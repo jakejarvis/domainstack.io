@@ -35,7 +35,7 @@
     "@date-fns/utc": "^2.1.1",
     "@neondatabase/serverless": "^1.0.2",
     "@opentelemetry/api": "^1.9.0",
-    "@posthog/nextjs-config": "^1.3.8",
+    "@posthog/nextjs-config": "^1.3.9",
     "@sparticuz/chromium": "141.0.0",
     "@tanstack/react-query": "^5.90.5",
     "@tanstack/react-query-devtools": "^5.90.2",

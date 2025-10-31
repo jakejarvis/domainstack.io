@@ -21,8 +21,8 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0
       '@posthog/nextjs-config':
-        specifier: ^1.3.8
-        version: 1.3.8(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
+        specifier: ^1.3.9
+        version: 1.3.9(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       '@sparticuz/chromium':
         specifier: 141.0.0
         version: 141.0.0
@@ -1607,8 +1607,11 @@ packages:
   '@posthog/core@1.4.0':
     resolution: {integrity: sha512-jmW8/I//YOHAfjzokqas+Qtc2T57Ux8d2uIJu7FLcMGxywckHsl6od59CD18jtUzKToQdjQhV6Y3429qj+KeNw==}
 
-  '@posthog/nextjs-config@1.3.8':
-    resolution: {integrity: sha512-MQmW1IEBSBvDDfuMSPT3N8lYYCBfUxjLaGO4M2y2YsZeuSvgci7bVwbYYVRdcnzY60goCj98HPWSxGiwUIJVJQ==}
+  '@posthog/core@1.5.0':
+    resolution: {integrity: sha512-oxfV20QMNwH30jKybUyqi3yGuMghULQz1zkJgQG3rjpHDxhD2vDN6E7UpmaqgphMIvGG3Q+DgfU10zfSPA7w7w==}
+
+  '@posthog/nextjs-config@1.3.9':
+    resolution: {integrity: sha512-hWksDDh4DAJjGrIGDyKv+6nrwFBFLftnxmmF6uActcQ1ofaVOL5ByUCblwinZ+KwCfhVh+eGM6HNRtCAJaOkWA==}
     engines: {node: '>=20'}
     peerDependencies:
       next: '>12.1.0'
@@ -6710,10 +6713,12 @@ snapshots:
 
   '@posthog/core@1.4.0': {}
 
-  '@posthog/nextjs-config@1.3.8(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))':
+  '@posthog/core@1.5.0': {}
+
+  '@posthog/nextjs-config@1.3.9(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))':
     dependencies:
       '@posthog/cli': 0.5.7
-      '@posthog/core': 1.4.0
+      '@posthog/core': 1.5.0
       next: 16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       semver: 7.7.3
     transitivePeerDependencies:
