@@ -8,13 +8,11 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useState } from "react";
-import { ErrorWithRetry } from "@/components/domain/error-with-retry";
-import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
+import { Favicon } from "@/components/favicon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +22,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -32,52 +29,16 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { Certificate } from "@/lib/schemas";
-import { SECTION_DEFS } from "@/lib/sections-meta";
+import { sections } from "@/lib/sections-meta";
 
-export function CertificatesSection({
-  data,
-  isLoading,
-  isError,
-  onRetryAction,
-}: {
-  data?: Certificate[] | null;
-  isLoading: boolean;
-  isError: boolean;
-  onRetryAction: () => void;
-}) {
+export function CertificatesSection({ data }: { data?: Certificate[] | null }) {
   const [showAll, setShowAll] = useState(false);
-  const firstCert = Array.isArray(data) && data.length > 0 ? data[0] : null;
-  const remainingCerts =
-    Array.isArray(data) && data.length > 1 ? data.slice(1) : [];
+  const firstCert = data && data.length > 0 ? data[0] : null;
+  const remainingCerts = data && data.length > 1 ? data.slice(1) : [];
+
   return (
-    <Section
-      {...SECTION_DEFS.certificates}
-      isError={isError}
-      isLoading={isLoading}
-    >
-      {isLoading ? (
-        <>
-          <div className="relative overflow-hidden rounded-2xl border border-black/5 bg-background/40 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/5">
-            <KeyValueGrid colsDesktop={2}>
-              <KeyValueSkeleton
-                label="Issuer"
-                widthClass="w-[100px]"
-                withLeading
-              />
-              <KeyValueSkeleton label="Subject" widthClass="w-[100px]" />
-              <KeyValueSkeleton label="Valid from" widthClass="w-[100px]" />
-              <KeyValueSkeleton
-                label="Valid to"
-                widthClass="w-[100px]"
-                withSuffix
-              />
-            </KeyValueGrid>
-          </div>
-          <div className="my-2 flex justify-center">
-            <Skeleton className="h-8 w-28 rounded-md" />
-          </div>
-        </>
-      ) : data && firstCert ? (
+    <Section {...sections.certificates}>
+      {firstCert ? (
         <>
           <Fragment
             key={`cert-${firstCert.subject}-${firstCert.validFrom}-${firstCert.validTo}`}
@@ -286,11 +247,6 @@ export function CertificatesSection({
             </AnimatePresence>
           )}
         </>
-      ) : isError ? (
-        <ErrorWithRetry
-          message="Failed to load certificates."
-          onRetryAction={onRetryAction}
-        />
       ) : (
         <Empty className="border border-dashed">
           <EmptyHeader>

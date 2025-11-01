@@ -1,12 +1,14 @@
+import { cacheLife } from "next/cache";
 import { Button } from "@/components/ui/button";
 
 async function fetchRepoStars(): Promise<number | null> {
+  "use cache";
+  cacheLife("hours");
+
   try {
     const res = await fetch(
       "https://api.github.com/repos/jakejarvis/domainstack.io",
       {
-        // Revalidate at most every 30 minutes to avoid rate limits (one day without access token)
-        next: { revalidate: process.env.GITHUB_TOKEN ? 1800 : 86400 },
         headers: {
           Accept: "application/vnd.github+json",
           ...(process.env.GITHUB_TOKEN

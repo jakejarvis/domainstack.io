@@ -1,10 +1,20 @@
-import { Section } from "@/components/domain/section";
+import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
+import { DnsSectionSkeleton } from "@/components/domain/dns/dns-section-skeleton";
+import { HeadersSectionSkeleton } from "@/components/domain/headers/headers-section-skeleton";
+import { HostingSectionSkeleton } from "@/components/domain/hosting/hosting-section-skeleton";
+import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
+import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SECTION_DEFS, SECTION_ORDER } from "@/lib/sections-meta";
 
+/**
+ * Reusable loading state for domain reports.
+ * Used by both route-level loading.tsx and Suspense fallback in DomainReportView.
+ * Contains the header skeleton and all section skeletons.
+ */
 export function DomainLoadingState() {
   return (
-    <div className="fade-in slide-in-from-bottom-2 animate-in space-y-4">
+    <div className="space-y-4">
+      {/* Domain header skeleton */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5 rounded" />
@@ -15,10 +25,14 @@ export function DomainLoadingState() {
         </div>
       </div>
 
+      {/* Sections skeleton */}
       <div className="space-y-4">
-        {SECTION_ORDER.map((key) => (
-          <Section {...SECTION_DEFS[key]} key={key} isLoading />
-        ))}
+        <RegistrationSectionSkeleton />
+        <HostingSectionSkeleton />
+        <DnsSectionSkeleton />
+        <CertificatesSectionSkeleton />
+        <HeadersSectionSkeleton />
+        <SeoSectionSkeleton />
       </div>
     </div>
   );

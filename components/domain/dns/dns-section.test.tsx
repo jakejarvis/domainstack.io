@@ -1,9 +1,9 @@
 /* @vitest-environment jsdom */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DnsRecordsSection } from "./dns-records-section";
+import { DnsSection } from "./dns-section";
 
-vi.mock("@/components/domain/dns-group", () => ({
+vi.mock("@/components/domain/dns/dns-group", () => ({
   DnsGroup: ({
     title,
     count,
@@ -21,11 +21,11 @@ vi.mock("@/components/domain/dns-group", () => ({
   ),
 }));
 
-vi.mock("@/components/domain/dns-record-list", () => ({
+vi.mock("@/components/domain/dns/dns-record-list", () => ({
   DnsRecordList: ({ type }: { type: string }) => <div>list:{type}</div>,
 }));
 
-describe("DnsRecordsSection", () => {
+describe("DnsSection", () => {
   it("renders groups for each type and passes counts", () => {
     const records = [
       { type: "A", name: "a", value: "1.2.3.4" },
@@ -35,14 +35,7 @@ describe("DnsRecordsSection", () => {
       { type: "NS", name: "ns", value: "ns1.example.com" },
     ] as unknown as import("@/lib/schemas").DnsRecord[];
 
-    render(
-      <DnsRecordsSection
-        records={records}
-        isLoading={false}
-        isError={false}
-        onRetryAction={() => {}}
-      />,
-    );
+    render(<DnsSection records={records} />);
 
     expect(screen.getByText("A Records")).toBeInTheDocument();
     const counts = screen.getAllByText("count:1");
@@ -50,25 +43,8 @@ describe("DnsRecordsSection", () => {
     expect(screen.getByText("MX Records")).toBeInTheDocument();
   });
 
-  it("shows error and loading states", () => {
-    render(
-      <DnsRecordsSection
-        records={null}
-        isLoading={false}
-        isError
-        onRetryAction={() => {}}
-      />,
-    );
-    expect(screen.getByText(/Failed to load DNS/i)).toBeInTheDocument();
-
-    render(
-      <DnsRecordsSection
-        records={null}
-        isLoading
-        isError={false}
-        onRetryAction={() => {}}
-      />,
-    );
-    expect(screen.getAllByText("DNS Records").length).toBeGreaterThan(0);
+  it("shows empty state when no records", () => {
+    render(<DnsSection records={null} />);
+    expect(screen.getByText(/No DNS records found/i)).toBeInTheDocument();
   });
 });

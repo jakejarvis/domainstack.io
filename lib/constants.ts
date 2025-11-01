@@ -27,14 +27,6 @@ const ONE_HOUR = 60 * 60;
 const ONE_DAY = 24 * ONE_HOUR;
 const ONE_WEEK = 7 * ONE_DAY;
 
-// RDAP bootstrap data (dns.json from IANA)
-// Changes infrequently (new TLDs, server updates); safe to cache aggressively
-export const TTL_RDAP_BOOTSTRAP = ONE_DAY; // 24 hours
-
-// Cloudflare IP ranges
-// Changes infrequently (new IP ranges); safe to cache aggressively
-export const TTL_CLOUDFLARE_IPS = ONE_DAY; // 24 hours
-
 // ===== Blob Storage Cache TTLs =====
 // How long to cache uploaded assets (favicons, screenshots, social images)
 export const TTL_FAVICON = ONE_WEEK; // 1 week

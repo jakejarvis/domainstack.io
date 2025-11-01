@@ -1,3 +1,5 @@
+"use client";
+
 import { ClockFading } from "lucide-react";
 import { ms } from "ms";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +18,9 @@ export function TtlBadge({ ttl }: { ttl: number }) {
           className="cursor-default py-1 text-[11px] text-muted-foreground"
         >
           <ClockFading />
-          <span className="leading-none">{ms(ttl * 1000)}</span>
+          <span className="leading-none" suppressHydrationWarning>
+            {ms(ttl * 1000)}
+          </span>
         </Badge>
       </TooltipTrigger>
       <TooltipContent>

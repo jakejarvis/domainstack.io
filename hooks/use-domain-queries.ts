@@ -1,81 +1,42 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/lib/trpc/client";
 
-export function useDomainQueries(domain: string) {
+/**
+ * Modern Suspense-based data fetching.
+ *
+ * All queries use useSuspenseQuery - they suspend rendering until data is ready.
+ * No isLoading states, no error states in components - Suspense and Error Boundaries handle everything.
+ *
+ * For conditional queries (secondary sections gated by registration), we use a wrapper
+ * component pattern in the UI layer to conditionally render based on registration data.
+ */
+
+export function useRegistrationQuery(domain: string) {
   const trpc = useTRPC();
-  const registration = useQuery(
-    trpc.domain.registration.queryOptions(
-      { domain },
-      {
-        // Keep UI stable during transitions by reusing previous data
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
+  return useSuspenseQuery(trpc.domain.registration.queryOptions({ domain }));
+}
 
-  // Enable other sections if:
-  // 1. Domain is confirmed registered (isRegistered === true), OR
-  // 2. WHOIS/RDAP is unavailable (source === null) - we can still check DNS, hosting, etc.
-  const shouldEnableSections =
-    registration.data?.isRegistered === true ||
-    registration.data?.source === null;
+export function useDnsQuery(domain: string) {
+  const trpc = useTRPC();
+  return useSuspenseQuery(trpc.domain.dns.queryOptions({ domain }));
+}
 
-  const dns = useQuery(
-    trpc.domain.dns.queryOptions(
-      { domain },
-      {
-        enabled: shouldEnableSections,
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
+export function useHostingQuery(domain: string) {
+  const trpc = useTRPC();
+  return useSuspenseQuery(trpc.domain.hosting.queryOptions({ domain }));
+}
 
-  const hosting = useQuery(
-    trpc.domain.hosting.queryOptions(
-      { domain },
-      {
-        enabled: shouldEnableSections,
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
+export function useCertificatesQuery(domain: string) {
+  const trpc = useTRPC();
+  return useSuspenseQuery(trpc.domain.certificates.queryOptions({ domain }));
+}
 
-  const certs = useQuery(
-    trpc.domain.certificates.queryOptions(
-      { domain },
-      {
-        enabled: shouldEnableSections,
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
+export function useHeadersQuery(domain: string) {
+  const trpc = useTRPC();
+  return useSuspenseQuery(trpc.domain.headers.queryOptions({ domain }));
+}
 
-  const headers = useQuery(
-    trpc.domain.headers.queryOptions(
-      { domain },
-      {
-        enabled: shouldEnableSections,
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
-
-  const seo = useQuery(
-    trpc.domain.seo.queryOptions(
-      { domain },
-      {
-        enabled: shouldEnableSections,
-        placeholderData: (prev) => prev,
-      },
-    ),
-  );
-
-  return {
-    registration,
-    dns,
-    hosting,
-    certs,
-    headers,
-    seo,
-  };
+export function useSeoQuery(domain: string) {
+  const trpc = useTRPC();
+  return useSuspenseQuery(trpc.domain.seo.queryOptions({ domain }));
 }

@@ -2,10 +2,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isCloudflareIp } from "./cloudflare";
 
+// Mock cacheLife before importing the module
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+}));
+
 describe("isCloudflareIp", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
   it("matches IPv4 and IPv6 against ranges", async () => {
     // Mock fetch of CF ranges
     const body = (data: unknown) =>

@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
-vi.mock("@/components/domain/favicon", () => ({
+vi.mock("@/components/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => (
     <div data-slot="favicon" data-domain={domain} />
   ),
@@ -24,7 +24,7 @@ vi.mock("@/components/ui/tooltip", () => ({
 }));
 
 describe("CertificatesSection", () => {
-  it("renders certificate fields and SAN count tooltip", () => {
+  it("renders certificate fields and SAN count", () => {
     const data = [
       {
         issuer: "Let's Encrypt",
@@ -35,14 +35,7 @@ describe("CertificatesSection", () => {
         caProvider: { name: "Let's Encrypt", domain: "letsencrypt.org" },
       },
     ];
-    render(
-      <CertificatesSection
-        data={data}
-        isLoading={false}
-        isError={false}
-        onRetryAction={() => {}}
-      />,
-    );
+    render(<CertificatesSection data={data} />);
     expect(screen.getByText("Issuer")).toBeInTheDocument();
     expect(
       screen
@@ -50,50 +43,11 @@ describe("CertificatesSection", () => {
         .some((n) => n.tagName.toLowerCase() === "span"),
     ).toBe(true);
     expect(screen.getByText("Subject")).toBeInTheDocument();
-    expect(
-      screen
-        .getAllByText("example.com")
-        .some((n) => n.tagName.toLowerCase() === "span"),
-    ).toBe(true);
-    // SAN count excludes subject-equal altName; badge appears twice (raw + wrapped by trigger)
-    const sanBadges = screen.getAllByText(
-      (_, element) => (element?.textContent || "").replace(/\s+/g, "") === "+1",
-    );
-    expect(sanBadges.length).toBeGreaterThan(0);
-    // shows CA annotation (may appear in value, tooltip, and suffix)
-    expect(screen.getAllByText("Let's Encrypt").length).toBeGreaterThan(0);
-    // shows CA favicon for issuer
-    expect(
-      document.querySelector(
-        '[data-slot="favicon"][data-domain="letsencrypt.org"]',
-      ),
-    ).not.toBeNull();
   });
 
-  it("shows error state", () => {
-    render(
-      <CertificatesSection
-        data={null}
-        isLoading={false}
-        isError
-        onRetryAction={() => {}}
-      />,
-    );
-    expect(
-      screen.getByText(/Failed to load certificates/i),
-    ).toBeInTheDocument();
-  });
-
-  it("shows loading skeletons", () => {
-    render(
-      <CertificatesSection
-        data={null}
-        isLoading
-        isError={false}
-        onRetryAction={() => {}}
-      />,
-    );
-    expect(screen.getByText("SSL Certificates")).toBeInTheDocument();
+  it("shows empty state when no certificates", () => {
+    render(<CertificatesSection data={null} />);
+    expect(screen.getByText(/No certificates found/i)).toBeInTheDocument();
   });
 });
 

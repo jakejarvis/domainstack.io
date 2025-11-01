@@ -50,6 +50,16 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           headers: () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
+
+            // For SSR on Vercel with deployment protection:
+            // Add bypass token to allow server-to-server calls
+            if (isServer && process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+              headers.set(
+                "x-vercel-protection-bypass",
+                process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+              );
+            }
+
             return headers;
           },
         }),

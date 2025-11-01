@@ -25,7 +25,7 @@ type SectionDef = {
   slug: string;
 };
 
-export const SECTION_DEFS: Record<string, SectionDef> = {
+export const sections: Record<string, SectionDef> = {
   registration: {
     title: "Registration",
     accent: "purple" as SectionAccent,
@@ -76,19 +76,4 @@ export const SECTION_DEFS: Record<string, SectionDef> = {
   },
 } as const;
 
-export type SectionKey = keyof typeof SECTION_DEFS;
-
-// Single source of truth for section ordering across loading and fallback UIs
-export const SECTION_ORDER: readonly SectionKey[] = [
-  "registration",
-  "hosting",
-  "dns",
-  "certificates",
-  "headers",
-  "seo",
-] as const;
-
-// Convenient list of stable slugs in visual order for Accordion defaultValue
-export const SECTION_SLUGS: readonly string[] = SECTION_ORDER.map(
-  (k) => SECTION_DEFS[k].slug,
-);
+export type SectionKey = keyof typeof sections;

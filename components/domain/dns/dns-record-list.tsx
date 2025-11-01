@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Favicon } from "@/components/domain/favicon";
+import { TtlBadge } from "@/components/domain/dns/ttl-badge";
 import { KeyValue } from "@/components/domain/key-value";
-import { TtlBadge } from "@/components/domain/ttl-badge";
+import { Favicon } from "@/components/favicon";
 import {
   Tooltip,
   TooltipContent,

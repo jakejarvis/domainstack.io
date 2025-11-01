@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Bookmarklet } from "@/components/bookmarklet";
-import { HeaderSearch } from "@/components/domain/header-search";
 import { GithubStars } from "@/components/github-stars";
+import { HeaderSearch } from "@/components/header-search";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";

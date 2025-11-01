@@ -2,7 +2,6 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportView } from "@/components/domain/domain-report-view";
-import { DomainSsrAnalytics } from "@/components/domain/domain-ssr-analytics";
 import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { makeQueryClient } from "@/trpc/query-client";
@@ -48,18 +47,12 @@ export default async function DomainPage({
 
   // Minimal prefetch: registration only, let sections stream progressively
   const queryClient = makeQueryClient();
-  await queryClient.prefetchQuery(
+  queryClient.prefetchQuery(
     trpc.domain.registration.queryOptions({ domain: normalized }),
   );
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
-      {/* Dynamic island: runs on server, reads cookie, captures analytics */}
-      <DomainSsrAnalytics
-        domain={normalized}
-        canonicalized={normalized !== decoded}
-      />
-
       <HydrationBoundary state={dehydrate(queryClient)}>
         <DomainReportView domain={normalized} />
       </HydrationBoundary>

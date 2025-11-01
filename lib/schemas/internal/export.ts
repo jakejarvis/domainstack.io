@@ -29,7 +29,11 @@ export const DomainExportSchema = z.object({
   })).nullish(),
   certificates: z.array(CertificateSchema.omit({ caProvider: true })).nullish(),
   headers: HttpHeadersSchema.nullish(),
-  seo: SeoResponseSchema.omit({ preview: true, source: true }).nullish(),
+  seo: SeoResponseSchema.omit({
+    preview: true,
+    source: true,
+    errors: true,
+  }).nullish(),
 });
 
 export type DomainExport = z.infer<typeof DomainExportSchema>;

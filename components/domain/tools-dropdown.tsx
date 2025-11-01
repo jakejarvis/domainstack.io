@@ -1,7 +1,7 @@
 "use client";
 
 import { MoreHorizontal, Plus } from "lucide-react";
-import { Favicon } from "@/components/domain/favicon";
+import { Favicon } from "@/components/favicon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

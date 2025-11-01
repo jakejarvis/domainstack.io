@@ -1,5 +1,13 @@
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json({ status: "ok" }, { status: 200 });
+  await connection();
+
+  return new NextResponse("ok", {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain",
+      "Cache-Control": "no-cache, no-store",
+    },
+  });
 }

@@ -1,5 +1,9 @@
+import "server-only";
 import * as ipaddr from "ipaddr.js";
-import { CLOUDFLARE_IPS_URL, TTL_CLOUDFLARE_IPS } from "@/lib/constants";
+import { cacheLife } from "next/cache";
+import { cache } from "react";
+import { CLOUDFLARE_IPS_URL } from "@/lib/constants";
+import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 
 export interface CloudflareIpRanges {
   ipv4Cidrs: string[];
@@ -9,10 +13,19 @@ export interface CloudflareIpRanges {
 let lastLoadedIpv4Parsed: Array<[ipaddr.IPv4, number]> | undefined;
 let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
 
-async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
-  const res = await fetch(CLOUDFLARE_IPS_URL, {
-    next: { revalidate: TTL_CLOUDFLARE_IPS },
-  });
+/**
+ * Fetch Cloudflare IP ranges with Cache Components.
+ *
+ * The IP ranges change infrequently (when Cloudflare expands infrastructure),
+ * so we cache for 1 day using Next.js 16 Cache Components.
+ *
+ * Also wrapped in React's cache() for per-request deduplication.
+ */
+const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
+  "use cache";
+  cacheLife("days");
+
+  const res = await fetch(CLOUDFLARE_IPS_URL);
 
   if (!res.ok) {
     throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
@@ -60,29 +73,9 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   }
 
   return ranges;
-}
+});
 
-function ipV4InCidr(addr: ipaddr.IPv4, cidr: string): boolean {
-  try {
-    const [net, prefix] = ipaddr.parseCIDR(cidr);
-    if (net.kind() !== "ipv4") return false;
-    return addr.match([net as ipaddr.IPv4, prefix]);
-  } catch {
-    return false;
-  }
-}
-
-function ipV6InCidr(addr: ipaddr.IPv6, cidr: string): boolean {
-  try {
-    const [net, prefix] = ipaddr.parseCIDR(cidr);
-    if (net.kind() !== "ipv6") return false;
-    return addr.match([net as ipaddr.IPv6, prefix]);
-  } catch {
-    return false;
-  }
-}
-
-export async function isCloudflareIp(ip: string): Promise<boolean> {
+export const isCloudflareIp = cache(async (ip: string): Promise<boolean> => {
   const ranges = await getCloudflareIpRanges();
 
   if (ipaddr.IPv4.isValid(ip)) {
@@ -104,4 +97,4 @@ export async function isCloudflareIp(ip: string): Promise<boolean> {
   }
 
   return false;
-}
+});

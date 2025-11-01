@@ -3,12 +3,10 @@
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
 import dynamic from "next/dynamic";
-import { ErrorWithRetry } from "@/components/domain/error-with-retry";
-import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
+import { Favicon } from "@/components/favicon";
 import {
   Empty,
   EmptyDescription,
@@ -16,59 +14,62 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
 import type { Hosting } from "@/lib/schemas";
-import { SECTION_DEFS } from "@/lib/sections-meta";
+import { sections } from "@/lib/sections-meta";
 import { cn } from "@/lib/utils";
 
 const HostingMap = dynamic(
-  () => import("@/components/domain/hosting-map").then((m) => m.HostingMap),
+  () =>
+    import("@/components/domain/hosting/hosting-map").then((m) => m.HostingMap),
   {
     ssr: false,
     loading: () => (
-      <div className="h-[280px] w-full rounded-2xl border border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10" />
+      <div className="flex h-[280px] w-full items-center justify-center rounded-2xl border border-black/10 bg-muted/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
+        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+          <Spinner />
+          <span>Loading map...</span>
+        </div>
+      </div>
     ),
   },
 );
 
-export function HostingEmailSection({
-  data,
-  isLoading,
-  isError,
-  onRetryAction,
-}: {
-  data?: Hosting | null;
-  isLoading: boolean;
-  isError: boolean;
-  onRetryAction: () => void;
-}) {
+function formatLocation(geo: Hosting["geo"]): string {
+  const parts = [geo.city, geo.region, geo.country].filter(Boolean);
+  return parts.join(", ");
+}
+
+export function HostingSection({ data }: { data?: Hosting | null }) {
+  // Early return for empty state - this satisfies TypeScript's control-flow analysis
+  if (!data) {
+    return (
+      <Section {...sections.hosting}>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <MailQuestionMark />
+            </EmptyMedia>
+            <EmptyTitle>No hosting details available</EmptyTitle>
+            <EmptyDescription>
+              We couldn&apos;t detect hosting, email, or DNS provider info. If
+              the domain has no A/AAAA records or blocked headers, details may
+              be unavailable.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </Section>
+    );
+  }
+
+  const hasAnyProvider =
+    data.dnsProvider.name ||
+    data.hostingProvider.name ||
+    data.emailProvider.name;
+
   return (
-    <Section {...SECTION_DEFS.hosting} isError={isError} isLoading={isLoading}>
-      {isLoading ? (
-        <>
-          <KeyValueGrid colsDesktop={3}>
-            <KeyValueSkeleton label="DNS" withLeading widthClass="w-[100px]" />
-            <KeyValueSkeleton
-              label="Hosting"
-              withLeading
-              widthClass="w-[100px]"
-            />
-            <KeyValueSkeleton
-              label="Email"
-              withLeading
-              widthClass="w-[100px]"
-            />
-          </KeyValueGrid>
-
-          <KeyValueSkeleton
-            label="Location"
-            withLeading
-            widthClass="w-[100px]"
-          />
-
-          {/* Map skeleton provided by dynamic component's loading prop; keep spacing */}
-          <div className="h-[280px] w-full rounded-2xl border border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10" />
-        </>
-      ) : data ? (
+    <Section {...sections.hosting}>
+      {hasAnyProvider ? (
         <>
           <KeyValueGrid colsDesktop={3}>
             <KeyValue
@@ -116,11 +117,7 @@ export function HostingEmailSection({
             <>
               <KeyValue
                 label="Location"
-                value={`${
-                  data.geo.city || data.geo.region || data.geo.country
-                    ? `${data.geo.city ? `${data.geo.city}, ` : ""}${data.geo.region ? `${data.geo.region}, ` : ""}${data.geo.country}`
-                    : ""
-                }`}
+                value={formatLocation(data.geo)}
                 leading={
                   data.geo.country_code &&
                   hasFlag(data.geo.country_code.toUpperCase()) ? (
@@ -141,11 +138,6 @@ export function HostingEmailSection({
             </>
           ) : null}
         </>
-      ) : isError ? (
-        <ErrorWithRetry
-          message="Failed to load hosting details."
-          onRetryAction={onRetryAction}
-        />
       ) : (
         <Empty className="border border-dashed">
           <EmptyHeader>

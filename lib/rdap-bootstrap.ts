@@ -1,12 +1,13 @@
 import "server-only";
+import { cacheLife } from "next/cache";
 import type { BootstrapData } from "rdapper";
-import { RDAP_BOOTSTRAP_URL, TTL_RDAP_BOOTSTRAP } from "@/lib/constants";
+import { RDAP_BOOTSTRAP_URL } from "@/lib/constants";
 
 /**
- * Fetch RDAP bootstrap data with Next.js caching.
+ * Fetch RDAP bootstrap data with Cache Components.
  *
  * The bootstrap registry changes infrequently (new TLDs, server updates),
- * so we cache it for 24 hours using Next.js's built-in fetch cache.
+ * so we cache it for 1 day using Next.js 16 Cache Components.
  *
  * This eliminates redundant fetches to IANA on every domain lookup when
  * passed to rdapper's lookup() via the customBootstrapData option.
@@ -15,9 +16,10 @@ import { RDAP_BOOTSTRAP_URL, TTL_RDAP_BOOTSTRAP } from "@/lib/constants";
  * @throws Error if fetch fails (caller should handle or let rdapper fetch directly)
  */
 export async function getRdapBootstrapData(): Promise<BootstrapData> {
-  const res = await fetch(RDAP_BOOTSTRAP_URL, {
-    next: { revalidate: TTL_RDAP_BOOTSTRAP },
-  });
+  "use cache";
+  cacheLife("days");
+
+  const res = await fetch(RDAP_BOOTSTRAP_URL);
 
   if (!res.ok) {
     throw new Error(

@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProviderValue } from "./provider-value";
 
-vi.mock("@/components/domain/favicon", () => ({
+vi.mock("@/components/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
 }));
 

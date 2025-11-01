@@ -10,7 +10,7 @@ vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/components/domain/favicon", () => ({
+vi.mock("@/components/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) =>
     createElement("span", {
       "data-slot": "favicon",

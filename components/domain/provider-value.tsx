@@ -1,6 +1,6 @@
 "use client";
 
-import { Favicon } from "@/components/domain/favicon";
+import { Favicon } from "@/components/favicon";
 
 export function ProviderValue({
   name,
