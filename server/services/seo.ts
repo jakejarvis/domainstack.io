@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { recordDomainAccess } from "@/lib/access";
 import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { TTL_SOCIAL_PREVIEW, USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
@@ -237,8 +238,17 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       fetchedAt: now,
       expiresAt,
     });
+
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
+
     try {
-      await scheduleSectionIfEarlier("seo", registrable, dueAtMs);
+      await scheduleSectionIfEarlier(
+        "seo",
+        registrable,
+        dueAtMs,
+        existingDomain.lastAccessedAt,
+      );
     } catch (err) {
       console.warn(
         `[seo] schedule failed for ${registrable}`,

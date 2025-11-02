@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
@@ -72,8 +73,17 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
         fetchedAt: now,
         expiresAt,
       });
+
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       try {
-        await scheduleSectionIfEarlier("headers", registrable, dueAtMs);
+        await scheduleSectionIfEarlier(
+          "headers",
+          registrable,
+          dueAtMs,
+          existingDomain.lastAccessedAt,
+        );
       } catch (err) {
         console.warn(
           `[headers] schedule failed for ${registrable}`,

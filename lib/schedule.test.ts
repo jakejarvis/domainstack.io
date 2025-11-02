@@ -426,4 +426,107 @@ describe("schedule", () => {
       expect(sections).toHaveLength(6);
     });
   });
+
+  describe("scheduleSectionIfEarlier with decay", () => {
+    it("applies 3x decay multiplier for DNS accessed 5 days ago", async () => {
+      const now = Date.now();
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const fiveDaysAgo = new Date(now - 5 * msPerDay);
+      const baseDueMs = now + 60 * 60 * 1000; // 1 hour from now
+
+      await scheduleSectionIfEarlier(
+        "dns",
+        "example.com",
+        baseDueMs,
+        fiveDaysAgo,
+      );
+
+      const { redis, ns } = await import("@/lib/redis");
+      const score = await redis.zscore(ns("due", "dns"), "example.com");
+
+      // Should be scheduled ~3x later due to decay (3 hours instead of 1 hour)
+      const expectedMs = now + 3 * 60 * 60 * 1000;
+      expect(score).toBeGreaterThanOrEqual(expectedMs - 1000); // small tolerance
+      expect(score).toBeLessThanOrEqual(expectedMs + 60 * 60 * 1000); // within reason
+    });
+
+    it("applies 50x decay multiplier for registration accessed 75 days ago", async () => {
+      const now = Date.now();
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const seventyFiveDaysAgo = new Date(now - 75 * msPerDay);
+      const baseDueMs = now + 24 * 60 * 60 * 1000; // 24 hours from now
+
+      await scheduleSectionIfEarlier(
+        "registration",
+        "example.com",
+        baseDueMs,
+        seventyFiveDaysAgo,
+      );
+
+      const { redis, ns } = await import("@/lib/redis");
+      const score = await redis.zscore(
+        ns("due", "registration"),
+        "example.com",
+      );
+
+      // Should be scheduled ~50x later due to decay (50 days instead of 1 day)
+      const expectedMs = now + 50 * 24 * 60 * 60 * 1000;
+      expect(score).toBeGreaterThanOrEqual(expectedMs - 1000);
+    });
+
+    it("does not schedule when domain is inactive beyond cutoff (DNS > 180 days)", async () => {
+      const now = Date.now();
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const twoHundredDaysAgo = new Date(now - 200 * msPerDay);
+
+      const scheduled = await scheduleSectionIfEarlier(
+        "dns",
+        "example.com",
+        now + 60 * 60 * 1000,
+        twoHundredDaysAgo,
+      );
+
+      expect(scheduled).toBe(false);
+
+      const { redis, ns } = await import("@/lib/redis");
+      const score = await redis.zscore(ns("due", "dns"), "example.com");
+      expect(score).toBeNull();
+    });
+
+    it("does not schedule when domain is inactive beyond cutoff (registration > 90 days)", async () => {
+      const now = Date.now();
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const oneHundredDaysAgo = new Date(now - 100 * msPerDay);
+
+      const scheduled = await scheduleSectionIfEarlier(
+        "registration",
+        "example.com",
+        now + 24 * 60 * 60 * 1000,
+        oneHundredDaysAgo,
+      );
+
+      expect(scheduled).toBe(false);
+
+      const { redis, ns } = await import("@/lib/redis");
+      const score = await redis.zscore(
+        ns("due", "registration"),
+        "example.com",
+      );
+      expect(score).toBeNull();
+    });
+
+    it("uses normal cadence when lastAccessedAt is null", async () => {
+      const now = Date.now();
+      const baseDueMs = now + 60 * 60 * 1000; // 1 hour from now
+
+      await scheduleSectionIfEarlier("dns", "example.com", baseDueMs, null);
+
+      const { redis, ns } = await import("@/lib/redis");
+      const score = await redis.zscore(ns("due", "dns"), "example.com");
+
+      // Should be scheduled at normal cadence (1 hour), not decayed
+      expect(score).toBeGreaterThanOrEqual(baseDueMs);
+      expect(score).toBeLessThanOrEqual(baseDueMs + 60 * 60 * 1000); // reasonable buffer
+    });
+  });
 });

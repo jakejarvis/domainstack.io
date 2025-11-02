@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDomainTld, lookup } from "rdapper";
+import { recordDomainAccess } from "@/lib/access";
 import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { findDomainByName, upsertDomain } from "@/lib/db/repos/domains";
@@ -344,12 +345,16 @@ export async function getRegistration(domain: string): Promise<Registration> {
     })),
   });
 
+  // Record access for decay calculation
+  recordDomainAccess(registrable);
+
   // Schedule background revalidation
   try {
     await scheduleSectionIfEarlier(
       "registration",
       registrable,
       expiresAt.getTime(),
+      domainRecord.lastAccessedAt,
     );
   } catch (err) {
     console.warn(

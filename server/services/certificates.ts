@@ -1,5 +1,6 @@
 import tls from "node:tls";
 import { eq } from "drizzle-orm";
+import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { replaceCertificates } from "@/lib/db/repos/certificates";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -159,9 +160,18 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         fetchedAt: now,
         expiresAt: nextDue,
       });
+
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       try {
         const dueAtMs = nextDue.getTime();
-        await scheduleSectionIfEarlier("certificates", registrable, dueAtMs);
+        await scheduleSectionIfEarlier(
+          "certificates",
+          registrable,
+          dueAtMs,
+          existingDomain.lastAccessedAt,
+        );
       } catch (err) {
         console.warn(
           `[certificates] schedule failed for ${registrable}`,

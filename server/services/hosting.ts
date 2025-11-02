@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
@@ -237,8 +238,17 @@ export async function detectHosting(domain: string): Promise<Hosting> {
       fetchedAt: now,
       expiresAt,
     });
+
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
+
     try {
-      await scheduleSectionIfEarlier("hosting", registrable, dueAtMs);
+      await scheduleSectionIfEarlier(
+        "hosting",
+        registrable,
+        dueAtMs,
+        existingDomain.lastAccessedAt,
+      );
     } catch (err) {
       console.warn(
         `[hosting] schedule failed for ${registrable}`,
