@@ -3,39 +3,34 @@ import "server-only";
 import { TRPCError } from "@trpc/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { waitUntil } from "@vercel/functions";
+import { getRateLimits, type ServiceLimits } from "@/lib/edge-config";
 import { redis } from "@/lib/redis";
 import { t } from "@/trpc/init";
 
-export const SERVICE_LIMITS = {
-  dns: { points: 60, window: "1 m" },
-  headers: { points: 60, window: "1 m" },
-  certs: { points: 30, window: "1 m" },
-  registration: { points: 10, window: "1 m" },
-  screenshot: { points: 30, window: "1 h" },
-  favicon: { points: 100, window: "1 m" },
-  seo: { points: 30, window: "1 m" },
-  hosting: { points: 30, window: "1 m" },
-  pricing: { points: 30, window: "1 m" },
-} as const;
-
-export type ServiceName = keyof typeof SERVICE_LIMITS;
-
-const limiters = Object.fromEntries(
-  Object.entries(SERVICE_LIMITS).map(([service, cfg]) => [
-    service,
-    new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(
-        cfg.points,
-        cfg.window as `${number} ${"s" | "m" | "h"}`,
-      ),
-      analytics: true,
-    }),
-  ]),
-) as Record<ServiceName, Ratelimit>;
+export type ServiceName = keyof ServiceLimits;
 
 export async function assertRateLimit(service: ServiceName, ip: string) {
-  const res = await limiters[service].limit(`${service}:${ip}`);
+  const limits = await getRateLimits();
+
+  // Fail open: if no limits configured or Edge Config fails, skip rate limiting
+  if (limits === null) {
+    console.info(`[ratelimit] rate limiting disabled (fail open)`);
+    return { limit: 0, remaining: 0, reset: 0 };
+  }
+
+  const cfg = limits[service];
+  if (!cfg) {
+    console.warn(`[ratelimit] no config for service ${service}, skipping`);
+    return { limit: 0, remaining: 0, reset: 0 };
+  }
+
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(cfg.points, cfg.window),
+    analytics: true,
+  });
+
+  const res = await limiter.limit(`${service}:${ip}`);
 
   if (!res.success) {
     const retryAfterSec = Math.max(
@@ -72,7 +67,7 @@ export async function assertRateLimit(service: ServiceName, ip: string) {
 
 export const rateLimitMiddleware = t.middleware(async ({ ctx, next, meta }) => {
   const service = (meta?.service ?? "") as ServiceName;
-  if (!service || !(service in SERVICE_LIMITS) || !ctx.ip) return next();
+  if (!service || !ctx.ip) return next();
   await assertRateLimit(service, ctx.ip);
   return next();
 });

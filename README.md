@@ -23,7 +23,8 @@
 - **tRPC** API
 - **Postgres** + **Drizzle ORM**
 - **Inngest** for background jobs and scheduled revalidation
-- **Upstash Redis** for caching, rate limits, and locks
+- **Upstash Redis** for caching and locks
+- **Vercel Edge Config** for dynamic configuration (domain suggestions, rate limits)
 - **Vercel Blob** for favicon/screenshot storage
 - [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
 - **Puppeteer** (with `@sparticuz/chromium` on server) for screenshots

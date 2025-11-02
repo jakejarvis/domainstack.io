@@ -72,6 +72,11 @@
 
 ## Security & Configuration Tips
 - Keep secrets in `.env.local`. See `.env.example` for required variables.
+- Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
+  - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
+  - `rate_limits` (object): Service rate limits; **fails open** (no limits) if unavailable for maximum availability
+  - Edge Config is completely optional and gracefully degrades when not configured
+  - Uses Next.js 16 `"use cache"` directive with `@vercel/edge-config` SDK for SSR compatibility
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle; use Redis for short-lived caching/locks. Apply retry backoff to respect provider limits.
