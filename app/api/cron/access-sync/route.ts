@@ -62,15 +62,12 @@ export async function GET(request: Request) {
       }
 
       // Extract domain name from key: "access:domain:{domain}"
-      const parts = key.split(":");
-      if (
-        parts.length !== 3 ||
-        parts[0] !== "access" ||
-        parts[1] !== "domain"
-      ) {
+      // Use prefix detection to preserve domains with colons (e.g., example.com:8080)
+      const prefix = "access:domain:";
+      if (!key.startsWith(prefix)) {
         continue;
       }
-      const domain = parts[2];
+      const domain = key.substring(prefix.length);
 
       updates.push({
         name: domain,
