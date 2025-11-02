@@ -57,6 +57,9 @@ export async function scheduleSectionIfEarlier(
   // Check if domain should stop being revalidated due to inactivity
   if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
     // Don't schedule - domain is too inactive
+    console.info(
+      `[schedule] skip ${section} ${domain} (stopped: inactive ${lastAccessedAt ? `since ${lastAccessedAt.toISOString()}` : "never accessed"})`,
+    );
     return false;
   }
 
@@ -64,6 +67,7 @@ export async function scheduleSectionIfEarlier(
   const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
   if (decayMultiplier === null) {
     // This shouldn't happen as shouldStopRevalidation would catch it, but be safe
+    console.warn(`[schedule] unexpected null decay for ${section} ${domain}`);
     return false;
   }
 
@@ -72,6 +76,16 @@ export async function scheduleSectionIfEarlier(
   const baseDelta = dueAtMs - now;
   const decayedDelta = applyDecayToTtl(baseDelta, decayMultiplier);
   const decayedDueMs = now + decayedDelta;
+
+  // Log when decay is applied (multiplier > 1)
+  if (decayMultiplier > 1) {
+    const daysInactive = lastAccessedAt
+      ? Math.floor((now - lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    console.info(
+      `[schedule] decay ${section} ${domain} (${decayMultiplier}x, inactive ${daysInactive ? `${daysInactive}d` : "unknown"})`,
+    );
+  }
 
   // Validate dueAtMs before any computation or Redis writes
   if (!Number.isFinite(decayedDueMs) || decayedDueMs < 0) {

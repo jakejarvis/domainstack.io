@@ -21,11 +21,14 @@ import type { Section } from "@/lib/schemas";
  */
 export function recordDomainAccess(domain: string): void {
   // Fire-and-forget: intentionally not awaited to avoid blocking
-  // Errors are silently ignored to prevent access tracking from breaking services
+  // Errors are logged but don't break the service
   const key = ns("access", "domain", domain);
   const timestamp = Date.now();
-  redis.set(key, timestamp).catch(() => {
-    // Silently ignore Redis errors for access tracking
+  redis.set(key, timestamp).catch((err) => {
+    console.warn(
+      `[access] failed to record ${domain}`,
+      err instanceof Error ? err.message : String(err),
+    );
   });
 }
 

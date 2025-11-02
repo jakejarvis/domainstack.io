@@ -38,6 +38,8 @@ export async function GET(request: Request) {
       keys.push(...result[1]);
     } while (cursor !== "0");
 
+    console.info(`[access-sync] found ${keys.length} access keys to process`);
+
     if (keys.length === 0) {
       return NextResponse.json({
         success: true,
@@ -77,12 +79,19 @@ export async function GET(request: Request) {
     }
 
     if (updates.length === 0) {
+      console.warn(
+        `[access-sync] found ${keys.length} keys but no valid data to sync`,
+      );
       return NextResponse.json({
         success: true,
         synced: 0,
         message: "no valid access data to sync",
       });
     }
+
+    console.info(
+      `[access-sync] prepared ${updates.length} updates from ${keys.length} keys`,
+    );
 
     // Batch update to Postgres (100 at a time to avoid overwhelming DB)
     const BATCH_SIZE = 100;
