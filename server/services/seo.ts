@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { recordDomainAccess } from "@/lib/access";
 import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { TTL_SOCIAL_PREVIEW, USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
@@ -32,6 +33,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   if (!registrable) {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
+
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached SEO data
   const existingDomain = await findDomainByName(registrable);
@@ -67,7 +72,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         errors: Record<string, unknown>;
         expiresAt: Date | null;
       }>);
-  if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > Date.now()) {
+  if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > nowMs) {
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
+
     const preview = existing[0].canonicalUrl
       ? {
           title: existing[0].previewTitle ?? null,
@@ -215,7 +223,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   };
 
   // Persist to Postgres only if domain exists (i.e., is registered)
-  const now = new Date();
   const expiresAt = ttlForSeo(now);
   const dueAtMs = expiresAt.getTime();
 
@@ -237,8 +244,17 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       fetchedAt: now,
       expiresAt,
     });
+
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
+
     try {
-      await scheduleSectionIfEarlier("seo", registrable, dueAtMs);
+      await scheduleSectionIfEarlier(
+        "seo",
+        registrable,
+        dueAtMs,
+        now, // Use current access time, not stale DB timestamp
+      );
     } catch (err) {
       console.warn(
         `[seo] schedule failed for ${registrable}`,

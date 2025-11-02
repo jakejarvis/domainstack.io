@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDomainTld, lookup } from "rdapper";
+import { recordDomainAccess } from "@/lib/access";
 import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { findDomainByName, upsertDomain } from "@/lib/db/repos/domains";
@@ -68,12 +69,16 @@ export async function getRegistration(domain: string): Promise<Registration> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+
   // ===== Fast path 1: Redis cache for registration status =====
   const cachedStatus = await getRegistrationStatusFromCache(registrable);
 
   // If Redis cache says unregistered, return minimal Registration object
   if (cachedStatus === false) {
     console.info(`[registration] cache hit unregistered ${registrable}`);
+    recordDomainAccess(registrable);
     return {
       domain: registrable,
       tld: getDomainTld(registrable) ?? "",
@@ -101,7 +106,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       .where(eq(registrations.domainId, existingDomain.id))
       .limit(1);
 
-    const now = new Date();
     if (existing[0] && existing[0].registration.expiresAt > now) {
       const { registration: row, providerName, providerDomain } = existing[0];
 
@@ -161,6 +165,24 @@ export async function getRegistration(domain: string): Promise<Registration> {
         },
       );
 
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
+      // Schedule background revalidation using cached access time
+      try {
+        await scheduleSectionIfEarlier(
+          "registration",
+          registrable,
+          row.expiresAt.getTime(),
+          now,
+        );
+      } catch (err) {
+        console.warn(
+          `[registration] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
+
       console.info(
         `[registration] ok cached ${registrable} registered=${row.isRegistered} registrar=${registrarProvider.name}`,
       );
@@ -186,6 +208,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
       console.info(
         `[registration] unavailable ${registrable} reason=${error || "unknown"}`,
       );
+
+      // Record access for decay calculation (even for unavailable domains)
+      recordDomainAccess(registrable);
 
       // Return minimal unregistered response for TLDs without WHOIS/RDAP
       // (We can't determine registration status without WHOIS/RDAP access)
@@ -234,6 +259,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
     console.info(
       `[registration] ok ${registrable} unregistered (not persisted)`,
     );
+
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -295,8 +323,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
     registrarProvider,
   };
 
-  const fetchedAt = new Date();
-
   // Upsert domain record and resolve registrar provider in parallel (independent operations)
   const [domainRecord, registrarProviderId] = await Promise.all([
     upsertDomain({
@@ -312,7 +338,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
   ]);
 
   const expiresAt = ttlForRegistration(
-    fetchedAt,
+    now,
     record.expirationDate ? new Date(record.expirationDate) : null,
   );
 
@@ -335,7 +361,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     source: record.source,
     registrarProviderId,
     resellerProviderId: null,
-    fetchedAt,
+    fetchedAt: now,
     expiresAt,
     nameservers: (record.nameservers ?? []).map((n) => ({
       host: n.host,
@@ -344,12 +370,16 @@ export async function getRegistration(domain: string): Promise<Registration> {
     })),
   });
 
+  // Record access for decay calculation
+  recordDomainAccess(registrable);
+
   // Schedule background revalidation
   try {
     await scheduleSectionIfEarlier(
       "registration",
       registrable,
       expiresAt.getTime(),
+      now, // Use current access time, not stale DB timestamp
     );
   } catch (err) {
     console.warn(

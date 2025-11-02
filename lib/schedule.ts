@@ -1,6 +1,11 @@
 import "server-only";
 
 import {
+  applyDecayToTtl,
+  getDecayMultiplier,
+  shouldStopRevalidation,
+} from "@/lib/access";
+import {
   BACKOFF_BASE_SECS,
   BACKOFF_MAX_SECS,
   LEASE_SECS,
@@ -47,14 +52,42 @@ export async function scheduleSectionIfEarlier(
   section: Section,
   domain: string,
   dueAtMs: number,
+  lastAccessedAt?: Date | null,
 ): Promise<boolean> {
-  // Validate dueAtMs before any computation or Redis writes
-  if (!Number.isFinite(dueAtMs) || dueAtMs < 0) {
+  // Check if domain should stop being revalidated due to inactivity
+  if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
+    // Don't schedule - domain is too inactive
+    console.info(
+      `[schedule] skip ${section} ${domain} (stopped: inactive ${lastAccessedAt ? `since ${lastAccessedAt.toISOString()}` : "never accessed"})`,
+    );
     return false;
   }
+
+  // Apply decay multiplier to the due time
+  const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
+
+  // Calculate the actual due time with decay applied
   const now = Date.now();
+  const baseDelta = dueAtMs - now;
+  const decayedDelta = applyDecayToTtl(baseDelta, decayMultiplier);
+  const decayedDueMs = now + decayedDelta;
+
+  // Log when decay is applied (multiplier > 1)
+  if (decayMultiplier > 1) {
+    const daysInactive = lastAccessedAt
+      ? Math.floor((now - lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    console.info(
+      `[schedule] decay ${section} ${domain} (${decayMultiplier}x, inactive ${daysInactive ? `${daysInactive}d` : "unknown"})`,
+    );
+  }
+
+  // Validate dueAtMs before any computation or Redis writes
+  if (!Number.isFinite(decayedDueMs) || decayedDueMs < 0) {
+    return false;
+  }
   const minDueMs = now + minTtlSecondsForSection(section) * 1000;
-  const desired = Math.max(dueAtMs, minDueMs);
+  const desired = Math.max(decayedDueMs, minDueMs);
 
   const dueKey = ns("due", section);
   let current: number | null = null;
@@ -74,9 +107,12 @@ export async function scheduleSectionIfEarlier(
 export async function scheduleSectionsForDomain(
   domain: string,
   sections: Array<{ section: Section; dueAtMs: number }>,
+  lastAccessedAt?: Date | null,
 ): Promise<void> {
   await Promise.all(
-    sections.map((s) => scheduleSectionIfEarlier(s.section, domain, s.dueAtMs)),
+    sections.map((s) =>
+      scheduleSectionIfEarlier(s.section, domain, s.dueAtMs, lastAccessedAt),
+    ),
   );
 }
 
@@ -87,11 +123,13 @@ export async function scheduleImmediate(
   domain: string,
   sections: Section[],
   delayMs: number = 1000,
+  lastAccessedAt?: Date | null,
 ): Promise<void> {
   const now = Date.now();
   await scheduleSectionsForDomain(
     domain,
     sections.map((s) => ({ section: s, dueAtMs: now + delayMs })),
+    lastAccessedAt,
   );
 }
 

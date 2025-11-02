@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
@@ -19,6 +20,10 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
+
   // Fast path: Check Postgres for cached HTTP headers
   const existingDomain = await findDomainByName(registrable);
   const existing = existingDomain
@@ -32,9 +37,13 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
         .where(eq(httpHeaders.domainId, existingDomain.id))
     : ([] as Array<{ name: string; value: string; expiresAt: Date | null }>);
   if (existing.length > 0) {
-    const now = Date.now();
-    const fresh = existing.every((h) => (h.expiresAt?.getTime?.() ?? 0) > now);
+    const fresh = existing.every(
+      (h) => (h.expiresAt?.getTime?.() ?? 0) > nowMs,
+    );
     if (fresh) {
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       const normalized = normalize(
         existing.map((h) => ({ name: h.name, value: h.value })),
       );
@@ -61,7 +70,6 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     const normalized = normalize(headers);
 
     // Persist to Postgres only if domain exists (i.e., is registered)
-    const now = new Date();
     const expiresAt = ttlForHeaders(now);
     const dueAtMs = expiresAt.getTime();
 
@@ -72,8 +80,17 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
         fetchedAt: now,
         expiresAt,
       });
+
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       try {
-        await scheduleSectionIfEarlier("headers", registrable, dueAtMs);
+        await scheduleSectionIfEarlier(
+          "headers",
+          registrable,
+          dueAtMs,
+          now, // Use current access time, not stale DB timestamp
+        );
       } catch (err) {
         console.warn(
           `[headers] schedule failed for ${registrable}`,
