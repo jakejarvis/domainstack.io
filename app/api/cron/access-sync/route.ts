@@ -23,9 +23,20 @@ export async function GET(request: Request) {
   try {
     const startedAt = Date.now();
 
-    // Scan for all access keys
+    // Scan for all access keys using incremental SCAN (non-blocking)
     const pattern = ns("access", "domain", "*");
-    const keys = await redis.keys(pattern);
+    const keys: string[] = [];
+    let cursor = "0";
+
+    // Iterate with SCAN until cursor returns to "0"
+    do {
+      const result = await redis.scan(cursor, {
+        match: pattern,
+        count: 100, // Reasonable batch size for each scan iteration
+      });
+      cursor = result[0];
+      keys.push(...result[1]);
+    } while (cursor !== "0");
 
     if (keys.length === 0) {
       return NextResponse.json({
