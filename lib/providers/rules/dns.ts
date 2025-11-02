@@ -391,4 +391,10 @@ export const DNS_PROVIDERS: Array<
       ],
     },
   },
+  {
+    name: "Liquid Web",
+    domain: "liquidweb.com",
+    category: "dns",
+    rule: { kind: "nsSuffix", suffix: "liquidweb.com" },
+  },
 ];

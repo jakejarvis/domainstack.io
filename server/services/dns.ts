@@ -551,11 +551,9 @@ function sortDnsRecordsForType(arr: DnsRecord[], type: DnsType): DnsRecord[] {
     });
     return arr;
   }
-  if (type === "TXT" || type === "NS") {
-    arr.sort((a, b) => a.value.localeCompare(b.value));
-    return arr;
-  }
-  // For A/AAAA retain provider order
+  // For A, AAAA, TXT, and NS records: sort deterministically to prevent hydration errors
+  // This ensures server and client render the same order
+  arr.sort((a, b) => a.value.localeCompare(b.value));
   return arr;
 }
 

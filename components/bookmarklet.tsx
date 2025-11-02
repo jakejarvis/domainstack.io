@@ -70,7 +70,7 @@ export function Bookmarklet({ className }: { className?: string }) {
 
         <div className="space-y-3.5">
           <p className="text-muted-foreground text-sm">
-            Or, on Apple devices, add our Shortcut via the button below. An{" "}
+            Or, on Apple devices, add a Shortcut via the button below. An{" "}
             <span className="font-semibold text-foreground/80">
               Inspect Domain
             </span>{" "}

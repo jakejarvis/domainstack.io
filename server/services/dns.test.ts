@@ -468,4 +468,113 @@ describe("providerOrderForLookup (hash-based selection)", () => {
     expect(fetchSpy).not.toHaveBeenCalled(); // DB cache hit
     fetchSpy.mockRestore();
   });
+
+  it("sorts A and AAAA records deterministically to prevent hydration errors", async () => {
+    const { resolveAll } = await import("./dns");
+
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "example.com",
+      tld: "com",
+      unicodeName: "example.com",
+    });
+
+    // First run: multiple A records in specific order
+    const firstFetch = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "151.101.194.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.130.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.66.133" },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "2606:4700::1" },
+          { name: "example.com.", TTL: 60, data: "2606:4700::2" },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+        ]),
+      );
+
+    const first = await resolveAll("example.com");
+    const firstARecords = first.records.filter((r) => r.type === "A");
+    const firstAAAARecords = first.records.filter((r) => r.type === "AAAA");
+
+    expect(firstARecords.length).toBe(3);
+    expect(firstAAAARecords.length).toBe(2);
+
+    // A records should be sorted alphabetically
+    expect(firstARecords[0].value).toBe("151.101.130.133");
+    expect(firstARecords[1].value).toBe("151.101.194.133");
+    expect(firstARecords[2].value).toBe("151.101.66.133");
+
+    // AAAA records should be sorted alphabetically
+    expect(firstAAAARecords[0].value).toBe("2606:4700::1");
+    expect(firstAAAARecords[1].value).toBe("2606:4700::2");
+
+    firstFetch.mockRestore();
+
+    // Second run: same data but different order from provider
+    // This simulates what happens when server and client fetch at different times
+    const secondFetch = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "151.101.66.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.194.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.130.133" },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "2606:4700::2" },
+          { name: "example.com.", TTL: 60, data: "2606:4700::1" },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+        ]),
+      );
+
+    // Clear cache to force re-fetch
+    const { redis } = await import("@/lib/redis");
+    await redis.del("dns:result:example.com");
+
+    const second = await resolveAll("example.com");
+    const secondARecords = second.records.filter((r) => r.type === "A");
+    const secondAAAARecords = second.records.filter((r) => r.type === "AAAA");
+
+    // Despite different provider order, results should be identical (deterministic)
+    expect(secondARecords[0].value).toBe("151.101.130.133");
+    expect(secondARecords[1].value).toBe("151.101.194.133");
+    expect(secondARecords[2].value).toBe("151.101.66.133");
+
+    expect(secondAAAARecords[0].value).toBe("2606:4700::1");
+    expect(secondAAAARecords[1].value).toBe("2606:4700::2");
+
+    secondFetch.mockRestore();
+  });
 });
