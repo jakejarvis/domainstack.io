@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 
-import { sql } from "drizzle-orm";
+import { asc, gt, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
 
@@ -19,9 +19,10 @@ async function backfillLastAccessed() {
   const now = new Date();
   const BATCH_SIZE = 1000;
   let totalUpdated = 0;
+  let lastId = ""; // Track last processed ID for keyset pagination
 
   try {
-    // Get total count first
+    // Get total count first (for progress reporting)
     const countResult = await db.execute<{ count: string }>(
       sql`SELECT COUNT(*) as count FROM ${domains}`,
     );
@@ -29,35 +30,45 @@ async function backfillLastAccessed() {
 
     console.info(`[backfill] Found ${total} domains to update`);
 
-    // Process in batches to avoid overwhelming the database
-    let offset = 0;
-    while (offset < total) {
+    // Process in batches using keyset pagination (efficient and safe)
+    let batchSize = BATCH_SIZE;
+    while (batchSize === BATCH_SIZE) {
+      // Select next batch of IDs using keyset pagination
+      const batch = await db
+        .select({ id: domains.id })
+        .from(domains)
+        .where(lastId ? gt(domains.id, lastId) : undefined)
+        .orderBy(asc(domains.id))
+        .limit(BATCH_SIZE);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      // Update the batch
+      const batchIds = batch.map((row) => row.id);
       const updated = await db
         .update(domains)
         .set({
           lastAccessedAt: now,
           updatedAt: now,
         })
-        .where(sql`${domains.id} IN (
-          SELECT ${domains.id}
-          FROM ${domains}
-          ORDER BY ${domains.id}
-          LIMIT ${BATCH_SIZE}
-          OFFSET ${offset}
-        )`)
+        .where(inArray(domains.id, batchIds))
         .returning({ id: domains.id });
 
-      const batchSize = updated.length;
+      batchSize = updated.length;
       totalUpdated += batchSize;
-      offset += BATCH_SIZE;
+
+      // Track the last processed ID for next iteration
+      lastId = updated[updated.length - 1].id;
 
       console.info(
         `[backfill] Progress: ${totalUpdated}/${total} (${Math.round((totalUpdated / total) * 100)}%)`,
       );
 
-      // Small delay between batches to avoid overloading the database
-      if (offset < total) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      // Stop when fewer than BATCH_SIZE rows returned (no more data)
+      if (batchSize < BATCH_SIZE) {
+        break;
       }
     }
 
