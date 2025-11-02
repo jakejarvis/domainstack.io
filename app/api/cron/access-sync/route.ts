@@ -35,14 +35,14 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fetch all timestamps
-    const timestamps = await redis.mget<number[]>(...keys);
-
-    // Build update batch
+    // Atomically read and delete each key to avoid race conditions
+    // Using GETDEL ensures that if a fresh write happens after we read,
+    // it won't be deleted (it will create a new key that survives this sync)
     const updates: Array<{ name: string; accessedAt: Date }> = [];
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      const timestamp = timestamps[i];
+
+    for (const key of keys) {
+      // Atomic read-and-delete
+      const timestamp = await redis.getdel<number>(key);
 
       if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
         continue;
@@ -80,11 +80,6 @@ export async function GET(request: Request) {
     for (let i = 0; i < updates.length; i += BATCH_SIZE) {
       const chunk = updates.slice(i, i + BATCH_SIZE);
       await batchUpdateLastAccessed(chunk);
-
-      // Delete synced keys from Redis
-      const keysToDelete = chunk.map((u) => ns("access", "domain", u.name));
-      await redis.del(...keysToDelete);
-
       synced += chunk.length;
     }
 
