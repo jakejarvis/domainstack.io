@@ -65,11 +65,6 @@ export async function scheduleSectionIfEarlier(
 
   // Apply decay multiplier to the due time
   const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
-  if (decayMultiplier === null) {
-    // This shouldn't happen as shouldStopRevalidation would catch it, but be safe
-    console.warn(`[schedule] unexpected null decay for ${section} ${domain}`);
-    return false;
-  }
 
   // Calculate the actual due time with decay applied
   const now = Date.now();
