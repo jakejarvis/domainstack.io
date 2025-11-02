@@ -112,6 +112,7 @@ function normalize(h: HttpHeader[]): HttpHeader[] {
     "content-security-policy",
     "content-security-policy-report-only",
     "x-frame-options",
+    "x-content-type-options",
     "referrer-policy",
     "server",
     "x-powered-by",
