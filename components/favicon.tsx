@@ -52,6 +52,7 @@ export function Favicon({
         className={cn("text-muted-foreground", className)}
         width={size}
         height={size}
+        data-favicon={domain}
       />
     );
   }
@@ -60,7 +61,6 @@ export function Favicon({
     <Image
       key={url}
       src={url}
-      alt={`${domain} icon`}
       width={size}
       height={size}
       className={className}
@@ -68,6 +68,8 @@ export function Favicon({
       priority={false}
       draggable={false}
       onError={() => setFailedUrl(url)}
+      alt={`${domain} icon`}
+      data-favicon={domain}
     />
   );
 }
