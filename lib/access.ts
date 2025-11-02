@@ -64,16 +64,15 @@ function isFastChangingSection(section: Section): boolean {
 
 /**
  * Calculate the decay multiplier for a section based on last accessed time.
- * Returns null if the domain should stop being revalidated (beyond cutoff threshold).
  *
  * @param section - The section type to calculate decay for
  * @param lastAccessedAt - When the domain was last accessed, or null if never tracked
- * @returns The multiplier to apply (1, 3, 5, 10, 20, 30, 50) or null to stop scheduling
+ * @returns The multiplier to apply (1, 3, 5, 10, 20, 30, 50)
  */
 export function getDecayMultiplier(
   section: Section,
   lastAccessedAt: Date | null,
-): number | null {
+): number {
   // If never accessed or accessed in the future (clock skew), use normal cadence
   if (!lastAccessedAt || lastAccessedAt > new Date()) {
     return 1;
