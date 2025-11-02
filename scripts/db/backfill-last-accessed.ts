@@ -59,8 +59,11 @@ async function backfillLastAccessed() {
       batchSize = updated.length;
       totalUpdated += batchSize;
 
-      // Track the last processed ID for next iteration
-      lastId = updated[updated.length - 1].id;
+      // Track the last processed ID from the ordered batch (not from UPDATE RETURNING)
+      // UPDATE RETURNING has no guaranteed order, so we use the ordered SELECT batch
+      if (batch.length > 0) {
+        lastId = batch[batch.length - 1].id;
+      }
 
       console.info(
         `[backfill] Progress: ${totalUpdated}/${total} (${Math.round((totalUpdated / total) * 100)}%)`,
