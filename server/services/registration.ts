@@ -69,12 +69,16 @@ export async function getRegistration(domain: string): Promise<Registration> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+
   // ===== Fast path 1: Redis cache for registration status =====
   const cachedStatus = await getRegistrationStatusFromCache(registrable);
 
   // If Redis cache says unregistered, return minimal Registration object
   if (cachedStatus === false) {
     console.info(`[registration] cache hit unregistered ${registrable}`);
+    recordDomainAccess(registrable);
     return {
       domain: registrable,
       tld: getDomainTld(registrable) ?? "",
@@ -102,7 +106,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       .where(eq(registrations.domainId, existingDomain.id))
       .limit(1);
 
-    const now = new Date();
     if (existing[0] && existing[0].registration.expiresAt > now) {
       const { registration: row, providerName, providerDomain } = existing[0];
 
@@ -162,6 +165,24 @@ export async function getRegistration(domain: string): Promise<Registration> {
         },
       );
 
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
+      // Schedule background revalidation using cached access time
+      try {
+        await scheduleSectionIfEarlier(
+          "registration",
+          registrable,
+          row.expiresAt.getTime(),
+          now,
+        );
+      } catch (err) {
+        console.warn(
+          `[registration] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
+
       console.info(
         `[registration] ok cached ${registrable} registered=${row.isRegistered} registrar=${registrarProvider.name}`,
       );
@@ -187,6 +208,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
       console.info(
         `[registration] unavailable ${registrable} reason=${error || "unknown"}`,
       );
+
+      // Record access for decay calculation (even for unavailable domains)
+      recordDomainAccess(registrable);
 
       // Return minimal unregistered response for TLDs without WHOIS/RDAP
       // (We can't determine registration status without WHOIS/RDAP access)
@@ -235,6 +259,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
     console.info(
       `[registration] ok ${registrable} unregistered (not persisted)`,
     );
+
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -295,8 +322,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
     warnings: record.warnings,
     registrarProvider,
   };
-
-  const now = new Date();
 
   // Upsert domain record and resolve registrar provider in parallel (independent operations)
   const [domainRecord, registrarProviderId] = await Promise.all([

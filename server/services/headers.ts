@@ -20,6 +20,10 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
+
   // Fast path: Check Postgres for cached HTTP headers
   const existingDomain = await findDomainByName(registrable);
   const existing = existingDomain
@@ -33,9 +37,13 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
         .where(eq(httpHeaders.domainId, existingDomain.id))
     : ([] as Array<{ name: string; value: string; expiresAt: Date | null }>);
   if (existing.length > 0) {
-    const now = Date.now();
-    const fresh = existing.every((h) => (h.expiresAt?.getTime?.() ?? 0) > now);
+    const fresh = existing.every(
+      (h) => (h.expiresAt?.getTime?.() ?? 0) > nowMs,
+    );
     if (fresh) {
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       const normalized = normalize(
         existing.map((h) => ({ name: h.name, value: h.value })),
       );
@@ -62,7 +70,6 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     const normalized = normalize(headers);
 
     // Persist to Postgres only if domain exists (i.e., is registered)
-    const now = new Date();
     const expiresAt = ttlForHeaders(now);
     const dueAtMs = expiresAt.getTime();
 

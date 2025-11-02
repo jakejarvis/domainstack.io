@@ -34,6 +34,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
+
   // Fast path: Check Postgres for cached SEO data
   const existingDomain = await findDomainByName(registrable);
   const existing = existingDomain
@@ -68,7 +72,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         errors: Record<string, unknown>;
         expiresAt: Date | null;
       }>);
-  if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > Date.now()) {
+  if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > nowMs) {
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
+
     const preview = existing[0].canonicalUrl
       ? {
           title: existing[0].previewTitle ?? null,
@@ -216,7 +223,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   };
 
   // Persist to Postgres only if domain exists (i.e., is registered)
-  const now = new Date();
   const expiresAt = ttlForSeo(now);
   const dueAtMs = expiresAt.getTime();
 

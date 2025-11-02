@@ -24,6 +24,10 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
+
   // Fast path: Check Postgres for cached certificate data
   const existingDomain = await findDomainByName(registrable);
   const existing = existingDomain
@@ -47,11 +51,13 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         expiresAt: Date | null;
       }>);
   if (existing.length > 0) {
-    const nowMs = Date.now();
     const fresh = existing.every(
       (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
     );
     if (fresh) {
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
       const out: Certificate[] = existing.map((c) => ({
         issuer: c.issuer,
         subject: c.subject,
@@ -60,6 +66,10 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         validTo: new Date(c.validTo).toISOString(),
         caProvider: detectCertificateAuthority(c.issuer),
       }));
+
+      console.info(
+        `[certificates] cache hit ${registrable} count=${out.length}`,
+      );
       return out;
     }
   }
@@ -117,7 +127,6 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       };
     });
 
-    const now = new Date();
     const earliestValidTo =
       out.length > 0
         ? new Date(Math.min(...out.map((c) => new Date(c.validTo).getTime())))

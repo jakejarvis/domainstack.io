@@ -159,6 +159,10 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
+
   // Fast path: Check Postgres for cached DNS records
   const existingDomain = await findDomainByName(registrable);
   const rows = (
@@ -188,7 +192,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
     expiresAt: Date | null;
   }>;
   if (rows.length > 0) {
-    const now = Date.now();
     // Group cached rows by type
     const rowsByType = (rows as typeof rows).reduce(
       (acc, r) => {
@@ -208,7 +211,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
       const arr = rowsByType[t] ?? [];
       return (
         arr.length > 0 &&
-        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > now)
+        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
       );
     };
     const freshTypes = presentTypes.filter((t) => typeIsFresh(t));
@@ -227,6 +230,12 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
     const resolverHint = rows[0]?.resolver;
     const sorted = sortDnsRecordsByType(assembled, types);
     if (allFreshAcrossTypes) {
+      // Record access for decay calculation
+      recordDomainAccess(registrable);
+
+      console.info(
+        `[dns] cache hit ${registrable} types=${freshTypes.join(",")}`,
+      );
       return { records: sorted, resolver: resolverHint };
     }
 
@@ -253,7 +262,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
         durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
         // Persist only stale types
-        const now = new Date();
         const recordsByTypeToPersist = Object.fromEntries(
           typesToFetch.map((t) => [
             t,
@@ -335,6 +343,10 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
           },
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
+
+        // Record access for decay calculation (partial refresh path)
+        recordDomainAccess(registrable);
+
         console.info(
           `[dns] ok partial ${registrable} counts=${JSON.stringify(counts)} resolver=${pinnedProvider.key} duration=${durationByProvider[pinnedProvider.key]}ms`,
         );
