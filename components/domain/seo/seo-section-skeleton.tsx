@@ -55,11 +55,11 @@ export function SeoSectionSkeleton() {
 
           {/* Filters row */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Skeleton className="h-9 w-full rounded-md" />
-            <div className="h-9 w-full items-stretch gap-2 sm:flex sm:w-auto">
-              <Skeleton className="h-9 w-full rounded-md sm:w-16" />
-              <Skeleton className="h-9 w-full rounded-md sm:w-24" />
-              <Skeleton className="h-9 w-full rounded-md sm:w-28" />
+            <Skeleton className="h-9 w-full rounded-md sm:flex-1" />
+            <div className="flex h-9 w-full items-stretch gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
+              <Skeleton className="h-9 rounded-md sm:w-16" />
+              <Skeleton className="h-9 rounded-md sm:w-[88px]" />
+              <Skeleton className="h-9 rounded-md sm:w-[108px]" />
             </div>
           </div>
 
@@ -70,23 +70,12 @@ export function SeoSectionSkeleton() {
                 key={gid}
                 className="rounded-lg border border-border/65 p-1.5"
               >
-                <div className="flex w-full items-center justify-between p-1.5">
+                <div className="flex w-full items-center justify-between rounded-md p-1.5">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="size-3 rounded bg-muted" />
                     <Skeleton className="h-5 w-10 rounded" />
                   </div>
                   <Skeleton className="h-4 w-24" />
-                </div>
-                <div className="flex flex-col gap-1.5 py-2">
-                  {["r-0", "r-1", "r-2"].map((rid) => (
-                    <div
-                      key={rid}
-                      className="flex items-center gap-2 rounded-lg border border-input px-2.5 py-2"
-                    >
-                      <span className="inline-block size-1.5 rounded-full bg-accent" />
-                      <Skeleton className="h-3 w-64" />
-                    </div>
-                  ))}
                 </div>
               </div>
             ))}
@@ -98,9 +87,9 @@ export function SeoSectionSkeleton() {
               Sitemaps
               <SubheadCountSkeleton />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2.5">
               {["sm-0", "sm-1"].map((sid) => (
-                <Skeleton key={sid} className="h-3 w-56" />
+                <Skeleton key={sid} className="h-[18px] w-56" />
               ))}
             </div>
           </div>

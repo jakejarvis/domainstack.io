@@ -21,7 +21,8 @@ export function DomainLoadingState() {
           <Skeleton className="h-6 w-40" />
         </div>
         <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-28 rounded-md" />
+          <Skeleton className="h-9 w-22 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded-md" />
         </div>
       </div>
 

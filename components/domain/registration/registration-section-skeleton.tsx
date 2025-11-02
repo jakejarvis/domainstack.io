@@ -7,10 +7,14 @@ export function RegistrationSectionSkeleton() {
   return (
     <Section {...sections.registration} isLoading>
       <KeyValueGrid colsDesktop={2}>
-        <KeyValueSkeleton label="Registrar" withLeading withSuffix />
-        <KeyValueSkeleton label="Registrant" />
-        <KeyValueSkeleton label="Created" />
-        <KeyValueSkeleton label="Expires" withSuffix />
+        <KeyValueSkeleton
+          label="Registrar"
+          withLeading
+          widthClass="w-[120px]"
+        />
+        <KeyValueSkeleton label="Registrant" widthClass="w-[100px]" />
+        <KeyValueSkeleton label="Created" widthClass="w-[120px]" />
+        <KeyValueSkeleton label="Expires" widthClass="w-[120px]" />
       </KeyValueGrid>
     </Section>
   );
