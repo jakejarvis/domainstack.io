@@ -82,7 +82,7 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
           "headers",
           registrable,
           dueAtMs,
-          existingDomain.lastAccessedAt,
+          now, // Use current access time, not stale DB timestamp
         );
       } catch (err) {
         console.warn(

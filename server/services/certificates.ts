@@ -170,7 +170,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           "certificates",
           registrable,
           dueAtMs,
-          existingDomain.lastAccessedAt,
+          now, // Use current access time, not stale DB timestamp
         );
       } catch (err) {
         console.warn(

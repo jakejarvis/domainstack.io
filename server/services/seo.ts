@@ -247,7 +247,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         "seo",
         registrable,
         dueAtMs,
-        existingDomain.lastAccessedAt,
+        now, // Use current access time, not stale DB timestamp
       );
     } catch (err) {
       console.warn(

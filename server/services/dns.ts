@@ -253,7 +253,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
         durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
         // Persist only stale types
-        const nowDate = new Date();
+        const now = new Date();
         const recordsByTypeToPersist = Object.fromEntries(
           typesToFetch.map((t) => [
             t,
@@ -265,7 +265,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
                 ttl: r.ttl ?? null,
                 priority: r.priority ?? null,
                 isCloudflare: r.isCloudflare ?? null,
-                expiresAt: ttlForDnsRecord(nowDate, r.ttl ?? null),
+                expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
               })),
           ]),
         ) as Record<
@@ -287,7 +287,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
           await replaceDns({
             domainId: existingDomain.id,
             resolver: pinnedProvider.key,
-            fetchedAt: nowDate,
+            fetchedAt: now,
             recordsByType: recordsByTypeToPersist,
           });
           try {
@@ -303,7 +303,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               "dns",
               registrable,
               soonest,
-              existingDomain.lastAccessedAt,
+              now, // Use current access time, not stale DB timestamp
             );
           } catch (err) {
             console.warn(
@@ -433,7 +433,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
             "dns",
             registrable,
             soonest,
-            existingDomain.lastAccessedAt,
+            now, // Use current access time, not stale DB timestamp
           );
         } catch (err) {
           console.warn(

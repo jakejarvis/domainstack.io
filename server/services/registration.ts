@@ -296,7 +296,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     registrarProvider,
   };
 
-  const fetchedAt = new Date();
+  const now = new Date();
 
   // Upsert domain record and resolve registrar provider in parallel (independent operations)
   const [domainRecord, registrarProviderId] = await Promise.all([
@@ -313,7 +313,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
   ]);
 
   const expiresAt = ttlForRegistration(
-    fetchedAt,
+    now,
     record.expirationDate ? new Date(record.expirationDate) : null,
   );
 
@@ -336,7 +336,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     source: record.source,
     registrarProviderId,
     resellerProviderId: null,
-    fetchedAt,
+    fetchedAt: now,
     expiresAt,
     nameservers: (record.nameservers ?? []).map((n) => ({
       host: n.host,
@@ -354,7 +354,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
       "registration",
       registrable,
       expiresAt.getTime(),
-      domainRecord.lastAccessedAt,
+      now, // Use current access time, not stale DB timestamp
     );
   } catch (err) {
     console.warn(

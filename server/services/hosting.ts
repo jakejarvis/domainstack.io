@@ -247,7 +247,7 @@ export async function detectHosting(domain: string): Promise<Hosting> {
         "hosting",
         registrable,
         dueAtMs,
-        existingDomain.lastAccessedAt,
+        now, // Use current access time, not stale DB timestamp
       );
     } catch (err) {
       console.warn(
