@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { startTransition, useCallback, useEffect, useState } from "react";
+import { notifyManager, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { captureClient } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
@@ -23,24 +23,25 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
 
   // Check if all section data is loaded in cache
   useEffect(() => {
-    // Subscribe to query cache updates to reactively check data availability
-    const unsubscribe = queryClient.getQueryCache().subscribe(() => {
+    // Check if all queries have data and schedule state update
+    const checkAndUpdateDataStatus = () => {
       const hasAllData = Object.values(queryKeys).every(
         (key) => queryClient.getQueryData(key) !== undefined,
       );
-      // Wrap state update in startTransition to prevent updating parent during child render
-      startTransition(() => {
+      // Use TanStack Query's notifyManager to schedule state update in the next batch
+      // This prevents updating parent component during child render phase
+      notifyManager.schedule(() => {
         setAllDataLoaded(hasAllData);
       });
-    });
+    };
+
+    // Subscribe to query cache updates to reactively check data availability
+    const unsubscribe = queryClient
+      .getQueryCache()
+      .subscribe(checkAndUpdateDataStatus);
 
     // Initial check
-    const hasAllData = Object.values(queryKeys).every(
-      (key) => queryClient.getQueryData(key) !== undefined,
-    );
-    startTransition(() => {
-      setAllDataLoaded(hasAllData);
-    });
+    checkAndUpdateDataStatus();
 
     return unsubscribe;
   }, [queryClient, queryKeys]);
