@@ -397,4 +397,16 @@ export const DNS_PROVIDERS: Array<
     category: "dns",
     rule: { kind: "nsSuffix", suffix: "liquidweb.com" },
   },
+  {
+    name: "Nexcess",
+    domain: "nexcess.net",
+    category: "dns",
+    rule: { kind: "nsSuffix", suffix: "nexcess.net" },
+  },
+  {
+    name: "Packet Clearing House",
+    domain: "pch.net",
+    category: "dns",
+    rule: { kind: "nsSuffix", suffix: "pch.net" },
+  },
 ];

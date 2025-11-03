@@ -332,4 +332,16 @@ export const REGISTRAR_PROVIDERS: Array<
     category: "registrar",
     rule: { kind: "registrarIncludes", substr: "namesrs" },
   },
+  {
+    name: "Lexsynergy",
+    domain: "lexsynergy.com",
+    category: "registrar",
+    rule: { kind: "registrarIncludes", substr: "lexsynergy" },
+  },
+  {
+    name: "101domain",
+    domain: "101domain.com",
+    category: "registrar",
+    rule: { kind: "registrarIncludes", substr: "101domain" },
+  },
 ];
