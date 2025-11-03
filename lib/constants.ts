@@ -157,3 +157,7 @@ export const NONPUBLIC_TLDS: readonly string[] = [
 
   // TODO: add brands (.google, .amazon, etc.)
 ];
+
+// ===== UI Configuration =====
+// Maximum number of domain suggestions/history items to show
+export const MAX_HISTORY_ITEMS = 10;

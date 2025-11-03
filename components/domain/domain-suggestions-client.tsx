@@ -1,11 +1,19 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/favicon";
 import { useHomeSearch } from "@/components/home-search-context";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useRouter } from "@/hooks/use-router";
 import { captureClient } from "@/lib/analytics/client";
+import { MAX_HISTORY_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type DomainSuggestionsClientProps = {
@@ -19,14 +27,13 @@ export function DomainSuggestionsClient({
   defaultSuggestions,
   className,
   faviconSize = 16,
-  max = 10,
+  max = MAX_HISTORY_ITEMS,
 }: DomainSuggestionsClientProps) {
   const router = useRouter();
   const { onSuggestionClickAction } = useHomeSearch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const { history, isHistoryLoaded, clearHistory } = useDomainHistory();
   const [showLeftGradient, setShowLeftGradient] = useState(false);
   const [showRightGradient, setShowRightGradient] = useState(false);
 
@@ -37,17 +44,6 @@ export function DomainSuggestionsClient({
     ];
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("search-history");
-      if (stored) setHistory(JSON.parse(stored));
-    } catch {
-      // ignore parse errors
-    } finally {
-      setHistoryLoaded(true);
-    }
-  }, []);
 
   // Check scroll position and update gradient visibility
   // biome-ignore lint/correctness/useExhaustiveDependencies: we want to re-run when history loads or suggestions change
@@ -80,7 +76,7 @@ export function DomainSuggestionsClient({
       container.removeEventListener("scroll", updateGradients);
       resizeObserver.disconnect();
     };
-  }, [historyLoaded, displayedSuggestions.length]);
+  }, [isHistoryLoaded, displayedSuggestions.length]);
 
   function handleClick(domain: string) {
     captureClient("search_suggestion_clicked", {
@@ -94,6 +90,21 @@ export function DomainSuggestionsClient({
     router.push(`/${encodeURIComponent(domain)}`);
   }
 
+  function handleClearHistory() {
+    clearHistory();
+    captureClient("search_history_cleared", {
+      source: "suggestion",
+    });
+
+    // Scroll back to the left with smooth animation
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        left: 0,
+        behavior: "smooth",
+      });
+    }
+  }
+
   return (
     <div className={cn("relative", className)}>
       <div
@@ -101,7 +112,7 @@ export function DomainSuggestionsClient({
         className="scrollbar-hide overflow-x-auto py-0.5"
       >
         <div className="flex gap-2">
-          {(historyLoaded ? displayedSuggestions : defaultSuggestions).map(
+          {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map(
             (domain) => (
               <Button
                 key={domain}
@@ -109,8 +120,8 @@ export function DomainSuggestionsClient({
                 size="sm"
                 className={cn(
                   "flex-shrink-0 cursor-pointer bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
-                  "first-of-type:ml-[1px] last-of-type:mr-[1px]",
-                  historyLoaded ? "visible" : "invisible",
+                  "first-of-type:ml-[1px]",
+                  isHistoryLoaded ? "visible" : "invisible",
                 )}
                 onClick={() => handleClick(domain)}
               >
@@ -124,6 +135,24 @@ export function DomainSuggestionsClient({
                 </span>
               </Button>
             ),
+          )}
+          {isHistoryLoaded && history.length > 0 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleClearHistory}
+                  className="flex-shrink-0"
+                  aria-label="Clear history"
+                >
+                  <X />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Clear history</TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="w-[1px] flex-shrink-0" />
           )}
         </div>
       </div>

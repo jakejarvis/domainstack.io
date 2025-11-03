@@ -102,8 +102,8 @@ describe("DomainSuggestionsClient", () => {
     expect(
       screen.getByRole("button", { name: /test\.org/i }),
     ).toBeInTheDocument();
-    // Should only show history items
-    expect(screen.getAllByRole("button").length).toBe(2);
+    // Should show 2 history items + 1 clear history button
+    expect(screen.getAllByRole("button").length).toBe(3);
   });
 
   it("invokes onSelect when a suggestion is clicked", async () => {

@@ -1,8 +1,9 @@
+import { MAX_HISTORY_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function DomainSuggestionsSkeleton({
   className,
-  count = 5,
+  count = MAX_HISTORY_ITEMS,
 }: {
   className?: string;
   count?: number;
