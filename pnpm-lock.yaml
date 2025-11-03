@@ -42,8 +42,8 @@ importers:
         specifier: ^11.7.1
         version: 11.7.1(@tanstack/react-query@5.90.6(react@19.2.0))(@trpc/client@11.7.1(@trpc/server@11.7.1(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.1(typescript@5.9.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
       '@upstash/ratelimit':
-        specifier: ^2.0.6
-        version: 2.0.6(@upstash/redis@1.35.6)
+        specifier: ^2.0.7
+        version: 2.0.7(@upstash/redis@1.35.6)
       '@upstash/redis':
         specifier: ^1.35.6
         version: 1.35.6
@@ -85,10 +85,10 @@ importers:
         version: 17.2.3
       drizzle-orm:
         specifier: ^0.44.7
-        version: 0.44.7(@electric-sql/pglite@0.3.11)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7)
+        version: 0.44.7(@electric-sql/pglite@0.3.12)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.44.7(@electric-sql/pglite@0.3.11)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7))(zod@4.1.12)
+        version: 0.8.3(drizzle-orm@0.44.7(@electric-sql/pglite@0.3.12)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7))(zod@4.1.12)
       file-type:
         specifier: ^21.0.0
         version: 21.0.0
@@ -129,8 +129,8 @@ importers:
         specifier: ^3.4.7
         version: 3.4.7
       posthog-js:
-        specifier: ^1.284.0
-        version: 1.284.0
+        specifier: ^1.285.0
+        version: 1.285.0
       posthog-node:
         specifier: ^5.11.0
         version: 5.11.0
@@ -181,11 +181,11 @@ importers:
         version: 4.1.12
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.3.2
-        version: 2.3.2
+        specifier: 2.3.3
+        version: 2.3.3
       '@electric-sql/pglite':
-        specifier: ^0.3.11
-        version: 0.3.11
+        specifier: ^0.3.12
+        version: 0.3.12
       '@tailwindcss/postcss':
         specifier: ^4.1.16
         version: 4.1.16
@@ -202,8 +202,8 @@ importers:
         specifier: 14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/node':
-        specifier: 24.9.2
-        version: 24.9.2
+        specifier: 24.10.0
+        version: 24.10.0
       '@types/react':
         specifier: 19.2.2
         version: 19.2.2
@@ -215,7 +215,7 @@ importers:
         version: 8.18.1
       '@vitejs/plugin-react':
         specifier: ^5.1.0
-        version: 5.1.0(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
+        version: 5.1.0(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
       '@vitest/coverage-v8':
         specifier: ^4.0.6
         version: 4.0.6(vitest@4.0.6)
@@ -251,10 +251,10 @@ importers:
         version: 5.9.3
       vite-tsconfig-paths:
         specifier: ^5.1.4
-        version: 5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
+        version: 5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
       vitest:
         specifier: ^4.0.6
-        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
+        version: 4.0.6(@types/debug@4.1.12)(@types/node@24.10.0)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
 
 packages:
 
@@ -445,55 +445,55 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@biomejs/biome@2.3.2':
-    resolution: {integrity: sha512-8e9tzamuDycx7fdrcJ/F/GDZ8SYukc5ud6tDicjjFqURKYFSWMl0H0iXNXZEGmcmNUmABgGuHThPykcM41INgg==}
+  '@biomejs/biome@2.3.3':
+    resolution: {integrity: sha512-zn/P1pRBCpDdhi+VNSMnpczOz9DnqzOA2c48K8xgxjDODvi5O8gs3a2H233rck/5HXpkFj6TmyoqVvxirZUnvg==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.3.2':
-    resolution: {integrity: sha512-4LECm4kc3If0JISai4c3KWQzukoUdpxy4fRzlrPcrdMSRFksR9ZoXK7JBcPuLBmd2SoT4/d7CQS33VnZpgBjew==}
+  '@biomejs/cli-darwin-arm64@2.3.3':
+    resolution: {integrity: sha512-5+JtW6RKmjqL9un0UtHV0ezOslAyYBzyl5ZhYiu7GHesX2x8NCDl6tXYrenv9m7e1RLbkO5E5Kh04kseMtz6lw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.3.2':
-    resolution: {integrity: sha512-jNMnfwHT4N3wi+ypRfMTjLGnDmKYGzxVr1EYAPBcauRcDnICFXN81wD6wxJcSUrLynoyyYCdfW6vJHS/IAoTDA==}
+  '@biomejs/cli-darwin-x64@2.3.3':
+    resolution: {integrity: sha512-UPmKRalkHicvIpeccuKqq+/gA2HYV8FUnAEDJnqYBlGlycKqe6xrovWqvWTE4TTNpIFf4UQyuaDzLkN6Kz6tbA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.3.2':
-    resolution: {integrity: sha512-2Zz4usDG1GTTPQnliIeNx6eVGGP2ry5vE/v39nT73a3cKN6t5H5XxjcEoZZh62uVZvED7hXXikclvI64vZkYqw==}
+  '@biomejs/cli-linux-arm64-musl@2.3.3':
+    resolution: {integrity: sha512-KhCDMV+V7Yu72v40ssGJTHuv/j0n7JQ6l0s/c+EMcX5zPYLMLr4XpmI+WXhp4Vfkz0T5Xnh5wbrTBI3f2UTpjQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-arm64@2.3.2':
-    resolution: {integrity: sha512-amnqvk+gWybbQleRRq8TMe0rIv7GHss8mFJEaGuEZYWg1Tw14YKOkeo8h6pf1c+d3qR+JU4iT9KXnBKGON4klw==}
+  '@biomejs/cli-linux-arm64@2.3.3':
+    resolution: {integrity: sha512-zeiKwALNB/hax7+LLhCYqhqzlWdTfgE9BGkX2Z8S4VmCYnGFrf2fON/ec6KCos7mra5MDm6fYICsEWN2+HKZhw==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64-musl@2.3.2':
-    resolution: {integrity: sha512-gzB19MpRdTuOuLtPpFBGrV3Lq424gHyq2lFj8wfX9tvLMLdmA/R9C7k/mqBp/spcbWuHeIEKgEs3RviOPcWGBA==}
+  '@biomejs/cli-linux-x64-musl@2.3.3':
+    resolution: {integrity: sha512-IyqQ+jYzU5MVy9CK5NV0U+NnUMPUAhYMrB/x4QgL/Dl1MqzBVc61bHeyhLnKM6DSEk73/TQYrk/8/QmVHudLdQ==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-linux-x64@2.3.2':
-    resolution: {integrity: sha512-8BG/vRAhFz1pmuyd24FQPhNeueLqPtwvZk6yblABY2gzL2H8fLQAF/Z2OPIc+BPIVPld+8cSiKY/KFh6k81xfA==}
+  '@biomejs/cli-linux-x64@2.3.3':
+    resolution: {integrity: sha512-05CjPLbvVVU8J6eaO6iSEoA0FXKy2l6ddL+1h/VpiosCmIp3HxRKLOa1hhC1n+D13Z8g9b1DtnglGtM5U3sTag==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
 
-  '@biomejs/cli-win32-arm64@2.3.2':
-    resolution: {integrity: sha512-lCruqQlfWjhMlOdyf5pDHOxoNm4WoyY2vZ4YN33/nuZBRstVDuqPPjS0yBkbUlLEte11FbpW+wWSlfnZfSIZvg==}
+  '@biomejs/cli-win32-arm64@2.3.3':
+    resolution: {integrity: sha512-NtlLs3pdFqFAQYZjlEHKOwJEn3GEaz7rtR2oCrzaLT2Xt3Cfd55/VvodQ5V+X+KepLa956QJagckJrNL+DmumQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.3.2':
-    resolution: {integrity: sha512-6Ee9P26DTb4D8sN9nXxgbi9Dw5vSOfH98M7UlmkjKB2vtUbrRqCbZiNfryGiwnPIpd6YUoTl7rLVD2/x1CyEHQ==}
+  '@biomejs/cli-win32-x64@2.3.3':
+    resolution: {integrity: sha512-klJKPPQvUk9Rlp0Dd56gQw/+Wt6uUprHdHWtbDC93f3Iv+knA2tLWpcYoOZJgPV+9s+RBmYv0DGy4mUlr20esg==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -561,11 +561,11 @@ packages:
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
 
-  '@electric-sql/pglite@0.3.11':
-    resolution: {integrity: sha512-FJtjnEyez8XgmgyE5Ewmx89TGVN+75ZjykFoExApRIbJBMT4dsbsuZkF/YWLuymGDfGFHDACjvENPMEqg4FoWg==}
+  '@electric-sql/pglite@0.3.12':
+    resolution: {integrity: sha512-0xdRSYv96UW5DamTzJ7I0edfRw6VXbhQJrfBlVWaXRgs6k1YINUv+yB5bThsFQARhW7cQzFrsTl1vnud9eHYcQ==}
 
-  '@emnapi/runtime@1.6.0':
-    resolution: {integrity: sha512-obtUmAHTMjll499P+D9A3axeJFlhdjOWdKUNs/U6QIGT7V5RjcUW1xToAzjvmgTSQhDbYn/NwfTRoJcQ2rNBxA==}
+  '@emnapi/runtime@1.7.0':
+    resolution: {integrity: sha512-oAYoQnCYaQZKVS53Fq23ceWMRxq5EhQsE0x0RdQ55jT7wagMu5k+fS39v1fiSLrtrLQlXwVINenqhLMtTrV/1Q==}
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
@@ -2858,11 +2858,11 @@ packages:
   '@types/mysql@2.15.26':
     resolution: {integrity: sha512-DSLCOXhkvfS5WNNPbfn2KdICAmk8lLc+/PNvnPnF7gOdMZCxopXduqv0OQ13y/yA/zXTSikZZqVgybUxOEg6YQ==}
 
-  '@types/node@22.18.13':
-    resolution: {integrity: sha512-Bo45YKIjnmFtv6I1TuC8AaHBbqXtIo+Om5fE4QiU1Tj8QR/qt+8O3BAtOimG5IFmwaWiPmB3Mv3jtYzBA4Us2A==}
+  '@types/node@22.19.0':
+    resolution: {integrity: sha512-xpr/lmLPQEj+TUnHmR+Ab91/glhJvsqcjB+yY0Ix9GO70H6Lb4FHH5GeqdOE5btAx7eIMwuHkp4H2MSkLcqWbA==}
 
-  '@types/node@24.9.2':
-    resolution: {integrity: sha512-uWN8YqxXxqFMX2RqGOrumsKeti4LlmIMIyV0lgut4jx7KQBcBiW6vkDtIBvHnHIquwNfJhk8v2OtmO8zXWHfPA==}
+  '@types/node@24.10.0':
+    resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
 
   '@types/pbf@3.0.5':
     resolution: {integrity: sha512-j3pOPiEcWZ34R6a6mN07mUkM4o4Lwf6hPNt8eilOeZhTFbxFXmKhvXl9Y28jotFPaI1bpPDJsbCprUoNke6OrA==}
@@ -2903,8 +2903,8 @@ packages:
     resolution: {integrity: sha512-7qJHGxpQgQr9/vmeS1PktEwvNAF7TI4iJDi8Pu2CFZ9YUGHZH4fOP5TfYlZ4aVxfopnELiE4BS4FBjyK7V1/xQ==}
     engines: {node: '>=16.0.0'}
 
-  '@upstash/ratelimit@2.0.6':
-    resolution: {integrity: sha512-Uak5qklMfzFN5RXltxY6IXRENu+Hgmo9iEgMPOlUs2etSQas2N+hJfbHw37OUy4vldLRXeD0OzL+YRvO2l5acg==}
+  '@upstash/ratelimit@2.0.7':
+    resolution: {integrity: sha512-qNQW4uBPKVk8c4wFGj2S/vfKKQxXx1taSJoSGBN36FeiVBBKHQgsjPbKUijZ9Xu5FyVK+pfiXWKIsQGyoje8Fw==}
     peerDependencies:
       '@upstash/redis': ^1.34.3
 
@@ -4443,8 +4443,8 @@ packages:
     resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
     engines: {node: '>=12'}
 
-  posthog-js@1.284.0:
-    resolution: {integrity: sha512-GmycRGKWdTO6gUSMn8qzzoVTryQhxVwjK2y1Mn0eV7kldLS+tZhr/wM+Z8fXBkbrRwWUjofKFgB83gd1WzbJrA==}
+  posthog-js@1.285.0:
+    resolution: {integrity: sha512-rNpxWoqTywb412YcTMeLk4qvWAGkoMO5SLgASyaqulLrPCuDGU0Go53seKiIaEEvHY8jJHL5NGnnVVjErSk6OA==}
 
   posthog-node@5.11.0:
     resolution: {integrity: sha512-9+gmWp/7AEryJMi0+/ywJjKQhpkmcjxf+eT030fTIIPvFTF84zeeagdZBGNC/Nh2Jc0grIAW6O1n5lxXiX3daA==}
@@ -5551,39 +5551,39 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@biomejs/biome@2.3.2':
+  '@biomejs/biome@2.3.3':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.3.2
-      '@biomejs/cli-darwin-x64': 2.3.2
-      '@biomejs/cli-linux-arm64': 2.3.2
-      '@biomejs/cli-linux-arm64-musl': 2.3.2
-      '@biomejs/cli-linux-x64': 2.3.2
-      '@biomejs/cli-linux-x64-musl': 2.3.2
-      '@biomejs/cli-win32-arm64': 2.3.2
-      '@biomejs/cli-win32-x64': 2.3.2
+      '@biomejs/cli-darwin-arm64': 2.3.3
+      '@biomejs/cli-darwin-x64': 2.3.3
+      '@biomejs/cli-linux-arm64': 2.3.3
+      '@biomejs/cli-linux-arm64-musl': 2.3.3
+      '@biomejs/cli-linux-x64': 2.3.3
+      '@biomejs/cli-linux-x64-musl': 2.3.3
+      '@biomejs/cli-win32-arm64': 2.3.3
+      '@biomejs/cli-win32-x64': 2.3.3
 
-  '@biomejs/cli-darwin-arm64@2.3.2':
+  '@biomejs/cli-darwin-arm64@2.3.3':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.3.2':
+  '@biomejs/cli-darwin-x64@2.3.3':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.3.2':
+  '@biomejs/cli-linux-arm64-musl@2.3.3':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.3.2':
+  '@biomejs/cli-linux-arm64@2.3.3':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.3.2':
+  '@biomejs/cli-linux-x64-musl@2.3.3':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.3.2':
+  '@biomejs/cli-linux-x64@2.3.3':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.3.2':
+  '@biomejs/cli-win32-arm64@2.3.3':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.3.2':
+  '@biomejs/cli-win32-x64@2.3.3':
     optional: true
 
   '@borewit/text-codec@0.1.1': {}
@@ -5634,9 +5634,9 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
-  '@electric-sql/pglite@0.3.11': {}
+  '@electric-sql/pglite@0.3.12': {}
 
-  '@emnapi/runtime@1.6.0':
+  '@emnapi/runtime@1.7.0':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -5902,7 +5902,7 @@ snapshots:
 
   '@img/sharp-wasm32@0.34.4':
     dependencies:
-      '@emnapi/runtime': 1.6.0
+      '@emnapi/runtime': 1.7.0
     optional: true
 
   '@img/sharp-win32-arm64@0.34.4':
@@ -5916,7 +5916,7 @@ snapshots:
 
   '@inngest/ai@0.1.7':
     dependencies:
-      '@types/node': 22.18.13
+      '@types/node': 22.19.0
       typescript: 5.9.3
 
   '@isaacs/balanced-match@4.0.1': {}
@@ -6015,7 +6015,7 @@ snapshots:
 
   '@neondatabase/serverless@1.0.2':
     dependencies:
-      '@types/node': 22.18.13
+      '@types/node': 22.19.0
       '@types/pg': 8.15.6
 
   '@next/env@16.0.1': {}
@@ -8100,7 +8100,7 @@ snapshots:
 
   '@types/bunyan@1.8.11':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
   '@types/chai@5.2.3':
     dependencies:
@@ -8109,7 +8109,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
   '@types/debug@4.1.12':
     dependencies:
@@ -8129,19 +8129,19 @@ snapshots:
 
   '@types/memcached@2.2.10':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
   '@types/ms@2.1.0': {}
 
   '@types/mysql@2.15.26':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
-  '@types/node@22.18.13':
+  '@types/node@22.19.0':
     dependencies:
       undici-types: 6.21.0
 
-  '@types/node@24.9.2':
+  '@types/node@24.10.0':
     dependencies:
       undici-types: 7.16.0
 
@@ -8153,13 +8153,13 @@ snapshots:
 
   '@types/pg@8.15.6':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
   '@types/pg@8.6.1':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
@@ -8179,22 +8179,22 @@ snapshots:
 
   '@types/tedious@4.0.14':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
     optional: true
 
   '@upstash/core-analytics@0.0.10':
     dependencies:
       '@upstash/redis': 1.35.6
 
-  '@upstash/ratelimit@2.0.6(@upstash/redis@1.35.6)':
+  '@upstash/ratelimit@2.0.7(@upstash/redis@1.35.6)':
     dependencies:
       '@upstash/core-analytics': 0.0.10
       '@upstash/redis': 1.35.6
@@ -8256,7 +8256,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@vitejs/plugin-react@5.1.0(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))':
+  '@vitejs/plugin-react@5.1.0(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -8264,7 +8264,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.43
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+      vite: 7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -8281,7 +8281,7 @@ snapshots:
       magicast: 0.3.5
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
+      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.10.0)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -8294,13 +8294,13 @@ snapshots:
       chai: 6.2.0
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.6(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))':
+  '@vitest/mocker@4.0.6(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))':
     dependencies:
       '@vitest/spy': 4.0.6
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+      vite: 7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
 
   '@vitest/pretty-format@4.0.6':
     dependencies:
@@ -8328,7 +8328,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
+      vitest: 4.0.6(@types/debug@4.1.12)(@types/node@24.10.0)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6)
 
   '@vitest/utils@4.0.6':
     dependencies:
@@ -8738,18 +8738,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.7(@electric-sql/pglite@0.3.11)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7):
+  drizzle-orm@0.44.7(@electric-sql/pglite@0.3.12)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7):
     optionalDependencies:
-      '@electric-sql/pglite': 0.3.11
+      '@electric-sql/pglite': 0.3.12
       '@neondatabase/serverless': 1.0.2
       '@opentelemetry/api': 1.9.0
       '@types/pg': 8.15.6
       '@upstash/redis': 1.35.6
       postgres: 3.4.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.44.7(@electric-sql/pglite@0.3.11)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7))(zod@4.1.12):
+  drizzle-zod@0.8.3(drizzle-orm@0.44.7(@electric-sql/pglite@0.3.12)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7))(zod@4.1.12):
     dependencies:
-      drizzle-orm: 0.44.7(@electric-sql/pglite@0.3.11)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7)
+      drizzle-orm: 0.44.7(@electric-sql/pglite@0.3.12)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(@upstash/redis@1.35.6)(postgres@3.4.7)
       zod: 4.1.12
 
   dunder-proto@1.0.1:
@@ -9652,7 +9652,7 @@ snapshots:
 
   postgres@3.4.7: {}
 
-  posthog-js@1.284.0:
+  posthog-js@1.285.0:
     dependencies:
       '@posthog/core': 1.5.0
       core-js: 3.46.0
@@ -9690,7 +9690,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
       long: 5.3.2
 
   protocol-buffers-schema@3.6.0: {}
@@ -10330,18 +10330,18 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  vite-tsconfig-paths@5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)):
+  vite-tsconfig-paths@5.1.4(typescript@5.9.3)(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@5.9.3)
     optionalDependencies:
-      vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+      vite: 7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6):
+  vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -10350,16 +10350,16 @@ snapshots:
       rollup: 4.52.5
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
       fsevents: 2.3.3
       jiti: 2.6.1
       lightningcss: 1.30.2
       tsx: 4.20.6
 
-  vitest@4.0.6(@types/debug@4.1.12)(@types/node@24.9.2)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6):
+  vitest@4.0.6(@types/debug@4.1.12)(@types/node@24.10.0)(@vitest/ui@4.0.6)(jiti@2.6.1)(jsdom@27.1.0(bufferutil@4.0.9))(lightningcss@1.30.2)(tsx@4.20.6):
     dependencies:
       '@vitest/expect': 4.0.6
-      '@vitest/mocker': 4.0.6(vite@7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
+      '@vitest/mocker': 4.0.6(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6))
       '@vitest/pretty-format': 4.0.6
       '@vitest/runner': 4.0.6
       '@vitest/snapshot': 4.0.6
@@ -10376,11 +10376,11 @@ snapshots:
       tinyexec: 0.3.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.1.12(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
+      vite: 7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.20.6)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
-      '@types/node': 24.9.2
+      '@types/node': 24.10.0
       '@vitest/ui': 4.0.6(vitest@4.0.6)
       jsdom: 27.1.0(bufferutil@4.0.9)
     transitivePeerDependencies:
