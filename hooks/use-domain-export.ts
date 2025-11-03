@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { captureClient } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
@@ -28,14 +28,19 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
       const hasAllData = Object.values(queryKeys).every(
         (key) => queryClient.getQueryData(key) !== undefined,
       );
-      setAllDataLoaded(hasAllData);
+      // Wrap state update in startTransition to prevent updating parent during child render
+      startTransition(() => {
+        setAllDataLoaded(hasAllData);
+      });
     });
 
     // Initial check
     const hasAllData = Object.values(queryKeys).every(
       (key) => queryClient.getQueryData(key) !== undefined,
     );
-    setAllDataLoaded(hasAllData);
+    startTransition(() => {
+      setAllDataLoaded(hasAllData);
+    });
 
     return unsubscribe;
   }, [queryClient, queryKeys]);
