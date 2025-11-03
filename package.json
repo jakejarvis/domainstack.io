@@ -42,7 +42,7 @@
     "@trpc/client": "^11.7.1",
     "@trpc/server": "^11.7.1",
     "@trpc/tanstack-react-query": "^11.7.1",
-    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.35.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/blob": "^2.0.0",
