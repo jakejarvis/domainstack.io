@@ -577,4 +577,71 @@ describe("providerOrderForLookup (hash-based selection)", () => {
 
     secondFetch.mockRestore();
   });
+
+  it("preserves case sensitivity in TXT records to prevent hydration errors", async () => {
+    const { resolveAll } = await import("./dns");
+
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "example.com",
+      tld: "com",
+      unicodeName: "example.com",
+    });
+
+    // First run: TXT record with mixed case (like google-site-verification)
+    const firstFetch = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1" }]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          {
+            name: "example.com.",
+            TTL: 120,
+            data: '"google-site-verification=RnrF88_2OaCBS9ziVuSmclMrmr4Q78QHNASfsAOe-jM"',
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+        ]),
+      );
+
+    const first = await resolveAll("example.com");
+    const txtRecords = first.records.filter((r) => r.type === "TXT");
+
+    expect(txtRecords.length).toBe(1);
+    // Should preserve original case
+    expect(txtRecords[0].value).toBe(
+      "google-site-verification=RnrF88_2OaCBS9ziVuSmclMrmr4Q78QHNASfsAOe-jM",
+    );
+
+    firstFetch.mockRestore();
+
+    // Second run: fetch from database cache
+    const fetchSpy = vi.spyOn(global, "fetch");
+    const second = await resolveAll("example.com");
+    const cachedTxtRecords = second.records.filter((r) => r.type === "TXT");
+
+    // Database should return same case (no lowercase conversion)
+    expect(cachedTxtRecords.length).toBe(1);
+    expect(cachedTxtRecords[0].value).toBe(
+      "google-site-verification=RnrF88_2OaCBS9ziVuSmclMrmr4Q78QHNASfsAOe-jM",
+    );
+
+    // Should be a cache hit (no network calls)
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
 });

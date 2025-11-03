@@ -58,16 +58,17 @@ export async function replaceDns(params: UpsertDnsParams) {
     const next = (recordsByType[type] ?? []).map((r) => ({
       ...r,
       type,
-      // Normalize DNS record name/value for case-insensitive uniqueness
-      name: (r.name as string).trim().toLowerCase(),
-      value: (r.value as string).trim().toLowerCase(),
+      // Trim but preserve original case for DNS records
+      name: (r.name as string).trim(),
+      value: (r.value as string).trim(),
     }));
 
     for (const r of next) {
       // Include priority in the uniqueness key for MX/SRV records
       // (same host with different priorities = different records)
+      // Use lowercase for case-insensitive deduplication, but store original case
       const priorityPart = r.priority != null ? `|${r.priority}` : "";
-      const key = `${type}|${r.name}|${r.value}${priorityPart}`;
+      const key = `${type}|${r.name.toLowerCase()}|${r.value.toLowerCase()}${priorityPart}`;
 
       // Skip duplicates within the same batch
       if (allNextKeys.has(key)) {
