@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/favicon";
 import { useHomeSearch } from "@/components/home-search-context";
 import { Button } from "@/components/ui/button";
@@ -8,22 +8,35 @@ import { useRouter } from "@/hooks/use-router";
 import { captureClient } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 
-export function DomainSuggestionsClient({
-  defaultSuggestions,
-  className,
-  faviconSize = 16,
-  max = 5,
-}: {
+export type DomainSuggestionsClientProps = {
   defaultSuggestions: string[];
   className?: string;
   faviconSize?: number;
   max?: number;
-}) {
+};
+
+export function DomainSuggestionsClient({
+  defaultSuggestions,
+  className,
+  faviconSize = 16,
+  max = 10,
+}: DomainSuggestionsClientProps) {
   const router = useRouter();
   const { onSuggestionClickAction } = useHomeSearch();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [history, setHistory] = useState<string[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(false);
+
+  const displayedSuggestions = useMemo(() => {
+    const merged = [
+      ...history,
+      ...defaultSuggestions.filter((d) => !history.includes(d)),
+    ];
+    return merged.slice(0, max);
+  }, [history, defaultSuggestions, max]);
 
   useEffect(() => {
     try {
@@ -36,13 +49,38 @@ export function DomainSuggestionsClient({
     }
   }, []);
 
-  const displayedSuggestions = useMemo(() => {
-    const merged = [
-      ...history,
-      ...defaultSuggestions.filter((d) => !history.includes(d)),
-    ];
-    return merged.slice(0, max);
-  }, [history, defaultSuggestions, max]);
+  // Check scroll position and update gradient visibility
+  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to re-run when history loads or suggestions change
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const updateGradients = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+
+      // Show left gradient if scrolled right from the start
+      setShowLeftGradient(scrollLeft > 0);
+
+      // Show right gradient if not scrolled to the end
+      // Adding a small threshold (1px) for rounding errors
+      setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 1);
+    };
+
+    // Initial check
+    updateGradients();
+
+    // Update on scroll
+    container.addEventListener("scroll", updateGradients);
+
+    // Update on resize (in case content changes)
+    const resizeObserver = new ResizeObserver(updateGradients);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", updateGradients);
+      resizeObserver.disconnect();
+    };
+  }, [historyLoaded, displayedSuggestions.length]);
 
   function handleClick(domain: string) {
     captureClient("search_suggestion_clicked", {
@@ -57,25 +95,45 @@ export function DomainSuggestionsClient({
   }
 
   return (
-    <div className={cn("flex flex-wrap justify-center gap-2", className)}>
-      {(historyLoaded ? displayedSuggestions : defaultSuggestions).map(
-        (domain) => (
-          <Button
-            key={domain}
-            variant="secondary"
-            size="sm"
-            className={cn(
-              "cursor-pointer bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
-              historyLoaded ? "visible" : "invisible",
-            )}
-            onClick={() => handleClick(domain)}
-          >
-            <span className="inline-flex items-center gap-2">
-              <Favicon domain={domain} size={faviconSize} className="rounded" />
-              {domain}
-            </span>
-          </Button>
-        ),
+    <div className={cn("relative", className)}>
+      <div
+        ref={scrollContainerRef}
+        className="scrollbar-hide overflow-x-auto py-0.5"
+      >
+        <div className="flex gap-2">
+          {(historyLoaded ? displayedSuggestions : defaultSuggestions).map(
+            (domain) => (
+              <Button
+                key={domain}
+                variant="secondary"
+                size="sm"
+                className={cn(
+                  "flex-shrink-0 cursor-pointer bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                  "first-of-type:ml-[1px] last-of-type:mr-[1px]",
+                  historyLoaded ? "visible" : "invisible",
+                )}
+                onClick={() => handleClick(domain)}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Favicon
+                    domain={domain}
+                    size={faviconSize}
+                    className="rounded"
+                  />
+                  {domain}
+                </span>
+              </Button>
+            ),
+          )}
+        </div>
+      </div>
+      {/* Left gradient - shown when scrolled right from start */}
+      {showLeftGradient && (
+        <div className="pointer-events-none absolute top-0 left-0 h-full w-12 bg-gradient-to-r from-background to-transparent" />
+      )}
+      {/* Right gradient - shown when more content available */}
+      {showRightGradient && (
+        <div className="pointer-events-none absolute top-0 right-0 h-full w-12 bg-gradient-to-l from-background to-transparent" />
       )}
     </div>
   );

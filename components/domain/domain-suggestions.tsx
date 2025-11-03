@@ -1,23 +1,18 @@
-import { DomainSuggestionsClient } from "@/components/domain/domain-suggestions-client";
+import {
+  DomainSuggestionsClient,
+  type DomainSuggestionsClientProps,
+} from "@/components/domain/domain-suggestions-client";
 import { getDefaultSuggestions } from "@/lib/edge-config";
 
-export async function DomainSuggestions({
-  className,
-  faviconSize = 16,
-  max = 5,
-}: {
-  className?: string;
-  faviconSize?: number;
-  max?: number;
-}) {
+export async function DomainSuggestions(
+  props: Omit<DomainSuggestionsClientProps, "defaultSuggestions">,
+) {
   const defaultSuggestions = await getDefaultSuggestions();
 
   return (
     <DomainSuggestionsClient
       defaultSuggestions={defaultSuggestions}
-      className={className}
-      faviconSize={faviconSize}
-      max={max}
+      {...props}
     />
   );
 }
