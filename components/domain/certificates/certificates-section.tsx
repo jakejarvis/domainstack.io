@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ArrowDown,
+  ArrowUp,
   ChevronDown,
   ChevronUp,
   ShieldQuestionMark,
@@ -151,7 +151,7 @@ export function CertificatesSection({
                   style={{ overflow: "hidden" }}
                 >
                   <div className="my-3 flex justify-center" aria-hidden>
-                    <ArrowDown className="h-4 w-4 text-muted-foreground/60" />
+                    <ArrowUp className="h-4 w-4 text-muted-foreground/60" />
                   </div>
                   {remainingCerts.map((c, idx) => (
                     <Fragment
@@ -230,7 +230,7 @@ export function CertificatesSection({
 
                       {idx < remainingCerts.length - 1 && (
                         <div className="my-3 flex justify-center" aria-hidden>
-                          <ArrowDown className="h-4 w-4 text-muted-foreground/60" />
+                          <ArrowUp className="h-4 w-4 text-muted-foreground/60" />
                         </div>
                       )}
                     </Fragment>
