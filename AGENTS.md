@@ -14,11 +14,9 @@
 - `trpc/` tRPC client setup, query client, and error handling.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` — start dev server at http://localhost:3000.
+- `pnpm dev` — start all local services (Postgres, Redis, SRH, Inngest) and Next.js dev server at http://localhost:3000 using `concurrently`.
 - `pnpm build` — compile production bundle.
 - `pnpm start` — serve compiled output for smoke tests.
-- `pnpm docker:up` — start all Dockerized local services (Postgres, Redis, SRH, Inngest) and wait until ready.
-- `pnpm docker:down` — stop all Dockerized local services.
 - `pnpm lint` — run Biome lint + type-aware checks (`--write` to fix).
 - `pnpm format` — apply Biome formatting.
 - `pnpm typecheck` — run `tsc --noEmit` for stricter diagnostics.

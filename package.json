@@ -12,9 +12,7 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "docker:up": "scripts/start-dev-infra.sh",
-    "docker:down": "scripts/stop-dev-infra.sh",
+    "dev": "concurrently --kill-others 'scripts/start-dev-infra.sh' 'next dev'",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
@@ -62,7 +60,7 @@
     "geist": "^1.5.1",
     "icojs": "^0.20.0",
     "image-size": "^2.0.2",
-    "inngest": "^3.44.4",
+    "inngest": "^3.44.5",
     "ipaddr.js": "^2.2.0",
     "lucide-react": "^0.552.0",
     "mapbox-gl": "^3.16.0",
@@ -106,6 +104,7 @@
     "@vitest/ui": "^4.0.6",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "bufferutil": "^4.0.9",
+    "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.6",
     "jsdom": "^27.1.0",
     "puppeteer": "24.26.1",
@@ -119,5 +118,16 @@
   "engines": {
     "node": ">=22.x"
   },
-  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd"
+  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@posthog/cli",
+      "bufferutil",
+      "core-js",
+      "esbuild",
+      "protobufjs",
+      "puppeteer",
+      "sharp"
+    ]
+  }
 }

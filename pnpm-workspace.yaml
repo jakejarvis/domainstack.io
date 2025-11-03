@@ -1,8 +1,0 @@
-onlyBuiltDependencies:
-  - '@posthog/cli'
-  - bufferutil
-  - core-js
-  - esbuild
-  - protobufjs
-  - puppeteer
-  - sharp
