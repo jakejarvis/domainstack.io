@@ -20,7 +20,11 @@ import { getPricingForTld } from "@/server/services/pricing";
 import { getRegistration } from "@/server/services/registration";
 import { getOrCreateScreenshotBlobUrl } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
-import { createTRPCRouter, domainProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  domainProcedure,
+  trackDomainAccess,
+} from "@/trpc/init";
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -35,7 +39,10 @@ export const domainRouter = createTRPCRouter({
     .meta({ service: "registration" })
     .input(DomainInputSchema)
     .output(RegistrationSchema)
-    .query(({ input }) => getRegistration(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return getRegistration(input.domain);
+    }),
   pricing: domainProcedure
     .meta({ service: "pricing" })
     .input(DomainInputSchema)
@@ -45,27 +52,42 @@ export const domainRouter = createTRPCRouter({
     .meta({ service: "dns" })
     .input(DomainInputSchema)
     .output(DnsResolveResultSchema)
-    .query(({ input }) => resolveAll(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return resolveAll(input.domain);
+    }),
   hosting: domainProcedure
     .meta({ service: "hosting" })
     .input(DomainInputSchema)
     .output(HostingSchema)
-    .query(({ input }) => detectHosting(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return detectHosting(input.domain);
+    }),
   certificates: domainProcedure
     .meta({ service: "certs" })
     .input(DomainInputSchema)
     .output(CertificatesSchema)
-    .query(({ input }) => getCertificates(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return getCertificates(input.domain);
+    }),
   headers: domainProcedure
     .meta({ service: "headers" })
     .input(DomainInputSchema)
     .output(HttpHeadersResponseSchema)
-    .query(({ input }) => probeHeaders(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return probeHeaders(input.domain);
+    }),
   seo: domainProcedure
     .meta({ service: "seo" })
     .input(DomainInputSchema)
     .output(SeoResponseSchema)
-    .query(({ input }) => getSeo(input.domain)),
+    .query(({ input }) => {
+      trackDomainAccess(input.domain);
+      return getSeo(input.domain);
+    }),
   favicon: domainProcedure
     .meta({ service: "favicon" })
     .input(DomainInputSchema)

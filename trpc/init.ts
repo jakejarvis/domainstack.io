@@ -96,39 +96,37 @@ const withRatelimit = t.middleware(async ({ ctx, next, meta }) => {
 });
 
 /**
- * Middleware to record domain access for decay calculation.
- * Expects input to have a `domain` field containing the domain string.
- */
-const withAccess = t.middleware(async ({ input, next }) => {
-  // Extract domain from input and record access if it's a valid registrable domain
-  const domain =
-    typeof input === "object" &&
-    input !== null &&
-    "domain" in input &&
-    typeof input.domain === "string"
-      ? input.domain
-      : null;
-
-  if (domain) {
-    const registrable = toRegistrableDomain(domain);
-    if (registrable) {
-      recordDomainAccess(registrable);
-    }
-  }
-
-  return next();
-});
-
-/**
  * Public procedure with logging.
  * Use this for all public endpoints (e.g. health check, etc).
  */
 export const publicProcedure = t.procedure.use(withLogging);
 
 /**
- * Domain-specific procedure with rate limiting and access tracking.
+ * Domain-specific procedure with rate limiting.
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
+ *
+ * Note: Access tracking is done in the query handler, not middleware,
+ * because the input hasn't been parsed yet at the middleware stage.
  */
-export const domainProcedure = publicProcedure
-  .use(withRatelimit)
-  .use(withAccess);
+export const domainProcedure = publicProcedure.use(withRatelimit);
+
+/**
+ * Helper to track domain access in query handlers.
+ * Call this at the start of domain-related query handlers.
+ *
+ * @param domain - The domain from the input
+ * @example
+ * ```ts
+ * .query(({ input }) => {
+ *   trackDomainAccess(input.domain);
+ *   return getSeo(input.domain);
+ * })
+ * ```
+ */
+export function trackDomainAccess(domain: string): void {
+  const registrable = toRegistrableDomain(domain);
+  if (registrable) {
+    console.debug(`[trpc] recording access for domain: ${registrable}`);
+    recordDomainAccess(registrable);
+  }
+}
