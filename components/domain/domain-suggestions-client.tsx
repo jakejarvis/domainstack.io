@@ -32,6 +32,7 @@ export function DomainSuggestionsClient({
   const router = useRouter();
   const { onSuggestionClickAction } = useHomeSearch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const updateGradientsRef = useRef<(() => void) | null>(null);
 
   const { history, isHistoryLoaded, clearHistory } = useDomainHistory();
   const [showLeftGradient, setShowLeftGradient] = useState(false);
@@ -45,8 +46,7 @@ export function DomainSuggestionsClient({
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
 
-  // Check scroll position and update gradient visibility
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to re-run when history loads or suggestions change
+  // Set up scroll and resize observers once on mount
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -62,20 +62,32 @@ export function DomainSuggestionsClient({
       setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 1);
     };
 
+    updateGradientsRef.current = updateGradients;
+
     // Initial check
     updateGradients();
 
+    const handleScroll = () => updateGradientsRef.current?.();
+
     // Update on scroll
-    container.addEventListener("scroll", updateGradients);
+    container.addEventListener("scroll", handleScroll);
 
     // Update on resize (in case content changes)
-    const resizeObserver = new ResizeObserver(updateGradients);
+    const resizeObserver = new ResizeObserver(() =>
+      updateGradientsRef.current?.(),
+    );
     resizeObserver.observe(container);
 
     return () => {
-      container.removeEventListener("scroll", updateGradients);
+      container.removeEventListener("scroll", handleScroll);
       resizeObserver.disconnect();
     };
+  }, []); // Only run once on mount
+
+  // Trigger gradient updates when content changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to re-run when history loads or suggestions change
+  useEffect(() => {
+    updateGradientsRef.current?.();
   }, [isHistoryLoaded, displayedSuggestions.length]);
 
   function handleClick(domain: string) {
