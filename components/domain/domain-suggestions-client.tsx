@@ -51,15 +51,30 @@ export function DomainSuggestionsClient({
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    let rafId: number | null = null;
+
     const updateGradients = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container;
+      // Cancel any pending frame
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
 
-      // Show left gradient if scrolled right from the start
-      setShowLeftGradient(scrollLeft > 0);
+      // Schedule update for next frame to throttle and prevent layout thrashing
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const { scrollLeft, scrollWidth, clientWidth } = container;
 
-      // Show right gradient if not scrolled to the end
-      // Adding a small threshold (1px) for rounding errors
-      setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 1);
+        const shouldShowLeft = scrollLeft > 0;
+        const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1;
+
+        // Only update state if values actually changed to prevent render loops
+        setShowLeftGradient((prev) =>
+          prev === shouldShowLeft ? prev : shouldShowLeft,
+        );
+        setShowRightGradient((prev) =>
+          prev === shouldShowRight ? prev : shouldShowRight,
+        );
+      });
     };
 
     updateGradientsRef.current = updateGradients;
@@ -79,16 +94,13 @@ export function DomainSuggestionsClient({
     resizeObserver.observe(container);
 
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       container.removeEventListener("scroll", handleScroll);
       resizeObserver.disconnect();
     };
   }, []); // Only run once on mount
-
-  // Trigger gradient updates when content changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we want to re-run when history loads or suggestions change
-  useEffect(() => {
-    updateGradientsRef.current?.();
-  }, [isHistoryLoaded, displayedSuggestions.length]);
 
   function handleClick(domain: string) {
     captureClient("search_suggestion_clicked", {
