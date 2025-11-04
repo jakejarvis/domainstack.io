@@ -8,7 +8,6 @@ import {
   hosting,
   httpHeaders,
   providers,
-  registrationNameservers,
   registrations,
   seo,
 } from "@/lib/db/schema";
@@ -34,17 +33,6 @@ export const DomainUpdate = zWrite.createUpdateSchema(domains);
 export const RegistrationSelect = zRead.createSelectSchema(registrations);
 export const RegistrationInsert = zWrite.createInsertSchema(registrations);
 export const RegistrationUpdate = zWrite.createUpdateSchema(registrations);
-
-// Registration nameservers
-export const RegistrationNameserverSelect = zRead.createSelectSchema(
-  registrationNameservers,
-);
-export const RegistrationNameserverInsert = zWrite.createInsertSchema(
-  registrationNameservers,
-);
-export const RegistrationNameserverUpdate = zWrite.createUpdateSchema(
-  registrationNameservers,
-);
 
 // DNS records
 export const DnsRecordSelect = zRead.createSelectSchema(dnsRecords);

@@ -1,83 +1,41 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
-import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { registrationNameservers, registrations } from "@/lib/db/schema";
+import { registrations } from "@/lib/db/schema";
 import {
   RegistrationInsert as RegistrationInsertSchema,
-  RegistrationNameserverInsert as RegistrationNameserverInsertSchema,
   RegistrationUpdate as RegistrationUpdateSchema,
 } from "@/lib/db/zod";
 import { ns, redis } from "@/lib/redis";
+import type { RegistrationNameservers } from "@/lib/schemas";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
-type RegistrationNameserverInsert = InferInsertModel<
-  typeof registrationNameservers
->;
 
-export async function upsertRegistration(
-  params: RegistrationInsert & {
-    nameservers?: Array<
-      Pick<RegistrationNameserverInsert, "host" | "ipv4" | "ipv6">
-    >;
-  },
-) {
-  const { domainId, nameservers: ns, ...rest } = params;
-  const insertRow = RegistrationInsertSchema.parse({ domainId, ...rest });
-  const updateRow = RegistrationUpdateSchema.parse({ ...rest });
-  await db.transaction(async (tx) => {
-    await tx.insert(registrations).values(insertRow).onConflictDoUpdate({
-      target: registrations.domainId,
-      set: updateRow,
-    });
+export async function upsertRegistration(params: RegistrationInsert) {
+  const { domainId, nameservers, ...rest } = params;
 
-    if (!ns) return;
-    // Replace-set semantics for nameservers
-    const existing = await tx
-      .select({
-        id: registrationNameservers.id,
-        host: registrationNameservers.host,
-      })
-      .from(registrationNameservers)
-      .where(eq(registrationNameservers.domainId, domainId));
+  // Normalize nameserver hosts (trim + lowercase)
+  const normalizedNameservers: RegistrationNameservers = (
+    nameservers ?? []
+  ).map((n) => ({
+    host: n.host.trim().toLowerCase(),
+    ipv4: n.ipv4 ?? [],
+    ipv6: n.ipv6 ?? [],
+  }));
 
-    const nextByHost = new Map(ns.map((n) => [n.host.trim().toLowerCase(), n]));
-    const toDelete = existing
-      .filter((e) => !nextByHost.has(e.host.toLowerCase()))
-      .map((e) => e.id);
+  const insertRow = RegistrationInsertSchema.parse({
+    domainId,
+    nameservers: normalizedNameservers,
+    ...rest,
+  });
+  const updateRow = RegistrationUpdateSchema.parse({
+    nameservers: normalizedNameservers,
+    ...rest,
+  });
 
-    if (toDelete.length > 0) {
-      await tx
-        .delete(registrationNameservers)
-        .where(inArray(registrationNameservers.id, toDelete));
-    }
-
-    // Batch upsert all nameservers
-    if (ns.length > 0) {
-      const values = ns.map((n) => {
-        const host = n.host.trim().toLowerCase();
-        return RegistrationNameserverInsertSchema.parse({
-          domainId,
-          host,
-          ipv4: (n.ipv4 ?? []) as string[],
-          ipv6: (n.ipv6 ?? []) as string[],
-        });
-      });
-
-      await tx
-        .insert(registrationNameservers)
-        .values(values)
-        .onConflictDoUpdate({
-          target: [
-            registrationNameservers.domainId,
-            registrationNameservers.host,
-          ],
-          set: {
-            ipv4: sql`excluded.${sql.identifier(registrationNameservers.ipv4.name)}`,
-            ipv6: sql`excluded.${sql.identifier(registrationNameservers.ipv6.name)}`,
-          },
-        });
-    }
+  await db.insert(registrations).values(insertRow).onConflictDoUpdate({
+    target: registrations.domainId,
+    set: updateRow,
   });
 }
 

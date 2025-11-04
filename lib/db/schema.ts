@@ -18,6 +18,7 @@ import type {
   HttpHeader,
   OpenGraphMeta,
   RegistrationContacts,
+  RegistrationNameservers,
   RegistrationStatuses,
   RobotsTxt,
   TwitterMeta,
@@ -120,6 +121,10 @@ export const registrations = pgTable(
       .$type<RegistrationContacts>()
       .notNull()
       .default(sql`'[]'::jsonb`),
+    nameservers: jsonb("nameservers")
+      .$type<RegistrationNameservers>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     whoisServer: text("whois_server"),
     rdapServers: jsonb("rdap_servers")
       .$type<string[]>()
@@ -138,23 +143,6 @@ export const registrations = pgTable(
   (t) => [
     index("i_reg_registrar").on(t.registrarProviderId),
     index("i_reg_expires").on(t.expiresAt),
-  ],
-);
-
-export const registrationNameservers = pgTable(
-  "registration_nameservers",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    domainId: uuid("domain_id")
-      .notNull()
-      .references(() => domains.id, { onDelete: "cascade" }),
-    host: text("host").notNull(),
-    ipv4: jsonb("ipv4").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-    ipv6: jsonb("ipv6").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-  },
-  (t) => [
-    unique("u_reg_ns").on(t.domainId, t.host),
-    index("i_reg_ns_host").on(t.host),
   ],
 );
 

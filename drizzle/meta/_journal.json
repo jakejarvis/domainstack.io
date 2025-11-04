@@ -71,6 +71,13 @@
       "when": 1762287285272,
       "tag": "0009_nosy_micromacro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762287770864,
+      "tag": "0010_exotic_adam_warlock",
+      "breakpoints": true
     }
   ]
 }

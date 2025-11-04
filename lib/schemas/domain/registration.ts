@@ -94,9 +94,25 @@ export const RegistrationSchema = z.object({
   registrarProvider: ProviderRefSchema,
 });
 
+// Extract nameservers schema for reuse
+export const RegistrationNameserverSchema = z.object({
+  host: z.string(),
+  ipv4: z.array(z.string()).optional(),
+  ipv6: z.array(z.string()).optional(),
+});
+export const RegistrationNameserversSchema = z.array(
+  RegistrationNameserverSchema,
+);
+
 export type Registration = z.infer<typeof RegistrationSchema>;
 export type RegistrationStatus = z.infer<typeof RegistrationStatusSchema>;
 export type RegistrationStatuses = z.infer<typeof RegistrationStatusesSchema>;
+export type RegistrationNameserver = z.infer<
+  typeof RegistrationNameserverSchema
+>;
+export type RegistrationNameservers = z.infer<
+  typeof RegistrationNameserversSchema
+>;
 export type RegistrationContact = z.infer<typeof RegistrationContactSchema>;
 export type RegistrationContacts = z.infer<typeof RegistrationContactsSchema>;
 export type RegistrationSource = z.infer<typeof RegistrationSourceSchema>;

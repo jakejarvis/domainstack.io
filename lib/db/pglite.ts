@@ -53,7 +53,6 @@ export async function resetPGliteDb(): Promise<void> {
     dnsRecords,
     httpHeaders,
     certificates,
-    registrationNameservers,
     registrations,
     hosting,
     seo,
@@ -63,7 +62,6 @@ export async function resetPGliteDb(): Promise<void> {
   await db.delete(dnsRecords);
   await db.delete(httpHeaders);
   await db.delete(certificates);
-  await db.delete(registrationNameservers);
   await db.delete(registrations);
   await db.delete(hosting);
   await db.delete(seo);

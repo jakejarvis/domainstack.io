@@ -9,12 +9,7 @@ import {
   setRegistrationStatusInCache,
   upsertRegistration,
 } from "@/lib/db/repos/registrations";
-import {
-  domains,
-  providers,
-  registrationNameservers,
-  registrations,
-} from "@/lib/db/schema";
+import { domains, providers, registrations } from "@/lib/db/schema";
 import { ttlForRegistration } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectRegistrar } from "@/lib/providers/detection";
@@ -111,21 +106,12 @@ export async function getRegistration(domain: string): Promise<Registration> {
   if (existing[0] && existing[0].registration.expiresAt > now) {
     const row = existing[0];
 
-    // Fetch nameservers separately (reasonable due to 1-to-many relationship)
-    const ns = await db
-      .select({
-        host: registrationNameservers.host,
-        ipv4: registrationNameservers.ipv4,
-        ipv6: registrationNameservers.ipv6,
-      })
-      .from(registrationNameservers)
-      .where(eq(registrationNameservers.domainId, row.domainId));
-
     const registrarProvider = row.providerName
       ? { name: row.providerName, domain: row.providerDomain ?? null }
       : { name: null as string | null, domain: null as string | null };
 
     const contactsArray: RegistrationContacts = row.registration.contacts ?? [];
+    const nameserversArray = row.registration.nameservers ?? [];
 
     const response: Registration = {
       domain: registrable,
@@ -142,10 +128,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
       expirationDate: row.registration.expirationDate?.toISOString(),
       deletionDate: row.registration.deletionDate?.toISOString(),
       transferLock: row.registration.transferLock ?? undefined,
-      nameservers:
-        ns.length > 0
-          ? ns.map((n) => ({ host: n.host, ipv4: n.ipv4, ipv6: n.ipv6 }))
-          : undefined,
+      nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
       contacts: contactsArray,
       whoisServer: row.registration.whoisServer ?? undefined,
       rdapServers: row.registration.rdapServers ?? undefined,
