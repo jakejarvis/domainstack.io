@@ -57,9 +57,9 @@ export const CertificateInsert = zWrite.createInsertSchema(certificates);
 export const CertificateUpdate = zWrite.createUpdateSchema(certificates);
 
 // HTTP headers
-export const HttpHeaderRowSelect = zRead.createSelectSchema(httpHeaders);
-export const HttpHeaderRowInsert = zWrite.createInsertSchema(httpHeaders);
-export const HttpHeaderRowUpdate = zWrite.createUpdateSchema(httpHeaders);
+export const HttpHeadersRowSelect = zRead.createSelectSchema(httpHeaders);
+export const HttpHeadersRowInsert = zWrite.createInsertSchema(httpHeaders);
+export const HttpHeadersRowUpdate = zWrite.createUpdateSchema(httpHeaders);
 
 // Hosting
 export const HostingRowSelect = zRead.createSelectSchema(hosting);

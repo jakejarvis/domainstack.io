@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type {
   GeneralMeta,
+  HttpHeader,
   OpenGraphMeta,
   RegistrationContacts,
   RegistrationStatuses,
@@ -216,24 +217,18 @@ export const certificates = pgTable(
 );
 
 // HTTP headers (latest set)
-export const httpHeaders = pgTable(
-  "http_headers",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    domainId: uuid("domain_id")
-      .notNull()
-      .references(() => domains.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    value: text("value").notNull(),
-    status: integer("status").notNull().default(200),
-    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [
-    index("i_http_domain").on(t.domainId),
-    index("i_http_name").on(t.name),
-  ],
-);
+export const httpHeaders = pgTable("http_headers", {
+  domainId: uuid("domain_id")
+    .primaryKey()
+    .references(() => domains.id, { onDelete: "cascade" }),
+  headers: jsonb("headers")
+    .$type<HttpHeader[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  status: integer("status").notNull().default(200),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
 
 // Hosting (latest)
 export const hosting = pgTable(

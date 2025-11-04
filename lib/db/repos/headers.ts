@@ -1,7 +1,7 @@
 import "server-only";
-import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
+import type { HttpHeader } from "@/lib/schemas";
 
 export type ReplaceHeadersParams = {
   domainId: string;
@@ -14,20 +14,29 @@ export type ReplaceHeadersParams = {
 export async function replaceHeaders(params: ReplaceHeadersParams) {
   const { domainId, headers, status, fetchedAt, expiresAt } = params;
 
-  // Delete all existing headers for this domain
-  await db.delete(httpHeaders).where(eq(httpHeaders.domainId, domainId));
+  // Normalize incoming header names (trim + lowercase)
+  const normalizedHeaders: HttpHeader[] = headers.map((h) => ({
+    name: h.name.trim().toLowerCase(),
+    value: h.value,
+  }));
 
-  // Normalize incoming header names (trim + lowercase) and insert all
-  if (headers.length > 0) {
-    const values = headers.map((h) => ({
+  // Upsert: insert or update if row exists
+  await db
+    .insert(httpHeaders)
+    .values({
       domainId,
-      name: h.name.trim().toLowerCase(),
-      value: h.value,
+      headers: normalizedHeaders,
       status,
       fetchedAt,
       expiresAt,
-    }));
-
-    await db.insert(httpHeaders).values(values);
-  }
+    })
+    .onConflictDoUpdate({
+      target: httpHeaders.domainId,
+      set: {
+        headers: normalizedHeaders,
+        status,
+        fetchedAt,
+        expiresAt,
+      },
+    });
 }

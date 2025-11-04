@@ -32,43 +32,31 @@ export async function probeHeaders(
   const existing = existingDomain
     ? await db
         .select({
-          name: httpHeaders.name,
-          value: httpHeaders.value,
+          headers: httpHeaders.headers,
           status: httpHeaders.status,
           expiresAt: httpHeaders.expiresAt,
         })
         .from(httpHeaders)
         .where(eq(httpHeaders.domainId, existingDomain.id))
-    : ([] as Array<{
-        name: string;
-        value: string;
-        status: number;
-        expiresAt: Date | null;
-      }>);
-  if (existing.length > 0) {
-    const fresh = existing.every(
-      (h) => (h.expiresAt?.getTime?.() ?? 0) > nowMs,
-    );
-    if (fresh) {
-      const normalized = normalize(
-        existing.map((h) => ({ name: h.name, value: h.value })),
-      );
-      // Get status from first header (all have same status)
-      const cachedStatus = existing[0].status;
-      // Get status message
-      let statusMessage: string | undefined;
-      try {
-        const statusInfo = getStatusCode(cachedStatus);
-        statusMessage = statusInfo.message;
-      } catch {
-        statusMessage = undefined;
-      }
+        .limit(1)
+    : [];
 
-      console.info(
-        `[headers] cache hit ${registrable} status=${cachedStatus} count=${normalized.length}`,
-      );
-      return { headers: normalized, status: cachedStatus, statusMessage };
+  if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > nowMs) {
+    const row = existing[0];
+    const normalized = normalize(row.headers);
+    // Get status message
+    let statusMessage: string | undefined;
+    try {
+      const statusInfo = getStatusCode(row.status);
+      statusMessage = statusInfo.message;
+    } catch {
+      statusMessage = undefined;
     }
+
+    console.info(
+      `[headers] cache hit ${registrable} status=${row.status} count=${normalized.length}`,
+    );
+    return { headers: normalized, status: row.status, statusMessage };
   }
 
   const REQUEST_TIMEOUT_MS = 5000;
