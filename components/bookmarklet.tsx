@@ -1,7 +1,13 @@
 "use client";
 
-import { Bookmark, Layers2, MousePointerClick } from "lucide-react";
+import {
+  Bookmark,
+  CornerLeftUp,
+  Layers2,
+  MousePointerClick,
+} from "lucide-react";
 import { useCallback } from "react";
+import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,8 +31,14 @@ export function Bookmarklet({ className }: { className?: string }) {
     element.href = `javascript:(function(){${openScript}})();`;
   }, []);
 
+  const handleOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      toast.dismiss("bookmarklet-reminder");
+    }
+  }, []);
+
   return (
-    <Dialog>
+    <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger className={className} asChild>
         <Button aria-label="Open bookmarklet info" variant="ghost" size="sm">
           <Bookmark />
@@ -59,7 +71,14 @@ export function Bookmarklet({ className }: { className?: string }) {
               "!px-3",
             )}
             // biome-ignore lint/a11y/useValidAnchor: the href is a script, not a valid URL that we want to open now
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              toast.info("Drag the button to your bookmarks bar to use it.", {
+                icon: <CornerLeftUp className="h-4 w-4" />,
+                position: "top-center",
+                id: "bookmarklet-reminder",
+              });
+            }}
           >
             <Bookmark />
             <span>Inspect Domain</span>

@@ -409,4 +409,10 @@ export const DNS_PROVIDERS: Array<
     category: "dns",
     rule: { kind: "nsSuffix", suffix: "pch.net" },
   },
+  {
+    name: "MarkMonitor",
+    domain: "markmonitor.com",
+    category: "dns",
+    rule: { kind: "nsSuffix", suffix: "markmonitor.com" },
+  },
 ];
