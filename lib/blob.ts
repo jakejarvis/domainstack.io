@@ -15,6 +15,7 @@ export async function putBlob(options: {
     access: "public",
     contentType: options.contentType,
     cacheControlMaxAge: options.cacheControlMaxAge,
+    allowOverwrite: true,
   });
 
   return {
