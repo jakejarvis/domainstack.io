@@ -8,7 +8,7 @@ import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
 import { ttlForSeo } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { fetchWithTimeout } from "@/lib/fetch";
+import { fetchWithSelectiveRedirects, fetchWithTimeout } from "@/lib/fetch";
 import { optimizeImageCover } from "@/lib/image";
 import { ns, redis } from "@/lib/redis";
 import { scheduleSectionIfEarlier } from "@/lib/schedule";
@@ -165,9 +165,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   }
 
   // robots.txt fetch (no Redis cache; stored in Postgres with row TTL)
+  // Only follow redirects between apex/www or http/https versions
   try {
     const robotsUrl = `https://${registrable}/robots.txt`;
-    const res = await fetchWithTimeout(
+    const res = await fetchWithSelectiveRedirects(
       robotsUrl,
       {
         method: "GET",
