@@ -364,15 +364,14 @@ async function getOrCreateSocialPreviewImageUrl(
     try {
       const ttl = TTL_SOCIAL_PREVIEW;
       const expiresAtMs = Date.now() + ttl * 1000;
-      await redis.set(
-        indexKey,
-        { url, key: pathname, expiresAtMs },
-        { ex: ttl },
-      );
-      await redis.zadd(ns("purge", "social"), {
-        score: expiresAtMs,
-        member: url,
-      });
+      // Use Promise.all to batch Redis writes via auto-pipelining
+      await Promise.all([
+        redis.set(indexKey, { url, key: pathname, expiresAtMs }, { ex: ttl }),
+        redis.zadd(ns("purge", "social"), {
+          score: expiresAtMs,
+          member: url,
+        }),
+      ]);
     } catch {}
 
     return { url };
