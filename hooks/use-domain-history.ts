@@ -53,18 +53,29 @@ export function useDomainHistory(domain?: string) {
   useEffect(() => {
     if (!domain || !isHistoryLoaded) return;
 
-    try {
-      // Use current state instead of re-reading from localStorage
-      const next = [domain, ...history.filter((d) => d !== domain)].slice(
-        0,
-        MAX_HISTORY_ITEMS,
-      );
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      setHistory(next);
-    } catch {
-      // ignore storage errors
-    }
-  }, [domain, isHistoryLoaded, history]);
+    // Use functional setState to avoid race conditions and ensure we work with latest state
+    setHistory((currentHistory) => {
+      // Skip update if domain is already at the front
+      if (currentHistory.length > 0 && currentHistory[0] === domain) {
+        return currentHistory;
+      }
+
+      // Create new list with domain at front, removing any duplicates
+      const next = [
+        domain,
+        ...currentHistory.filter((d) => d !== domain),
+      ].slice(0, MAX_HISTORY_ITEMS);
+
+      // Update localStorage with new list
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage errors
+      }
+
+      return next;
+    });
+  }, [domain, isHistoryLoaded]);
 
   // Clear history function
   const clearHistory = useCallback(() => {
