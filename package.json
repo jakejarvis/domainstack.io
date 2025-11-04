@@ -58,7 +58,7 @@
     "drizzle-zod": "^0.8.3",
     "file-type": "^21.0.0",
     "geist": "^1.5.1",
-    "icojs": "^0.20.0",
+    "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "inngest": "^3.44.5",
     "ipaddr.js": "^2.2.0",

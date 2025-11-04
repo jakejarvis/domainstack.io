@@ -96,8 +96,8 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       icojs:
-        specifier: ^0.20.0
-        version: 0.20.0(@jimp/custom@0.22.12)
+        specifier: ^0.20.1
+        version: 0.20.1(@jimp/custom@0.22.12)
       image-size:
         specifier: ^2.0.2
         version: 2.0.2
@@ -3712,8 +3712,8 @@ packages:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
     engines: {node: '>= 14'}
 
-  icojs@0.20.0:
-    resolution: {integrity: sha512-lYzM8Awqrtw9bH8y37een2Gispb6iQAf9pDOHmDdTsuyd2PMqTAL2hZW7kB16kYAPN0mrsjx+Zct4sI9ro8S7w==}
+  icojs@0.20.1:
+    resolution: {integrity: sha512-5CgDmAMlXmqMLFSCKTKrWK5FJl9WaA5Y8y3vtuNSas0HZx9O7dtS+xgeIu7jG8W3VQSXWAXdoGaILtF6ktjE7Q==}
     engines: {node: '>=20.19.4'}
 
   iconv-lite@0.6.3:
@@ -8540,7 +8540,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  icojs@0.20.0(@jimp/custom@0.22.12):
+  icojs@0.20.1(@jimp/custom@0.22.12):
     dependencies:
       '@jimp/bmp': 0.22.12(@jimp/custom@0.22.12)
       decode-ico: 0.4.1
