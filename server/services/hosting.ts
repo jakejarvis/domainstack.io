@@ -108,27 +108,29 @@ export async function detectHosting(domain: string): Promise<Hosting> {
   const ip = (a?.value || aaaa?.value) ?? null;
   const hasWebHosting = a !== undefined || aaaa !== undefined;
 
-  // Skip headers probe if domain has no A/AAAA records (no web hosting)
-  const headers = hasWebHosting
-    ? await probeHeaders(domain).catch(
-        () => [] as { name: string; value: string }[],
-      )
-    : [];
+  // Parallelize headers probe and IP lookup when web hosting exists
+  const [headers, meta] = await Promise.all([
+    hasWebHosting
+      ? probeHeaders(domain).catch(
+          () => [] as { name: string; value: string }[],
+        )
+      : Promise.resolve([] as { name: string; value: string }[]),
+    ip
+      ? lookupIpMeta(ip)
+      : Promise.resolve({
+          geo: {
+            city: "",
+            region: "",
+            country: "",
+            country_code: "",
+            lat: null,
+            lon: null,
+          },
+          owner: null,
+          domain: null,
+        }),
+  ]);
 
-  const meta = ip
-    ? await lookupIpMeta(ip)
-    : {
-        geo: {
-          city: "",
-          region: "",
-          country: "",
-          country_code: "",
-          lat: null,
-          lon: null,
-        },
-        owner: null,
-        domain: null,
-      };
   const geo = meta.geo;
 
   // Hosting provider detection with fallback:
