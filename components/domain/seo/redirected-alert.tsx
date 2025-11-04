@@ -1,6 +1,7 @@
 "use client";
 
-import { Milestone } from "lucide-react";
+import { Milestone, Search } from "lucide-react";
+import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function RedirectedAlert({
@@ -22,14 +23,16 @@ export function RedirectedAlert({
       <Alert {...props}>
         <Milestone aria-hidden="true" />
         <AlertDescription>
-          <p className="text-[13px]">
+          <p className="inline-flex items-center gap-1 text-[13px]">
             We followed a redirect to{" "}
-            <a
+            <Link
               href={`/${encodeURIComponent(dest)}`}
-              className="mx-px font-medium text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
+              className="inline-flex items-center gap-1 text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
+              title={`View report for ${dest}`}
             >
-              {dest}
-            </a>
+              <span className="font-medium">{dest}</span>
+              <Search className="!h-3.5 !w-3.5" aria-hidden="true" />
+            </Link>
             .
           </p>
         </AlertDescription>
