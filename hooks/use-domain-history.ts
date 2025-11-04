@@ -54,9 +54,8 @@ export function useDomainHistory(domain?: string) {
     if (!domain || !isHistoryLoaded) return;
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const list = stored ? (JSON.parse(stored) as string[]) : [];
-      const next = [domain, ...list.filter((d) => d !== domain)].slice(
+      // Use current state instead of re-reading from localStorage
+      const next = [domain, ...history.filter((d) => d !== domain)].slice(
         0,
         MAX_HISTORY_ITEMS,
       );
@@ -65,7 +64,7 @@ export function useDomainHistory(domain?: string) {
     } catch {
       // ignore storage errors
     }
-  }, [domain, isHistoryLoaded]);
+  }, [domain, isHistoryLoaded, history]);
 
   // Clear history function
   const clearHistory = useCallback(() => {
