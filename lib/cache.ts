@@ -5,8 +5,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 type LockResult<T = unknown> =
-  | { acquired: true; cachedResult: null }
-  | { acquired: false; cachedResult: T | null };
+  | { acquired: true; cachedResult: null; timedOut: false }
+  | { acquired: false; cachedResult: T | null; timedOut: false }
+  | { acquired: false; cachedResult: null; timedOut: true };
 
 /**
  * Acquire a Redis lock or wait for result from another process
@@ -48,7 +49,7 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
 
     if (acquired) {
       console.debug(`[cache] redis lock acquired ${lockKey}`);
-      return { acquired: true, cachedResult: null };
+      return { acquired: true, cachedResult: null, timedOut: false };
     }
 
     console.debug(
@@ -60,7 +61,7 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
       err instanceof Error ? err : new Error(String(err)),
     );
     // If Redis is down, fail open (don't wait)
-    return { acquired: true, cachedResult: null };
+    return { acquired: true, cachedResult: null, timedOut: false };
   }
 
   // Lock not acquired, poll for result
@@ -80,7 +81,7 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
         console.debug(
           `[cache] redis cache hit waiting ${resultKey} polls=${pollCount} duration=${Date.now() - startTime}ms`,
         );
-        return { acquired: false, cachedResult: result };
+        return { acquired: false, cachedResult: result, timedOut: false };
       }
 
       // Check if lock still exists - if not, the other process may have failed
@@ -96,7 +97,7 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
         });
         const retryAcquired = Boolean(retryRes);
         if (retryAcquired) {
-          return { acquired: true, cachedResult: null };
+          return { acquired: true, cachedResult: null, timedOut: false };
         }
       }
     } catch (err) {
@@ -113,7 +114,7 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
     `[cache] redis wait timeout ${lockKey} polls=${pollCount} duration=${Date.now() - startTime}ms`,
   );
 
-  return { acquired: false, cachedResult: null };
+  return { acquired: false, cachedResult: null, timedOut: true };
 }
 
 type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
@@ -167,7 +168,35 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
     lockTtl: Math.max(5, Math.min(120, ttlSeconds)),
   });
 
-  if (!lockResult.acquired) {
+  // Handle timeout scenario - try to acquire lock ourselves as a fallback
+  if (lockResult.timedOut) {
+    console.warn(
+      `[cache] timeout waiting for result ${indexKey}, attempting to acquire lock as fallback`,
+    );
+    // Try one more time to acquire the lock
+    try {
+      const retryRes = await redis.set(lockKey, "1", {
+        nx: true,
+        ex: Math.max(5, Math.min(120, ttlSeconds)),
+      });
+      if (retryRes) {
+        console.debug(`[cache] lock acquired after timeout ${lockKey}`);
+        // Proceed to do the work ourselves
+      } else {
+        // Still can't acquire, return null to avoid indefinite hang
+        console.error(
+          `[cache] failed to acquire lock after timeout ${lockKey}, returning null`,
+        );
+        return { url: null };
+      }
+    } catch (retryErr) {
+      console.error(
+        `[cache] lock retry failed after timeout ${lockKey}`,
+        retryErr instanceof Error ? retryErr : new Error(String(retryErr)),
+      );
+      return { url: null };
+    }
+  } else if (!lockResult.acquired) {
     const cached = lockResult.cachedResult;
     if (cached && typeof cached === "object" && "url" in cached) {
       const cachedUrl = (cached as { url: string | null }).url;
