@@ -118,9 +118,25 @@ export async function acquireLockOrWaitForResult<T = unknown>(options: {
 }
 
 type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
+  /**
+   * Index key for the Redis cache
+   */
   indexKey: string;
+  /**
+   * Lock key for the Redis cache
+   */
   lockKey: string;
-  ttlSeconds: number;
+  /**
+   * TTL in seconds for the Redis cache
+   * @default 604800 (7 days)
+   */
+  ttlSeconds?: number;
+  /**
+   * Grace period in seconds to add to blob deletion schedule beyond Redis TTL
+   * This prevents race conditions where Redis expires but blob hasn't been pruned yet
+   * @default 86400 (24 hours)
+   */
+  blobGracePeriodSeconds?: number;
   /**
    * Produce and upload the asset, returning { url, key } and any metrics to attach
    */
@@ -139,8 +155,14 @@ type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
 export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
   options: CachedAssetOptions<T>,
 ): Promise<{ url: string | null }> {
-  const { indexKey, lockKey, ttlSeconds, produceAndUpload, purgeQueue } =
-    options;
+  const {
+    indexKey,
+    lockKey,
+    ttlSeconds = 604800, // 7 days default
+    blobGracePeriodSeconds = 86400, // 24 hours default
+    produceAndUpload,
+    purgeQueue,
+  } = options;
 
   // 1) Check index
   try {
@@ -209,6 +231,8 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
   try {
     const produced = await produceAndUpload();
     const expiresAtMs = Date.now() + ttlSeconds * 1000;
+    // Schedule blob deletion AFTER Redis TTL + grace period to prevent race conditions
+    const blobDeleteAtMs = expiresAtMs + blobGracePeriodSeconds * 1000;
 
     try {
       // Use pipeline to batch cache writes and lock release
@@ -220,7 +244,7 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
       );
       if (purgeQueue && produced.url) {
         pipeline.zadd(ns("purge", purgeQueue), {
-          score: expiresAtMs,
+          score: blobDeleteAtMs, // Use extended deadline for blob deletion
           member: produced.url,
         });
       }

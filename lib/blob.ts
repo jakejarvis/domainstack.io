@@ -15,7 +15,7 @@ export async function putBlob(options: {
     access: "public",
     contentType: options.contentType,
     cacheControlMaxAge: options.cacheControlMaxAge,
-    allowOverwrite: true,
+    allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
   });
 
   return {
