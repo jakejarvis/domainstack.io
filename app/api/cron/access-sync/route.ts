@@ -51,11 +51,19 @@ export async function GET(request: Request) {
     // Atomically read and delete each key to avoid race conditions
     // Using GETDEL ensures that if a fresh write happens after we read,
     // it won't be deleted (it will create a new key that survives this sync)
-    const updates: Array<{ name: string; accessedAt: Date }> = [];
-
+    // Batch read-and-delete all keys using pipeline for efficiency
+    const pipeline = redis.pipeline();
     for (const key of keys) {
-      // Atomic read-and-delete
-      const timestamp = await redis.getdel<number>(key);
+      pipeline.getdel(key);
+    }
+    const results = await pipeline.exec<Array<number | null>>();
+
+    const updates: Array<{ name: string; accessedAt: Date }> = [];
+    const prefix = "access:domain:";
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const timestamp = results[i];
 
       if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
         continue;
@@ -63,7 +71,6 @@ export async function GET(request: Request) {
 
       // Extract domain name from key: "access:domain:{domain}"
       // Use prefix detection to preserve domains with colons (e.g., example.com:8080)
-      const prefix = "access:domain:";
       if (!key.startsWith(prefix)) {
         continue;
       }
