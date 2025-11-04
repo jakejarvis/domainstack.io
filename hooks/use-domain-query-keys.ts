@@ -16,6 +16,7 @@ export function useDomainQueryKeys(domain: string) {
       certificates: trpc.domain.certificates.queryOptions({ domain }).queryKey,
       headers: trpc.domain.headers.queryOptions({ domain }).queryKey,
       seo: trpc.domain.seo.queryOptions({ domain }).queryKey,
+      favicon: trpc.domain.favicon.queryOptions({ domain }).queryKey,
     }),
     [trpc, domain],
   );

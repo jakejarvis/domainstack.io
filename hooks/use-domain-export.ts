@@ -11,6 +11,7 @@ type QueryKeys = {
   certificates: readonly unknown[];
   headers: readonly unknown[];
   seo: readonly unknown[];
+  favicon: readonly unknown[];
 };
 
 /**
@@ -64,6 +65,7 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
       const certificatesData = queryClient.getQueryData(queryKeys.certificates);
       const headersData = queryClient.getQueryData(queryKeys.headers);
       const seoData = queryClient.getQueryData(queryKeys.seo);
+      const faviconData = queryClient.getQueryData(queryKeys.favicon);
 
       // Aggregate into export format
       const exportData = {
@@ -73,6 +75,8 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
         certificates: certificatesData ?? null,
         headers: headersData ?? null,
         seo: seoData ?? null,
+        favicon:
+          (faviconData as { url: string | null } | undefined)?.url ?? null,
       };
 
       // Export with partial data (graceful degradation)
