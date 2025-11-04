@@ -3,7 +3,7 @@ import { getDomainTld, lookup } from "rdapper";
 import { recordDomainAccess } from "@/lib/access";
 import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
 import { db } from "@/lib/db/client";
-import { findDomainByName, upsertDomain } from "@/lib/db/repos/domains";
+import { upsertDomain } from "@/lib/db/repos/domains";
 import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
 import {
   getRegistrationStatusFromCache,
@@ -11,6 +11,7 @@ import {
   upsertRegistration,
 } from "@/lib/db/repos/registrations";
 import {
+  domains,
   providers,
   registrationNameservers,
   registrations,
@@ -92,103 +93,107 @@ export async function getRegistration(domain: string): Promise<Registration> {
   }
 
   // ===== Fast path 2: Postgres cache for full registration data =====
-  const existingDomain = await findDomainByName(registrable);
-  if (existingDomain) {
-    // Fetch registration with provider data using LEFT JOIN
-    const existing = await db
+  // Single query to fetch domain + registration + provider
+  const existing = await db
+    .select({
+      domainId: domains.id,
+      domainName: domains.name,
+      domainTld: domains.tld,
+      domainUnicodeName: domains.unicodeName,
+      registration: registrations,
+      providerName: providers.name,
+      providerDomain: providers.domain,
+    })
+    .from(domains)
+    .innerJoin(registrations, eq(registrations.domainId, domains.id))
+    .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
+    .where(eq(domains.name, registrable))
+    .limit(1);
+
+  if (existing[0] && existing[0].registration.expiresAt > now) {
+    const row = existing[0];
+
+    // Fetch nameservers separately (reasonable due to 1-to-many relationship)
+    const ns = await db
       .select({
-        registration: registrations,
-        providerName: providers.name,
-        providerDomain: providers.domain,
+        host: registrationNameservers.host,
+        ipv4: registrationNameservers.ipv4,
+        ipv6: registrationNameservers.ipv6,
       })
-      .from(registrations)
-      .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
-      .where(eq(registrations.domainId, existingDomain.id))
-      .limit(1);
+      .from(registrationNameservers)
+      .where(eq(registrationNameservers.domainId, row.domainId));
 
-    if (existing[0] && existing[0].registration.expiresAt > now) {
-      const { registration: row, providerName, providerDomain } = existing[0];
+    const registrarProvider = row.providerName
+      ? { name: row.providerName, domain: row.providerDomain ?? null }
+      : { name: null as string | null, domain: null as string | null };
 
-      // Fetch nameservers separately (reasonable due to 1-to-many relationship)
-      const ns = await db
-        .select({
-          host: registrationNameservers.host,
-          ipv4: registrationNameservers.ipv4,
-          ipv6: registrationNameservers.ipv6,
-        })
-        .from(registrationNameservers)
-        .where(eq(registrationNameservers.domainId, existingDomain.id));
+    const contactsArray: RegistrationContacts = row.registration.contacts ?? [];
 
-      const registrarProvider = providerName
-        ? { name: providerName, domain: providerDomain ?? null }
-        : { name: null as string | null, domain: null as string | null };
+    const response: Registration = {
+      domain: registrable,
+      tld: row.domainTld,
+      isRegistered: row.registration.isRegistered,
+      privacyEnabled: row.registration.privacyEnabled ?? false,
+      unicodeName: row.domainUnicodeName,
+      punycodeName: row.domainName,
+      registry: row.registration.registry ?? undefined,
+      // registrar object is optional; we don't persist its full details, so omit
+      statuses: row.registration.statuses ?? undefined,
+      creationDate: row.registration.creationDate?.toISOString(),
+      updatedDate: row.registration.updatedDate?.toISOString(),
+      expirationDate: row.registration.expirationDate?.toISOString(),
+      deletionDate: row.registration.deletionDate?.toISOString(),
+      transferLock: row.registration.transferLock ?? undefined,
+      nameservers:
+        ns.length > 0
+          ? ns.map((n) => ({ host: n.host, ipv4: n.ipv4, ipv6: n.ipv6 }))
+          : undefined,
+      contacts: contactsArray,
+      whoisServer: row.registration.whoisServer ?? undefined,
+      rdapServers: row.registration.rdapServers ?? undefined,
+      source: row.registration.source ?? null,
+      registrarProvider,
+    };
 
-      const contactsArray: RegistrationContacts = row.contacts ?? [];
-
-      const response: Registration = {
-        domain: registrable,
-        tld: existingDomain.tld,
-        isRegistered: row.isRegistered,
-        privacyEnabled: row.privacyEnabled ?? false,
-        unicodeName: existingDomain.unicodeName,
-        punycodeName: existingDomain.name,
-        registry: row.registry ?? undefined,
-        // registrar object is optional; we don't persist its full details, so omit
-        statuses: row.statuses ?? undefined,
-        creationDate: row.creationDate?.toISOString(),
-        updatedDate: row.updatedDate?.toISOString(),
-        expirationDate: row.expirationDate?.toISOString(),
-        deletionDate: row.deletionDate?.toISOString(),
-        transferLock: row.transferLock ?? undefined,
-        nameservers:
-          ns.length > 0
-            ? ns.map((n) => ({ host: n.host, ipv4: n.ipv4, ipv6: n.ipv6 }))
-            : undefined,
-        contacts: contactsArray,
-        whoisServer: row.whoisServer ?? undefined,
-        rdapServers: row.rdapServers ?? undefined,
-        source: row.source ?? null,
-        registrarProvider,
-      };
-
-      // Update Redis fast-path cache to keep it hot for subsequent requests
-      // Fire-and-forget to avoid blocking the response on Redis latency
-      const ttl = row.isRegistered
-        ? REDIS_TTL_REGISTERED
-        : REDIS_TTL_UNREGISTERED;
-      setRegistrationStatusInCache(registrable, row.isRegistered, ttl).catch(
-        (err) => {
-          console.warn(
-            `[registration] failed to warm Redis cache for ${registrable}:`,
-            err instanceof Error ? err : new Error(String(err)),
-          );
-        },
+    // Update Redis fast-path cache to keep it hot for subsequent requests
+    // Fire-and-forget to avoid blocking the response on Redis latency
+    const ttl = row.registration.isRegistered
+      ? REDIS_TTL_REGISTERED
+      : REDIS_TTL_UNREGISTERED;
+    setRegistrationStatusInCache(
+      registrable,
+      row.registration.isRegistered,
+      ttl,
+    ).catch((err) => {
+      console.warn(
+        `[registration] failed to warm Redis cache for ${registrable}:`,
+        err instanceof Error ? err : new Error(String(err)),
       );
+    });
 
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
+    // Record access for decay calculation
+    recordDomainAccess(registrable);
 
-      // Schedule background revalidation using cached access time
-      try {
-        await scheduleSectionIfEarlier(
-          "registration",
-          registrable,
-          row.expiresAt.getTime(),
-          now,
-        );
-      } catch (err) {
-        console.warn(
-          `[registration] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      }
-
-      console.info(
-        `[registration] ok cached ${registrable} registered=${row.isRegistered} registrar=${registrarProvider.name}`,
+    // Schedule background revalidation using cached access time
+    try {
+      await scheduleSectionIfEarlier(
+        "registration",
+        registrable,
+        row.registration.expiresAt.getTime(),
+        now,
       );
-
-      return response;
+    } catch (err) {
+      console.warn(
+        `[registration] schedule failed for ${registrable}`,
+        err instanceof Error ? err : new Error(String(err)),
+      );
     }
+
+    console.info(
+      `[registration] ok cached ${registrable} registered=${row.registration.isRegistered} registrar=${registrarProvider.name}`,
+    );
+
+    return response;
   }
 
   // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
