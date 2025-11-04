@@ -172,8 +172,13 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
       if (typeof cachedUrl === "string") {
         return { url: cachedUrl };
       }
+      // Treat null as cache miss - allows retry on transient failures
+      // Null will still be written to cache with lock to prevent concurrent retries
       if (cachedUrl === null) {
-        return { url: null };
+        console.debug(
+          `[cache] null result in cache ${indexKey}, treating as miss for retry`,
+        );
+        // Fall through to retry logic
       }
     }
   } catch (err) {

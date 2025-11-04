@@ -97,9 +97,36 @@ describe("cached assets", () => {
     expect(stored?.url).toBe("https://cdn/new.webp");
   });
 
-  it("propagates not_found via cached null", async () => {
+  it("retries when null is cached (treats null as miss)", async () => {
     const indexKey = ns("test", "asset4");
     const lockKey = ns("lock", "test", "asset4");
+
+    // Pre-seed cache with null result (simulating previous failure)
+    const { redis } = await import("@/lib/redis");
+    await redis.set(indexKey, {
+      url: null,
+      expiresAtMs: Date.now() + 1000,
+    });
+
+    let produceCalled = false;
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      lockKey,
+      ttlSeconds: 60,
+      produceAndUpload: async () => {
+        produceCalled = true;
+        return { url: "https://cdn/recovered.webp" };
+      },
+    });
+
+    // Should have retried and returned new URL
+    expect(result).toEqual({ url: "https://cdn/recovered.webp" });
+    expect(produceCalled).toBe(true);
+  });
+
+  it("writes null to cache to prevent concurrent retries", async () => {
+    const indexKey = ns("test", "asset5");
+    const lockKey = ns("lock", "test", "asset5");
 
     const result = await getOrCreateCachedAsset<{ source: string }>({
       indexKey,
@@ -109,6 +136,13 @@ describe("cached assets", () => {
     });
 
     expect(result).toEqual({ url: null });
+
+    // Null should still be written to cache
+    const { redis } = await import("@/lib/redis");
+    const stored = (await redis.get(indexKey)) as {
+      url?: string | null;
+    } | null;
+    expect(stored?.url).toBe(null);
   });
 
   it("schedules blob deletion with grace period beyond Redis TTL", async () => {
