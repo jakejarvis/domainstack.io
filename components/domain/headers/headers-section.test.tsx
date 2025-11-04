@@ -33,4 +33,27 @@ describe("HeadersSection", () => {
     render(<HeadersSection data={null} />);
     expect(screen.getByText(/No HTTP headers detected/i)).toBeInTheDocument();
   });
+
+  it("renders location header with link to destination domain", () => {
+    const data = [{ name: "location", value: "https://www.example.com/path" }];
+    render(<HeadersSection data={data} />);
+    expect(screen.getByText("location")).toBeInTheDocument();
+    expect(
+      screen.getByText("https://www.example.com/path"),
+    ).toBeInTheDocument();
+
+    // Check that the link is rendered with correct href
+    const link = screen.getByTitle("View report for example.com");
+    expect(link).toHaveAttribute("href", "/example.com");
+  });
+
+  it("renders location header without link for relative URLs", () => {
+    const data = [{ name: "location", value: "/relative/path" }];
+    render(<HeadersSection data={data} />);
+    expect(screen.getByText("location")).toBeInTheDocument();
+    expect(screen.getByText("/relative/path")).toBeInTheDocument();
+
+    // Should not have a link for relative URLs
+    expect(screen.queryByTitle(/View report for/)).not.toBeInTheDocument();
+  });
 });

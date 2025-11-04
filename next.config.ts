@@ -41,6 +41,7 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
     sourcemaps: {
       enabled: true,
     },
+    verbose: false, // https://posthog.com/questions/is-there-a-way-to-log-less
   });
 }
 

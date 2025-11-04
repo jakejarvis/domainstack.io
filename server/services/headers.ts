@@ -136,6 +136,7 @@ function normalize(h: HttpHeader[]): HttpHeader[] {
     "x-powered-by",
     "cache-control",
     "permissions-policy",
+    "location",
   ]);
   const normalized = h.map((hdr) => ({
     name: hdr.name.trim().toLowerCase(),
