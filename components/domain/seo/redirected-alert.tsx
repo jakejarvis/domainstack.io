@@ -20,7 +20,10 @@ export function RedirectedAlert({
     const src = domain.replace(/^www\./i, "").toLowerCase();
     if (dest === src) return null;
     return (
-      <Alert {...props}>
+      <Alert
+        {...props}
+        className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10"
+      >
         <Milestone aria-hidden="true" />
         <AlertDescription>
           <p className="inline-flex items-center gap-1 text-[13px]">
