@@ -1,6 +1,5 @@
 import { getStatusCode } from "@readme/http-status-codes";
 import { eq } from "drizzle-orm";
-import { recordDomainAccess } from "@/lib/access";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -51,9 +50,6 @@ export async function probeHeaders(
       (h) => (h.expiresAt?.getTime?.() ?? 0) > nowMs,
     );
     if (fresh) {
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
-
       const normalized = normalize(
         existing.map((h) => ({ name: h.name, value: h.value })),
       );
@@ -103,9 +99,6 @@ export async function probeHeaders(
         fetchedAt: now,
         expiresAt,
       });
-
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
 
       try {
         await scheduleSectionIfEarlier(

@@ -1,7 +1,6 @@
 import z from "zod";
 import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { rateLimitMiddleware } from "@/lib/ratelimit";
 import {
   CertificatesSchema,
   DnsResolveResultSchema,
@@ -21,7 +20,7 @@ import { getPricingForTld } from "@/server/services/pricing";
 import { getRegistration } from "@/server/services/registration";
 import { getOrCreateScreenshotBlobUrl } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
-import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+import { createTRPCRouter, domainProcedure } from "@/trpc/init";
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -32,57 +31,48 @@ const DomainInputSchema = z
   });
 
 export const domainRouter = createTRPCRouter({
-  registration: publicProcedure
+  registration: domainProcedure
     .meta({ service: "registration" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(RegistrationSchema)
     .query(({ input }) => getRegistration(input.domain)),
-  pricing: publicProcedure
+  pricing: domainProcedure
     .meta({ service: "pricing" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(PricingSchema)
     .query(({ input }) => getPricingForTld(input.domain)),
-  dns: publicProcedure
+  dns: domainProcedure
     .meta({ service: "dns" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(DnsResolveResultSchema)
     .query(({ input }) => resolveAll(input.domain)),
-  hosting: publicProcedure
+  hosting: domainProcedure
     .meta({ service: "hosting" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(HostingSchema)
     .query(({ input }) => detectHosting(input.domain)),
-  certificates: publicProcedure
+  certificates: domainProcedure
     .meta({ service: "certs" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(CertificatesSchema)
     .query(({ input }) => getCertificates(input.domain)),
-  headers: publicProcedure
+  headers: domainProcedure
     .meta({ service: "headers" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(HttpHeadersResponseSchema)
     .query(({ input }) => probeHeaders(input.domain)),
-  seo: publicProcedure
+  seo: domainProcedure
     .meta({ service: "seo" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(SeoResponseSchema)
     .query(({ input }) => getSeo(input.domain)),
-  favicon: publicProcedure
+  favicon: domainProcedure
     .meta({ service: "favicon" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(StorageUrlSchema)
     .query(({ input }) => getOrCreateFaviconBlobUrl(input.domain)),
-  screenshot: publicProcedure
+  screenshot: domainProcedure
     .meta({ service: "screenshot" })
-    .use(rateLimitMiddleware)
     .input(DomainInputSchema)
     .output(StorageUrlSchema)
     .query(({ input }) => getOrCreateScreenshotBlobUrl(input.domain)),

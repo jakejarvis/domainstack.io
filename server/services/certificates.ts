@@ -1,6 +1,5 @@
 import tls from "node:tls";
 import { eq } from "drizzle-orm";
-import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { replaceCertificates } from "@/lib/db/repos/certificates";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -55,9 +54,6 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
     );
     if (fresh) {
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
-
       const out: Certificate[] = existing.map((c) => ({
         issuer: c.issuer,
         subject: c.subject,
@@ -169,9 +165,6 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         fetchedAt: now,
         expiresAt: nextDue,
       });
-
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
 
       try {
         const dueAtMs = nextDue.getTime();

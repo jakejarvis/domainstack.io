@@ -1,13 +1,28 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  applyDecayToTtl,
-  getDecayMultiplier,
-  shouldStopRevalidation,
-} from "./access";
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 describe("access-decay", () => {
   const now = new Date("2024-01-15T00:00:00Z");
   const msPerDay = 24 * 60 * 60 * 1000;
+
+  // Import functions needed for these tests
+  let getDecayMultiplier: typeof import("./access").getDecayMultiplier;
+  let shouldStopRevalidation: typeof import("./access").shouldStopRevalidation;
+  let applyDecayToTtl: typeof import("./access").applyDecayToTtl;
+
+  beforeAll(async () => {
+    const accessModule = await import("./access");
+    getDecayMultiplier = accessModule.getDecayMultiplier;
+    shouldStopRevalidation = accessModule.shouldStopRevalidation;
+    applyDecayToTtl = accessModule.applyDecayToTtl;
+  });
 
   beforeEach(() => {
     // Use fake timers to control Date.now() and new Date()

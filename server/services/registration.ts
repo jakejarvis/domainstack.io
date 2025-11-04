@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { getDomainTld, lookup } from "rdapper";
-import { recordDomainAccess } from "@/lib/access";
 import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { upsertDomain } from "@/lib/db/repos/domains";
@@ -79,7 +78,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
   // If Redis cache says unregistered, return minimal Registration object
   if (cachedStatus === false) {
     console.info(`[registration] cache hit unregistered ${registrable}`);
-    recordDomainAccess(registrable);
     return {
       domain: registrable,
       tld: getDomainTld(registrable) ?? "",
@@ -171,9 +169,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       );
     });
 
-    // Record access for decay calculation
-    recordDomainAccess(registrable);
-
     // Schedule background revalidation using cached access time
     try {
       await scheduleSectionIfEarlier(
@@ -213,9 +208,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       console.info(
         `[registration] unavailable ${registrable} reason=${error || "unknown"}`,
       );
-
-      // Record access for decay calculation (even for unavailable domains)
-      recordDomainAccess(registrable);
 
       // Return minimal unregistered response for TLDs without WHOIS/RDAP
       // (We can't determine registration status without WHOIS/RDAP access)
@@ -261,9 +253,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
     console.info(
       `[registration] ok ${registrable} unregistered (not persisted)`,
     );
-
-    // Record access for decay calculation
-    recordDomainAccess(registrable);
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -371,9 +360,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       ipv6: n.ipv6 ?? [],
     })),
   });
-
-  // Record access for decay calculation
-  recordDomainAccess(registrable);
 
   // Schedule background revalidation
   try {

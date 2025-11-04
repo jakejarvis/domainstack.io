@@ -14,8 +14,14 @@ import { ns, redis } from "@/lib/redis";
 import type { Section } from "@/lib/schemas";
 
 /**
- * Record that a domain was accessed (for decay calculation).
+ * Record that a domain was accessed by a user (for decay calculation).
  * Fire-and-forget pattern: does not throw on errors.
+ *
+ * Keys expire after 90 minutes (5400s) as a safety net, since the
+ * access-sync cron runs hourly and uses GETDEL to atomically read and delete.
+ *
+ * IMPORTANT: Only call this for real user requests, NOT for background
+ * revalidation jobs (Inngest). Background jobs should not reset decay timers.
  *
  * @param domain - The domain name that was accessed
  */
@@ -24,7 +30,7 @@ export function recordDomainAccess(domain: string): void {
   // Errors are logged but don't break the service
   const key = ns("access", "domain", domain);
   const timestamp = Date.now();
-  redis.set(key, timestamp).catch((err) => {
+  redis.set(key, timestamp, { ex: 5400 }).catch((err) => {
     console.warn(
       `[access] failed to record ${domain}`,
       err instanceof Error ? err.message : String(err),

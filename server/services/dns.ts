@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { recordDomainAccess } from "@/lib/access";
 import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { isCloudflareIp } from "@/lib/cloudflare";
 import { USER_AGENT } from "@/lib/constants";
@@ -230,9 +229,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
     const resolverHint = rows[0]?.resolver;
     const sorted = sortDnsRecordsByType(assembled, types);
     if (allFreshAcrossTypes) {
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
-
       console.info(
         `[dns] cache hit ${registrable} types=${freshTypes.join(",")}`,
       );
@@ -289,9 +285,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
         >;
         // Persist to Postgres only if domain exists (i.e., is registered)
         if (existingDomain) {
-          // Record access for decay calculation
-          recordDomainAccess(registrable);
-
           await replaceDns({
             domainId: existingDomain.id,
             resolver: pinnedProvider.key,
@@ -343,9 +336,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
           },
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
-
-        // Record access for decay calculation (partial refresh path)
-        recordDomainAccess(registrable);
 
         console.info(
           `[dns] ok partial ${registrable} counts=${JSON.stringify(counts)} resolver=${pinnedProvider.key} duration=${durationByProvider[pinnedProvider.key]}ms`,
@@ -429,9 +419,6 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
           fetchedAt: now,
           recordsByType: recordsByTypeToPersist,
         });
-
-        // Record access for decay calculation
-        recordDomainAccess(registrable);
 
         try {
           const times = Object.values(recordsByTypeToPersist)

@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { recordDomainAccess } from "@/lib/access";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
@@ -68,9 +67,6 @@ export async function detectHosting(domain: string): Promise<Hosting> {
       .limit(1);
     const row = existing[0];
     if (row && (row.expiresAt?.getTime?.() ?? 0) > nowMs) {
-      // Record access for decay calculation
-      recordDomainAccess(registrable);
-
       const info: Hosting = {
         hostingProvider: {
           name: row.hostingProviderName ?? null,
@@ -253,9 +249,6 @@ export async function detectHosting(domain: string): Promise<Hosting> {
       fetchedAt: now,
       expiresAt,
     });
-
-    // Record access for decay calculation
-    recordDomainAccess(registrable);
 
     try {
       await scheduleSectionIfEarlier(

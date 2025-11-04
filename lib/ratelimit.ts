@@ -5,11 +5,20 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { waitUntil } from "@vercel/functions";
 import { getRateLimits, type ServiceLimits } from "@/lib/edge-config";
 import { redis } from "@/lib/redis";
-import { t } from "@/trpc/init";
 
 export type ServiceName = keyof ServiceLimits;
 
-export async function assertRateLimit(service: ServiceName, ip: string) {
+/**
+ * Assert that a rate limit is not exceeded for a given service and IP address.
+ * @param service - The service name
+ * @param ip - The IP address
+ * @returns The rate limit result
+ * @throws TRPCError if the rate limit is exceeded
+ */
+export async function assertRateLimit(
+  service: ServiceName,
+  ip: string,
+): Promise<{ limit: number; remaining: number; reset: number }> {
   const limits = await getRateLimits();
 
   // Fail open: if no limits configured or Edge Config fails, skip rate limiting
@@ -64,10 +73,3 @@ export async function assertRateLimit(service: ServiceName, ip: string) {
 
   return { limit: res.limit, remaining: res.remaining, reset: res.reset };
 }
-
-export const rateLimitMiddleware = t.middleware(async ({ ctx, next, meta }) => {
-  const service = (meta?.service ?? "") as ServiceName;
-  if (!service || !ctx.ip) return next();
-  await assertRateLimit(service, ctx.ip);
-  return next();
-});

@@ -9,9 +9,9 @@ import {
 } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
+import { errorToastLink } from "@/components/trpc-error-toast-link";
 import { TRPCProvider as Provider } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
-import { errorToastLink } from "@/trpc/error-toast-link";
 import { makeQueryClient } from "@/trpc/query-client";
 
 let browserQueryClient: ReturnType<typeof makeQueryClient> | undefined;
