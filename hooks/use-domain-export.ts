@@ -1,5 +1,5 @@
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { captureClient } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
@@ -20,12 +20,18 @@ type QueryKeys = {
 export function useDomainExport(domain: string, queryKeys: QueryKeys) {
   const queryClient = useQueryClient();
   const [allDataLoaded, setAllDataLoaded] = useState(false);
+  const queryKeysRef = useRef(queryKeys);
+
+  // Update ref when queryKeys change
+  useEffect(() => {
+    queryKeysRef.current = queryKeys;
+  }, [queryKeys]);
 
   // Check if all section data is loaded in cache
   useEffect(() => {
     // Check if all queries have data and schedule state update
     const checkAndUpdateDataStatus = () => {
-      const hasAllData = Object.values(queryKeys).every(
+      const hasAllData = Object.values(queryKeysRef.current).every(
         (key) => queryClient.getQueryData(key) !== undefined,
       );
       // Use TanStack Query's notifyManager to schedule state update in the next batch
@@ -44,7 +50,7 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
     checkAndUpdateDataStatus();
 
     return unsubscribe;
-  }, [queryClient, queryKeys]);
+  }, [queryClient]); // Only resubscribe if queryClient changes
 
   // Export handler that reads all data from React Query cache
   const handleExport = useCallback(() => {
