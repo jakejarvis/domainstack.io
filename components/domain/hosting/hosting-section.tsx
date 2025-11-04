@@ -2,8 +2,7 @@
 
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
-import dynamic from "next/dynamic";
-import { MapSkeleton } from "@/components/domain/hosting/map-skeleton";
+import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { Section } from "@/components/domain/section";
@@ -18,15 +17,6 @@ import {
 import type { Hosting } from "@/lib/schemas";
 import { sections } from "@/lib/sections-meta";
 import { cn } from "@/lib/utils";
-
-const HostingMap = dynamic(
-  () =>
-    import("@/components/domain/hosting/hosting-map").then((m) => m.HostingMap),
-  {
-    ssr: false,
-    loading: () => <MapSkeleton />,
-  },
-);
 
 function formatLocation(geo: Hosting["geo"]): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
