@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CertificateSchema } from "../domain/certificates";
 import { DnsRecordSchema } from "../domain/dns";
 import { HostingSchema } from "../domain/hosting";
-import { HttpHeadersSchema } from "../domain/http";
+import { HttpHeadersResponseSchema } from "../domain/http";
 import { RegistrationSchema } from "../domain/registration";
 import { SeoResponseSchema } from "../domain/seo";
 
@@ -28,7 +28,7 @@ export const DomainExportSchema = z.object({
     geo: h.geo,
   })).nullish(),
   certificates: z.array(CertificateSchema.omit({ caProvider: true })).nullish(),
-  headers: HttpHeadersSchema.nullish(),
+  headers: HttpHeadersResponseSchema.nullish(),
   seo: SeoResponseSchema.omit({
     preview: true,
     source: true,

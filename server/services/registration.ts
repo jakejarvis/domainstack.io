@@ -242,9 +242,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
     throw err;
   }
 
-  // Log raw rdapper record for observability (safe; already public data)
-  console.debug(`[registration] rdapper result for ${registrable}`, record);
-
   // Cache the registration status (true/false) in Redis for fast lookups
   // Fire-and-forget to avoid blocking the response on Redis latency
   const ttl = record.isRegistered

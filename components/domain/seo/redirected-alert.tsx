@@ -26,7 +26,7 @@ export function RedirectedAlert({
             We followed a redirect to{" "}
             <a
               href={`/${encodeURIComponent(dest)}`}
-              className="mx-px font-medium text-foreground/90 underline underline-offset-3"
+              className="mx-px font-medium text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
             >
               {dest}
             </a>

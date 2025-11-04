@@ -6,7 +6,7 @@ import {
   CertificatesSchema,
   DnsResolveResultSchema,
   HostingSchema,
-  HttpHeadersSchema,
+  HttpHeadersResponseSchema,
   PricingSchema,
   RegistrationSchema,
   SeoResponseSchema,
@@ -66,7 +66,7 @@ export const domainRouter = createTRPCRouter({
     .meta({ service: "headers" })
     .use(rateLimitMiddleware)
     .input(DomainInputSchema)
-    .output(HttpHeadersSchema)
+    .output(HttpHeadersResponseSchema)
     .query(({ input }) => probeHeaders(input.domain)),
   seo: publicProcedure
     .meta({ service: "seo" })

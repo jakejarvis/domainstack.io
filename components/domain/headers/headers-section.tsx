@@ -1,10 +1,11 @@
 "use client";
 
-import { Logs, Search } from "lucide-react";
+import { ExternalLink, Info, Logs, Search } from "lucide-react";
 import Link from "next/link";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { Section } from "@/components/domain/section";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
   EmptyDescription,
@@ -12,23 +13,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { normalizeDomainInput } from "@/lib/domain";
-import type { HttpHeader } from "@/lib/schemas";
+import type { HttpHeadersResponse } from "@/lib/schemas";
 import { sections } from "@/lib/sections-meta";
-
-const IMPORTANT_HEADERS = new Set([
-  "strict-transport-security",
-  "content-security-policy",
-  "content-security-policy-report-only",
-  "x-frame-options",
-  "x-content-type-options",
-  "referrer-policy",
-  "server",
-  "x-powered-by",
-  "cache-control",
-  "permissions-policy",
-  "location",
-]);
 
 /**
  * Extract domain from a Location header value.
@@ -49,40 +37,73 @@ export function HeadersSection({
   data,
 }: {
   domain?: string;
-  data?: HttpHeader[] | null;
+  data?: HttpHeadersResponse | null;
 }) {
+  const headers = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
+  const status = data?.status;
+  const statusMessage = data?.statusMessage;
+
   return (
     <Section {...sections.headers}>
-      {data && data.length > 0 ? (
-        <KeyValueGrid colsDesktop={2}>
-          {data.map((h, index) => {
-            const isLocation = h.name?.toLowerCase() === "location";
-            const locationDomain = isLocation
-              ? extractDomainFromLocation(h.value)
-              : null;
+      {headers && headers.length > 0 ? (
+        <div className="space-y-4">
+          {status !== 200 && (
+            <Alert>
+              <Info aria-hidden="true" />
+              <AlertDescription>
+                <p className="inline-flex items-center gap-1 text-[13px]">
+                  Server returned{" "}
+                  <a
+                    href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/${status}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex items-center gap-1 text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
+                  >
+                    <span className="font-medium">
+                      {status}
+                      {statusMessage ? ` ${statusMessage}` : ""}
+                    </span>
+                    <ExternalLink
+                      className="!h-3.5 !w-3.5"
+                      aria-hidden="true"
+                    />
+                  </a>
+                  <span>.</span>
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
 
-            return (
-              <KeyValue
-                key={`header-${h.name}-${index}`}
-                label={h.name}
-                value={h.value}
-                copyable
-                highlight={IMPORTANT_HEADERS.has(h.name?.toLowerCase() ?? "")}
-                suffix={
-                  locationDomain ? (
-                    <Link
-                      href={`/${locationDomain}`}
-                      className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
-                      title={`View report for ${locationDomain}`}
-                    >
-                      <Search className="h-4 w-4" />
-                    </Link>
-                  ) : undefined
-                }
-              />
-            );
-          })}
-        </KeyValueGrid>
+          <KeyValueGrid colsDesktop={2}>
+            {headers.map((h, index) => {
+              const isLocation = h.name?.toLowerCase() === "location";
+              const locationDomain = isLocation
+                ? extractDomainFromLocation(h.value)
+                : null;
+
+              return (
+                <KeyValue
+                  key={`header-${h.name}-${index}`}
+                  label={h.name}
+                  value={h.value}
+                  copyable
+                  highlight={IMPORTANT_HEADERS.has(h.name?.toLowerCase() ?? "")}
+                  suffix={
+                    locationDomain ? (
+                      <Link
+                        href={`/${locationDomain}`}
+                        className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
+                        title={`View report for ${locationDomain}`}
+                      >
+                        <Search className="h-4 w-4" />
+                      </Link>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
+          </KeyValueGrid>
+        </div>
       ) : (
         <Empty className="border border-dashed">
           <EmptyHeader>

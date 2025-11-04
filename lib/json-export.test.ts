@@ -50,7 +50,11 @@ describe("exportDomainData", () => {
       dns: null,
       hosting: null,
       certificates: [],
-      headers: [],
+      headers: {
+        headers: [],
+        status: 200,
+        statusMessage: "OK",
+      },
     });
 
     expect(createObjectURL).toHaveBeenCalled();

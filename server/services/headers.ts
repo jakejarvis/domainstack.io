@@ -1,5 +1,7 @@
+import { getStatusCode } from "@readme/http-status-codes";
 import { eq } from "drizzle-orm";
 import { recordDomainAccess } from "@/lib/access";
+import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
@@ -8,9 +10,11 @@ import { ttlForHeaders } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { scheduleSectionIfEarlier } from "@/lib/schedule";
-import type { HttpHeader } from "@/lib/schemas";
+import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
 
-export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
+export async function probeHeaders(
+  domain: string,
+): Promise<HttpHeadersResponse> {
   const url = `https://${domain}/`;
   console.debug(`[headers] start ${domain}`);
 
@@ -31,11 +35,17 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
         .select({
           name: httpHeaders.name,
           value: httpHeaders.value,
+          status: httpHeaders.status,
           expiresAt: httpHeaders.expiresAt,
         })
         .from(httpHeaders)
         .where(eq(httpHeaders.domainId, existingDomain.id))
-    : ([] as Array<{ name: string; value: string; expiresAt: Date | null }>);
+    : ([] as Array<{
+        name: string;
+        value: string;
+        status: number;
+        expiresAt: Date | null;
+      }>);
   if (existing.length > 0) {
     const fresh = existing.every(
       (h) => (h.expiresAt?.getTime?.() ?? 0) > nowMs,
@@ -47,10 +57,21 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
       const normalized = normalize(
         existing.map((h) => ({ name: h.name, value: h.value })),
       );
+      // Get status from first header (all have same status)
+      const cachedStatus = existing[0].status;
+      // Get status message
+      let statusMessage: string | undefined;
+      try {
+        const statusInfo = getStatusCode(cachedStatus);
+        statusMessage = statusInfo.message;
+      } catch {
+        statusMessage = undefined;
+      }
+
       console.info(
-        `[headers] cache hit ${registrable} count=${normalized.length}`,
+        `[headers] cache hit ${registrable} status=${cachedStatus} count=${normalized.length}`,
       );
-      return normalized;
+      return { headers: normalized, status: cachedStatus, statusMessage };
     }
   }
 
@@ -78,6 +99,7 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
       await replaceHeaders({
         domainId: existingDomain.id,
         headers: normalized,
+        status: final.status,
         fetchedAt: now,
         expiresAt,
       });
@@ -102,7 +124,17 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     console.info(
       `[headers] ok ${registrable} status=${final.status} count=${normalized.length}`,
     );
-    return normalized;
+
+    // Get status message
+    let statusMessage: string | undefined;
+    try {
+      const statusInfo = getStatusCode(final.status);
+      statusMessage = statusInfo.message;
+    } catch {
+      statusMessage = undefined;
+    }
+
+    return { headers: normalized, status: final.status, statusMessage };
   } catch (err) {
     // Classify error: DNS resolution failures are expected for domains without A/AAAA records
     const isDnsError = isExpectedDnsError(err);
@@ -119,33 +151,20 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
     }
 
     // Return empty on failure without caching to avoid long-lived negatives
-    return [];
+    return { headers: [], status: 0, statusMessage: undefined };
   }
 }
 
 function normalize(h: HttpHeader[]): HttpHeader[] {
   // Normalize header names (trim + lowercase) then sort important first
-  const important = new Set([
-    "strict-transport-security",
-    "content-security-policy",
-    "content-security-policy-report-only",
-    "x-frame-options",
-    "x-content-type-options",
-    "referrer-policy",
-    "server",
-    "x-powered-by",
-    "cache-control",
-    "permissions-policy",
-    "location",
-  ]);
   const normalized = h.map((hdr) => ({
     name: hdr.name.trim().toLowerCase(),
     value: hdr.value,
   }));
   return normalized.sort(
     (a, b) =>
-      Number(important.has(b.name)) - Number(important.has(a.name)) ||
-      a.name.localeCompare(b.name),
+      Number(IMPORTANT_HEADERS.has(b.name)) -
+        Number(IMPORTANT_HEADERS.has(a.name)) || a.name.localeCompare(b.name),
   );
 }
 

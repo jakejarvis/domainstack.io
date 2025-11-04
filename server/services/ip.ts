@@ -13,11 +13,13 @@ export async function lookupIpMeta(ip: string): Promise<{
   console.debug(`[ip] start lookup for ${ip}`);
   try {
     const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`);
-    if (!res.ok) throw new Error("ipwho.is fail");
+    if (!res.ok) {
+      console.error(`[ip] error looking up ${ip}`, res.statusText);
+      throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
+    }
 
     // https://ipwhois.io/documentation
-    // https://chatgpt.com/s/t_68ed0de1e01881919c2545fe40ffc7ac
-    const j = (await res.json()) as {
+    const data = (await res.json()) as {
       ip?: string;
       success?: boolean;
       type?: "IPv4" | "IPv6";
@@ -56,24 +58,23 @@ export async function lookupIpMeta(ip: string): Promise<{
       };
     };
 
-    console.debug(`[ip] ipwho.is result for ${ip}`, j);
-
-    const org = j.connection?.org?.trim();
-    const isp = j.connection?.isp?.trim();
+    const org = data.connection?.org?.trim();
+    const isp = data.connection?.isp?.trim();
     const owner = (org || isp || "").trim() || null;
-    const domain = (j.connection?.domain || "").trim() || null;
+    const domain = (data.connection?.domain || "").trim() || null;
     const geo = {
-      city: j.city || "",
-      region: j.region || "",
-      country: j.country || "",
-      country_code: j.country_code || "",
-      lat: typeof j.latitude === "number" ? j.latitude : null,
-      lon: typeof j.longitude === "number" ? j.longitude : null,
+      city: data.city || "",
+      region: data.region || "",
+      country: data.country || "",
+      country_code: data.country_code || "",
+      lat: typeof data.latitude === "number" ? data.latitude : null,
+      lon: typeof data.longitude === "number" ? data.longitude : null,
     };
 
     console.info(
       `[ip] ok ${ip} owner=${owner || "none"} domain=${domain || "none"}`,
     );
+
     return { geo, owner, domain };
   } catch (err) {
     console.warn(

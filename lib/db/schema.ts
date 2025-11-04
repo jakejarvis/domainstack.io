@@ -225,6 +225,7 @@ export const httpHeaders = pgTable(
       .references(() => domains.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     value: text("value").notNull(),
+    status: integer("status").notNull().default(200),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },

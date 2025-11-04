@@ -76,11 +76,16 @@ describe("probeHeaders", () => {
 
     const { probeHeaders } = await import("./headers");
     const out1 = await probeHeaders("example.com");
-    expect(out1.length).toBeGreaterThan(0);
+    expect(out1.headers.length).toBeGreaterThan(0);
+    expect(out1.status).toBe(200);
+    expect(out1.statusMessage).toBe("OK");
     // In Vitest v4, vi.spyOn on a mock returns the same mock, so clear its history
     fetchMock.mockClear();
     const out2 = await probeHeaders("example.com");
-    expect(out2.length).toBe(out1.length);
+    expect(out2.headers.length).toBe(out1.headers.length);
+    expect(out2.status).toBe(200);
+    // Cached responses now include statusMessage since we store status in DB
+    expect(out2.statusMessage).toBe("OK");
     expect(fetchMock).not.toHaveBeenCalled();
     fetchMock.mockRestore();
   });
@@ -106,9 +111,12 @@ describe("probeHeaders", () => {
       probeHeaders("example.com"),
       probeHeaders("example.com"),
     ]);
-    expect(a.length).toBeGreaterThan(0);
-    expect(b.length).toBe(a.length);
-    expect(c.length).toBe(a.length);
+    expect(a.headers.length).toBeGreaterThan(0);
+    expect(b.headers.length).toBe(a.headers.length);
+    expect(c.headers.length).toBe(a.headers.length);
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+    expect(c.status).toBe(200);
     // Only assert that all calls returned equivalent results; caching is validated elsewhere
     fetchMock.mockRestore();
   });
@@ -119,7 +127,8 @@ describe("probeHeaders", () => {
     });
     const { probeHeaders } = await import("./headers");
     const out = await probeHeaders("fail.invalid");
-    expect(out.length).toBe(0);
+    expect(out.headers.length).toBe(0);
+    expect(out.status).toBe(0);
     fetchMock.mockRestore();
   });
 
@@ -153,7 +162,8 @@ describe("probeHeaders", () => {
     const out = await probeHeaders("no-web-hosting.invalid");
 
     // Should return empty array
-    expect(out.length).toBe(0);
+    expect(out.headers.length).toBe(0);
+    expect(out.status).toBe(0);
 
     // Should log as debug (not error) since this is expected
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -187,7 +197,8 @@ describe("probeHeaders", () => {
     const out = await probeHeaders("timeout.invalid");
 
     // Should return empty array
-    expect(out.length).toBe(0);
+    expect(out.headers.length).toBe(0);
+    expect(out.status).toBe(0);
 
     // Should log as error since this is unexpected
     expect(consoleErrorSpy).toHaveBeenCalledWith(

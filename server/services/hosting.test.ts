@@ -97,10 +97,14 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue([
-      { name: "server", value: "Vercel" },
-      { name: "x-vercel-id", value: "abc" },
-    ]);
+    (probeHeaders as unknown as Mock).mockResolvedValue({
+      headers: [
+        { name: "server", value: "Vercel" },
+        { name: "x-vercel-id", value: "abc" },
+      ],
+      status: 200,
+      statusMessage: "OK",
+    });
     (lookupIpMeta as unknown as Mock).mockResolvedValue({
       geo: {
         city: "San Francisco",
@@ -208,7 +212,11 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue([]);
+    (probeHeaders as unknown as Mock).mockResolvedValue({
+      headers: [],
+      status: 200,
+      statusMessage: "OK",
+    });
 
     await detectHosting("web-hosting.example");
 
@@ -226,7 +234,11 @@ describe("detectHosting", () => {
       records: [{ type: "A", name: "x", value: "9.9.9.9", ttl: 60 }],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue([]);
+    (probeHeaders as unknown as Mock).mockResolvedValue({
+      headers: [],
+      status: 200,
+      statusMessage: "OK",
+    });
     (lookupIpMeta as unknown as Mock).mockResolvedValue({
       geo: {
         city: "",
@@ -268,7 +280,11 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue([]);
+    (probeHeaders as unknown as Mock).mockResolvedValue({
+      headers: [],
+      status: 200,
+      statusMessage: "OK",
+    });
 
     const result = await detectHosting("fallbacks.example");
     expect(result.emailProvider.domain).toBe("example.com");
@@ -299,7 +315,11 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue([]);
+    (probeHeaders as unknown as Mock).mockResolvedValue({
+      headers: [],
+      status: 200,
+      statusMessage: "OK",
+    });
 
     // Create domain record first (simulates registered domain)
     const { db } = await import("@/lib/db/client");
