@@ -6,7 +6,7 @@ import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
 import { ttlForHeaders } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { fetchWithTimeout } from "@/lib/fetch";
+import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { scheduleSectionIfEarlier } from "@/lib/schedule";
 import type { HttpHeader } from "@/lib/schemas";
 
@@ -57,9 +57,10 @@ export async function probeHeaders(domain: string): Promise<HttpHeader[]> {
   const REQUEST_TIMEOUT_MS = 5000;
   try {
     // Use GET to ensure provider-identifying headers are present on first load.
-    const final = await fetchWithTimeout(
+    // Only follow redirects between apex/www or http/https versions
+    const final = await fetchWithSelectiveRedirects(
       url,
-      { method: "GET", redirect: "follow" },
+      { method: "GET" },
       { timeoutMs: REQUEST_TIMEOUT_MS },
     );
 
