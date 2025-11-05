@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Bookmarklet } from "@/components/bookmarklet";
+import { BookmarkletDialog } from "@/components/bookmarklet-dialog";
 import { GithubStars } from "@/components/github-stars";
 import { HeaderSearch } from "@/components/header-search";
 import { Logo } from "@/components/logo";
@@ -41,7 +41,7 @@ export function AppHeader() {
         </Suspense>
         {/* The bookmarklet is practially uselesss on mobile */}
         <Separator orientation="vertical" className="!h-4 hidden sm:block" />
-        <Bookmarklet className="hidden sm:block" />
+        <BookmarkletDialog className="hidden sm:block" />
         {/* Theme toggle is always shown */}
         <Separator orientation="vertical" className="!h-4" />
         <ThemeToggle />

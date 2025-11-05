@@ -5,6 +5,7 @@ import {
   CornerLeftUp,
   Layers2,
   MousePointerClick,
+  Play,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -18,12 +19,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { VideoPlayer, VideoPlayerContent } from "@/components/ui/video-player";
 import { cn } from "@/lib/utils";
 
 // retrieve this from the last segment of the icloud.com URL provided when sharing a shortcut
 const APPLE_SHORTCUT_ID = "fa17677a0d6440c2a195e608305d6f2b";
 
-export function Bookmarklet({ className }: { className?: string }) {
+export function BookmarkletDialog({ className }: { className?: string }) {
   // Capture the origin after mount to avoid SSR issues and ensure we have the correct origin
   const [origin, setOrigin] = useState<string>("");
 
@@ -105,19 +107,59 @@ export function Bookmarklet({ className }: { className?: string }) {
             </span>{" "}
             option will now appear when you share a webpage from Safari.
           </p>
-          <a
-            // https://www.icloud.com/shortcuts/fa17677a0d6440c2a195e608305d6f2b
-            href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
-            target="_blank"
-            rel="noopener"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "lg" }),
-              "!px-3",
-            )}
-          >
-            <Layers2 />
-            <span>Add Shortcut</span>
-          </a>
+          <div className="flex gap-2">
+            <a
+              // https://www.icloud.com/shortcuts/fa17677a0d6440c2a195e608305d6f2b
+              href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
+              target="_blank"
+              rel="noopener"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "!px-3",
+              )}
+            >
+              <Layers2 />
+              <span>Add Shortcut</span>
+            </a>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="!px-3"
+                  aria-label="Watch demo"
+                >
+                  <Play />
+                  <span>Watch Demo</span>
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="max-h-[90vh] overflow-y-auto border-border/80 dark:border-border/50">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>Shortcut Demo</DialogTitle>
+                  <DialogDescription>
+                    See how the Apple Shortcut works to inspect domains from
+                    Safari.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <VideoPlayer>
+                  <VideoPlayerContent
+                    className="h-full object-contain"
+                    crossOrigin=""
+                    preload="auto"
+                    slot="media"
+                    src="https://res.cloudinary.com/dhema2uls/video/upload/v1762374050/shortcut_demo_mn2egd.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                  />
+                </VideoPlayer>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
