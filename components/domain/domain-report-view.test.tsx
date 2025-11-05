@@ -47,6 +47,11 @@ vi.mock("@/lib/trpc/client", () => ({
           queryKey: ["seo", input],
         }),
       },
+      favicon: {
+        queryOptions: (input: { domain: string }) => ({
+          queryKey: ["favicon", input],
+        }),
+      },
     },
   }),
 }));
@@ -198,6 +203,9 @@ describe("DomainReportView Export", () => {
     queryClient.setQueryData(["certificates", { domain }], []);
     queryClient.setQueryData(["headers", { domain }], []);
     queryClient.setQueryData(["seo", { domain }], { title: "Test" });
+    queryClient.setQueryData(["favicon", { domain }], {
+      url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
+    });
 
     render(
       <QueryClientProvider client={queryClient}>
@@ -232,6 +240,8 @@ describe("DomainReportView Export", () => {
       certificates: [],
       headers: [],
       seo: { title: "Test" },
+      favicon:
+        "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
     });
   });
 
