@@ -54,8 +54,16 @@ export async function headThenGet(
 }
 
 /**
- * Checks if a redirect from one URL to another is allowed.
- * Only allows redirects between apex/www or http/https versions of the same domain.
+ * Determines if a redirect should be followed based on selective redirect rules.
+ * Allows redirects:
+ * 1. Between apex/www versions (e.g., example.com -> www.example.com)
+ * 2. Between http/https schemes
+ * 3. To different paths on the same domain (e.g., www.example.com -> www.example.com/homepage)
+ * 4. With different query parameters (e.g., example.com -> example.com/?ref=social)
+ * 5. With different hash fragments (e.g., example.com -> example.com/#content)
+ *
+ * Blocks redirects:
+ * - To different domains (after normalizing www)
  */
 function isAllowedRedirect(fromUrl: string, toUrl: string): boolean {
   try {
@@ -72,16 +80,8 @@ function isAllowedRedirect(fromUrl: string, toUrl: string): boolean {
       return false;
     }
 
-    // Allow if path, search, and hash are the same (only scheme or www prefix changed)
-    const isSchemeLike =
-      from.pathname === to.pathname &&
-      from.search === to.search &&
-      from.hash === to.hash;
-    if (isSchemeLike) {
-      return true;
-    }
-
-    return false;
+    // Allow: same domain, any path, query params, or hash
+    return true;
   } catch {
     // If URL parsing fails, don't allow redirect
     return false;
@@ -89,8 +89,8 @@ function isAllowedRedirect(fromUrl: string, toUrl: string): boolean {
 }
 
 /**
- * Fetch with manual redirect handling that only follows redirects between
- * apex/www or http/https versions of the same domain.
+ * Fetch with manual redirect handling that only follows redirects to the same domain
+ * (allowing apex/www, http/https, path, query param, and hash changes).
  */
 export async function fetchWithSelectiveRedirects(
   input: RequestInfo | URL,

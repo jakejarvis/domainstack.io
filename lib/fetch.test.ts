@@ -271,64 +271,102 @@ describe("lib/fetch", () => {
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it("does NOT follow redirect to different path", async () => {
+    it("follows redirect to different path on same domain", async () => {
       const redirectRes = createResponse({
         status: 301,
         headers: new Headers({ location: "https://example.com/other-path" }),
       });
+      const finalRes = createResponse({ ok: true, status: 200 });
 
-      globalThis.fetch = vi.fn(
-        async () => redirectRes,
-      ) as unknown as typeof fetch;
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(redirectRes)
+        .mockResolvedValueOnce(finalRes);
+      globalThis.fetch = mock as unknown as typeof fetch;
 
       const out = await fetchWithSelectiveRedirects(
         "https://example.com/",
         {},
         { timeoutMs: 50 },
       );
-      expect(out).toBe(redirectRes);
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect(out).toBe(finalRes);
+      expect(mock).toHaveBeenCalledTimes(2);
     });
 
-    it("does NOT follow redirect with query params", async () => {
+    it("follows redirect with query params", async () => {
       const redirectRes = createResponse({
         status: 301,
         headers: new Headers({
           location: "https://example.com/?utm_source=test",
         }),
       });
+      const finalRes = createResponse({ ok: true, status: 200 });
 
-      globalThis.fetch = vi.fn(
-        async () => redirectRes,
-      ) as unknown as typeof fetch;
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(redirectRes)
+        .mockResolvedValueOnce(finalRes);
+      globalThis.fetch = mock as unknown as typeof fetch;
 
       const out = await fetchWithSelectiveRedirects(
         "https://example.com/",
         {},
         { timeoutMs: 50 },
       );
-      expect(out).toBe(redirectRes);
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect(out).toBe(finalRes);
+      expect(mock).toHaveBeenCalledTimes(2);
     });
 
-    it("handles relative redirect URLs", async () => {
+    it("follows redirect with hash fragment", async () => {
       const redirectRes = createResponse({
         status: 301,
-        headers: new Headers({ location: "/" }),
+        headers: new Headers({
+          location: "https://example.com/#section",
+        }),
       });
+      const finalRes = createResponse({ ok: true, status: 200 });
 
-      globalThis.fetch = vi.fn(
-        async () => redirectRes,
-      ) as unknown as typeof fetch;
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(redirectRes)
+        .mockResolvedValueOnce(finalRes);
+      globalThis.fetch = mock as unknown as typeof fetch;
 
       const out = await fetchWithSelectiveRedirects(
-        "https://www.example.com/path",
+        "https://example.com/",
         {},
         { timeoutMs: 50 },
       );
-      // Relative redirect to "/" changes the path (/path -> /), so should NOT be followed
-      expect(out).toBe(redirectRes);
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect(out).toBe(finalRes);
+      expect(mock).toHaveBeenCalledTimes(2);
+    });
+
+    it("follows relative redirect URLs to different path", async () => {
+      const redirectRes = createResponse({
+        status: 301,
+        headers: new Headers({ location: "/main" }),
+      });
+      const finalRes = createResponse({ ok: true, status: 200 });
+
+      const mock = vi
+        .fn()
+        .mockResolvedValueOnce(redirectRes)
+        .mockResolvedValueOnce(finalRes);
+      globalThis.fetch = mock as unknown as typeof fetch;
+
+      const out = await fetchWithSelectiveRedirects(
+        "https://www.example.com/",
+        {},
+        { timeoutMs: 50 },
+      );
+      expect(out).toBe(finalRes);
+      expect(mock).toHaveBeenCalledTimes(2);
+      // Second call should use the absolute URL
+      expect(mock).toHaveBeenNthCalledWith(
+        2,
+        "https://www.example.com/main",
+        expect.objectContaining({ redirect: "manual" }),
+      );
     });
 
     it("throws on too many redirects", async () => {
