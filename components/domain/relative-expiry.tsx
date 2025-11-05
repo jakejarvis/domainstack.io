@@ -48,6 +48,7 @@ export function RelativeExpiryString({
           daysUntil <= (dangerDays ?? 0) &&
           "text-red-600 dark:text-red-400",
         daysUntil !== null &&
+          daysUntil > (dangerDays ?? 0) &&
           daysUntil <= (warnDays ?? 0) &&
           "text-amber-600 dark:text-amber-400",
         className,
