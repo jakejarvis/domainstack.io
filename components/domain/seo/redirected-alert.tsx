@@ -26,7 +26,7 @@ export function RedirectedAlert({
       >
         <Milestone aria-hidden="true" />
         <AlertDescription>
-          <p className="inline-flex items-center gap-1 text-[13px]">
+          <p className="text-[13px]">
             We followed a redirect to{" "}
             <Link
               href={`/${encodeURIComponent(dest)}`}
@@ -36,7 +36,7 @@ export function RedirectedAlert({
               <span className="font-medium">{dest}</span>
               <Search className="!h-3.5 !w-3.5" aria-hidden="true" />
             </Link>
-            .
+            {"."}
           </p>
         </AlertDescription>
       </Alert>

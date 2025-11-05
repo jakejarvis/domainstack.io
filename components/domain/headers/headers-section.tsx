@@ -51,7 +51,7 @@ export function HeadersSection({
             <Alert className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
               <Info aria-hidden="true" />
               <AlertDescription>
-                <p className="inline-flex items-center gap-1 text-[13px]">
+                <p className="text-[13px]">
                   Server returned{" "}
                   <a
                     href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/${status}`}
@@ -68,7 +68,7 @@ export function HeadersSection({
                       aria-hidden="true"
                     />
                   </a>
-                  <span>.</span>
+                  {"."}
                 </p>
               </AlertDescription>
             </Alert>
