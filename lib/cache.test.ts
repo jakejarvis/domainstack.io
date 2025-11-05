@@ -97,11 +97,11 @@ describe("cached assets", () => {
     expect(stored?.url).toBe("https://cdn/new.webp");
   });
 
-  it("retries when null is cached (treats null as miss)", async () => {
+  it("retries transient failures (null without notFound flag)", async () => {
     const indexKey = ns("test", "asset4");
     const lockKey = ns("lock", "test", "asset4");
 
-    // Pre-seed cache with null result (simulating previous failure)
+    // Pre-seed cache with null result WITHOUT notFound (simulating transient failure)
     const { redis } = await import("@/lib/redis");
     await redis.set(indexKey, {
       url: null,
@@ -124,25 +124,55 @@ describe("cached assets", () => {
     expect(produceCalled).toBe(true);
   });
 
-  it("writes null to cache to prevent concurrent retries", async () => {
+  it("does NOT retry permanent not found (null with notFound=true)", async () => {
     const indexKey = ns("test", "asset5");
     const lockKey = ns("lock", "test", "asset5");
+
+    // Pre-seed cache with permanent not found
+    const { redis } = await import("@/lib/redis");
+    await redis.set(indexKey, {
+      url: null,
+      notFound: true,
+      expiresAtMs: Date.now() + 1000,
+    });
+
+    let produceCalled = false;
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      lockKey,
+      ttlSeconds: 60,
+      produceAndUpload: async () => {
+        produceCalled = true;
+        return { url: "https://cdn/should-not-call.webp" };
+      },
+    });
+
+    // Should NOT retry and return null immediately
+    expect(result).toEqual({ url: null });
+    expect(produceCalled).toBe(false);
+  });
+
+  it("caches notFound flag when returned by producer", async () => {
+    const indexKey = ns("test", "asset6");
+    const lockKey = ns("lock", "test", "asset6");
 
     const result = await getOrCreateCachedAsset<{ source: string }>({
       indexKey,
       lockKey,
       ttlSeconds: 60,
-      produceAndUpload: async () => ({ url: null }),
+      produceAndUpload: async () => ({ url: null, notFound: true }),
     });
 
     expect(result).toEqual({ url: null });
 
-    // Null should still be written to cache
+    // notFound flag should be stored in cache
     const { redis } = await import("@/lib/redis");
     const stored = (await redis.get(indexKey)) as {
       url?: string | null;
+      notFound?: boolean;
     } | null;
     expect(stored?.url).toBe(null);
+    expect(stored?.notFound).toBe(true);
   });
 
   it("schedules blob deletion with grace period beyond Redis TTL", async () => {

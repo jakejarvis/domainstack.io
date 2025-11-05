@@ -143,6 +143,7 @@ type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
   produceAndUpload: () => Promise<{
     url: string | null;
     key?: string;
+    notFound?: boolean; // true if asset permanently doesn't exist (don't retry)
     metrics?: TProduceMeta;
   }>;
   /**
@@ -166,15 +167,24 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
 
   // 1) Check index
   try {
-    const raw = (await redis.get(indexKey)) as { url?: unknown } | null;
+    const raw = (await redis.get(indexKey)) as {
+      url?: unknown;
+      notFound?: unknown;
+    } | null;
     if (raw && typeof raw === "object") {
       const cachedUrl = (raw as { url?: unknown }).url;
+      const cachedNotFound = (raw as { notFound?: unknown }).notFound;
+
       if (typeof cachedUrl === "string") {
         return { url: cachedUrl };
       }
-      // Treat null as cache miss - allows retry on transient failures
-      // Null will still be written to cache with lock to prevent concurrent retries
+      // Only retry null if it's NOT marked as permanently not found
       if (cachedUrl === null) {
+        if (cachedNotFound === true) {
+          // Permanent not found - don't retry
+          return { url: null };
+        }
+        // Transient failure or legacy null - retry
         console.debug(
           `[cache] null result in cache ${indexKey}, treating as miss for retry`,
         );
@@ -244,7 +254,12 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
       const pipeline = redis.pipeline();
       pipeline.set(
         indexKey,
-        { url: produced.url, key: produced.key, expiresAtMs },
+        {
+          url: produced.url,
+          key: produced.key,
+          notFound: produced.notFound ?? undefined, // Store notFound flag if present
+          expiresAtMs,
+        },
         { ex: ttlSeconds },
       );
       if (purgeQueue && produced.url) {

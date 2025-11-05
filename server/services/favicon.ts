@@ -32,6 +32,8 @@ export async function getOrCreateFaviconBlobUrl(
     purgeQueue: "favicon",
     produceAndUpload: async () => {
       const sources = buildSources(domain);
+      let allNotFound = true; // Track if all sources returned 404/not found
+
       for (const src of sources) {
         try {
           const res = await fetchWithTimeout(
@@ -46,7 +48,13 @@ export async function getOrCreateFaviconBlobUrl(
             },
             { timeoutMs: REQUEST_TIMEOUT_MS },
           );
-          if (!res.ok) continue;
+          if (!res.ok) {
+            // Track if this was a 404 (not found) vs other error
+            if (res.status !== 404) {
+              allNotFound = false; // Server error, timeout, etc. - not a true "not found"
+            }
+            continue;
+          }
           const contentType = res.headers.get("content-type");
           const ab = await res.arrayBuffer();
           const buf = Buffer.from(ab);
@@ -81,10 +89,13 @@ export async function getOrCreateFaviconBlobUrl(
             },
           };
         } catch {
+          // Network error, timeout, etc. - not a true "not found"
+          allNotFound = false;
           // try next source
         }
       }
-      return { url: null };
+      // Return null with notFound flag if ALL sources returned 404
+      return { url: null, notFound: allNotFound };
     },
   });
 }
