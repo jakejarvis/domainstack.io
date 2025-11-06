@@ -1,5 +1,6 @@
 import { getStatusCode } from "@readme/http-status-codes";
 import { eq } from "drizzle-orm";
+import { cache } from "react";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -11,7 +12,14 @@ import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { scheduleSectionIfEarlier } from "@/lib/schedule";
 import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
 
-export async function probeHeaders(
+/**
+ * Probe HTTP headers for a domain with Postgres caching.
+ *
+ * Wrapped in React's cache() for per-request deduplication during SSR,
+ * ensuring multiple components can query headers without triggering
+ * multiple HTTP requests to the target domain.
+ */
+export const probeHeaders = cache(async function probeHeaders(
   domain: string,
 ): Promise<HttpHeadersResponse> {
   const url = `https://${domain}/`;
@@ -134,7 +142,7 @@ export async function probeHeaders(
     // Return empty on failure without caching to avoid long-lived negatives
     return { headers: [], status: 0, statusMessage: undefined };
   }
-}
+});
 
 function normalize(h: HttpHeader[]): HttpHeader[] {
   // Normalize header names (trim + lowercase) then sort important first
