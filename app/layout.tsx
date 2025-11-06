@@ -14,7 +14,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Domainstack — Domain Intelligence Made Easy",
-  description: "Investigate domains with WHOIS, DNS, SSL, headers, and more.",
+  description:
+    "Unlock full domain intelligence in one tool. Instantly view registration history, DNS and SSL records, HTTP headers, hosting & email details, and live SEO signals — all in one clean, fast interface.",
   metadataBase: new URL(BASE_URL),
   alternates: {
     canonical: "/",
