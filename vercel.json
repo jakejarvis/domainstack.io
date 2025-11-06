@@ -7,16 +7,6 @@
       "PUPPETEER_SKIP_DOWNLOAD": "1"
     }
   },
-  "rewrites": [
-    {
-      "source": "/_proxy/ingest/static/:path*",
-      "destination": "https://us-assets.i.posthog.com/static/:path*"
-    },
-    {
-      "source": "/_proxy/ingest/:path*",
-      "destination": "https://us.i.posthog.com/:path*"
-    }
-  ],
   "crons": [
     {
       "path": "/api/cron/due-drain",
