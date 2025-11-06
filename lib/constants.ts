@@ -8,12 +8,23 @@ export const USER_AGENT =
 
 export const REPOSITORY_SLUG = "jakejarvis/domainstack.io";
 
+// Time constants (in seconds)
+const ONE_MINUTE = 60;
+const ONE_HOUR = ONE_MINUTE * 60;
+const ONE_DAY = ONE_HOUR * 24;
+const ONE_WEEK = ONE_DAY * 7;
+
 /**
  * RDAP Bootstrap Registry URL from IANA.
  * This JSON file maps TLDs to their authoritative RDAP servers.
  * @see https://datatracker.ietf.org/doc/html/rfc7484
  */
 export const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
+/**
+ * RDAP Bootstrap cache TTL in seconds.
+ * The bootstrap registry changes very infrequently, so we cache it for 1 week.
+ */
+export const RDAP_BOOTSTRAP_CACHE_TTL_SECONDS = ONE_WEEK;
 
 /**
  * Cloudflare IP Ranges URL.
@@ -21,11 +32,11 @@ export const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
  * @see https://developers.cloudflare.com/api/resources/ips/methods/list/
  */
 export const CLOUDFLARE_IPS_URL = "https://api.cloudflare.com/client/v4/ips";
-
-// Time constants (in seconds)
-const ONE_HOUR = 60 * 60;
-const ONE_DAY = 24 * ONE_HOUR;
-const ONE_WEEK = 7 * ONE_DAY;
+/**
+ * Cloudflare IP Ranges cache TTL in seconds.
+ * The IP ranges change infrequently, so we cache it for 1 week.
+ */
+export const CLOUDFLARE_IPS_CACHE_TTL_SECONDS = 604800; // 1 week
 
 // ===== Blob Storage Cache TTLs =====
 // How long to cache uploaded assets (favicons, screenshots, social images)

@@ -3,12 +3,14 @@ import "server-only";
 import type { BootstrapData } from "rdapper";
 import { cache } from "react";
 import { acquireLockOrWaitForResult } from "@/lib/cache";
-import { RDAP_BOOTSTRAP_URL } from "@/lib/constants";
+import {
+  RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
+  RDAP_BOOTSTRAP_URL,
+} from "@/lib/constants";
 import { redis } from "@/lib/redis";
 
 const CACHE_KEY = "rdap:bootstrap";
 const LOCK_KEY = "rdap:bootstrap:lock";
-const CACHE_TTL_SECONDS = 604800; // 1 week (bootstrap changes very infrequently)
 
 /**
  * Fetch RDAP bootstrap data with Redis caching.
@@ -48,7 +50,7 @@ export const getRdapBootstrapData = cache(async (): Promise<BootstrapData> => {
 
         bootstrap = await res.json();
         await redis.set(CACHE_KEY, bootstrap, {
-          ex: CACHE_TTL_SECONDS,
+          ex: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
         });
         console.info("[rdap-bootstrap] Bootstrap data fetched (not cached)");
       } catch (err) {

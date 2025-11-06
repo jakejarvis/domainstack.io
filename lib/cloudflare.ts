@@ -3,7 +3,10 @@ import "server-only";
 import * as ipaddr from "ipaddr.js";
 import { cache } from "react";
 import { acquireLockOrWaitForResult } from "@/lib/cache";
-import { CLOUDFLARE_IPS_URL } from "@/lib/constants";
+import {
+  CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
+  CLOUDFLARE_IPS_URL,
+} from "@/lib/constants";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { redis } from "@/lib/redis";
 
@@ -14,7 +17,6 @@ export interface CloudflareIpRanges {
 
 const CACHE_KEY = "cloudflare:ip-ranges";
 const LOCK_KEY = "cloudflare:ip-ranges:lock";
-const CACHE_TTL_SECONDS = 604800; // 1 week
 
 let lastLoadedIpv4Parsed: Array<[ipaddr.IPv4, number]> | undefined;
 let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
@@ -101,7 +103,7 @@ const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
       try {
         ranges = await fetchCloudflareIpRanges();
         await redis.set(CACHE_KEY, ranges, {
-          ex: CACHE_TTL_SECONDS,
+          ex: CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
         });
         parseAndCacheRanges(ranges);
         console.info("[cloudflare-ips] IP ranges fetched (not cached)");
