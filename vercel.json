@@ -3,14 +3,24 @@
   "build": {
     "env": {
       "ENABLE_EXPERIMENTAL_COREPACK": "1",
-      "PUPPETEER_SKIP_DOWNLOAD": "1",
-      "NPM_CONFIG_NODE_LINKER": "hoisted"
+      "NPM_CONFIG_NODE_LINKER": "hoisted",
+      "PUPPETEER_SKIP_DOWNLOAD": "1"
     }
   },
+  "rewrites": [
+    {
+      "source": "/_proxy/ingest/static/:path*",
+      "destination": "https://us-assets.i.posthog.com/static/:path*"
+    },
+    {
+      "source": "/_proxy/ingest/:path*",
+      "destination": "https://us.i.posthog.com/:path*"
+    }
+  ],
   "crons": [
     {
       "path": "/api/cron/due-drain",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/access-sync",
@@ -22,7 +32,7 @@
     },
     {
       "path": "/api/cron/pricing-refresh",
-      "schedule": "0 0 * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }
