@@ -90,7 +90,7 @@ function TooltipContent({
   const mode: HybridMode = ctx?.mode ?? "tooltip";
 
   const baseClasses =
-    "group fade-in-0 zoom-in-95 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit animate-in whitespace-normal break-words max-w-[calc(100vw-2rem)] rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-xs outline-hidden data-[state=closed]:animate-out";
+    "group fade-in-0 zoom-in-95 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit animate-in whitespace-normal break-words max-w-[calc(100vw-2rem)] rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-xs outline-hidden data-[state=closed]:animate-out selection:bg-background selection:text-foreground";
   const originClass =
     mode === "tooltip"
       ? "origin-(--radix-tooltip-content-transform-origin)"
