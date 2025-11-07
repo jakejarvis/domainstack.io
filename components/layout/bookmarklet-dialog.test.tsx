@@ -11,7 +11,7 @@ vi.mock("@/components/ui/video-player", () => ({
   VideoPlayerContent: () => <div data-testid="video-content" />,
 }));
 
-import { BookmarkletDialog } from "@/components/bookmarklet-dialog";
+import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 
 describe("Bookmarklet", () => {
   it("sets Inspect Domain href to a javascript: url", async () => {

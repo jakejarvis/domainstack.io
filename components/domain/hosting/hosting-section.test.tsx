@@ -12,7 +12,7 @@ vi.mock("next/dynamic", () => ({
   },
 }));
 
-vi.mock("@/components/favicon", () => ({
+vi.mock("@/components/domain/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
 }));
 

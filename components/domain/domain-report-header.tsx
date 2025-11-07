@@ -2,9 +2,9 @@
 
 import { ExternalLink } from "lucide-react";
 import { ExportButton } from "@/components/domain/export-button";
+import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
-import { Favicon } from "@/components/favicon";
 import { captureClient } from "@/lib/analytics/client";
 
 interface DomainReportHeaderProps {

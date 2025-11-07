@@ -1,25 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { BookmarkletDialog } from "@/components/bookmarklet-dialog";
-import { GithubStars } from "@/components/github-stars";
-import { HeaderSearch } from "@/components/header-search";
+import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
+import { GithubStars } from "@/components/layout/github-stars";
+import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
+import { HeaderSearch } from "@/components/layout/header-search";
+import { HeaderSearchSkeleton } from "@/components/layout/header-search-skeleton";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Logo } from "@/components/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
-
-function GithubStarsSkeleton() {
-  return (
-    <div className="h-[32px] w-[60px] animate-pulse rounded-md bg-muted/50" />
-  );
-}
-
-function HeaderSearchSkeleton() {
-  return (
-    <div className="flex flex-1 justify-center">
-      <div className="h-10 w-full max-w-2xl animate-pulse rounded-md bg-muted/50" />
-    </div>
-  );
-}
 
 export function AppHeader() {
   return (

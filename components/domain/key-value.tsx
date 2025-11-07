@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyButton } from "@/components/domain/copy-button";
+import { CopyButton } from "@/components/copy-button";
 import {
   Tooltip,
   TooltipContent,

@@ -6,11 +6,11 @@ import {
   GraduationCap,
   HatGlasses,
 } from "lucide-react";
+import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
-import { Favicon } from "@/components/favicon";
 import {
   Tooltip,
   TooltipContent,

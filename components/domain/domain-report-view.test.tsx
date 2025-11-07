@@ -96,7 +96,7 @@ vi.mock("@/components/domain/export-button", () => ({
   ),
 }));
 
-vi.mock("@/components/favicon", () => ({
+vi.mock("@/components/domain/favicon", () => ({
   Favicon: () => <div>Favicon</div>,
 }));
 

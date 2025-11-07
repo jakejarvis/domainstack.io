@@ -4,13 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSuggestionsClient } from "@/components/domain/domain-suggestions-client";
-import { HomeSearchProvider } from "@/components/home-search-context";
+import { HomeSearchProvider } from "@/components/layout/home-search-context";
 
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/components/favicon", () => ({
+vi.mock("@/components/domain/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) =>
     createElement("span", {
       "data-slot": "favicon",

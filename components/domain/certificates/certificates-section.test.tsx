@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
-vi.mock("@/components/favicon", () => ({
+vi.mock("@/components/domain/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => (
     <div data-testid="favicon" data-slot="favicon" data-domain={domain} />
   ),

@@ -1,6 +1,6 @@
 import { DomainSuggestions } from "@/components/domain/domain-suggestions";
-import { HomeHero } from "@/components/home-hero";
-import { HomeSearchSection } from "@/components/home-search-section";
+import { HomeHero } from "@/components/layout/home-hero";
+import { HomeSearchSection } from "@/components/layout/home-search-section";
 
 export default function Home() {
   return (

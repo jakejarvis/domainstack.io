@@ -2,8 +2,8 @@
 
 import { X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Favicon } from "@/components/favicon";
-import { useHomeSearch } from "@/components/home-search-context";
+import { Favicon } from "@/components/domain/favicon";
+import { useHomeSearch } from "@/components/layout/home-search-context";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,

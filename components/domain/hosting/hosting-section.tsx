@@ -2,11 +2,11 @@
 
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
+import { Favicon } from "@/components/domain/favicon";
 import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { Section } from "@/components/domain/section";
-import { Favicon } from "@/components/favicon";
 import {
   Empty,
   EmptyDescription,
