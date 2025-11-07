@@ -173,6 +173,11 @@ export default async function OGImage({
     {
       ...size,
       fonts,
+      headers: {
+        "Cache-Control": "public, max-age=604800, stale-while-revalidate=3600",
+        "Vercel-CDN-Cache-Control":
+          "max-age=604800, stale-while-revalidate=3600",
+      },
     },
   );
 }

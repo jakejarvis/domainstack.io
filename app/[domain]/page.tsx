@@ -20,7 +20,9 @@ export async function generateMetadata({
   const normalized = normalizeDomainInput(decoded);
 
   return {
-    title: `${normalized} — Domain Report`,
+    title: {
+      absolute: `${normalized} — Domain Report`,
+    },
     description: `Domainstack report for ${normalized}: WHOIS lookup, DNS & SSL scan, HTTP headers, hosting & email provider data, and SEO metadata.`,
     alternates: {
       canonical: `/${normalized}`,

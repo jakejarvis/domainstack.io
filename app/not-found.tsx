@@ -1,4 +1,5 @@
 import { FileQuestionMark } from "lucide-react";
+import type { Metadata } from "next";
 import { DomainSearch } from "@/components/domain/domain-search";
 import {
   Empty,
@@ -8,6 +9,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+
+export const metadata: Metadata = {
+  title: "Not Found",
+  description: "The page you're looking for doesn't exist.",
+};
 
 export default function NotFound() {
   return (
