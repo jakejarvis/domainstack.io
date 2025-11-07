@@ -38,10 +38,10 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
     personalApiKey: process.env.POSTHOG_API_KEY,
     envId: process.env.POSTHOG_ENV_ID,
     host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+    logLevel: "error",
     sourcemaps: {
       enabled: true,
     },
-    verbose: false, // https://posthog.com/questions/is-there-a-way-to-log-less
   });
 }
 
