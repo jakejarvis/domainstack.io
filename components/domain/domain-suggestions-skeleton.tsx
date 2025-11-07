@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +12,7 @@ export function DomainSuggestionsSkeleton({
   return (
     <div className={cn("relative", className)}>
       <div className="overflow-hidden py-0.5">
-        <div className="flex gap-2 px-0.5 pb-2">
+        <div className="flex gap-2 pl-0.5">
           {Array.from({ length: count }).map((_, i) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: fine for skeletons
@@ -19,10 +20,10 @@ export function DomainSuggestionsSkeleton({
               className="flex h-8 flex-shrink-0 animate-pulse items-center gap-2 rounded-md bg-muted/15 px-3 ring-1 ring-border/60"
             >
               {/* Favicon placeholder */}
-              <div className="size-4 rounded bg-muted/50" />
+              <Skeleton className="size-4" />
               {/* Domain text placeholder with varying widths */}
-              <div
-                className="h-3.5 rounded bg-muted/50"
+              <Skeleton
+                className="h-3.5"
                 style={{
                   width: `${80 + ((i * 20) % 60)}px`,
                 }}

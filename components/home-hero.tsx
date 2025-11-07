@@ -62,13 +62,13 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
         Inspect any domain&rsquo;s
       </span>
       <motion.span
-        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md sm:rounded-xl sm:px-3 sm:py-1"
+        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-border/60 backdrop-blur will-change-[width,transform] supports-[backdrop-filter]:backdrop-blur-md sm:rounded-xl sm:px-3 sm:py-1"
         aria-live="polite"
         aria-atomic="true"
         initial={false}
         animate={{ width: measuredWidth ?? undefined }}
         transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-        style={{ willChange: "width", width: measuredWidth ?? undefined }}
+        style={{ width: measuredWidth ?? undefined }}
       >
         <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
           <span className="-translate-x-1/2 absolute left-1/2">
@@ -83,7 +83,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
                   ease: [0.22, 1, 0.36, 1],
                   duration: 0.5,
                 }}
-                className="inline-block transform-gpu will-change-transform"
+                className="inline-block will-change-[transform,opacity]"
               >
                 {rotatingWords[index]}
               </motion.span>
