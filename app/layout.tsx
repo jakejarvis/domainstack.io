@@ -23,13 +23,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  formatDetection: {
-    telephone: false,
-    date: false,
-    address: false,
-    email: false,
-    url: false,
-  },
 };
 
 export default function RootLayout({
@@ -43,6 +36,14 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable} touch-manipulation`}
       suppressHydrationWarning
     >
+      <head>
+        <link
+          rel="search"
+          href="/opensearch.xml"
+          type="application/opensearchdescription+xml"
+          title="Domainstack"
+        />
+      </head>
       <body className="min-h-svh overscroll-none font-sans tabular-nums antialiased">
         <Providers>
           {/* Solid background for light/dark modes */}
