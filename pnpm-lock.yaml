@@ -105,8 +105,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       inngest:
-        specifier: ^3.45.0
-        version: 3.45.0(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.12)
+        specifier: ^3.45.1
+        version: 3.45.1(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.12)
       ipaddr.js:
         specifier: ^2.2.0
         version: 2.2.0
@@ -3793,8 +3793,8 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
 
-  inngest@3.45.0:
-    resolution: {integrity: sha512-gGKzA/mNMxEm5bdSpgCAfearQlbmMF2GpUnPyO/KkkV/UZei+qJt8PcuvGCkY/AFLxBHBQX5IQMhpzGwlJIFWg==}
+  inngest@3.45.1:
+    resolution: {integrity: sha512-wDBfp1GqmCfTF4/s3FraEk/JwGK4XrYmfnnsGB5t0iiX9uiB4NN55fJ7eNvx29HoHs4QCfr3Q79egEHg9B5UFA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@sveltejs/kit': '>=1.27.3'
@@ -3807,7 +3807,7 @@ packages:
       koa: '>=2.14.2'
       next: '>=12.0.0'
       typescript: '>=5.8.0'
-      zod: '>=3.24.0'
+      zod: ^3.25.0 || ^4.0.0
     peerDependenciesMeta:
       '@sveltejs/kit':
         optional: true
@@ -7644,7 +7644,7 @@ snapshots:
 
   '@types/pg-pool@2.0.6':
     dependencies:
-      '@types/pg': 8.15.5
+      '@types/pg': 8.15.6
 
   '@types/pg@8.15.5':
     dependencies:
@@ -8670,7 +8670,7 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  inngest@3.45.0(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.12):
+  inngest@3.45.1(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(typescript@5.9.3)(zod@4.1.12):
     dependencies:
       '@bufbuild/protobuf': 2.10.0
       '@inngest/ai': 0.1.7
