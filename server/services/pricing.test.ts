@@ -330,10 +330,10 @@ describe("pricing service", () => {
       const cloudflareCached = await redis.get("pricing:cloudflare");
       expect(cloudflareCached).toBeNull();
 
-      // Verify TTL is short (should be 5 seconds)
+      // Verify TTL is short (should be 60 seconds per simplified pattern)
       const porkbunTtl = await redis.ttl("pricing:porkbun");
       expect(porkbunTtl).toBeGreaterThan(0);
-      expect(porkbunTtl).toBeLessThanOrEqual(5);
+      expect(porkbunTtl).toBeLessThanOrEqual(60);
     });
   });
 });

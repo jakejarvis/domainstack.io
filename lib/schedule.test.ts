@@ -54,7 +54,6 @@ describe("schedule", () => {
           domain: "example.com",
           section: "dns",
         },
-        id: "revalidate:dns:example.com",
         ts: expect.any(Number),
       });
     });
@@ -70,7 +69,6 @@ describe("schedule", () => {
           data: expect.objectContaining({
             domain: "example.com",
           }),
-          id: "revalidate:dns:example.com",
         }),
       );
     });

@@ -1,0 +1,1 @@
+ALTER TABLE "seo" ADD COLUMN "preview_image_uploaded_url" text;

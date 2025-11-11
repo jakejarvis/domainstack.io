@@ -1,5 +1,4 @@
 import { getDomainTld } from "rdapper";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { ns, redis } from "@/lib/redis";
 import type { Pricing } from "@/lib/schemas";
 
@@ -20,8 +19,6 @@ interface PricingProvider {
   name: string;
   /** Redis key for cached pricing data */
   cacheKey: string;
-  /** Redis key for distributed lock */
-  lockKey: string;
   /** How long to cache the pricing data (seconds) */
   cacheTtlSeconds: number;
   /** Fetch pricing data from the registrar API */
@@ -35,59 +32,35 @@ interface PricingProvider {
 
 /**
  * Generic function to fetch and cache pricing data from any provider.
+ * Uses simple fail-open caching without distributed locks.
  */
 async function fetchProviderPricing(
   provider: PricingProvider,
 ): Promise<RegistrarPricingResponse | null> {
-  let payload = await redis.get<RegistrarPricingResponse>(provider.cacheKey);
+  // Try cache first
+  const cached = await redis
+    .get<RegistrarPricingResponse>(provider.cacheKey)
+    .catch(() => null);
+  if (cached) return cached;
 
-  if (!payload) {
-    const lock = await acquireLockOrWaitForResult<RegistrarPricingResponse>({
-      lockKey: provider.lockKey,
-      resultKey: provider.cacheKey,
-      lockTtl: 30,
-      pollIntervalMs: 250,
-      maxWaitMs: 20_000,
-    });
-
-    if (lock.acquired) {
-      try {
-        payload = await provider.fetchPricing();
-        await redis.set(provider.cacheKey, payload, {
-          ex: provider.cacheTtlSeconds,
-        });
-        console.info(`[pricing] fetch ok ${provider.name} (not cached)`);
-      } catch (err) {
-        console.error(
-          `[pricing] fetch error ${provider.name}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-        // Write a short-TTL negative cache to prevent hammering during outages
-        try {
-          await redis.set(provider.cacheKey, null, { ex: 5 });
-        } catch (cacheErr) {
-          console.warn(
-            `[pricing] negative cache failed ${provider.name}`,
-            cacheErr,
-          );
-        }
-      } finally {
-        // Always release the lock so waiters don't stall
-        try {
-          await redis.del(provider.lockKey);
-        } catch (delErr) {
-          console.warn(
-            `[pricing] lock release failed ${provider.name}`,
-            delErr,
-          );
-        }
-      }
-    } else {
-      payload = lock.cachedResult;
-    }
+  // Fetch fresh pricing
+  try {
+    const payload = await provider.fetchPricing();
+    // Cache for next time (fire-and-forget)
+    redis
+      .set(provider.cacheKey, payload, { ex: provider.cacheTtlSeconds })
+      .catch(() => {});
+    console.info(`[pricing] fetch ok ${provider.name} (not cached)`);
+    return payload;
+  } catch (err) {
+    console.error(
+      `[pricing] fetch error ${provider.name}`,
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    // Short TTL negative cache (fire-and-forget)
+    redis.set(provider.cacheKey, null, { ex: 60 }).catch(() => {});
+    return null;
   }
-
-  return payload ?? null;
 }
 
 // ============================================================================
@@ -97,7 +70,6 @@ async function fetchProviderPricing(
 const porkbunProvider: PricingProvider = {
   name: "porkbun",
   cacheKey: ns("pricing:porkbun"),
-  lockKey: ns("pricing:porkbun-lock"),
   cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
@@ -146,7 +118,6 @@ const porkbunProvider: PricingProvider = {
 const cloudflareProvider: PricingProvider = {
   name: "cloudflare",
   cacheKey: ns("pricing:cloudflare"),
-  lockKey: ns("pricing:cloudflare-lock"),
   cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {

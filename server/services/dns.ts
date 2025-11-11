@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { isCloudflareIp } from "@/lib/cloudflare";
 import { USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
@@ -17,6 +16,138 @@ import {
   type DnsType,
   DnsTypeSchema,
 } from "@/lib/schemas";
+
+// ============================================================================
+// DNS-specific lock/wait utility
+// ============================================================================
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type LockResult<T = unknown> =
+  | { acquired: true; cachedResult: null; timedOut: false }
+  | { acquired: false; cachedResult: T | null; timedOut: false }
+  | { acquired: false; cachedResult: null; timedOut: true };
+
+/**
+ * Acquire a Redis lock or wait for result from another process.
+ *
+ * This pattern is justified for DNS because:
+ * - Each lookup queries 2+ providers (Cloudflare, Google)
+ * - Each provider called for 5 record types (A, AAAA, MX, TXT, NS)
+ * - That's 10+ external API calls per domain lookup = expensive
+ * - Lock prevents expensive duplicate work on concurrent cache misses
+ * - Wait pattern provides fast response when concurrent requests arrive
+ *
+ * This prevents duplicate work by:
+ * 1. Trying to acquire lock with NX (only set if not exists)
+ * 2. If lock acquired, caller does work and caches result
+ * 3. If lock NOT acquired, poll for cached result until timeout
+ *
+ * @param options.lockKey - Redis key for the lock
+ * @param options.resultKey - Redis key where result will be cached
+ * @param options.lockTtl - Lock TTL in seconds (default 30)
+ * @param options.pollIntervalMs - How often to check for result (default 250ms)
+ * @param options.maxWaitMs - Max time to wait for result (default 25000ms)
+ * @returns Lock status and any cached result
+ */
+async function acquireLockOrWaitForResult<T = unknown>(options: {
+  lockKey: string;
+  resultKey: string;
+  lockTtl?: number;
+  pollIntervalMs?: number;
+  maxWaitMs?: number;
+}): Promise<LockResult<T>> {
+  const {
+    lockKey,
+    resultKey,
+    lockTtl = 30,
+    pollIntervalMs = 250,
+    maxWaitMs = 25000,
+  } = options;
+
+  // Try to acquire lock
+  try {
+    const setRes = await redis.set(lockKey, "1", {
+      nx: true,
+      ex: lockTtl,
+    });
+    const acquired = Boolean(setRes);
+
+    if (acquired) {
+      console.debug(`[dns] redis lock acquired ${lockKey}`);
+      return { acquired: true, cachedResult: null, timedOut: false };
+    }
+
+    console.debug(
+      `[dns] redis lock not acquired ${lockKey} maxWait=${maxWaitMs}ms`,
+    );
+  } catch (err) {
+    console.warn(
+      `[dns] redis lock acquisition failed ${lockKey}`,
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    // If Redis is down, fail open (don't wait)
+    return { acquired: true, cachedResult: null, timedOut: false };
+  }
+
+  // Lock not acquired, poll for result
+  const startTime = Date.now();
+  let pollCount = 0;
+
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      pollCount++;
+      // Batch check for result and lock existence in parallel
+      const [result, lockExists] = await Promise.all([
+        redis.get(resultKey) as Promise<T | null>,
+        redis.exists(lockKey),
+      ]);
+
+      if (result !== null) {
+        console.debug(
+          `[dns] redis cache hit waiting ${resultKey} polls=${pollCount} duration=${Date.now() - startTime}ms`,
+        );
+        return { acquired: false, cachedResult: result, timedOut: false };
+      }
+
+      // Check if lock still exists - if not, the other process may have failed
+      if (!lockExists) {
+        console.warn(
+          `[dns] redis lock disappeared ${lockKey} polls=${pollCount}`,
+        );
+        // Lock gone but no result - other process likely failed
+        // Try to acquire lock ourselves
+        const retryRes = await redis.set(lockKey, "1", {
+          nx: true,
+          ex: lockTtl,
+        });
+        const retryAcquired = Boolean(retryRes);
+        if (retryAcquired) {
+          return { acquired: true, cachedResult: null, timedOut: false };
+        }
+      }
+    } catch (err) {
+      console.warn(
+        `[dns] redis polling error ${lockKey}`,
+        err instanceof Error ? err : new Error(String(err)),
+      );
+    }
+
+    await sleep(pollIntervalMs);
+  }
+
+  console.warn(
+    `[dns] redis wait timeout ${lockKey} polls=${pollCount} duration=${Date.now() - startTime}ms`,
+  );
+
+  return { acquired: false, cachedResult: null, timedOut: true };
+}
+
+// ============================================================================
+// DNS resolution
+// ============================================================================
 
 export type DohProvider = {
   key: string;

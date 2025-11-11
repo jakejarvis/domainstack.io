@@ -22,14 +22,11 @@ export async function getOrCreateFaviconBlobUrl(
   domain: string,
 ): Promise<{ url: string | null }> {
   const indexKey = ns("favicon", "url", domain, String(DEFAULT_SIZE));
-  const lockKey = ns("lock", "favicon", domain, String(DEFAULT_SIZE));
   const ttl = TTL_FAVICON;
 
   return await getOrCreateCachedAsset({
     indexKey,
-    lockKey,
     ttlSeconds: ttl,
-    purgeQueue: "favicon",
     produceAndUpload: async () => {
       const sources = buildSources(domain);
       let allNotFound = true; // Track if all sources returned 404/not found

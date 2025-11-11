@@ -13,10 +13,6 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/blob-prune",
-      "schedule": "0 3 * * *"
-    },
-    {
       "path": "/api/cron/pricing-refresh",
       "schedule": "0 4 * * *"
     }
