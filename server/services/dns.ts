@@ -10,7 +10,7 @@ import { ttlForDnsRecord } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeout } from "@/lib/fetch";
 import { ns, redis } from "@/lib/redis";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import {
   type DnsRecord,
   type DnsResolveResult,
@@ -300,9 +300,9 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               );
             // Always schedule: use the soonest expiry if available, otherwise schedule immediately
             const soonest = times.length > 0 ? Math.min(...times) : Date.now();
-            await scheduleSectionIfEarlier(
-              "dns",
+            await scheduleRevalidation(
               registrable,
+              "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
             );
@@ -428,9 +428,9 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               (t): t is number => typeof t === "number" && Number.isFinite(t),
             );
           const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
-          await scheduleSectionIfEarlier(
-            "dns",
+          await scheduleRevalidation(
             registrable,
+            "dns",
             soonest,
             existingDomain.lastAccessedAt ?? null,
           );

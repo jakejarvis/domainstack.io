@@ -1,9 +1,8 @@
 import "server-only";
+
 import { z } from "zod";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
 import { inngest } from "@/lib/inngest/client";
 import { ns, redis } from "@/lib/redis";
-import { recordFailureAndBackoff, resetFailureBackoff } from "@/lib/schedule";
 import { type Section, SectionEnum } from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { resolveAll } from "@/server/services/dns";
@@ -12,13 +11,12 @@ import { detectHosting } from "@/server/services/hosting";
 import { getRegistration } from "@/server/services/registration";
 import { getSeo } from "@/server/services/seo";
 
-const eventDataSchema = z.object({
+const eventSchema = z.object({
   domain: z.string().min(1),
-  section: SectionEnum.optional(),
-  sections: z.array(SectionEnum).optional(),
+  section: SectionEnum,
 });
 
-export async function revalidateSection(
+async function runSingleSection(
   domain: string,
   section: Section,
 ): Promise<void> {
@@ -44,122 +42,80 @@ export async function revalidateSection(
   }
 }
 
+/**
+ * Background revalidation function for a single domain+section.
+ * Simplified from the batch approach - Inngest handles concurrency, retries, and rate limiting.
+ */
 export const sectionRevalidate = inngest.createFunction(
   {
     id: "section-revalidate",
+    // Configure retry policy - Inngest will handle backoff automatically
+    retries: 3,
+    // Rate limit to avoid overwhelming external services
+    rateLimit: {
+      limit: 10,
+      period: "1m",
+    },
+    // Concurrency control: prevent concurrent execution of the same domain+section
+    // This provides similar protection to our Redis lock, but at the Inngest level
     concurrency: {
-      key: "event.data.domain",
       limit: 1,
+      key: "event.data.domain + ':' + event.data.section",
     },
   },
   { event: "section/revalidate" },
   async ({ event, step, logger }) => {
-    const data = eventDataSchema.parse(event.data);
-    const domain = data.domain;
-    const normalizedDomain =
-      typeof domain === "string" ? domain.trim().toLowerCase() : "";
+    const { domain, section } = eventSchema.parse(event.data);
 
-    const sections: Section[] = Array.isArray(data.sections)
-      ? data.sections
-      : data.section
-        ? [data.section]
-        : [];
+    // Normalize domain
+    const normalizedDomain = domain.trim().toLowerCase();
 
-    if (sections.length === 0) {
-      logger.debug("[section-revalidate] no sections provided", {
-        domain: normalizedDomain,
+    // Note: Inngest's concurrency control (above) prevents multiple executions
+    // of the same domain+section, so the Redis lock below is a lightweight
+    // secondary safeguard for edge cases (e.g., if Inngest's concurrency
+    // control has issues or during local development).
+    const lockKey = ns("lock", "revalidate", section, normalizedDomain);
+
+    await step.run("revalidate", async () => {
+      // Try to acquire lock (lightweight check, mainly for observability)
+      const lockTtl = 300; // 5 minutes
+      const acquired = await redis.set(lockKey, "1", {
+        nx: true,
+        ex: lockTtl,
       });
-      return;
-    }
 
-    for (const section of sections) {
-      const lockKey = ns("lock", "revalidate", section, normalizedDomain);
-      const resultKey = ns("result", "revalidate", section, normalizedDomain);
+      if (!acquired) {
+        logger.info("skipped (already running)", {
+          domain: normalizedDomain,
+          section,
+        });
+        return;
+      }
 
-      // Step 1: Acquire lock and revalidate section data
-      const result = await step.run(
-        `revalidate-with-lock:${section}`,
-        async () => {
-          // Try to acquire lock or wait for result
-          const wait = await acquireLockOrWaitForResult({
-            lockKey,
-            resultKey,
-            lockTtl: 60,
-          });
+      try {
+        logger.info("start", {
+          domain: normalizedDomain,
+          section,
+        });
 
-          if (!wait.acquired) {
-            return { skipped: true, success: false };
-          }
+        await runSingleSection(normalizedDomain, section);
 
-          // Lock acquired, perform revalidation
-          try {
-            logger.info("[section-revalidate] start", {
-              domain: normalizedDomain,
-              section,
-            });
-            await revalidateSection(normalizedDomain, section);
-            logger.info("[section-revalidate] done", {
-              domain: normalizedDomain,
-              section,
-            });
-            return { skipped: false, success: true };
-          } catch (err) {
-            logger.error("[section-revalidate] failed", {
-              domain: normalizedDomain,
-              section,
-              error: err,
-            });
-            return { skipped: false, success: false };
-          }
-        },
-      );
-
-      // Skip cleanup if we didn't acquire the lock
-      if (result.skipped) continue;
-
-      // Step 2: Cleanup - write result, reset/record backoff, release lock
-      await step.run(`cleanup:${section}`, async () => {
+        logger.info("done", {
+          domain: normalizedDomain,
+          section,
+        });
+      } finally {
+        // Always release the lock
         try {
-          if (result.success) {
-            // Write completion result for deduplication
-            try {
-              await redis.set(
-                resultKey,
-                JSON.stringify({ completedAt: Date.now() }),
-                { ex: 55 },
-              );
-            } catch (err) {
-              logger.warn("[section-revalidate] failed to write result", {
-                domain: normalizedDomain,
-                section,
-                error: err,
-              });
-            }
-
-            // Clear any accumulated failure backoff on success
-            // Services already schedule next run after successful writes
-            try {
-              await resetFailureBackoff(section, normalizedDomain);
-            } catch {}
-          } else {
-            // On failure: record failure and apply backoff
-            try {
-              await recordFailureAndBackoff(section, normalizedDomain);
-            } catch {}
-          }
-        } finally {
-          // Always release lock
-          try {
-            await redis.del(lockKey);
-          } catch (err) {
-            logger.warn("[section-revalidate] failed to release lock", {
-              domain: normalizedDomain,
-              section,
-              error: err,
-            });
-          }
+          await redis.del(lockKey);
+        } catch (err) {
+          logger.warn("failed to release lock", {
+            domain: normalizedDomain,
+            section,
+            error: err,
+          });
         }
-      });
-    }
+      }
+    });
   },
 );

@@ -11,7 +11,7 @@ import { certificates as certTable } from "@/lib/db/schema";
 import { ttlForCertificates } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type { Certificate } from "@/lib/schemas";
 
 export async function getCertificates(domain: string): Promise<Certificate[]> {
@@ -168,9 +168,9 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
 
       try {
         const dueAtMs = nextDue.getTime();
-        await scheduleSectionIfEarlier(
-          "certificates",
+        await scheduleRevalidation(
           registrable,
+          "certificates",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
         );

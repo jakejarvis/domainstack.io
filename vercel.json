@@ -9,10 +9,6 @@
   },
   "crons": [
     {
-      "path": "/api/cron/due-drain",
-      "schedule": "*/15 * * * *"
-    },
-    {
       "path": "/api/cron/access-sync",
       "schedule": "0 * * * *"
     },

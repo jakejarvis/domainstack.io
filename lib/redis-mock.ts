@@ -8,6 +8,18 @@ type SetOptions = {
 
 type ZAddEntry = { score: number; member: string };
 
+type ZRangeLimit = {
+  offset?: number;
+  count?: number;
+};
+
+type ZRangeOptions = {
+  byScore?: boolean;
+  offset?: number;
+  count?: number;
+  limit?: ZRangeLimit;
+};
+
 type ExpiryEntry = {
   value: unknown;
   // Expiration timestamp in ms; undefined means no expiry
@@ -147,23 +159,39 @@ export function makeInMemoryRedis() {
     key: string,
     min: number,
     max: number,
-    options?: { byScore?: boolean; offset?: number; count?: number },
+    options?: ZRangeOptions,
   ): Promise<string[]> {
     const z = getZset(key);
     const sortedEntries = Array.from(z.entries()).sort((a, b) => a[1] - b[1]);
 
-    let items: string[];
+    const limit = options?.limit ?? null;
+    const rawOffset =
+      typeof limit?.offset === "number"
+        ? limit.offset
+        : typeof options?.offset === "number"
+          ? options.offset
+          : 0;
+    const rawCount =
+      typeof limit?.count === "number"
+        ? limit.count
+        : typeof options?.count === "number"
+          ? options.count
+          : undefined;
+
     if (options?.byScore) {
       // Score-based range: filter by score values
-      items = sortedEntries
+      const items = sortedEntries
         .filter(([, score]) => score >= min && score <= max)
         .map(([member]) => member);
-      const offset = options.offset ?? 0;
-      const count = options.count ?? items.length;
-      return items.slice(offset, offset + count);
+      const count = rawCount ?? items.length;
+      return items.slice(rawOffset, rawOffset + count);
     } else {
       // Index-based range: slice by index positions
-      items = sortedEntries.map(([member]) => member);
+      const items = sortedEntries.map(([member]) => member);
+      if (limit) {
+        const count = rawCount ?? items.length;
+        return items.slice(rawOffset, rawOffset + count);
+      }
       const start = min < 0 ? items.length + min : min;
       const end = max < 0 ? items.length + max + 1 : max + 1;
       return items.slice(start, end);
@@ -274,6 +302,10 @@ export function makeInMemoryRedis() {
         commands.push({ method: "zadd", args: [key, entry] });
         return pipelineApi;
       },
+      zrem(key: string, ...members: string[]) {
+        commands.push({ method: "zrem", args: [key, members] });
+        return pipelineApi;
+      },
       async exec<T = unknown[]>(): Promise<T> {
         const results: unknown[] = [];
         for (const cmd of commands) {
@@ -305,6 +337,9 @@ export function makeInMemoryRedis() {
                 args[0] as string,
                 args[1] as ZAddEntry | ZAddEntry[],
               );
+              break;
+            case "zrem":
+              result = await zrem(args[0] as string, ...(args[1] as string[]));
               break;
             default:
               throw new Error(`Unsupported pipeline method: ${method}`);

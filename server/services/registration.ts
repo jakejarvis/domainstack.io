@@ -14,7 +14,7 @@ import { ttlForRegistration } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type { Registration, RegistrationContacts } from "@/lib/schemas";
 
 /**
@@ -155,9 +155,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
 
     // Schedule background revalidation using actual last access time
     try {
-      await scheduleSectionIfEarlier(
-        "registration",
+      await scheduleRevalidation(
         registrable,
+        "registration",
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
       );
@@ -347,9 +347,9 @@ export async function getRegistration(domain: string): Promise<Registration> {
 
   // Schedule background revalidation
   try {
-    await scheduleSectionIfEarlier(
-      "registration",
+    await scheduleRevalidation(
       registrable,
+      "registration",
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );

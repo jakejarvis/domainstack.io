@@ -10,7 +10,7 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects, fetchWithTimeout } from "@/lib/fetch";
 import { optimizeImageCover } from "@/lib/image";
 import { ns, redis } from "@/lib/redis";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -243,9 +243,9 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     });
 
     try {
-      await scheduleSectionIfEarlier(
-        "seo",
+      await scheduleRevalidation(
         registrable,
+        "seo",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       );

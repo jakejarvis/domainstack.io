@@ -82,7 +82,7 @@ export const REDIS_TTL_UNREGISTERED = ONE_HOUR; // 1 hour
 // - Refresh at 50% of TTL (proactive refresh): Headers (6h for 12h TTL)
 // - Refresh at 25% of TTL (aggressive): Certificates (6h for 24h window)
 //
-// Note: Actual refresh timing is bounded by these minimums via scheduleSectionIfEarlier().
+// Note: Actual refresh timing is bounded by these minimums via scheduleRevalidation().
 // If a domain tries to schedule sooner, it gets pushed to the minimum interval.
 export const REVALIDATE_MIN_DNS = TTL_DNS_DEFAULT; // 1h (refresh when expires)
 export const REVALIDATE_MIN_HEADERS = TTL_HEADERS / 2; // 6h (proactive: refresh at 50% of 12h)
@@ -90,19 +90,6 @@ export const REVALIDATE_MIN_HOSTING = TTL_HOSTING; // 24h (refresh when expires)
 export const REVALIDATE_MIN_CERTIFICATES = TTL_CERTIFICATES_WINDOW / 4; // 6h (aggressive: refresh at 25% of 24h)
 export const REVALIDATE_MIN_SEO = TTL_SEO; // 24h (refresh when expires)
 export const REVALIDATE_MIN_REGISTRATION = TTL_REGISTRATION_REGISTERED; // 24h (refresh when expires)
-
-// ===== Background Job Configuration =====
-// How often the cron job runs to drain the revalidation queue
-export const DRAIN_CRON_MINUTES = 15;
-
-export const PER_SECTION_BATCH = 50;
-export const MAX_EVENTS_PER_RUN = 100;
-
-// Lease duration matches cron interval to prevent overlapping executions
-export const LEASE_SECS = DRAIN_CRON_MINUTES * 60;
-
-export const BACKOFF_BASE_SECS = 5 * 60; // 5 minutes
-export const BACKOFF_MAX_SECS = 6 * 60 * 60; // 6 hours
 
 // ===== Access Decay Configuration =====
 // Decay tier thresholds control how aggressively we slow down revalidation

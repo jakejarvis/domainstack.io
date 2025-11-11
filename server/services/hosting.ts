@@ -18,7 +18,7 @@ import {
   detectEmailProvider,
   detectHostingProvider,
 } from "@/lib/providers/detection";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type { Hosting } from "@/lib/schemas";
 import { resolveAll } from "@/server/services/dns";
 import { probeHeaders } from "@/server/services/headers";
@@ -251,9 +251,9 @@ export async function detectHosting(domain: string): Promise<Hosting> {
     });
 
     try {
-      await scheduleSectionIfEarlier(
-        "hosting",
+      await scheduleRevalidation(
         registrable,
+        "hosting",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       );
