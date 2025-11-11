@@ -101,7 +101,7 @@ export const probeHeaders = cache(async function probeHeaders(
           "headers",
           registrable,
           dueAtMs,
-          now, // Use current access time, not stale DB timestamp
+          existingDomain.lastAccessedAt ?? null,
         );
       } catch (err) {
         console.warn(

@@ -304,7 +304,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               "dns",
               registrable,
               soonest,
-              now, // Use current access time, not stale DB timestamp
+              existingDomain.lastAccessedAt ?? null,
             );
           } catch (err) {
             console.warn(
@@ -432,7 +432,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
             "dns",
             registrable,
             soonest,
-            now, // Use current access time, not stale DB timestamp
+            existingDomain.lastAccessedAt ?? null,
           );
         } catch (err) {
           console.warn(

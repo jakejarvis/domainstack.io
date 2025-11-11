@@ -93,6 +93,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
       domainName: domains.name,
       domainTld: domains.tld,
       domainUnicodeName: domains.unicodeName,
+      domainLastAccessedAt: domains.lastAccessedAt,
       registration: registrations,
       providerName: providers.name,
       providerDomain: providers.domain,
@@ -152,13 +153,13 @@ export async function getRegistration(domain: string): Promise<Registration> {
       );
     });
 
-    // Schedule background revalidation using cached access time
+    // Schedule background revalidation using actual last access time
     try {
       await scheduleSectionIfEarlier(
         "registration",
         registrable,
         row.registration.expiresAt.getTime(),
-        now,
+        row.domainLastAccessedAt ?? null,
       );
     } catch (err) {
       console.warn(
@@ -350,7 +351,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
       "registration",
       registrable,
       expiresAt.getTime(),
-      now, // Use current access time, not stale DB timestamp
+      domainRecord.lastAccessedAt ?? null,
     );
   } catch (err) {
     console.warn(
