@@ -56,16 +56,19 @@ export async function GET(request: Request) {
     for (const key of keys) {
       pipeline.getdel(key);
     }
-    const results = await pipeline.exec<Array<number | null>>();
+    const results = await pipeline.exec<Array<string | number | null>>();
 
     const updates: Array<{ name: string; accessedAt: Date }> = [];
     const prefix = "access:domain:";
 
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
-      const timestamp = results[i];
+      const rawTimestamp = results[i];
 
-      if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) {
+      // Redis returns string values, so coerce to number
+      const timestamp = Number(rawTimestamp);
+
+      if (!Number.isFinite(timestamp)) {
         continue;
       }
 
