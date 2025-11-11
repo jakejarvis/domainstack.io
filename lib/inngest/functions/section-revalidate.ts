@@ -2,7 +2,6 @@ import "server-only";
 
 import { z } from "zod";
 import { inngest } from "@/lib/inngest/client";
-import { ns, redis } from "@/lib/redis";
 import { type Section, SectionEnum } from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { resolveAll } from "@/server/services/dns";
@@ -45,6 +44,11 @@ async function runSingleSection(
 /**
  * Background revalidation function for a single domain+section.
  * Simplified from the batch approach - Inngest handles concurrency, retries, and rate limiting.
+ *
+ * Note: We rely entirely on Inngest's concurrency control (configured above) to prevent
+ * duplicate work. This removes Redis as a dependency and point of failure in the
+ * revalidation pipeline. Inngest's distributed concurrency control is battle-tested
+ * and more reliable than a Redis-based lock.
  */
 export const sectionRevalidate = inngest.createFunction(
   {
@@ -57,7 +61,7 @@ export const sectionRevalidate = inngest.createFunction(
       period: "1m",
     },
     // Concurrency control: prevent concurrent execution of the same domain+section
-    // This provides similar protection to our Redis lock, but at the Inngest level
+    // This is our ONLY concurrency mechanism - no Redis locks needed
     concurrency: {
       limit: 1,
       key: "event.data.domain + ':' + event.data.section",
@@ -70,52 +74,18 @@ export const sectionRevalidate = inngest.createFunction(
     // Normalize domain
     const normalizedDomain = domain.trim().toLowerCase();
 
-    // Note: Inngest's concurrency control (above) prevents multiple executions
-    // of the same domain+section, so the Redis lock below is a lightweight
-    // secondary safeguard for edge cases (e.g., if Inngest's concurrency
-    // control has issues or during local development).
-    const lockKey = ns("lock", "revalidate", section, normalizedDomain);
-
     await step.run("revalidate", async () => {
-      // Try to acquire lock (lightweight check, mainly for observability)
-      const lockTtl = 300; // 5 minutes
-      const acquired = await redis.set(lockKey, "1", {
-        nx: true,
-        ex: lockTtl,
+      logger.info("start", {
+        domain: normalizedDomain,
+        section,
       });
 
-      if (!acquired) {
-        logger.info("skipped (already running)", {
-          domain: normalizedDomain,
-          section,
-        });
-        return;
-      }
+      await runSingleSection(normalizedDomain, section);
 
-      try {
-        logger.info("start", {
-          domain: normalizedDomain,
-          section,
-        });
-
-        await runSingleSection(normalizedDomain, section);
-
-        logger.info("done", {
-          domain: normalizedDomain,
-          section,
-        });
-      } finally {
-        // Always release the lock
-        try {
-          await redis.del(lockKey);
-        } catch (err) {
-          logger.warn("failed to release lock", {
-            domain: normalizedDomain,
-            section,
-            error: err,
-          });
-        }
-      }
+      logger.info("done", {
+        domain: normalizedDomain,
+        section,
+      });
     });
   },
 );
