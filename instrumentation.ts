@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
@@ -47,7 +48,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
         method: request.method,
       });
 
-      await phClient.shutdown();
+      waitUntil?.(phClient.shutdown());
     } catch (trackingError) {
       // Graceful degradation - don't throw to avoid breaking the request
       console.error("[instrumentation] error tracking failed:", trackingError);
