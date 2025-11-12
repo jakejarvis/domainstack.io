@@ -54,19 +54,11 @@ export async function getOrCreateScreenshotBlobUrl(
     domain,
     `${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT}`,
   );
-  const lockKey = ns(
-    "lock",
-    "screenshot",
-    domain,
-    `${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT}`,
-  );
   const ttl = TTL_SCREENSHOT;
 
   return await getOrCreateCachedAsset({
     indexKey,
-    lockKey,
     ttlSeconds: ttl,
-    purgeQueue: "screenshot",
     produceAndUpload: async () => {
       let browser: Browser | null = null;
       try {

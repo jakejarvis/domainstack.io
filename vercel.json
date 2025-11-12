@@ -9,16 +9,8 @@
   },
   "crons": [
     {
-      "path": "/api/cron/due-drain",
-      "schedule": "*/15 * * * *"
-    },
-    {
       "path": "/api/cron/access-sync",
       "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/blob-prune",
-      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron/pricing-refresh",

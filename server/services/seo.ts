@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
-import { TTL_SOCIAL_PREVIEW, USER_AGENT } from "@/lib/constants";
+import { USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
@@ -9,8 +8,7 @@ import { ttlForSeo } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects, fetchWithTimeout } from "@/lib/fetch";
 import { optimizeImageCover } from "@/lib/image";
-import { ns, redis } from "@/lib/redis";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -50,6 +48,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
           previewTitle: seoTable.previewTitle,
           previewDescription: seoTable.previewDescription,
           previewImageUrl: seoTable.previewImageUrl,
+          previewImageUploadedUrl: seoTable.previewImageUploadedUrl,
           canonicalUrl: seoTable.canonicalUrl,
           robots: seoTable.robots,
           errors: seoTable.errors,
@@ -66,6 +65,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         previewTitle: string | null;
         previewDescription: string | null;
         previewImageUrl: string | null;
+        previewImageUploadedUrl: string | null;
         canonicalUrl: string | null;
         robots: RobotsTxt;
         errors: Record<string, unknown>;
@@ -81,17 +81,9 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
           canonicalUrl: existing[0].canonicalUrl,
         }
       : null;
-    // Ensure uploaded image URL is still valid; refresh via Redis-backed cache
-    if (preview?.image) {
-      try {
-        const refreshed = await getOrCreateSocialPreviewImageUrl(
-          registrable,
-          preview.image,
-        );
-        preview.imageUploaded = refreshed?.url ?? null;
-      } catch {
-        // keep as-is on transient errors
-      }
+    // Use uploaded URL from Postgres if available
+    if (preview) {
+      preview.imageUploaded = existing[0].previewImageUploadedUrl ?? null;
     }
 
     // Normalize robots: convert empty object to valid RobotsTxt structure
@@ -190,14 +182,15 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   const preview = meta ? selectPreview(meta, finalUrl) : null;
 
   // If a social preview image is present, store a cached copy via Vercel Blob for privacy
+  let uploadedImageUrl: string | null = null;
   if (preview?.image) {
     try {
-      const stored = await getOrCreateSocialPreviewImageUrl(
+      uploadedImageUrl = await generateSocialPreviewBlob(
         registrable,
         preview.image,
       );
       // Preserve original image URL for meta display; attach uploaded URL for rendering
-      preview.imageUploaded = stored?.url ?? null;
+      preview.imageUploaded = uploadedImageUrl;
     } catch {
       // On failure, avoid rendering external image URL
       preview.imageUploaded = null;
@@ -234,6 +227,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       previewTitle: response.preview?.title ?? null,
       previewDescription: response.preview?.description ?? null,
       previewImageUrl: response.preview?.image ?? null,
+      previewImageUploadedUrl: uploadedImageUrl,
       canonicalUrl: response.preview?.canonicalUrl ?? null,
       robots: robots ?? { fetched: false, groups: [], sitemaps: [] },
       robotsSitemaps: response.robots?.sitemaps ?? [],
@@ -243,9 +237,9 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     });
 
     try {
-      await scheduleSectionIfEarlier(
-        "seo",
+      await scheduleRevalidation(
         registrable,
+        "seo",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       );
@@ -264,64 +258,27 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   return response;
 }
 
-async function getOrCreateSocialPreviewImageUrl(
+/**
+ * Generate and upload social preview blob from external image URL.
+ * Returns the blob URL or null on failure.
+ */
+async function generateSocialPreviewBlob(
   domain: string,
   imageUrl: string,
-): Promise<{ url: string | null }> {
+): Promise<string | null> {
   // Guard against non-http(s) schemes to avoid SSRF or unsupported fetches
   try {
     const u = new URL(imageUrl);
     if (u.protocol !== "http:" && u.protocol !== "https:") {
-      return { url: null };
+      return null;
     }
   } catch {
     // Invalid URL
-    return { url: null };
+    return null;
   }
 
   const lower = domain.toLowerCase();
-  const indexKey = ns(
-    "seo-image",
-    "url",
-    lower,
-    `${SOCIAL_WIDTH}x${SOCIAL_HEIGHT}`,
-  );
-  const lockKey = ns(
-    "lock",
-    "seo-image",
-    lower,
-    `${SOCIAL_WIDTH}x${SOCIAL_HEIGHT}`,
-  );
 
-  // 1) Check Redis index first
-  try {
-    const raw = (await redis.get(indexKey)) as { url?: unknown } | null;
-    if (
-      raw &&
-      typeof raw === "object" &&
-      typeof (raw as { url?: unknown }).url === "string"
-    ) {
-      return { url: (raw as { url: string }).url };
-    }
-  } catch {
-    // ignore and continue
-  }
-
-  // 2) Acquire lock or wait for another process to complete
-  const lockResult = await acquireLockOrWaitForResult<{ url: string }>({
-    lockKey,
-    resultKey: indexKey,
-    lockTtl: 30,
-  });
-
-  if (!lockResult.acquired) {
-    if (lockResult.cachedResult?.url) {
-      return { url: lockResult.cachedResult.url };
-    }
-    return { url: null };
-  }
-
-  // 3) We acquired the lock - fetch, process, upload
   try {
     const res = await fetchWithTimeout(
       imageUrl,
@@ -336,17 +293,17 @@ async function getOrCreateSocialPreviewImageUrl(
       { timeoutMs: 8000 },
     );
 
-    if (!res.ok) return { url: null };
+    if (!res.ok) return null;
     const contentType = res.headers.get("content-type") ?? "";
-    if (!/image\//.test(contentType)) return { url: null };
+    if (!/image\//.test(contentType)) return null;
 
     const ab = await res.arrayBuffer();
     const raw = Buffer.from(ab);
 
     const image = await optimizeImageCover(raw, SOCIAL_WIDTH, SOCIAL_HEIGHT);
-    if (!image || image.length === 0) return { url: null };
+    if (!image || image.length === 0) return null;
 
-    const { url, pathname } = await storeImage({
+    const { url } = await storeImage({
       kind: "social",
       domain: lower,
       buffer: image,
@@ -354,25 +311,8 @@ async function getOrCreateSocialPreviewImageUrl(
       height: SOCIAL_HEIGHT,
     });
 
-    try {
-      const ttl = TTL_SOCIAL_PREVIEW;
-      const expiresAtMs = Date.now() + ttl * 1000;
-      // Use Promise.all to batch Redis writes via auto-pipelining
-      await Promise.all([
-        redis.set(indexKey, { url, key: pathname, expiresAtMs }, { ex: ttl }),
-        redis.zadd(ns("purge", "social"), {
-          score: expiresAtMs,
-          member: url,
-        }),
-      ]);
-    } catch {}
-
-    return { url };
+    return url;
   } catch {
-    return { url: null };
-  } finally {
-    try {
-      await redis.del(lockKey);
-    } catch {}
+    return null;
   }
 }

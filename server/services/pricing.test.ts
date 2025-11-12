@@ -277,8 +277,8 @@ describe("pricing service", () => {
     });
   });
 
-  describe("getPricingForTld - lock management", () => {
-    it("releases locks after successful fetch", async () => {
+  describe("getPricingForTld - negative caching", () => {
+    it("returns pricing successfully from API and caches it", async () => {
       const { redis } = await import("@/lib/redis");
 
       vi.spyOn(global, "fetch")
@@ -296,12 +296,14 @@ describe("pricing service", () => {
 
       await getPricingForTld("example.com");
 
-      // Verify locks were released
-      expect(await redis.exists("pricing:porkbun-lock")).toBe(0);
-      expect(await redis.exists("pricing:cloudflare-lock")).toBe(0);
+      // Verify pricing data was cached
+      const porkbunCached = await redis.get("pricing:porkbun");
+      expect(porkbunCached).toEqual(mockPorkbunResponse);
+      const cloudflareCached = await redis.get("pricing:cloudflare");
+      expect(cloudflareCached).toEqual(mockCloudflareResponse);
     });
 
-    it("releases locks after fetch error", async () => {
+    it("caches null value with short TTL when fetch fails", async () => {
       const { redis } = await import("@/lib/redis");
 
       vi.spyOn(global, "fetch")
@@ -310,12 +312,14 @@ describe("pricing service", () => {
 
       await getPricingForTld("example.com");
 
-      // Verify locks were released even though fetches failed
-      expect(await redis.exists("pricing:porkbun-lock")).toBe(0);
-      expect(await redis.exists("pricing:cloudflare-lock")).toBe(0);
+      // Verify negative cache (null) was set to prevent repeated failed fetches
+      const porkbunCached = await redis.get("pricing:porkbun");
+      expect(porkbunCached).toBeNull();
+      const cloudflareCached = await redis.get("pricing:cloudflare");
+      expect(cloudflareCached).toBeNull();
     });
 
-    it("sets negative cache on fetch error", async () => {
+    it("sets negative cache with short TTL on fetch error", async () => {
       const { redis } = await import("@/lib/redis");
 
       vi.spyOn(global, "fetch")
@@ -330,10 +334,10 @@ describe("pricing service", () => {
       const cloudflareCached = await redis.get("pricing:cloudflare");
       expect(cloudflareCached).toBeNull();
 
-      // Verify TTL is short (should be 5 seconds)
+      // Verify TTL is short (should be 60 seconds for negative cache)
       const porkbunTtl = await redis.ttl("pricing:porkbun");
       expect(porkbunTtl).toBeGreaterThan(0);
-      expect(porkbunTtl).toBeLessThanOrEqual(5);
+      expect(porkbunTtl).toBeLessThanOrEqual(60);
     });
   });
 });

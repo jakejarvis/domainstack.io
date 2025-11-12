@@ -272,6 +272,7 @@ export const seo = pgTable(
     previewTitle: text("preview_title"),
     previewDescription: text("preview_description"),
     previewImageUrl: text("preview_image_url"),
+    previewImageUploadedUrl: text("preview_image_uploaded_url"),
     canonicalUrl: text("canonical_url"),
     robots: jsonb("robots")
       .$type<RobotsTxt>()

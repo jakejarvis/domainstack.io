@@ -9,7 +9,7 @@ import { httpHeaders } from "@/lib/db/schema";
 import { ttlForHeaders } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
-import { scheduleSectionIfEarlier } from "@/lib/schedule";
+import { scheduleRevalidation } from "@/lib/schedule";
 import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
 
 /**
@@ -97,9 +97,9 @@ export const probeHeaders = cache(async function probeHeaders(
       });
 
       try {
-        await scheduleSectionIfEarlier(
-          "headers",
+        await scheduleRevalidation(
           registrable,
+          "headers",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
         );

@@ -2,7 +2,6 @@ import "server-only";
 
 import type { BootstrapData } from "rdapper";
 import { cache } from "react";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
 import {
   RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
   RDAP_BOOTSTRAP_URL,
@@ -10,13 +9,13 @@ import {
 import { redis } from "@/lib/redis";
 
 const CACHE_KEY = "rdap:bootstrap";
-const LOCK_KEY = "rdap:bootstrap:lock";
 
 /**
  * Fetch RDAP bootstrap data with Redis caching.
  *
  * The bootstrap registry changes infrequently (new TLDs, server updates),
- * so we cache it for 1 week in Redis with distributed locking to prevent thundering herd.
+ * so we cache it for 1 week in Redis. If multiple requests race to fetch, they will
+ * all get the same data and cache it (acceptable for rarely-changing data).
  *
  * This eliminates redundant fetches to IANA on every domain lookup when
  * passed to rdapper's lookup() via the customBootstrapData option.
@@ -27,61 +26,48 @@ const LOCK_KEY = "rdap:bootstrap:lock";
  * @throws Error if fetch fails (caller should handle or let rdapper fetch directly)
  */
 export const getRdapBootstrapData = cache(async (): Promise<BootstrapData> => {
-  let bootstrap = await redis.get<BootstrapData>(CACHE_KEY);
+  // Try Redis cache first
+  const cached = await redis.get<BootstrapData>(CACHE_KEY).catch((err) => {
+    console.error(
+      "[rdap-bootstrap] cache read error",
+      { cacheKey: CACHE_KEY },
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    return null;
+  });
+  if (cached) return cached;
 
-  if (!bootstrap) {
-    const lock = await acquireLockOrWaitForResult<BootstrapData>({
-      lockKey: LOCK_KEY,
-      resultKey: CACHE_KEY,
-      lockTtl: 30,
-      pollIntervalMs: 250,
-      maxWaitMs: 20_000,
-    });
+  // Fetch from IANA
+  try {
+    const res = await fetch(RDAP_BOOTSTRAP_URL);
 
-    if (lock.acquired) {
-      try {
-        const res = await fetch(RDAP_BOOTSTRAP_URL);
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch RDAP bootstrap: ${res.status} ${res.statusText}`,
+      );
+    }
 
-        if (!res.ok) {
-          throw new Error(
-            `Failed to fetch RDAP bootstrap: ${res.status} ${res.statusText}`,
-          );
-        }
+    const bootstrap = await res.json();
 
-        bootstrap = await res.json();
-        await redis.set(CACHE_KEY, bootstrap, {
-          ex: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
-        });
-        console.info("[rdap-bootstrap] Bootstrap data fetched (not cached)");
-      } catch (err) {
+    // Cache for next time (fire-and-forget)
+    redis
+      .set(CACHE_KEY, bootstrap, { ex: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS })
+      .catch((err) => {
         console.error(
-          "[rdap-bootstrap] fetch error",
+          "[rdap-bootstrap] cache write error",
+          { cacheKey: CACHE_KEY },
           err instanceof Error ? err : new Error(String(err)),
         );
-        // Write a short-TTL negative cache to prevent hammering during outages
-        try {
-          await redis.set(CACHE_KEY, null, { ex: 60 });
-        } catch (cacheErr) {
-          console.warn("[rdap-bootstrap] negative cache failed", cacheErr);
-        }
-        // Re-throw so rdapper can handle by fetching directly
-        throw err;
-      } finally {
-        // Always release the lock so waiters don't stall
-        try {
-          await redis.del(LOCK_KEY);
-        } catch (delErr) {
-          console.warn("[rdap-bootstrap] lock release failed", delErr);
-        }
-      }
-    } else {
-      bootstrap = lock.cachedResult;
-    }
-  }
+      });
 
-  if (!bootstrap) {
-    throw new Error("RDAP bootstrap data unavailable");
+    console.info("[rdap-bootstrap] Bootstrap data fetched (not cached)");
+    return bootstrap;
+  } catch (err) {
+    console.error(
+      "[rdap-bootstrap] fetch error",
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    // Re-throw so rdapper can handle by fetching directly
+    throw err;
   }
-
-  return bootstrap;
 });

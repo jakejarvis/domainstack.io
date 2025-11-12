@@ -2,7 +2,6 @@ import "server-only";
 
 import * as ipaddr from "ipaddr.js";
 import { cache } from "react";
-import { acquireLockOrWaitForResult } from "@/lib/cache";
 import {
   CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
   CLOUDFLARE_IPS_URL,
@@ -16,7 +15,6 @@ export interface CloudflareIpRanges {
 }
 
 const CACHE_KEY = "cloudflare:ip-ranges";
-const LOCK_KEY = "cloudflare:ip-ranges:lock";
 
 let lastLoadedIpv4Parsed: Array<[ipaddr.IPv4, number]> | undefined;
 let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
@@ -83,60 +81,52 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
  * Fetch Cloudflare IP ranges with Redis caching.
  *
  * The IP ranges change infrequently (when Cloudflare expands infrastructure),
- * so we cache for 1 day in Redis with distributed locking to prevent thundering herd.
+ * so we cache for 1 day in Redis. If multiple requests race to fetch, they will
+ * all get the same data and cache it (acceptable for rarely-changing data).
  *
  * Also wrapped in React's cache() for per-request deduplication.
  */
 const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
-  let ranges = await redis.get<CloudflareIpRanges>(CACHE_KEY);
+  // Try Redis cache first
+  const cached = await redis.get<CloudflareIpRanges>(CACHE_KEY).catch((err) => {
+    console.error(
+      "[cloudflare-ips] cache read error",
+      { cacheKey: CACHE_KEY },
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    return null;
+  });
+  if (cached) {
+    parseAndCacheRanges(cached);
+    return cached;
+  }
 
-  if (!ranges) {
-    const lock = await acquireLockOrWaitForResult<CloudflareIpRanges>({
-      lockKey: LOCK_KEY,
-      resultKey: CACHE_KEY,
-      lockTtl: 30,
-      pollIntervalMs: 250,
-      maxWaitMs: 20_000,
-    });
+  // Fetch fresh data
+  try {
+    const ranges = await fetchCloudflareIpRanges();
 
-    if (lock.acquired) {
-      try {
-        ranges = await fetchCloudflareIpRanges();
-        await redis.set(CACHE_KEY, ranges, {
-          ex: CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
-        });
-        parseAndCacheRanges(ranges);
-        console.info("[cloudflare-ips] IP ranges fetched (not cached)");
-      } catch (err) {
+    // Cache for next time (fire-and-forget)
+    redis
+      .set(CACHE_KEY, ranges, { ex: CLOUDFLARE_IPS_CACHE_TTL_SECONDS })
+      .catch((err) => {
         console.error(
-          "[cloudflare-ips] fetch error",
+          "[cloudflare-ips] cache write error",
+          { cacheKey: CACHE_KEY },
           err instanceof Error ? err : new Error(String(err)),
         );
-        // Write a short-TTL negative cache to prevent hammering during outages
-        try {
-          await redis.set(CACHE_KEY, null, { ex: 60 });
-        } catch (cacheErr) {
-          console.warn("[cloudflare-ips] negative cache failed", cacheErr);
-        }
-      } finally {
-        // Always release the lock so waiters don't stall
-        try {
-          await redis.del(LOCK_KEY);
-        } catch (delErr) {
-          console.warn("[cloudflare-ips] lock release failed", delErr);
-        }
-      }
-    } else {
-      ranges = lock.cachedResult;
-    }
-  }
+      });
 
-  // If we got ranges from cache, ensure parsed versions are available
-  if (ranges) {
     parseAndCacheRanges(ranges);
+    console.info("[cloudflare-ips] IP ranges fetched (not cached)");
+    return ranges;
+  } catch (err) {
+    console.error(
+      "[cloudflare-ips] fetch error",
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    // Return empty ranges on error
+    return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }
-
-  return ranges ?? { ipv4Cidrs: [], ipv6Cidrs: [] };
 });
 
 /**
