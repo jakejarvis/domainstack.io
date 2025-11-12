@@ -24,8 +24,8 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(next@16.0.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))
       '@readme/http-status-codes':
-        specifier: ^9.0.5
-        version: 9.0.5
+        specifier: ^9.0.6
+        version: 9.0.6
       '@sparticuz/chromium':
         specifier: 141.0.0
         version: 141.0.0
@@ -2380,8 +2380,8 @@ packages:
   '@radix-ui/rect@1.1.1':
     resolution: {integrity: sha512-HPwpGIzkl28mWyZqG52jiqDJ12waP11Pa1lGoiyUkIEuMLBP0oeK/C89esbXrxsky5we7dfd8U58nm0SgAWpVw==}
 
-  '@readme/http-status-codes@9.0.5':
-    resolution: {integrity: sha512-tm8XbKH1gQeOnHH1/K/vnSlmIh1f2dYANkCwcgIdcQGRGiAhMcnxXWRgApSd5sURcRS1jNyB0O4qqLkV8N+MQg==}
+  '@readme/http-status-codes@9.0.6':
+    resolution: {integrity: sha512-u0tV0Kz6FE+5jFcxBr/oZfxJX+R+mU2Q/zXOKS4RCuXon2LDGlrrpBih7GQnXURHIsn+MajqVbaIgGv+A6X9IQ==}
     engines: {node: '>=20'}
 
   '@rolldown/pluginutils@1.0.0-beta.43':
@@ -7330,7 +7330,7 @@ snapshots:
 
   '@radix-ui/rect@1.1.1': {}
 
-  '@readme/http-status-codes@9.0.5': {}
+  '@readme/http-status-codes@9.0.6': {}
 
   '@rolldown/pluginutils@1.0.0-beta.43': {}
 

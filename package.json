@@ -34,7 +34,7 @@
     "@neondatabase/serverless": "^1.0.2",
     "@opentelemetry/api": "^1.9.0",
     "@posthog/nextjs-config": "^1.4.0",
-    "@readme/http-status-codes": "^9.0.5",
+    "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "141.0.0",
     "@tanstack/react-query": "^5.90.7",
     "@tanstack/react-query-devtools": "^5.90.2",
