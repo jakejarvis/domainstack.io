@@ -108,7 +108,7 @@
     "bufferutil": "^4.0.9",
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.6",
-    "jsdom": "^27.1.0",
+    "jsdom": "^27.2.0",
     "puppeteer": "24.26.1",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.20.6",
