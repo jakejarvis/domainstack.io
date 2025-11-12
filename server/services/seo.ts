@@ -48,6 +48,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
           previewTitle: seoTable.previewTitle,
           previewDescription: seoTable.previewDescription,
           previewImageUrl: seoTable.previewImageUrl,
+          previewImageUploadedUrl: seoTable.previewImageUploadedUrl,
           canonicalUrl: seoTable.canonicalUrl,
           robots: seoTable.robots,
           errors: seoTable.errors,
@@ -64,6 +65,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         previewTitle: string | null;
         previewDescription: string | null;
         previewImageUrl: string | null;
+        previewImageUploadedUrl: string | null;
         canonicalUrl: string | null;
         robots: RobotsTxt;
         errors: Record<string, unknown>;
