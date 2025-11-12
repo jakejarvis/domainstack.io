@@ -107,11 +107,17 @@ export async function detectHosting(domain: string): Promise<Hosting> {
   // Parallelize headers probe and IP lookup when web hosting exists
   const [headersResponse, meta] = await Promise.all([
     hasWebHosting
-      ? probeHeaders(domain).catch(() => ({
-          headers: [] as { name: string; value: string }[],
-          status: 0,
-          statusMessage: undefined,
-        }))
+      ? probeHeaders(domain).catch((err) => {
+          console.error(
+            `[hosting] headers probe error ${domain}`,
+            err instanceof Error ? err : new Error(String(err)),
+          );
+          return {
+            headers: [] as { name: string; value: string }[],
+            status: 0,
+            statusMessage: undefined,
+          };
+        })
       : Promise.resolve({
           headers: [] as { name: string; value: string }[],
           status: 0,

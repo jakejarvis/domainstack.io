@@ -40,7 +40,14 @@ async function fetchProviderPricing(
   // Try cache first
   const cached = await redis
     .get<RegistrarPricingResponse>(provider.cacheKey)
-    .catch(() => null);
+    .catch((err) => {
+      console.error(
+        `[pricing] cache read error ${provider.name}`,
+        { cacheKey: provider.cacheKey },
+        err instanceof Error ? err : new Error(String(err)),
+      );
+      return null;
+    });
   if (cached) return cached;
 
   // Fetch fresh pricing
@@ -49,7 +56,13 @@ async function fetchProviderPricing(
     // Cache for next time (fire-and-forget)
     redis
       .set(provider.cacheKey, payload, { ex: provider.cacheTtlSeconds })
-      .catch(() => {});
+      .catch((err) => {
+        console.error(
+          `[pricing] cache write error ${provider.name}`,
+          { cacheKey: provider.cacheKey },
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
     console.info(`[pricing] fetch ok ${provider.name} (not cached)`);
     return payload;
   } catch (err) {
@@ -58,7 +71,13 @@ async function fetchProviderPricing(
       err instanceof Error ? err : new Error(String(err)),
     );
     // Short TTL negative cache (fire-and-forget)
-    redis.set(provider.cacheKey, null, { ex: 60 }).catch(() => {});
+    redis.set(provider.cacheKey, null, { ex: 60 }).catch((cacheErr) => {
+      console.error(
+        `[pricing] negative cache write error ${provider.name}`,
+        { cacheKey: provider.cacheKey },
+        cacheErr instanceof Error ? cacheErr : new Error(String(cacheErr)),
+      );
+    });
     return null;
   }
 }

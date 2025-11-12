@@ -84,7 +84,13 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
         },
         { ex: ttlSeconds },
       )
-      .catch(() => {});
+      .catch((err) => {
+        console.error(
+          "[cache] cache write error",
+          { indexKey },
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
 
     return { url: produced.url };
   } catch (produceErr) {

@@ -88,9 +88,14 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
  */
 const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
   // Try Redis cache first
-  const cached = await redis
-    .get<CloudflareIpRanges>(CACHE_KEY)
-    .catch(() => null);
+  const cached = await redis.get<CloudflareIpRanges>(CACHE_KEY).catch((err) => {
+    console.error(
+      "[cloudflare-ips] cache read error",
+      { cacheKey: CACHE_KEY },
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    return null;
+  });
   if (cached) {
     parseAndCacheRanges(cached);
     return cached;
@@ -103,7 +108,13 @@ const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
     // Cache for next time (fire-and-forget)
     redis
       .set(CACHE_KEY, ranges, { ex: CLOUDFLARE_IPS_CACHE_TTL_SECONDS })
-      .catch(() => {});
+      .catch((err) => {
+        console.error(
+          "[cloudflare-ips] cache write error",
+          { cacheKey: CACHE_KEY },
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
 
     parseAndCacheRanges(ranges);
     console.info("[cloudflare-ips] IP ranges fetched (not cached)");

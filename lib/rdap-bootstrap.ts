@@ -27,7 +27,14 @@ const CACHE_KEY = "rdap:bootstrap";
  */
 export const getRdapBootstrapData = cache(async (): Promise<BootstrapData> => {
   // Try Redis cache first
-  const cached = await redis.get<BootstrapData>(CACHE_KEY).catch(() => null);
+  const cached = await redis.get<BootstrapData>(CACHE_KEY).catch((err) => {
+    console.error(
+      "[rdap-bootstrap] cache read error",
+      { cacheKey: CACHE_KEY },
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    return null;
+  });
   if (cached) return cached;
 
   // Fetch from IANA
@@ -45,7 +52,13 @@ export const getRdapBootstrapData = cache(async (): Promise<BootstrapData> => {
     // Cache for next time (fire-and-forget)
     redis
       .set(CACHE_KEY, bootstrap, { ex: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS })
-      .catch(() => {});
+      .catch((err) => {
+        console.error(
+          "[rdap-bootstrap] cache write error",
+          { cacheKey: CACHE_KEY },
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
 
     console.info("[rdap-bootstrap] Bootstrap data fetched (not cached)");
     return bootstrap;
