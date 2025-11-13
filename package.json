@@ -68,7 +68,7 @@
     "media-chrome": "^4.15.1",
     "motion": "^12.23.24",
     "ms": "3.0.0-canary.202508261828",
-    "next": "16.0.1",
+    "next": "16.0.3",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.7",
     "posthog-js": "^1.290.0",
