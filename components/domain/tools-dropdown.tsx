@@ -118,6 +118,12 @@ const TOOLS = (
       buildUrl: (domain) =>
         `https://otx.alienvault.com/indicator/domain/${encodeURIComponent(domain)}`,
     },
+    {
+      name: "Cloudflare Radar",
+      faviconDomain: "cloudflare.com",
+      buildUrl: (domain) =>
+        `https://radar.cloudflare.com/domains/domain/${encodeURIComponent(domain)}`,
+    },
   ] satisfies Tool[]
 ).toSorted((a, b) =>
   a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
