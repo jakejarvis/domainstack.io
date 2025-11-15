@@ -21,6 +21,7 @@ export type DomainSearchProps = {
   initialValue?: string;
   externalNavigation?: { domain: string; source: Source } | null;
   onNavigationCompleteAction?: () => void;
+  onFocusChangeAction?: (isFocused: boolean) => void;
 };
 
 export function DomainSearch({
@@ -28,6 +29,7 @@ export function DomainSearch({
   initialValue = "",
   externalNavigation,
   onNavigationCompleteAction,
+  onFocusChangeAction,
 }: DomainSearchProps) {
   const { value, setValue, loading, inputRef, submit, navigateToDomain } =
     useDomainSearch({
@@ -76,6 +78,7 @@ export function DomainSearch({
 
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     setIsFocused(true);
+    onFocusChangeAction?.(true);
     // If focus came from keyboard (e.g., Cmd/Ctrl+K), select immediately
     // and allow the next click to place the caret precisely.
     if (!pointerDownRef.current) {
@@ -91,6 +94,7 @@ export function DomainSearch({
 
   function handleBlur() {
     setIsFocused(false);
+    onFocusChangeAction?.(false);
   }
 
   function handleClick(e: React.MouseEvent<HTMLInputElement>) {
@@ -114,6 +118,7 @@ export function DomainSearch({
       e.stopPropagation();
       e.currentTarget.blur();
       setIsFocused(false);
+      onFocusChangeAction?.(false);
     }
   }
 
