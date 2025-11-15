@@ -1,7 +1,7 @@
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { captureClient } from "@/lib/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 
 type QueryKeys = {
@@ -55,7 +55,7 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
 
   // Export handler that reads all data from React Query cache
   const handleExport = useCallback(() => {
-    captureClient("export_json_clicked", { domain });
+    analytics.track("export_json_clicked", { domain });
 
     try {
       // Read data from cache using provided query keys
@@ -83,10 +83,13 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
       exportDomainData(domain, exportData);
     } catch (error) {
       console.error("[export] failed to export domain data", error);
-      captureClient("export_json_failed", {
-        domain,
-        error: error instanceof Error ? error.message : String(error),
-      });
+
+      analytics.trackException(
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          domain,
+        },
+      );
 
       // Show error toast
       toast.error(`Failed to export ${domain}`, {

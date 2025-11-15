@@ -2,6 +2,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportView } from "@/components/domain/domain-report-view";
+import { analytics } from "@/lib/analytics/server";
 import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { makeQueryClient } from "@/trpc/query-client";
@@ -46,6 +47,9 @@ export default async function DomainPage({
   if (normalized !== decoded) {
     redirect(`/${encodeURIComponent(normalized)}`);
   }
+
+  // Track server-side page view
+  analytics.track("report_viewed", { domain: normalized });
 
   // Minimal prefetch: registration only, let sections stream progressively
   const queryClient = makeQueryClient();

@@ -2,7 +2,7 @@ import "server-only";
 
 import { TRPCError } from "@trpc/server";
 import { Ratelimit } from "@upstash/ratelimit";
-import { waitUntil } from "@vercel/functions";
+import { after } from "next/server";
 import { getRateLimits, type ServiceLimits } from "@/lib/edge-config";
 import { redis } from "@/lib/redis";
 
@@ -66,7 +66,9 @@ export async function assertRateLimit(
 
   // allow ratelimit analytics to be sent in background
   try {
-    waitUntil?.(res.pending);
+    after(async () => {
+      await res.pending;
+    });
   } catch {
     // no-op
   }

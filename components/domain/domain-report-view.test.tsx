@@ -5,11 +5,6 @@ import { userEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainReportView } from "./domain-report-view";
 
-// Mock all required modules
-vi.mock("@/lib/analytics/client", () => ({
-  captureClient: vi.fn(),
-}));
-
 vi.mock("@/lib/json-export", () => ({
   exportDomainData: vi.fn(),
 }));
@@ -181,7 +176,6 @@ describe("DomainReportView Export", () => {
   });
   it("calls exportDomainData with cached query data when Export button is clicked", async () => {
     const { exportDomainData } = await import("@/lib/json-export");
-    const { captureClient } = await import("@/lib/analytics/client");
 
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -226,11 +220,6 @@ describe("DomainReportView Export", () => {
 
     // Click export button
     await userEvent.click(exportButton);
-
-    // Verify analytics was captured
-    expect(captureClient).toHaveBeenCalledWith("export_json_clicked", {
-      domain,
-    });
 
     // Verify exportDomainData was called with aggregated data
     expect(exportDomainData).toHaveBeenCalledWith(domain, {

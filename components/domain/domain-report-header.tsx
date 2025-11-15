@@ -5,7 +5,7 @@ import { ExportButton } from "@/components/domain/export-button";
 import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
-import { captureClient } from "@/lib/analytics/client";
+import { useAnalytics } from "@/lib/analytics/client";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -22,6 +22,8 @@ export function DomainReportHeader({
   onExport,
   exportDisabled,
 }: DomainReportHeaderProps) {
+  const analytics = useAnalytics();
+
   return (
     <div className="flex items-center justify-between">
       <ScreenshotTooltip domain={domain}>
@@ -31,7 +33,7 @@ export function DomainReportHeader({
           rel="noopener"
           className="flex items-center gap-2"
           onClick={() =>
-            captureClient("external_domain_link_clicked", { domain })
+            analytics.track("external_domain_link_clicked", { domain })
           }
         >
           <Favicon domain={domain} size={20} className="rounded" />

@@ -1,11 +1,23 @@
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 
-// Global mocks for analytics capture to avoid network/log noise in tests
+// Global mocks for analytics to avoid network/log noise in tests
 vi.mock("@/lib/analytics/server", () => ({
-  captureServer: vi.fn(async () => undefined),
+  analytics: {
+    track: vi.fn(async () => undefined),
+    trackException: vi.fn(async () => undefined),
+  },
 }));
-vi.mock("@/lib/analytics/client", () => ({ captureClient: vi.fn() }));
+vi.mock("@/lib/analytics/client", () => ({
+  analytics: {
+    track: vi.fn(),
+    trackException: vi.fn(),
+  },
+  useAnalytics: () => ({
+    track: vi.fn(),
+    trackException: vi.fn(),
+  }),
+}));
 
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));

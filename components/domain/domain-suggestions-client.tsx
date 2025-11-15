@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useRouter } from "@/hooks/use-router";
-import { captureClient } from "@/lib/analytics/client";
+import { useAnalytics } from "@/lib/analytics/client";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,7 @@ export function DomainSuggestionsClient({
   max = MAX_HISTORY_ITEMS,
 }: DomainSuggestionsClientProps) {
   const router = useRouter();
+  const analytics = useAnalytics();
   const { onSuggestionClickAction } = useHomeSearch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const updateGradientsRef = useRef<(() => void) | null>(null);
@@ -103,7 +104,7 @@ export function DomainSuggestionsClient({
   }, []); // Only run once on mount
 
   function handleClick(domain: string) {
-    captureClient("search_suggestion_clicked", {
+    analytics.track("search_suggestion_clicked", {
       domain,
       source: "suggestion",
     });
@@ -116,9 +117,7 @@ export function DomainSuggestionsClient({
 
   function handleClearHistory() {
     clearHistory();
-    captureClient("search_history_cleared", {
-      source: "suggestion",
-    });
+    analytics.track("search_history_cleared");
 
     // Scroll back to the left with smooth animation
     if (scrollContainerRef.current) {

@@ -4,7 +4,6 @@ import { Check, ClipboardCheck, Copy } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { captureClient } from "@/lib/analytics/client";
 
 interface CopyButtonProps {
   value: string;
@@ -17,15 +16,14 @@ export function CopyButton({ value, label }: CopyButtonProps) {
 
   const handleCopy = () => {
     navigator.clipboard.writeText(value);
+
     toast.success("Copied!", {
       icon: <ClipboardCheck className="h-4 w-4" />,
       position: "bottom-center",
     });
-    captureClient("copy_clicked", {
-      label: label ?? null,
-      value_length: value.length,
-    });
+
     setCopied(true);
+
     if (resetTimerRef.current) {
       window.clearTimeout(resetTimerRef.current);
     }
