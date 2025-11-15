@@ -1,6 +1,7 @@
 "use client";
 
 import posthog from "posthog-js";
+import { useMemo } from "react";
 
 function track(event: string, properties?: Record<string, unknown>) {
   try {
@@ -39,8 +40,11 @@ export const analytics = {
  * ```
  */
 export function useAnalytics() {
-  return {
-    track,
-    trackException,
-  };
+  return useMemo(
+    () => ({
+      track,
+      trackException,
+    }),
+    [],
+  );
 }
