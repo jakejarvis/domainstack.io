@@ -114,7 +114,7 @@ const TOOLS = (
     },
     {
       name: "Open Threat Exchange",
-      faviconDomain: "ssllabs.com",
+      faviconDomain: "levelblue.com",
       buildUrl: (domain) =>
         `https://otx.alienvault.com/indicator/domain/${encodeURIComponent(domain)}`,
     },
@@ -123,6 +123,12 @@ const TOOLS = (
       faviconDomain: "cloudflare.com",
       buildUrl: (domain) =>
         `https://radar.cloudflare.com/domains/domain/${encodeURIComponent(domain)}`,
+    },
+    {
+      name: "IBM X-Force",
+      faviconDomain: "exchange.xforce.ibmcloud.com",
+      buildUrl: (domain) =>
+        `https://exchange.xforce.ibmcloud.com/url/${encodeURIComponent(domain)}`,
     },
   ] satisfies Tool[]
 ).toSorted((a, b) =>
