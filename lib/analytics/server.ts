@@ -1,7 +1,7 @@
 import "server-only";
 
-import { waitUntil } from "@vercel/functions";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -53,7 +53,7 @@ const getDistinctId = cache(async (): Promise<string> => {
  * Use this in server components, API routes, and server actions.
  *
  * Note: These functions are fire-and-forget. They return immediately
- * and perform tracking in the background via waitUntil (when available).
+ * and perform tracking in the background via after() (when available).
  */
 export const analytics = {
   track: (
@@ -83,9 +83,9 @@ export const analytics = {
 
     // Run in background when available, otherwise fire-and-forget
     try {
-      waitUntil?.(doTrack());
+      after(() => doTrack());
     } catch {
-      // If waitUntil not available, still track but don't block
+      // If after not available, still track but don't block
       doTrack().catch(() => {
         // no-op - graceful degradation
       });
@@ -119,9 +119,9 @@ export const analytics = {
 
     // Run in background when available, otherwise fire-and-forget
     try {
-      waitUntil?.(doTrack());
+      after(() => doTrack());
     } catch {
-      // If waitUntil not available, still track but don't block
+      // If after not available, still track but don't block
       doTrack().catch(() => {
         // no-op - graceful degradation
       });
