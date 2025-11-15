@@ -6,7 +6,7 @@ import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useRouter } from "@/hooks/use-router";
-import { captureClient } from "@/lib/analytics/client";
+import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
 
 const domainSchema = z
@@ -79,7 +79,7 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
 
   function navigateToDomain(domain: string, navigateSource: Source = source) {
     const target = normalizeDomainInput(domain);
-    captureClient("search_submitted", {
+    analytics.track("search_submitted", {
       domain: target,
       source: navigateSource,
     });
@@ -104,7 +104,7 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
       const firstIssue = parsed.error.issues?.[0] as
         | { code?: string; message?: string }
         | undefined;
-      captureClient("search_invalid_input", {
+      analytics.track("search_invalid_input", {
         reason: firstIssue?.code ?? "invalid",
         value_length: value.length,
       });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
 import { createSectionWithData } from "@/components/domain/create-section-with-data";
@@ -28,7 +28,6 @@ import {
   useSeoQuery,
 } from "@/hooks/use-domain-queries";
 import { useDomainQueryKeys } from "@/hooks/use-domain-query-keys";
-import { captureClient } from "@/lib/analytics/client";
 
 // Create section components using the factory
 const RegistrationSectionWithData = createSectionWithData(
@@ -86,15 +85,6 @@ function DomainReportContent({ domain }: { domain: string }) {
 
   // Add to search history (only for registered domains)
   useDomainHistory(isConfirmedUnregistered ? "" : domain);
-
-  // Capture analytics event when registration state resolves
-  useEffect(() => {
-    if (isConfirmedUnregistered) {
-      captureClient("unregistered_viewed", { domain });
-    } else {
-      captureClient("report_viewed", { domain });
-    }
-  }, [domain, isConfirmedUnregistered]);
 
   // Get memoized query keys for all sections
   const queryKeys = useDomainQueryKeys(domain);
