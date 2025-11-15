@@ -162,4 +162,139 @@ describe("cached assets", () => {
     expect(stored?.url).toBe(null);
     expect(stored?.notFound).toBe(true);
   });
+
+  it("checks DB cache (L2) on Redis miss", async () => {
+    const indexKey = ns("test", "asset7");
+    const dbUrl = "https://db/cached.webp";
+
+    let fetchFromDbCalled = false;
+    let produceCalled = false;
+
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      ttlSeconds: 60,
+      fetchFromDb: async () => {
+        fetchFromDbCalled = true;
+        return { url: dbUrl, key: "db-key" };
+      },
+      produceAndUpload: async () => {
+        produceCalled = true;
+        return { url: "https://cdn/produced.webp" };
+      },
+    });
+
+    expect(result).toEqual({ url: dbUrl });
+    expect(fetchFromDbCalled).toBe(true);
+    expect(produceCalled).toBe(false);
+
+    // DB result should be cached in Redis
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const { redis } = await import("@/lib/redis");
+    const stored = (await redis.get(indexKey)) as { url?: string } | null;
+    expect(stored?.url).toBe(dbUrl);
+  });
+
+  it("generates asset when both Redis and DB miss", async () => {
+    const indexKey = ns("test", "asset8");
+
+    let fetchFromDbCalled = false;
+    let produceCalled = false;
+    let persistToDbCalled = false;
+
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      ttlSeconds: 60,
+      fetchFromDb: async () => {
+        fetchFromDbCalled = true;
+        return null; // DB miss
+      },
+      produceAndUpload: async () => {
+        produceCalled = true;
+        return { url: "https://cdn/fresh.webp", key: "fresh-key" };
+      },
+      persistToDb: async (res) => {
+        persistToDbCalled = true;
+        expect(res.url).toBe("https://cdn/fresh.webp");
+      },
+    });
+
+    expect(result).toEqual({ url: "https://cdn/fresh.webp" });
+    expect(fetchFromDbCalled).toBe(true);
+    expect(produceCalled).toBe(true);
+
+    // Wait for fire-and-forget to complete
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(persistToDbCalled).toBe(true);
+  });
+
+  it("skips DB callbacks when not provided", async () => {
+    const indexKey = ns("test", "asset9");
+
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      ttlSeconds: 60,
+      produceAndUpload: async () => ({
+        url: "https://cdn/no-db.webp",
+        key: "no-db",
+      }),
+      // fetchFromDb and persistToDb omitted
+    });
+
+    expect(result).toEqual({ url: "https://cdn/no-db.webp" });
+  });
+
+  it("handles DB fetch errors gracefully", async () => {
+    const indexKey = ns("test", "asset10");
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      ttlSeconds: 60,
+      fetchFromDb: async () => {
+        throw new Error("DB connection failed");
+      },
+      produceAndUpload: async () => ({
+        url: "https://cdn/fallback.webp",
+      }),
+    });
+
+    expect(result).toEqual({ url: "https://cdn/fallback.webp" });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[cache] db read failed"),
+      expect.any(Error),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("handles DB persist errors gracefully", async () => {
+    const indexKey = ns("test", "asset11");
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await getOrCreateCachedAsset<{ source: string }>({
+      indexKey,
+      ttlSeconds: 60,
+      produceAndUpload: async () => ({
+        url: "https://cdn/persist-fail.webp",
+      }),
+      persistToDb: async () => {
+        throw new Error("DB write failed");
+      },
+    });
+
+    expect(result).toEqual({ url: "https://cdn/persist-fail.webp" });
+
+    // Wait for fire-and-forget to complete
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[cache] db persist error"),
+      expect.any(Object),
+      expect.any(Error),
+    );
+
+    errorSpy.mockRestore();
+  });
 });

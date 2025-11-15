@@ -1,6 +1,24 @@
 /* @vitest-environment node */
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+// Mock toRegistrableDomain to allow .invalid and .example domains for testing
+vi.mock("@/lib/domain-server", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/domain-server")>(
+    "@/lib/domain-server",
+  );
+  return {
+    ...actual,
+    toRegistrableDomain: (input: string) => {
+      // Allow .invalid and .example domains (reserved, never resolve) for safe testing
+      if (input.endsWith(".invalid") || input.endsWith(".example")) {
+        return input.toLowerCase();
+      }
+      // Use real implementation for everything else
+      return actual.toRegistrableDomain(input);
+    },
+  };
+});
+
 const storageMock = vi.hoisted(() => ({
   storeImage: vi.fn(async () => ({
     url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
@@ -24,6 +42,9 @@ vi.mock("sharp", () => ({
 }));
 
 beforeAll(async () => {
+  const { makePGliteDb } = await import("@/lib/db/pglite");
+  const { db } = await makePGliteDb();
+  vi.doMock("@/lib/db/client", () => ({ db }));
   const { makeInMemoryRedis } = await import("@/lib/redis-mock");
   const impl = makeInMemoryRedis();
   vi.doMock("@/lib/redis", () => impl);
@@ -38,6 +59,8 @@ beforeAll(async () => {
 afterEach(async () => {
   vi.restoreAllMocks();
   storageMock.storeImage.mockReset();
+  const { resetPGliteDb } = await import("@/lib/db/pglite");
+  await resetPGliteDb();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
   resetInMemoryRedis();
 });
