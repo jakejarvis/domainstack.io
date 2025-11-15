@@ -109,11 +109,9 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
         value_length: value.length,
       });
       if (showInvalidToast) {
-        const friendlyMessage =
-          firstIssue?.message ?? "Please enter a valid domain.";
-        toast.error(friendlyMessage, {
+        toast.error(firstIssue?.message, {
           icon: createElement(CircleX, { className: "h-4 w-4" }),
-          position: "top-center",
+          position: "bottom-center",
         });
         inputRef.current?.focus();
       }
