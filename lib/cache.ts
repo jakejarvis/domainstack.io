@@ -34,6 +34,7 @@ type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
     url: string | null;
     key?: string;
     notFound?: boolean;
+    metrics?: TProduceMeta;
   }) => Promise<void>;
 };
 
@@ -141,6 +142,7 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
         url: produced.url,
         key: produced.key,
         notFound: produced.notFound,
+        metrics: produced.metrics,
       }).catch((err) => {
         console.error(
           "[cache] db persist error",

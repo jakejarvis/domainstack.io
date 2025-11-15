@@ -187,7 +187,7 @@ export async function getOrCreateScreenshotBlobUrl(
         pathname: result.key ?? null,
         width: VIEWPORT_WIDTH,
         height: VIEWPORT_HEIGHT,
-        source: null, // Will be set from metrics if available
+        source: result.metrics?.source ?? null,
         notFound: result.notFound ?? false,
         fetchedAt: now,
         expiresAt,

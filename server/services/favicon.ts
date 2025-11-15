@@ -129,10 +129,10 @@ export async function getOrCreateFaviconBlobUrl(
         url: result.url,
         pathname: result.key ?? null,
         size: DEFAULT_SIZE,
-        source: null, // Will be set from metrics if available
+        source: result.metrics?.source ?? null,
         notFound: result.notFound ?? false,
-        upstreamStatus: null,
-        upstreamContentType: null,
+        upstreamStatus: result.metrics?.upstream_status ?? null,
+        upstreamContentType: result.metrics?.upstream_content_type ?? null,
         fetchedAt: now,
         expiresAt,
       });
