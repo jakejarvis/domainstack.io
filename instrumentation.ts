@@ -15,35 +15,13 @@ export const onRequestError: Instrumentation.onRequestError = async (
       // Dynamic imports for Node.js-only code
       const { analytics } = await import("@/lib/analytics/server");
 
-      let distinctId: string | null = null;
-      if (request.headers?.cookie) {
-        const cookieString = request.headers.cookie;
-        const postHogCookieMatch =
-          typeof cookieString === "string"
-            ? cookieString.match(/ph_phc_.*?_posthog=([^;]+)/)
-            : null;
-
-        if (postHogCookieMatch?.[1]) {
-          try {
-            const decodedCookie = decodeURIComponent(postHogCookieMatch[1]);
-            const postHogData = JSON.parse(decodedCookie);
-            distinctId = postHogData.distinct_id;
-          } catch (err) {
-            console.error(
-              "[instrumentation] cookie parse error",
-              err instanceof Error ? err : new Error(String(err)),
-            );
-          }
-        }
-      }
-
+      // Note: we let analytics.trackException handle distinctId extraction from cookies
       analytics.trackException(
         error instanceof Error ? error : new Error(String(error)),
         {
           path: request.path,
           method: request.method,
         },
-        distinctId,
       );
     } catch (trackingError) {
       // Graceful degradation - don't throw to avoid breaking the request

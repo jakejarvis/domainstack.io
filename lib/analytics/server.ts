@@ -95,7 +95,7 @@ export const analytics = {
   trackException: (
     error: Error,
     properties: Record<string, unknown>,
-    distinctId?: string | null,
+    distinctId?: string,
   ) => {
     const doTrack = async () => {
       const client = getServerPosthog();
