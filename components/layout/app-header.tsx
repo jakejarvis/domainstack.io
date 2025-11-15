@@ -27,9 +27,8 @@ export function AppHeader() {
         <Suspense fallback={<GithubStarsSkeleton />}>
           <GithubStars />
         </Suspense>
-        {/* The bookmarklet is practially uselesss on mobile */}
-        <Separator orientation="vertical" className="!h-4 hidden sm:block" />
-        <BookmarkletDialog className="hidden sm:block" />
+        <Separator orientation="vertical" className="!h-4" />
+        <BookmarkletDialog />
         {/* Theme toggle is always shown */}
         <Separator orientation="vertical" className="!h-4" />
         <ThemeToggle />
