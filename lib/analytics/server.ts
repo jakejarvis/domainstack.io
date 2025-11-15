@@ -80,7 +80,7 @@ export const analytics = {
   trackException: async (
     error: Error,
     properties: Record<string, unknown>,
-    distinctId?: string,
+    distinctId?: string | null,
   ) => {
     const client = getServerPosthog();
     if (!client) {
