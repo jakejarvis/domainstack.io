@@ -49,7 +49,7 @@ export default async function DomainPage({
   }
 
   // Track server-side page view
-  await analytics.track("report_viewed", { domain: normalized });
+  analytics.track("report_viewed", { domain: normalized });
 
   // Minimal prefetch: registration only, let sections stream progressively
   const queryClient = makeQueryClient();

@@ -37,7 +37,7 @@ export const onRequestError: Instrumentation.onRequestError = async (
         }
       }
 
-      await analytics.trackException(
+      analytics.trackException(
         error instanceof Error ? error : new Error(String(error)),
         {
           path: request.path,

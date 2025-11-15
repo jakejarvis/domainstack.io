@@ -51,53 +51,80 @@ const getDistinctId = cache(async (): Promise<string> => {
 /**
  * Analytics tracking utility for server-side contexts.
  * Use this in server components, API routes, and server actions.
+ *
+ * Note: These functions are fire-and-forget. They return immediately
+ * and perform tracking in the background via waitUntil (when available).
  */
 export const analytics = {
-  track: async (
+  track: (
     event: string,
     properties: Record<string, unknown>,
     distinctId?: string,
   ) => {
-    const client = getServerPosthog();
-    if (!client) {
-      return;
-    }
+    const doTrack = async () => {
+      const client = getServerPosthog();
+      if (!client) {
+        return;
+      }
 
-    client.capture({
-      event,
-      distinctId: distinctId || (await getDistinctId()) || "server",
-      properties,
-    });
+      client.capture({
+        event,
+        distinctId: distinctId || (await getDistinctId()) || "server",
+        properties,
+      });
 
-    // flush events to posthog in background
+      // flush events to posthog
+      try {
+        await client.shutdown();
+      } catch {
+        // no-op
+      }
+    };
+
+    // Run in background when available, otherwise fire-and-forget
     try {
-      waitUntil?.(client.shutdown());
+      waitUntil?.(doTrack());
     } catch {
-      // no-op
+      // If waitUntil not available, still track but don't block
+      doTrack().catch(() => {
+        // no-op - graceful degradation
+      });
     }
   },
 
-  trackException: async (
+  trackException: (
     error: Error,
     properties: Record<string, unknown>,
     distinctId?: string | null,
   ) => {
-    const client = getServerPosthog();
-    if (!client) {
-      return;
-    }
+    const doTrack = async () => {
+      const client = getServerPosthog();
+      if (!client) {
+        return;
+      }
 
-    client.captureException(
-      error,
-      distinctId || (await getDistinctId()) || "server",
-      properties,
-    );
+      client.captureException(
+        error,
+        distinctId || (await getDistinctId()) || "server",
+        properties,
+      );
 
-    // flush events to posthog in background
+      // flush events to posthog
+      try {
+        await client.shutdown();
+      } catch {
+        // no-op
+      }
+    };
+
+    // Run in background when available, otherwise fire-and-forget
     try {
-      waitUntil?.(client.shutdown());
+      waitUntil?.(doTrack());
     } catch {
-      // no-op
+      // If waitUntil not available, still track but don't block
+      doTrack().catch(() => {
+        // no-op - graceful degradation
+      });
     }
   },
 };
