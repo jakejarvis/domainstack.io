@@ -1,7 +1,6 @@
 import { getOrCreateCachedAsset } from "@/lib/cache";
 import { TTL_FAVICON, USER_AGENT } from "@/lib/constants";
-import { ensureDomainRecord } from "@/lib/db/repos/domain-helpers";
-import { findDomainByName } from "@/lib/db/repos/domains";
+import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
 import { getFaviconByDomainId, upsertFavicon } from "@/lib/db/repos/favicons";
 import { ttlForFavicon } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";

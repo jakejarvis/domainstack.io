@@ -1,8 +1,7 @@
 import type { Browser } from "puppeteer-core";
 import { getOrCreateCachedAsset } from "@/lib/cache";
 import { TTL_SCREENSHOT, USER_AGENT } from "@/lib/constants";
-import { ensureDomainRecord } from "@/lib/db/repos/domain-helpers";
-import { findDomainByName } from "@/lib/db/repos/domains";
+import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
 import {
   getScreenshotByDomainId,
   upsertScreenshot,
