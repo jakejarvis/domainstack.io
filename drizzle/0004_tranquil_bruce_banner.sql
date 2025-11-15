@@ -1,1 +1,0 @@
-CREATE INDEX "i_providers_name_lower" ON "providers" USING btree ("category",lower("name"));

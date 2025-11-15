@@ -1,1 +1,0 @@
-ALTER TABLE "http_headers" ADD COLUMN "status" integer DEFAULT 200 NOT NULL;

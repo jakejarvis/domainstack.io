@@ -16,22 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Neon WebSocket proxy -> Postgres (WS on 5433)
-  # This mirrors the Neon Drizzle guide's example: proxy listens on :80 in-container,
-  # we publish it on localhost:5433, and point it at our local Postgres at postgres:5432
-  # See https://neon.com/guides/drizzle-local-vercel
-  pg_proxy:
-    image: ghcr.io/neondatabase/wsproxy:latest
-    environment:
-      APPEND_PORT: "postgres:5432"
-      ALLOW_ADDR_REGEX: ".*"
-      LOG_TRAFFIC: "false"
-      LOG_CONN_INFO: "true"
-    ports:
-      - "5433:80"
-    depends_on:
-      - postgres
-
   # Local Redis (binary protocol on 6379)
   redis:
     image: redis:7-alpine

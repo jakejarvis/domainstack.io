@@ -61,8 +61,6 @@ wait_for_port() {
 # --- Wait for exposed services ----------------------------------------------
 # Postgres TCP
 wait_for_port "127.0.0.1" 5432 "Postgres"
-# Neon wsproxy (WebSocket over HTTP)
-wait_for_port "127.0.0.1" 5433 "Neon wsproxy"
 # Redis TCP
 wait_for_port "127.0.0.1" 6379 "Redis"
 # Serverless Redis HTTP (SRH)
@@ -74,7 +72,6 @@ wait_for_port "127.0.0.1" 8288 "Inngest Dev Server"
 echo
 echo "🎉 Local infra is ready!"
 echo "  * Postgres:  postgres://postgres:postgres@localhost:5432/main"
-echo "  * wsproxy:   ws://localhost:5433/v1  (driver uses this automatically)"
 echo "  * Redis:     redis://localhost:6379"
 echo "  * SRH:       http://localhost:8079"
 echo "  * Inngest:   http://localhost:8288"

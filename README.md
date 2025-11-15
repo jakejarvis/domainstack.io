@@ -17,7 +17,7 @@
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
 - **Tailwind CSS v4**
 - **tRPC** API
-- **Postgres** + **Drizzle ORM**
+- **PlanetScale Postgres** + **Drizzle ORM**
 - **Inngest** for background jobs and scheduled revalidation
 - **Upstash Redis** for caching and locks
 - **Vercel Edge Config** for dynamic configuration (domain suggestions, rate limits)
@@ -64,7 +64,6 @@ pnpm dev
 
 This single command boots:
 - **Postgres** on `localhost:5432`
-- **Neon wsproxy** on `localhost:5433` (WebSocket proxy used by the Neon serverless driver)
 - **Redis** on `localhost:6379`
 - **Serverless Redis HTTP (SRH)** on `http://localhost:8079` (Upstash-compatible REST proxy)
 - **Inngest dev server** on `http://localhost:8288`

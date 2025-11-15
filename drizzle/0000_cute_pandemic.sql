@@ -1,6 +1,6 @@
 CREATE TYPE "public"."dns_record_type" AS ENUM('A', 'AAAA', 'MX', 'TXT', 'NS');--> statement-breakpoint
-CREATE TYPE "public"."dns_resolver" AS ENUM('cloudflare', 'google');--> statement-breakpoint
 CREATE TYPE "public"."provider_category" AS ENUM('hosting', 'email', 'dns', 'ca', 'registrar');--> statement-breakpoint
+CREATE TYPE "public"."provider_source" AS ENUM('catalog', 'discovered');--> statement-breakpoint
 CREATE TYPE "public"."registration_source" AS ENUM('rdap', 'whois');--> statement-breakpoint
 CREATE TABLE "certificates" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -25,10 +25,10 @@ CREATE TABLE "dns_records" (
 	"ttl" integer,
 	"priority" integer,
 	"is_cloudflare" boolean,
-	"resolver" "dns_resolver" NOT NULL,
+	"resolver" text NOT NULL,
 	"fetched_at" timestamp with time zone NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
-	CONSTRAINT "u_dns_record" UNIQUE("domain_id","type","name","value")
+	CONSTRAINT "u_dns_record" UNIQUE("domain_id","type","name","value","priority")
 );
 --> statement-breakpoint
 CREATE TABLE "domains" (
@@ -38,6 +38,7 @@ CREATE TABLE "domains" (
 	"unicode_name" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"last_accessed_at" timestamp with time zone,
 	CONSTRAINT "u_domains_name" UNIQUE("name")
 );
 --> statement-breakpoint
@@ -57,13 +58,11 @@ CREATE TABLE "hosting" (
 );
 --> statement-breakpoint
 CREATE TABLE "http_headers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"domain_id" uuid NOT NULL,
-	"name" text NOT NULL,
-	"value" text NOT NULL,
+	"domain_id" uuid PRIMARY KEY NOT NULL,
+	"headers" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"status" integer DEFAULT 200 NOT NULL,
 	"fetched_at" timestamp with time zone NOT NULL,
-	"expires_at" timestamp with time zone NOT NULL,
-	CONSTRAINT "u_http_header" UNIQUE("domain_id","name")
+	"expires_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "providers" (
@@ -72,18 +71,10 @@ CREATE TABLE "providers" (
 	"name" text NOT NULL,
 	"domain" text,
 	"slug" text NOT NULL,
+	"source" "provider_source" DEFAULT 'discovered' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "u_providers_category_slug" UNIQUE("category","slug")
-);
---> statement-breakpoint
-CREATE TABLE "registration_nameservers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"domain_id" uuid NOT NULL,
-	"host" text NOT NULL,
-	"ipv4" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"ipv6" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	CONSTRAINT "u_reg_ns" UNIQUE("domain_id","host")
 );
 --> statement-breakpoint
 CREATE TABLE "registrations" (
@@ -98,6 +89,7 @@ CREATE TABLE "registrations" (
 	"transfer_lock" boolean,
 	"statuses" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"contacts" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"nameservers" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"whois_server" text,
 	"rdap_servers" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"source" "registration_source" NOT NULL,
@@ -134,7 +126,6 @@ ALTER TABLE "hosting" ADD CONSTRAINT "hosting_hosting_provider_id_providers_id_f
 ALTER TABLE "hosting" ADD CONSTRAINT "hosting_email_provider_id_providers_id_fk" FOREIGN KEY ("email_provider_id") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "hosting" ADD CONSTRAINT "hosting_dns_provider_id_providers_id_fk" FOREIGN KEY ("dns_provider_id") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "http_headers" ADD CONSTRAINT "http_headers_domain_id_domains_id_fk" FOREIGN KEY ("domain_id") REFERENCES "public"."domains"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "registration_nameservers" ADD CONSTRAINT "registration_nameservers_domain_id_domains_id_fk" FOREIGN KEY ("domain_id") REFERENCES "public"."domains"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "registrations" ADD CONSTRAINT "registrations_domain_id_domains_id_fk" FOREIGN KEY ("domain_id") REFERENCES "public"."domains"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "registrations" ADD CONSTRAINT "registrations_registrar_provider_id_providers_id_fk" FOREIGN KEY ("registrar_provider_id") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "registrations" ADD CONSTRAINT "registrations_reseller_provider_id_providers_id_fk" FOREIGN KEY ("reseller_provider_id") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -146,9 +137,9 @@ CREATE INDEX "i_dns_domain_type" ON "dns_records" USING btree ("domain_id","type
 CREATE INDEX "i_dns_type_value" ON "dns_records" USING btree ("type","value");--> statement-breakpoint
 CREATE INDEX "i_dns_expires" ON "dns_records" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "i_domains_tld" ON "domains" USING btree ("tld");--> statement-breakpoint
+CREATE INDEX "i_domains_last_accessed" ON "domains" USING btree ("last_accessed_at");--> statement-breakpoint
 CREATE INDEX "i_hosting_providers" ON "hosting" USING btree ("hosting_provider_id","email_provider_id","dns_provider_id");--> statement-breakpoint
-CREATE INDEX "i_http_name" ON "http_headers" USING btree ("name");--> statement-breakpoint
-CREATE INDEX "i_reg_ns_host" ON "registration_nameservers" USING btree ("host");--> statement-breakpoint
+CREATE INDEX "i_providers_name_lower" ON "providers" USING btree ("category",lower("name"));--> statement-breakpoint
 CREATE INDEX "i_reg_registrar" ON "registrations" USING btree ("registrar_provider_id");--> statement-breakpoint
 CREATE INDEX "i_reg_expires" ON "registrations" USING btree ("expires_at");--> statement-breakpoint
 CREATE INDEX "i_seo_src_final_url" ON "seo" USING btree ("source_final_url");--> statement-breakpoint

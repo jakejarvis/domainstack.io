@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1760902370337,
-      "tag": "0000_complete_wolfpack",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1761315158458,
-      "tag": "0001_lazy_namor",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1761678447420,
-      "tag": "0002_dapper_tomas",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1761683390956,
-      "tag": "0003_slippery_rocket_racer",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1761772897161,
-      "tag": "0004_tranquil_bruce_banner",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1761779161195,
-      "tag": "0005_wise_steve_rogers",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1761858707958,
-      "tag": "0006_stiff_plazm",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1762109168801,
-      "tag": "0007_flat_veda",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1762273848868,
-      "tag": "0008_slim_ken_ellis",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1762287285272,
-      "tag": "0009_nosy_micromacro",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1762287770864,
-      "tag": "0010_exotic_adam_warlock",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1762902695943,
-      "tag": "0011_yummy_lilandra",
+      "when": 1763215417831,
+      "tag": "0000_cute_pandemic",
       "breakpoints": true
     }
   ]

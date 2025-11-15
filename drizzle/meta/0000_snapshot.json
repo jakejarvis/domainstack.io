@@ -1,5 +1,5 @@
 {
-  "id": "06bb0394-eb78-4455-afa5-b591028232f7",
+  "id": "69e923f5-30d7-4e8c-b018-56b429c7534b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -213,8 +213,7 @@
         },
         "resolver": {
           "name": "resolver",
-          "type": "dns_resolver",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -314,7 +313,8 @@
             "domain_id",
             "type",
             "name",
-            "value"
+            "value",
+            "priority"
           ]
         }
       },
@@ -364,6 +364,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "last_accessed_at": {
+          "name": "last_accessed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -372,6 +378,21 @@
           "columns": [
             {
               "expression": "tld",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "i_domains_last_accessed": {
+          "name": "i_domains_last_accessed",
+          "columns": [
+            {
+              "expression": "last_accessed_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -568,30 +589,25 @@
       "name": "http_headers",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "domain_id": {
           "name": "domain_id",
           "type": "uuid",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "text",
+        "headers": {
+          "name": "headers",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
-        "value": {
-          "name": "value",
-          "type": "text",
+        "status": {
+          "name": "status",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 200
         },
         "fetched_at": {
           "name": "fetched_at",
@@ -606,23 +622,7 @@
           "notNull": true
         }
       },
-      "indexes": {
-        "i_http_name": {
-          "name": "i_http_name",
-          "columns": [
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "http_headers_domain_id_domains_id_fk": {
           "name": "http_headers_domain_id_domains_id_fk",
@@ -639,16 +639,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "u_http_header": {
-          "name": "u_http_header",
-          "nullsNotDistinct": false,
-          "columns": [
-            "domain_id",
-            "name"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -689,6 +680,14 @@
           "primaryKey": false,
           "notNull": true
         },
+        "source": {
+          "name": "source",
+          "type": "provider_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'discovered'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -704,69 +703,20 @@
           "default": "now()"
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "u_providers_category_slug": {
-          "name": "u_providers_category_slug",
-          "nullsNotDistinct": false,
-          "columns": [
-            "category",
-            "slug"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.registration_nameservers": {
-      "name": "registration_nameservers",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "domain_id": {
-          "name": "domain_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "host": {
-          "name": "host",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "ipv4": {
-          "name": "ipv4",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "ipv6": {
-          "name": "ipv6",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        }
-      },
       "indexes": {
-        "i_reg_ns_host": {
-          "name": "i_reg_ns_host",
+        "i_providers_name_lower": {
+          "name": "i_providers_name_lower",
           "columns": [
             {
-              "expression": "host",
+              "expression": "category",
               "isExpression": false,
               "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -776,29 +726,15 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "registration_nameservers_domain_id_domains_id_fk": {
-          "name": "registration_nameservers_domain_id_domains_id_fk",
-          "tableFrom": "registration_nameservers",
-          "tableTo": "domains",
-          "columnsFrom": [
-            "domain_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "u_reg_ns": {
-          "name": "u_reg_ns",
+        "u_providers_category_slug": {
+          "name": "u_providers_category_slug",
           "nullsNotDistinct": false,
           "columns": [
-            "domain_id",
-            "host"
+            "category",
+            "slug"
           ]
         }
       },
@@ -873,6 +809,13 @@
         },
         "contacts": {
           "name": "contacts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "nameservers": {
+          "name": "nameservers",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
@@ -1175,14 +1118,6 @@
         "NS"
       ]
     },
-    "public.dns_resolver": {
-      "name": "dns_resolver",
-      "schema": "public",
-      "values": [
-        "cloudflare",
-        "google"
-      ]
-    },
     "public.provider_category": {
       "name": "provider_category",
       "schema": "public",
@@ -1192,6 +1127,14 @@
         "dns",
         "ca",
         "registrar"
+      ]
+    },
+    "public.provider_source": {
+      "name": "provider_source",
+      "schema": "public",
+      "values": [
+        "catalog",
+        "discovered"
       ]
     },
     "public.registration_source": {
