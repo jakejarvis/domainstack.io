@@ -67,7 +67,7 @@ export const analytics = {
         return;
       }
 
-      client.capture({
+      await client.captureImmediate({
         event,
         distinctId: distinctId || (await getDistinctId()) || "server",
         properties,
