@@ -57,26 +57,37 @@ export function SeoSectionSkeleton() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Skeleton className="h-9 w-full rounded-md sm:flex-1" />
             <div className="flex h-9 w-full items-stretch gap-2 sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-              <Skeleton className="h-9 rounded-md sm:w-16" />
-              <Skeleton className="h-9 rounded-md sm:w-[88px]" />
-              <Skeleton className="h-9 rounded-md sm:w-[108px]" />
+              <Skeleton className="h-9 rounded-md sm:w-20" />
+              <Skeleton className="h-9 rounded-md sm:w-20" />
+              <Skeleton className="h-9 rounded-md sm:w-20" />
             </div>
           </div>
 
           {/* Groups accordion skeleton */}
           <div className="space-y-2">
-            {["g-0", "g-1", "g-2"].map((gid) => (
-              <div
-                key={gid}
-                className="rounded-lg border border-border/65 p-1.5"
-              >
-                <div className="flex w-full items-center justify-between rounded-md p-1.5">
+            {["g-0", "g-1", "g-2"].map((gid, gidx) => (
+              <div key={gid}>
+                {/* Group header */}
+                <div className="flex w-full items-center justify-between rounded-md p-1.5 py-2">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="size-3 rounded bg-muted" />
-                    <Skeleton className="h-5 w-10 rounded" />
+                    <Skeleton className="h-5 w-25 rounded" />
                   </div>
                   <Skeleton className="h-4 w-24" />
                 </div>
+                {/* Rule rows skeleton - only show for first group */}
+                {gidx === 0 && (
+                  <div className="flex flex-col py-2">
+                    {[0, 1, 2, 3, 4, 5].map((rid) => (
+                      <div
+                        key={`${gid}-rule-${rid}`}
+                        className={`flex items-center gap-2 border-input border-t px-2.5 py-2.5 ${rid === 0 ? "border-t-0" : ""}`}
+                      >
+                        <Skeleton className="size-3.5 rounded-full" />
+                        <Skeleton className="h-3 w-32 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

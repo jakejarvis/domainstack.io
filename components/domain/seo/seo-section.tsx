@@ -627,20 +627,21 @@ function GroupContent({
     useProgressiveReveal(rules, 6);
   if (isSearching) {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col">
         {rules.map((r, i) => (
           <RuleRow
             key={`r-${r.type}-${r.value}-all-${i}`}
             rule={r}
             query={query}
             highlight={highlight}
+            isFirst={i === 0}
           />
         ))}
       </div>
     );
   }
   return (
-    <div className="flex flex-col gap-1.5 py-2">
+    <div className="flex flex-col py-2">
       {rules.length === 0 && hasEmptyDisallow && only !== "allow" ? (
         <div className="rounded-md bg-muted/30 px-2 py-1 text-[13px] text-muted-foreground/90">
           No disallow restrictions (allow all)
@@ -657,6 +658,7 @@ function GroupContent({
           rule={r}
           query={query}
           highlight={highlight}
+          isFirst={i === 0}
         />
       ))}
       {added.length > 0 ? (
@@ -666,7 +668,7 @@ function GroupContent({
           animate={{ height: "auto", opacity: 1 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
           style={{ overflow: "hidden" }}
-          className="flex flex-col gap-1.5"
+          className="flex flex-col"
         >
           {added.map((r, i) => (
             <RuleRow
@@ -700,13 +702,20 @@ function RuleRow({
   rule,
   query,
   highlight,
+  isFirst = false,
 }: {
   rule: { type: "allow" | "disallow" | "crawlDelay"; value: string };
   query: string;
   highlight: (text: string, q: string) => React.ReactNode;
+  isFirst?: boolean;
 }) {
   return (
-    <div className="group flex items-center gap-2 rounded-lg border border-input px-2.5 py-2 font-mono text-xs">
+    <div
+      className={cn(
+        "group flex items-center gap-2 border-input border-t px-2.5 py-2.5 font-mono text-xs",
+        isFirst && "border-t-0",
+      )}
+    >
       <RuleTypeDot type={rule.type} />
       <span className="truncate">{highlight(rule.value, query)}</span>
     </div>

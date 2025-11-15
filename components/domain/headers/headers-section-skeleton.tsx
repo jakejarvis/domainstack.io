@@ -7,7 +7,7 @@ export function HeadersSectionSkeleton() {
   return (
     <Section {...sections.headers} isLoading>
       <KeyValueGrid colsDesktop={2}>
-        <KeyValueSkeletonList count={12} widthClass="w-[100px]" withTrailing />
+        <KeyValueSkeletonList count={12} widthClass="w-[180px]" withTrailing />
       </KeyValueGrid>
     </Section>
   );

@@ -11,15 +11,11 @@ export function CertificatesSectionSkeleton() {
         <KeyValueGrid colsDesktop={2}>
           <KeyValueSkeleton label="Issuer" widthClass="w-[100px]" withLeading />
           <KeyValueSkeleton label="Subject" widthClass="w-[100px]" />
-          <KeyValueSkeleton label="Valid from" widthClass="w-[100px]" />
-          <KeyValueSkeleton
-            label="Valid to"
-            widthClass="w-[100px]"
-            withSuffix
-          />
+          <KeyValueSkeleton label="Valid from" widthClass="w-[120px]" />
+          <KeyValueSkeleton label="Valid to" widthClass="w-[120px]" />
         </KeyValueGrid>
       </div>
-      <div className="my-2 flex justify-center">
+      <div className="mt-4 flex justify-center">
         <Skeleton className="h-8 w-28 rounded-md" />
       </div>
     </Section>

@@ -13,7 +13,7 @@ export function HostingSectionSkeleton() {
         <KeyValueSkeleton label="Email" withLeading widthClass="w-[100px]" />
       </KeyValueGrid>
 
-      <KeyValueSkeleton label="Location" withLeading widthClass="w-[100px]" />
+      <KeyValueSkeleton label="Location" withLeading widthClass="w-[220px]" />
 
       <MapSkeleton />
     </Section>
