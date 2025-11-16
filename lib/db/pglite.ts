@@ -44,6 +44,23 @@ export async function makePGliteDb(): Promise<DbBundle> {
   return cached;
 }
 
+/**
+ * Properly close PGlite client to prevent file handle leaks.
+ * CRITICAL: Call this in afterAll() hooks to avoid memory leaks and EPERM errors on macOS.
+ */
+export async function closePGliteDb(): Promise<void> {
+  if (!cached) return;
+  try {
+    await cached.client.close();
+  } catch (error) {
+    // Swallow errors on close (client may already be closed)
+    console.warn("PGlite close warning:", error);
+  } finally {
+    cached = null;
+    schemaApplied = false;
+  }
+}
+
 // Helper for tests to clear all rows between cases while reusing the same DB
 export async function resetPGliteDb(): Promise<void> {
   if (!cached) return;

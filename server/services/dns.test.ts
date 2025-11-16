@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -31,6 +32,12 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.restoreAllMocks();
+});
+
+afterAll(async () => {
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
 });
 
 function dohAnswer(

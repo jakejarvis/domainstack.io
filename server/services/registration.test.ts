@@ -1,5 +1,14 @@
 /* @vitest-environment node */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const hoisted = vi.hoisted(() => ({
   lookup: vi.fn(async (_domain: string) => ({
@@ -45,8 +54,8 @@ vi.mock("@/lib/domain-server", async (importOriginal) => {
 });
 
 describe("getRegistration", () => {
-  beforeEach(async () => {
-    vi.resetModules();
+  // Setup DB and Redis mocks once for all tests (expensive operations)
+  beforeAll(async () => {
     const { makePGliteDb } = await import("@/lib/db/pglite");
     const { db } = await makePGliteDb();
     vi.doMock("@/lib/db/client", () => ({ db }));
@@ -55,10 +64,22 @@ describe("getRegistration", () => {
     vi.doMock("@/lib/redis", () => impl);
   });
 
-  afterEach(async () => {
-    vi.restoreAllMocks();
+  // Reset only data between tests (lightweight operation)
+  beforeEach(async () => {
+    const { resetPGliteDb } = await import("@/lib/db/pglite");
+    await resetPGliteDb();
     const { resetInMemoryRedis } = await import("@/lib/redis-mock");
     resetInMemoryRedis();
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
+  });
+
+  afterAll(async () => {
+    // Close PGlite client to prevent file handle leaks
+    const { closePGliteDb } = await import("@/lib/db/pglite");
+    await closePGliteDb();
   });
 
   it("returns cached record when present (DB fast-path, rdapper not called)", async () => {

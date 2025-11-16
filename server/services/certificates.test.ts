@@ -45,6 +45,7 @@ vi.mock("@/lib/domain-server", async () => {
 });
 
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -73,6 +74,12 @@ afterEach(async () => {
   vi.restoreAllMocks();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
   resetInMemoryRedis();
+});
+
+afterAll(async () => {
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
 });
 
 function makePeer(

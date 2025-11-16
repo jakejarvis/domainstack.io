@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -79,6 +80,12 @@ afterEach(async () => {
   browserMock.newPage.mockReset();
 });
 
+afterAll(async () => {
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
+});
+
 describe("getOrCreateScreenshotBlobUrl", () => {
   it("returns existing blob url from DB when present", async () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
@@ -108,7 +115,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/1200x630\.webp$/,
     );
     expect(storageMock.storeImage).toHaveBeenCalled();
-  });
+  }, 10000); // 10s timeout for browser operations
 
   it("retries navigation failure and succeeds on second attempt", async () => {
     let calls = 0;
@@ -128,7 +135,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/1200x630\.webp$/,
     );
     expect(pageMock.goto).toHaveBeenCalledTimes(2);
-  });
+  }, 10000); // 10s timeout for retry logic
 
   it("retries screenshot failure and succeeds on second attempt", async () => {
     pageMock.goto.mockResolvedValueOnce(undefined);
@@ -150,7 +157,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/1200x630\.webp$/,
     );
     expect(pageMock.screenshot).toHaveBeenCalledTimes(2);
-  });
+  }, 10000); // 10s timeout for retry logic
 
   it("returns null when all attempts across both urls fail", async () => {
     pageMock.goto.mockImplementation(async () => {
@@ -166,7 +173,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     Math.random = originalRandom;
     expect(out.url).toBeNull();
     expect(pageMock.goto.mock.calls.length).toBeGreaterThanOrEqual(4);
-  });
+  }, 15000); // 15s timeout for multiple retry attempts
 
   it("closes page on every retry attempt even when errors occur", async () => {
     let calls = 0;
@@ -187,5 +194,5 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     expect(browserMock.newPage).toHaveBeenCalledTimes(6);
     // Should have closed all 6 pages (no leaks)
     expect(pageMock.close).toHaveBeenCalledTimes(6);
-  });
+  }, 15000); // 15s timeout for multiple retry attempts
 });

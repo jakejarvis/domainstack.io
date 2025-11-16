@@ -30,9 +30,10 @@ vi.mock("next/server", async () => {
   return {
     ...actual,
     after: (callback: () => void | Promise<void>) => {
-      // Execute immediately in tests (no request context needed)
-      Promise.resolve(callback()).catch(() => {
-        // Swallow errors like production after() does
+      // Execute immediately in tests and return promise for proper test awaiting
+      // Swallow errors like production after() does
+      return Promise.resolve(callback()).catch(() => {
+        // Error silently handled
       });
     },
   };

@@ -35,7 +35,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // PGlite cleanup handled automatically
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
 });
 
 beforeEach(async () => {

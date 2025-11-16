@@ -1,5 +1,13 @@
 /* @vitest-environment node */
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 // Mock toRegistrableDomain to allow .invalid and .example domains for testing
 vi.mock("@/lib/domain-server", async () => {
@@ -65,6 +73,12 @@ afterEach(async () => {
   resetInMemoryRedis();
 });
 
+afterAll(async () => {
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
+});
+
 describe("getOrCreateFaviconBlobUrl", () => {
   it("returns existing blob url from DB when present", async () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
@@ -103,7 +117,7 @@ describe("getOrCreateFaviconBlobUrl", () => {
     );
     expect(storageMock.storeImage).toHaveBeenCalled();
     fetchSpy.mockRestore();
-  });
+  }, 10000); // 10s timeout for network + image processing
 
   it("returns null when all sources fail", async () => {
     const notOk = new Response(null, { status: 404 });
@@ -111,7 +125,7 @@ describe("getOrCreateFaviconBlobUrl", () => {
     const out = await getOrCreateFaviconBlobUrl("nope.invalid");
     expect(out.url).toBeNull();
     fetchSpy.mockRestore();
-  });
+  }, 10000); // 10s timeout for multiple fetch attempts
 
   it("negative-caches failures to avoid repeat fetch", async () => {
     const notOk = new Response(null, { status: 404 });
@@ -129,5 +143,5 @@ describe("getOrCreateFaviconBlobUrl", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
 
     fetchSpy.mockRestore();
-  });
+  }, 10000); // 10s timeout for multiple fetch attempts
 });

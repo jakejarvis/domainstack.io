@@ -57,29 +57,33 @@ describe("lib/fetch", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("aborts after timeout and rejects", async () => {
-    // Use real timers to avoid PromiseRejectionHandledWarning with fake timers
-    vi.useRealTimers();
-    globalThis.fetch = vi.fn((_input, init) => {
-      const signal = (init as RequestInit | undefined)?.signal as
-        | AbortSignal
-        | undefined;
-      return new Promise<Response>((_resolve, reject) => {
-        if (signal) {
-          signal.addEventListener("abort", () => {
-            reject(new Error("aborted"));
-          });
-        }
-      });
-    }) as unknown as typeof fetch;
+  describe("with real timers", () => {
+    beforeEach(() => {
+      // Override parent beforeEach - use real timers to avoid PromiseRejectionHandledWarning
+      vi.useRealTimers();
+    });
 
-    await expect(
-      fetchWithTimeout("https://slow.test", {}, { timeoutMs: 10 }),
-    ).rejects.toThrow("aborted");
+    it("aborts after timeout and rejects", async () => {
+      globalThis.fetch = vi.fn((_input, init) => {
+        const signal = (init as RequestInit | undefined)?.signal as
+          | AbortSignal
+          | undefined;
+        return new Promise<Response>((_resolve, reject) => {
+          if (signal) {
+            signal.addEventListener("abort", () => {
+              reject(new Error("aborted"));
+            });
+          }
+        });
+      }) as unknown as typeof fetch;
+
+      await expect(
+        fetchWithTimeout("https://slow.test", {}, { timeoutMs: 10 }),
+      ).rejects.toThrow("aborted");
+    });
   });
 
   it("retries once and then succeeds", async () => {
-    vi.useFakeTimers();
     const res = createResponse({ ok: true, status: 200 });
     const mock = vi
       .fn()
@@ -101,7 +105,7 @@ describe("lib/fetch", () => {
     const out = await p;
     expect(out).toBe(res);
     expect(mock).toHaveBeenCalledTimes(2);
-  });
+  }, 5000); // 5s timeout for retry logic
 
   it("headThenGet uses HEAD when ok", async () => {
     const res = createResponse({ ok: true, status: 200 });

@@ -19,6 +19,7 @@ vi.mock("@/lib/domain-server", async () => {
 });
 
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -66,6 +67,12 @@ afterEach(async () => {
   vi.unstubAllEnvs();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
   resetInMemoryRedis();
+});
+
+afterAll(async () => {
+  // Close PGlite client to prevent file handle leaks
+  const { closePGliteDb } = await import("@/lib/db/pglite");
+  await closePGliteDb();
 });
 
 // Ensure module under test is loaded after mocks

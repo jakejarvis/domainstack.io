@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
     setupFiles: ["./vitest.setup.ts"],
-    css: true,
     globals: true,
     silent: "passed-only",
     exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
@@ -15,5 +14,7 @@ export default defineConfig({
       reporter: ["text", "html", "lcov"],
       exclude: ["**/components/ui/**", ...coverageConfigDefaults.exclude],
     },
+    // Use forks pool for better isolation and to prevent file handle leaks
+    pool: "forks",
   },
 });
