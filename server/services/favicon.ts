@@ -68,6 +68,7 @@ async function fetchFaviconInternal(
         maxRedirects: 2,
         allowHttp: src.startsWith("http://"),
       });
+      allNotFound = false;
       const buf = asset.buffer;
       // Normalize everything to a consistent WebP size so we don't leak arbitrary formats downstream.
       const webp = await convertBufferToImageCover(
