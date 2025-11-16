@@ -1,5 +1,6 @@
 import "server-only";
 
+import { after } from "next/server";
 import {
   FAST_CHANGING_TIERS,
   REVALIDATE_MIN_CERTIFICATES,
@@ -10,15 +11,28 @@ import {
   REVALIDATE_MIN_SEO,
   SLOW_CHANGING_TIERS,
 } from "@/lib/constants";
-import { ns, redis } from "@/lib/redis";
+import { updateLastAccessed } from "@/lib/db/repos/domains";
 import type { Section } from "@/lib/schemas";
 
 /**
+ * Module-level map to track last write attempt per domain.
+ * Prevents excessive database writes by debouncing updates.
+ * Key: domain name, Value: timestamp of last write attempt
+ */
+const lastWriteAttempts = new Map<string, number>();
+
+/**
+ * Debounce window in milliseconds (5 minutes).
+ * Only write to DB if more than 5 minutes have passed since last attempt.
+ */
+const DEBOUNCE_MS = 5 * 60 * 1000;
+
+/**
  * Record that a domain was accessed by a user (for decay calculation).
- * Fire-and-forget pattern: does not throw on errors.
+ * Schedules the write to happen after the response is sent using Next.js after().
  *
- * Keys expire after 90 minutes (5400s) as a safety net, since the
- * access-sync cron runs hourly and uses GETDEL to atomically read and delete.
+ * Uses module-level debouncing to limit writes to once per 5 minutes per domain.
+ * Writes directly to Postgres without intermediate Redis buffering.
  *
  * IMPORTANT: Only call this for real user requests, NOT for background
  * revalidation jobs (Inngest). Background jobs should not reset decay timers.
@@ -26,16 +40,19 @@ import type { Section } from "@/lib/schemas";
  * @param domain - The domain name that was accessed
  */
 export function recordDomainAccess(domain: string): void {
-  // Fire-and-forget: intentionally not awaited to avoid blocking
-  // Errors are logged but don't break the service
-  const key = ns("access", "domain", domain);
-  const timestamp = Date.now();
-  redis.set(key, timestamp, { ex: 5400 }).catch((err) => {
-    console.warn(
-      `[access] failed to record ${domain}`,
-      err instanceof Error ? err.message : String(err),
-    );
-  });
+  const now = Date.now();
+  const lastAttempt = lastWriteAttempts.get(domain);
+
+  // Debounce: skip if we recently attempted a write
+  if (lastAttempt && now - lastAttempt < DEBOUNCE_MS) {
+    return;
+  }
+
+  // Record this attempt to prevent duplicate writes
+  lastWriteAttempts.set(domain, now);
+
+  // Schedule DB write to happen after the response is sent
+  after(() => updateLastAccessed(domain));
 }
 
 /**

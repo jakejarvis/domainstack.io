@@ -8,6 +8,12 @@ import {
   vi,
 } from "vitest";
 
+// Mock the domains repo to avoid DB dependency in these tests
+// (only testing pure calculation functions, not recordDomainAccess)
+vi.mock("@/lib/db/repos/domains", () => ({
+  updateLastAccessed: vi.fn(),
+}));
+
 describe("access-decay", () => {
   const now = new Date("2024-01-15T00:00:00Z");
   const msPerDay = 24 * 60 * 60 * 1000;
