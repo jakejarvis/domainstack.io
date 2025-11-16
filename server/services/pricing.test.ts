@@ -303,7 +303,7 @@ describe("pricing service", () => {
       expect(cloudflareCached).toEqual(mockCloudflareResponse);
     });
 
-    it("caches null value with short TTL when fetch fails", async () => {
+    it("caches sentinel value with short TTL when fetch fails", async () => {
       const { redis } = await import("@/lib/redis");
 
       vi.spyOn(global, "fetch")
@@ -314,9 +314,9 @@ describe("pricing service", () => {
 
       // Verify negative cache (null) was set to prevent repeated failed fetches
       const porkbunCached = await redis.get("pricing:porkbun");
-      expect(porkbunCached).toBeNull();
+      expect(porkbunCached).toBe("error");
       const cloudflareCached = await redis.get("pricing:cloudflare");
-      expect(cloudflareCached).toBeNull();
+      expect(cloudflareCached).toBe("error");
     });
 
     it("sets negative cache with short TTL on fetch error", async () => {
@@ -330,9 +330,9 @@ describe("pricing service", () => {
 
       // Verify negative cache was set for both providers
       const porkbunCached = await redis.get("pricing:porkbun");
-      expect(porkbunCached).toBeNull();
+      expect(porkbunCached).toBe("error");
       const cloudflareCached = await redis.get("pricing:cloudflare");
-      expect(cloudflareCached).toBeNull();
+      expect(cloudflareCached).toBe("error");
 
       // Verify TTL is short (should be 60 seconds for negative cache)
       const porkbunTtl = await redis.ttl("pricing:porkbun");

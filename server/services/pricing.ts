@@ -40,7 +40,7 @@ async function fetchProviderPricing(
 ): Promise<RegistrarPricingResponse | null> {
   // Try cache first
   const cached = await redis
-    .get<RegistrarPricingResponse>(provider.cacheKey)
+    .get<RegistrarPricingResponse | "error">(provider.cacheKey)
     .catch((err) => {
       console.error(
         `[pricing] cache read error ${provider.name}`,
@@ -49,7 +49,11 @@ async function fetchProviderPricing(
       );
       return null;
     });
-  if (cached) return cached;
+  if (cached && cached !== "error") return cached;
+  if (cached === "error") {
+    console.debug(`[pricing] cached failure ${provider.name}`);
+    return null;
+  }
 
   // Fetch fresh pricing
   try {
@@ -75,7 +79,7 @@ async function fetchProviderPricing(
     );
     // Short TTL negative cache
     after(() => {
-      redis.set(provider.cacheKey, null, { ex: 60 }).catch((cacheErr) => {
+      redis.set(provider.cacheKey, "error", { ex: 60 }).catch((cacheErr) => {
         console.error(
           `[pricing] negative cache write error ${provider.name}`,
           { cacheKey: provider.cacheKey },
