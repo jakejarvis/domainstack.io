@@ -12,7 +12,6 @@ import {
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
-import { ttlForHosting } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   detectDnsProvider,
@@ -21,6 +20,7 @@ import {
 } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Hosting } from "@/lib/schemas";
+import { ttlForHosting } from "@/lib/ttl";
 import { resolveAll } from "@/server/services/dns";
 import { probeHeaders } from "@/server/services/headers";
 import { lookupIpMeta } from "@/server/services/ip";

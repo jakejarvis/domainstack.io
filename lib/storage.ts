@@ -200,7 +200,7 @@ export async function storeImage(options: {
     kind,
     buffer,
     filename: `${finalWidth}x${finalHeight}`,
-    extraParts: [domain, `${finalWidth}x${finalHeight}`],
+    extraParts: [domain, kind, `${finalWidth}x${finalHeight}`],
     contentType: contentType || undefined,
     extension: extension || undefined,
     cacheControlMaxAge,

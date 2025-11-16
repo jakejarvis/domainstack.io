@@ -1,12 +1,12 @@
 import { cache } from "react";
-import { USER_AGENT } from "@/lib/constants";
+import { USER_AGENT } from "@/lib/constants/app";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
-import { ttlForFavicon } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeout } from "@/lib/fetch";
 import { convertBufferToImageCover } from "@/lib/image";
 import { storeImage } from "@/lib/storage";
+import { ttlForFavicon } from "@/lib/ttl";
 
 const DEFAULT_SIZE = 32;
 const REQUEST_TIMEOUT_MS = 1500; // per each method

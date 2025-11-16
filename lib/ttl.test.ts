@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ttlForCertificates,
-  ttlForDnsRecord,
-  ttlForRegistration,
-} from "@/lib/db/ttl";
+import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration } from "./ttl";
 
 describe("TTL policy", () => {
   it("registration: 24h when far from expiry", () => {

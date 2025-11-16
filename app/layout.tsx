@@ -7,7 +7,7 @@ import { Providers } from "@/app/providers";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
-import { BASE_URL } from "@/lib/constants";
+import { BASE_URL } from "@/lib/constants/app";
 import { TRPCProvider } from "@/trpc/client";
 
 import "./globals.css";

@@ -5,7 +5,7 @@ import { cache } from "react";
 import {
   RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
   RDAP_BOOTSTRAP_URL,
-} from "@/lib/constants";
+} from "@/lib/constants/external-apis";
 import { redis } from "@/lib/redis";
 
 const CACHE_KEY = "rdap:bootstrap";

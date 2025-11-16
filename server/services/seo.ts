@@ -1,11 +1,10 @@
 import { eq } from "drizzle-orm";
 import { after } from "next/server";
-import { USER_AGENT } from "@/lib/constants";
+import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
-import { ttlForSeo } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects, fetchWithTimeout } from "@/lib/fetch";
 import { optimizeImageCover } from "@/lib/image";
@@ -19,6 +18,7 @@ import type {
 } from "@/lib/schemas";
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "@/lib/seo";
 import { storeImage } from "@/lib/storage";
+import { ttlForSeo } from "@/lib/ttl";
 
 const SOCIAL_WIDTH = 1200;
 const SOCIAL_HEIGHT = 630;
@@ -305,7 +305,7 @@ async function generateSocialPreviewBlob(
     if (!image || image.length === 0) return null;
 
     const { url } = await storeImage({
-      kind: "social",
+      kind: "opengraph",
       domain: lower,
       buffer: image,
       width: SOCIAL_WIDTH,

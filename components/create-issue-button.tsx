@@ -3,7 +3,7 @@
 import { Bug } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { REPOSITORY_SLUG } from "@/lib/constants";
+import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };
 

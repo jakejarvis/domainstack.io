@@ -186,7 +186,7 @@ describe("getRegistration", () => {
     resetInMemoryRedis();
 
     // Pre-cache unregistered status using the canonical helper
-    const { REDIS_TTL_UNREGISTERED } = await import("@/lib/constants");
+    const { REDIS_TTL_UNREGISTERED } = await import("@/lib/constants/ttl");
     const { setRegistrationStatusInCache } = await import(
       "@/lib/db/repos/registrations"
     );

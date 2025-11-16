@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_HISTORY_ITEMS } from "@/lib/constants";
+import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 import { cn } from "@/lib/utils";
 
 export function DomainSuggestionsSkeleton({

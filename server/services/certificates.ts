@@ -9,11 +9,11 @@ import {
   makeProviderKey,
 } from "@/lib/db/repos/providers";
 import { certificates as certTable } from "@/lib/db/schema";
-import { ttlForCertificates } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Certificate } from "@/lib/schemas";
+import { ttlForCertificates } from "@/lib/ttl";
 
 export async function getCertificates(domain: string): Promise<Certificate[]> {
   console.debug(`[certificates] start ${domain}`);

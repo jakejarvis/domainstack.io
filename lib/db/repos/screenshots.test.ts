@@ -18,7 +18,7 @@ vi.mock("@/lib/db/client", async () => {
 
 import { db } from "@/lib/db/client";
 import { screenshots } from "@/lib/db/schema";
-import { ttlForScreenshot } from "@/lib/db/ttl";
+import { ttlForScreenshot } from "@/lib/ttl";
 import { getScreenshotByDomainId, upsertScreenshot } from "./screenshots";
 
 let testDomainId: string;

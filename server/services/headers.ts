@@ -7,11 +7,11 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
-import { ttlForHeaders } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
+import { ttlForHeaders } from "@/lib/ttl";
 
 /**
  * Probe HTTP headers for a domain with Postgres caching.

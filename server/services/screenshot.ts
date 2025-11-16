@@ -1,15 +1,15 @@
 import type { Browser } from "puppeteer-core";
-import { USER_AGENT } from "@/lib/constants";
+import { USER_AGENT } from "@/lib/constants/app";
 import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
 import {
   getScreenshotByDomainId,
   upsertScreenshot,
 } from "@/lib/db/repos/screenshots";
-import { ttlForScreenshot } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
 import { launchChromium } from "@/lib/puppeteer";
 import { storeImage } from "@/lib/storage";
+import { ttlForScreenshot } from "@/lib/ttl";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;

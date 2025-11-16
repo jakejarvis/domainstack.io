@@ -18,7 +18,7 @@ vi.mock("@/lib/db/client", async () => {
 
 import { db } from "@/lib/db/client";
 import { favicons } from "@/lib/db/schema";
-import { ttlForFavicon } from "@/lib/db/ttl";
+import { ttlForFavicon } from "@/lib/ttl";
 import { getFaviconByDomainId, upsertFavicon } from "./favicons";
 
 let testDomainId: string;

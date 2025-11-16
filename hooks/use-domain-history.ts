@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MAX_HISTORY_ITEMS } from "@/lib/constants";
+import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 
 const STORAGE_KEY = "search-history";
 

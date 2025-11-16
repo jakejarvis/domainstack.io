@@ -12,7 +12,7 @@ import {
   TTL_REGISTRATION_REGISTERED,
   TTL_SCREENSHOT,
   TTL_SEO,
-} from "@/lib/constants";
+} from "@/lib/constants/ttl";
 
 // Helper functions
 export function addSeconds(base: Date, seconds: number): Date {

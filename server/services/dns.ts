@@ -1,12 +1,11 @@
 import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { isCloudflareIp } from "@/lib/cloudflare";
-import { USER_AGENT } from "@/lib/constants";
+import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
 import { replaceDns } from "@/lib/db/repos/dns";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { dnsRecords } from "@/lib/db/schema";
-import { ttlForDnsRecord } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeout } from "@/lib/fetch";
 import { ns, redis } from "@/lib/redis";
@@ -17,6 +16,7 @@ import {
   type DnsType,
   DnsTypeSchema,
 } from "@/lib/schemas";
+import { ttlForDnsRecord } from "@/lib/ttl";
 
 // ============================================================================
 // DNS-specific lock/wait utility

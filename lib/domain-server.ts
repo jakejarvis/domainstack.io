@@ -1,5 +1,5 @@
 import { toRegistrableDomain as toRegistrableDomainRdapper } from "rdapper";
-import { BLACKLISTED_SUFFIXES } from "@/lib/constants";
+import { BLACKLISTED_SUFFIXES } from "@/lib/constants/domain-validation";
 
 // A simple wrapper around rdapper's toRegistrableDomain that also checks if
 // the domain is blacklisted below

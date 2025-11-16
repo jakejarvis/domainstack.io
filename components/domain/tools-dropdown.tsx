@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { REPOSITORY_SLUG } from "@/lib/constants";
+import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ToolsDropdownProps = {
   domain: string;

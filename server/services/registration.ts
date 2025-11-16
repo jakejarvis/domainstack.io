@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { getDomainTld, lookup } from "rdapper";
-import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
+import {
+  REDIS_TTL_REGISTERED,
+  REDIS_TTL_UNREGISTERED,
+} from "@/lib/constants/ttl";
 import { db } from "@/lib/db/client";
 import { upsertDomain } from "@/lib/db/repos/domains";
 import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
@@ -11,12 +14,12 @@ import {
   upsertRegistration,
 } from "@/lib/db/repos/registrations";
 import { domains, providers, registrations } from "@/lib/db/schema";
-import { ttlForRegistration } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Registration, RegistrationContacts } from "@/lib/schemas";
+import { ttlForRegistration } from "@/lib/ttl";
 
 /**
  * Normalize registrar provider information from raw rdapper data.

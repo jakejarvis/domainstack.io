@@ -13,7 +13,7 @@ import {
 import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useRouter } from "@/hooks/use-router";
 import { useAnalytics } from "@/lib/analytics/client";
-import { MAX_HISTORY_ITEMS } from "@/lib/constants";
+import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 import { cn } from "@/lib/utils";
 
 export type DomainSuggestionsClientProps = {

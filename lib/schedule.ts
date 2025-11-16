@@ -12,7 +12,7 @@ import {
   REVALIDATE_MIN_HOSTING,
   REVALIDATE_MIN_REGISTRATION,
   REVALIDATE_MIN_SEO,
-} from "@/lib/constants";
+} from "@/lib/constants/ttl";
 import { inngest } from "@/lib/inngest/client";
 import { type Section, SectionEnum } from "@/lib/schemas";
 

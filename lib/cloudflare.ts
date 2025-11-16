@@ -5,7 +5,7 @@ import { cache } from "react";
 import {
   CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
   CLOUDFLARE_IPS_URL,
-} from "@/lib/constants";
+} from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { redis } from "@/lib/redis";
 

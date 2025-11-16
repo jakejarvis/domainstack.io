@@ -3,14 +3,16 @@ import "server-only";
 import { after } from "next/server";
 import {
   FAST_CHANGING_TIERS,
+  SLOW_CHANGING_TIERS,
+} from "@/lib/constants/decay";
+import {
   REVALIDATE_MIN_CERTIFICATES,
   REVALIDATE_MIN_DNS,
   REVALIDATE_MIN_HEADERS,
   REVALIDATE_MIN_HOSTING,
   REVALIDATE_MIN_REGISTRATION,
   REVALIDATE_MIN_SEO,
-  SLOW_CHANGING_TIERS,
-} from "@/lib/constants";
+} from "@/lib/constants/ttl";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import type { Section } from "@/lib/schemas";
 

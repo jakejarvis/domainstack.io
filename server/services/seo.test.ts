@@ -99,7 +99,7 @@ describe("getSeo", () => {
   it("uses cached response when meta exists in cache", async () => {
     const { upsertDomain } = await import("@/lib/db/repos/domains");
     const { upsertSeo } = await import("@/lib/db/repos/seo");
-    const { ttlForSeo } = await import("@/lib/db/ttl");
+    const { ttlForSeo } = await import("@/lib/ttl");
 
     const now = new Date();
     const d = await upsertDomain({
