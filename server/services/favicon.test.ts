@@ -143,9 +143,14 @@ describe("getOrCreateFaviconBlobUrl", () => {
   }, 10000); // 10s timeout for multiple fetch attempts
 
   it("negative-caches failures to avoid repeat fetch", async () => {
-    fetchRemoteAssetMock.mockRejectedValue(
-      new RemoteAssetError("response_error", "Not found", 404),
-    );
+    const mkError = () =>
+      new RemoteAssetError("response_error", "Not found", 404);
+    // First invocation will try up to four sources; force each one to fail exactly once.
+    fetchRemoteAssetMock
+      .mockRejectedValueOnce(mkError())
+      .mockRejectedValueOnce(mkError())
+      .mockRejectedValueOnce(mkError())
+      .mockRejectedValueOnce(mkError());
 
     // First call: miss -> fetch attempts -> negative cache
     const first = await getOrCreateFaviconBlobUrl("negcache.example");
