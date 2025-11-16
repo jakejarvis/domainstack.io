@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { getDomainTld } from "rdapper";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
@@ -99,7 +99,13 @@ export async function updateLastAccessed(name: string): Promise<void> {
         lastAccessedAt: new Date(),
       })
       .where(
-        sql`${domains.name} = ${name} AND (${domains.lastAccessedAt} IS NULL OR ${domains.lastAccessedAt} < ${debounceThreshold})`,
+        and(
+          eq(domains.name, name),
+          or(
+            isNull(domains.lastAccessedAt),
+            lt(domains.lastAccessedAt, debounceThreshold),
+          ),
+        ),
       );
   } catch (err) {
     console.warn(
