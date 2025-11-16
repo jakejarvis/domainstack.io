@@ -12,9 +12,10 @@ type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
    */
   ttlSeconds?: number;
   /**
-   * Produce and upload the asset, returning { url, key } and any metrics to attach
+   * Optional: Produce and upload the asset, returning { url, key } and any metrics to attach.
+   * If omitted and both caches miss, a clear error will be thrown.
    */
-  produceAndUpload: () => Promise<{
+  produceAndUpload?: () => Promise<{
     url: string | null;
     key?: string;
     notFound?: boolean; // true if asset permanently doesn't exist (don't retry)
@@ -99,31 +100,43 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
     try {
       const dbResult = await fetchFromDb();
       if (dbResult) {
-        // Found in DB, cache it in Redis for next time
-        after(() => {
-          const expiresAtMs = Date.now() + ttlSeconds * 1000;
-          redis
-            .set(
-              indexKey,
-              {
-                url: dbResult.url,
-                key: dbResult.key,
-                notFound: dbResult.notFound ?? undefined,
-                expiresAtMs,
-              },
-              { ex: ttlSeconds },
-            )
-            .catch((err) => {
-              console.error(
-                "[cache] redis write from db failed",
-                { indexKey },
-                err instanceof Error ? err : new Error(String(err)),
-              );
-            });
-        });
+        // Only treat as cache hit if we have a definitive result:
+        // - url is present (string), OR
+        // - url is null but marked as permanently not found
+        // This mirrors Redis L1 semantics and prevents "not yet generated"
+        // rows from being treated as final results.
+        const isDefinitiveResult =
+          dbResult.url !== null || dbResult.notFound === true;
 
-        console.debug(`[cache] db hit ${indexKey}`);
-        return { url: dbResult.url };
+        if (isDefinitiveResult) {
+          // Found in DB, cache it in Redis for next time
+          after(() => {
+            const expiresAtMs = Date.now() + ttlSeconds * 1000;
+            redis
+              .set(
+                indexKey,
+                {
+                  url: dbResult.url,
+                  key: dbResult.key,
+                  notFound: dbResult.notFound ?? undefined,
+                  expiresAtMs,
+                },
+                { ex: ttlSeconds },
+              )
+              .catch((err) => {
+                console.error(
+                  "[cache] redis write from db failed",
+                  { indexKey },
+                  err instanceof Error ? err : new Error(String(err)),
+                );
+              });
+          });
+
+          console.debug(`[cache] db hit ${indexKey}`);
+          return { url: dbResult.url };
+        }
+        // else: url is null but not marked as permanent notFound
+        // → treat as miss, fall through to generation
       }
     } catch (err) {
       // DB failures should not break the flow; log and fall through to generation
@@ -135,6 +148,12 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
   }
 
   // 3) Generate asset (both caches missed or failed)
+  if (!produceAndUpload) {
+    throw new Error(
+      `[cache] Cannot generate asset for ${indexKey}: produceAndUpload callback not provided`,
+    );
+  }
+
   try {
     const produced = await produceAndUpload();
     const expiresAtMs = Date.now() + ttlSeconds * 1000;
