@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,7 @@ const PROVIDER_CONFIG: Record<
     transparentIcon: false,
   },
   cloudflare: {
-    name: "Cloudflare",
+    name: "Cloudflare Registrar",
     icon: CloudflareIcon,
     url: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
     transparentIcon: true,
@@ -72,6 +73,8 @@ export function DomainPricingCTA({
   className?: string;
 }) {
   const trpc = useTRPC();
+  const analytics = useAnalytics();
+
   const { data, isLoading } = useQuery(
     trpc.domain.pricing.queryOptions(
       { domain },
@@ -124,6 +127,12 @@ export function DomainPricingCTA({
                 rel="noopener"
                 aria-label={`Register this domain with ${providerPricing.provider}`}
                 className="flex items-center gap-2"
+                onClick={() =>
+                  analytics.track("registrar_referral_clicked", {
+                    domain,
+                    provider: providerPricing.provider,
+                  })
+                }
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
