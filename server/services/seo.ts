@@ -195,6 +195,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       // Always proxy OG images through Blob storage so we control caching/privacy.
       const asset = await fetchRemoteAsset({
         url: preview.image,
+        currentUrl: finalUrl,
         headers: {
           Accept:
             "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",

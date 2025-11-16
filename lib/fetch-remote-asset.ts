@@ -34,8 +34,10 @@ export class RemoteAssetError extends Error {
 }
 
 export type FetchRemoteAssetOptions = {
-  /** Absolute or relative (against currentUrl) URL to fetch. */
+  /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
+  /** Optional base URL used to resolve relative `url` values. */
+  currentUrl?: string | URL;
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
   /** Abort timeout per request/redirect hop (ms). */
@@ -64,7 +66,7 @@ export type RemoteAssetResult = {
 export async function fetchRemoteAsset(
   opts: FetchRemoteAssetOptions,
 ): Promise<RemoteAssetResult> {
-  let currentUrl = toUrl(opts.url);
+  let currentUrl = toUrl(opts.url, opts.currentUrl);
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
@@ -146,10 +148,10 @@ export async function fetchRemoteAsset(
   throw new RemoteAssetError("redirect_limit", "Exceeded redirect limit");
 }
 
-function toUrl(input: string | URL): URL {
+function toUrl(input: string | URL, base?: string | URL): URL {
   if (input instanceof URL) return input;
   try {
-    return new URL(input);
+    return base ? new URL(input, base) : new URL(input);
   } catch {
     throw new RemoteAssetError("invalid_url", `Invalid URL: ${input}`);
   }
