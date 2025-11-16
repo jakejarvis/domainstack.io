@@ -4,12 +4,14 @@
 - `app/` Next.js App Router. Default to server components; keep `app/page.tsx` and `app/api/*` thin and delegate to `server/` or `lib/`.
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `hooks/` shared stateful helpers (camelCase named exports).
-- `lib/` domain utilities and caching (`lib/cache`); import via `@/...` aliases.
-- `lib/inngest/` Inngest client and functions for background jobs and scheduled section revalidation.
+- `lib/` domain utilities and shared modules; import via `@/...` aliases.
+- `lib/constants/` modular constants organized by domain (app, decay, domain-validation, external-apis, headers, ttl).
+- `lib/inngest/` Inngest client and functions for event-driven background section revalidation.
+- `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
+- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo).
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts` and domain-specific routers).
 - `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, registration, SEO, screenshot, favicon, etc.).
-- `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, and error handling.
 
@@ -35,18 +37,19 @@
 - TypeScript only, `strict` enabled; prefer small, pure modules (≈≤300 LOC).
 - 2-space indentation. Files/folders: kebab-case; exports: PascalCase; helpers: camelCase named exports.
 - Client components must begin with `"use client"`. Consolidate imports via `@/...`. Keep page roots lean.
- - Use `drizzle-zod` for DB boundary validation:
-   - Read schemas: `server/db/zod.ts` `*Select` (strict `Date` types)
-   - Write schemas: `server/db/zod.ts` `*Insert`/`*Update` (dates coerced)
-   - Reuse domain Zod types for JSON columns (SEO, registration) to avoid drift
-   - Reference: drizzle-zod docs [drizzle-zod](https://orm.drizzle.team/docs/zod)
+- Constants: Organize by domain in `lib/constants/` submodules; re-export via `lib/constants/index.ts`.
+- Use `drizzle-zod` for DB boundary validation:
+  - Read schemas: `lib/db/zod.ts` `*Select` (strict `Date` types)
+  - Write schemas: `lib/db/zod.ts` `*Insert`/`*Update` (dates coerced)
+  - Reuse domain Zod types for JSON columns (SEO, registration) to avoid drift
+  - Reference: drizzle-zod docs [drizzle-zod](https://orm.drizzle.team/docs/zod)
 
 ## Testing Guidelines
 - Use **Vitest** with React Testing Library; config in `vitest.config.ts`.
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks `server-only` module.
-- Database in tests: Drizzle client is not globally mocked. Replace `@/server/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
+- Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - Redis in tests: do NOT use globals. Mock per-suite with the in-memory adapter:
   - In `beforeAll`: `const { makeInMemoryRedis } = await import("@/lib/redis-mock"); const impl = makeInMemoryRedis(); vi.doMock("@/lib/redis", () => impl);`
   - In `beforeEach`/`afterEach`: `const { resetInMemoryRedis } = await import("@/lib/redis-mock"); resetInMemoryRedis();`
@@ -60,6 +63,7 @@
   - Use unique cache keys/domains; call `resetInMemoryRedis()` in `afterEach`.
   - Screenshot service (`server/services/screenshot.ts`) uses hoisted mocks for `puppeteer`/`puppeteer-core` and `@sparticuz/chromium`.
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
+  - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
 - Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
 - Commands: `pnpm test`, `pnpm test:run`, `pnpm test:ui`, `pnpm test:coverage`.
 
@@ -75,17 +79,22 @@
   - `rate_limits` (object): Service rate limits; **fails open** (no limits) if unavailable for maximum availability
   - Edge Config is completely optional and gracefully degrades when not configured
   - Uses Next.js 16 `"use cache"` directive with `@vercel/edge-config` SDK for SSR compatibility
-- Vercel Blob backs favicon/screenshot storage with automatic public URLs.
+- Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
-- Persist domain data in Postgres via Drizzle; use Redis for short-lived caching/locks. Apply retry backoff to respect provider limits.
-- Background revalidation runs via Inngest functions (scheduled and event-driven) in `lib/inngest/functions/`.
+- Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`); use Redis only for IP-based rate limiting.
+- Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
+- Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control (no Redis locks needed).
+- Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
 - Cron jobs trigger Inngest events via `app/api/cron/` endpoints secured with `CRON_SECRET`.
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.
 
 ## Analytics & Observability
 - Uses **PostHog** for analytics and error tracking with reverse proxy via `/_proxy/ingest/*`.
 - PostHog sourcemap uploads configured in `next.config.ts` with `@posthog/nextjs-config`.
-- OpenTelemetry integration via `@vercel/otel` in `instrumentation.ts`.
+- OpenTelemetry integration via `@vercel/otel` in `instrumentation.ts` for distributed tracing.
 - Client-side analytics captured via `posthog-js` and initialized in `instrumentation-client.ts`.
-- Server-side analytics captured via `posthog-node` in `lib/analytics/server.ts`.
+- Server-side analytics captured via `posthog-node` in `lib/analytics/server.ts`:
+  - Uses `analytics.track()` and `analytics.trackException()` for unified tracking.
+  - Leverages Next.js 16 `after()` for background event capture with graceful degradation.
+  - Distinct ID sourced from PostHog cookie via `cache()`-wrapped `getDistinctId()` to comply with Next.js restrictions.
 - Analytics mocked in tests via `vitest.setup.ts`.

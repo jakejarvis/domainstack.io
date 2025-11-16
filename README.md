@@ -8,25 +8,27 @@
 
 - **Instant domain reports**: Registration, DNS, certificates, HTTP headers, hosting & email, and geolocation.
 - **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
-- **Screenshots & favicons**: Server-side screenshots and favicon extraction, stored in Vercel Blob.
-- **Fast, private, no sign-up**: Live fetches with smart caching.
-- **Reliable data pipeline**: Postgres persistence (Drizzle), background revalidation (Inngest), and Redis for short-lived caching/locks.
+- **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
+- **Fast, private, no sign-up**: Live fetches with intelligent multi-layer caching.
+- **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle), event-driven background revalidation (Inngest), and Redis for short-lived rate limiting.
+- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable rate limits and domain suggestions without redeployment.
 
 ## 🛠️ Tech Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
 - **Tailwind CSS v4**
 - **tRPC** API
-- **PlanetScale Postgres** + **Drizzle ORM**
-- **Inngest** for background jobs and scheduled revalidation
-- **Upstash Redis** for caching and locks
-- **Vercel Edge Config** for dynamic configuration (domain suggestions, rate limits)
-- **Vercel Blob** for favicon/screenshot storage
+- **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
+- **Inngest** for event-driven background revalidation with built-in concurrency control
+- **Upstash Redis** for IP-based rate limiting
+- **Vercel Edge Config** for runtime configuration (domain suggestions, service rate limits)
+- **Vercel Blob** for favicon/screenshot storage with Postgres metadata caching
 - [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
-- **Puppeteer** (with `@sparticuz/chromium` on server) for screenshots
+- **Puppeteer** (with `@sparticuz/chromium` on Vercel) for server-side screenshots
 - **Mapbox** for IP geolocation maps
-- **PostHog** analytics with sourcemap uploads
-- **Vitest** for testing and **Biome** for lint/format
+- **PostHog** for analytics and error tracking with sourcemap uploads and reverse proxy
+- **OpenTelemetry** via `@vercel/otel` for distributed tracing
+- **Vitest** with React Testing Library and **Biome** for lint/format
 
 ## 🌱 Getting Started
 
