@@ -57,9 +57,14 @@ export async function findDomainByName(name: string) {
  *
  * @param domain - The domain name (should already be normalized/registrable)
  * @returns The domain record with its ID
+ * @throws {Error} If the domain has no valid TLD
  */
 export async function ensureDomainRecord(domain: string) {
-  const tld = getDomainTld(domain) ?? "";
+  const tld = getDomainTld(domain);
+
+  if (!tld) {
+    throw new Error(`Cannot persist domain "${domain}": unable to extract TLD`);
+  }
 
   // For unicode handling, we'd need to use toUnicode from node:url or a library,
   // but for now we'll use the ASCII version as the unicode name if they match
