@@ -66,39 +66,27 @@ afterEach(async () => {
 });
 
 describe("getOrCreateFaviconBlobUrl", () => {
-  it("returns existing blob url when present", async () => {
-    const key = `favicon:url:${"example.com"}:${32}`;
-    const { redis } = await import("@/lib/redis");
-    await redis.set(key, {
+  it("returns existing blob url from DB when present", async () => {
+    const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
+    const { upsertFavicon } = await import("@/lib/db/repos/favicons");
+
+    const domainRecord = await ensureDomainRecord("example.com");
+    await upsertFavicon({
+      domainId: domainRecord.id,
       url: "blob://existing-url",
-      expiresAtMs: Date.now() + 1000,
+      pathname: null,
+      size: 32,
+      source: null,
+      notFound: false,
+      upstreamStatus: null,
+      upstreamContentType: null,
+      fetchedAt: new Date(),
+      expiresAt: new Date(Date.now() + 1000000),
     });
+
     const out = await getOrCreateFaviconBlobUrl("example.com");
     expect(out.url).toBe("blob://existing-url");
     expect(storageMock.storeImage).not.toHaveBeenCalled();
-  });
-
-  it("reads object values from redis index", async () => {
-    const key = `favicon:url:${"legacy.com"}:${32}`;
-    const { redis } = await import("@/lib/redis");
-    await redis.set(key, {
-      url: "https://blob/legacy.png",
-      expiresAtMs: Date.now() + 1000,
-    });
-    const out = await getOrCreateFaviconBlobUrl("legacy.com");
-    expect(out.url).toBe("https://blob/legacy.png");
-  });
-
-  it("accepts object values from redis client auto-parse", async () => {
-    const key = `favicon:url:${"object.com"}:${32}`;
-    // Simulate a client returning an already-parsed object
-    const { redis } = await import("@/lib/redis");
-    await redis.set(key, {
-      url: "https://blob/object.png",
-      expiresAtMs: Date.now() + 1000,
-    });
-    const out = await getOrCreateFaviconBlobUrl("object.com");
-    expect(out.url).toBe("https://blob/object.png");
   });
 
   it("fetches, converts, stores, and returns url when not cached", async () => {
