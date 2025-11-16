@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
 import { isCloudflareIp } from "@/lib/cloudflare";
 import { USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
@@ -422,7 +423,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
             fetchedAt: now,
             recordsByType: recordsByTypeToPersist,
           });
-          try {
+          after(() => {
             const times = Object.values(recordsByTypeToPersist)
               .flat()
               .map((r) => r.expiresAt?.getTime?.())
@@ -431,18 +432,18 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               );
             // Always schedule: use the soonest expiry if available, otherwise schedule immediately
             const soonest = times.length > 0 ? Math.min(...times) : Date.now();
-            await scheduleRevalidation(
+            scheduleRevalidation(
               registrable,
               "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
-            );
-          } catch (err) {
-            console.warn(
-              `[dns] schedule failed partial ${registrable}`,
-              err instanceof Error ? err : new Error(String(err)),
-            );
-          }
+            ).catch((err) => {
+              console.warn(
+                `[dns] schedule failed partial ${registrable}`,
+                err instanceof Error ? err : new Error(String(err)),
+              );
+            });
+          });
         }
 
         // Merge cached fresh + newly fetched stale
@@ -551,7 +552,7 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
           recordsByType: recordsByTypeToPersist,
         });
 
-        try {
+        after(() => {
           const times = Object.values(recordsByTypeToPersist)
             .flat()
             .map((r) => r.expiresAt?.getTime?.())
@@ -559,18 +560,18 @@ async function resolveAllInternal(domain: string): Promise<DnsResolveResult> {
               (t): t is number => typeof t === "number" && Number.isFinite(t),
             );
           const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
-          await scheduleRevalidation(
+          scheduleRevalidation(
             registrable,
             "dns",
             soonest,
             existingDomain.lastAccessedAt ?? null,
-          );
-        } catch (err) {
-          console.warn(
-            `[dns] schedule failed full ${registrable}`,
-            err instanceof Error ? err : new Error(String(err)),
-          );
-        }
+          ).catch((err) => {
+            console.warn(
+              `[dns] schedule failed full ${registrable}`,
+              err instanceof Error ? err : new Error(String(err)),
+            );
+          });
+        });
       }
       console.info(
         `[dns] ok ${registrable} counts=${JSON.stringify(counts)} resolver=${resolverUsed} durations=${JSON.stringify(durationByProvider)}`,

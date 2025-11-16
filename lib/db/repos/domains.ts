@@ -1,8 +1,16 @@
 import "server-only";
 
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { getDomainTld } from "rdapper";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
+
+/**
+ * Debounce interval for updating domain lastAccessedAt timestamp.
+ * Prevents excessive writes by only updating if the last access was
+ * more than this many milliseconds ago.
+ */
+const DOMAIN_UPDATE_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 
 export type UpsertDomainParams = {
   name: string; // punycode lowercased
@@ -43,30 +51,66 @@ export async function findDomainByName(name: string) {
 }
 
 /**
- * Batch update lastAccessedAt timestamps for multiple domains.
- * Used by the access sync cron to flush Redis data to Postgres.
+ * Parse domain name and ensure a domain record exists in Postgres.
+ * This is used by services that need to persist data for a domain (favicon, screenshot, etc.)
+ * even when a full domain report hasn't been requested.
  *
- * @param updates - Array of domain names and their access timestamps
+ * @param domain - The domain name (should already be normalized/registrable)
+ * @returns The domain record with its ID
+ * @throws {Error} If the domain has no valid TLD
  */
-export async function batchUpdateLastAccessed(
-  updates: Array<{ name: string; accessedAt: Date }>,
-): Promise<void> {
-  if (updates.length === 0) return;
+export async function ensureDomainRecord(domain: string) {
+  const tld = getDomainTld(domain);
 
-  // Use Drizzle's update with case-when pattern for batch updates
-  // This is more efficient than individual updates
-  const cases = updates.map(
-    (u) =>
-      sql`WHEN ${domains.name} = ${u.name} THEN ${u.accessedAt.toISOString()}::timestamptz`,
-  );
+  if (!tld) {
+    throw new Error(`Cannot persist domain "${domain}": unable to extract TLD`);
+  }
 
-  const names = updates.map((u) => u.name);
+  // For unicode handling, we'd need to use toUnicode from node:url or a library,
+  // but for now we'll use the ASCII version as the unicode name if they match
+  // This is safe because rdapper already normalizes to ASCII/punycode when needed
+  const unicodeName = domain;
 
-  await db
-    .update(domains)
-    .set({
-      lastAccessedAt: sql`CASE ${sql.join(cases, sql.raw(" "))} END`,
-      updatedAt: new Date(),
-    })
-    .where(inArray(domains.name, names));
+  const domainRecord = await upsertDomain({
+    name: domain,
+    tld,
+    unicodeName,
+  });
+
+  return domainRecord;
+}
+
+/**
+ * Update lastAccessedAt timestamp for a domain.
+ * Only updates if the domain hasn't been accessed in the last 5 minutes
+ * to reduce unnecessary writes.
+ *
+ * Fire-and-forget: catches errors and logs warnings without throwing.
+ *
+ * @param name - The domain name to update
+ */
+export async function updateLastAccessed(name: string): Promise<void> {
+  try {
+    const debounceThreshold = new Date(Date.now() - DOMAIN_UPDATE_DEBOUNCE_MS);
+
+    await db
+      .update(domains)
+      .set({
+        lastAccessedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(domains.name, name),
+          or(
+            isNull(domains.lastAccessedAt),
+            lt(domains.lastAccessedAt, debounceThreshold),
+          ),
+        ),
+      );
+  } catch (err) {
+    console.warn(
+      `[access] failed to update lastAccessedAt for ${name}`,
+      err instanceof Error ? err.message : String(err),
+    );
+  }
 }

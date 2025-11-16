@@ -1,5 +1,9 @@
 import { getOrCreateCachedAsset } from "@/lib/cache";
 import { TTL_FAVICON, USER_AGENT } from "@/lib/constants";
+import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
+import { getFaviconByDomainId, upsertFavicon } from "@/lib/db/repos/favicons";
+import { ttlForFavicon } from "@/lib/db/ttl";
+import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeout } from "@/lib/fetch";
 import { convertBufferToImageCover } from "@/lib/image";
 import { ns } from "@/lib/redis";
@@ -21,14 +25,34 @@ function buildSources(domain: string): string[] {
 export async function getOrCreateFaviconBlobUrl(
   domain: string,
 ): Promise<{ url: string | null }> {
-  const indexKey = ns("favicon", "url", domain, String(DEFAULT_SIZE));
+  // Normalize to registrable domain
+  const registrable = toRegistrableDomain(domain);
+  if (!registrable) {
+    throw new Error(`Cannot extract registrable domain from ${domain}`);
+  }
+
+  const indexKey = ns("favicon", "url", registrable, String(DEFAULT_SIZE));
   const ttl = TTL_FAVICON;
 
   return await getOrCreateCachedAsset({
     indexKey,
     ttlSeconds: ttl,
+    // Check Postgres for cached favicon
+    fetchFromDb: async () => {
+      const existingDomain = await findDomainByName(registrable);
+      if (!existingDomain) return null;
+
+      const faviconRecord = await getFaviconByDomainId(existingDomain.id);
+      if (!faviconRecord) return null;
+
+      return {
+        url: faviconRecord.url,
+        key: faviconRecord.pathname ?? undefined,
+        notFound: faviconRecord.notFound,
+      };
+    },
     produceAndUpload: async () => {
-      const sources = buildSources(domain);
+      const sources = buildSources(registrable);
       let allNotFound = true; // Track if all sources returned 404/not found
 
       for (const src of sources) {
@@ -64,7 +88,7 @@ export async function getOrCreateFaviconBlobUrl(
           if (!webp) continue;
           const { url, pathname } = await storeImage({
             kind: "favicon",
-            domain,
+            domain: registrable,
             buffer: webp,
             width: DEFAULT_SIZE,
             height: DEFAULT_SIZE,
@@ -93,6 +117,25 @@ export async function getOrCreateFaviconBlobUrl(
       }
       // Return null with notFound flag if ALL sources returned 404
       return { url: null, notFound: allNotFound };
+    },
+    // Persist to Postgres after generation
+    persistToDb: async (result) => {
+      const domainRecord = await ensureDomainRecord(registrable);
+      const now = new Date();
+      const expiresAt = ttlForFavicon(now);
+
+      await upsertFavicon({
+        domainId: domainRecord.id,
+        url: result.url,
+        pathname: result.key ?? null,
+        size: DEFAULT_SIZE,
+        source: result.metrics?.source ?? null,
+        notFound: result.notFound ?? false,
+        upstreamStatus: result.metrics?.upstream_status ?? null,
+        upstreamContentType: result.metrics?.upstream_content_type ?? null,
+        fetchedAt: now,
+        expiresAt,
+      });
     },
   });
 }

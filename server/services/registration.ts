@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
 import { getDomainTld, lookup } from "rdapper";
 import { REDIS_TTL_REGISTERED, REDIS_TTL_UNREGISTERED } from "@/lib/constants";
 import { db } from "@/lib/db/client";
@@ -138,35 +139,36 @@ export async function getRegistration(domain: string): Promise<Registration> {
     };
 
     // Update Redis fast-path cache to keep it hot for subsequent requests
-    // Fire-and-forget to avoid blocking the response on Redis latency
     const ttl = row.registration.isRegistered
       ? REDIS_TTL_REGISTERED
       : REDIS_TTL_UNREGISTERED;
-    setRegistrationStatusInCache(
-      registrable,
-      row.registration.isRegistered,
-      ttl,
-    ).catch((err) => {
-      console.warn(
-        `[registration] failed to warm Redis cache for ${registrable}:`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
+    after(() => {
+      setRegistrationStatusInCache(
+        registrable,
+        row.registration.isRegistered,
+        ttl,
+      ).catch((err) => {
+        console.warn(
+          `[registration] failed to warm Redis cache for ${registrable}:`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
     });
 
     // Schedule background revalidation using actual last access time
-    try {
-      await scheduleRevalidation(
+    after(() => {
+      scheduleRevalidation(
         registrable,
         "registration",
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
-      );
-    } catch (err) {
-      console.warn(
-        `[registration] schedule failed for ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    }
+      ).catch((err) => {
+        console.warn(
+          `[registration] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
+    });
 
     console.info(
       `[registration] ok cached ${registrable} registered=${row.registration.isRegistered} registrar=${registrarProvider.name}`,
@@ -219,18 +221,19 @@ export async function getRegistration(domain: string): Promise<Registration> {
   }
 
   // Cache the registration status (true/false) in Redis for fast lookups
-  // Fire-and-forget to avoid blocking the response on Redis latency
   const ttl = record.isRegistered
     ? REDIS_TTL_REGISTERED
     : REDIS_TTL_UNREGISTERED;
-  setRegistrationStatusInCache(registrable, record.isRegistered, ttl).catch(
-    (err) => {
-      console.warn(
-        `[registration] failed to cache status for ${registrable}:`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    },
-  );
+  after(() => {
+    setRegistrationStatusInCache(registrable, record.isRegistered, ttl).catch(
+      (err) => {
+        console.warn(
+          `[registration] failed to cache status for ${registrable}:`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      },
+    );
+  });
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
@@ -346,19 +349,19 @@ export async function getRegistration(domain: string): Promise<Registration> {
   });
 
   // Schedule background revalidation
-  try {
-    await scheduleRevalidation(
+  after(() => {
+    scheduleRevalidation(
       registrable,
       "registration",
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
-    );
-  } catch (err) {
-    console.warn(
-      `[registration] schedule failed for ${registrable}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
-  }
+    ).catch((err) => {
+      console.warn(
+        `[registration] schedule failed for ${registrable}`,
+        err instanceof Error ? err : new Error(String(err)),
+      );
+    });
+  });
 
   console.info(
     `[registration] ok ${registrable} registered=${record.isRegistered} registrar=${withProvider.registrarProvider.name}`,

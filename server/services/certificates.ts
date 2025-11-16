@@ -1,5 +1,6 @@
 import tls from "node:tls";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
 import { db } from "@/lib/db/client";
 import { replaceCertificates } from "@/lib/db/repos/certificates";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -166,20 +167,20 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         expiresAt: nextDue,
       });
 
-      try {
+      after(() => {
         const dueAtMs = nextDue.getTime();
-        await scheduleRevalidation(
+        scheduleRevalidation(
           registrable,
           "certificates",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
-        );
-      } catch (err) {
-        console.warn(
-          `[certificates] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      }
+        ).catch((err) => {
+          console.warn(
+            `[certificates] schedule failed for ${registrable}`,
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        });
+      });
     }
 
     console.info(`[certificates] ok ${registrable} chainLength=${out.length}`);

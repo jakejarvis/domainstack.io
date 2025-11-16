@@ -4,11 +4,13 @@ import {
   TTL_CERTIFICATES_WINDOW,
   TTL_DNS_DEFAULT,
   TTL_DNS_MAX,
+  TTL_FAVICON,
   TTL_HEADERS,
   TTL_HOSTING,
   TTL_REGISTRATION_EXPIRY_THRESHOLD,
   TTL_REGISTRATION_NEAR_EXPIRY,
   TTL_REGISTRATION_REGISTERED,
+  TTL_SCREENSHOT,
   TTL_SEO,
 } from "@/lib/constants";
 
@@ -71,4 +73,12 @@ export function ttlForHosting(now: Date): Date {
 
 export function ttlForSeo(now: Date): Date {
   return addSeconds(now, TTL_SEO);
+}
+
+export function ttlForFavicon(now: Date): Date {
+  return addSeconds(now, TTL_FAVICON);
+}
+
+export function ttlForScreenshot(now: Date): Date {
+  return addSeconds(now, TTL_SCREENSHOT);
 }

@@ -291,3 +291,42 @@ export const seo = pgTable(
     index("i_seo_canonical").on(t.canonicalUrl),
   ],
 );
+
+// Favicons
+export const favicons = pgTable(
+  "favicons",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    url: text("url"),
+    pathname: text("pathname"),
+    size: integer("size").notNull(),
+    source: text("source"),
+    notFound: boolean("not_found").notNull().default(false),
+    upstreamStatus: integer("upstream_status"),
+    upstreamContentType: text("upstream_content_type"),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_favicons_expires").on(t.expiresAt)],
+);
+
+// Screenshots
+export const screenshots = pgTable(
+  "screenshots",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    url: text("url"),
+    pathname: text("pathname"),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    source: text("source"),
+    notFound: boolean("not_found").notNull().default(false),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_screenshots_expires").on(t.expiresAt)],
+);

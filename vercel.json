@@ -9,10 +9,6 @@
   },
   "crons": [
     {
-      "path": "/api/cron/access-sync",
-      "schedule": "0 * * * *"
-    },
-    {
       "path": "/api/cron/pricing-refresh",
       "schedule": "0 4 * * *"
     }

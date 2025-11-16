@@ -5,10 +5,12 @@ import {
   dnsRecords,
   dnsRecordType,
   domains,
+  favicons,
   hosting,
   httpHeaders,
   providers,
   registrations,
+  screenshots,
   seo,
 } from "@/lib/db/schema";
 
@@ -58,3 +60,13 @@ export const HostingRowUpdate = zWrite.createUpdateSchema(hosting);
 export const SeoRowSelect = zRead.createSelectSchema(seo);
 export const SeoRowInsert = zWrite.createInsertSchema(seo);
 export const SeoRowUpdate = zWrite.createUpdateSchema(seo);
+
+// Favicons
+export const FaviconSelect = zRead.createSelectSchema(favicons);
+export const FaviconInsert = zWrite.createInsertSchema(favicons);
+export const FaviconUpdate = zWrite.createUpdateSchema(favicons);
+
+// Screenshots
+export const ScreenshotSelect = zRead.createSelectSchema(screenshots);
+export const ScreenshotInsert = zWrite.createInsertSchema(screenshots);
+export const ScreenshotUpdate = zWrite.createUpdateSchema(screenshots);

@@ -1,6 +1,13 @@
 import type { Browser } from "puppeteer-core";
 import { getOrCreateCachedAsset } from "@/lib/cache";
 import { TTL_SCREENSHOT, USER_AGENT } from "@/lib/constants";
+import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
+import {
+  getScreenshotByDomainId,
+  upsertScreenshot,
+} from "@/lib/db/repos/screenshots";
+import { ttlForScreenshot } from "@/lib/db/ttl";
+import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
 import { launchChromium } from "@/lib/puppeteer";
 import { ns } from "@/lib/redis";
@@ -41,6 +48,12 @@ export async function getOrCreateScreenshotBlobUrl(
     backoffMaxMs?: number;
   },
 ): Promise<{ url: string | null }> {
+  // Normalize to registrable domain
+  const registrable = toRegistrableDomain(domain);
+  if (!registrable) {
+    throw new Error(`Cannot extract registrable domain from ${domain}`);
+  }
+
   const attempts = Math.max(
     1,
     options?.attempts ?? CAPTURE_MAX_ATTEMPTS_DEFAULT,
@@ -51,7 +64,7 @@ export async function getOrCreateScreenshotBlobUrl(
   const indexKey = ns(
     "screenshot",
     "url",
-    domain,
+    registrable,
     `${VIEWPORT_WIDTH}x${VIEWPORT_HEIGHT}`,
   );
   const ttl = TTL_SCREENSHOT;
@@ -59,11 +72,25 @@ export async function getOrCreateScreenshotBlobUrl(
   return await getOrCreateCachedAsset({
     indexKey,
     ttlSeconds: ttl,
+    // Check Postgres for cached screenshot
+    fetchFromDb: async () => {
+      const existingDomain = await findDomainByName(registrable);
+      if (!existingDomain) return null;
+
+      const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
+      if (!screenshotRecord) return null;
+
+      return {
+        url: screenshotRecord.url,
+        key: screenshotRecord.pathname ?? undefined,
+        notFound: screenshotRecord.notFound,
+      };
+    },
     produceAndUpload: async () => {
       let browser: Browser | null = null;
       try {
         browser = await launchChromium();
-        const tryUrls = buildHomepageUrls(domain);
+        const tryUrls = buildHomepageUrls(registrable);
         for (const url of tryUrls) {
           let lastError: unknown = null;
           for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
@@ -109,7 +136,7 @@ export async function getOrCreateScreenshotBlobUrl(
               );
               const { url: storedUrl, pathname } = await storeImage({
                 kind: "screenshot",
-                domain,
+                domain: registrable,
                 buffer: withWatermark,
                 width: VIEWPORT_WIDTH,
                 height: VIEWPORT_HEIGHT,
@@ -147,6 +174,24 @@ export async function getOrCreateScreenshotBlobUrl(
           } catch {}
         }
       }
+    },
+    // Persist to Postgres after generation
+    persistToDb: async (result) => {
+      const domainRecord = await ensureDomainRecord(registrable);
+      const now = new Date();
+      const expiresAt = ttlForScreenshot(now);
+
+      await upsertScreenshot({
+        domainId: domainRecord.id,
+        url: result.url,
+        pathname: result.key ?? null,
+        width: VIEWPORT_WIDTH,
+        height: VIEWPORT_HEIGHT,
+        source: result.metrics?.source ?? null,
+        notFound: result.notFound ?? false,
+        fetchedAt: now,
+        expiresAt,
+      });
     },
   });
 }

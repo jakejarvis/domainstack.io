@@ -56,6 +56,8 @@ export async function resetPGliteDb(): Promise<void> {
     registrations,
     hosting,
     seo,
+    favicons,
+    screenshots,
     providers,
     domains,
   } = schema;
@@ -65,6 +67,8 @@ export async function resetPGliteDb(): Promise<void> {
   await db.delete(registrations);
   await db.delete(hosting);
   await db.delete(seo);
+  await db.delete(favicons);
+  await db.delete(screenshots);
   await db.delete(providers);
   await db.delete(domains);
 }
