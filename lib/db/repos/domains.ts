@@ -5,6 +5,13 @@ import { getDomainTld } from "rdapper";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
 
+/**
+ * Debounce interval for updating domain lastAccessedAt timestamp.
+ * Prevents excessive writes by only updating if the last access was
+ * more than this many milliseconds ago.
+ */
+const DOMAIN_UPDATE_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
+
 export type UpsertDomainParams = {
   name: string; // punycode lowercased
   tld: string;
@@ -79,16 +86,15 @@ export async function ensureDomainRecord(domain: string) {
  */
 export async function updateLastAccessed(name: string): Promise<void> {
   try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const debounceThreshold = new Date(Date.now() - DOMAIN_UPDATE_DEBOUNCE_MS);
 
     await db
       .update(domains)
       .set({
         lastAccessedAt: new Date(),
-        updatedAt: new Date(),
       })
       .where(
-        sql`${domains.name} = ${name} AND (${domains.lastAccessedAt} IS NULL OR ${domains.lastAccessedAt} < ${fiveMinutesAgo})`,
+        sql`${domains.name} = ${name} AND (${domains.lastAccessedAt} IS NULL OR ${domains.lastAccessedAt} < ${debounceThreshold})`,
       );
   } catch (err) {
     console.warn(
