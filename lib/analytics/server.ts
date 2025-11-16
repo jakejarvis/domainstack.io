@@ -6,6 +6,9 @@ import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
 
+// PostHog clients maintain background flushers; keep a single shared instance
+// per runtime to avoid reopening sockets for every event. We deliberately avoid
+// calling client.shutdown() after each capture so the client stays usable.
 let sharedClient: PostHog | null = null;
 
 function getServerPosthog(): PostHog | null {
@@ -86,13 +89,6 @@ export const analytics = {
         distinctId: resolvedDistinctId,
         properties,
       });
-
-      // flush events to posthog
-      try {
-        await client.shutdown();
-      } catch {
-        // no-op
-      }
     };
 
     // Run in background when available, otherwise fire-and-forget
@@ -127,13 +123,6 @@ export const analytics = {
       const resolvedDistinctId = (await distinctIdPromise) || "server";
 
       client.captureException(error, resolvedDistinctId, properties);
-
-      // flush events to posthog
-      try {
-        await client.shutdown();
-      } catch {
-        // no-op
-      }
     };
 
     // Run in background when available, otherwise fire-and-forget
