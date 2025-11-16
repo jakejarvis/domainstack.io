@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { USER_AGENT } from "@/lib/constants";
-import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
-import { getFaviconByDomainId, upsertFavicon } from "@/lib/db/repos/favicons";
+import { ensureDomainRecord } from "@/lib/db/repos/domains";
+import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
 import { ttlForFavicon } from "@/lib/db/ttl";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeout } from "@/lib/fetch";
@@ -20,31 +21,26 @@ function buildSources(domain: string): string[] {
   ];
 }
 
-export async function getOrCreateFaviconBlobUrl(
-  domain: string,
+/**
+ * Internal function that does the actual work.
+ * Wrapped with React's cache() for request-scoped deduplication.
+ */
+async function fetchFaviconInternal(
+  registrable: string,
 ): Promise<{ url: string | null }> {
-  // Normalize to registrable domain
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
-
-  // Check Postgres for cached favicon
+  // Check Postgres for cached favicon (optimized single query)
   try {
-    const existingDomain = await findDomainByName(registrable);
-    if (existingDomain) {
-      const faviconRecord = await getFaviconByDomainId(existingDomain.id);
-      if (faviconRecord) {
-        // Only treat as cache hit if we have a definitive result:
-        // - url is present (string), OR
-        // - url is null but marked as permanently not found
-        const isDefinitiveResult =
-          faviconRecord.url !== null || faviconRecord.notFound === true;
+    const faviconRecord = await getFaviconByDomain(registrable);
+    if (faviconRecord) {
+      // Only treat as cache hit if we have a definitive result:
+      // - url is present (string), OR
+      // - url is null but marked as permanently not found
+      const isDefinitiveResult =
+        faviconRecord.url !== null || faviconRecord.notFound === true;
 
-        if (isDefinitiveResult) {
-          console.debug("[favicon] db cache hit");
-          return { url: faviconRecord.url };
-        }
+      if (isDefinitiveResult) {
+        console.debug("[favicon] db cache hit");
+        return { url: faviconRecord.url };
       }
     }
   } catch (err) {
@@ -162,4 +158,24 @@ export async function getOrCreateFaviconBlobUrl(
   }
 
   return { url: null };
+}
+
+// Wrap with React cache() for automatic request-scoped deduplication
+const cachedFetchFavicon = cache(fetchFaviconInternal);
+
+/**
+ * Get or create a favicon for a domain.
+ * Uses React's cache() for request-scoped deduplication - if multiple
+ * components request the same favicon during SSR, only one fetch happens.
+ */
+export async function getOrCreateFaviconBlobUrl(
+  domain: string,
+): Promise<{ url: string | null }> {
+  // Normalize to registrable domain
+  const registrable = toRegistrableDomain(domain);
+  if (!registrable) {
+    throw new Error(`Cannot extract registrable domain from ${domain}`);
+  }
+
+  return cachedFetchFavicon(registrable);
 }

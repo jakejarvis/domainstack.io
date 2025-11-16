@@ -2,7 +2,7 @@ import "server-only";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { favicons } from "@/lib/db/schema";
+import { domains, favicons } from "@/lib/db/schema";
 import { FaviconInsert as FaviconInsertSchema } from "@/lib/db/zod";
 
 type FaviconInsert = InferInsertModel<typeof favicons>;
@@ -34,4 +34,19 @@ export async function getFaviconByDomainId(domainId: string) {
     .where(and(eq(favicons.domainId, domainId), gt(favicons.expiresAt, now)))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Fetch favicon record by domain name (optimized with JOIN).
+ * Returns null if domain not found, favicon expired, or not yet generated.
+ */
+export async function getFaviconByDomain(domainName: string) {
+  const now = new Date();
+  const rows = await db
+    .select()
+    .from(favicons)
+    .innerJoin(domains, eq(favicons.domainId, domains.id))
+    .where(and(eq(domains.name, domainName), gt(favicons.expiresAt, now)))
+    .limit(1);
+  return rows[0]?.favicons ?? null;
 }
