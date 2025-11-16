@@ -54,6 +54,11 @@ const getDistinctId = cache(async (): Promise<string> => {
  *
  * Note: These functions are fire-and-forget. They return immediately
  * and perform tracking in the background via after() (when available).
+ *
+ * Implementation: To comply with Next.js restrictions on using cookies()
+ * inside after(), we call getDistinctId() outside to start the promise.
+ * Since getDistinctId() is wrapped in cache(), this triggers cookies()
+ * during the request phase, and we just await the cached result inside after().
  */
 export const analytics = {
   track: (
@@ -61,15 +66,24 @@ export const analytics = {
     properties: Record<string, unknown>,
     distinctId?: string,
   ) => {
+    // Start getDistinctId() promise outside of after() to trigger cookies()
+    // during the request phase (not inside the after callback)
+    const distinctIdPromise = distinctId
+      ? Promise.resolve(distinctId)
+      : getDistinctId();
+
     const doTrack = async () => {
       const client = getServerPosthog();
       if (!client) {
         return;
       }
 
+      // Await the promise that was started outside of after()
+      const resolvedDistinctId = (await distinctIdPromise) || "server";
+
       await client.captureImmediate({
         event,
-        distinctId: distinctId || (await getDistinctId()) || "server",
+        distinctId: resolvedDistinctId,
         properties,
       });
 
@@ -97,17 +111,22 @@ export const analytics = {
     properties: Record<string, unknown>,
     distinctId?: string,
   ) => {
+    // Start getDistinctId() promise outside of after() to trigger cookies()
+    // during the request phase (not inside the after callback)
+    const distinctIdPromise = distinctId
+      ? Promise.resolve(distinctId)
+      : getDistinctId();
+
     const doTrack = async () => {
       const client = getServerPosthog();
       if (!client) {
         return;
       }
 
-      client.captureException(
-        error,
-        distinctId || (await getDistinctId()) || "server",
-        properties,
-      );
+      // Await the promise that was started outside of after()
+      const resolvedDistinctId = (await distinctIdPromise) || "server";
+
+      client.captureException(error, resolvedDistinctId, properties);
 
       // flush events to posthog
       try {
