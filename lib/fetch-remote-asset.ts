@@ -44,7 +44,7 @@ export type FetchRemoteAssetOptions = {
   maxBytes?: number;
   /** Maximum redirects we will follow while re-checking the host. */
   maxRedirects?: number;
-  /** Optional allow list of hostnames that can bypass the block list. */
+  /** Additional allow list to further restrict hosts (still subject to default blocklist). */
   allowedHosts?: string[];
   /** Allow HTTP (useful for favicons); defaults to HTTPS only. */
   allowHttp?: boolean;
@@ -178,6 +178,17 @@ async function ensureUrlAllowed(
   }
 
   if (
+    BLOCKED_HOSTNAMES.has(hostname) ||
+    BLOCKED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
+  ) {
+    console.warn("[remote-asset] blocked host", {
+      url: url.toString(),
+      reason: "host_blocked",
+    });
+    throw new RemoteAssetError("host_blocked", `Host ${hostname} is blocked`);
+  }
+
+  if (
     options.allowedHosts.length > 0 &&
     !options.allowedHosts.includes(hostname)
   ) {
@@ -189,17 +200,6 @@ async function ensureUrlAllowed(
       "host_not_allowed",
       `Host ${hostname} is not in allow list`,
     );
-  }
-
-  if (
-    BLOCKED_HOSTNAMES.has(hostname) ||
-    BLOCKED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
-  ) {
-    console.warn("[remote-asset] blocked host", {
-      url: url.toString(),
-      reason: "host_blocked",
-    });
-    throw new RemoteAssetError("host_blocked", `Host ${hostname} is blocked`);
   }
 
   if (isIP(hostname)) {
