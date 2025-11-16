@@ -18,6 +18,14 @@ vi.mock("@/lib/domain-server", async () => {
   };
 });
 
+const dnsLookupMock = vi.hoisted(() =>
+  vi.fn(async () => [{ address: "203.0.113.10", family: 4 }]),
+);
+
+vi.mock("node:dns/promises", () => ({
+  lookup: dnsLookupMock,
+}));
+
 import {
   afterAll,
   afterEach,
@@ -55,6 +63,13 @@ beforeAll(async () => {
   vi.doMock("@/lib/redis", () => impl);
 });
 
+beforeEach(() => {
+  dnsLookupMock.mockReset();
+  dnsLookupMock.mockImplementation(async () => [
+    { address: "203.0.113.10", family: 4 },
+  ]);
+});
+
 beforeEach(async () => {
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
@@ -63,8 +78,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  vi.restoreAllMocks();
-  vi.unstubAllEnvs();
+  vi.clearAllMocks();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
   resetInMemoryRedis();
 });
@@ -248,6 +262,53 @@ describe("getSeo", () => {
     expect(out.preview?.image).toBe("https://example.com/images/og.png");
     // Should have attempted to upload the resolved URL
     expect(fetchMock).toHaveBeenCalledTimes(3); // HTML + robots.txt + image
+    fetchMock.mockRestore();
+  });
+
+  it("skips OG image fetches that point directly to loopback IPs", async () => {
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        htmlResponse(
+          `<!doctype html><html><head>
+            <title>Site</title>
+            <meta property="og:image" content="https://127.0.0.1/og.png" />
+          </head></html>`,
+          "https://limit.invalid/",
+        ),
+      )
+      .mockResolvedValueOnce(
+        textResponse("User-agent: *\nAllow: /", "text/plain"),
+      );
+
+    const out = await getSeo("loopback.invalid");
+    expect(out.preview?.imageUploaded).toBeNull();
+    // Only HTML + robots fetch should occur (image fetch blocked)
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    fetchMock.mockRestore();
+  });
+
+  it("skips OG image fetches when hostname resolves to a private IP", async () => {
+    dnsLookupMock.mockResolvedValueOnce([{ address: "10.0.0.12", family: 4 }]);
+
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        htmlResponse(
+          `<!doctype html><html><head>
+            <title>Site</title>
+            <meta property="og:image" content="https://assets.example.com/og.png" />
+          </head></html>`,
+          "https://limit.invalid/",
+        ),
+      )
+      .mockResolvedValueOnce(
+        textResponse("User-agent: *\nAllow: /", "text/plain"),
+      );
+
+    const out = await getSeo("private-resolve.invalid");
+    expect(out.preview?.imageUploaded).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     fetchMock.mockRestore();
   });
 });
