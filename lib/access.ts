@@ -30,6 +30,18 @@ const lastWriteAttempts = new Map<string, number>();
 const DEBOUNCE_MS = 5 * 60 * 1000;
 
 /**
+ * Maximum number of domains to track before cleanup is triggered.
+ * Set conservatively to prevent unbounded memory growth.
+ */
+const MAX_TRACKED_DOMAINS = 10_000;
+
+/**
+ * Threshold at which cleanup is triggered.
+ * Set slightly higher than max to allow for burst traffic.
+ */
+const CLEANUP_THRESHOLD = 12_000;
+
+/**
  * Record that a domain was accessed by a user (for decay calculation).
  * Schedules the write to happen after the response is sent using Next.js after().
  *
@@ -52,6 +64,22 @@ export function recordDomainAccess(domain: string): void {
 
   // Record this attempt to prevent duplicate writes
   lastWriteAttempts.set(domain, now);
+
+  // Cleanup stale entries to prevent unbounded memory growth
+  // Only run cleanup when we exceed the threshold
+  if (lastWriteAttempts.size > CLEANUP_THRESHOLD) {
+    const cutoffTime = now - DEBOUNCE_MS;
+    for (const [trackedDomain, timestamp] of lastWriteAttempts.entries()) {
+      // Remove entries older than the debounce window
+      if (timestamp < cutoffTime) {
+        lastWriteAttempts.delete(trackedDomain);
+      }
+      // Stop early if we've cleaned enough entries
+      if (lastWriteAttempts.size <= MAX_TRACKED_DOMAINS) {
+        break;
+      }
+    }
+  }
 
   // Schedule DB write to happen after the response is sent
   after(() => updateLastAccessed(domain));
