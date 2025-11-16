@@ -8,6 +8,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { RemoteAssetError } from "@/lib/fetch-remote-asset";
 
 // Mock toRegistrableDomain to allow .invalid and .example domains for testing
 vi.mock("@/lib/domain-server", async () => {
@@ -35,7 +36,26 @@ const storageMock = vi.hoisted(() => ({
   getFaviconTtlSeconds: vi.fn(() => 60),
 }));
 
+const fetchRemoteAssetMock = vi.hoisted(() =>
+  // Shared stub so we can flip between success + failure scenarios quickly.
+  vi.fn(async () => ({
+    buffer: Buffer.from([1, 2, 3, 4]),
+    contentType: "image/png",
+    finalUrl: "https://example.com/favicon.ico",
+    status: 200,
+  })),
+);
+
 vi.mock("@/lib/storage", () => storageMock);
+vi.mock("@/lib/fetch-remote-asset", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/fetch-remote-asset")
+  >("@/lib/fetch-remote-asset");
+  return {
+    ...actual,
+    fetchRemoteAsset: fetchRemoteAssetMock,
+  };
+});
 vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
 
 // Mock sharp to return a pipeline that resolves a buffer (now using webp)
@@ -67,6 +87,7 @@ beforeAll(async () => {
 afterEach(async () => {
   vi.restoreAllMocks();
   storageMock.storeImage.mockReset();
+  fetchRemoteAssetMock.mockReset();
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
@@ -104,44 +125,37 @@ describe("getOrCreateFaviconBlobUrl", () => {
   });
 
   it("fetches, converts, stores, and returns url when not cached", async () => {
-    const body = new Uint8Array([137, 80, 78, 71]); // pretend PNG signature bytes
-    const resp = new Response(body, {
-      status: 200,
-      headers: { "content-type": "image/png" },
-    });
-    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(resp);
-
     const out = await getOrCreateFaviconBlobUrl("example.com");
     expect(out.url).toMatch(
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/32x32\.webp$/,
     );
+    expect(fetchRemoteAssetMock).toHaveBeenCalled();
     expect(storageMock.storeImage).toHaveBeenCalled();
-    fetchSpy.mockRestore();
   }, 10000); // 10s timeout for network + image processing
 
   it("returns null when all sources fail", async () => {
-    const notOk = new Response(null, { status: 404 });
-    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(notOk);
+    fetchRemoteAssetMock.mockRejectedValue(
+      new RemoteAssetError("response_error", "Not found", 404),
+    );
     const out = await getOrCreateFaviconBlobUrl("nope.invalid");
     expect(out.url).toBeNull();
-    fetchSpy.mockRestore();
+    expect(fetchRemoteAssetMock).toHaveBeenCalled();
   }, 10000); // 10s timeout for multiple fetch attempts
 
   it("negative-caches failures to avoid repeat fetch", async () => {
-    const notOk = new Response(null, { status: 404 });
-    const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(notOk);
+    fetchRemoteAssetMock.mockRejectedValue(
+      new RemoteAssetError("response_error", "Not found", 404),
+    );
 
     // First call: miss -> fetch attempts -> negative cache
     const first = await getOrCreateFaviconBlobUrl("negcache.example");
     expect(first.url).toBeNull();
-    expect(fetchSpy).toHaveBeenCalled();
+    expect(fetchRemoteAssetMock).toHaveBeenCalled();
 
     // Second call: should hit negative cache and not fetch again
-    fetchSpy.mockClear();
+    fetchRemoteAssetMock.mockClear();
     const second = await getOrCreateFaviconBlobUrl("negcache.example");
     expect(second.url).toBeNull();
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    fetchSpy.mockRestore();
+    expect(fetchRemoteAssetMock).not.toHaveBeenCalled();
   }, 10000); // 10s timeout for multiple fetch attempts
 });

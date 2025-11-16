@@ -1,4 +1,8 @@
-export async function fetchWithTimeout(
+/**
+ * Fetch a trusted upstream resource with a timeout and optional retries.
+ * Do not use this for user-controlled URLs; prefer the hardened remote asset helper.
+ */
+export async function fetchWithTimeoutAndRetry(
   input: RequestInfo | URL,
   init: RequestInit = {},
   opts: { timeoutMs?: number; retries?: number; backoffMs?: number } = {},
@@ -9,6 +13,7 @@ export async function fetchWithTimeout(
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    // Create a fresh controller per attempt so aborted signals don't leak.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -19,38 +24,12 @@ export async function fetchWithTimeout(
       lastError = err;
       clearTimeout(timer);
       if (attempt < retries) {
+        // Simple linear backoff — good enough for trusted upstream retry logic.
         await new Promise((r) => setTimeout(r, backoffMs));
       }
     }
   }
   throw lastError instanceof Error ? lastError : new Error("fetch failed");
-}
-
-export async function headThenGet(
-  url: string,
-  init: RequestInit = {},
-  opts: { timeoutMs?: number } = {},
-): Promise<{ response: Response; usedMethod: "HEAD" | "GET" }> {
-  const timeoutMs = opts.timeoutMs ?? 5000;
-  try {
-    const headRes = await fetchWithTimeout(
-      url,
-      { ...init, method: "HEAD", redirect: "follow" },
-      { timeoutMs },
-    );
-    if (headRes.ok) {
-      return { response: headRes, usedMethod: "HEAD" };
-    }
-  } catch {
-    // fall through to GET
-  }
-
-  const getRes = await fetchWithTimeout(
-    url,
-    { ...init, method: "GET", redirect: "follow" },
-    { timeoutMs },
-  );
-  return { response: getRes, usedMethod: "GET" };
 }
 
 /**

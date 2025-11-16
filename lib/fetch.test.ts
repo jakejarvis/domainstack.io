@@ -2,8 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fetchWithSelectiveRedirects,
-  fetchWithTimeout,
-  headThenGet,
+  fetchWithTimeoutAndRetry,
 } from "@/lib/fetch";
 
 const originalFetch = globalThis.fetch;
@@ -48,7 +47,7 @@ describe("lib/fetch", () => {
       async () => res as Response,
     ) as unknown as typeof fetch;
 
-    const out = await fetchWithTimeout(
+    const out = await fetchWithTimeoutAndRetry(
       "https://example.com",
       {},
       { timeoutMs: 50 },
@@ -78,7 +77,7 @@ describe("lib/fetch", () => {
       }) as unknown as typeof fetch;
 
       await expect(
-        fetchWithTimeout("https://slow.test", {}, { timeoutMs: 10 }),
+        fetchWithTimeoutAndRetry("https://slow.test", {}, { timeoutMs: 10 }),
       ).rejects.toThrow("aborted");
     });
   });
@@ -91,7 +90,7 @@ describe("lib/fetch", () => {
       .mockResolvedValueOnce(res);
     globalThis.fetch = mock as unknown as typeof fetch;
 
-    const p = fetchWithTimeout(
+    const p = fetchWithTimeoutAndRetry(
       "https://flaky.test",
       {},
       {
@@ -106,43 +105,6 @@ describe("lib/fetch", () => {
     expect(out).toBe(res);
     expect(mock).toHaveBeenCalledTimes(2);
   }, 5000); // 5s timeout for retry logic
-
-  it("headThenGet uses HEAD when ok", async () => {
-    const res = createResponse({ ok: true, status: 200 });
-    const mock = vi.fn(async (_input, init) => {
-      if ((init as RequestInit | undefined)?.method === "HEAD") return res;
-      return createResponse({ ok: false, status: 500 });
-    });
-    globalThis.fetch = mock as unknown as typeof fetch;
-
-    const { response, usedMethod } = await headThenGet(
-      "https://example.com",
-      {},
-      { timeoutMs: 50 },
-    );
-    expect(response).toBe(res);
-    expect(usedMethod).toBe("HEAD");
-    expect(mock).toHaveBeenCalledTimes(1);
-  });
-
-  it("headThenGet falls back to GET when HEAD fails", async () => {
-    const getRes = createResponse({ ok: true, status: 200 });
-    const mock = vi.fn(async (_input, init) => {
-      if ((init as RequestInit | undefined)?.method === "HEAD")
-        return createResponse({ ok: false, status: 405 });
-      return getRes;
-    });
-    globalThis.fetch = mock as unknown as typeof fetch;
-
-    const { response, usedMethod } = await headThenGet(
-      "https://example.com",
-      {},
-      { timeoutMs: 50 },
-    );
-    expect(response).toBe(getRes);
-    expect(usedMethod).toBe("GET");
-    expect(mock).toHaveBeenCalledTimes(2);
-  });
 
   describe("fetchWithSelectiveRedirects", () => {
     it("returns non-redirect responses immediately", async () => {

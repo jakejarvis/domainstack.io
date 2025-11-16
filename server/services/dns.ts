@@ -7,7 +7,7 @@ import { replaceDns } from "@/lib/db/repos/dns";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { dnsRecords } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { fetchWithTimeout } from "@/lib/fetch";
+import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { ns, redis } from "@/lib/redis";
 import { scheduleRevalidation } from "@/lib/schedule";
 import {
@@ -606,7 +606,8 @@ async function resolveTypeWithProvider(
   provider: DohProvider,
 ): Promise<DnsRecord[]> {
   const url = buildDohUrl(provider, domain, type);
-  const res = await fetchWithTimeout(
+  // Each DoH call is potentially flaky; short timeout + single retry keeps latency bounded.
+  const res = await fetchWithTimeoutAndRetry(
     url,
     {
       headers: { ...DEFAULT_HEADERS, ...provider.headers },
