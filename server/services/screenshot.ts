@@ -89,39 +89,41 @@ export async function getOrCreateScreenshotBlobUrl(
   let browser: Browser | null = null;
   try {
     browser = await launchChromium();
+
     const tryUrls = buildHomepageUrls(registrable);
+
     for (const url of tryUrls) {
       let lastError: unknown = null;
+
       for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
+        let page: import("puppeteer-core").Page | null = null;
+
         try {
-          const page = await browser.newPage();
-          let rawPng: Buffer;
+          page = await browser.newPage();
+
+          await page.setViewport({
+            width: VIEWPORT_WIDTH,
+            height: VIEWPORT_HEIGHT,
+            deviceScaleFactor: 1,
+          });
+          await page.setUserAgent(USER_AGENT);
+
+          await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: NAV_TIMEOUT_MS,
+          });
+
           try {
-            await page.setViewport({
-              width: VIEWPORT_WIDTH,
-              height: VIEWPORT_HEIGHT,
-              deviceScaleFactor: 1,
+            await page.waitForNetworkIdle({
+              idleTime: IDLE_TIME_MS,
+              timeout: IDLE_TIMEOUT_MS,
             });
-            await page.setUserAgent(USER_AGENT);
-            await page.goto(url, {
-              waitUntil: "domcontentloaded",
-              timeout: NAV_TIMEOUT_MS,
-            });
-            try {
-              await page.waitForNetworkIdle({
-                idleTime: IDLE_TIME_MS,
-                timeout: IDLE_TIMEOUT_MS,
-              });
-            } catch {}
-            rawPng = (await page.screenshot({
-              type: "png",
-              fullPage: false,
-            })) as Buffer;
-          } finally {
-            try {
-              await page.close();
-            } catch {}
-          }
+          } catch {}
+
+          const rawPng = (await page.screenshot({
+            type: "png",
+            fullPage: false,
+          })) as Buffer;
           const png = await optimizeImageCover(
             rawPng,
             VIEWPORT_WIDTH,
@@ -179,6 +181,12 @@ export async function getOrCreateScreenshotBlobUrl(
           );
           if (attemptIndex < attempts - 1) {
             await sleep(delay);
+          }
+        } finally {
+          if (page) {
+            try {
+              await page.close();
+            } catch {}
           }
         }
       }

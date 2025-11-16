@@ -26,6 +26,7 @@ const pageMock = {
   goto: vi.fn(async () => undefined),
   waitForNetworkIdle: vi.fn(async () => undefined),
   screenshot: vi.fn(async () => Buffer.from([1, 2, 3])),
+  close: vi.fn(async () => undefined),
 };
 const browserMock = {
   newPage: vi.fn(async () => pageMock),
@@ -74,6 +75,8 @@ afterEach(async () => {
   pageMock.goto.mockReset();
   pageMock.waitForNetworkIdle.mockReset();
   pageMock.screenshot.mockReset();
+  pageMock.close.mockReset();
+  browserMock.newPage.mockReset();
 });
 
 describe("getOrCreateScreenshotBlobUrl", () => {
@@ -163,5 +166,26 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     Math.random = originalRandom;
     expect(out.url).toBeNull();
     expect(pageMock.goto.mock.calls.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("closes page on every retry attempt even when errors occur", async () => {
+    let calls = 0;
+    pageMock.goto.mockImplementation(async () => {
+      calls += 1;
+      throw new Error(`attempt ${calls} failed`);
+    });
+    const originalRandom = Math.random;
+    Math.random = () => 0;
+    const out = await getOrCreateScreenshotBlobUrl("example.com", {
+      attempts: 3,
+      backoffBaseMs: 1,
+      backoffMaxMs: 2,
+    });
+    Math.random = originalRandom;
+    expect(out.url).toBeNull();
+    // Should have created pages for 3 attempts × 2 urls = 6 pages
+    expect(browserMock.newPage).toHaveBeenCalledTimes(6);
+    // Should have closed all 6 pages (no leaks)
+    expect(pageMock.close).toHaveBeenCalledTimes(6);
   });
 });
