@@ -72,6 +72,7 @@ export const providers = pgTable(
       t.category,
       sql`lower(${t.name})`,
     ),
+    index("i_providers_category_domain").on(t.category, t.domain),
   ],
 );
 
@@ -171,6 +172,7 @@ export const dnsRecords = pgTable(
     index("i_dns_domain_type").on(t.domainId, t.type),
     index("i_dns_type_value").on(t.type, t.value),
     index("i_dns_expires").on(t.expiresAt),
+    index("i_dns_domain_expires").on(t.domainId, t.expiresAt),
   ],
 );
 
@@ -205,18 +207,22 @@ export const certificates = pgTable(
 );
 
 // HTTP headers (latest set)
-export const httpHeaders = pgTable("http_headers", {
-  domainId: uuid("domain_id")
-    .primaryKey()
-    .references(() => domains.id, { onDelete: "cascade" }),
-  headers: jsonb("headers")
-    .$type<HttpHeader[]>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  status: integer("status").notNull().default(200),
-  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-});
+export const httpHeaders = pgTable(
+  "http_headers",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    headers: jsonb("headers")
+      .$type<HttpHeader[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    status: integer("status").notNull().default(200),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_http_headers_expires").on(t.expiresAt)],
+);
 
 // Hosting (latest)
 export const hosting = pgTable(

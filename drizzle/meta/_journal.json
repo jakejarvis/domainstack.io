@@ -15,6 +15,13 @@
       "when": 1763249162040,
       "tag": "0001_perpetual_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763311738596,
+      "tag": "0002_public_ravenous",
+      "breakpoints": true
     }
   ]
 }

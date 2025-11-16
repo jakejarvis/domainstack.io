@@ -52,7 +52,7 @@ export async function resolveProviderId(
       .where(
         and(
           eq(providers.category, category),
-          sql`lower(${providers.name}) = lower(${name})`,
+          eq(sql`lower(${providers.name})`, name.toLowerCase()),
         ),
       )
       .orderBy(desc(eq(providers.source, "catalog")), desc(providers.updatedAt))
@@ -136,7 +136,7 @@ export async function batchResolveOrCreateProviderIds(
       if (input.name) {
         return and(
           eq(providers.category, input.category),
-          sql`lower(${providers.name}) = lower(${input.name})`,
+          eq(sql`lower(${providers.name})`, input.name.toLowerCase()),
         );
       }
       return null;
@@ -237,7 +237,7 @@ export async function batchResolveOrCreateProviderIds(
             if (input.name) {
               return and(
                 eq(providers.category, input.category),
-                sql`lower(${providers.name}) = lower(${input.name})`,
+                eq(sql`lower(${providers.name})`, input.name.toLowerCase()),
               );
             }
             return null;
