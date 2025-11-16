@@ -22,6 +22,22 @@ vi.mock("@/lib/analytics/client", () => ({
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));
 
+// Mock Next.js after() to execute callbacks immediately in tests
+// In production, after() schedules work after the response is sent
+vi.mock("next/server", async () => {
+  const actual =
+    await vi.importActual<typeof import("next/server")>("next/server");
+  return {
+    ...actual,
+    after: (callback: () => void | Promise<void>) => {
+      // Execute immediately in tests (no request context needed)
+      Promise.resolve(callback()).catch(() => {
+        // Swallow errors like production after() does
+      });
+    },
+  };
+});
+
 // Mock ResizeObserver for jsdom environment
 global.ResizeObserver = class ResizeObserver {
   observe = vi.fn();

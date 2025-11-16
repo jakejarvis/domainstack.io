@@ -9,6 +9,11 @@ import {
   vi,
 } from "vitest";
 
+// Mock the domains repo to avoid DB dependency in these tests
+vi.mock("@/lib/db/repos/domains", () => ({
+  updateLastAccessed: vi.fn(),
+}));
+
 let scheduleRevalidation: typeof import("@/lib/schedule").scheduleRevalidation;
 let allSections: typeof import("@/lib/schedule").allSections;
 

@@ -18,6 +18,11 @@ vi.mock("@/lib/domain-server", async () => {
   };
 });
 
+// Mock scheduleRevalidation to avoid Inngest API calls in tests
+vi.mock("@/lib/schedule", () => ({
+  scheduleRevalidation: vi.fn().mockResolvedValue(true),
+}));
+
 import {
   afterEach,
   beforeAll,

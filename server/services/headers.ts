@@ -1,5 +1,6 @@
 import { getStatusCode } from "@readme/http-status-codes";
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
 import { cache } from "react";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { db } from "@/lib/db/client";
@@ -96,19 +97,19 @@ export const probeHeaders = cache(async function probeHeaders(
         expiresAt,
       });
 
-      try {
-        await scheduleRevalidation(
+      after(() => {
+        scheduleRevalidation(
           registrable,
           "headers",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
-        );
-      } catch (err) {
-        console.warn(
-          `[headers] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      }
+        ).catch((err) => {
+          console.warn(
+            `[headers] schedule failed for ${registrable}`,
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        });
+      });
     }
     console.info(
       `[headers] ok ${registrable} status=${final.status} count=${normalized.length}`,

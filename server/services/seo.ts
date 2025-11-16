@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { after } from "next/server";
 import { USER_AGENT } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
@@ -236,19 +237,19 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       expiresAt,
     });
 
-    try {
-      await scheduleRevalidation(
+    after(() => {
+      scheduleRevalidation(
         registrable,
         "seo",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
-      );
-    } catch (err) {
-      console.warn(
-        `[seo] schedule failed for ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    }
+      ).catch((err) => {
+        console.warn(
+          `[seo] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
+    });
   }
 
   console.info(

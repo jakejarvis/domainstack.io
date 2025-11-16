@@ -156,19 +156,19 @@ export async function getRegistration(domain: string): Promise<Registration> {
     });
 
     // Schedule background revalidation using actual last access time
-    try {
-      await scheduleRevalidation(
+    after(() => {
+      scheduleRevalidation(
         registrable,
         "registration",
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
-      );
-    } catch (err) {
-      console.warn(
-        `[registration] schedule failed for ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    }
+      ).catch((err) => {
+        console.warn(
+          `[registration] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
+    });
 
     console.info(
       `[registration] ok cached ${registrable} registered=${row.registration.isRegistered} registrar=${registrarProvider.name}`,
@@ -349,19 +349,19 @@ export async function getRegistration(domain: string): Promise<Registration> {
   });
 
   // Schedule background revalidation
-  try {
-    await scheduleRevalidation(
+  after(() => {
+    scheduleRevalidation(
       registrable,
       "registration",
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
-    );
-  } catch (err) {
-    console.warn(
-      `[registration] schedule failed for ${registrable}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
-  }
+    ).catch((err) => {
+      console.warn(
+        `[registration] schedule failed for ${registrable}`,
+        err instanceof Error ? err : new Error(String(err)),
+      );
+    });
+  });
 
   console.info(
     `[registration] ok ${registrable} registered=${record.isRegistered} registrar=${withProvider.registrarProvider.name}`,

@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { after } from "next/server";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
@@ -256,19 +257,19 @@ export async function detectHosting(domain: string): Promise<Hosting> {
       expiresAt,
     });
 
-    try {
-      await scheduleRevalidation(
+    after(() => {
+      scheduleRevalidation(
         registrable,
         "hosting",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
-      );
-    } catch (err) {
-      console.warn(
-        `[hosting] schedule failed for ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    }
+      ).catch((err) => {
+        console.warn(
+          `[hosting] schedule failed for ${registrable}`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      });
+    });
   }
   console.info(
     `[hosting] ok ${registrable} hosting=${hostingName} email=${emailName} dns=${dnsName}`,
