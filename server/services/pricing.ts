@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { getDomainTld } from "rdapper";
 import { ns, redis } from "@/lib/redis";
 import type { Pricing } from "@/lib/schemas";
@@ -53,16 +54,18 @@ async function fetchProviderPricing(
   // Fetch fresh pricing
   try {
     const payload = await provider.fetchPricing();
-    // Cache for next time (fire-and-forget)
-    redis
-      .set(provider.cacheKey, payload, { ex: provider.cacheTtlSeconds })
-      .catch((err) => {
-        console.error(
-          `[pricing] cache write error ${provider.name}`,
-          { cacheKey: provider.cacheKey },
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      });
+    // Cache for next time
+    after(() => {
+      redis
+        .set(provider.cacheKey, payload, { ex: provider.cacheTtlSeconds })
+        .catch((err) => {
+          console.error(
+            `[pricing] cache write error ${provider.name}`,
+            { cacheKey: provider.cacheKey },
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        });
+    });
     console.info(`[pricing] fetch ok ${provider.name} (not cached)`);
     return payload;
   } catch (err) {
@@ -70,13 +73,15 @@ async function fetchProviderPricing(
       `[pricing] fetch error ${provider.name}`,
       err instanceof Error ? err : new Error(String(err)),
     );
-    // Short TTL negative cache (fire-and-forget)
-    redis.set(provider.cacheKey, null, { ex: 60 }).catch((cacheErr) => {
-      console.error(
-        `[pricing] negative cache write error ${provider.name}`,
-        { cacheKey: provider.cacheKey },
-        cacheErr instanceof Error ? cacheErr : new Error(String(cacheErr)),
-      );
+    // Short TTL negative cache
+    after(() => {
+      redis.set(provider.cacheKey, null, { ex: 60 }).catch((cacheErr) => {
+        console.error(
+          `[pricing] negative cache write error ${provider.name}`,
+          { cacheKey: provider.cacheKey },
+          cacheErr instanceof Error ? cacheErr : new Error(String(cacheErr)),
+        );
+      });
     });
     return null;
   }

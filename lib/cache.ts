@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { redis } from "@/lib/redis";
 
 type CachedAssetOptions<TProduceMeta extends Record<string, unknown>> = {
@@ -98,26 +99,28 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
     try {
       const dbResult = await fetchFromDb();
       if (dbResult) {
-        // Found in DB, cache it in Redis for next time (fire-and-forget)
-        const expiresAtMs = Date.now() + ttlSeconds * 1000;
-        redis
-          .set(
-            indexKey,
-            {
-              url: dbResult.url,
-              key: dbResult.key,
-              notFound: dbResult.notFound ?? undefined,
-              expiresAtMs,
-            },
-            { ex: ttlSeconds },
-          )
-          .catch((err) => {
-            console.error(
-              "[cache] redis write from db failed",
-              { indexKey },
-              err instanceof Error ? err : new Error(String(err)),
-            );
-          });
+        // Found in DB, cache it in Redis for next time
+        after(() => {
+          const expiresAtMs = Date.now() + ttlSeconds * 1000;
+          redis
+            .set(
+              indexKey,
+              {
+                url: dbResult.url,
+                key: dbResult.key,
+                notFound: dbResult.notFound ?? undefined,
+                expiresAtMs,
+              },
+              { ex: ttlSeconds },
+            )
+            .catch((err) => {
+              console.error(
+                "[cache] redis write from db failed",
+                { indexKey },
+                err instanceof Error ? err : new Error(String(err)),
+              );
+            });
+        });
 
         console.debug(`[cache] db hit ${indexKey}`);
         return { url: dbResult.url };
@@ -136,41 +139,45 @@ export async function getOrCreateCachedAsset<T extends Record<string, unknown>>(
     const produced = await produceAndUpload();
     const expiresAtMs = Date.now() + ttlSeconds * 1000;
 
-    // 4) Persist to Postgres if callback provided (fire-and-forget)
+    // 4) Persist to Postgres if callback provided
     if (persistToDb) {
-      persistToDb({
-        url: produced.url,
-        key: produced.key,
-        notFound: produced.notFound,
-        metrics: produced.metrics,
-      }).catch((err) => {
-        console.error(
-          "[cache] db persist error",
-          { indexKey },
-          err instanceof Error ? err : new Error(String(err)),
-        );
+      after(() => {
+        persistToDb({
+          url: produced.url,
+          key: produced.key,
+          notFound: produced.notFound,
+          metrics: produced.metrics,
+        }).catch((err) => {
+          console.error(
+            "[cache] db persist error",
+            { indexKey },
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        });
       });
     }
 
-    // 5) Cache in Redis for next time (fire-and-forget)
-    redis
-      .set(
-        indexKey,
-        {
-          url: produced.url,
-          key: produced.key,
-          notFound: produced.notFound ?? undefined,
-          expiresAtMs,
-        },
-        { ex: ttlSeconds },
-      )
-      .catch((err) => {
-        console.error(
-          "[cache] cache write error",
-          { indexKey },
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      });
+    // 5) Cache in Redis for next time
+    after(() => {
+      redis
+        .set(
+          indexKey,
+          {
+            url: produced.url,
+            key: produced.key,
+            notFound: produced.notFound ?? undefined,
+            expiresAtMs,
+          },
+          { ex: ttlSeconds },
+        )
+        .catch((err) => {
+          console.error(
+            "[cache] cache write error",
+            { indexKey },
+            err instanceof Error ? err : new Error(String(err)),
+          );
+        });
+    });
 
     return { url: produced.url };
   } catch (produceErr) {
