@@ -7,7 +7,7 @@ import {
 } from "@/lib/db/repos/screenshots";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
-import { launchChromium } from "@/lib/puppeteer";
+import { getBrowser } from "@/lib/puppeteer";
 import { storeImage } from "@/lib/storage";
 import { ttlForScreenshot } from "@/lib/ttl";
 
@@ -19,6 +19,9 @@ const IDLE_TIMEOUT_MS = 3000;
 const CAPTURE_MAX_ATTEMPTS_DEFAULT = 3;
 const CAPTURE_BACKOFF_BASE_MS_DEFAULT = 200;
 const CAPTURE_BACKOFF_MAX_MS_DEFAULT = 1200;
+
+// In-memory lock to prevent concurrent screenshot generation for the same domain
+const screenshotPromises = new Map<string, Promise<{ url: string | null }>>();
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -52,6 +55,35 @@ export async function getOrCreateScreenshotBlobUrl(
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
+  // Check for in-flight request
+  if (screenshotPromises.has(registrable)) {
+    console.debug("[screenshot] in-flight request hit");
+    // biome-ignore lint/style/noNonNullAssertion: checked above
+    return screenshotPromises.get(registrable)!;
+  }
+
+  // Create a new promise and store it
+  const promise = (async () => {
+    try {
+      return await generateScreenshot(registrable, options);
+    } finally {
+      // Remove the promise from the map once it's settled
+      screenshotPromises.delete(registrable);
+    }
+  })();
+
+  screenshotPromises.set(registrable, promise);
+  return promise;
+}
+
+async function generateScreenshot(
+  registrable: string,
+  options?: {
+    attempts?: number;
+    backoffBaseMs?: number;
+    backoffMaxMs?: number;
+  },
+): Promise<{ url: string | null }> {
   const attempts = Math.max(
     1,
     options?.attempts ?? CAPTURE_MAX_ATTEMPTS_DEFAULT,
@@ -86,13 +118,14 @@ export async function getOrCreateScreenshotBlobUrl(
   }
 
   // Generate screenshot (cache missed)
+  let resultUrl: string | null = null;
   let browser: Browser | null = null;
   try {
-    browser = await launchChromium();
+    browser = await getBrowser();
 
     const tryUrls = buildHomepageUrls(registrable);
 
-    for (const url of tryUrls) {
+    urlLoop: for (const url of tryUrls) {
       let lastError: unknown = null;
 
       for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
@@ -171,7 +204,8 @@ export async function getOrCreateScreenshotBlobUrl(
             );
           }
 
-          return { url: storedUrl };
+          resultUrl = storedUrl;
+          break urlLoop;
         } catch (err) {
           lastError = err;
           const delay = backoffDelayMs(
@@ -186,7 +220,12 @@ export async function getOrCreateScreenshotBlobUrl(
           if (page) {
             try {
               await page.close();
-            } catch {}
+            } catch (err) {
+              console.warn(
+                "[screenshot] failed to close page",
+                err instanceof Error ? err : new Error(String(err)),
+              );
+            }
           }
         }
       }
@@ -196,35 +235,32 @@ export async function getOrCreateScreenshotBlobUrl(
     }
 
     // All attempts failed - persist null result
-    try {
-      const domainRecord = await ensureDomainRecord(registrable);
-      const now = new Date();
-      const expiresAt = ttlForScreenshot(now);
-
-      await upsertScreenshot({
-        domainId: domainRecord.id,
-        url: null,
-        pathname: null,
-        width: VIEWPORT_WIDTH,
-        height: VIEWPORT_HEIGHT,
-        source: null,
-        notFound: false,
-        fetchedAt: now,
-        expiresAt,
-      });
-    } catch (err) {
-      console.error(
-        "[screenshot] db persist error (null)",
-        err instanceof Error ? err : new Error(String(err)),
-      );
-    }
-
-    return { url: null };
-  } finally {
-    if (browser) {
+    if (!resultUrl) {
       try {
-        await browser.close();
-      } catch {}
+        const domainRecord = await ensureDomainRecord(registrable);
+        const now = new Date();
+        const expiresAt = ttlForScreenshot(now);
+
+        await upsertScreenshot({
+          domainId: domainRecord.id,
+          url: null,
+          pathname: null,
+          width: VIEWPORT_WIDTH,
+          height: VIEWPORT_HEIGHT,
+          source: null,
+          notFound: true,
+          fetchedAt: now,
+          expiresAt,
+        });
+      } catch (err) {
+        console.error(
+          "[screenshot] db persist error (null)",
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
     }
+  } finally {
+    // Browser is now managed as a singleton; don't close it here
   }
+  return { url: resultUrl };
 }
