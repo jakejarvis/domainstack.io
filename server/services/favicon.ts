@@ -3,13 +3,14 @@ import { USER_AGENT } from "@/lib/constants/app";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { fetchWithTimeout } from "@/lib/fetch";
+import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { storeImage } from "@/lib/storage";
 import { ttlForFavicon } from "@/lib/ttl";
 
 const DEFAULT_SIZE = 32;
 const REQUEST_TIMEOUT_MS = 1500; // per each method
+const MAX_FAVICON_BYTES = 1 * 1024 * 1024; // 1MB
 
 function buildSources(domain: string): string[] {
   const enc = encodeURIComponent(domain);
@@ -56,32 +57,25 @@ async function fetchFaviconInternal(
 
   for (const src of sources) {
     try {
-      const res = await fetchWithTimeout(
-        src,
-        {
-          redirect: "follow",
-          headers: {
-            Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-            "User-Agent": USER_AGENT,
-          },
+      const asset = await fetchRemoteAsset({
+        url: src,
+        headers: {
+          Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
+          "User-Agent": USER_AGENT,
         },
-        { timeoutMs: REQUEST_TIMEOUT_MS },
-      );
-      if (!res.ok) {
-        // Track if this was a 404 (not found) vs other error
-        if (res.status !== 404) {
-          allNotFound = false; // Server error, timeout, etc. - not a true "not found"
-        }
-        continue;
-      }
-      const contentType = res.headers.get("content-type");
-      const ab = await res.arrayBuffer();
-      const buf = Buffer.from(ab);
+        maxBytes: MAX_FAVICON_BYTES,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        maxRedirects: 2,
+        allowHttp: src.startsWith("http://"),
+      });
+      allNotFound = false;
+      const buf = asset.buffer;
+      // Normalize everything to a consistent WebP size so we don't leak arbitrary formats downstream.
       const webp = await convertBufferToImageCover(
         buf,
         DEFAULT_SIZE,
         DEFAULT_SIZE,
-        contentType,
+        asset.contentType,
       );
       if (!webp) continue;
       const { url, pathname } = await storeImage({
@@ -112,8 +106,8 @@ async function fetchFaviconInternal(
           size: DEFAULT_SIZE,
           source,
           notFound: false,
-          upstreamStatus: res.status,
-          upstreamContentType: contentType ?? null,
+          upstreamStatus: asset.status,
+          upstreamContentType: asset.contentType ?? null,
           fetchedAt: now,
           expiresAt,
         });
@@ -125,9 +119,17 @@ async function fetchFaviconInternal(
       }
 
       return { url };
-    } catch {
+    } catch (err) {
+      if (
+        err instanceof RemoteAssetError &&
+        err.code === "response_error" &&
+        err.status === 404
+      ) {
+        // still considered a true "not found"
+      } else {
+        allNotFound = false;
+      }
       // Network error, timeout, etc. - not a true "not found"
-      allNotFound = false;
       // try next source
     }
   }

@@ -1,6 +1,4 @@
-import { lookup as dnsLookup } from "node:dns/promises";
 import { eq } from "drizzle-orm";
-import * as ipaddr from "ipaddr.js";
 import { after } from "next/server";
 import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
@@ -8,7 +6,11 @@ import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { fetchWithSelectiveRedirects, fetchWithTimeout } from "@/lib/fetch";
+import {
+  fetchWithSelectiveRedirects,
+  fetchWithTimeoutAndRetry,
+} from "@/lib/fetch";
+import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type {
@@ -25,8 +27,6 @@ import { ttlForSeo } from "@/lib/ttl";
 const SOCIAL_WIDTH = 1200;
 const SOCIAL_HEIGHT = 630;
 const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
-const BLOCKED_HOSTNAMES = new Set(["localhost"]);
-const BLOCKED_HOST_SUFFIXES = [".internal", ".local", ".localhost"];
 
 export async function getSeo(domain: string): Promise<SeoResponse> {
   console.debug(`[seo] start ${domain}`);
@@ -129,7 +129,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
 
   // HTML fetch
   try {
-    const res = await fetchWithTimeout(
+    const res = await fetchWithTimeoutAndRetry(
       finalUrl,
       {
         method: "GET",
@@ -191,25 +191,38 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   let uploadedImageUrl: string | null = null;
 
   if (preview?.image) {
-    let pageHost: string | null = null;
     try {
-      pageHost = new URL(finalUrl).hostname.toLowerCase();
-    } catch {
-      pageHost = null;
-    }
-
-    try {
-      uploadedImageUrl = await generateSocialPreviewBlob(
-        registrable,
-        preview.image,
-        {
-          allowHosts: pageHost ? [pageHost] : [],
+      // Always proxy OG images through Blob storage so we control caching/privacy.
+      const asset = await fetchRemoteAsset({
+        url: preview.image,
+        currentUrl: finalUrl,
+        headers: {
+          Accept:
+            "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
+          "User-Agent": USER_AGENT,
         },
+        maxBytes: MAX_REMOTE_IMAGE_BYTES,
+        timeoutMs: 8000,
+        maxRedirects: 3,
+      });
+      const optimized = await optimizeImageCover(
+        asset.buffer,
+        SOCIAL_WIDTH,
+        SOCIAL_HEIGHT,
       );
-      // Preserve original image URL for meta display; attach uploaded URL for rendering
-      preview.imageUploaded = uploadedImageUrl;
+      if (!optimized || optimized.length === 0) {
+        throw new Error("Failed to optimize image");
+      }
+      const { url } = await storeImage({
+        kind: "opengraph",
+        domain: registrable,
+        buffer: optimized,
+        width: SOCIAL_WIDTH,
+        height: SOCIAL_HEIGHT,
+      });
+      uploadedImageUrl = url;
+      preview.imageUploaded = url;
     } catch {
-      // On failure, avoid rendering external image URL
       preview.imageUploaded = null;
     }
   }
@@ -273,133 +286,4 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   );
 
   return response;
-}
-
-/**
- * Generate and upload social preview blob from external image URL.
- * Returns the blob URL or null on failure.
- */
-async function generateSocialPreviewBlob(
-  domain: string,
-  imageUrl: string,
-  opts?: { allowHosts?: string[] },
-): Promise<string | null> {
-  // Guard against non-http(s) schemes to avoid SSRF or unsupported fetches
-  let parsed: URL;
-  try {
-    parsed = new URL(imageUrl);
-  } catch {
-    // Invalid URL
-    return null;
-  }
-
-  if (!(await allowRemoteImageUrl(parsed, opts))) {
-    return null;
-  }
-
-  const lower = domain.toLowerCase();
-
-  try {
-    const res = await fetchWithTimeout(
-      parsed.toString(),
-      {
-        method: "GET",
-        headers: {
-          Accept:
-            "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
-          "User-Agent": USER_AGENT,
-        },
-      },
-      { timeoutMs: 8000 },
-    );
-
-    if (!res.ok) return null;
-
-    const contentType = res.headers.get("content-type") ?? "";
-    if (!/image\//.test(contentType)) return null;
-
-    const contentLengthHeader = res.headers.get("content-length");
-    if (contentLengthHeader) {
-      const declared = Number(contentLengthHeader);
-      if (Number.isFinite(declared) && declared > MAX_REMOTE_IMAGE_BYTES) {
-        return null;
-      }
-    }
-
-    const ab = await res.arrayBuffer();
-    if (ab.byteLength > MAX_REMOTE_IMAGE_BYTES) {
-      return null;
-    }
-
-    const raw = Buffer.from(ab);
-
-    const image = await optimizeImageCover(raw, SOCIAL_WIDTH, SOCIAL_HEIGHT);
-    if (!image || image.length === 0) return null;
-
-    const { url } = await storeImage({
-      kind: "opengraph",
-      domain: lower,
-      buffer: image,
-      width: SOCIAL_WIDTH,
-      height: SOCIAL_HEIGHT,
-    });
-
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-async function allowRemoteImageUrl(
-  url: URL,
-  opts?: { allowHosts?: string[] },
-): Promise<boolean> {
-  if (url.protocol !== "https:") {
-    return false;
-  }
-
-  if (url.username || url.password) {
-    return false;
-  }
-
-  const hostname = url.hostname.trim().toLowerCase();
-  const allowHosts =
-    opts?.allowHosts?.map((h) => h.trim().toLowerCase()).filter(Boolean) ?? [];
-
-  if (
-    hostname === "" ||
-    BLOCKED_HOSTNAMES.has(hostname) ||
-    BLOCKED_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
-  ) {
-    return false;
-  }
-
-  if (allowHosts.includes(hostname)) {
-    return true;
-  }
-
-  if (ipaddr.isValid(hostname)) {
-    return !isBlockedIp(hostname);
-  }
-
-  try {
-    const records = await dnsLookup(hostname, { all: true });
-    if (!records || records.length === 0) {
-      return false;
-    }
-    return !records.some((record) => isBlockedIp(record.address));
-  } catch {
-    return false;
-  }
-}
-
-function isBlockedIp(address: string): boolean {
-  try {
-    const parsed = ipaddr.parse(address);
-    const range = parsed.range();
-    // ipaddr marks public IPv4/IPv6 networks as "unicast"
-    return range !== "unicast";
-  } catch {
-    return true;
-  }
 }

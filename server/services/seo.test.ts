@@ -22,9 +22,29 @@ const dnsLookupMock = vi.hoisted(() =>
   vi.fn(async () => [{ address: "203.0.113.10", family: 4 }]),
 );
 
+const fetchRemoteAssetMock = vi.hoisted(() =>
+  // We don't care about the actual image buffer in most tests, only that the helper is invoked.
+  vi.fn(async () => ({
+    buffer: Buffer.from([1, 2, 3]),
+    contentType: "image/png",
+    finalUrl: "https://example.com/og.png",
+    status: 200,
+  })),
+);
+
 vi.mock("node:dns/promises", () => ({
   lookup: dnsLookupMock,
 }));
+
+vi.mock("@/lib/fetch-remote-asset", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/fetch-remote-asset")
+  >("@/lib/fetch-remote-asset");
+  return {
+    ...actual,
+    fetchRemoteAsset: fetchRemoteAssetMock,
+  };
+});
 
 import {
   afterAll,
@@ -79,6 +99,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.clearAllMocks();
+  fetchRemoteAssetMock.mockReset();
   const { resetInMemoryRedis } = await import("@/lib/redis-mock");
   resetInMemoryRedis();
 });
@@ -192,20 +213,13 @@ describe("getSeo", () => {
       )
       .mockResolvedValueOnce(
         textResponse("User-agent: *\nAllow: /", "text/plain"),
-      )
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        headers: new Headers({ "content-type": "text/plain" }),
-        arrayBuffer: async () => new ArrayBuffer(0),
-        url: "",
-      } as unknown as Response);
+      );
+    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("upload failed"));
 
     const out = await getSeo("img-fail.invalid");
-    // original image remains for Meta Tags display
     expect(out.preview?.image ?? "").toContain("/og.png");
-    // uploaded url is null on failure for privacy-safe rendering
     expect(out.preview?.imageUploaded ?? null).toBeNull();
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
     fetchMock.mockRestore();
   });
 
@@ -248,20 +262,17 @@ describe("getSeo", () => {
       )
       .mockResolvedValueOnce(
         textResponse("User-agent: *\nAllow: /", "text/plain"),
-      )
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: new Headers({ "content-type": "image/png" }),
-        arrayBuffer: async () => new ArrayBuffer(100),
-        url: "",
-      } as unknown as Response);
+      );
 
     const out = await getSeo("relative-url.invalid");
-    // Relative URL should be resolved to absolute
     expect(out.preview?.image).toBe("https://example.com/images/og.png");
-    // Should have attempted to upload the resolved URL
-    expect(fetchMock).toHaveBeenCalledTimes(3); // HTML + robots.txt + image
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
+    expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://example.com/images/og.png",
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     fetchMock.mockRestore();
   });
 
@@ -280,10 +291,11 @@ describe("getSeo", () => {
       .mockResolvedValueOnce(
         textResponse("User-agent: *\nAllow: /", "text/plain"),
       );
+    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("blocked"));
 
     const out = await getSeo("loopback.invalid");
     expect(out.preview?.imageUploaded).toBeNull();
-    // Only HTML + robots fetch should occur (image fetch blocked)
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     fetchMock.mockRestore();
   });
@@ -305,9 +317,11 @@ describe("getSeo", () => {
       .mockResolvedValueOnce(
         textResponse("User-agent: *\nAllow: /", "text/plain"),
       );
+    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("blocked"));
 
     const out = await getSeo("private-resolve.invalid");
     expect(out.preview?.imageUploaded).toBeNull();
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     fetchMock.mockRestore();
   });
