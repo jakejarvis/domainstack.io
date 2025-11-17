@@ -85,6 +85,8 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
             rejectUnauthorized: false,
           },
           () => {
+            // Clear timeout on successful connection
+            socket.setTimeout(0);
             const peer = socket.getPeerCertificate(
               true,
             ) as tls.DetailedPeerCertificate;

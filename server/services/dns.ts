@@ -624,25 +624,25 @@ async function resolveTypeWithProvider(
   return sortDnsRecordsForType(records, type);
 }
 
-function normalizeAnswer(
+async function normalizeAnswer(
   _domain: string,
   type: DnsType,
   a: DnsAnswer,
-): Promise<DnsRecord | undefined> | DnsRecord | undefined {
+): Promise<DnsRecord | undefined> {
   const name = trimDot(a.name);
   const ttl = a.TTL;
   switch (type) {
     case "A":
     case "AAAA": {
       const value = trimDot(a.data);
-      const isCloudflarePromise = isCloudflareIp(value);
-      return isCloudflarePromise.then((isCloudflare) => ({
+      const isCloudflare = await isCloudflareIp(value);
+      return {
         type,
         name,
         value,
         ttl,
         isCloudflare,
-      }));
+      };
     }
     case "NS": {
       return { type, name, value: trimDot(a.data), ttl };
