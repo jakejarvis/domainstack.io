@@ -1,16 +1,38 @@
 import { initTRPC } from "@trpc/server";
-import { ipAddress } from "@vercel/functions";
+import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { assertRateLimit, type ServiceName } from "@/lib/ratelimit";
 
+const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
+
+const resolveRequestIp = async () => {
+  try {
+    const headerList = await headers();
+    for (const name of IP_HEADERS) {
+      const value = headerList.get(name);
+      if (value) {
+        const first = value.split(",")[0]?.trim();
+        if (first) {
+          return first;
+        }
+      }
+    }
+  } catch {
+    // headers() is only available inside Next.js request lifecycle hooks.
+    // Ignore errors when invoked in tests or scripts.
+  }
+
+  return null;
+};
+
 export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
-  const ip = req ? ipAddress(req) : null;
+  const ip = await resolveRequestIp();
 
-  return { ip, req } as const;
+  return { req, ip } as const;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
