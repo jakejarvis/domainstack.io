@@ -11,7 +11,6 @@ type QueryKeys = {
   certificates: readonly unknown[];
   headers: readonly unknown[];
   seo: readonly unknown[];
-  favicon: readonly unknown[];
 };
 
 /**
@@ -28,13 +27,17 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
     queryKeysRef.current = queryKeys;
   }, [queryKeys]);
 
-  // Check if all section data is loaded in cache
+  // Check if all section data is loaded or has cached errors
   useEffect(() => {
-    // Check if all queries have data and schedule state update
+    // Check if all queries have data or cached errors and schedule state update
     const checkAndUpdateDataStatus = () => {
-      const hasAllData = Object.values(queryKeysRef.current).every(
-        (key) => queryClient.getQueryData(key) !== undefined,
-      );
+      const hasAllData = Object.values(queryKeysRef.current).every((key) => {
+        const query = queryClient.getQueryCache().find({ queryKey: key });
+        // Consider data loaded if query has data OR has a cached error state
+        return (
+          query?.state.data !== undefined || query?.state.status === "error"
+        );
+      });
       // Use TanStack Query's notifyManager to schedule state update in the next batch
       // This prevents updating parent component during child render phase
       notifyManager.schedule(() => {
@@ -65,7 +68,6 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
       const certificatesData = queryClient.getQueryData(queryKeys.certificates);
       const headersData = queryClient.getQueryData(queryKeys.headers);
       const seoData = queryClient.getQueryData(queryKeys.seo);
-      const faviconData = queryClient.getQueryData(queryKeys.favicon);
 
       // Aggregate into export format
       const exportData = {
@@ -75,8 +77,6 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
         certificates: certificatesData ?? null,
         headers: headersData ?? null,
         seo: seoData ?? null,
-        favicon:
-          (faviconData as { url: string | null } | undefined)?.url ?? null,
       };
 
       // Export with partial data (graceful degradation)

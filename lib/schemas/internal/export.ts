@@ -8,7 +8,6 @@ import { SeoResponseSchema } from "../domain/seo";
 
 export const DomainExportSchema = z.object({
   domain: z.string(),
-  favicon: z.string().nullish(),
   registration: RegistrationSchema.omit({
     domain: true,
     unicodeName: true,
