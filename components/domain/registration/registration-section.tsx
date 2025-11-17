@@ -16,9 +16,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { Registration } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 

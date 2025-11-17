@@ -27,9 +27,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { Certificate } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 
 export function CertificatesSection({
   data,

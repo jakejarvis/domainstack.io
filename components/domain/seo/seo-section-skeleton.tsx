@@ -4,7 +4,7 @@ import { Section } from "@/components/domain/section";
 import { SocialPreviewSkeletonLarge } from "@/components/domain/seo/social-preview-skeleton-large";
 import { SubheadCountSkeleton } from "@/components/domain/subhead-count";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sections } from "@/lib/sections-meta";
+import { sections } from "@/lib/constants/sections";
 
 export function SeoSectionSkeleton() {
   return (

@@ -14,20 +14,20 @@ vi.mock("@/lib/db/repos/domains", () => ({
   updateLastAccessed: vi.fn(),
 }));
 
-describe("access-decay", () => {
+describe("revalidation", () => {
   const now = new Date("2024-01-15T00:00:00Z");
   const msPerDay = 24 * 60 * 60 * 1000;
 
   // Import functions needed for these tests
-  let getDecayMultiplier: typeof import("./access").getDecayMultiplier;
-  let shouldStopRevalidation: typeof import("./access").shouldStopRevalidation;
-  let applyDecayToTtl: typeof import("./access").applyDecayToTtl;
+  let getDecayMultiplier: typeof import("./revalidation").getDecayMultiplier;
+  let shouldStopRevalidation: typeof import("./revalidation").shouldStopRevalidation;
+  let applyDecayToTtl: typeof import("./revalidation").applyDecayToTtl;
 
   beforeAll(async () => {
-    const accessModule = await import("./access");
-    getDecayMultiplier = accessModule.getDecayMultiplier;
-    shouldStopRevalidation = accessModule.shouldStopRevalidation;
-    applyDecayToTtl = accessModule.applyDecayToTtl;
+    const revalidationModule = await import("./revalidation");
+    getDecayMultiplier = revalidationModule.getDecayMultiplier;
+    shouldStopRevalidation = revalidationModule.shouldStopRevalidation;
+    applyDecayToTtl = revalidationModule.applyDecayToTtl;
   });
 
   beforeEach(() => {

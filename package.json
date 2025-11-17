@@ -35,7 +35,7 @@
     "@posthog/nextjs-config": "^1.4.0",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "141.0.0",
-    "@tanstack/react-query": "^5.90.9",
+    "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@trpc/client": "^11.7.1",
     "@trpc/server": "^11.7.1",
@@ -62,7 +62,7 @@
     "image-size": "^2.0.2",
     "inngest": "^3.45.1",
     "ipaddr.js": "^2.2.0",
-    "lucide-react": "^0.553.0",
+    "lucide-react": "^0.554.0",
     "mapbox-gl": "^3.16.0",
     "media-chrome": "^4.15.1",
     "motion": "^12.23.24",
@@ -71,7 +71,7 @@
     "next-themes": "^0.4.6",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
-    "posthog-js": "^1.293.0",
+    "posthog-js": "^1.294.0",
     "posthog-node": "^5.11.2",
     "puppeteer-core": "24.26.1",
     "radix-ui": "^1.4.3",
@@ -90,7 +90,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.5",
+    "@biomejs/biome": "2.3.6",
     "@electric-sql/pglite": "^0.3.14",
     "@tailwindcss/postcss": "^4.1.17",
     "@testing-library/dom": "10.4.1",
@@ -103,8 +103,8 @@
     "@types/react-dom": "19.2.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^5.1.1",
-    "@vitest/coverage-v8": "^4.0.9",
-    "@vitest/ui": "^4.0.9",
+    "@vitest/coverage-v8": "^4.0.10",
+    "@vitest/ui": "^4.0.10",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "bufferutil": "^4.0.9",
     "concurrently": "^9.2.1",
@@ -116,12 +116,12 @@
     "tw-animate-css": "^1.4.0",
     "typescript": "5.9.3",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.10"
   },
   "engines": {
     "node": ">=22.x"
   },
-  "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd",
+  "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@posthog/cli",

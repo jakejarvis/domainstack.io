@@ -14,8 +14,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { sections } from "@/lib/constants/sections";
 import type { Hosting } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 import { cn } from "@/lib/utils";
 
 function formatLocation(geo: Hosting["geo"]): string {

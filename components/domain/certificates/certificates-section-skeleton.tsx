@@ -2,7 +2,7 @@ import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
 import { Skeleton } from "@/components/ui/skeleton";
-import { sections } from "@/lib/sections-meta";
+import { sections } from "@/lib/constants/sections";
 
 export function CertificatesSectionSkeleton() {
   return (

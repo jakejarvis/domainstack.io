@@ -1,19 +1,14 @@
 import { initTRPC } from "@trpc/server";
 import { ipAddress } from "@vercel/functions";
+import { after } from "next/server";
 import superjson from "superjson";
-import { recordDomainAccess } from "@/lib/access";
+import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { assertRateLimit, type ServiceName } from "@/lib/ratelimit";
 
 export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
-  const ip = req
-    ? (ipAddress(req) ??
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      req.headers.get("x-real-ip") ??
-      req.headers.get("cf-connecting-ip") ??
-      null)
-    : null;
+  const ip = req ? ipAddress(req) : null;
 
   return { ip, req } as const;
 };
@@ -74,9 +69,20 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
     return result;
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
+    const error = err instanceof Error ? err : new Error(String(err));
     console.error(
-      `[trpc] error ${path} (${type}) ${durationMs}ms`,
-      err instanceof Error ? err : new Error(String(err)),
+      JSON.stringify({
+        level: "error",
+        message: `[trpc] error ${path} (${type})`,
+        path,
+        type,
+        durationMs,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          cause: error.cause,
+        },
+      }),
     );
     throw err;
   }
@@ -96,37 +102,42 @@ const withRatelimit = t.middleware(async ({ ctx, next, meta }) => {
 });
 
 /**
+ * Middleware to record that a domain was accessed by a user (for decay calculation).
+ * - Expects input to have a `domain` field.
+ * - Can be disabled by setting `meta.recordAccess = false`.
+ * Schedules the write to happen after the response is sent using Next.js after().
+ */
+const withDomainAccessUpdate = t.middleware(async ({ input, meta, next }) => {
+  // Allow procedures to opt-out of access tracking
+  if (meta?.recordAccess === false) {
+    return next();
+  }
+  // Check if input is a valid object with a domain property
+  if (
+    input &&
+    typeof input === "object" &&
+    "domain" in input &&
+    typeof input.domain === "string"
+  ) {
+    const registrable = toRegistrableDomain(input.domain);
+    if (registrable) {
+      console.debug(`[trpc] recording access for domain: ${registrable}`);
+      after(() => updateLastAccessed(registrable));
+    }
+  }
+  return next();
+});
+
+/**
  * Public procedure with logging.
  * Use this for all public endpoints (e.g. health check, etc).
  */
 export const publicProcedure = t.procedure.use(withLogging);
 
 /**
- * Domain-specific procedure with rate limiting.
+ * Domain-specific procedure with rate limiting and access tracking.
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
- *
- * Note: Access tracking is done in the query handler, not middleware,
- * because the input hasn't been parsed yet at the middleware stage.
  */
-export const domainProcedure = publicProcedure.use(withRatelimit);
-
-/**
- * Helper to track domain access in query handlers.
- * Call this at the start of domain-related query handlers.
- *
- * @param domain - The domain from the input
- * @example
- * ```ts
- * .query(({ input }) => {
- *   trackDomainAccess(input.domain);
- *   return getSeo(input.domain);
- * })
- * ```
- */
-export function trackDomainAccess(domain: string): void {
-  const registrable = toRegistrableDomain(domain);
-  if (registrable) {
-    console.debug(`[trpc] recording access for domain: ${registrable}`);
-    recordDomainAccess(registrable);
-  }
-}
+export const domainProcedure = publicProcedure
+  .use(withRatelimit)
+  .use(withDomainAccessUpdate);

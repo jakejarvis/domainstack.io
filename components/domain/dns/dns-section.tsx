@@ -12,8 +12,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { sections } from "@/lib/constants/sections";
 import type { DnsRecord } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 
 export function DnsSection({
   data,

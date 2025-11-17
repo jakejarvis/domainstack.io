@@ -20,11 +20,7 @@ import { getPricingForTld } from "@/server/services/pricing";
 import { getRegistration } from "@/server/services/registration";
 import { getOrCreateScreenshotBlobUrl } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
-import {
-  createTRPCRouter,
-  domainProcedure,
-  trackDomainAccess,
-} from "@/trpc/init";
+import { createTRPCRouter, domainProcedure } from "@/trpc/init";
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -39,63 +35,45 @@ export const domainRouter = createTRPCRouter({
     .meta({ service: "registration" })
     .input(DomainInputSchema)
     .output(RegistrationSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return getRegistration(input.domain);
-    }),
-  pricing: domainProcedure
-    .meta({ service: "pricing" })
-    .input(DomainInputSchema)
-    .output(PricingSchema)
-    .query(({ input }) => getPricingForTld(input.domain)),
+    .query(({ input }) => getRegistration(input.domain)),
   dns: domainProcedure
     .meta({ service: "dns" })
     .input(DomainInputSchema)
     .output(DnsResolveResultSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return resolveAll(input.domain);
-    }),
+    .query(({ input }) => resolveAll(input.domain)),
   hosting: domainProcedure
     .meta({ service: "hosting" })
     .input(DomainInputSchema)
     .output(HostingSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return detectHosting(input.domain);
-    }),
+    .query(({ input }) => detectHosting(input.domain)),
   certificates: domainProcedure
     .meta({ service: "certs" })
     .input(DomainInputSchema)
     .output(CertificatesSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return getCertificates(input.domain);
-    }),
+    .query(({ input }) => getCertificates(input.domain)),
   headers: domainProcedure
     .meta({ service: "headers" })
     .input(DomainInputSchema)
     .output(HttpHeadersResponseSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return probeHeaders(input.domain);
-    }),
+    .query(({ input }) => probeHeaders(input.domain)),
   seo: domainProcedure
     .meta({ service: "seo" })
     .input(DomainInputSchema)
     .output(SeoResponseSchema)
-    .query(({ input }) => {
-      trackDomainAccess(input.domain);
-      return getSeo(input.domain);
-    }),
+    .query(({ input }) => getSeo(input.domain)),
   favicon: domainProcedure
-    .meta({ service: "favicon" })
+    .meta({ service: "favicon", recordAccess: false })
     .input(DomainInputSchema)
     .output(StorageUrlSchema)
     .query(({ input }) => getOrCreateFaviconBlobUrl(input.domain)),
   screenshot: domainProcedure
-    .meta({ service: "screenshot" })
+    .meta({ service: "screenshot", recordAccess: false })
     .input(DomainInputSchema)
     .output(StorageUrlSchema)
     .query(({ input }) => getOrCreateScreenshotBlobUrl(input.domain)),
+  pricing: domainProcedure
+    .meta({ service: "pricing", recordAccess: false })
+    .input(DomainInputSchema)
+    .output(PricingSchema)
+    .query(({ input }) => getPricingForTld(input.domain)),
 });

@@ -2,7 +2,7 @@ import { MapSkeleton } from "@/components/domain/hosting/map-skeleton";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
-import { sections } from "@/lib/sections-meta";
+import { sections } from "@/lib/constants/sections";
 
 export function HostingSectionSkeleton() {
   return (

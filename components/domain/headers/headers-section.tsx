@@ -14,9 +14,9 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
+import { sections } from "@/lib/constants/sections";
 import { normalizeDomainInput } from "@/lib/domain";
 import type { HttpHeadersResponse } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 
 /**
  * Extract domain from a Location header value.

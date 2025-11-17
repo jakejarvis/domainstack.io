@@ -1,7 +1,7 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeletonList } from "@/components/domain/key-value-skeletons";
 import { Section } from "@/components/domain/section";
-import { sections } from "@/lib/sections-meta";
+import { sections } from "@/lib/constants/sections";
 
 export function HeadersSectionSkeleton() {
   return (

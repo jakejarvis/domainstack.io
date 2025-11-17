@@ -1,6 +1,5 @@
 import "server-only";
 
-import { after } from "next/server";
 import {
   FAST_CHANGING_TIERS,
   SLOW_CHANGING_TIERS,
@@ -13,77 +12,7 @@ import {
   REVALIDATE_MIN_REGISTRATION,
   REVALIDATE_MIN_SEO,
 } from "@/lib/constants/ttl";
-import { updateLastAccessed } from "@/lib/db/repos/domains";
 import type { Section } from "@/lib/schemas";
-
-/**
- * Module-level map to track last write attempt per domain.
- * Prevents excessive database writes by debouncing updates.
- * Key: domain name, Value: timestamp of last write attempt
- */
-const lastWriteAttempts = new Map<string, number>();
-
-/**
- * Debounce window in milliseconds (5 minutes).
- * Only write to DB if more than 5 minutes have passed since last attempt.
- */
-const DEBOUNCE_MS = 5 * 60 * 1000;
-
-/**
- * Maximum number of domains to track before cleanup is triggered.
- * Set conservatively to prevent unbounded memory growth.
- */
-const MAX_TRACKED_DOMAINS = 10_000;
-
-/**
- * Threshold at which cleanup is triggered.
- * Set slightly higher than max to allow for burst traffic.
- */
-const CLEANUP_THRESHOLD = 12_000;
-
-/**
- * Record that a domain was accessed by a user (for decay calculation).
- * Schedules the write to happen after the response is sent using Next.js after().
- *
- * Uses module-level debouncing to limit writes to once per 5 minutes per domain.
- * Writes directly to Postgres without intermediate Redis buffering.
- *
- * IMPORTANT: Only call this for real user requests, NOT for background
- * revalidation jobs (Inngest). Background jobs should not reset decay timers.
- *
- * @param domain - The domain name that was accessed
- */
-export function recordDomainAccess(domain: string): void {
-  const now = Date.now();
-  const lastAttempt = lastWriteAttempts.get(domain);
-
-  // Debounce: skip if we recently attempted a write
-  if (lastAttempt && now - lastAttempt < DEBOUNCE_MS) {
-    return;
-  }
-
-  // Record this attempt to prevent duplicate writes
-  lastWriteAttempts.set(domain, now);
-
-  // Cleanup stale entries to prevent unbounded memory growth
-  // Only run cleanup when we exceed the threshold
-  if (lastWriteAttempts.size > CLEANUP_THRESHOLD) {
-    const cutoffTime = now - DEBOUNCE_MS;
-    for (const [trackedDomain, timestamp] of lastWriteAttempts.entries()) {
-      // Remove entries older than the debounce window
-      if (timestamp < cutoffTime) {
-        lastWriteAttempts.delete(trackedDomain);
-      }
-      // Stop early if we've cleaned enough entries
-      if (lastWriteAttempts.size <= MAX_TRACKED_DOMAINS) {
-        break;
-      }
-    }
-  }
-
-  // Schedule DB write to happen after the response is sent
-  after(() => updateLastAccessed(domain));
-}
 
 /**
  * Get the base revalidation interval (in seconds) for a section.

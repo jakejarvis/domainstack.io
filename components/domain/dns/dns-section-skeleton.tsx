@@ -1,7 +1,7 @@
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
 import { SubheadCountSkeleton } from "@/components/domain/subhead-count";
-import { sections } from "@/lib/sections-meta";
+import { sections } from "@/lib/constants/sections";
 
 function DnsGroupSkeleton({
   title,

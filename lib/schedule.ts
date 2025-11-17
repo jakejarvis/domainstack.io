@@ -1,11 +1,6 @@
 import "server-only";
 
 import {
-  applyDecayToTtl,
-  getDecayMultiplier,
-  shouldStopRevalidation,
-} from "@/lib/access";
-import {
   REVALIDATE_MIN_CERTIFICATES,
   REVALIDATE_MIN_DNS,
   REVALIDATE_MIN_HEADERS,
@@ -14,6 +9,11 @@ import {
   REVALIDATE_MIN_SEO,
 } from "@/lib/constants/ttl";
 import { inngest } from "@/lib/inngest/client";
+import {
+  applyDecayToTtl,
+  getDecayMultiplier,
+  shouldStopRevalidation,
+} from "@/lib/revalidation";
 import { type Section, SectionEnum } from "@/lib/schemas";
 
 function minTtlSecondsForSection(section: Section): number {

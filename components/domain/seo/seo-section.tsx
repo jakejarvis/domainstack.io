@@ -54,8 +54,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProgressiveReveal } from "@/hooks/use-progressive-reveal";
+import { sections } from "@/lib/constants/sections";
 import type { SeoResponse, SocialPreviewProvider } from "@/lib/schemas";
-import { sections } from "@/lib/sections-meta";
 import { cn } from "@/lib/utils";
 
 export function SeoSection({
