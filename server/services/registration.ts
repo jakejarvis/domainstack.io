@@ -1,18 +1,10 @@
 import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { getDomainTld, lookup } from "rdapper";
-import {
-  REDIS_TTL_REGISTERED,
-  REDIS_TTL_UNREGISTERED,
-} from "@/lib/constants/ttl";
 import { db } from "@/lib/db/client";
 import { upsertDomain } from "@/lib/db/repos/domains";
 import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
-import {
-  getRegistrationStatusFromCache,
-  setRegistrationStatusInCache,
-  upsertRegistration,
-} from "@/lib/db/repos/registrations";
+import { upsertRegistration } from "@/lib/db/repos/registrations";
 import { domains, providers, registrations } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { detectRegistrar } from "@/lib/providers/detection";
@@ -71,25 +63,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
 
-  // ===== Fast path 1: Redis cache for registration status =====
-  const cachedStatus = await getRegistrationStatusFromCache(registrable);
-
-  // If Redis cache says unregistered, return minimal Registration object
-  if (cachedStatus === false) {
-    console.info(`[registration] cache hit unregistered ${registrable}`);
-    return {
-      domain: registrable,
-      tld: getDomainTld(registrable) ?? "",
-      isRegistered: false,
-      source: null,
-      registrarProvider: {
-        name: null,
-        domain: null,
-      },
-    };
-  }
-
-  // ===== Fast path 2: Postgres cache for full registration data =====
+  // ===== Fast path: Postgres cache for full registration data =====
   // Single query to fetch domain + registration + provider
   const existing = await db
     .select({
@@ -140,23 +114,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
       source: row.registration.source ?? null,
       registrarProvider,
     };
-
-    // Update Redis fast-path cache to keep it hot for subsequent requests
-    const ttl = row.registration.isRegistered
-      ? REDIS_TTL_REGISTERED
-      : REDIS_TTL_UNREGISTERED;
-    after(() => {
-      setRegistrationStatusInCache(
-        registrable,
-        row.registration.isRegistered,
-        ttl,
-      ).catch((err) => {
-        console.warn(
-          `[registration] failed to warm Redis cache for ${registrable}:`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      });
-    });
 
     // Schedule background revalidation using actual last access time
     after(() => {
@@ -222,21 +179,6 @@ export async function getRegistration(domain: string): Promise<Registration> {
     );
     throw err;
   }
-
-  // Cache the registration status (true/false) in Redis for fast lookups
-  const ttl = record.isRegistered
-    ? REDIS_TTL_REGISTERED
-    : REDIS_TTL_UNREGISTERED;
-  after(() => {
-    setRegistrationStatusInCache(registrable, record.isRegistered, ttl).catch(
-      (err) => {
-        console.warn(
-          `[registration] failed to cache status for ${registrable}:`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      },
-    );
-  });
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {

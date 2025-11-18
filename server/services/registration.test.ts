@@ -54,22 +54,17 @@ vi.mock("@/lib/domain-server", async (importOriginal) => {
 });
 
 describe("getRegistration", () => {
-  // Setup DB and Redis mocks once for all tests (expensive operations)
+  // Setup DB mock once for all tests (expensive operations)
   beforeAll(async () => {
     const { makePGliteDb } = await import("@/lib/db/pglite");
     const { db } = await makePGliteDb();
     vi.doMock("@/lib/db/client", () => ({ db }));
-    const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-    const impl = makeInMemoryRedis();
-    vi.doMock("@/lib/redis", () => impl);
   });
 
   // Reset only data between tests (lightweight operation)
   beforeEach(async () => {
     const { resetPGliteDb } = await import("@/lib/db/pglite");
     await resetPGliteDb();
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
   });
 
   afterEach(async () => {
@@ -119,19 +114,9 @@ describe("getRegistration", () => {
     const rec = await getRegistration("example.com");
     expect(rec.isRegistered).toBe(true);
     expect(spy).not.toHaveBeenCalled();
-
-    // Verify Redis cache was updated when hitting Postgres cache
-    const { redis } = await import("@/lib/redis");
-    const { getRegistrationCacheKey } = await import(
-      "@/lib/db/repos/registrations"
-    );
-    const cached = await redis.get(getRegistrationCacheKey("example.com"));
-    expect(cached).toBe("1"); // "1" means registered
   });
 
   it("loads via rdapper, creates registrar provider when missing, and caches", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("example.com");
     expect(rec.isRegistered).toBe(true);
@@ -166,9 +151,7 @@ describe("getRegistration", () => {
     expect(prov?.name).toBe("GoDaddy");
   });
 
-  it("caches unregistered domains in Redis only (not Postgres)", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
+  it("does not persist unregistered domains in Postgres", async () => {
     const { lookup } = await import("rdapper");
     (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
       ok: true,
@@ -190,59 +173,9 @@ describe("getRegistration", () => {
       .where(eq(domains.name, "unregistered.test"))
       .limit(1);
     expect(d.length).toBe(0);
-
-    // Verify cached in Redis
-    const { redis } = await import("@/lib/redis");
-    const { getRegistrationCacheKey } = await import(
-      "@/lib/db/repos/registrations"
-    );
-    const cached = await redis.get(
-      getRegistrationCacheKey("unregistered.test"),
-    );
-    expect(cached).toBe("0"); // "0" means unregistered
   });
 
-  it("returns cached unregistered status from Redis without calling rdapper", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
-
-    // Pre-cache unregistered status using the canonical helper
-    const { REDIS_TTL_UNREGISTERED } = await import("@/lib/constants/ttl");
-    const { setRegistrationStatusInCache } = await import(
-      "@/lib/db/repos/registrations"
-    );
-    await setRegistrationStatusInCache(
-      "cached-unregistered.test",
-      false,
-      REDIS_TTL_UNREGISTERED,
-    );
-
-    const { lookup } = await import("rdapper");
-    const spy = lookup as unknown as import("vitest").Mock;
-    spy.mockClear();
-
-    const { getRegistration } = await import("./registration");
-    const result = await getRegistration("cached-unregistered.test");
-
-    // Should return a minimal Registration object with isRegistered: false
-    expect(result).toMatchObject({
-      domain: "cached-unregistered.test",
-      tld: "test",
-      isRegistered: false,
-      source: null,
-      registrarProvider: {
-        name: null,
-        domain: null,
-      },
-    });
-
-    // rdapper should not have been called
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it("caches registered domains in both Redis and Postgres", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
+  it("persists registered domains in Postgres", async () => {
     const { lookup } = await import("rdapper");
     (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
       ok: true,
@@ -276,19 +209,9 @@ describe("getRegistration", () => {
       .limit(1);
     expect(reg.length).toBe(1);
     expect(reg[0].isRegistered).toBe(true);
-
-    // Verify cached in Redis
-    const { redis } = await import("@/lib/redis");
-    const { getRegistrationCacheKey } = await import(
-      "@/lib/db/repos/registrations"
-    );
-    const cached = await redis.get(getRegistrationCacheKey("registered.test"));
-    expect(cached).toBe("1"); // "1" means registered
   });
 
   it("handles TLDs without WHOIS/RDAP gracefully (no server discovered)", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
     const { lookup } = await import("rdapper");
 
     // Simulate rdapper error for TLD without WHOIS server
@@ -328,8 +251,6 @@ describe("getRegistration", () => {
   });
 
   it("handles TLDs with unresponsive WHOIS servers gracefully (timeout)", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
     const { lookup } = await import("rdapper");
 
     // Simulate rdapper timeout error (WHOIS server exists but doesn't respond)
@@ -366,8 +287,6 @@ describe("getRegistration", () => {
   });
 
   it("logs actual registration errors as errors (timeout, network failure)", async () => {
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
     const { lookup } = await import("rdapper");
 
     // Simulate a real error (timeout, network failure, etc.)
