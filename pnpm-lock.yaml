@@ -41,12 +41,6 @@ importers:
       '@trpc/tanstack-react-query':
         specifier: ^11.7.1
         version: 11.7.1(@tanstack/react-query@5.90.10(react@19.2.0))(@trpc/client@11.7.1(@trpc/server@11.7.1(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.7.1(typescript@5.9.3))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
-      '@upstash/ratelimit':
-        specifier: ^2.0.7
-        version: 2.0.7(@upstash/redis@1.35.6)
-      '@upstash/redis':
-        specifier: ^1.35.6
-        version: 1.35.6
       '@vercel/analytics':
         specifier: ^1.5.0
         version: 1.5.0(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)
@@ -114,8 +108,8 @@ importers:
         specifier: ^3.16.0
         version: 3.16.0
       media-chrome:
-        specifier: ^4.15.1
-        version: 4.15.1(react@19.2.0)
+        specifier: ^4.16.0
+        version: 4.16.0(react@19.2.0)
       motion:
         specifier: ^12.23.24
         version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -2773,15 +2767,6 @@ packages:
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
 
-  '@upstash/core-analytics@0.0.10':
-    resolution: {integrity: sha512-7qJHGxpQgQr9/vmeS1PktEwvNAF7TI4iJDi8Pu2CFZ9YUGHZH4fOP5TfYlZ4aVxfopnELiE4BS4FBjyK7V1/xQ==}
-    engines: {node: '>=16.0.0'}
-
-  '@upstash/ratelimit@2.0.7':
-    resolution: {integrity: sha512-qNQW4uBPKVk8c4wFGj2S/vfKKQxXx1taSJoSGBN36FeiVBBKHQgsjPbKUijZ9Xu5FyVK+pfiXWKIsQGyoje8Fw==}
-    peerDependencies:
-      '@upstash/redis': ^1.34.3
-
   '@upstash/redis@1.35.6':
     resolution: {integrity: sha512-aSEIGJgJ7XUfTYvhQcQbq835re7e/BXjs8Janq6Pvr6LlmTZnyqwT97RziZLO/8AVUL037RLXqqiQC6kCt+5pA==}
 
@@ -3127,8 +3112,8 @@ packages:
   canonicalize@1.0.8:
     resolution: {integrity: sha512-0CNTVCLZggSh7bc5VkX5WWPWO+cyZbNd07IHIsSXLia/eAq+r836hgk+8BKoEh7949Mda87VUOitx5OddVj64A==}
 
-  ce-la-react@0.3.1:
-    resolution: {integrity: sha512-g0YwpZDPIwTwFumGTzNHcgJA6VhFfFCJkSNdUdC04br2UfU+56JDrJrJva3FZ7MToB4NDHAFBiPE/PZdNl1mQA==}
+  ce-la-react@0.3.2:
+    resolution: {integrity: sha512-QJ6k4lOD/btI08xG8jBPxRCGXvCnusGGkTsiXk0u3NqUu/W+BXRnFD4PYjwtqh8AWmGa5LDbGk0fLQsqr0nSMA==}
     peerDependencies:
       react: '>=17.0.0'
 
@@ -4085,8 +4070,8 @@ packages:
   mdn-data@2.12.2:
     resolution: {integrity: sha512-IEn+pegP1aManZuckezWCO+XZQDplx1366JoVhTpMpBB1sPey/SbveZQUosKiKiGYjg1wH4pMlNgXbCiYgihQA==}
 
-  media-chrome@4.15.1:
-    resolution: {integrity: sha512-Hxqr0qQ67ewmRaLJBqe5ayu53txFX+DODb9xBSHgTbw7j+gITGZ4llbPPEmqMlDnatw7IsF+AUh9rJYbpnn4ZQ==}
+  media-chrome@4.16.0:
+    resolution: {integrity: sha512-c5xpTYcYo9nYsC/G/C1PyOcPXEL6iIaSR9MH3GncVuj4S90aHqvGbsyUWFDPPBKx5sCwWLxDnbszE/24eMT54g==}
 
   mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -7720,18 +7705,10 @@ snapshots:
       '@types/node': 24.10.1
     optional: true
 
-  '@upstash/core-analytics@0.0.10':
-    dependencies:
-      '@upstash/redis': 1.35.6
-
-  '@upstash/ratelimit@2.0.7(@upstash/redis@1.35.6)':
-    dependencies:
-      '@upstash/core-analytics': 0.0.10
-      '@upstash/redis': 1.35.6
-
   '@upstash/redis@1.35.6':
     dependencies:
       uncrypto: 0.1.3
+    optional: true
 
   '@vercel/analytics@1.5.0(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)':
     optionalDependencies:
@@ -8042,7 +8019,7 @@ snapshots:
 
   canonicalize@1.0.8: {}
 
-  ce-la-react@0.3.1(react@19.2.0):
+  ce-la-react@0.3.2(react@19.2.0):
     dependencies:
       react: 19.2.0
 
@@ -8986,9 +8963,9 @@ snapshots:
 
   mdn-data@2.12.2: {}
 
-  media-chrome@4.15.1(react@19.2.0):
+  media-chrome@4.16.0(react@19.2.0):
     dependencies:
-      ce-la-react: 0.3.1(react@19.2.0)
+      ce-la-react: 0.3.2(react@19.2.0)
     transitivePeerDependencies:
       - react
 
@@ -9871,7 +9848,8 @@ snapshots:
 
   ulid@2.4.0: {}
 
-  uncrypto@0.1.3: {}
+  uncrypto@0.1.3:
+    optional: true
 
   undici-types@6.21.0: {}
 

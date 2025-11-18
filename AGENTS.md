@@ -16,7 +16,7 @@
 - `trpc/` tRPC client setup, query client, and error handling.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` — start all local services (Postgres, Redis, SRH, Inngest) and Next.js dev server at http://localhost:3000 using `concurrently`.
+- `pnpm dev` — start all local services (Postgres, Inngest, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
 - `pnpm build` — compile production bundle.
 - `pnpm start` — serve compiled output for smoke tests.
 - `pnpm lint` — run Biome lint + type-aware checks (`--write` to fix).
@@ -71,17 +71,15 @@
 - Keep secrets in `.env.local`. See `.env.example` for required variables.
 - Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
-  - `rate_limits` (object): Service rate limits; **fails open** (no limits) if unavailable for maximum availability
   - Edge Config is completely optional and gracefully degrades when not configured
   - Uses Next.js 16 `"use cache"` directive with `@vercel/edge-config` SDK for SSR compatibility
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
-- **Redis usage**: ONLY for IP-based rate limiting via `@upstash/ratelimit`. All other caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
+- All caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
 - Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
 - Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
-- Cron jobs trigger Inngest events via `app/api/cron/` endpoints secured with `CRON_SECRET`.
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.
 
 ## Analytics & Observability

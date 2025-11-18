@@ -4,7 +4,6 @@ import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { assertRateLimit, type ServiceName } from "@/lib/ratelimit";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -42,33 +41,6 @@ export const t = initTRPC
   .meta<Record<string, unknown>>()
   .create({
     transformer: superjson,
-    errorFormatter({ shape, error }) {
-      const cause = (
-        error as unknown as {
-          cause?: {
-            retryAfter?: number;
-            service?: string;
-            limit?: number;
-            remaining?: number;
-          };
-        }
-      ).cause;
-      return {
-        ...shape,
-        data: {
-          ...shape.data,
-          retryAfter:
-            typeof cause?.retryAfter === "number"
-              ? cause.retryAfter
-              : undefined,
-          service:
-            typeof cause?.service === "string" ? cause.service : undefined,
-          limit: typeof cause?.limit === "number" ? cause.limit : undefined,
-          remaining:
-            typeof cause?.remaining === "number" ? cause.remaining : undefined,
-        },
-      };
-    },
   });
 
 export const createTRPCRouter = t.router;
@@ -111,29 +83,11 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
 });
 
 /**
- * Middleware to rate limit requests.
- * - Expects meta to have a `service` field containing the service name.
- * - Expects ctx to have an `ip` field containing the IP address.
- * - Throws a TRPCError if the rate limit is exceeded.
- */
-const withRatelimit = t.middleware(async ({ ctx, next, meta }) => {
-  if (meta?.service && ctx.ip) {
-    await assertRateLimit(meta.service as ServiceName, ctx.ip);
-  }
-  return next();
-});
-
-/**
  * Middleware to record that a domain was accessed by a user (for decay calculation).
- * - Expects input to have a `domain` field.
- * - Can be disabled by setting `meta.recordAccess = false`.
+ * Expects input to have a `domain` field.
  * Schedules the write to happen after the response is sent using Next.js after().
  */
-const withDomainAccessUpdate = t.middleware(async ({ input, meta, next }) => {
-  // Allow procedures to opt-out of access tracking
-  if (meta?.recordAccess === false) {
-    return next();
-  }
+const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   // Check if input is a valid object with a domain property
   if (
     input &&
@@ -157,9 +111,7 @@ const withDomainAccessUpdate = t.middleware(async ({ input, meta, next }) => {
 export const publicProcedure = t.procedure.use(withLogging);
 
 /**
- * Domain-specific procedure with rate limiting and access tracking.
+ * Domain-specific procedure with "last accessed at" tracking.
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
  */
-export const domainProcedure = publicProcedure
-  .use(withRatelimit)
-  .use(withDomainAccessUpdate);
+export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);

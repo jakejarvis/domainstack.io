@@ -10,8 +10,8 @@
 - **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
 - **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
 - **Fast, private, no sign-up**: Live fetches with intelligent multi-layer caching.
-- **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle), event-driven background revalidation (Inngest), and Redis for short-lived rate limiting.
-- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable rate limits and domain suggestions without redeployment.
+- **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
+- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable domain suggestions without redeployment.
 
 ## 🛠️ Tech Stack
 
@@ -20,8 +20,7 @@
 - **tRPC** API
 - **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
 - **Inngest** for event-driven background revalidation with built-in concurrency control
-- **Upstash Redis** for IP-based rate limiting
-- **Vercel Edge Config** for runtime configuration (domain suggestions, service rate limits)
+- **Vercel Edge Config** for runtime configuration (domain suggestions)
 - **Vercel Blob** for favicon/screenshot storage with Postgres metadata caching
 - [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
 - **Puppeteer** (with `@sparticuz/chromium` on Vercel) for server-side screenshots
@@ -66,8 +65,6 @@ pnpm dev
 
 This single command boots:
 - **Postgres** on `localhost:5432`
-- **Redis** on `localhost:6379`
-- **Serverless Redis HTTP (SRH)** on `http://localhost:8079` (Upstash-compatible REST proxy)
 - **Inngest dev server** on `http://localhost:8288`
 - **Next.js dev server** on `http://localhost:3000`
 
