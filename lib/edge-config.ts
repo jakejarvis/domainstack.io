@@ -11,19 +11,19 @@ import type { ServiceLimits } from "@/lib/ratelimit";
  *
  * Edge Config key: `rate_limits`
  *
- * Expected schema:
+ * Expected schema (duration in milliseconds):
  * ```json
  * {
  *   "rate_limits": {
- *     "dns": { "points": 60, "window": "1 m" },
- *     "headers": { "points": 60, "window": "1 m" },
- *     "certs": { "points": 30, "window": "1 m" },
- *     "registration": { "points": 10, "window": "1 m" },
- *     "screenshot": { "points": 30, "window": "1 h" },
- *     "favicon": { "points": 100, "window": "1 m" },
- *     "seo": { "points": 30, "window": "1 m" },
- *     "hosting": { "points": 30, "window": "1 m" },
- *     "pricing": { "points": 30, "window": "1 m" }
+ *     "dns": { "limit": 60, "duration": 60000 },
+ *     "headers": { "limit": 60, "duration": 60000 },
+ *     "certs": { "limit": 30, "duration": 60000 },
+ *     "registration": { "limit": 10, "duration": 60000 },
+ *     "screenshot": { "limit": 30, "duration": 3600000 },
+ *     "favicon": { "limit": 100, "duration": 60000 },
+ *     "seo": { "limit": 30, "duration": 60000 },
+ *     "hosting": { "limit": 30, "duration": 60000 },
+ *     "pricing": { "limit": 30, "duration": 60000 }
  *   }
  * }
  * ```

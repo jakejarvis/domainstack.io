@@ -7,15 +7,15 @@ import { getRateLimits } from "@/lib/edge-config";
  * Rate limit configuration for each service.
  */
 export type RateLimitConfig = {
-  points: number;
-  window: `${number} ${"s" | "m" | "h"}`;
+  limit: number;
+  duration: number;
 };
 
 /**
  * Service rate limits configuration.
  *
- * Each service has a points budget and time window for rate limiting.
- * Example: { points: 60, window: "1 m" } = 60 requests per minute
+ * Each service has a request limit and duration window for rate limiting.
+ * Example: { limit: 60, duration: 60000 } = 60 requests per minute (60000ms)
  */
 export type ServiceLimits = {
   dns: RateLimitConfig;
@@ -47,24 +47,15 @@ function createLimiter(
   service: ServiceName,
   config: RateLimitConfig,
 ): Ratelimit {
-  // Parse window format "1 m" -> milliseconds
-  const [value, unit] = config.window.split(" ");
-  const duration =
-    unit === "s"
-      ? Number(value) * 1000
-      : unit === "m"
-        ? Number(value) * 60 * 1000
-        : Number(value) * 60 * 60 * 1000; // "h"
-
   const fallback = (identifier: string): RateLimitResult => {
     console.warn(
       `[ratelimit] timeout/error for ${service}:${identifier}, failing open`,
     );
     return {
       success: true, // Fail open on timeout/error
-      limit: config.points,
-      remaining: config.points,
-      reset: Date.now() + duration,
+      limit: config.limit,
+      remaining: config.limit,
+      reset: Date.now() + config.duration,
     };
   };
 
@@ -77,9 +68,9 @@ function createLimiter(
     return {
       limit: async () => ({
         success: true,
-        limit: config.points,
-        remaining: config.points,
-        reset: Date.now() + duration,
+        limit: config.limit,
+        remaining: config.limit,
+        reset: Date.now() + config.duration,
       }),
     } as unknown as Ratelimit;
   }
@@ -87,8 +78,8 @@ function createLimiter(
   return new Ratelimit({
     rootKey,
     namespace: service,
-    limit: config.points,
-    duration: `${duration}ms`,
+    limit: config.limit,
+    duration: config.duration, // Duration in milliseconds
     timeout: {
       ms: 3000, // Max wait before fallback
       fallback,

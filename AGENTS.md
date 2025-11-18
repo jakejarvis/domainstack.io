@@ -71,14 +71,14 @@
 - Keep secrets in `.env.local`. See `.env.example` for required variables.
 - Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
-  - `rate_limits` (object): Service rate limits; **fails open** (no limits) if unavailable for maximum availability
+  - `rate_limits` (object): Service rate limits in format `{ "service": { "limit": 60, "duration": 60000 } }` (duration in milliseconds); **fails open** (no limits) if unavailable for maximum availability
   - Edge Config is completely optional and gracefully degrades when not configured
   - Uses Next.js 16 `"use cache"` directive with `@vercel/edge-config` SDK for SSR compatibility
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
 - All other caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
-- Rate limiting: IP-based via `@unkey/ratelimit` with service-specific namespaces; `UNKEY_ROOT_KEY` required.
+- Rate limiting: IP-based via `@unkey/ratelimit` with service-specific namespaces; `UNKEY_ROOT_KEY` required. Durations specified in milliseconds.
 - Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
 - Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
