@@ -25,9 +25,9 @@ export function DnsRecordList({
 
   return (
     <>
-      {filtered.map((r) => (
+      {filtered.map((r, index) => (
         <KeyValue
-          key={`${type}-${r.value}${type === "MX" ? `-${r.priority ?? ""}` : ""}`}
+          key={`${type}-${index}-${r.value}${type === "MX" ? `-${r.priority ?? ""}` : ""}`}
           label={
             type === "MX" && r.priority != null
               ? `Priority ${r.priority}`

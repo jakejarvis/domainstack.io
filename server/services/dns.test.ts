@@ -18,16 +18,11 @@ beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-  const impl = makeInMemoryRedis();
-  vi.doMock("@/lib/redis", () => impl);
 });
 
 beforeEach(async () => {
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
-  const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-  resetInMemoryRedis();
 });
 
 afterEach(async () => {
@@ -252,9 +247,16 @@ describe("resolveAll", () => {
     fetchSpy.mockRestore();
   });
 
-  it("dedupes concurrent callers via aggregate cache/lock", async () => {
+  it("handles concurrent callers via Postgres cache", async () => {
     const { resolveAll } = await import("./dns");
-    // Use the top-level dohAnswer helper declared above
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+
+    // Pre-cache data in Postgres to simulate cache hit for concurrent requests
+    await upsertDomain({
+      name: "example.com",
+      tld: "com",
+      unicodeName: "example.com",
+    });
 
     const fetchMock = vi
       .spyOn(global, "fetch")
@@ -278,17 +280,19 @@ describe("resolveAll", () => {
         ]),
       );
 
-    // Fire several concurrent calls
-    const [r1, r2, r3] = await Promise.all([
-      resolveAll("example.com"),
+    // First call fetches and caches
+    const r1 = await resolveAll("example.com");
+    expect(r1.records.length).toBeGreaterThan(0);
+
+    // Concurrent calls should get same Postgres-cached data
+    const [r2, r3] = await Promise.all([
       resolveAll("example.com"),
       resolveAll("example.com"),
     ]);
 
-    expect(r1.records.length).toBeGreaterThan(0);
-    expect(r2.records.length).toBeGreaterThan(0);
-    expect(r3.records.length).toBeGreaterThan(0);
-    // Ensure all callers see non-empty results; DoH fetch call counts and exact lengths may vary under concurrency
+    expect(r2.records).toEqual(r1.records);
+    expect(r3.records).toEqual(r1.records);
+    // All callers see consistent data from Postgres cache
     fetchMock.mockRestore();
   });
 
@@ -481,7 +485,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
-    await upsertDomain({
+    const domain = await upsertDomain({
       name: "example.com",
       tld: "com",
       unicodeName: "example.com",
@@ -535,8 +539,16 @@ describe("providerOrderForLookup (hash-based selection)", () => {
 
     firstFetch.mockRestore();
 
-    // Second run: same data but different order from provider
-    // This simulates what happens when server and client fetch at different times
+    // Second run: Expire Postgres cache to force re-fetch
+    const { db } = await import("@/lib/db/client");
+    const { dnsRecords } = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
+    await db
+      .update(dnsRecords)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(dnsRecords.domainId, domain.id));
+
+    // Provider returns same data but different order
     const secondFetch = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
@@ -565,10 +577,6 @@ describe("providerOrderForLookup (hash-based selection)", () => {
           { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
         ]),
       );
-
-    // Clear cache to force re-fetch
-    const { redis } = await import("@/lib/redis");
-    await redis.del("dns:result:example.com");
 
     const second = await resolveAll("example.com");
     const secondARecords = second.records.filter((r) => r.type === "A");

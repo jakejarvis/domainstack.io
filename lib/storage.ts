@@ -1,29 +1,12 @@
 import "server-only";
 
-import { createHmac } from "node:crypto";
 import { putBlob } from "@/lib/blob";
+import { deterministicHash } from "@/lib/hash";
 import type { StorageKind } from "@/lib/schemas";
 
 const UPLOAD_MAX_ATTEMPTS = 3;
 const UPLOAD_BACKOFF_BASE_MS = 100;
 const UPLOAD_BACKOFF_MAX_MS = 2000;
-
-/**
- * Deterministic, obfuscated hash for IDs and filenames.
- * Requires a dedicated BLOB_SIGNING_SECRET in non-dev environments.
- */
-function deterministicHash(input: string, length = 32): string {
-  const isDev = process.env.NODE_ENV === "development";
-  const secret = process.env.BLOB_SIGNING_SECRET;
-  if (!secret && !isDev) {
-    throw new Error("BLOB_SIGNING_SECRET is not set");
-  }
-  const stableSecret = secret || "dev-hmac-secret";
-  return createHmac("sha256", stableSecret)
-    .update(input)
-    .digest("hex")
-    .slice(0, length);
-}
 
 function makeBlobPathname(
   kind: StorageKind,
@@ -31,8 +14,16 @@ function makeBlobPathname(
   extension = "bin",
   extraParts: Array<string | number>,
 ): string {
+  const isDev = process.env.NODE_ENV === "development";
+  const secret = process.env.BLOB_SIGNING_SECRET;
+  if (!secret && !isDev) {
+    throw new Error("BLOB_SIGNING_SECRET is not set");
+  }
+
   const base = `${kind}:${extraParts.join(":")}`;
-  const digest = deterministicHash(base);
+  const finalSecret = secret || "dev-hmac-secret";
+  const digest = deterministicHash(base, finalSecret);
+
   return `${digest}/${filename}.${extension}`;
 }
 
