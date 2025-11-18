@@ -50,17 +50,12 @@
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
-- Redis in tests: do NOT use globals. Mock per-suite with the in-memory adapter:
-  - In `beforeAll`: `const { makeInMemoryRedis } = await import("@/lib/redis-mock"); const impl = makeInMemoryRedis(); vi.doMock("@/lib/redis", () => impl);`
-  - In `beforeEach`/`afterEach`: `const { resetInMemoryRedis } = await import("@/lib/redis-mock"); resetInMemoryRedis();`
-  - Seed/assert via the mocked client: `const { redis } = await import("@/lib/redis"); await redis.set(key, value);`
 - UI tests:
   - Do not add direct tests for `components/ui/*` (shadcn).
   - Mock Radix primitives (Accordion, Tooltip) when testing domain sections.
   - Mock tRPC/React Query for components like `Favicon` and `Screenshot`.
 - Server tests:
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).
-  - Use unique cache keys/domains; call `resetInMemoryRedis()` in `afterEach`.
   - Screenshot service (`server/services/screenshot.ts`) uses hoisted mocks for `puppeteer`/`puppeteer-core` and `@sparticuz/chromium`.
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
@@ -81,9 +76,10 @@
   - Uses Next.js 16 `"use cache"` directive with `@vercel/edge-config` SDK for SSR compatibility
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
-- Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`); use Redis only for IP-based rate limiting.
+- Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
+- **Redis usage**: ONLY for IP-based rate limiting via `@upstash/ratelimit`. All other caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
 - Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
-- Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control (no Redis locks needed).
+- Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
 - Cron jobs trigger Inngest events via `app/api/cron/` endpoints secured with `CRON_SECRET`.
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.

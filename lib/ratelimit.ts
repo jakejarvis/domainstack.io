@@ -2,11 +2,44 @@ import "server-only";
 
 import { TRPCError } from "@trpc/server";
 import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { after } from "next/server";
-import { getRateLimits, type ServiceLimits } from "@/lib/edge-config";
-import { redis } from "@/lib/redis";
+import { getRateLimits } from "@/lib/edge-config";
 
+/**
+ * Rate limit configuration for each service.
+ */
+export type RateLimitConfig = {
+  points: number;
+  window: `${number} ${"s" | "m" | "h"}`;
+};
+
+/**
+ * Service rate limits configuration.
+ *
+ * Each service has a points budget and time window for rate limiting.
+ * Example: { points: 60, window: "1 m" } = 60 requests per minute
+ */
+export type ServiceLimits = {
+  dns: RateLimitConfig;
+  headers: RateLimitConfig;
+  certs: RateLimitConfig;
+  registration: RateLimitConfig;
+  screenshot: RateLimitConfig;
+  favicon: RateLimitConfig;
+  seo: RateLimitConfig;
+  hosting: RateLimitConfig;
+  pricing: RateLimitConfig;
+};
 export type ServiceName = keyof ServiceLimits;
+
+/**
+ * Redis client for rate limiting only.
+ *
+ * Uses KV_REST_API_URL and KV_REST_API_TOKEN from Vercel KV integration.
+ * All other caching uses Next.js Data Cache or Postgres.
+ */
+export const redis = Redis.fromEnv();
 
 /**
  * Assert that a rate limit is not exceeded for a given service and IP address.
@@ -16,7 +49,7 @@ export type ServiceName = keyof ServiceLimits;
  * @throws TRPCError if the rate limit is exceeded
  */
 export async function assertRateLimit(
-  service: ServiceName,
+  service: keyof ServiceLimits,
   ip: string,
 ): Promise<{ limit: number; remaining: number; reset: number }> {
   const limits = await getRateLimits();

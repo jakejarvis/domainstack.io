@@ -41,9 +41,6 @@ export function allSections(): Section[] {
  * Schedule a section revalidation for a domain by sending an Inngest event.
  * Uses Inngest's native scheduling (sendAt) and deduplication (stable event ID).
  *
- * This replaces the complex Redis sorted set approach with a simple, direct event send.
- * Inngest automatically handles deduplication, scheduling, and retry logic.
- *
  * @param domain - The domain to revalidate
  * @param section - The section to revalidate
  * @param dueAtMs - When the revalidation should run (milliseconds since epoch)

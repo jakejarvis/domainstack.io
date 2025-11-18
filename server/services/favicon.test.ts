@@ -73,9 +73,6 @@ beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-  const impl = makeInMemoryRedis();
-  vi.doMock("@/lib/redis", () => impl);
 });
 
 // Import after mocks
@@ -90,8 +87,6 @@ afterEach(async () => {
   fetchRemoteAssetMock.mockReset();
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
-  const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-  resetInMemoryRedis();
 });
 
 afterAll(async () => {

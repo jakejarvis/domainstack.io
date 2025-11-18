@@ -83,10 +83,11 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
           title: existing[0].previewTitle ?? null,
           description: existing[0].previewDescription ?? null,
           image: existing[0].previewImageUrl ?? null,
-          imageUploaded: null as string | null, // Will be fetched from Redis below
+          imageUploaded: null as string | null, // Will be fetched from database row below
           canonicalUrl: existing[0].canonicalUrl,
         }
       : null;
+
     // Use uploaded URL from Postgres if available
     if (preview) {
       preview.imageUploaded = existing[0].previewImageUploadedUrl ?? null;
@@ -158,7 +159,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     htmlError = String(err);
   }
 
-  // robots.txt fetch (no Redis cache; stored in Postgres with row TTL)
+  // robots.txt fetch
   // Only follow redirects between apex/www or http/https versions
   try {
     const robotsUrl = `https://${registrable}/robots.txt`;

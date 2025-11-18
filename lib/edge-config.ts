@@ -1,32 +1,7 @@
 "use cache";
 
 import { get } from "@vercel/edge-config";
-
-/**
- * Rate limit configuration for each service.
- */
-export type RateLimitConfig = {
-  points: number;
-  window: `${number} ${"s" | "m" | "h"}`;
-};
-
-/**
- * Service rate limits configuration.
- *
- * Each service has a points budget and time window for rate limiting.
- * Example: { points: 60, window: "1 m" } = 60 requests per minute
- */
-export type ServiceLimits = {
-  dns: RateLimitConfig;
-  headers: RateLimitConfig;
-  certs: RateLimitConfig;
-  registration: RateLimitConfig;
-  screenshot: RateLimitConfig;
-  favicon: RateLimitConfig;
-  seo: RateLimitConfig;
-  hosting: RateLimitConfig;
-  pricing: RateLimitConfig;
-};
+import type { ServiceLimits } from "@/lib/ratelimit";
 
 /**
  * Fetches rate limits from Vercel Edge Config.

@@ -39,7 +39,7 @@ export function ttlForRegistration(
   expirationDate?: Date | null,
 ): Date {
   // Note: Only registered domains are stored in Postgres.
-  // Unregistered domains are cached in Redis only (see REDIS_TTL_UNREGISTERED).
+  // Unregistered domains return 404 and are not cached.
   if (expirationDate) {
     const msUntil = expirationDate.getTime() - now.getTime();
     if (msUntil <= TTL_REGISTRATION_EXPIRY_THRESHOLD * 1000) {

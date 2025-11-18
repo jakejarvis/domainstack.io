@@ -16,7 +16,7 @@ describe("TTL policy", () => {
   });
 
   it("registration: 24h when no expiry date", () => {
-    // Note: Unregistered domains are never stored in Postgres, only in Redis.
+    // Note: Unregistered domains are never stored in Postgres.
     // This function only runs for registered domains in practice.
     const now = new Date("2024-01-01T00:00:00.000Z");
     const d = ttlForRegistration(now, null);

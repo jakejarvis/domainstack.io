@@ -1,20 +1,17 @@
 import "server-only";
 
 import * as ipaddr from "ipaddr.js";
-import { cache } from "react";
+import { unstable_cache as cache } from "next/cache";
 import {
   CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
   CLOUDFLARE_IPS_URL,
 } from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
-import { redis } from "@/lib/redis";
 
 export interface CloudflareIpRanges {
   ipv4Cidrs: string[];
   ipv6Cidrs: string[];
 }
-
-const CACHE_KEY = "cloudflare:ip-ranges";
 
 let lastLoadedIpv4Parsed: Array<[ipaddr.IPv4, number]> | undefined;
 let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
@@ -78,61 +75,41 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
 }
 
 /**
- * Fetch Cloudflare IP ranges with Redis caching.
+ * Fetch Cloudflare IP ranges with Next.js Data Cache.
  *
  * The IP ranges change infrequently (when Cloudflare expands infrastructure),
- * so we cache for 1 day in Redis. If multiple requests race to fetch, they will
- * all get the same data and cache it (acceptable for rarely-changing data).
+ * so we cache for 1 day with stale-while-revalidate.
  *
- * Also wrapped in React's cache() for per-request deduplication.
+ * Uses Next.js unstable_cache for automatic caching with tags.
  */
-const getCloudflareIpRanges = cache(async (): Promise<CloudflareIpRanges> => {
-  // Try Redis cache first
-  const cached = await redis.get<CloudflareIpRanges>(CACHE_KEY).catch((err) => {
-    console.error(
-      "[cloudflare-ips] cache read error",
-      { cacheKey: CACHE_KEY },
-      err instanceof Error ? err : new Error(String(err)),
-    );
-    return null;
-  });
-  if (cached) {
-    parseAndCacheRanges(cached);
-    return cached;
-  }
-
-  // Fetch fresh data
-  try {
-    const ranges = await fetchCloudflareIpRanges();
-
-    // Cache for next time (fire-and-forget)
-    redis
-      .set(CACHE_KEY, ranges, { ex: CLOUDFLARE_IPS_CACHE_TTL_SECONDS })
-      .catch((err) => {
-        console.error(
-          "[cloudflare-ips] cache write error",
-          { cacheKey: CACHE_KEY },
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      });
-
-    parseAndCacheRanges(ranges);
-    console.info("[cloudflare-ips] IP ranges fetched (not cached)");
-    return ranges;
-  } catch (err) {
-    console.error(
-      "[cloudflare-ips] fetch error",
-      err instanceof Error ? err : new Error(String(err)),
-    );
-    // Return empty ranges on error
-    return { ipv4Cidrs: [], ipv6Cidrs: [] };
-  }
-});
+const getCloudflareIpRanges = cache(
+  async (): Promise<CloudflareIpRanges> => {
+    try {
+      const ranges = await fetchCloudflareIpRanges();
+      parseAndCacheRanges(ranges);
+      console.info("[cloudflare-ips] IP ranges fetched");
+      return ranges;
+    } catch (err) {
+      console.error(
+        "[cloudflare-ips] fetch error",
+        err instanceof Error ? err : new Error(String(err)),
+      );
+      // Return empty ranges on error
+      return { ipv4Cidrs: [], ipv6Cidrs: [] };
+    }
+  },
+  ["cloudflare-ip-ranges"],
+  {
+    revalidate: CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
+    tags: ["cloudflare", "cloudflare-ip-ranges"],
+  },
+);
 
 /**
  * Check if a given IP address is part of Cloudflare's IP ranges.
+ * Uses per-request React cache() for deduplication.
  */
-export const isCloudflareIp = cache(async (ip: string): Promise<boolean> => {
+export async function isCloudflareIp(ip: string): Promise<boolean> {
   const ranges = await getCloudflareIpRanges();
 
   if (ipaddr.IPv4.isValid(ip)) {
@@ -154,4 +131,4 @@ export const isCloudflareIp = cache(async (ip: string): Promise<boolean> => {
   }
 
   return false;
-});
+}

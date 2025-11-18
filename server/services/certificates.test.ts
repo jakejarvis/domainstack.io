@@ -60,9 +60,6 @@ beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-  const impl = makeInMemoryRedis();
-  vi.doMock("@/lib/redis", () => impl);
 });
 
 beforeEach(async () => {
@@ -72,8 +69,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-  resetInMemoryRedis();
 });
 
 afterAll(async () => {
@@ -138,9 +133,6 @@ describe("getCertificates", () => {
       on: vi.fn(),
     } as unknown as tls.TLSSocket;
 
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
-
     // Create domain record first (simulates registered domain)
     const { db } = await import("@/lib/db/client");
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -190,8 +182,6 @@ describe("getCertificates", () => {
   it("returns empty on timeout", async () => {
     tlsMock.callListener = false;
     // Ensure cache is clear and use a distinct domain key
-    const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-    resetInMemoryRedis();
     let timeoutCb: (() => void) | null = null;
     let errorHandler: ((err: Error) => void) | undefined;
     tlsMock.socketMock = {

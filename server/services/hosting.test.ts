@@ -55,9 +55,6 @@ beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-  const impl = makeInMemoryRedis();
-  vi.doMock("@/lib/redis", () => impl);
 });
 
 beforeEach(async () => {
@@ -67,8 +64,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.restoreAllMocks();
-  const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-  resetInMemoryRedis();
 });
 
 afterAll(async () => {

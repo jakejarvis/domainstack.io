@@ -43,12 +43,6 @@ async function runSingleSection(
 
 /**
  * Background revalidation function for a single domain+section.
- * Simplified from the batch approach - Inngest handles concurrency, retries, and rate limiting.
- *
- * Note: We rely entirely on Inngest's concurrency control (configured above) to prevent
- * duplicate work. This removes Redis as a dependency and point of failure in the
- * revalidation pipeline. Inngest's distributed concurrency control is battle-tested
- * and more reliable than a Redis-based lock.
  */
 export const sectionRevalidate = inngest.createFunction(
   {

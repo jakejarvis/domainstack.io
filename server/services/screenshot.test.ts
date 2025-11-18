@@ -56,9 +56,6 @@ beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  const { makeInMemoryRedis } = await import("@/lib/redis-mock");
-  const impl = makeInMemoryRedis();
-  vi.doMock("@/lib/redis", () => impl);
   ({ getOrCreateScreenshotBlobUrl } = await import("./screenshot"));
 });
 
@@ -71,8 +68,6 @@ afterEach(async () => {
   storageMock.storeImage.mockReset();
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
-  const { resetInMemoryRedis } = await import("@/lib/redis-mock");
-  resetInMemoryRedis();
   pageMock.goto.mockReset();
   pageMock.waitForNetworkIdle.mockReset();
   pageMock.screenshot.mockReset();

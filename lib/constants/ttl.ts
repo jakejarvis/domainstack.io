@@ -33,12 +33,6 @@ export const TTL_HEADERS = 12 * ONE_HOUR; // 12 hours
 export const TTL_HOSTING = ONE_DAY; // 24 hours
 export const TTL_SEO = ONE_DAY; // 24 hours
 
-// ===== Redis Cache TTLs =====
-// Lightweight registration status cache (stores only true/false, not full data).
-// Unregistered domains are ONLY cached here, never in Postgres.
-export const REDIS_TTL_REGISTERED = ONE_DAY; // 24 hours
-export const REDIS_TTL_UNREGISTERED = ONE_HOUR; // 1 hour
-
 // ===== Background Job Revalidation =====
 // How often Inngest jobs attempt to refresh each section's data.
 // These intervals determine "freshness" - shorter = more up-to-date but more load.
