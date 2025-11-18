@@ -16,25 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Local Redis (binary protocol on 6379)
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  # Serverless Redis HTTP (SRH) — Upstash-compatible REST proxy on 8079
-  # Set KV_REST_API_URL to http://localhost:8079
-  srh:
-    image: hiett/serverless-redis-http:latest
-    environment:
-      SRH_MODE: "env"
-      SRH_TOKEN: "dev-token"
-      SRH_CONNECTION_STRING: "redis://redis:6379"
-    ports:
-      - "8079:80"
-    depends_on:
-      - redis
-
   # Inngest Dev Server on 8288
   # Next.js runs on the HOST at :3000; the dev server reaches it via host.docker.internal
   inngest:

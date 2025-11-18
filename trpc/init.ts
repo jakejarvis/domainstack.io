@@ -1,10 +1,10 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { assertRateLimit, type ServiceName } from "@/lib/ratelimit";
+import { checkRateLimit, type ServiceName } from "@/lib/ratelimit";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -118,7 +118,26 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
  */
 const withRatelimit = t.middleware(async ({ ctx, next, meta }) => {
   if (meta?.service && ctx.ip) {
-    await assertRateLimit(meta.service as ServiceName, ctx.ip);
+    const result = await checkRateLimit(meta.service as ServiceName, ctx.ip);
+
+    if (!result.success) {
+      const retryAfterSec = Math.max(
+        1,
+        Math.ceil((result.reset - Date.now()) / 1000),
+      );
+
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: `Rate limit exceeded for ${meta.service}. Try again in ${retryAfterSec}s.`,
+        cause: {
+          retryAfter: retryAfterSec,
+          service: meta.service,
+          limit: result.limit,
+          remaining: result.remaining,
+          reset: result.reset,
+        },
+      });
+    }
   }
   return next();
 });
@@ -154,12 +173,10 @@ const withDomainAccessUpdate = t.middleware(async ({ input, meta, next }) => {
  * Public procedure with logging.
  * Use this for all public endpoints (e.g. health check, etc).
  */
-export const publicProcedure = t.procedure.use(withLogging);
+export const publicProcedure = t.procedure.use(withRatelimit).use(withLogging);
 
 /**
- * Domain-specific procedure with rate limiting and access tracking.
+ * Domain-specific procedure with "last accessed" tracking.
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
  */
-export const domainProcedure = publicProcedure
-  .use(withRatelimit)
-  .use(withDomainAccessUpdate);
+export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);

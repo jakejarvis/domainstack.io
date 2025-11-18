@@ -1,9 +1,6 @@
 import "server-only";
 
-import { TRPCError } from "@trpc/server";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { after } from "next/server";
+import { Ratelimit } from "@unkey/ratelimit";
 import { getRateLimits } from "@/lib/edge-config";
 
 /**
@@ -34,77 +31,114 @@ export type ServiceLimits = {
 export type ServiceName = keyof ServiceLimits;
 
 /**
- * Redis client for rate limiting only.
- *
- * Uses KV_REST_API_URL and KV_REST_API_TOKEN from Vercel KV integration.
- * All other caching uses Next.js Data Cache or Postgres.
+ * Result of a rate limit check.
  */
-export const redis = Redis.fromEnv();
+export type RateLimitResult = {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  reset: number;
+};
 
 /**
- * Assert that a rate limit is not exceeded for a given service and IP address.
+ * Creates a configured Unkey rate limiter instance for a specific service.
+ */
+function createLimiter(
+  service: ServiceName,
+  config: RateLimitConfig,
+): Ratelimit {
+  // Parse window format "1 m" -> milliseconds
+  const [value, unit] = config.window.split(" ");
+  const duration =
+    unit === "s"
+      ? Number(value) * 1000
+      : unit === "m"
+        ? Number(value) * 60 * 1000
+        : Number(value) * 60 * 60 * 1000; // "h"
+
+  const fallback = (identifier: string): RateLimitResult => {
+    console.warn(
+      `[ratelimit] timeout/error for ${service}:${identifier}, failing open`,
+    );
+    return {
+      success: true, // Fail open on timeout/error
+      limit: config.points,
+      remaining: config.points,
+      reset: Date.now() + duration,
+    };
+  };
+
+  const rootKey = process.env.UNKEY_ROOT_KEY;
+  if (!rootKey) {
+    console.warn(
+      "[ratelimit] UNKEY_ROOT_KEY not set, rate limiting disabled (fail open)",
+    );
+    // Return a no-op limiter that always succeeds
+    return {
+      limit: async () => ({
+        success: true,
+        limit: config.points,
+        remaining: config.points,
+        reset: Date.now() + duration,
+      }),
+    } as unknown as Ratelimit;
+  }
+
+  return new Ratelimit({
+    rootKey,
+    namespace: service,
+    limit: config.points,
+    duration: `${duration}ms`,
+    timeout: {
+      ms: 3000, // Max wait before fallback
+      fallback,
+    },
+    onError: (err: Error, identifier: string) => {
+      console.error(`[ratelimit] ${service} - ${err.message}`);
+      return fallback(identifier);
+    },
+  });
+}
+
+/**
+ * Check rate limit for a service and IP address.
+ * Returns result object - does NOT throw errors.
+ *
  * @param service - The service name
  * @param ip - The IP address
- * @returns The rate limit result
- * @throws TRPCError if the rate limit is exceeded
+ * @returns Rate limit check result
  */
-export async function assertRateLimit(
-  service: keyof ServiceLimits,
+export async function checkRateLimit(
+  service: ServiceName,
   ip: string,
-): Promise<{ limit: number; remaining: number; reset: number }> {
+): Promise<RateLimitResult> {
   const limits = await getRateLimits();
 
-  // Fail open: if no limits configured or Edge Config fails, skip rate limiting
+  // Fail open: if no limits configured or Edge Config fails
   if (limits === null) {
     console.info(`[ratelimit] rate limiting disabled (fail open)`);
-    return { limit: 0, remaining: 0, reset: 0 };
+    return { success: true, limit: 0, remaining: 0, reset: 0 };
   }
 
   const cfg = limits[service];
   if (!cfg) {
     console.warn(`[ratelimit] no config for service ${service}, skipping`);
-    return { limit: 0, remaining: 0, reset: 0 };
+    return { success: true, limit: 0, remaining: 0, reset: 0 };
   }
 
-  const limiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(cfg.points, cfg.window),
-    analytics: true,
-  });
+  const limiter = createLimiter(service, cfg);
+  const result = await limiter.limit(ip);
 
-  const res = await limiter.limit(`${service}:${ip}`);
-
-  if (!res.success) {
-    const retryAfterSec = Math.max(
-      1,
-      Math.ceil((res.reset - Date.now()) / 1000),
-    );
-
+  if (!result.success) {
     console.warn(
-      `[ratelimit] blocked ${service} for ${ip} (limit=${res.limit}, retry in ${retryAfterSec}s)`,
+      `[ratelimit] blocked ${service} for ${ip} (limit=${result.limit}, remaining=${result.remaining})`,
     );
-
-    throw new TRPCError({
-      code: "TOO_MANY_REQUESTS",
-      message: `Rate limit exceeded for ${service}. Try again in ${retryAfterSec}s.`,
-      cause: {
-        retryAfter: retryAfterSec,
-        service,
-        limit: res.limit,
-        remaining: res.remaining,
-        reset: res.reset,
-      },
-    });
   }
 
-  // allow ratelimit analytics to be sent in background
-  try {
-    after(async () => {
-      await res.pending;
-    });
-  } catch {
-    // no-op
-  }
-
-  return { limit: res.limit, remaining: res.remaining, reset: res.reset };
+  return {
+    success: result.success,
+    limit: result.limit,
+    remaining: result.remaining,
+    reset: result.reset,
+  };
 }

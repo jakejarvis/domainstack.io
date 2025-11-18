@@ -20,7 +20,7 @@
 - **tRPC** API
 - **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
 - **Inngest** for event-driven background revalidation with built-in concurrency control
-- **Upstash Redis** for IP-based rate limiting
+- **Unkey** for API rate limiting
 - **Vercel Edge Config** for runtime configuration (domain suggestions, service rate limits)
 - **Vercel Blob** for favicon/screenshot storage with Postgres metadata caching
 - [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
@@ -66,8 +66,6 @@ pnpm dev
 
 This single command boots:
 - **Postgres** on `localhost:5432`
-- **Redis** on `localhost:6379`
-- **Serverless Redis HTTP (SRH)** on `http://localhost:8079` (Upstash-compatible REST proxy)
 - **Inngest dev server** on `http://localhost:8288`
 - **Next.js dev server** on `http://localhost:3000`
 

@@ -61,10 +61,6 @@ wait_for_port() {
 # --- Wait for exposed services ----------------------------------------------
 # Postgres TCP
 wait_for_port "127.0.0.1" 5432 "Postgres"
-# Redis TCP
-wait_for_port "127.0.0.1" 6379 "Redis"
-# Serverless Redis HTTP (SRH)
-wait_for_port "127.0.0.1" 8079 "SRH (Upstash-compatible HTTP)"
 # Inngest Dev Server
 wait_for_port "127.0.0.1" 8288 "Inngest Dev Server"
 
@@ -72,8 +68,6 @@ wait_for_port "127.0.0.1" 8288 "Inngest Dev Server"
 echo
 echo "🎉 Local infra is ready!"
 echo "  * Postgres:  postgres://postgres:postgres@localhost:5432/main"
-echo "  * Redis:     redis://localhost:6379"
-echo "  * SRH:       http://localhost:8079"
 echo "  * Inngest:   http://localhost:8288"
 echo
 

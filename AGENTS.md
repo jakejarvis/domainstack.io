@@ -16,7 +16,7 @@
 - `trpc/` tRPC client setup, query client, and error handling.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` — start all local services (Postgres, Redis, SRH, Inngest) and Next.js dev server at http://localhost:3000 using `concurrently`.
+- `pnpm dev` — start all local services (Postgres, Inngest, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
 - `pnpm build` — compile production bundle.
 - `pnpm start` — serve compiled output for smoke tests.
 - `pnpm lint` — run Biome lint + type-aware checks (`--write` to fix).
@@ -77,7 +77,8 @@
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
-- **Redis usage**: ONLY for IP-based rate limiting via `@upstash/ratelimit`. All other caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
+- All other caching uses Next.js Data Cache (`unstable_cache`) or Postgres.
+- Rate limiting: IP-based via `@unkey/ratelimit` with service-specific namespaces; `UNKEY_ROOT_KEY` required.
 - Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
 - Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
