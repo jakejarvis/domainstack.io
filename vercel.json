@@ -6,11 +6,5 @@
       "NPM_CONFIG_NODE_LINKER": "hoisted",
       "PUPPETEER_SKIP_DOWNLOAD": "1"
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/pricing-refresh",
-      "schedule": "0 4 * * *"
-    }
-  ]
+  }
 }

@@ -1,7 +1,22 @@
-import { after } from "next/server";
+"use cache";
+
 import { getDomainTld } from "rdapper";
-import { ns, redis } from "@/lib/redis";
 import type { Pricing } from "@/lib/schemas";
+
+/**
+ * Domain registration pricing service.
+ *
+ * Caching Strategy:
+ * - Uses Next.js 16 Data Cache with "use cache" directive
+ * - Automatic stale-while-revalidate (SWR): serves cached data instantly,
+ *   revalidates in background when cache expires
+ * - Cache TTLs: 7 days (Porkbun and Cloudflare)
+ * - No manual cron jobs needed - Next.js handles revalidation automatically
+ * - Gracefully handles slow/failed API responses by returning null
+ *
+ * When registrar APIs are slow (common), users see cached pricing immediately
+ * while fresh data fetches in the background. This provides the best UX.
+ */
 
 /**
  * Normalized pricing response shape that all registrars conform to.
@@ -18,8 +33,6 @@ type RegistrarPricingResponse = Record<
 interface PricingProvider {
   /** Provider name for logging */
   name: string;
-  /** Redis key for cached pricing data */
-  cacheKey: string;
   /** How long to cache the pricing data (seconds) */
   cacheTtlSeconds: number;
   /** Fetch pricing data from the registrar API */
@@ -32,61 +45,21 @@ interface PricingProvider {
 }
 
 /**
- * Generic function to fetch and cache pricing data from any provider.
- * Uses simple fail-open caching without distributed locks.
+ * Fetch pricing data from a provider with Next.js Data Cache.
+ * Uses Next.js 16's "use cache" directive for automatic caching.
  */
 async function fetchProviderPricing(
   provider: PricingProvider,
 ): Promise<RegistrarPricingResponse | null> {
-  // Try cache first
-  const cached = await redis
-    .get<RegistrarPricingResponse | "error">(provider.cacheKey)
-    .catch((err) => {
-      console.error(
-        `[pricing] cache read error ${provider.name}`,
-        { cacheKey: provider.cacheKey },
-        err instanceof Error ? err : new Error(String(err)),
-      );
-      return null;
-    });
-  if (cached && cached !== "error") return cached;
-  if (cached === "error") {
-    console.debug(`[pricing] cached failure ${provider.name}`);
-    return null;
-  }
-
-  // Fetch fresh pricing
   try {
     const payload = await provider.fetchPricing();
-    // Cache for next time
-    after(() => {
-      redis
-        .set(provider.cacheKey, payload, { ex: provider.cacheTtlSeconds })
-        .catch((err) => {
-          console.error(
-            `[pricing] cache write error ${provider.name}`,
-            { cacheKey: provider.cacheKey },
-            err instanceof Error ? err : new Error(String(err)),
-          );
-        });
-    });
-    console.info(`[pricing] fetch ok ${provider.name} (not cached)`);
+    console.info(`[pricing] fetch ok ${provider.name}`);
     return payload;
   } catch (err) {
     console.error(
       `[pricing] fetch error ${provider.name}`,
       err instanceof Error ? err : new Error(String(err)),
     );
-    // Short TTL negative cache
-    after(() => {
-      redis.set(provider.cacheKey, "error", { ex: 60 }).catch((cacheErr) => {
-        console.error(
-          `[pricing] negative cache write error ${provider.name}`,
-          { cacheKey: provider.cacheKey },
-          cacheErr instanceof Error ? cacheErr : new Error(String(cacheErr)),
-        );
-      });
-    });
     return null;
   }
 }
@@ -97,7 +70,6 @@ async function fetchProviderPricing(
 
 const porkbunProvider: PricingProvider = {
   name: "porkbun",
-  cacheKey: ns("pricing:porkbun"),
   cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
@@ -114,6 +86,10 @@ const porkbunProvider: PricingProvider = {
           headers: { "Content-Type": "application/json" },
           body: "{}",
           signal: controller.signal,
+          next: {
+            revalidate: this.cacheTtlSeconds,
+            tags: ["pricing", "pricing-porkbun"],
+          },
         },
       );
 
@@ -145,7 +121,6 @@ const porkbunProvider: PricingProvider = {
 
 const cloudflareProvider: PricingProvider = {
   name: "cloudflare",
-  cacheKey: ns("pricing:cloudflare"),
   cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
@@ -159,6 +134,10 @@ const cloudflareProvider: PricingProvider = {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: controller.signal,
+        next: {
+          revalidate: this.cacheTtlSeconds,
+          tags: ["pricing", "pricing-cloudflare"],
+        },
       });
 
       if (!res.ok) {
@@ -259,51 +238,4 @@ export async function getPricingForTld(domain: string): Promise<Pricing> {
     );
 
   return { tld, providers: availableProviders };
-}
-
-/**
- * Proactively refresh pricing data from all providers.
- * Called by the daily cron job to keep cache warm.
- * Runs all provider refreshes in parallel for efficiency.
- */
-export async function refreshAllProviderPricing(): Promise<{
-  refreshed: string[];
-  failed: string[];
-}> {
-  const refreshed: string[] = [];
-  const failed: string[] = [];
-
-  // Run all provider refreshes in parallel
-  const tasks = providers.map(async (provider) => {
-    try {
-      const payload = await provider.fetchPricing();
-      await redis.set(provider.cacheKey, payload, {
-        ex: provider.cacheTtlSeconds,
-      });
-      return { name: provider.name, success: true as const };
-    } catch (err) {
-      return { name: provider.name, success: false as const, error: err };
-    }
-  });
-
-  const results = await Promise.allSettled(tasks);
-
-  // Process results and emit logs
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      const { name, success, error } = result.value;
-      if (success) {
-        refreshed.push(name);
-        console.info(`[pricing] refresh ok ${name}`);
-      } else {
-        failed.push(name);
-        console.error(`[pricing] refresh failed ${name}`, error);
-      }
-    } else {
-      // Promise itself was rejected (shouldn't happen with our error handling)
-      console.error("[pricing] refresh unexpected", result.reason);
-    }
-  }
-
-  return { refreshed, failed };
 }
