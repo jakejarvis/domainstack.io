@@ -142,20 +142,27 @@ export function DomainSuggestionsClient({
                 variant="secondary"
                 size="sm"
                 className={cn(
-                  "flex-shrink-0 cursor-pointer bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                  "flex-shrink-0 bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
                   "first-of-type:ml-[1px]",
                   isHistoryLoaded ? "visible" : "invisible",
                 )}
-                onClick={() => handleClick(domain)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleClick(domain);
+                }}
+                asChild
               >
-                <span className="inline-flex items-center gap-2">
+                <a
+                  href={`/${encodeURIComponent(domain)}`}
+                  className="inline-flex items-center gap-2"
+                >
                   <Favicon
                     domain={domain}
                     size={faviconSize}
                     className="rounded"
                   />
                   {domain}
-                </span>
+                </a>
               </Button>
             ),
           )}
