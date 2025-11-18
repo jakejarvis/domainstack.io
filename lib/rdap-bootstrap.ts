@@ -33,9 +33,9 @@ export const getRdapBootstrapData = cache(
     console.info("[rdap-bootstrap] Bootstrap data fetched");
     return bootstrap;
   },
-  ["rdap-bootstrap"],
+  [],
   {
     revalidate: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
-    tags: ["rdap", "rdap-bootstrap"],
+    tags: ["rdap-bootstrap"],
   },
 );

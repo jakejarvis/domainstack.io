@@ -98,10 +98,10 @@ const getCloudflareIpRanges = cache(
       return { ipv4Cidrs: [], ipv6Cidrs: [] };
     }
   },
-  ["cloudflare-ip-ranges"],
+  [],
   {
     revalidate: CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
-    tags: ["cloudflare", "cloudflare-ip-ranges"],
+    tags: ["cloudflare-ip-ranges"],
   },
 );
 

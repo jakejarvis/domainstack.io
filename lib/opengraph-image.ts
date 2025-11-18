@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { cacheLife } from "next/cache";
 
 // ── Brand palette
 export const BRAND = {
@@ -59,9 +58,6 @@ async function loadGeistFromPackage() {
 }
 
 async function fetchGoogleWoff2(cssUrl: string) {
-  "use cache";
-  cacheLife("max");
-
   const cssRes = await fetch(cssUrl);
   if (!cssRes.ok) throw new Error(`Font CSS fetch failed: ${cssUrl}`);
   const css = await cssRes.text();
@@ -73,9 +69,6 @@ async function fetchGoogleWoff2(cssUrl: string) {
 }
 
 async function loadGeistFromGoogle() {
-  "use cache";
-  cacheLife("max");
-
   try {
     const regular = await fetchGoogleWoff2(
       "https://fonts.googleapis.com/css2?family=Geist:wght@400&display=swap",
