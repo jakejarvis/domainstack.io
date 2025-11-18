@@ -75,7 +75,7 @@ export function HeadersSection({
           )}
 
           <KeyValueGrid colsDesktop={2}>
-            {headers.map((h, index) => {
+            {headers.map((h) => {
               const isLocation = h.name?.toLowerCase() === "location";
               const locationDomain = isLocation
                 ? extractDomainFromLocation(h.value)
@@ -83,7 +83,7 @@ export function HeadersSection({
 
               return (
                 <KeyValue
-                  key={`header-${h.name}-${index}`}
+                  key={`header-${h.name}-${h.value}`}
                   label={h.name}
                   value={h.value}
                   copyable
