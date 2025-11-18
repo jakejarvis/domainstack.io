@@ -229,8 +229,6 @@ describe("DomainReportView Export", () => {
       certificates: [],
       headers: [],
       seo: { title: "Test" },
-      favicon:
-        "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
     });
   });
 

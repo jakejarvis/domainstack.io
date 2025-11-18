@@ -2,13 +2,11 @@ import { Analytics } from "@vercel/analytics/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Providers } from "@/app/providers";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
 import { BASE_URL } from "@/lib/constants/app";
-import { TRPCProvider } from "@/trpc/client";
 
 import "./globals.css";
 
@@ -52,11 +50,7 @@ export default function RootLayout({
           {/* App Shell */}
           <div className="isolate flex min-h-svh flex-col">
             <AppHeader />
-            <main className="flex min-h-0 flex-1 flex-col">
-              <Suspense fallback={<div />}>
-                <TRPCProvider>{children}</TRPCProvider>
-              </Suspense>
-            </main>
+            <main className="flex min-h-0 flex-1 flex-col">{children}</main>
             <AppFooter />
           </div>
           <Toaster />
