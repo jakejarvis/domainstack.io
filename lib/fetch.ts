@@ -146,7 +146,12 @@ function createAbortSignal(
 
   const runCleanup = () => {
     for (const fn of cleanupFns) {
-      fn();
+      try {
+        fn();
+      } catch (err) {
+        // Ignore cleanup errors to ensure all cleanup functions run
+        console.warn("Cleanup error:", err);
+      }
     }
   };
 
@@ -187,24 +192,41 @@ function createAbortSignal(
   const onTimeoutAbort = () =>
     abortCombined((timeoutController.signal as { reason?: unknown }).reason);
 
-  if (externalSignal.aborted) {
-    onExternalAbort();
-  } else {
-    externalSignal.addEventListener("abort", onExternalAbort, { once: true });
-    cleanupFns.push(() =>
-      externalSignal.removeEventListener("abort", onExternalAbort),
-    );
-  }
+  // Wrap listener setup in try-finally to ensure cleanup always registered
+  try {
+    if (externalSignal.aborted) {
+      onExternalAbort();
+    } else {
+      externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+      // Register cleanup immediately after adding listener
+      cleanupFns.push(() => {
+        try {
+          externalSignal.removeEventListener("abort", onExternalAbort);
+        } catch {
+          // Listener might already be removed by { once: true }
+        }
+      });
+    }
 
-  if (timeoutController.signal.aborted) {
-    onTimeoutAbort();
-  } else {
-    timeoutController.signal.addEventListener("abort", onTimeoutAbort, {
-      once: true,
-    });
-    cleanupFns.push(() =>
-      timeoutController.signal.removeEventListener("abort", onTimeoutAbort),
-    );
+    if (timeoutController.signal.aborted) {
+      onTimeoutAbort();
+    } else {
+      timeoutController.signal.addEventListener("abort", onTimeoutAbort, {
+        once: true,
+      });
+      // Register cleanup immediately after adding listener
+      cleanupFns.push(() => {
+        try {
+          timeoutController.signal.removeEventListener("abort", onTimeoutAbort);
+        } catch {
+          // Listener might already be removed by { once: true }
+        }
+      });
+    }
+  } catch (err) {
+    // If any error occurs during setup, run cleanup immediately
+    runCleanup();
+    throw err;
   }
 
   return {
