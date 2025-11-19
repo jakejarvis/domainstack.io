@@ -1,0 +1,1 @@
+DROP INDEX "i_dns_domain_type";

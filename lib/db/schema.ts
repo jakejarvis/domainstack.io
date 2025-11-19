@@ -169,7 +169,6 @@ export const dnsRecords = pgTable(
     // Include priority in uniqueness for MX/SRV records
     // (same host with different priorities = different records)
     unique("u_dns_record").on(t.domainId, t.type, t.name, t.value, t.priority),
-    index("i_dns_domain_type").on(t.domainId, t.type),
     index("i_dns_type_value").on(t.type, t.value),
     index("i_dns_expires").on(t.expiresAt),
     index("i_dns_domain_expires").on(t.domainId, t.expiresAt),
