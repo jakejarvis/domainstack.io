@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Globe } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -18,18 +18,15 @@ export function Favicon({
   className?: string;
 }) {
   const trpc = useTRPC();
-  const [isHydrated, setIsHydrated] = useState(false);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
-
+  // No need to wait for hydration - if the data was prefetched on the server,
+  // it will be available immediately via the dehydrated state
   const { data, isPending } = useQuery(
     trpc.domain.favicon.queryOptions(
       { domain },
       {
-        enabled: isHydrated,
+        // Keep previous data while refetching to prevent flicker
         placeholderData: (prev) => prev,
       },
     ),
@@ -37,7 +34,8 @@ export function Favicon({
 
   const url = data?.url ?? null;
 
-  if (!isHydrated || isPending) {
+  // Show skeleton only when truly pending (not when hydrating with prefetched data)
+  if (isPending) {
     return (
       <Skeleton
         className={cn("bg-input", className)}
