@@ -184,13 +184,33 @@ export async function batchResolveOrCreateProviderIds(
 
   // Batch create missing providers
   if (toCreate.length > 0) {
-    const values = toCreate.map((input) => ({
-      category: input.category,
-      name: input.name as string,
-      domain: input.domain ?? undefined,
-      slug: slugify(input.name as string),
-      source: "discovered" as const,
-    }));
+    // Deduplicate by slug to prevent insertion conflicts within the batch
+    // Multiple providers with same name+category but different domains can have same slug
+    const slugMap = new Map<string, (typeof toCreate)[0]>();
+    const values: Array<{
+      category: (typeof providerCategory.enumValues)[number];
+      name: string;
+      domain: string | undefined;
+      slug: string;
+      source: "discovered";
+    }> = [];
+
+    for (const input of toCreate) {
+      const slug = slugify(input.name as string);
+      const slugKey = `${input.category}|${slug}`;
+
+      // Only add first occurrence of each category+slug combination
+      if (!slugMap.has(slugKey)) {
+        slugMap.set(slugKey, input);
+        values.push({
+          category: input.category,
+          name: input.name as string,
+          domain: input.domain ?? undefined,
+          slug,
+          source: "discovered" as const,
+        });
+      }
+    }
 
     try {
       const inserted = await db

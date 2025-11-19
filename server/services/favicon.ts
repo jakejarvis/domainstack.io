@@ -13,10 +13,7 @@ const REQUEST_TIMEOUT_MS = 1500; // per each method
 const MAX_FAVICON_BYTES = 1 * 1024 * 1024; // 1MB
 
 // In-memory lock to prevent concurrent favicon generation for the same domain
-const faviconPromises = new Map<
-  string,
-  Promise<{ url: string | null }>
->();
+const faviconPromises = new Map<string, Promise<{ url: string | null }>>();
 
 // Safety timeout for cleaning up stale promises (30 seconds)
 const PROMISE_CLEANUP_TIMEOUT_MS = 30_000;

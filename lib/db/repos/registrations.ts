@@ -14,13 +14,14 @@ export async function upsertRegistration(params: RegistrationInsert) {
   const { domainId, nameservers, ...rest } = params;
 
   // Normalize nameserver hosts (trim + lowercase)
-  const normalizedNameservers: RegistrationNameservers = (
-    nameservers ?? []
-  ).map((n) => ({
-    host: n.host.trim().toLowerCase(),
-    ipv4: n.ipv4 ?? [],
-    ipv6: n.ipv6 ?? [],
-  }));
+  // Filter out any nameservers with missing/invalid host values
+  const normalizedNameservers: RegistrationNameservers = (nameservers ?? [])
+    .filter((n) => n?.host && typeof n.host === "string")
+    .map((n) => ({
+      host: n.host.trim().toLowerCase(),
+      ipv4: n.ipv4 ?? [],
+      ipv6: n.ipv6 ?? [],
+    }));
 
   const insertRow = RegistrationInsertSchema.parse({
     domainId,

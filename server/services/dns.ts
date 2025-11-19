@@ -465,6 +465,8 @@ async function normalizeAnswer(
       const [prioStr, ...hostParts] = a.data.split(" ");
       const priority = Number(prioStr);
       const host = trimDot(hostParts.join(" "));
+      // Skip MX records with empty/invalid hosts
+      if (!host) return undefined;
       return {
         type,
         name,

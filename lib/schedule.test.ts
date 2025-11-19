@@ -60,6 +60,7 @@ describe("schedule", () => {
           section: "dns",
         },
         ts: expect.any(Number),
+        id: "example.com:dns",
       });
     });
 
