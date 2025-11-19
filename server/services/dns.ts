@@ -163,7 +163,9 @@ export const resolveAll = cache(async function resolveAll(
       isCloudflare: r.isCloudflare ?? undefined,
     }));
     const resolverHint = rows[0]?.resolver;
-    const sorted = sortDnsRecordsByType(assembled, types);
+    // Deduplicate records from DB to prevent returning duplicates from cache
+    const deduplicated = deduplicateDnsRecords(assembled);
+    const sorted = sortDnsRecordsByType(deduplicated, types);
     if (allFreshAcrossTypes) {
       console.info(
         `[dns] cache hit ${registrable} types=${freshTypes.join(",")}`,
@@ -261,9 +263,11 @@ export const resolveAll = cache(async function resolveAll(
             isCloudflare: r.isCloudflare ?? undefined,
           })),
         );
-        // Deduplicate before sorting to prevent duplicates in merged results
+        // Deduplicate cachedFresh separately to ensure DB consistency
+        const deduplicatedCachedFresh = deduplicateDnsRecords(cachedFresh);
+        // Deduplicate merged results to prevent duplicates
         const deduplicated = deduplicateDnsRecords([
-          ...cachedFresh,
+          ...deduplicatedCachedFresh,
           ...fetchedStale,
         ]);
         const merged = sortDnsRecordsByType(deduplicated, types);
