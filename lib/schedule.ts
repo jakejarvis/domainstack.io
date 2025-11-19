@@ -94,11 +94,13 @@ export async function scheduleRevalidation(
   const scheduledDueMs = Math.max(decayedDueMs, minDueMs);
 
   // Send event to Inngest
-  // Note: We do NOT set an event ID here. Inngest will generate unique IDs for each event.
-  // This allows multiple revalidations to be scheduled (e.g., hourly DNS checks).
-  // Duplicate work is prevented by Inngest's concurrency control (configured in the function),
-  // which ensures only one instance of domain+section runs at a time.
+  // Use stable event ID (domain+section) to enable Inngest's built-in deduplication.
+  // This prevents queueing duplicate events during request bursts, while still allowing
+  // rescheduling at different times (Inngest replaces pending events with same ID).
+  // Duplicate work is further prevented by Inngest's concurrency control (configured
+  // in the function), which ensures only one instance of domain+section runs at a time.
   try {
+    const eventId = `${normalizedDomain}:${section}`;
     await inngest.send({
       name: "section/revalidate",
       data: {
@@ -106,6 +108,7 @@ export async function scheduleRevalidation(
         section,
       },
       ts: scheduledDueMs,
+      id: eventId,
     });
 
     console.debug(
