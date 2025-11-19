@@ -5,8 +5,7 @@ import { DomainReportView } from "@/components/domain/domain-report-view";
 import { analytics } from "@/lib/analytics/server";
 import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { makeQueryClient } from "@/trpc/query-client";
-import { trpc } from "@/trpc/server";
+import { getQueryClient, trpc } from "@/trpc/server";
 
 import "country-flag-icons/3x2/flags.css";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -52,7 +51,8 @@ export default async function DomainPage({
   analytics.track("report_viewed", { domain: normalized });
 
   // Minimal prefetch: registration only, let sections stream progressively
-  const queryClient = makeQueryClient();
+  // Use getQueryClient() to ensure consistent query client across the request
+  const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
     trpc.domain.registration.queryOptions({ domain: normalized }),
   );
