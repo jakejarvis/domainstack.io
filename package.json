@@ -54,7 +54,7 @@
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "drizzle-zod": "^0.8.3",
-    "file-type": "^21.1.0",
+    "file-type": "^21.1.1",
     "geist": "^1.5.1",
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
