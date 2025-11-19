@@ -91,6 +91,30 @@ describe("resolveAll", () => {
     fetchMock.mockRestore();
   });
 
+  it("dedupes identical provider answers before persistence", async () => {
+    const { resolveAll } = await import("./dns");
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "dedupe.com.", TTL: 300, data: "203.0.113.5" },
+          { name: "dedupe.com.", TTL: 300, data: "203.0.113.5" },
+          { name: "dedupe.com.", TTL: 300, data: "203.0.113.5" },
+        ]),
+      )
+      .mockResolvedValueOnce(dohAnswer([]))
+      .mockResolvedValueOnce(dohAnswer([]))
+      .mockResolvedValueOnce(dohAnswer([]))
+      .mockResolvedValueOnce(dohAnswer([]));
+
+    const out = await resolveAll("dedupe.com");
+    const aRecords = out.records.filter((r) => r.type === "A");
+
+    expect(aRecords).toHaveLength(1);
+    expect(aRecords[0]?.value).toBe("203.0.113.5");
+    fetchMock.mockRestore();
+  });
+
   it("handles duplicate MX records with different priorities (jarv.net case)", async () => {
     const { resolveAll } = await import("./dns");
     // jarv.net has MX records pointing to the same host with different priorities:

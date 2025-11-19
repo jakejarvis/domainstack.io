@@ -139,19 +139,21 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
         arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
       );
     };
-    const freshTypes = presentTypes.filter((t) => typeIsFresh(t));
-    const allFreshAcrossTypes = (types as DnsType[]).every((t) =>
-      typeIsFresh(t),
-    );
+      const freshTypes = presentTypes.filter((t) => typeIsFresh(t));
+      const allFreshAcrossTypes = (types as DnsType[]).every((t) =>
+        typeIsFresh(t),
+      );
 
-    const assembled: DnsRecord[] = rows.map((r) => ({
-      type: r.type as DnsType,
-      name: r.name,
-      value: r.value,
-      ttl: r.ttl ?? undefined,
-      priority: r.priority ?? undefined,
-      isCloudflare: r.isCloudflare ?? undefined,
-    }));
+      const assembled: DnsRecord[] = dedupeDnsRecords(
+        rows.map((r) => ({
+          type: r.type as DnsType,
+          name: r.name,
+          value: r.value,
+          ttl: r.ttl ?? undefined,
+          priority: r.priority ?? undefined,
+          isCloudflare: r.isCloudflare ?? undefined,
+        })),
+      );
     const resolverHint = rows[0]?.resolver;
     const sorted = sortDnsRecordsByType(assembled, types);
     if (allFreshAcrossTypes) {
@@ -181,13 +183,14 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
             }),
           )
         ).flat();
+        const dedupedFetchedStale = dedupeDnsRecords(fetchedStale);
         durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
         // Persist only stale types
         const recordsByTypeToPersist = Object.fromEntries(
           typesToFetch.map((t) => [
             t,
-            fetchedStale
+            dedupedFetchedStale
               .filter((r) => r.type === t)
               .map((r) => ({
                 name: r.name,
@@ -252,7 +255,7 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
           })),
         );
         const merged = sortDnsRecordsByType(
-          [...cachedFresh, ...fetchedStale],
+          dedupeDnsRecords([...cachedFresh, ...dedupedFetchedStale]),
           types,
         );
         const counts = (types as DnsType[]).reduce(
@@ -290,11 +293,12 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
         }),
       );
       const flat = results.flat();
+      const dedupedFlat = dedupeDnsRecords(flat);
       durationByProvider[provider.key] = Date.now() - attemptStart;
 
       const counts = types.reduce(
         (acc, t) => {
-          acc[t] = flat.filter((r) => r.type === t).length;
+          acc[t] = dedupedFlat.filter((r) => r.type === t).length;
           return acc;
         },
         { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
@@ -310,7 +314,7 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
         TXT: [],
         NS: [],
       };
-      for (const r of flat) recordsByType[r.type].push(r);
+      for (const r of dedupedFlat) recordsByType[r.type].push(r);
 
       // Persist to Postgres only if domain exists (i.e., is registered)
       // Compute expiresAt for each record once before persistence
@@ -371,7 +375,7 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
         `[dns] ok ${registrable} counts=${JSON.stringify(counts)} resolver=${resolverUsed} durations=${JSON.stringify(durationByProvider)}`,
       );
       // Sort records deterministically to match cache-path ordering
-      const sorted = sortDnsRecordsByType(flat, types);
+        const sorted = sortDnsRecordsByType(dedupedFlat, types);
       return { records: sorted, resolver: resolverUsed } as DnsResolveResult;
     } catch (err) {
       console.warn(
@@ -499,6 +503,20 @@ function sortDnsRecordsForType(arr: DnsRecord[], type: DnsType): DnsRecord[] {
   // This ensures server and client render the same order
   arr.sort((a, b) => a.value.localeCompare(b.value));
   return arr;
+}
+
+function dedupeDnsRecords(records: DnsRecord[]): DnsRecord[] {
+  const seen = new Set<string>();
+  const deduped: DnsRecord[] = [];
+  for (const record of records) {
+    const priorityPart =
+      record.priority != null ? `|${record.priority}` : "";
+    const key = `${record.type}|${record.name.trim().toLowerCase()}|${record.value.trim().toLowerCase()}${priorityPart}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(record);
+  }
+  return deduped;
 }
 
 export function providerOrderForLookup(domain: string): DohProvider[] {
