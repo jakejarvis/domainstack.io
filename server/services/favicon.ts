@@ -12,6 +12,15 @@ const DEFAULT_SIZE = 32;
 const REQUEST_TIMEOUT_MS = 1500; // per each method
 const MAX_FAVICON_BYTES = 1 * 1024 * 1024; // 1MB
 
+// In-memory lock to prevent concurrent favicon generation for the same domain
+const faviconPromises = new Map<
+  string,
+  Promise<{ url: string | null }>
+>();
+
+// Safety timeout for cleaning up stale promises (30 seconds)
+const PROMISE_CLEANUP_TIMEOUT_MS = 30_000;
+
 function buildSources(domain: string): string[] {
   const enc = encodeURIComponent(domain);
   return [
@@ -27,6 +36,47 @@ function buildSources(domain: string): string[] {
  * Wrapped with React's cache() for request-scoped deduplication.
  */
 async function fetchFaviconInternal(
+  registrable: string,
+): Promise<{ url: string | null }> {
+  // Check for in-flight request across all SSR contexts
+  if (faviconPromises.has(registrable)) {
+    console.debug("[favicon] in-flight request hit");
+    // biome-ignore lint/style/noNonNullAssertion: checked above
+    return faviconPromises.get(registrable)!;
+  }
+
+  // Create promise with guaranteed cleanup
+  const promise = (async () => {
+    try {
+      return await fetchFaviconWork(registrable);
+    } finally {
+      faviconPromises.delete(registrable);
+    }
+  })();
+
+  // Store promise with safety timeout cleanup
+  faviconPromises.set(registrable, promise);
+
+  // Safety: Auto-cleanup stale promise after timeout
+  const timeoutId = setTimeout(() => {
+    if (faviconPromises.get(registrable) === promise) {
+      console.warn(
+        `[favicon] cleaning up stale promise for ${registrable} after ${PROMISE_CLEANUP_TIMEOUT_MS}ms`,
+      );
+      faviconPromises.delete(registrable);
+    }
+  }, PROMISE_CLEANUP_TIMEOUT_MS);
+
+  // Clear timeout when promise settles
+  void promise.finally(() => clearTimeout(timeoutId));
+
+  return promise;
+}
+
+/**
+ * Core favicon fetching logic (separated for cleaner promise management)
+ */
+async function fetchFaviconWork(
   registrable: string,
 ): Promise<{ url: string | null }> {
   // Check Postgres for cached favicon (optimized single query)
