@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { after } from "next/server";
+import { cache } from "react";
 import { isCloudflareIp } from "@/lib/cloudflare";
 import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
@@ -70,7 +71,16 @@ function buildDohUrl(
   return url;
 }
 
-export async function resolveAll(domain: string): Promise<DnsResolveResult> {
+/**
+ * Resolve all DNS record types for a domain with Postgres caching.
+ *
+ * Wrapped in React's cache() for per-request deduplication during SSR,
+ * ensuring multiple services can query DNS without triggering duplicate
+ * lookups to DoH providers.
+ */
+export const resolveAll = cache(async function resolveAll(
+  domain: string,
+): Promise<DnsResolveResult> {
   console.debug(`[dns] start ${domain}`);
 
   const providers = providerOrderForLookup(domain);
@@ -396,7 +406,7 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
   throw new Error(
     `All DoH providers failed for ${registrable}: ${String(lastError)}`,
   );
-}
+});
 
 async function resolveTypeWithProvider(
   domain: string,

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { after } from "next/server";
+import { cache } from "react";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
@@ -25,7 +26,16 @@ import { resolveAll } from "@/server/services/dns";
 import { probeHeaders } from "@/server/services/headers";
 import { lookupIpMeta } from "@/server/services/ip";
 
-export async function detectHosting(domain: string): Promise<Hosting> {
+/**
+ * Detect hosting, email, and DNS providers for a domain with Postgres caching.
+ *
+ * Wrapped in React's cache() for per-request deduplication during SSR,
+ * ensuring multiple components can query hosting without triggering duplicate
+ * fetches of DNS and headers data.
+ */
+export const detectHosting = cache(async function detectHosting(
+  domain: string,
+): Promise<Hosting> {
   console.debug(`[hosting] start ${domain}`);
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
@@ -275,4 +285,4 @@ export async function detectHosting(domain: string): Promise<Hosting> {
     `[hosting] ok ${registrable} hosting=${hostingName} email=${emailName} dns=${dnsName}`,
   );
   return info;
-}
+});

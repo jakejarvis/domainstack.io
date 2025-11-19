@@ -1,4 +1,15 @@
-export async function lookupIpMeta(ip: string): Promise<{
+import { cache } from "react";
+
+/**
+ * Lookup IP metadata including geolocation and ownership information.
+ *
+ * Wrapped in React's cache() for per-request deduplication during SSR,
+ * ensuring multiple services can query the same IP without triggering
+ * duplicate API calls to the upstream provider.
+ */
+export const lookupIpMeta = cache(async function lookupIpMeta(
+  ip: string,
+): Promise<{
   geo: {
     city: string;
     region: string;
@@ -94,4 +105,4 @@ export async function lookupIpMeta(ip: string): Promise<{
       },
     };
   }
-}
+});
