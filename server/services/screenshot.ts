@@ -23,6 +23,9 @@ const CAPTURE_BACKOFF_MAX_MS_DEFAULT = 1200;
 // In-memory lock to prevent concurrent screenshot generation for the same domain
 const screenshotPromises = new Map<string, Promise<{ url: string | null }>>();
 
+// Safety timeout for cleaning up stale promises (60 seconds)
+const PROMISE_CLEANUP_TIMEOUT_MS = 60_000;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -62,7 +65,7 @@ export async function getOrCreateScreenshotBlobUrl(
     return screenshotPromises.get(registrable)!;
   }
 
-  // Create a new promise and store it
+  // Create a new promise with guaranteed cleanup
   const promise = (async () => {
     try {
       return await generateScreenshot(registrable, options);
@@ -72,7 +75,30 @@ export async function getOrCreateScreenshotBlobUrl(
     }
   })();
 
+  // Store promise with safety timeout cleanup
   screenshotPromises.set(registrable, promise);
+
+  // Safety: Auto-cleanup stale promise after timeout to prevent memory leak
+  // This catches edge cases where promise never settles
+  const timeoutId = setTimeout(() => {
+    if (screenshotPromises.get(registrable) === promise) {
+      console.warn(
+        `[screenshot] cleaning up stale promise for ${registrable} after ${PROMISE_CLEANUP_TIMEOUT_MS}ms`,
+      );
+      screenshotPromises.delete(registrable);
+    }
+  }, PROMISE_CLEANUP_TIMEOUT_MS);
+
+  // Clear timeout when promise settles to avoid unnecessary work
+  void promise.finally(() => clearTimeout(timeoutId));
+
+  // Log map size for monitoring
+  if (screenshotPromises.size > 10) {
+    console.warn(
+      `[screenshot] promise map size: ${screenshotPromises.size} (potential memory pressure)`,
+    );
+  }
+
   return promise;
 }
 
