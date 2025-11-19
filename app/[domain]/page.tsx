@@ -53,7 +53,7 @@ export default async function DomainPage({
 
   // Minimal prefetch: registration only, let sections stream progressively
   const queryClient = makeQueryClient();
-  queryClient.prefetchQuery(
+  void queryClient.prefetchQuery(
     trpc.domain.registration.queryOptions({ domain: normalized }),
   );
 
