@@ -45,6 +45,34 @@ function dohAnswer(
 }
 
 describe("resolveAll", () => {
+  it("deduplicates records when DoH provider returns duplicates", async () => {
+    const { resolveAll } = await import("./dns");
+    // Simulate a DoH provider returning duplicate A records (same IP twice)
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "1.2.3.4" },
+          { name: "example.com.", TTL: 60, data: "1.2.3.4" }, // duplicate!
+          { name: "example.com.", TTL: 60, data: "5.6.7.8" },
+        ]),
+      )
+      .mockResolvedValueOnce(dohAnswer([])) // AAAA
+      .mockResolvedValueOnce(dohAnswer([])) // MX
+      .mockResolvedValueOnce(dohAnswer([])) // TXT
+      .mockResolvedValueOnce(dohAnswer([])); // NS
+
+    const out = await resolveAll("example.com");
+    const aRecords = out.records.filter((r) => r.type === "A");
+
+    // Should have exactly 2 A records (duplicate removed), not 3
+    expect(aRecords).toHaveLength(2);
+    expect(aRecords[0]?.value).toBe("1.2.3.4");
+    expect(aRecords[1]?.value).toBe("5.6.7.8");
+
+    fetchMock.mockRestore();
+  });
+
   it("normalizes records and returns combined results", async () => {
     const { resolveAll } = await import("./dns");
     // The code calls DoH for A, AAAA, MX, TXT, NS in parallel and across providers; we just return A for both A and AAAA etc.

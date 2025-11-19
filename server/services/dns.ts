@@ -251,10 +251,12 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
             isCloudflare: r.isCloudflare ?? undefined,
           })),
         );
-        const merged = sortDnsRecordsByType(
-          [...cachedFresh, ...fetchedStale],
-          types,
-        );
+        // Deduplicate before sorting to prevent duplicates in merged results
+        const deduplicated = deduplicateDnsRecords([
+          ...cachedFresh,
+          ...fetchedStale,
+        ]);
+        const merged = sortDnsRecordsByType(deduplicated, types);
         const counts = (types as DnsType[]).reduce(
           (acc, t) => {
             acc[t] = merged.filter((r) => r.type === t).length;
@@ -370,8 +372,10 @@ export async function resolveAll(domain: string): Promise<DnsResolveResult> {
       console.info(
         `[dns] ok ${registrable} counts=${JSON.stringify(counts)} resolver=${resolverUsed} durations=${JSON.stringify(durationByProvider)}`,
       );
+      // Deduplicate records before returning (same logic as replaceDns uses for DB persistence)
+      const deduplicated = deduplicateDnsRecords(flat);
       // Sort records deterministically to match cache-path ordering
-      const sorted = sortDnsRecordsByType(flat, types);
+      const sorted = sortDnsRecordsByType(deduplicated, types);
       return { records: sorted, resolver: resolverUsed } as DnsResolveResult;
     } catch (err) {
       console.warn(
@@ -464,6 +468,29 @@ function trimDot(s: string) {
 function trimQuotes(s: string) {
   // Cloudflare may return quoted strings; remove leading/trailing quotes
   return s.replace(/^"|"$/g, "");
+}
+
+/**
+ * Deduplicate DNS records using the same logic as replaceDns.
+ * Records are considered duplicates if they have the same type, name, value, and priority.
+ * Case-insensitive comparison for name and value.
+ */
+function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
+  const seen = new Set<string>();
+  const deduplicated: DnsRecord[] = [];
+
+  for (const r of records) {
+    // Use case-insensitive comparison, same as replaceDns
+    const priorityPart = r.priority != null ? `|${r.priority}` : "";
+    const key = `${r.type}|${r.name.trim().toLowerCase()}|${r.value.trim().toLowerCase()}${priorityPart}`;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated;
 }
 
 function sortDnsRecordsByType(
