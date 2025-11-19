@@ -46,6 +46,7 @@
 
 ## Testing Guidelines
 - Use **Vitest** with React Testing Library; config in `vitest.config.ts`.
+- Uses `threads` pool for compatibility with sandboxed environments (e.g., Cursor agent commands).
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks `server-only` module.

@@ -14,7 +14,8 @@ export default defineConfig({
       reporter: ["text", "html", "lcov"],
       exclude: ["**/components/ui/**", ...coverageConfigDefaults.exclude],
     },
-    // Use forks pool for better isolation and to prevent file handle leaks
-    pool: "forks",
+    // Use threads pool for compatibility with sandboxed environments
+    // File handle cleanup is managed by afterAll hooks in test files (e.g., PGlite.close())
+    pool: "threads",
   },
 });
