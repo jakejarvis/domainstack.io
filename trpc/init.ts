@@ -48,36 +48,105 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.
+ * All logs are structured JSON for better parsing by log aggregators.
+ * Errors are tracked in PostHog for centralized monitoring.
  * @param path - The path of the procedure
  * @param type - The type of the procedure
+ * @param input - The input to the procedure
  * @param next - The next middleware
  * @returns The result of the next middleware
  */
-const withLogging = t.middleware(async ({ path, type, next }) => {
+const withLogging = t.middleware(async ({ path, type, input, next }) => {
   const start = performance.now();
-  console.debug(`[trpc] start ${path} (${type})`);
+
+  // Sample input for debugging (only log safe fields, avoid PII)
+  const inputSample =
+    input && typeof input === "object"
+      ? Object.keys(input).reduce(
+          (acc, key) => {
+            // Log only safe fields, truncate long values
+            if (
+              key === "domain" ||
+              key === "type" ||
+              key === "types" ||
+              key === "limit"
+            ) {
+              const value = (input as Record<string, unknown>)[key];
+              acc[key] = String(value).slice(0, 100);
+            }
+            return acc;
+          },
+          {} as Record<string, string>,
+        )
+      : undefined;
+
+  console.debug(
+    JSON.stringify({
+      level: "debug",
+      message: "[trpc] start",
+      path,
+      type,
+      input: inputSample,
+      timestamp: new Date().toISOString(),
+    }),
+  );
+
   try {
     const result = await next();
     const durationMs = Math.round(performance.now() - start);
-    console.info(`[trpc] ok ${path} (${type}) ${durationMs}ms`);
+
+    console.info(
+      JSON.stringify({
+        level: "info",
+        message: "[trpc] ok",
+        path,
+        type,
+        durationMs,
+        timestamp: new Date().toISOString(),
+      }),
+    );
+
+    // Track slow requests (>5s threshold) in PostHog
+    if (durationMs > 5000) {
+      const { analytics } = await import("@/lib/analytics/server");
+      analytics.track("trpc_slow_request", {
+        path,
+        type,
+        durationMs,
+      });
+    }
+
     return result;
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
     const error = err instanceof Error ? err : new Error(String(err));
+
     console.error(
       JSON.stringify({
         level: "error",
-        message: `[trpc] error ${path} (${type})`,
+        message: "[trpc] error",
         path,
         type,
         durationMs,
+        timestamp: new Date().toISOString(),
         error: {
           message: error.message,
+          name: error.name,
           stack: error.stack,
           cause: error.cause,
         },
       }),
     );
+
+    // Track exceptions in PostHog for centralized monitoring
+    const { analytics } = await import("@/lib/analytics/server");
+    analytics.trackException(error, {
+      path,
+      type,
+      durationMs,
+      source: "trpc",
+    });
+
     throw err;
   }
 });
@@ -97,7 +166,14 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   ) {
     const registrable = toRegistrableDomain(input.domain);
     if (registrable) {
-      console.debug(`[trpc] recording access for domain: ${registrable}`);
+      console.debug(
+        JSON.stringify({
+          level: "debug",
+          message: "[trpc] recording access for domain",
+          domain: registrable,
+          timestamp: new Date().toISOString(),
+        }),
+      );
       after(() => updateLastAccessed(registrable));
     }
   }
