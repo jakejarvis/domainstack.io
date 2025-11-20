@@ -70,7 +70,7 @@
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "posthog-js": "^1.295.0",
-    "posthog-node": "^5.11.2",
+    "posthog-node": "^5.13.2",
     "puppeteer-core": "24.26.1",
     "radix-ui": "^1.4.3",
     "rdapper": "^0.11.0",
