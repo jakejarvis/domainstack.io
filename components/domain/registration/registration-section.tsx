@@ -9,6 +9,7 @@ import {
 import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
 import {
@@ -160,6 +161,13 @@ export function RegistrationSection({
               data.creationDate
                 ? formatDateTimeUtc(data.creationDate)
                 : undefined
+            }
+            suffix={
+              data.creationDate ? (
+                <span className="text-[11px] text-muted-foreground leading-none">
+                  <RelativeAgeString from={data.creationDate} />
+                </span>
+              ) : null
             }
           />
 

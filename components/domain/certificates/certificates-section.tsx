@@ -11,6 +11,7 @@ import { Fragment, useState } from "react";
 import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,11 @@ export function CertificatesSection({
                   label="Valid from"
                   value={formatDate(firstCert.validFrom)}
                   valueTooltip={formatDateTimeUtc(firstCert.validFrom)}
+                  suffix={
+                    <span className="text-[11px] text-muted-foreground leading-none">
+                      <RelativeAgeString from={firstCert.validFrom} />
+                    </span>
+                  }
                 />
 
                 <KeyValue
@@ -209,6 +215,11 @@ export function CertificatesSection({
                             label="Valid from"
                             value={formatDate(c.validFrom)}
                             valueTooltip={formatDateTimeUtc(c.validFrom)}
+                            suffix={
+                              <span className="text-[11px] text-muted-foreground leading-none">
+                                <RelativeAgeString from={c.validFrom} />
+                              </span>
+                            }
                           />
 
                           <KeyValue
