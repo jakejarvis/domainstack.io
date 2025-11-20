@@ -5,6 +5,12 @@ import { userEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainReportView } from "./domain-report-view";
 
+vi.mock("@/lib/auth-client", () => ({
+  useSession: () => ({ data: null, isPending: false }),
+  signIn: { social: vi.fn() },
+  signOut: vi.fn(),
+}));
+
 vi.mock("@/lib/json-export", () => ({
   exportDomainData: vi.fn(),
 }));
@@ -46,6 +52,25 @@ vi.mock("@/lib/trpc/client", () => ({
         queryOptions: (input: { domain: string }) => ({
           queryKey: ["favicon", input],
         }),
+      },
+    },
+    monitoring: {
+      getMonitoringStatusByName: {
+        queryOptions: (input: { domainName: string }) => ({
+          queryKey: ["monitoring", "status", input],
+        }),
+      },
+      getMonitoredDomains: {
+        queryOptions: () => ({
+          queryKey: ["monitoring", "domains"],
+        }),
+      },
+    },
+  }),
+  useTRPCClient: () => ({
+    monitoring: {
+      toggleDomainMonitoringByName: {
+        mutate: vi.fn(),
       },
     },
   }),
