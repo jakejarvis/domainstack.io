@@ -167,7 +167,7 @@ export function DomainSearch({
               onBlur={handleBlur}
               onClick={handleClick}
               onKeyDown={handleKeyDown}
-              className="relative top-0 sm:top-px"
+              className="relative top-0 truncate sm:top-px"
             />
 
             <InputGroupAddon>
