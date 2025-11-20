@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { DomainMonitorToggle } from "@/components/domain/domain-monitor-toggle";
 import { ExportButton } from "@/components/domain/export-button";
 import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
@@ -46,6 +47,8 @@ export function DomainReportHeader({
       </ScreenshotTooltip>
 
       <div className="flex items-center gap-2">
+        <DomainMonitorToggle domainName={domain} />
+
         <ExportButton onExportAction={onExport} disabled={exportDisabled} />
 
         <ToolsDropdown domain={domain} />

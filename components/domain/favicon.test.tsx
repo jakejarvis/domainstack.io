@@ -35,6 +35,7 @@ vi.mock("@/lib/trpc/client", () => ({
       },
     },
   }),
+  useTRPCClient: () => ({}),
 }));
 
 vi.mock("@tanstack/react-query", async () => {

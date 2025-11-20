@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
@@ -8,11 +9,23 @@ import { HeaderGrid } from "@/components/layout/header-grid";
 import { HeaderSearch } from "@/components/layout/header-search";
 import { HeaderSearchProvider } from "@/components/layout/header-search-context";
 import { HeaderSearchSkeleton } from "@/components/layout/header-search-skeleton";
+import { SignInButton } from "@/components/layout/sign-in-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { UserMenu } from "@/components/layout/user-menu";
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
 
-export function AppHeader() {
+export async function AppHeader() {
+  // Fetch session server-side
+  let session = null;
+  try {
+    const headerList = await headers();
+    session = await auth.api.getSession({ headers: headerList });
+  } catch {
+    // Ignore auth errors
+  }
+
   return (
     <HeaderSearchProvider>
       <HeaderGrid>
@@ -34,6 +47,17 @@ export function AppHeader() {
           <BookmarkletDialog />
           <Separator orientation="vertical" className="!h-4" />
           <ThemeToggle />
+          {session?.user ? (
+            <>
+              <Separator orientation="vertical" className="!h-4" />
+              <UserMenu user={session.user} />
+            </>
+          ) : (
+            <>
+              <Separator orientation="vertical" className="!h-4" />
+              <SignInButton />
+            </>
+          )}
         </HeaderButtons>
       </HeaderGrid>
     </HeaderSearchProvider>

@@ -1,4 +1,4 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
@@ -31,7 +31,20 @@ export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
   const ip = await resolveRequestIp();
 
-  return { req, ip } as const;
+  // Fetch session for authenticated requests
+  let session = null;
+  let user = null;
+
+  try {
+    const headerList = await headers();
+    const { auth } = await import("@/lib/auth");
+    session = await auth.api.getSession({ headers: headerList });
+    user = session?.user ?? null;
+  } catch {
+    // Ignore auth errors in tests/scripts
+  }
+
+  return { req, ip, session, user } as const;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
@@ -191,3 +204,27 @@ export const publicProcedure = t.procedure.use(withLogging);
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
  */
 export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);
+
+/**
+ * Protected procedure that requires authentication.
+ * Use this for all authenticated endpoints (monitoring, account settings, etc).
+ * Throws UNAUTHORIZED if user is not authenticated.
+ */
+const withAuth = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.session || !ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be signed in to perform this action",
+    });
+  }
+
+  return next({
+    ctx: {
+      // Narrow down types - user is guaranteed to be non-null
+      session: ctx.session,
+      user: ctx.user,
+    },
+  });
+});
+
+export const protectedProcedure = publicProcedure.use(withAuth);
