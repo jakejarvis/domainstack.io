@@ -1,9 +1,7 @@
-import { cacheLife } from "next/cache";
 import { Button } from "@/components/ui/button";
 
 async function fetchRepoStars(): Promise<number | null> {
   "use cache";
-  cacheLife("hours");
 
   try {
     const res = await fetch(
