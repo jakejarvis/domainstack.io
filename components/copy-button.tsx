@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ClipboardCheck, Copy } from "lucide-react";
+import clipboardCopy from "clipboard-copy";
+import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,23 +15,30 @@ export function CopyButton({ value, label }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+  const handleCopy = async () => {
+    try {
+      await clipboardCopy(value);
 
-    toast.success("Copied!", {
-      icon: <ClipboardCheck className="h-4 w-4" />,
-      position: "bottom-center",
-    });
+      toast.success("Copied!", {
+        icon: <ClipboardCheck className="h-4 w-4" />,
+        position: "bottom-center",
+      });
 
-    setCopied(true);
+      setCopied(true);
 
-    if (resetTimerRef.current) {
-      window.clearTimeout(resetTimerRef.current);
+      if (resetTimerRef.current) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = window.setTimeout(() => {
+        setCopied(false);
+        resetTimerRef.current = null;
+      }, 1200);
+    } catch {
+      toast.error("Failed to copy", {
+        icon: <CircleX className="h-4 w-4" />,
+        position: "bottom-center",
+      });
     }
-    resetTimerRef.current = window.setTimeout(() => {
-      setCopied(false);
-      resetTimerRef.current = null;
-    }, 1200);
   };
 
   return (

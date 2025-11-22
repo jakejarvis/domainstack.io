@@ -20,7 +20,7 @@ export function ScreenshotTooltip({
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [tapCount, setTapCount] = useState(0);
-  const { supportsHover } = usePointerCapability();
+  const { isTouchDevice } = usePointerCapability();
 
   // Reset tap count when tooltip closes
   useEffect(() => {
@@ -30,8 +30,8 @@ export function ScreenshotTooltip({
   }, [open]);
 
   const handleInteraction = (e: React.MouseEvent<HTMLElement>) => {
-    // On touch devices (no hover support), implement two-tap behavior
-    if (!supportsHover && tapCount === 0) {
+    // On touch devices, implement two-tap behavior
+    if (isTouchDevice && tapCount === 0) {
       e.preventDefault();
       setTapCount(1);
       setOpen(true);

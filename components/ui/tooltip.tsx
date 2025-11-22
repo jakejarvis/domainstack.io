@@ -30,10 +30,9 @@ function TooltipProvider({
 function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  const { supportsHover, isCoarsePointer } = usePointerCapability();
-  // Current heuristic: prefer popover when there is no hover support or the pointer is coarse.
-  const mode: HybridMode =
-    !supportsHover || isCoarsePointer ? "popover" : "tooltip";
+  const { isTouchDevice } = usePointerCapability();
+  // Current heuristic: prefer popover on touch devices
+  const mode: HybridMode = isTouchDevice ? "popover" : "tooltip";
 
   const { children, ...rest } = props;
 

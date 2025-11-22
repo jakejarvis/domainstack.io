@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import useLocalStorageState from "use-local-storage-state";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 
 const STORAGE_KEY = "search-history";
@@ -31,22 +32,17 @@ const STORAGE_KEY = "search-history";
  * ```
  */
 export function useDomainHistory(domain?: string) {
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory, { removeItem }] = useLocalStorageState<string[]>(
+    STORAGE_KEY,
+    {
+      defaultValue: [],
+    },
+  );
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
 
-  // Load history from localStorage on mount
+  // Mark history as loaded on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as string[];
-        setHistory(parsed);
-      }
-    } catch {
-      // ignore parse errors
-    } finally {
-      setIsHistoryLoaded(true);
-    }
+    setIsHistoryLoaded(true);
   }, []);
 
   // Add domain to history when provided
@@ -61,31 +57,17 @@ export function useDomainHistory(domain?: string) {
       }
 
       // Create new list with domain at front, removing any duplicates
-      const next = [
-        domain,
-        ...currentHistory.filter((d) => d !== domain),
-      ].slice(0, MAX_HISTORY_ITEMS);
-
-      // Update localStorage with new list
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // ignore storage errors
-      }
-
-      return next;
+      return [domain, ...currentHistory.filter((d) => d !== domain)].slice(
+        0,
+        MAX_HISTORY_ITEMS,
+      );
     });
-  }, [domain, isHistoryLoaded]);
+  }, [domain, isHistoryLoaded, setHistory]);
 
   // Clear history function
   const clearHistory = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      setHistory([]);
-    } catch {
-      // ignore storage errors
-    }
-  }, []);
+    removeItem();
+  }, [removeItem]);
 
   return {
     history,
