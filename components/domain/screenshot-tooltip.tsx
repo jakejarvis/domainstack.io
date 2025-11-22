@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Screenshot } from "@/components/domain/screenshot";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
 export function ScreenshotTooltip({
@@ -18,6 +19,27 @@ export function ScreenshotTooltip({
 }) {
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const { supportsHover } = usePointerCapability();
+
+  // Reset tap count when tooltip closes
+  useEffect(() => {
+    if (!open) {
+      setTapCount(0);
+    }
+  }, [open]);
+
+  const handleInteraction = (e: React.MouseEvent<HTMLElement>) => {
+    // On touch devices (no hover support), implement two-tap behavior
+    if (!supportsHover && tapCount === 0) {
+      e.preventDefault();
+      setTapCount(1);
+      setOpen(true);
+      setHasOpened(true);
+    }
+    // Second tap on touch devices - allow default link behavior
+    // On hover devices, always allow default behavior
+  };
 
   return (
     <Tooltip
@@ -27,7 +49,9 @@ export function ScreenshotTooltip({
         if (v) setHasOpened(true);
       }}
     >
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipTrigger asChild onClick={handleInteraction}>
+        {children}
+      </TooltipTrigger>
       <TooltipContent
         sideOffset={6}
         alignOffset={-12}
