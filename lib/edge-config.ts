@@ -1,5 +1,3 @@
-"use cache";
-
 import { get } from "@vercel/edge-config";
 
 /**

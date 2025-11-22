@@ -1,11 +1,8 @@
 import "server-only";
 
-import { unstable_cache as cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import type { BootstrapData } from "rdapper";
-import {
-  RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
-  RDAP_BOOTSTRAP_URL,
-} from "@/lib/constants/external-apis";
+import { RDAP_BOOTSTRAP_URL } from "@/lib/constants/external-apis";
 
 /**
  * Fetch RDAP bootstrap data with Next.js Data Cache.
@@ -19,23 +16,20 @@ import {
  * @returns RDAP bootstrap data containing TLD-to-server mappings
  * @throws Error if fetch fails (caller should handle or let rdapper fetch directly)
  */
-export const getRdapBootstrapData = cache(
-  async (): Promise<BootstrapData> => {
-    const res = await fetch(RDAP_BOOTSTRAP_URL);
+export async function getRdapBootstrapData(): Promise<BootstrapData> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag("rdap-bootstrap");
 
-    if (!res.ok) {
-      throw new Error(
-        `Failed to fetch RDAP bootstrap: ${res.status} ${res.statusText}`,
-      );
-    }
+  const res = await fetch(RDAP_BOOTSTRAP_URL);
 
-    const bootstrap = await res.json();
-    console.info("[rdap-bootstrap] Bootstrap data fetched");
-    return bootstrap;
-  },
-  [],
-  {
-    revalidate: RDAP_BOOTSTRAP_CACHE_TTL_SECONDS,
-    tags: ["rdap-bootstrap"],
-  },
-);
+  if (!res.ok) {
+    throw new Error(
+      `Failed to fetch RDAP bootstrap: ${res.status} ${res.statusText}`,
+    );
+  }
+
+  const bootstrap = await res.json();
+  console.info("[rdap-bootstrap] Bootstrap data fetched");
+  return bootstrap;
+}

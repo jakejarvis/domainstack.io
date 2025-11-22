@@ -39,6 +39,18 @@ vi.mock("next/server", async () => {
   };
 });
 
+// Mock Next.js cache functions that require cacheComponents config
+// These are no-ops in tests since we don't need actual caching behavior
+vi.mock("next/cache", async () => {
+  const actual =
+    await vi.importActual<typeof import("next/cache")>("next/cache");
+  return {
+    ...actual,
+    cacheLife: vi.fn(),
+    cacheTag: vi.fn(),
+  };
+});
+
 // Mock ResizeObserver for jsdom environment
 global.ResizeObserver = class ResizeObserver {
   observe = vi.fn();

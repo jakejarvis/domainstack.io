@@ -1,11 +1,8 @@
 import "server-only";
 
 import * as ipaddr from "ipaddr.js";
-import { unstable_cache as cache } from "next/cache";
-import {
-  CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
-  CLOUDFLARE_IPS_URL,
-} from "@/lib/constants/external-apis";
+import { cacheLife, cacheTag } from "next/cache";
+import { CLOUDFLARE_IPS_URL } from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 
 export interface CloudflareIpRanges {
@@ -78,32 +75,29 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
  * Fetch Cloudflare IP ranges with Next.js Data Cache.
  *
  * The IP ranges change infrequently (when Cloudflare expands infrastructure),
- * so we cache for 1 day with stale-while-revalidate.
+ * so we cache for 1 week with stale-while-revalidate.
  *
- * Uses Next.js unstable_cache for automatic caching with tags.
+ * Uses Next.js 16's "use cache" directive for automatic caching with tags.
  */
-const getCloudflareIpRanges = cache(
-  async (): Promise<CloudflareIpRanges> => {
-    try {
-      const ranges = await fetchCloudflareIpRanges();
-      parseAndCacheRanges(ranges);
-      console.info("[cloudflare-ips] IP ranges fetched");
-      return ranges;
-    } catch (err) {
-      console.error(
-        "[cloudflare-ips] fetch error",
-        err instanceof Error ? err : new Error(String(err)),
-      );
-      // Return empty ranges on error
-      return { ipv4Cidrs: [], ipv6Cidrs: [] };
-    }
-  },
-  [],
-  {
-    revalidate: CLOUDFLARE_IPS_CACHE_TTL_SECONDS,
-    tags: ["cloudflare-ip-ranges"],
-  },
-);
+async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag("cloudflare-ip-ranges");
+
+  try {
+    const ranges = await fetchCloudflareIpRanges();
+    parseAndCacheRanges(ranges);
+    console.info("[cloudflare-ips] IP ranges fetched");
+    return ranges;
+  } catch (err) {
+    console.error(
+      "[cloudflare-ips] fetch error",
+      err instanceof Error ? err : new Error(String(err)),
+    );
+    // Return empty ranges on error
+    return { ipv4Cidrs: [], ipv6Cidrs: [] };
+  }
+}
 
 /**
  * Check if a given IP address is part of Cloudflare's IP ranges.

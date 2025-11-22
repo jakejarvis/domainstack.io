@@ -1,20 +1,8 @@
 /* @vitest-environment node */
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-
-let isCloudflareIp: typeof import("./cloudflare").isCloudflareIp;
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { isCloudflareIp } from "./cloudflare";
 
 describe("isCloudflareIp", () => {
-  beforeAll(async () => {
-    // Mock unstable_cache to just call the function (no actual caching in tests)
-    vi.doMock("next/cache", () => ({
-      unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
-    }));
-
-    // Import module AFTER mocks are set up
-    const module = await import("./cloudflare");
-    isCloudflareIp = module.isCloudflareIp;
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });

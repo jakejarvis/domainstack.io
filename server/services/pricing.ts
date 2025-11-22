@@ -1,5 +1,4 @@
-"use cache";
-
+import { cacheLife, cacheTag } from "next/cache";
 import { getDomainTld } from "rdapper";
 import type { Pricing } from "@/lib/schemas";
 
@@ -33,8 +32,6 @@ type RegistrarPricingResponse = Record<
 interface PricingProvider {
   /** Provider name for logging */
   name: string;
-  /** How long to cache the pricing data (seconds) */
-  cacheTtlSeconds: number;
   /** Fetch pricing data from the registrar API */
   fetchPricing: () => Promise<RegistrarPricingResponse>;
   /** Extract the registration price for a specific TLD from the response */
@@ -70,9 +67,12 @@ async function fetchProviderPricing(
 
 const porkbunProvider: PricingProvider = {
   name: "porkbun",
-  cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
+    "use cache";
+    cacheLife("weeks");
+    cacheTag("pricing", "pricing-porkbun");
+
     // Does not require authentication!
     // https://porkbun.com/api/json/v3/documentation#Domain%20Pricing
     const controller = new AbortController();
@@ -86,10 +86,6 @@ const porkbunProvider: PricingProvider = {
           headers: { "Content-Type": "application/json" },
           body: "{}",
           signal: controller.signal,
-          next: {
-            revalidate: this.cacheTtlSeconds,
-            tags: ["pricing", "pricing-porkbun"],
-          },
         },
       );
 
@@ -121,9 +117,12 @@ const porkbunProvider: PricingProvider = {
 
 const cloudflareProvider: PricingProvider = {
   name: "cloudflare",
-  cacheTtlSeconds: 7 * 24 * 60 * 60, // 7 days
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
+    "use cache";
+    cacheLife("weeks");
+    cacheTag("pricing", "pricing-cloudflare");
+
     // Third-party API that aggregates Cloudflare pricing
     // https://cfdomainpricing.com/
     const controller = new AbortController();
@@ -134,10 +133,6 @@ const cloudflareProvider: PricingProvider = {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: controller.signal,
-        next: {
-          revalidate: this.cacheTtlSeconds,
-          tags: ["pricing", "pricing-cloudflare"],
-        },
       });
 
       if (!res.ok) {
