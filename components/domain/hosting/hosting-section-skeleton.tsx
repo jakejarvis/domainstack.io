@@ -1,4 +1,4 @@
-import { MapSkeleton } from "@/components/domain/hosting/map-skeleton";
+import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
@@ -15,7 +15,7 @@ export function HostingSectionSkeleton() {
 
       <KeyValueSkeleton label="Location" withLeading widthClass="w-[220px]" />
 
-      <MapSkeleton />
+      <HostingMapSkeleton />
     </Section>
   );
 }
