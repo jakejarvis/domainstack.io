@@ -4,7 +4,6 @@ import {
   formatLogEntry,
   getMinLogLevel,
   parseLogLevel,
-  sanitizeContext,
   serializeError,
   shouldLog,
 } from "./index";
@@ -39,38 +38,6 @@ describe("Logger Core", () => {
     });
   });
 
-  describe("sanitizeContext", () => {
-    it("filters out PII fields", () => {
-      const context = {
-        domain: "example.com",
-        userId: "123",
-        password: "secret",
-        email: "user@example.com",
-      };
-
-      const sanitized = sanitizeContext(context);
-      expect(sanitized).toEqual({ domain: "example.com" });
-    });
-
-    it("truncates long values", () => {
-      const longValue = "a".repeat(300);
-      const context = { domain: longValue };
-
-      const sanitized = sanitizeContext(context);
-      expect(sanitized?.domain).toHaveLength(203); // 200 + "..."
-      expect(String(sanitized?.domain).endsWith("...")).toBe(true);
-    });
-
-    it("handles undefined context", () => {
-      expect(sanitizeContext(undefined)).toBeUndefined();
-    });
-
-    it("returns undefined for empty context", () => {
-      const context = { userId: "123" }; // No safe fields
-      expect(sanitizeContext(context)).toBeUndefined();
-    });
-  });
-
   describe("serializeError", () => {
     it("serializes Error objects", () => {
       const error = new Error("Test error");
@@ -100,12 +67,14 @@ describe("Logger Core", () => {
       expect(entry.environment).toBe("test");
     });
 
-    it("includes sanitized context", () => {
+    it("includes context", () => {
       const entry = createLogEntry("info", "Test", {
-        context: { domain: "example.com", password: "secret" },
+        context: { domain: "example.com" },
       });
 
-      expect(entry.context).toEqual({ domain: "example.com" });
+      expect(entry.context).toEqual({
+        domain: "example.com",
+      });
     });
 
     it("includes serialized error", () => {

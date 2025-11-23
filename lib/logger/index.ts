@@ -54,30 +54,6 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   fatal: 60,
 };
 
-// PII-safe field allowlist - only these fields will be logged from context
-const SAFE_FIELDS = new Set([
-  "domain",
-  "type",
-  "types",
-  "limit",
-  "path",
-  "method",
-  "status",
-  "statusCode",
-  "durationMs",
-  "source",
-  "component",
-  "action",
-  "provider",
-  "recordType",
-  "count",
-  "cached",
-  "ttl",
-  "expiresAt",
-  "attempts",
-  "backoffMs",
-]);
-
 // ============================================================================
 // Utilities
 // ============================================================================
@@ -129,34 +105,6 @@ export function shouldLog(
 }
 
 /**
- * Filter context to only include PII-safe fields and truncate long values.
- * This prevents accidentally logging sensitive information.
- */
-export function sanitizeContext(context?: LogContext): LogContext | undefined {
-  if (!context || typeof context !== "object") {
-    return undefined;
-  }
-
-  const sanitized: LogContext = {};
-  let hasFields = false;
-
-  for (const key of Object.keys(context)) {
-    if (SAFE_FIELDS.has(key)) {
-      const value = context[key];
-      // Truncate strings to 200 chars max
-      if (typeof value === "string" && value.length > 200) {
-        sanitized[key] = `${value.slice(0, 200)}...`;
-      } else {
-        sanitized[key] = value;
-      }
-      hasFields = true;
-    }
-  }
-
-  return hasFields ? sanitized : undefined;
-}
-
-/**
  * Serialize an error object for logging.
  */
 export function serializeError(error: unknown): SerializedError {
@@ -203,10 +151,9 @@ export function createLogEntry(
     timestamp: new Date().toISOString(),
   };
 
-  // Add sanitized context
-  const sanitized = sanitizeContext(options?.context);
-  if (sanitized) {
-    entry.context = sanitized;
+  // Add context if present
+  if (options?.context && Object.keys(options.context).length > 0) {
+    entry.context = options.context;
   }
 
   // Add error if present

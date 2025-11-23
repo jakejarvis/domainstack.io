@@ -110,7 +110,6 @@
   - Console output only in development (info/debug) and always for errors
   - Correlation IDs propagated from server via header/cookie/localStorage
 - **Log format:** Structured JSON with consistent fields (level, message, timestamp, context, correlationId, traceId, spanId, environment).
-- **PII safety:** Only allowlisted fields logged from context (domain, type, status, durationMs, etc.). See `SAFE_FIELDS` in `lib/logger/index.ts`.
 - **Usage examples:**
   ```typescript
   // Server (service layer)
