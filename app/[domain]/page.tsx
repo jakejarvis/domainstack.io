@@ -19,6 +19,15 @@ export async function generateMetadata({
   const decoded = decodeURIComponent(raw);
   const normalized = normalizeDomainInput(decoded);
 
+  const isRegistrable = toRegistrableDomain(normalized);
+  if (!isRegistrable) {
+    // workaround, should match metadata from not-found.tsx
+    return {
+      title: "Not Found",
+      description: "The page you're looking for doesn't exist.",
+    };
+  }
+
   return {
     title: {
       absolute: `${normalized} — Domain Report`,
