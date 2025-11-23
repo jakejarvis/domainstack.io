@@ -86,13 +86,6 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
     } catch (err) {
       logger.error("failed to export domain data", err, { domain });
 
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        {
-          domain,
-        },
-      );
-
       // Show error toast
       toast.error(`Failed to export ${domain}`, {
         description:
