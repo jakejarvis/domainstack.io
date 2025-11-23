@@ -83,9 +83,19 @@ export function getCorrelationIdFromCookie(): string | undefined {
   try {
     const cookies = document.cookie.split(";");
     for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split("=");
-      if (name === CORRELATION_ID_COOKIE && value) {
-        return decodeURIComponent(value);
+      const trimmed = cookie.trim();
+      const separatorIndex = trimmed.indexOf("=");
+
+      if (separatorIndex === -1) {
+        continue;
+      }
+
+      const name = trimmed.substring(0, separatorIndex);
+      if (name === CORRELATION_ID_COOKIE) {
+        const value = trimmed.substring(separatorIndex + 1);
+        if (value) {
+          return decodeURIComponent(value);
+        }
       }
     }
   } catch {
