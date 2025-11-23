@@ -30,6 +30,14 @@ export async function fetchWithTimeoutAndRetry(
         throw err instanceof Error ? err : new Error("fetch aborted");
       }
       if (attempt < retries) {
+        logger.warn(
+          `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
+          {
+            url: input.toString(),
+            error: err,
+          },
+        );
+
         // Simple linear backoff — good enough for trusted upstream retry logic.
         await new Promise((r) => setTimeout(r, backoffMs));
       }

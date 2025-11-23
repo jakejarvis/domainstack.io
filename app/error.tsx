@@ -1,10 +1,10 @@
 "use client";
 
 import { RefreshCcw } from "lucide-react";
-import posthog from "posthog-js";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger/client";
 
 export default function RootError(props: {
   error: Error & { digest?: string };
@@ -13,7 +13,7 @@ export default function RootError(props: {
   const { error, reset } = props;
 
   useEffect(() => {
-    posthog.captureException(error);
+    logger.error("Root error boundary caught error", error);
   }, [error]);
 
   const isDev = process.env.NODE_ENV !== "production";
