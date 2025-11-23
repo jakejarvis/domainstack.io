@@ -5,8 +5,11 @@ import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
+import { createLogger } from "@/lib/logger/server";
 import { storeImage } from "@/lib/storage";
 import { ttlForFavicon } from "@/lib/ttl";
+
+const logger = createLogger({ source: "favicon" });
 
 const DEFAULT_SIZE = 32;
 const REQUEST_TIMEOUT_MS = 1500; // per each method
@@ -37,7 +40,7 @@ async function fetchFaviconInternal(
 ): Promise<{ url: string | null }> {
   // Check for in-flight request across all SSR contexts
   if (faviconPromises.has(registrable)) {
-    console.debug("[favicon] in-flight request hit");
+    logger.debug("in-flight request hit", { domain: registrable });
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return faviconPromises.get(registrable)!;
   }
@@ -57,9 +60,10 @@ async function fetchFaviconInternal(
   // Safety: Auto-cleanup stale promise after timeout
   const timeoutId = setTimeout(() => {
     if (faviconPromises.get(registrable) === promise) {
-      console.warn(
-        `[favicon] cleaning up stale promise for ${registrable} after ${PROMISE_CLEANUP_TIMEOUT_MS}ms`,
-      );
+      logger.warn(`cleaning up stale promise for ${registrable}`, {
+        domain: registrable,
+        timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
+      });
       faviconPromises.delete(registrable);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
@@ -87,15 +91,12 @@ async function fetchFaviconWork(
         faviconRecord.url !== null || faviconRecord.notFound === true;
 
       if (isDefinitiveResult) {
-        console.debug("[favicon] db cache hit");
+        logger.debug("db cache hit", { domain: registrable, cached: true });
         return { url: faviconRecord.url };
       }
     }
   } catch (err) {
-    console.warn(
-      "[favicon] db read failed",
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error("db read failed", err, { domain: registrable });
   }
 
   // Generate favicon (cache missed)
@@ -159,10 +160,7 @@ async function fetchFaviconWork(
           expiresAt,
         });
       } catch (err) {
-        console.error(
-          "[favicon] db persist error",
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        logger.error("db persist error", err, { domain: registrable });
       }
 
       return { url };
@@ -200,10 +198,7 @@ async function fetchFaviconWork(
       expiresAt,
     });
   } catch (err) {
-    console.error(
-      "[favicon] db persist error (null)",
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error("db persist error (null)", err, { domain: registrable });
   }
 
   return { url: null };

@@ -1,6 +1,7 @@
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useLogger } from "@/hooks/use-logger";
 import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 
@@ -19,6 +20,7 @@ type QueryKeys = {
  */
 export function useDomainExport(domain: string, queryKeys: QueryKeys) {
   const queryClient = useQueryClient();
+  const logger = useLogger({ component: "DomainExport" });
   const [allDataLoaded, setAllDataLoaded] = useState(false);
   const queryKeysRef = useRef(queryKeys);
 
@@ -81,11 +83,11 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
 
       // Export with partial data (graceful degradation)
       exportDomainData(domain, exportData);
-    } catch (error) {
-      console.error("[export] failed to export domain data", error);
+    } catch (err) {
+      logger.error("failed to export domain data", err, { domain });
 
       analytics.trackException(
-        error instanceof Error ? error : new Error(String(error)),
+        err instanceof Error ? err : new Error(String(err)),
         {
           domain,
         },
@@ -94,13 +96,13 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
       // Show error toast
       toast.error(`Failed to export ${domain}`, {
         description:
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "An error occurred while exporting",
         position: "bottom-center",
       });
     }
-  }, [domain, queryClient, queryKeys]);
+  }, [domain, queryClient, queryKeys, logger.error]);
 
   return { handleExport, allDataLoaded };
 }

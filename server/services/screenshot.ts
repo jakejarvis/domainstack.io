@@ -7,9 +7,12 @@ import {
 } from "@/lib/db/repos/screenshots";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
+import { createLogger } from "@/lib/logger/server";
 import { getBrowser } from "@/lib/puppeteer";
 import { storeImage } from "@/lib/storage";
 import { ttlForScreenshot } from "@/lib/ttl";
+
+const logger = createLogger({ source: "screenshot" });
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
@@ -60,7 +63,7 @@ export async function getOrCreateScreenshotBlobUrl(
 
   // Check for in-flight request
   if (screenshotPromises.has(registrable)) {
-    console.debug("[screenshot] in-flight request hit");
+    logger.debug("in-flight request hit", { domain: registrable });
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return screenshotPromises.get(registrable)!;
   }
@@ -82,9 +85,10 @@ export async function getOrCreateScreenshotBlobUrl(
   // This catches edge cases where promise never settles
   const timeoutId = setTimeout(() => {
     if (screenshotPromises.get(registrable) === promise) {
-      console.warn(
-        `[screenshot] cleaning up stale promise for ${registrable} after ${PROMISE_CLEANUP_TIMEOUT_MS}ms`,
-      );
+      logger.warn(`cleaning up stale promise for ${registrable}`, {
+        domain: registrable,
+        timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
+      });
       screenshotPromises.delete(registrable);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
@@ -94,9 +98,9 @@ export async function getOrCreateScreenshotBlobUrl(
 
   // Log map size for monitoring
   if (screenshotPromises.size > 10) {
-    console.warn(
-      `[screenshot] promise map size: ${screenshotPromises.size} (potential memory pressure)`,
-    );
+    logger.warn("promise map size high (potential memory pressure)", {
+      count: screenshotPromises.size,
+    });
   }
 
   return promise;
@@ -131,16 +135,13 @@ async function generateScreenshot(
           screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
         if (isDefinitiveResult) {
-          console.debug("[screenshot] db cache hit");
+          logger.debug("db cache hit", { domain: registrable, cached: true });
           return { url: screenshotRecord.url };
         }
       }
     }
   } catch (err) {
-    console.warn(
-      "[screenshot] db read failed",
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error("db read failed", err, { domain: registrable });
   }
 
   // Generate screenshot (cache missed)
@@ -224,10 +225,7 @@ async function generateScreenshot(
               expiresAt,
             });
           } catch (err) {
-            console.error(
-              "[screenshot] db persist error",
-              err instanceof Error ? err : new Error(String(err)),
-            );
+            logger.error("db persist error", err, { domain: registrable });
           }
 
           resultUrl = storedUrl;
@@ -247,10 +245,9 @@ async function generateScreenshot(
             try {
               await page.close();
             } catch (err) {
-              console.warn(
-                "[screenshot] failed to close page",
-                err instanceof Error ? err : new Error(String(err)),
-              );
+              logger.error("failed to close page", err, {
+                domain: registrable,
+              });
             }
           }
         }
@@ -279,10 +276,7 @@ async function generateScreenshot(
           expiresAt,
         });
       } catch (err) {
-        console.error(
-          "[screenshot] db persist error (null)",
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        logger.error("db persist error (null)", err, { domain: registrable });
       }
     }
   } finally {

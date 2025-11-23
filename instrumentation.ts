@@ -22,9 +22,8 @@ export const onRequestError: Instrumentation.onRequestError = async (
           method: request.method,
         },
       );
-    } catch (trackingError) {
+    } catch {
       // Graceful degradation - don't throw to avoid breaking the request
-      console.error("[instrumentation] error tracking failed:", trackingError);
     }
   }
 };

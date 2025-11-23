@@ -3,6 +3,9 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { BootstrapData } from "rdapper";
 import { RDAP_BOOTSTRAP_URL } from "@/lib/constants/external-apis";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "rdap-bootstrap" });
 
 /**
  * Fetch RDAP bootstrap data with Next.js Data Cache.
@@ -30,6 +33,6 @@ export async function getRdapBootstrapData(): Promise<BootstrapData> {
   }
 
   const bootstrap = await res.json();
-  console.info("[rdap-bootstrap] Bootstrap data fetched");
+  logger.info("bootstrap data fetched");
   return bootstrap;
 }

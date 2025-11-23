@@ -1,6 +1,9 @@
 import "server-only";
 
 import { del, put } from "@vercel/blob";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "blob" });
 
 /**
  * Upload a buffer to Vercel Blob storage
@@ -44,9 +47,12 @@ export async function deleteBlobs(urls: string[]): Promise<DeleteResult> {
       results.push({ url, deleted: true });
     } catch (err) {
       const message = (err as Error)?.message || "unknown";
-      console.error(
-        `[blob] delete failed ${url}`,
+      logger.error(
+        "delete failed",
         err instanceof Error ? err : new Error(String(err)),
+        {
+          url,
+        },
       );
       results.push({ url, deleted: false, error: message });
     }

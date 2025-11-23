@@ -10,13 +10,16 @@ import {
 } from "@/lib/db/repos/providers";
 import { certificates as certTable } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Certificate } from "@/lib/schemas";
 import { ttlForCertificates } from "@/lib/ttl";
 
+const logger = createLogger({ source: "certificates" });
+
 export async function getCertificates(domain: string): Promise<Certificate[]> {
-  console.debug(`[certificates] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -64,9 +67,11 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         caProvider: detectCertificateAuthority(c.issuer),
       }));
 
-      console.info(
-        `[certificates] cache hit ${registrable} count=${out.length}`,
-      );
+      logger.info(`cache hit ${registrable}`, {
+        domain: registrable,
+        count: out.length,
+        cached: true,
+      });
       return out;
     }
   }
@@ -176,22 +181,21 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           "certificates",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
-        ).catch((err) => {
-          console.warn(
-            `[certificates] schedule failed for ${registrable}`,
-            err instanceof Error ? err : new Error(String(err)),
-          );
+        ).catch((_err) => {
+          logger.warn(`schedule failed for ${registrable}`, {
+            domain: registrable,
+          });
         });
       });
     }
 
-    console.info(`[certificates] ok ${registrable} chainLength=${out.length}`);
+    logger.info(`ok ${registrable}`, {
+      domain: registrable,
+      chainLength: out.length,
+    });
     return out;
   } catch (err) {
-    console.warn(
-      `[certificates] error ${registrable}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error(`error ${registrable}`, err, { domain: registrable });
     // Do not treat as fatal; return empty and avoid long-lived negative cache
     return [];
   }

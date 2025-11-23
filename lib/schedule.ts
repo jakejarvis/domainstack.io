@@ -9,6 +9,10 @@ import {
   REVALIDATE_MIN_SEO,
 } from "@/lib/constants/ttl";
 import { inngest } from "@/lib/inngest/client";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "schedule" });
+
 import {
   applyDecayToTtl,
   getDecayMultiplier,
@@ -59,9 +63,11 @@ export async function scheduleRevalidation(
 
   // Check if domain should stop being revalidated due to inactivity
   if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
-    console.info(
-      `[schedule] skip ${section} ${normalizedDomain} (stopped: inactive ${lastAccessedAt ? `since ${lastAccessedAt.toISOString()}` : "never accessed"})`,
-    );
+    logger.info(`skip ${section} ${normalizedDomain} (stopped: inactive)`, {
+      domain: normalizedDomain,
+      section,
+      lastAccessedAt: lastAccessedAt?.toISOString() ?? "never",
+    });
     return false;
   }
 
@@ -79,9 +85,12 @@ export async function scheduleRevalidation(
     const daysInactive = lastAccessedAt
       ? Math.floor((now - lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24))
       : null;
-    console.info(
-      `[schedule] decay ${section} ${normalizedDomain} (${decayMultiplier}x, inactive ${daysInactive ? `${daysInactive}d` : "unknown"})`,
-    );
+    logger.info(`decay ${section} ${normalizedDomain}`, {
+      domain: normalizedDomain,
+      section,
+      decayMultiplier,
+      daysInactive: daysInactive ?? "unknown",
+    });
   }
 
   // Validate dueAtMs before scheduling
@@ -111,15 +120,17 @@ export async function scheduleRevalidation(
       id: eventId,
     });
 
-    console.debug(
-      `[schedule] ok ${section} ${normalizedDomain} at ${new Date(scheduledDueMs).toISOString()}`,
-    );
+    logger.debug(`ok ${section} ${normalizedDomain}`, {
+      domain: normalizedDomain,
+      section,
+      scheduledAt: new Date(scheduledDueMs).toISOString(),
+    });
     return true;
   } catch (err) {
-    console.warn(
-      `[schedule] failed ${section} ${normalizedDomain}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error(`failed ${section} ${normalizedDomain}`, err, {
+      domain: normalizedDomain,
+      section,
+    });
     return false;
   }
 }

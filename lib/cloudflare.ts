@@ -4,6 +4,9 @@ import * as ipaddr from "ipaddr.js";
 import { cacheLife, cacheTag } from "next/cache";
 import { CLOUDFLARE_IPS_URL } from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "cloudflare-ips" });
 
 export interface CloudflareIpRanges {
   ipv4Cidrs: string[];
@@ -87,13 +90,10 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   try {
     const ranges = await fetchCloudflareIpRanges();
     parseAndCacheRanges(ranges);
-    console.info("[cloudflare-ips] IP ranges fetched");
+    logger.info("IP ranges fetched");
     return ranges;
   } catch (err) {
-    console.error(
-      "[cloudflare-ips] fetch error",
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error("fetch error", err);
     // Return empty ranges on error
     return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }

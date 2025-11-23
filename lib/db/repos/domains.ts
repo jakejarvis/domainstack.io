@@ -4,6 +4,9 @@ import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { getDomainTld } from "rdapper";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "domains" });
 
 /**
  * Debounce interval for updating domain lastAccessedAt timestamp.
@@ -108,9 +111,6 @@ export async function updateLastAccessed(name: string): Promise<void> {
         ),
       );
   } catch (err) {
-    console.warn(
-      `[access] failed to update lastAccessedAt for ${name}`,
-      err instanceof Error ? err.message : String(err),
-    );
+    logger.error("failed to update lastAccessedAt", err, { domain: name });
   }
 }
