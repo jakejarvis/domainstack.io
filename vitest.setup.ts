@@ -22,6 +22,48 @@ vi.mock("@/lib/analytics/client", () => ({
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));
 
+// Mock logger to avoid noise in tests
+vi.mock("@/lib/logger/server", () => ({
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  },
+  createLogger: vi.fn(() => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  })),
+  setCorrelationId: vi.fn(),
+  getCorrelationId: vi.fn(() => undefined),
+  withCorrelationId: vi.fn((_id: string, fn: () => unknown) => fn()),
+}));
+
+vi.mock("@/lib/logger/client", () => ({
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  },
+  createLogger: vi.fn(() => ({
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+  })),
+}));
+
 // Mock Next.js after() to execute callbacks immediately in tests
 // In production, after() schedules work after the response is sent
 vi.mock("next/server", async () => {

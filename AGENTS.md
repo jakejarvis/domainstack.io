@@ -9,6 +9,7 @@
 - `lib/inngest/` Inngest client and functions for event-driven background section revalidation.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo).
+- `lib/logger/` unified structured logging system with OpenTelemetry integration, correlation IDs, and PII-safe field filtering.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts` and domain-specific routers).
 - `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, registration, SEO, screenshot, favicon, etc.).
@@ -49,6 +50,7 @@
 - Uses `threads` pool for compatibility with sandboxed environments (e.g., Cursor agent commands).
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
+  - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
@@ -91,3 +93,40 @@
   - Leverages Next.js 16 `after()` for background event capture with graceful degradation.
   - Distinct ID sourced from PostHog cookie via `cache()`-wrapped `getDistinctId()` to comply with Next.js restrictions.
 - Analytics mocked in tests via `vitest.setup.ts`.
+
+## Structured Logging
+- Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
+- **Server-side logging:**
+  - Import singleton: `import { logger } from "@/lib/logger/server"`
+  - Or create service logger: `const logger = createLogger({ source: "dns" })`
+  - Automatic OpenTelemetry trace/span ID injection from `@vercel/otel`
+  - Correlation ID tracking via AsyncLocalStorage for request tracing
+  - Critical errors automatically tracked in PostHog via `after()`
+  - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
+- **Client-side logging:**
+  - Import singleton: `import { logger } from "@/lib/logger/client"`
+  - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
+  - Errors automatically tracked in PostHog
+  - Console output only in development (info/debug) and always for errors
+  - Correlation IDs propagated from server via header/cookie/localStorage
+- **Log format:** Structured JSON with consistent fields (level, message, timestamp, context, correlationId, traceId, spanId, environment).
+- **PII safety:** Only allowlisted fields logged from context (domain, type, status, durationMs, etc.). See `SAFE_FIELDS` in `lib/logger/index.ts`.
+- **Usage examples:**
+  ```typescript
+  // Server (service layer)
+  import { createLogger } from "@/lib/logger/server";
+  const logger = createLogger({ source: "dns" });
+  logger.debug("start example.com", { domain: "example.com" });
+  logger.info("ok example.com", { domain: "example.com", count: 5 });
+  logger.error("failed to resolve", error, { domain: "example.com" });
+
+  // Client (components)
+  import { useLogger } from "@/hooks/use-logger";
+  const logger = useLogger({ component: "DomainSearch" });
+  logger.info("search initiated", { domain: query });
+  logger.error("search failed", error, { domain: query });
+  ```
+- **Correlation IDs:** Generated server-side, propagated to client via `x-correlation-id` header, stored in cookie/localStorage. Enables request tracing across services.
+- **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with correlation IDs and OpenTelemetry context.
+- **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
+

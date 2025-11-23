@@ -12,11 +12,10 @@ export const onRequestError: Instrumentation.onRequestError = async (
   // Only track errors in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     try {
-      // Dynamic imports for Node.js-only code
-      const { analytics } = await import("@/lib/analytics/server");
-
-      // Note: we let analytics.trackException handle distinctId extraction from cookies
-      analytics.trackException(
+      // Use logger for structured error logging
+      const { logger } = await import("@/lib/logger/server");
+      logger.error(
+        "[instrumentation] request error",
         error instanceof Error ? error : new Error(String(error)),
         {
           path: request.path,

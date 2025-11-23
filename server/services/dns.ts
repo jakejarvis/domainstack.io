@@ -10,6 +10,7 @@ import { dnsRecords } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { simpleHash } from "@/lib/hash";
+import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import {
   type DnsRecord,
@@ -18,6 +19,8 @@ import {
   DnsTypeSchema,
 } from "@/lib/schemas";
 import { ttlForDnsRecord } from "@/lib/ttl";
+
+const logger = createLogger({ source: "dns" });
 
 // ============================================================================
 // DNS resolution
@@ -81,7 +84,7 @@ function buildDohUrl(
 export const resolveAll = cache(async function resolveAll(
   domain: string,
 ): Promise<DnsResolveResult> {
-  console.debug(`[dns] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   const providers = providerOrderForLookup(domain);
   const durationByProvider: Record<string, number> = {};
@@ -167,9 +170,11 @@ export const resolveAll = cache(async function resolveAll(
     const deduplicated = deduplicateDnsRecords(assembled);
     const sorted = sortDnsRecordsByType(deduplicated, types);
     if (allFreshAcrossTypes) {
-      console.info(
-        `[dns] cache hit ${registrable} types=${freshTypes.join(",")}`,
-      );
+      logger.info(`cache hit ${registrable}`, {
+        domain: registrable,
+        types: freshTypes.join(","),
+        cached: true,
+      });
       return { records: sorted, resolver: resolverHint };
     }
 
@@ -243,11 +248,11 @@ export const resolveAll = cache(async function resolveAll(
               "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
-            ).catch((err) => {
-              console.warn(
-                `[dns] schedule failed partial ${registrable}`,
-                err instanceof Error ? err : new Error(String(err)),
-              );
+            ).catch((_err) => {
+              logger.warn(`schedule failed partial ${registrable}`, {
+                domain: registrable,
+                type: "partial",
+              });
             });
           });
         }
@@ -279,18 +284,21 @@ export const resolveAll = cache(async function resolveAll(
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
 
-        console.info(
-          `[dns] ok partial ${registrable} counts=${JSON.stringify(counts)} resolver=${pinnedProvider.key} duration=${durationByProvider[pinnedProvider.key]}ms`,
-        );
+        logger.info(`ok partial ${registrable}`, {
+          domain: registrable,
+          counts,
+          resolver: pinnedProvider.key,
+          durationMs: durationByProvider[pinnedProvider.key],
+        });
         return {
           records: merged,
           resolver: pinnedProvider.key,
         } as DnsResolveResult;
-      } catch (err) {
-        console.warn(
-          `[dns] partial refresh failed ${registrable} provider=${pinnedProvider.key}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
+      } catch (_err) {
+        logger.warn(`partial refresh failed ${registrable}`, {
+          domain: registrable,
+          provider: pinnedProvider.key,
+        });
         // Fall through to full provider loop below
       }
     }
@@ -375,27 +383,30 @@ export const resolveAll = cache(async function resolveAll(
             "dns",
             soonest,
             existingDomain.lastAccessedAt ?? null,
-          ).catch((err) => {
-            console.warn(
-              `[dns] schedule failed full ${registrable}`,
-              err instanceof Error ? err : new Error(String(err)),
-            );
+          ).catch((_err) => {
+            logger.warn(`schedule failed full ${registrable}`, {
+              domain: registrable,
+              type: "full",
+            });
           });
         });
       }
-      console.info(
-        `[dns] ok ${registrable} counts=${JSON.stringify(counts)} resolver=${resolverUsed} durations=${JSON.stringify(durationByProvider)}`,
-      );
+      logger.info(`ok ${registrable}`, {
+        domain: registrable,
+        counts,
+        resolver: resolverUsed,
+        durationByProvider,
+      });
       // Deduplicate records before returning (same logic as replaceDns uses for DB persistence)
       const deduplicated = deduplicateDnsRecords(flat);
       // Sort records deterministically to match cache-path ordering
       const sorted = sortDnsRecordsByType(deduplicated, types);
       return { records: sorted, resolver: resolverUsed } as DnsResolveResult;
     } catch (err) {
-      console.warn(
-        `[dns] provider attempt failed ${registrable} provider=${provider.key}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
+      logger.warn(`provider attempt failed ${registrable}`, {
+        domain: registrable,
+        provider: provider.key,
+      });
       durationByProvider[provider.key] = Date.now() - attemptStart;
       lastError = err;
       // Try next provider in rotation
@@ -403,13 +414,14 @@ export const resolveAll = cache(async function resolveAll(
   }
 
   // All providers failed
-  console.error(
-    `[dns] all providers failed ${registrable} tried=${providers.map((p) => p.key).join(",")}`,
-    lastError,
-  );
-  throw new Error(
+  const error = new Error(
     `All DoH providers failed for ${registrable}: ${String(lastError)}`,
   );
+  logger.error(`all providers failed ${registrable}`, error, {
+    domain: registrable,
+    providers: providers.map((p) => p.key).join(","),
+  });
+  throw error;
 });
 
 async function resolveTypeWithProvider(
