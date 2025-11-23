@@ -8,6 +8,7 @@ import {
   type LogContext,
   type Logger,
   type LogLevel,
+  parseLogLevel,
   shouldLog,
 } from "@/lib/logger/index";
 
@@ -87,7 +88,7 @@ class ServerLogger implements Logger {
     // Default to environment-based level, but allow override
     this.minLevel =
       minLevel ||
-      (process.env.LOG_LEVEL as LogLevel) ||
+      parseLogLevel(process.env.LOG_LEVEL) ||
       (process.env.NODE_ENV === "test"
         ? "warn"
         : process.env.NODE_ENV === "development"

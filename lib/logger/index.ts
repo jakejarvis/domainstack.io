@@ -83,6 +83,26 @@ const SAFE_FIELDS = new Set([
 // ============================================================================
 
 /**
+ * Validate and parse a log level string.
+ * Returns undefined if the level is invalid.
+ */
+export function parseLogLevel(level?: string): LogLevel | undefined {
+  if (!level) return undefined;
+  const validLevels: LogLevel[] = [
+    "trace",
+    "debug",
+    "info",
+    "warn",
+    "error",
+    "fatal",
+  ];
+  if (validLevels.includes(level as LogLevel)) {
+    return level as LogLevel;
+  }
+  return undefined;
+}
+
+/**
  * Get the minimum log level based on environment.
  * - Development: debug
  * - Production: info

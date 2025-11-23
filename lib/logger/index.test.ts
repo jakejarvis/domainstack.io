@@ -3,6 +3,7 @@ import {
   createLogEntry,
   formatLogEntry,
   getMinLogLevel,
+  parseLogLevel,
   sanitizeContext,
   serializeError,
   shouldLog,
@@ -22,6 +23,19 @@ describe("Logger Core", () => {
     it("respects environment-based minimum level", () => {
       // In test environment, min level should be "warn"
       expect(getMinLogLevel()).toBe("warn");
+    });
+  });
+
+  describe("parseLogLevel", () => {
+    it("returns the level if valid", () => {
+      expect(parseLogLevel("info")).toBe("info");
+      expect(parseLogLevel("debug")).toBe("debug");
+    });
+
+    it("returns undefined if invalid", () => {
+      expect(parseLogLevel("invalid")).toBeUndefined();
+      expect(parseLogLevel("")).toBeUndefined();
+      expect(parseLogLevel(undefined)).toBeUndefined();
     });
   });
 
