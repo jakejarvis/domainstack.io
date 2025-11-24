@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { DomainSuggestions } from "@/components/domain/domain-suggestions";
+import { DomainSuggestionsSkeleton } from "@/components/domain/domain-suggestions-skeleton";
 import { HomeHero } from "@/components/layout/home-hero";
 import { HomeSearchSection } from "@/components/layout/home-search-section";
 
@@ -8,7 +10,9 @@ export default function Home() {
       <div className="w-full space-y-6">
         <HomeHero />
         <HomeSearchSection>
-          <DomainSuggestions />
+          <Suspense fallback={<DomainSuggestionsSkeleton />}>
+            <DomainSuggestions />
+          </Suspense>
         </HomeSearchSection>
       </div>
     </div>

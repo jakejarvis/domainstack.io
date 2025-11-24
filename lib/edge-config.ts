@@ -38,8 +38,19 @@ export async function getDefaultSuggestions(): Promise<string[]> {
     // Return the suggestions if they exist, otherwise empty array
     return suggestions ?? [];
   } catch (err) {
-    // Log the error but fail gracefully
-    logger.error("failed to fetch domain suggestions", err);
+    // Check for specific prerender error from Next.js/Edge Config
+    // "During prerendering, dynamic "use cache" rejects when the prerender is complete."
+    const isPrerenderError =
+      err instanceof Error && err.message.includes("During prerendering");
+
+    if (isPrerenderError) {
+      // This is expected during static generation when accessing dynamic data
+      logger.debug("skipping domain suggestions during prerender");
+    } else {
+      // Log unexpected errors but still fail gracefully
+      logger.error("failed to fetch domain suggestions", err);
+    }
+
     return [];
   }
 }
