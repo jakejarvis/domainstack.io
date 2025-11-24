@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CloudflareIcon, PorkbunIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -10,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/lib/analytics/client";
+import { PRICING_PROVIDERS } from "@/lib/constants/pricing-providers";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -27,29 +27,6 @@ export function DomainPricingCTASkeleton({
     </div>
   );
 }
-
-const PROVIDER_CONFIG: Record<
-  string,
-  {
-    name: string;
-    icon: React.ComponentType<{ className?: string }>;
-    url: (domain: string) => string;
-    transparentIcon?: boolean;
-  }
-> = {
-  porkbun: {
-    name: "Porkbun",
-    icon: PorkbunIcon,
-    url: (domain) => `https://porkbun.com/checkout/search?q=${domain}`,
-    transparentIcon: false,
-  },
-  cloudflare: {
-    name: "Cloudflare Registrar",
-    icon: CloudflareIcon,
-    url: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
-    transparentIcon: true,
-  },
-};
 
 function formatPrice(value: string): string | null {
   const amount = Number.parseFloat(value);
@@ -106,7 +83,7 @@ export function DomainPricingCTA({
 
       <div className="flex flex-col gap-2">
         {sortedProviders.map((providerPricing) => {
-          const config = PROVIDER_CONFIG[providerPricing.provider];
+          const config = PRICING_PROVIDERS[providerPricing.provider];
           if (!config) return null;
 
           const price = formatPrice(providerPricing.price);
@@ -125,7 +102,7 @@ export function DomainPricingCTA({
                 href={config.url(domain)}
                 target="_blank"
                 rel="noopener"
-                aria-label={`Register this domain with ${providerPricing.provider}`}
+                aria-label={`Register this domain with ${config.name}`}
                 className="flex items-center gap-2"
                 onClick={() =>
                   analytics.track("registrar_referral_clicked", {

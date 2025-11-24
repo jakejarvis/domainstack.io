@@ -17,30 +17,121 @@ const logger = createLogger({ source: "pricing" });
  *
  * When registrar APIs are slow (common), users see cached pricing immediately
  * while fresh data fetches in the background. This provides the best UX.
+ *
+ * Extensibility:
+ * - To add a new provider, call `createPricingProvider()` with metadata and implementation
+ * - Configure timeout, cache TTL, and enabled state via the config parameter
+ * - Add the provider to the `providers` array
+ * - Use `createFetchWithTimeout()` helper for automatic timeout/error handling
  */
 
 /**
  * Normalized pricing response shape that all registrars conform to.
  * Maps TLD to pricing information: { "com": { "registration": "10.99", ... }, ... }
  */
-type RegistrarPricingResponse = Record<
+export type RegistrarPricingResponse = Record<
   string,
   { registration?: string; renewal?: string; transfer?: string }
 >;
 
 /**
+ * Configuration options for pricing providers.
+ */
+export interface PricingProviderConfig {
+  /** Request timeout in milliseconds (default: 60000) */
+  timeout?: number;
+  /** Cache revalidation period in seconds (default: 604800 = 7 days) */
+  revalidate?: number;
+  /** Whether to enable this provider (default: true) */
+  enabled?: boolean;
+}
+
+/**
  * Generic pricing provider interface that each registrar implements.
  */
-interface PricingProvider {
-  /** Provider name for logging */
+export interface PricingProvider {
+  /** Provider name (must match key in PRICING_PROVIDERS constant) */
   name: string;
+  /** Provider configuration */
+  config: Required<PricingProviderConfig>;
   /** Fetch pricing data from the registrar API */
   fetchPricing: () => Promise<RegistrarPricingResponse>;
-  /** Extract the registration price for a specific TLD from the response */
-  extractPrice: (
-    response: RegistrarPricingResponse,
-    tld: string,
-  ) => string | null;
+}
+
+// ============================================================================
+// Provider Helper Functions
+// ============================================================================
+
+/**
+ * Create a fetch function with automatic timeout, error handling, and Next.js cache configuration.
+ * Use this helper when implementing provider `fetchPricing` methods.
+ */
+export function createFetchWithTimeout(
+  providerName: string,
+  config: Required<PricingProviderConfig>,
+) {
+  return async (url: string, options: RequestInit = {}): Promise<Response> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        next: {
+          revalidate: config.revalidate,
+          tags: ["pricing", `pricing-${providerName}`],
+        },
+      });
+
+      if (!res.ok) {
+        logger.error("upstream error", undefined, {
+          provider: providerName,
+          status: res.status,
+        });
+        throw new Error(`${providerName} API returned ${res.status}`);
+      }
+
+      return res;
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        logger.error(`upstream timeout ${providerName}`, err, {
+          provider: providerName,
+        });
+        throw new Error(`${providerName} API request timed out`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+}
+
+/**
+ * Factory function to create a pricing provider with default configuration.
+ */
+export function createPricingProvider(
+  name: string,
+  implementation: {
+    fetchPricing: (
+      fetchWithTimeout: ReturnType<typeof createFetchWithTimeout>,
+    ) => Promise<RegistrarPricingResponse>;
+  },
+  config: PricingProviderConfig = {},
+): PricingProvider {
+  const resolvedConfig: Required<PricingProviderConfig> = {
+    timeout: config.timeout ?? 60_000,
+    revalidate: config.revalidate ?? 604_800, // 7 days
+    enabled: config.enabled ?? true,
+  };
+
+  const fetchWithTimeout = createFetchWithTimeout(name, resolvedConfig);
+
+  return {
+    name,
+    config: resolvedConfig,
+    fetchPricing: () => implementation.fetchPricing(fetchWithTimeout),
+  };
 }
 
 /**
@@ -49,6 +140,12 @@ interface PricingProvider {
 async function fetchProviderPricing(
   provider: PricingProvider,
 ): Promise<RegistrarPricingResponse | null> {
+  // Skip disabled providers
+  if (!provider.config.enabled) {
+    logger.debug("provider disabled", { provider: provider.name });
+    return null;
+  }
+
   try {
     const payload = await provider.fetchPricing();
     logger.info("fetch ok", { provider: provider.name });
@@ -63,130 +160,65 @@ async function fetchProviderPricing(
 // Provider Implementations
 // ============================================================================
 
-const porkbunProvider: PricingProvider = {
-  name: "porkbun",
-
-  async fetchPricing(): Promise<RegistrarPricingResponse> {
+const porkbunProvider = createPricingProvider("porkbun", {
+  async fetchPricing(fetchWithTimeout) {
     // Does not require authentication!
     // https://porkbun.com/api/json/v3/documentation#Domain%20Pricing
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60_000); // 60 second timeout
+    const res = await fetchWithTimeout(
+      "https://api.porkbun.com/api/json/v3/pricing/get",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      },
+    );
 
-    try {
-      const res = await fetch(
-        "https://api.porkbun.com/api/json/v3/pricing/get",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-          signal: controller.signal,
-          next: {
-            revalidate: 604800,
-            tags: ["pricing", "pricing-porkbun"],
-          },
-        },
-      );
-
-      if (!res.ok) {
-        logger.error("upstream error", undefined, {
-          provider: "porkbun",
-          status: res.status,
-        });
-        throw new Error(`Porkbun API returned ${res.status}`);
-      }
-
-      const data = await res.json();
-      // Porkbun returns: { status: "SUCCESS", pricing: { "com": { ... }, ... } }
-      // Extract just the pricing data
-      return data.pricing as RegistrarPricingResponse;
-    } catch (err) {
-      // Translate AbortError into a retryable timeout error
-      if (err instanceof Error && err.name === "AbortError") {
-        logger.error("upstream timeout porkbun", err, { provider: "porkbun" });
-        throw new Error("Porkbun API request timed out");
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const data = await res.json();
+    // Porkbun returns: { status: "SUCCESS", pricing: { "com": { ... }, ... } }
+    // Extract just the pricing data
+    return data.pricing as RegistrarPricingResponse;
   },
+});
 
-  extractPrice(response: RegistrarPricingResponse, tld: string): string | null {
-    return response?.[tld]?.registration ?? null;
-  },
-};
-
-const cloudflareProvider: PricingProvider = {
-  name: "cloudflare",
-
-  async fetchPricing(): Promise<RegistrarPricingResponse> {
+const cloudflareProvider = createPricingProvider("cloudflare", {
+  async fetchPricing(fetchWithTimeout) {
     // Third-party API that aggregates Cloudflare pricing
     // https://cfdomainpricing.com/
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60_000); // 60 second timeout
-
-    try {
-      const res = await fetch("https://cfdomainpricing.com/prices.json", {
+    const res = await fetchWithTimeout(
+      "https://cfdomainpricing.com/prices.json",
+      {
         method: "GET",
         headers: { Accept: "application/json" },
-        signal: controller.signal,
-        next: {
-          revalidate: 604800,
-          tags: ["pricing", "pricing-cloudflare"],
-        },
-      });
+      },
+    );
 
-      if (!res.ok) {
-        logger.error("upstream error", undefined, {
-          provider: "cloudflare",
-          status: res.status,
-        });
-        throw new Error(`Cloudflare pricing API returned ${res.status}`);
+    const data = await res.json();
+
+    // Transform the response to match our normalized shape
+    // cfdomainpricing.com returns: { "com": { "registration": 10.44, "renewal": 10.44 }, ... }
+    const pricing: RegistrarPricingResponse = {};
+
+    for (const [tld, prices] of Object.entries(data)) {
+      if (
+        typeof prices === "object" &&
+        prices !== null &&
+        "registration" in prices
+      ) {
+        pricing[tld] = {
+          registration: String(
+            (prices as { registration: string | number }).registration,
+          ),
+        };
       }
-
-      const data = await res.json();
-
-      // Transform the response to match our normalized shape
-      // cfdomainpricing.com returns: { "com": { "registration": 10.44, "renewal": 10.44 }, ... }
-      const pricing: RegistrarPricingResponse = {};
-
-      for (const [tld, prices] of Object.entries(data)) {
-        if (
-          typeof prices === "object" &&
-          prices !== null &&
-          "registration" in prices
-        ) {
-          pricing[tld] = {
-            registration: String(
-              (prices as { registration: string | number }).registration,
-            ),
-          };
-        }
-      }
-
-      return pricing;
-    } catch (err) {
-      // Translate AbortError into a retryable timeout error
-      if (err instanceof Error && err.name === "AbortError") {
-        logger.error("upstream timeout cloudflare", err, {
-          provider: "cloudflare",
-        });
-        throw new Error("Cloudflare pricing API request timed out");
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
     }
-  },
 
-  extractPrice(response: RegistrarPricingResponse, tld: string): string | null {
-    return response?.[tld]?.registration ?? null;
+    return pricing;
   },
-};
+});
 
 /**
- * List of providers to check in order of preference.
- * First provider with valid pricing wins.
+ * List of providers to check.
+ * All enabled providers are queried in parallel.
  */
 const providers: PricingProvider[] = [porkbunProvider, cloudflareProvider];
 
@@ -211,7 +243,7 @@ export async function getPricingForTld(domain: string): Promise<Pricing> {
     providers.map(async (provider) => {
       const payload = await fetchProviderPricing(provider);
       if (payload) {
-        const price = provider.extractPrice(payload, tld);
+        const price = payload?.[tld]?.registration ?? null;
         if (price) {
           return { provider: provider.name, price };
         }
