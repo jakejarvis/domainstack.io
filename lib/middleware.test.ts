@@ -1,10 +1,16 @@
-/* @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { getProxyAction } from "./middleware";
 
 describe("getProxyAction", () => {
   it("skips root path", () => {
-    expect(getProxyAction("/")).toEqual({ type: "skip" });
+    expect(getProxyAction("/")).toBeNull();
+  });
+
+  it("skips opengraph-image route", () => {
+    // This is essential for the dynamic OG image route [domain]/opengraph-image.tsx
+    expect(getProxyAction("/example.com/opengraph-image")).toBeNull();
+    // Also check nested paths just in case, though our routing is [domain]
+    expect(getProxyAction("/https://example.com/opengraph-image")).toBeNull();
   });
 
   it("matches clean domain", () => {
@@ -56,11 +62,11 @@ describe("getProxyAction", () => {
   });
 
   it("skips IPv6 literals", () => {
-    expect(getProxyAction("/[::1]")).toEqual({ type: "skip" });
+    expect(getProxyAction("/[::1]")).toBeNull();
   });
 
   it("skips IPv6 literals with port", () => {
-    expect(getProxyAction("/[::1]:8080")).toEqual({ type: "skip" });
+    expect(getProxyAction("/[::1]:8080")).toBeNull();
   });
 
   it("redirects port on valid domain", () => {
@@ -74,7 +80,7 @@ describe("getProxyAction", () => {
 
   it("skips invalid domains", () => {
     // toRegistrableDomain returns null for "invalid-domain"
-    expect(getProxyAction("/invalid-domain")).toEqual({ type: "skip" });
+    expect(getProxyAction("/invalid-domain")).toBeNull();
   });
 
   it("redirects messy input", () => {

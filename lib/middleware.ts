@@ -7,18 +7,26 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 export const SCHEME_PREFIX_REGEX = /^https?[:/]+([^/]+)/i;
 
 export type ProxyAction =
-  | { type: "skip" }
   | { type: "match" }
-  | { type: "redirect"; destination: string };
+  | { type: "redirect"; destination: string }
+  | null;
 
 /**
  * Pure function to decide the proxy action based on the URL path.
  * Decoupled from NextRequest/NextResponse for easier testing.
+ * Returns null to skip processing (e.g. invalid domains, root path, etc).
  */
 export function getProxyAction(path: string): ProxyAction {
   // Fast path: root path or empty
   if (path.length <= 1) {
-    return { type: "skip" };
+    return null;
+  }
+
+  // Special case for OpenGraph images: /example.com/opengraph-image
+  // This pattern is used by Next.js OG image generation for the dynamic route [domain]/opengraph-image.tsx
+  // We should skip middleware processing for this specific suffix to allow the route to handle it.
+  if (path.endsWith("/opengraph-image")) {
+    return null;
   }
 
   // 1. Get raw input (remove leading slash)
@@ -61,7 +69,7 @@ export function getProxyAction(path: string): ProxyAction {
   // 6. Strip Port
   // IPv6 literals in brackets (e.g. [::1]) are not supported.
   if (authority.includes("[") || authority.includes("]")) {
-    return { type: "skip" };
+    return null;
   }
 
   // Safe to split on colon as valid domains don't contain colons
@@ -70,14 +78,14 @@ export function getProxyAction(path: string): ProxyAction {
   candidate = authority.trim();
 
   if (!candidate) {
-    return { type: "skip" };
+    return null;
   }
 
   // 7. Validate and Normalize
   // This will return null for invalid domains, including IPs if rdapper handles them as such.
   const registrable = toRegistrableDomain(candidate);
   if (!registrable) {
-    return { type: "skip" };
+    return null;
   }
 
   // 8. Redirect if necessary
@@ -96,8 +104,9 @@ export function getProxyAction(path: string): ProxyAction {
 export function handleProxyRequest(request: NextRequest) {
   const action = getProxyAction(request.nextUrl.pathname);
 
-  const headers = new Headers();
-  headers.set("x-middleware-decision", action.type);
+  if (action === null) {
+    return NextResponse.next();
+  }
 
   if (action.type === "redirect") {
     const url = request.nextUrl.clone();
@@ -105,11 +114,15 @@ export function handleProxyRequest(request: NextRequest) {
     url.search = "";
     url.hash = "";
     return NextResponse.redirect(url, {
-      headers,
+      headers: {
+        "x-middleware-decision": action.type,
+      },
     });
   }
 
   return NextResponse.next({
-    headers,
+    headers: {
+      "x-middleware-decision": action.type,
+    },
   });
 }
