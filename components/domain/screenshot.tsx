@@ -29,7 +29,7 @@ export function Screenshot({
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
   const { data, isLoading, isFetching } = useQuery(
-    trpc.domain.screenshot.queryOptions(
+    trpc.domain.getScreenshot.queryOptions(
       { domain },
       {
         enabled,

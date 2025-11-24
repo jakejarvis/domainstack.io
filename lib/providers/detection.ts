@@ -8,7 +8,7 @@ import {
 } from "@/lib/providers/catalog";
 import type {
   DetectionContext,
-  HttpHeader,
+  Header,
   Provider,
   ProviderRef,
   Rule,
@@ -19,7 +19,7 @@ import type {
  * avoid redundant work in the loop.
  */
 interface HeaderDetectionContext {
-  headers: HttpHeader[];
+  headers: Header[];
   headerMap: Map<string, string>;
   headerNames: Set<string>;
 }
@@ -27,7 +27,7 @@ interface HeaderDetectionContext {
 /**
  * Create a detection context from HTTP headers for efficient rule evaluation.
  */
-function createHeaderContext(headers: HttpHeader[]): HeaderDetectionContext {
+function createHeaderContext(headers: Header[]): HeaderDetectionContext {
   const headerMap = new Map<string, string>();
   const headerNames = new Set<string>();
 
@@ -139,7 +139,7 @@ function detectProviderFromList(
 /**
  * Detect hosting provider from HTTP headers.
  */
-export function detectHostingProvider(headers: HttpHeader[]): ProviderRef {
+export function detectHostingProvider(headers: Header[]): ProviderRef {
   const context = createHeaderContext(headers);
   return detectProviderFromList(HOSTING_PROVIDERS, context);
 }

@@ -11,7 +11,7 @@ import { createLogger } from "@/lib/logger/server";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { Registration, RegistrationContacts } from "@/lib/schemas";
+import type { RegistrationContacts, RegistrationResponse } from "@/lib/schemas";
 import { ttlForRegistration } from "@/lib/ttl";
 
 const logger = createLogger({ source: "registration" });
@@ -54,7 +54,9 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
 /**
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
  */
-export async function getRegistration(domain: string): Promise<Registration> {
+export async function getRegistration(
+  domain: string,
+): Promise<RegistrationResponse> {
   logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
@@ -95,7 +97,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     const contactsArray: RegistrationContacts = row.registration.contacts ?? [];
     const nameserversArray = row.registration.nameservers ?? [];
 
-    const response: Registration = {
+    const response: RegistrationResponse = {
       domain: registrable,
       tld: row.domainTld,
       isRegistered: row.registration.isRegistered,
@@ -216,7 +218,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
   const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
   // Explicitly construct Registration object to avoid leaking rdapper internals
-  const withProvider: Registration = {
+  const withProvider: RegistrationResponse = {
     domain: record.domain,
     tld: record.tld,
     isRegistered: record.isRegistered,

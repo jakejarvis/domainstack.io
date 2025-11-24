@@ -37,7 +37,7 @@ export const RegistrationContactsSchema = z.array(RegistrationContactSchema);
 export const RegistrationSourceSchema = z.enum(["rdap", "whois"]);
 
 // https://github.com/jakejarvis/rdapper/blob/main/src/types.ts
-export const RegistrationSchema = z.object({
+export const RegistrationResponseSchema = z.object({
   domain: z.string(),
   tld: z.string(),
   isRegistered: z.boolean(),
@@ -104,7 +104,7 @@ export const RegistrationNameserversSchema = z.array(
   RegistrationNameserverSchema,
 );
 
-export type Registration = z.infer<typeof RegistrationSchema>;
+export type RegistrationResponse = z.infer<typeof RegistrationResponseSchema>;
 export type RegistrationStatus = z.infer<typeof RegistrationStatusSchema>;
 export type RegistrationStatuses = z.infer<typeof RegistrationStatusesSchema>;
 export type RegistrationNameserver = z.infer<

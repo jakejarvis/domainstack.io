@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
-import type { HttpHeader } from "@/lib/schemas";
+import type { Header } from "@/lib/schemas";
 
 export type ReplaceHeadersParams = {
   domainId: string;
@@ -15,7 +15,7 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
   const { domainId, headers, status, fetchedAt, expiresAt } = params;
 
   // Normalize incoming header names (trim + lowercase)
-  const normalizedHeaders: HttpHeader[] = headers.map((h) => ({
+  const normalizedHeaders: Header[] = headers.map((h) => ({
     name: h.name.trim().toLowerCase(),
     value: h.value,
   }));

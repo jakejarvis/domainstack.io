@@ -13,30 +13,30 @@ import { useTRPC } from "@/lib/trpc/client";
 
 export function useRegistrationQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.registration.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getRegistration.queryOptions({ domain }));
 }
 
 export function useDnsQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.dns.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getDnsRecords.queryOptions({ domain }));
 }
 
 export function useHostingQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.hosting.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getHosting.queryOptions({ domain }));
 }
 
 export function useCertificatesQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.certificates.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getCertificates.queryOptions({ domain }));
 }
 
 export function useHeadersQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.headers.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getHeaders.queryOptions({ domain }));
 }
 
 export function useSeoQuery(domain: string) {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.domain.seo.queryOptions({ domain }));
+  return useSuspenseQuery(trpc.domain.getSeo.queryOptions({ domain }));
 }

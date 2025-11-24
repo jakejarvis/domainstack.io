@@ -6,6 +6,7 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
+import type { BlobUrlResponse } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
 import { ttlForFavicon } from "@/lib/ttl";
 
@@ -33,9 +34,8 @@ function buildSources(domain: string): string[] {
 
 /**
  * Internal function that does the actual work.
- * Wrapped with React's cache() for request-scoped deduplication.
  */
-async function fetchFaviconInternal(
+async function fetchFaviconPromise(
   registrable: string,
 ): Promise<{ url: string | null }> {
   // Check for in-flight request across all SSR contexts
@@ -48,7 +48,7 @@ async function fetchFaviconInternal(
   // Create promise with guaranteed cleanup
   const promise = (async () => {
     try {
-      return await fetchFaviconWork(registrable);
+      return await fetchFavicon(registrable);
     } finally {
       faviconPromises.delete(registrable);
     }
@@ -77,7 +77,7 @@ async function fetchFaviconInternal(
 /**
  * Core favicon fetching logic (separated for cleaner promise management)
  */
-async function fetchFaviconWork(
+async function fetchFavicon(
   registrable: string,
 ): Promise<{ url: string | null }> {
   // Check Postgres for cached favicon (optimized single query)
@@ -204,22 +204,19 @@ async function fetchFaviconWork(
   return { url: null };
 }
 
-// Wrap with React cache() for automatic request-scoped deduplication
-const cachedFetchFavicon = cache(fetchFaviconInternal);
-
 /**
  * Get or create a favicon for a domain.
  * Uses React's cache() for request-scoped deduplication - if multiple
  * components request the same favicon during SSR, only one fetch happens.
  */
-export async function getOrCreateFaviconBlobUrl(
+export const getFavicon = cache(async function getFavicon(
   domain: string,
-): Promise<{ url: string | null }> {
+): Promise<BlobUrlResponse> {
   // Normalize to registrable domain
   const registrable = toRegistrableDomain(domain);
   if (!registrable) {
     throw new Error(`Cannot extract registrable domain from ${domain}`);
   }
 
-  return cachedFetchFavicon(registrable);
-}
+  return fetchFaviconPromise(registrable);
+});

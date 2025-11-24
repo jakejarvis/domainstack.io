@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
-import type { Hosting } from "@/lib/schemas";
+import type { HostingResponse } from "@/lib/schemas";
 
 interface HostingMapClientProps {
   lat: number;
@@ -20,7 +20,7 @@ const MapboxMapClient = dynamic<HostingMapClientProps>(
   },
 );
 
-export function HostingMap({ hosting }: { hosting: Hosting }) {
+export function HostingMap({ hosting }: { hosting: HostingResponse }) {
   // Generate unique key on mount to force full remount on navigation
   const [mountKey] = useState(() => `map-${Date.now()}-${Math.random()}`);
 

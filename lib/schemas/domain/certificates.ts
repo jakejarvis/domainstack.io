@@ -10,6 +10,7 @@ export const CertificateSchema = z.object({
   caProvider: ProviderRefSchema,
 });
 
-export const CertificatesSchema = z.array(CertificateSchema);
+export const CertificatesResponseSchema = z.array(CertificateSchema);
 
 export type Certificate = z.infer<typeof CertificateSchema>;
+export type CertificatesResponse = z.infer<typeof CertificatesResponseSchema>;

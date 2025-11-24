@@ -9,6 +9,7 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import { getBrowser } from "@/lib/puppeteer";
+import type { BlobUrlResponse } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
 import { ttlForScreenshot } from "@/lib/ttl";
 
@@ -47,14 +48,14 @@ function buildHomepageUrls(domain: string): string[] {
   return [`https://${domain}`, `http://${domain}`];
 }
 
-export async function getOrCreateScreenshotBlobUrl(
+export async function getScreenshot(
   domain: string,
   options?: {
     attempts?: number;
     backoffBaseMs?: number;
     backoffMaxMs?: number;
   },
-): Promise<{ url: string | null }> {
+): Promise<BlobUrlResponse> {
   // Normalize to registrable domain
   const registrable = toRegistrableDomain(domain);
   if (!registrable) {

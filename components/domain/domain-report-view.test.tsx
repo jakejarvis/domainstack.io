@@ -12,39 +12,39 @@ vi.mock("@/lib/json-export", () => ({
 vi.mock("@/lib/trpc/client", () => ({
   useTRPC: () => ({
     domain: {
-      registration: {
+      getRegistration: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["registration", input],
+          queryKey: ["getRegistration", input],
         }),
       },
-      dns: {
+      getDnsRecords: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["dns", input],
+          queryKey: ["getDnsRecords", input],
         }),
       },
-      hosting: {
+      getHosting: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["hosting", input],
+          queryKey: ["getHosting", input],
         }),
       },
-      certificates: {
+      getCertificates: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["certificates", input],
+          queryKey: ["getCertificates", input],
         }),
       },
-      headers: {
+      getHeaders: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["headers", input],
+          queryKey: ["getHeaders", input],
         }),
       },
-      seo: {
+      getSeo: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["seo", input],
+          queryKey: ["getSeo", input],
         }),
       },
-      favicon: {
+      getFavicon: {
         queryOptions: (input: { domain: string }) => ({
-          queryKey: ["favicon", input],
+          queryKey: ["getFavicon", input],
         }),
       },
     },
@@ -188,16 +188,16 @@ describe("DomainReportView Export", () => {
 
     // Pre-populate cache with test data
     const domain = "example.com";
-    queryClient.setQueryData(["registration", { domain }], {
+    queryClient.setQueryData(["getRegistration", { domain }], {
       isRegistered: true,
       domain: "example.com",
     });
-    queryClient.setQueryData(["dns", { domain }], { records: [] });
-    queryClient.setQueryData(["hosting", { domain }], { provider: "test" });
-    queryClient.setQueryData(["certificates", { domain }], []);
-    queryClient.setQueryData(["headers", { domain }], []);
-    queryClient.setQueryData(["seo", { domain }], { title: "Test" });
-    queryClient.setQueryData(["favicon", { domain }], {
+    queryClient.setQueryData(["getDnsRecords", { domain }], { records: [] });
+    queryClient.setQueryData(["getHosting", { domain }], { provider: "test" });
+    queryClient.setQueryData(["getCertificates", { domain }], []);
+    queryClient.setQueryData(["getHeaders", { domain }], []);
+    queryClient.setQueryData(["getSeo", { domain }], { title: "Test" });
+    queryClient.setQueryData(["getFavicon", { domain }], {
       url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
     });
 

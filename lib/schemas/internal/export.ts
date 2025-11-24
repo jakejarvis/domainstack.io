@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { CertificateSchema } from "../domain/certificates";
 import { DnsRecordSchema } from "../domain/dns";
-import { HostingSchema } from "../domain/hosting";
-import { HttpHeadersResponseSchema } from "../domain/http";
-import { RegistrationSchema } from "../domain/registration";
+import { HeadersResponseSchema } from "../domain/headers";
+import { HostingResponseSchema } from "../domain/hosting";
+import { RegistrationResponseSchema } from "../domain/registration";
 import { SeoResponseSchema } from "../domain/seo";
 
 export const DomainExportSchema = z.object({
   domain: z.string(),
-  registration: RegistrationSchema.omit({
+  registration: RegistrationResponseSchema.omit({
     domain: true,
     unicodeName: true,
     punycodeName: true,
@@ -21,14 +21,14 @@ export const DomainExportSchema = z.object({
       resolver: z.string(),
     })
     .nullish(),
-  hosting: HostingSchema.transform((h) => ({
+  hosting: HostingResponseSchema.transform((h) => ({
     dns: h.dnsProvider.name ?? "",
     hosting: h.hostingProvider.name ?? "",
     email: h.emailProvider.name ?? "",
     geo: h.geo,
   })).nullish(),
   certificates: z.array(CertificateSchema.omit({ caProvider: true })).nullish(),
-  headers: HttpHeadersResponseSchema.nullish(),
+  headers: HeadersResponseSchema.transform((h) => h.headers).nullish(),
   seo: SeoResponseSchema.omit({
     preview: true,
     source: true,

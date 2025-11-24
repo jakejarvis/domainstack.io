@@ -21,10 +21,10 @@ import {
   detectHostingProvider,
 } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { Hosting } from "@/lib/schemas";
+import type { HostingResponse } from "@/lib/schemas";
 import { ttlForHosting } from "@/lib/ttl";
-import { resolveAll } from "@/server/services/dns";
-import { probeHeaders } from "@/server/services/headers";
+import { getDnsRecords } from "@/server/services/dns";
+import { getHeaders } from "@/server/services/headers";
 import { lookupIpMeta } from "@/server/services/ip";
 
 const logger = createLogger({ source: "hosting" });
@@ -36,9 +36,9 @@ const logger = createLogger({ source: "hosting" });
  * ensuring multiple components can query hosting without triggering duplicate
  * fetches of DNS and headers data.
  */
-export const detectHosting = cache(async function detectHosting(
+export const getHosting = cache(async function getHosting(
   domain: string,
-): Promise<Hosting> {
+): Promise<HostingResponse> {
   logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
@@ -81,7 +81,7 @@ export const detectHosting = cache(async function detectHosting(
       .limit(1);
     const row = existing[0];
     if (row && (row.expiresAt?.getTime?.() ?? 0) > nowMs) {
-      const info: Hosting = {
+      const info: HostingResponse = {
         hostingProvider: {
           name: row.hostingProviderName ?? null,
           domain: row.hostingProviderDomain ?? null,
@@ -114,7 +114,7 @@ export const detectHosting = cache(async function detectHosting(
     }
   }
 
-  const { records: dns } = await resolveAll(domain);
+  const { records: dns } = await getDnsRecords(domain);
   const a = dns.find((d) => d.type === "A");
   const aaaa = dns.find((d) => d.type === "AAAA");
   const mx = dns.filter((d) => d.type === "MX");
@@ -125,7 +125,7 @@ export const detectHosting = cache(async function detectHosting(
   // Parallelize headers probe and IP lookup when web hosting exists
   const [headersResponse, meta] = await Promise.all([
     hasWebHosting
-      ? probeHeaders(domain).catch((err) => {
+      ? getHeaders(domain).catch((err) => {
           logger.error("headers probe error", err, { domain });
           return {
             headers: [] as { name: string; value: string }[],
@@ -204,7 +204,7 @@ export const detectHosting = cache(async function detectHosting(
     }
   }
 
-  const info: Hosting = {
+  const info: HostingResponse = {
     hostingProvider: { name: hostingName, domain: hostingIconDomain },
     emailProvider: { name: emailName, domain: emailIconDomain },
     dnsProvider: { name: dnsName, domain: dnsIconDomain },

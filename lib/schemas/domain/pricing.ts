@@ -5,10 +5,10 @@ export const ProviderPricingSchema = z.object({
   price: z.string(),
 });
 
-export const PricingSchema = z.object({
+export const PricingResponseSchema = z.object({
   tld: z.string().nullable(),
   providers: z.array(ProviderPricingSchema),
 });
 
 export type ProviderPricing = z.infer<typeof ProviderPricingSchema>;
-export type Pricing = z.infer<typeof PricingSchema>;
+export type PricingResponse = z.infer<typeof PricingResponseSchema>;

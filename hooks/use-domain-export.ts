@@ -6,12 +6,12 @@ import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 
 type QueryKeys = {
-  registration: readonly unknown[];
-  dns: readonly unknown[];
-  hosting: readonly unknown[];
-  certificates: readonly unknown[];
-  headers: readonly unknown[];
-  seo: readonly unknown[];
+  getRegistration: readonly unknown[];
+  getDnsRecords: readonly unknown[];
+  getHosting: readonly unknown[];
+  getCertificates: readonly unknown[];
+  getHeaders: readonly unknown[];
+  getSeo: readonly unknown[];
 };
 
 /**
@@ -64,12 +64,16 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
 
     try {
       // Read data from cache using provided query keys
-      const registrationData = queryClient.getQueryData(queryKeys.registration);
-      const dnsData = queryClient.getQueryData(queryKeys.dns);
-      const hostingData = queryClient.getQueryData(queryKeys.hosting);
-      const certificatesData = queryClient.getQueryData(queryKeys.certificates);
-      const headersData = queryClient.getQueryData(queryKeys.headers);
-      const seoData = queryClient.getQueryData(queryKeys.seo);
+      const registrationData = queryClient.getQueryData(
+        queryKeys.getRegistration,
+      );
+      const dnsData = queryClient.getQueryData(queryKeys.getDnsRecords);
+      const hostingData = queryClient.getQueryData(queryKeys.getHosting);
+      const certificatesData = queryClient.getQueryData(
+        queryKeys.getCertificates,
+      );
+      const headersData = queryClient.getQueryData(queryKeys.getHeaders);
+      const seoData = queryClient.getQueryData(queryKeys.getSeo);
 
       // Aggregate into export format
       const exportData = {

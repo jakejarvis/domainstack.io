@@ -1,7 +1,7 @@
 import { getDomainTld } from "rdapper";
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
-import type { Pricing } from "@/lib/schemas";
+import type { PricingResponse } from "@/lib/schemas";
 
 const logger = createLogger({ source: "pricing" });
 
@@ -298,7 +298,7 @@ const providers: PricingProvider[] = [
  * Fetch domain pricing for the given domain's TLD from all providers.
  * Returns pricing from all providers that have data for this TLD.
  */
-export async function getPricing(domain: string): Promise<Pricing> {
+export async function getPricing(domain: string): Promise<PricingResponse> {
   const input = (domain ?? "").trim().toLowerCase();
   // Ignore single-label hosts like "localhost" or invalid inputs
   if (!input.includes(".")) return { tld: null, providers: [] };

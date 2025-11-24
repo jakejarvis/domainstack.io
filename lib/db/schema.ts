@@ -15,7 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type {
   GeneralMeta,
-  HttpHeader,
+  Header,
   OpenGraphMeta,
   RegistrationContacts,
   RegistrationNameservers,
@@ -213,7 +213,7 @@ export const httpHeaders = pgTable(
       .primaryKey()
       .references(() => domains.id, { onDelete: "cascade" }),
     headers: jsonb("headers")
-      .$type<HttpHeader[]>()
+      .$type<Header[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
     status: integer("status").notNull().default(200),

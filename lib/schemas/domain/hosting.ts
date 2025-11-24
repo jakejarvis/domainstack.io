@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ProviderRefSchema } from "../internal/provider";
 
-export const HostingSchema = z.object({
+export const HostingResponseSchema = z.object({
   hostingProvider: ProviderRefSchema,
   emailProvider: ProviderRefSchema,
   dnsProvider: ProviderRefSchema,
@@ -15,4 +15,4 @@ export const HostingSchema = z.object({
   }),
 });
 
-export type Hosting = z.infer<typeof HostingSchema>;
+export type HostingResponse = z.infer<typeof HostingResponseSchema>;

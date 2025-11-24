@@ -30,8 +30,10 @@ vi.mock("next/image", () => ({
 vi.mock("@/lib/trpc/client", () => ({
   useTRPC: () => ({
     domain: {
-      screenshot: {
-        queryOptions: (vars: unknown) => ({ queryKey: ["screenshot", vars] }),
+      getScreenshot: {
+        queryOptions: (vars: unknown) => ({
+          queryKey: ["getScreenshot", vars],
+        }),
       },
     },
   }),

@@ -63,7 +63,7 @@ export default async function DomainPage({
   // Use getQueryClient() to ensure consistent query client across the request
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
-    trpc.domain.registration.queryOptions({ domain: normalized }),
+    trpc.domain.getRegistration.queryOptions({ domain: normalized }),
   );
 
   return (

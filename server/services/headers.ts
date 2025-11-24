@@ -11,7 +11,7 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
+import type { Header, HeadersResponse } from "@/lib/schemas";
 import { ttlForHeaders } from "@/lib/ttl";
 
 const logger = createLogger({ source: "headers" });
@@ -23,9 +23,9 @@ const logger = createLogger({ source: "headers" });
  * ensuring multiple components can query headers without triggering
  * multiple HTTP requests to the target domain.
  */
-export const probeHeaders = cache(async function probeHeaders(
+export const getHeaders = cache(async function getHeaders(
   domain: string,
-): Promise<HttpHeadersResponse> {
+): Promise<HeadersResponse> {
   const url = `https://${domain}/`;
   logger.debug("start", { domain });
 
@@ -84,7 +84,7 @@ export const probeHeaders = cache(async function probeHeaders(
       { timeoutMs: REQUEST_TIMEOUT_MS },
     );
 
-    const headers: HttpHeader[] = [];
+    const headers: Header[] = [];
     final.headers.forEach((value, name) => {
       headers.push({ name, value });
     });
@@ -149,7 +149,7 @@ export const probeHeaders = cache(async function probeHeaders(
   }
 });
 
-function normalize(h: HttpHeader[]): HttpHeader[] {
+function normalize(h: Header[]): Header[] {
   // Normalize header names (trim + lowercase) then sort important first
   const normalized = h.map((hdr) => ({
     name: hdr.name.trim().toLowerCase(),

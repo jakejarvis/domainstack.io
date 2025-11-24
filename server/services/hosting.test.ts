@@ -13,12 +13,12 @@ import {
 
 // Import lazily inside tests after DB injection to avoid importing the client early
 
-// Mocks for dependencies used by detectHosting
+// Mocks for dependencies used by getHosting
 vi.mock("@/server/services/dns", () => ({
-  resolveAll: vi.fn(async () => ({ records: [], source: "mock" })),
+  getDnsRecords: vi.fn(async () => ({ records: [], source: "mock" })),
 }));
 vi.mock("@/server/services/headers", () => ({
-  probeHeaders: vi.fn(async () => []),
+  getHeaders: vi.fn(async () => []),
 }));
 vi.mock("@/server/services/ip", () => ({
   lookupIpMeta: vi.fn(async () => ({
@@ -72,15 +72,15 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
-describe("detectHosting", () => {
+describe("getHosting", () => {
   it("returns known providers when signals match (Vercel/Google/Cloudflare)", async () => {
     // Arrange
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
     const { lookupIpMeta } = await import("@/server/services/ip");
-    const { detectHosting } = await import("@/server/services/hosting");
+    const { getHosting } = await import("@/server/services/hosting");
 
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         { type: "A", name: "example.com", value: "1.2.3.4", ttl: 60 },
         {
@@ -99,7 +99,7 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue({
+    (getHeaders as unknown as Mock).mockResolvedValue({
       headers: [
         { name: "server", value: "Vercel" },
         { name: "x-vercel-id", value: "abc" },
@@ -120,7 +120,7 @@ describe("detectHosting", () => {
     });
 
     // Act
-    const result = await detectHosting("example.com");
+    const result = await getHosting("example.com");
 
     // Assert
     expect(result.hostingProvider.name).toBe("Vercel");
@@ -133,9 +133,9 @@ describe("detectHosting", () => {
   });
 
   it("sets hosting to none when no A record is present", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { detectHosting } = await import("@/server/services/hosting");
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHosting } = await import("@/server/services/hosting");
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         {
           type: "MX",
@@ -154,21 +154,21 @@ describe("detectHosting", () => {
       source: "mock",
     });
 
-    const result = await detectHosting("no-a.example");
+    const result = await getHosting("no-a.example");
     expect(result.hostingProvider.name).toBeNull();
     expect(result.hostingProvider.domain).toBeNull();
   });
 
   it("skips headers probe when domain has no A or AAAA records", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
-    const { detectHosting } = await import("@/server/services/hosting");
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
+    const { getHosting } = await import("@/server/services/hosting");
 
     // Clear any previous calls
-    (probeHeaders as unknown as Mock).mockClear();
+    (getHeaders as unknown as Mock).mockClear();
 
     // Mock DNS with no A/AAAA records (email-only domain)
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         {
           type: "MX",
@@ -187,22 +187,22 @@ describe("detectHosting", () => {
       source: "mock",
     });
 
-    await detectHosting("email-only.example");
+    await getHosting("email-only.example");
 
-    // probeHeaders should NOT have been called
-    expect(probeHeaders).not.toHaveBeenCalled();
+    // getHeaders should NOT have been called
+    expect(getHeaders).not.toHaveBeenCalled();
   });
 
   it("calls headers probe when domain has A or AAAA records", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
-    const { detectHosting } = await import("@/server/services/hosting");
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
+    const { getHosting } = await import("@/server/services/hosting");
 
     // Clear any previous calls
-    (probeHeaders as unknown as Mock).mockClear();
+    (getHeaders as unknown as Mock).mockClear();
 
     // Mock DNS with A record (web hosting present)
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         { type: "A", name: "web-hosting.example", value: "1.2.3.4", ttl: 60 },
         {
@@ -214,29 +214,29 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue({
+    (getHeaders as unknown as Mock).mockResolvedValue({
       headers: [],
       status: 200,
       statusMessage: "OK",
     });
 
-    await detectHosting("web-hosting.example");
+    await getHosting("web-hosting.example");
 
-    // probeHeaders SHOULD have been called since A record exists
-    expect(probeHeaders).toHaveBeenCalledWith("web-hosting.example");
+    // getHeaders SHOULD have been called since A record exists
+    expect(getHeaders).toHaveBeenCalledWith("web-hosting.example");
   });
 
   it("falls back to IP owner when hosting is unknown and IP owner exists", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
     const { lookupIpMeta } = await import("@/server/services/ip");
-    const { detectHosting } = await import("@/server/services/hosting");
+    const { getHosting } = await import("@/server/services/hosting");
 
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [{ type: "A", name: "x", value: "9.9.9.9", ttl: 60 }],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue({
+    (getHeaders as unknown as Mock).mockResolvedValue({
       headers: [],
       status: 200,
       statusMessage: "OK",
@@ -254,16 +254,16 @@ describe("detectHosting", () => {
       domain: "isp.example",
     });
 
-    const result = await detectHosting("owner.example");
+    const result = await getHosting("owner.example");
     expect(result.hostingProvider.name).toBe("My ISP");
     expect(result.hostingProvider.domain).toBe("isp.example");
   });
 
   it("falls back to root domains for email and DNS when unknown", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
-    const { detectHosting } = await import("@/server/services/hosting");
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
+    const { getHosting } = await import("@/server/services/hosting");
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         { type: "A", name: "example.com", value: "1.1.1.1", ttl: 60 },
         {
@@ -282,23 +282,23 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue({
+    (getHeaders as unknown as Mock).mockResolvedValue({
       headers: [],
       status: 200,
       statusMessage: "OK",
     });
 
-    const result = await detectHosting("fallbacks.example");
+    const result = await getHosting("fallbacks.example");
     expect(result.emailProvider.domain).toBe("example.com");
     expect(result.dnsProvider.domain).toBe("example.net");
   });
 
   it("creates provider rows for DNS and Email when missing and links them", async () => {
-    const { resolveAll } = await import("@/server/services/dns");
-    const { probeHeaders } = await import("@/server/services/headers");
-    const { detectHosting } = await import("@/server/services/hosting");
+    const { getDnsRecords } = await import("@/server/services/dns");
+    const { getHeaders } = await import("@/server/services/headers");
+    const { getHosting } = await import("@/server/services/hosting");
 
-    (resolveAll as unknown as Mock).mockResolvedValue({
+    (getDnsRecords as unknown as Mock).mockResolvedValue({
       records: [
         { type: "A", name: "example.com", value: "1.2.3.4", ttl: 60 },
         {
@@ -317,7 +317,7 @@ describe("detectHosting", () => {
       ],
       source: "mock",
     });
-    (probeHeaders as unknown as Mock).mockResolvedValue({
+    (getHeaders as unknown as Mock).mockResolvedValue({
       headers: [],
       status: 200,
       statusMessage: "OK",
@@ -333,7 +333,7 @@ describe("detectHosting", () => {
       unicodeName: "provider-create.com",
     });
 
-    await detectHosting("provider-create.com");
+    await getHosting("provider-create.com");
 
     const { eq } = await import("drizzle-orm");
     const d = await db

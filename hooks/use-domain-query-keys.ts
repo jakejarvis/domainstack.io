@@ -10,13 +10,16 @@ export function useDomainQueryKeys(domain: string) {
 
   return useMemo(
     () => ({
-      registration: trpc.domain.registration.queryOptions({ domain }).queryKey,
-      dns: trpc.domain.dns.queryOptions({ domain }).queryKey,
-      hosting: trpc.domain.hosting.queryOptions({ domain }).queryKey,
-      certificates: trpc.domain.certificates.queryOptions({ domain }).queryKey,
-      headers: trpc.domain.headers.queryOptions({ domain }).queryKey,
-      seo: trpc.domain.seo.queryOptions({ domain }).queryKey,
-      favicon: trpc.domain.favicon.queryOptions({ domain }).queryKey,
+      getRegistration: trpc.domain.getRegistration.queryOptions({ domain })
+        .queryKey,
+      getDnsRecords: trpc.domain.getDnsRecords.queryOptions({ domain })
+        .queryKey,
+      getHosting: trpc.domain.getHosting.queryOptions({ domain }).queryKey,
+      getCertificates: trpc.domain.getCertificates.queryOptions({ domain })
+        .queryKey,
+      getHeaders: trpc.domain.getHeaders.queryOptions({ domain }).queryKey,
+      getSeo: trpc.domain.getSeo.queryOptions({ domain }).queryKey,
+      getFavicon: trpc.domain.getFavicon.queryOptions({ domain }).queryKey,
     }),
     [trpc, domain],
   );

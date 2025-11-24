@@ -14,7 +14,7 @@ import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import {
   type DnsRecord,
-  type DnsResolveResult,
+  type DnsRecordsResponse,
   type DnsType,
   DnsTypeSchema,
 } from "@/lib/schemas";
@@ -81,9 +81,9 @@ function buildDohUrl(
  * ensuring multiple services can query DNS without triggering duplicate
  * lookups to DoH providers.
  */
-export const resolveAll = cache(async function resolveAll(
+export const getDnsRecords = cache(async function getDnsRecords(
   domain: string,
-): Promise<DnsResolveResult> {
+): Promise<DnsRecordsResponse> {
   logger.debug("start", { domain });
 
   const providers = providerOrderForLookup(domain);
@@ -293,7 +293,7 @@ export const resolveAll = cache(async function resolveAll(
         return {
           records: merged,
           resolver: pinnedProvider.key,
-        } as DnsResolveResult;
+        } as DnsRecordsResponse;
       } catch (err) {
         // Fall through to full provider loop below
         logger.error("partial refresh failed", err, {
@@ -401,7 +401,7 @@ export const resolveAll = cache(async function resolveAll(
       const deduplicated = deduplicateDnsRecords(flat);
       // Sort records deterministically to match cache-path ordering
       const sorted = sortDnsRecordsByType(deduplicated, types);
-      return { records: sorted, resolver: resolverUsed } as DnsResolveResult;
+      return { records: sorted, resolver: resolverUsed } as DnsRecordsResponse;
     } catch (err) {
       logger.warn("provider attempt failed", {
         domain: registrable,

@@ -12,10 +12,12 @@ export function Favicon({
   domain,
   size = 16,
   className,
+  style,
 }: {
   domain: string;
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const trpc = useTRPC();
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function Favicon({
   // No need to wait for hydration - if the data was prefetched on the server,
   // it will be available immediately via the dehydrated state
   const { data, isPending } = useQuery(
-    trpc.domain.favicon.queryOptions(
+    trpc.domain.getFavicon.queryOptions(
       { domain },
       {
         // Keep previous data while refetching to prevent flicker
@@ -39,7 +41,7 @@ export function Favicon({
     return (
       <Skeleton
         className={cn("bg-input", className)}
-        style={{ width: size, height: size }}
+        style={{ ...style, width: size, height: size }}
       />
     );
   }
@@ -50,6 +52,7 @@ export function Favicon({
         className={cn("text-muted-foreground", className)}
         width={size}
         height={size}
+        style={{ ...style, width: size, height: size }}
         data-favicon={domain}
       />
     );
@@ -62,6 +65,7 @@ export function Favicon({
       width={size}
       height={size}
       className={className}
+      style={{ ...style, width: size, height: size }}
       unoptimized
       priority={false}
       draggable={false}

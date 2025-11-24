@@ -30,8 +30,10 @@ vi.mock("next/image", () => ({
 vi.mock("@/lib/trpc/client", () => ({
   useTRPC: () => ({
     domain: {
-      favicon: {
-        queryOptions: (vars: unknown) => ({ queryKey: ["favicon", vars] }),
+      getFavicon: {
+        queryOptions: (vars: unknown) => ({
+          queryKey: ["getFavicon", vars],
+        }),
       },
     },
   }),

@@ -15,10 +15,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { Hosting } from "@/lib/schemas";
+import type { HostingResponse } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
-function formatLocation(geo: Hosting["geo"]): string {
+function formatLocation(geo: HostingResponse["geo"]): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
   return parts.join(", ");
 }
@@ -27,7 +27,7 @@ export function HostingSection({
   data,
 }: {
   domain?: string;
-  data?: Hosting | null;
+  data?: HostingResponse | null;
 }) {
   const dnsProvider = data?.dnsProvider ?? null;
   const hostingProvider = data?.hostingProvider ?? null;

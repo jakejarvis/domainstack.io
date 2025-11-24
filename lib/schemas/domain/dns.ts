@@ -11,11 +11,14 @@ export const DnsRecordSchema = z.object({
   isCloudflare: z.boolean().optional(),
 });
 
-export const DnsResolveResultSchema = z.object({
-  records: z.array(DnsRecordSchema),
+export const DnsRecordsSchema = z.array(DnsRecordSchema);
+
+export const DnsRecordsResponseSchema = z.object({
+  records: DnsRecordsSchema,
   resolver: z.string().nullable(),
 });
 
 export type DnsType = z.infer<typeof DnsTypeSchema>;
 export type DnsRecord = z.infer<typeof DnsRecordSchema>;
-export type DnsResolveResult = z.infer<typeof DnsResolveResultSchema>;
+export type DnsRecords = z.infer<typeof DnsRecordsSchema>;
+export type DnsRecordsResponse = z.infer<typeof DnsRecordsResponseSchema>;

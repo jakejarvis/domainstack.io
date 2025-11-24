@@ -50,13 +50,13 @@ vi.mock("@/lib/image", () => ({
   addWatermarkToScreenshot: vi.fn(async (b: Buffer) => b),
 }));
 
-let getOrCreateScreenshotBlobUrl: typeof import("./screenshot").getOrCreateScreenshotBlobUrl;
+let getScreenshot: typeof import("./screenshot").getScreenshot;
 
 beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
   vi.doMock("@/lib/db/client", () => ({ db }));
-  ({ getOrCreateScreenshotBlobUrl } = await import("./screenshot"));
+  ({ getScreenshot } = await import("./screenshot"));
 });
 
 beforeEach(() => {
@@ -81,7 +81,7 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
-describe("getOrCreateScreenshotBlobUrl", () => {
+describe("getScreenshot", () => {
   it("returns existing blob url from DB when present", async () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
     const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
@@ -99,13 +99,13 @@ describe("getOrCreateScreenshotBlobUrl", () => {
       expiresAt: new Date(Date.now() + 1000000),
     });
 
-    const out = await getOrCreateScreenshotBlobUrl("example.com");
+    const out = await getScreenshot("example.com");
     expect(out.url).toBe("blob://existing");
     expect(storageMock.storeImage).not.toHaveBeenCalled();
   });
 
   it("captures, uploads and returns url when not cached", async () => {
-    const out = await getOrCreateScreenshotBlobUrl("example.com");
+    const out = await getScreenshot("example.com");
     expect(out.url).toMatch(
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/1200x630\.webp$/,
     );
@@ -120,7 +120,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0; // no jitter for determinism
-    const out = await getOrCreateScreenshotBlobUrl("example.com", {
+    const out = await getScreenshot("example.com", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -142,7 +142,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getOrCreateScreenshotBlobUrl("example.com", {
+    const out = await getScreenshot("example.com", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -160,7 +160,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getOrCreateScreenshotBlobUrl("example.com", {
+    const out = await getScreenshot("example.com", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -178,7 +178,7 @@ describe("getOrCreateScreenshotBlobUrl", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getOrCreateScreenshotBlobUrl("example.com", {
+    const out = await getScreenshot("example.com", {
       attempts: 3,
       backoffBaseMs: 1,
       backoffMaxMs: 2,

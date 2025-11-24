@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { Registration } from "@/lib/schemas";
+import type { RegistrationResponse } from "@/lib/schemas";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 
@@ -91,7 +91,7 @@ export function RegistrationSection({
   data,
 }: {
   domain?: string;
-  data?: Registration | null;
+  data?: RegistrationResponse | null;
 }) {
   if (!data) return null;
 
@@ -214,7 +214,7 @@ export function formatRegistrant(reg: {
 }
 
 export function extractRegistrantView(
-  record: Registration,
+  record: RegistrationResponse,
 ): RegistrantView | null {
   const registrant = record.contacts?.find((c) => c.type === "registrant");
   if (!registrant) return null;

@@ -57,7 +57,7 @@ export function DomainPricingCTA({
   const analytics = useAnalytics();
 
   const { data, isLoading } = useQuery(
-    trpc.domain.pricing.queryOptions(
+    trpc.domain.getPricing.queryOptions(
       { domain },
       {
         enabled: !!domain,

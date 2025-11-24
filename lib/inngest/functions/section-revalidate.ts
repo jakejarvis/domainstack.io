@@ -4,9 +4,9 @@ import { z } from "zod";
 import { inngest } from "@/lib/inngest/client";
 import { type Section, SectionEnum } from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
-import { resolveAll } from "@/server/services/dns";
-import { probeHeaders } from "@/server/services/headers";
-import { detectHosting } from "@/server/services/hosting";
+import { getDnsRecords } from "@/server/services/dns";
+import { getHeaders } from "@/server/services/headers";
+import { getHosting } from "@/server/services/hosting";
 import { getRegistration } from "@/server/services/registration";
 import { getSeo } from "@/server/services/seo";
 
@@ -21,13 +21,13 @@ async function runSingleSection(
 ): Promise<void> {
   switch (section) {
     case "dns":
-      await resolveAll(domain);
+      await getDnsRecords(domain);
       return;
     case "headers":
-      await probeHeaders(domain);
+      await getHeaders(domain);
       return;
     case "hosting":
-      await detectHosting(domain);
+      await getHosting(domain);
       return;
     case "certificates":
       await getCertificates(domain);

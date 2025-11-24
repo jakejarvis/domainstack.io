@@ -16,7 +16,7 @@ import {
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { sections } from "@/lib/constants/sections";
 import { normalizeDomainInput } from "@/lib/domain";
-import type { HttpHeadersResponse } from "@/lib/schemas";
+import type { HeadersResponse } from "@/lib/schemas";
 
 /**
  * Extract domain from a Location header value.
@@ -37,7 +37,7 @@ export function HeadersSection({
   data,
 }: {
   domain?: string;
-  data?: HttpHeadersResponse | null;
+  data?: HeadersResponse | null;
 }) {
   const headers = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
   const status = data?.status;

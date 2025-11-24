@@ -55,7 +55,7 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
-describe("probeHeaders", () => {
+describe("getHeaders", () => {
   it("uses GET and caches result", async () => {
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -79,14 +79,14 @@ describe("probeHeaders", () => {
         return new Response(null, { status: 500 });
       });
 
-    const { probeHeaders } = await import("./headers");
-    const out1 = await probeHeaders("example.com");
+    const { getHeaders } = await import("./headers");
+    const out1 = await getHeaders("example.com");
     expect(out1.headers.length).toBeGreaterThan(0);
     expect(out1.status).toBe(200);
     expect(out1.statusMessage).toBe("OK");
     // In Vitest v4, vi.spyOn on a mock returns the same mock, so clear its history
     fetchMock.mockClear();
-    const out2 = await probeHeaders("example.com");
+    const out2 = await getHeaders("example.com");
     expect(out2.headers.length).toBe(out1.headers.length);
     expect(out2.status).toBe(200);
     // Cached responses now include statusMessage since we store status in DB
@@ -110,11 +110,11 @@ describe("probeHeaders", () => {
         return new Response(null, { status: 500 });
       });
 
-    const { probeHeaders } = await import("./headers");
+    const { getHeaders } = await import("./headers");
     const [a, b, c] = await Promise.all([
-      probeHeaders("example.com"),
-      probeHeaders("example.com"),
-      probeHeaders("example.com"),
+      getHeaders("example.com"),
+      getHeaders("example.com"),
+      getHeaders("example.com"),
     ]);
     expect(a.headers.length).toBeGreaterThan(0);
     expect(b.headers.length).toBe(a.headers.length);
@@ -130,8 +130,8 @@ describe("probeHeaders", () => {
     const fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
       throw new Error("network");
     });
-    const { probeHeaders } = await import("./headers");
-    const out = await probeHeaders("fail.invalid");
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("fail.invalid");
     expect(out.headers.length).toBe(0);
     expect(out.status).toBe(0);
     fetchMock.mockRestore();
@@ -158,8 +158,8 @@ describe("probeHeaders", () => {
       throw enotfoundError;
     });
 
-    const { probeHeaders } = await import("./headers");
-    const out = await probeHeaders("no-web-hosting.invalid");
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("no-web-hosting.invalid");
 
     // Should return empty array
     expect(out.headers.length).toBe(0);
@@ -179,8 +179,8 @@ describe("probeHeaders", () => {
       throw realError;
     });
 
-    const { probeHeaders } = await import("./headers");
-    const out = await probeHeaders("timeout.invalid");
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("timeout.invalid");
 
     // Should return empty array
     expect(out.headers.length).toBe(0);

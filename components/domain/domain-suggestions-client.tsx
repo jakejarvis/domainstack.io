@@ -142,7 +142,7 @@ export function DomainSuggestionsClient({
                 variant="secondary"
                 size="sm"
                 className={cn(
-                  "flex-shrink-0 bg-muted/15 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                  "shrink-0 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
                   "first-of-type:ml-[1px]",
                   isHistoryLoaded ? "visible" : "invisible",
                 )}
@@ -159,7 +159,7 @@ export function DomainSuggestionsClient({
                   <Favicon
                     domain={domain}
                     size={faviconSize}
-                    className="rounded"
+                    className="pointer-events-none size-4 shrink-0 rounded"
                   />
                   {domain}
                 </a>

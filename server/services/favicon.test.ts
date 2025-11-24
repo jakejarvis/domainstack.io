@@ -76,9 +76,9 @@ beforeAll(async () => {
 });
 
 // Import after mocks
-let getOrCreateFaviconBlobUrl: typeof import("./favicon").getOrCreateFaviconBlobUrl;
+let getFavicon: typeof import("./favicon").getFavicon;
 beforeAll(async () => {
-  ({ getOrCreateFaviconBlobUrl } = await import("./favicon"));
+  ({ getFavicon } = await import("./favicon"));
 });
 
 afterEach(async () => {
@@ -95,7 +95,7 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
-describe("getOrCreateFaviconBlobUrl", () => {
+describe("getFavicon", () => {
   it("returns existing blob url from DB when present", async () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
     const { upsertFavicon } = await import("@/lib/db/repos/favicons");
@@ -114,13 +114,13 @@ describe("getOrCreateFaviconBlobUrl", () => {
       expiresAt: new Date(Date.now() + 1000000),
     });
 
-    const out = await getOrCreateFaviconBlobUrl("example.com");
+    const out = await getFavicon("example.com");
     expect(out.url).toBe("blob://existing-url");
     expect(storageMock.storeImage).not.toHaveBeenCalled();
   });
 
   it("fetches, converts, stores, and returns url when not cached", async () => {
-    const out = await getOrCreateFaviconBlobUrl("example.com");
+    const out = await getFavicon("example.com");
     expect(out.url).toMatch(
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/32x32\.webp$/,
     );
@@ -132,7 +132,7 @@ describe("getOrCreateFaviconBlobUrl", () => {
     fetchRemoteAssetMock.mockRejectedValue(
       new RemoteAssetError("response_error", "Not found", 404),
     );
-    const out = await getOrCreateFaviconBlobUrl("nope.invalid");
+    const out = await getFavicon("nope.invalid");
     expect(out.url).toBeNull();
     expect(fetchRemoteAssetMock).toHaveBeenCalled();
   }, 10000); // 10s timeout for multiple fetch attempts
@@ -148,13 +148,13 @@ describe("getOrCreateFaviconBlobUrl", () => {
       .mockRejectedValueOnce(mkError());
 
     // First call: miss -> fetch attempts -> negative cache
-    const first = await getOrCreateFaviconBlobUrl("negcache.example");
+    const first = await getFavicon("negcache.example");
     expect(first.url).toBeNull();
     expect(fetchRemoteAssetMock).toHaveBeenCalled();
 
     // Second call: should hit negative cache and not fetch again
     fetchRemoteAssetMock.mockClear();
-    const second = await getOrCreateFaviconBlobUrl("negcache.example");
+    const second = await getFavicon("negcache.example");
     expect(second.url).toBeNull();
     expect(fetchRemoteAssetMock).not.toHaveBeenCalled();
   }, 10000); // 10s timeout for multiple fetch attempts

@@ -44,9 +44,9 @@ function dohAnswer(
   });
 }
 
-describe("resolveAll", () => {
+describe("getDnsRecords", () => {
   it("deduplicates records when DoH provider returns duplicates", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     // Simulate a DoH provider returning duplicate A records (same IP twice)
     const fetchMock = vi
       .spyOn(global, "fetch")
@@ -62,7 +62,7 @@ describe("resolveAll", () => {
       .mockResolvedValueOnce(dohAnswer([])) // TXT
       .mockResolvedValueOnce(dohAnswer([])); // NS
 
-    const out = await resolveAll("example.com");
+    const out = await getDnsRecords("example.com");
     const aRecords = out.records.filter((r) => r.type === "A");
 
     // Should have exactly 2 A records (duplicate removed), not 3
@@ -74,7 +74,7 @@ describe("resolveAll", () => {
   });
 
   it("normalizes records and returns combined results", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     // The code calls DoH for A, AAAA, MX, TXT, NS in parallel and across providers; we just return A for both A and AAAA etc.
     const fetchMock = vi
       .spyOn(global, "fetch")
@@ -106,7 +106,7 @@ describe("resolveAll", () => {
         ]),
       );
 
-    const out = await resolveAll("example.com");
+    const out = await getDnsRecords("example.com");
     expect(out.records.length).toBeGreaterThan(0);
     const hasTxt = out.records.some(
       (r) => r.type === "TXT" && r.value === "v=spf1",
@@ -120,7 +120,7 @@ describe("resolveAll", () => {
   });
 
   it("handles duplicate MX records with different priorities (jarv.net case)", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     // jarv.net has MX records pointing to the same host with different priorities:
     // Priority 10: mx.netidentity.com.cust.hostedemail.com
     // Priority 20: mx.netidentity.com.cust.hostedemail.com (same host!)
@@ -159,7 +159,7 @@ describe("resolveAll", () => {
         dohAnswer([{ name: "jarv.net.", TTL: 300, data: "ns1.mailbank.com." }]),
       );
 
-    const out = await resolveAll("jarv.net");
+    const out = await getDnsRecords("jarv.net");
 
     // Should have both MX records (same host, different priorities)
     const mxRecords = out.records.filter((r) => r.type === "MX");
@@ -176,16 +176,16 @@ describe("resolveAll", () => {
   });
 
   it("throws when all providers fail", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     const fetchMock = vi
       .spyOn(global, "fetch")
       .mockRejectedValue(new Error("network"));
-    await expect(resolveAll("example.invalid")).rejects.toThrow();
+    await expect(getDnsRecords("example.invalid")).rejects.toThrow();
     fetchMock.mockRestore();
   });
 
   it("retries next provider when first fails and succeeds on second", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     let call = 0;
     const fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
       call += 1;
@@ -215,13 +215,13 @@ describe("resolveAll", () => {
       }
     });
 
-    const out = await resolveAll("example.com");
+    const out = await getDnsRecords("example.com");
     expect(out.records.length).toBeGreaterThan(0);
     fetchMock.mockRestore();
   });
 
   it("caches results across providers and preserves resolver metadata", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -262,13 +262,13 @@ describe("resolveAll", () => {
         ]),
       );
 
-    const first = await resolveAll("example.com");
+    const first = await getDnsRecords("example.com");
     expect(first.records.length).toBeGreaterThan(0);
     firstFetch.mockRestore();
 
     // Second run: DB hit — no network calls expected
     const fetchSpy = vi.spyOn(global, "fetch");
-    const second = await resolveAll("example.com");
+    const second = await getDnsRecords("example.com");
     expect(second.records.length).toBe(first.records.length);
     expect(["cloudflare", "google", "quad9"]).toContain(second.resolver);
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -276,7 +276,7 @@ describe("resolveAll", () => {
   });
 
   it("handles concurrent callers via Postgres cache", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
     const { upsertDomain } = await import("@/lib/db/repos/domains");
 
     // Pre-cache data in Postgres to simulate cache hit for concurrent requests
@@ -309,13 +309,13 @@ describe("resolveAll", () => {
       );
 
     // First call fetches and caches
-    const r1 = await resolveAll("example.com");
+    const r1 = await getDnsRecords("example.com");
     expect(r1.records.length).toBeGreaterThan(0);
 
     // Concurrent calls should get same Postgres-cached data
     const [r2, r3] = await Promise.all([
-      resolveAll("example.com"),
-      resolveAll("example.com"),
+      getDnsRecords("example.com"),
+      getDnsRecords("example.com"),
     ]);
 
     expect(r2.records).toEqual(r1.records);
@@ -325,7 +325,7 @@ describe("resolveAll", () => {
   });
 
   it("fetches missing AAAA during partial revalidation", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -361,7 +361,7 @@ describe("resolveAll", () => {
         ]),
       );
 
-    const first = await resolveAll("example.com");
+    const first = await getDnsRecords("example.com");
     expect(first.records.some((r) => r.type === "AAAA")).toBe(false);
     firstFetch.mockRestore();
 
@@ -386,7 +386,7 @@ describe("resolveAll", () => {
         return dohAnswer([]);
       });
 
-    const second = await resolveAll("example.com");
+    const second = await getDnsRecords("example.com");
     secondFetch.mockRestore();
 
     // Ensure AAAA was fetched and returned
@@ -462,7 +462,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
   });
 
   it("ensures resolver consistency improves cache hits", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -495,21 +495,21 @@ describe("providerOrderForLookup (hash-based selection)", () => {
         ]),
       );
 
-    const result1 = await resolveAll("domain1.com");
+    const result1 = await getDnsRecords("domain1.com");
     expect(result1.records.length).toBeGreaterThan(0);
     const resolver1 = result1.resolver;
     fetchMock1.mockRestore();
 
     // Second request for same domain - should use same resolver from cache
     const fetchSpy = vi.spyOn(global, "fetch");
-    const result2 = await resolveAll("domain1.com");
+    const result2 = await getDnsRecords("domain1.com");
     expect(result2.resolver).toBe(resolver1);
     expect(fetchSpy).not.toHaveBeenCalled(); // DB cache hit
     fetchSpy.mockRestore();
   });
 
   it("sorts A and AAAA records deterministically to prevent hydration errors", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -549,7 +549,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
         ]),
       );
 
-    const first = await resolveAll("example.com");
+    const first = await getDnsRecords("example.com");
     const firstARecords = first.records.filter((r) => r.type === "A");
     const firstAAAARecords = first.records.filter((r) => r.type === "AAAA");
 
@@ -606,7 +606,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
         ]),
       );
 
-    const second = await resolveAll("example.com");
+    const second = await getDnsRecords("example.com");
     const secondARecords = second.records.filter((r) => r.type === "A");
     const secondAAAARecords = second.records.filter((r) => r.type === "AAAA");
 
@@ -622,7 +622,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
   });
 
   it("preserves case sensitivity in TXT records to prevent hydration errors", async () => {
-    const { resolveAll } = await import("./dns");
+    const { getDnsRecords } = await import("./dns");
 
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -661,7 +661,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
         ]),
       );
 
-    const first = await resolveAll("example.com");
+    const first = await getDnsRecords("example.com");
     const txtRecords = first.records.filter((r) => r.type === "TXT");
 
     expect(txtRecords.length).toBe(1);
@@ -674,7 +674,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
 
     // Second run: fetch from database cache
     const fetchSpy = vi.spyOn(global, "fetch");
-    const second = await resolveAll("example.com");
+    const second = await getDnsRecords("example.com");
     const cachedTxtRecords = second.records.filter((r) => r.type === "TXT");
 
     // Database should return same case (no lowercase conversion)

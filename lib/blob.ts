@@ -14,17 +14,24 @@ export async function putBlob(options: {
   contentType?: string;
   cacheControlMaxAge?: number;
 }): Promise<{ url: string; pathname: string }> {
-  const blob = await put(options.pathname, options.body, {
-    access: "public",
-    contentType: options.contentType,
-    cacheControlMaxAge: options.cacheControlMaxAge,
-    allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
-  });
+  try {
+    const blob = await put(options.pathname, options.body, {
+      access: "public",
+      contentType: options.contentType,
+      cacheControlMaxAge: options.cacheControlMaxAge,
+      allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
+    });
 
-  return {
-    url: blob.url,
-    pathname: options.pathname,
-  };
+    logger.debug("put ok", { url: blob.url, options });
+
+    return {
+      url: blob.url,
+      pathname: options.pathname,
+    };
+  } catch (err) {
+    logger.error("put failed", err, { options });
+    throw err;
+  }
 }
 
 export type DeleteResult = Array<{
@@ -44,12 +51,14 @@ export async function deleteBlobs(urls: string[]): Promise<DeleteResult> {
   for (const url of urls) {
     try {
       await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
+      logger.debug("delete ok", { url });
       results.push({ url, deleted: true });
     } catch (err) {
-      const message = (err as Error)?.message || "unknown";
+      const message = err instanceof Error ? err.message : "Unexpected error";
       logger.error("delete failed", err, {
         url,
       });
+
       results.push({ url, deleted: false, error: message });
     }
   }
