@@ -47,13 +47,9 @@ export async function deleteBlobs(urls: string[]): Promise<DeleteResult> {
       results.push({ url, deleted: true });
     } catch (err) {
       const message = (err as Error)?.message || "unknown";
-      logger.error(
-        "delete failed",
-        err instanceof Error ? err : new Error(String(err)),
-        {
-          url,
-        },
-      );
+      logger.error("delete failed", err, {
+        url,
+      });
       results.push({ url, deleted: false, error: message });
     }
   }

@@ -188,7 +188,6 @@ async function ensureUrlAllowed(
   ) {
     logger.warn("blocked host", {
       url: url.toString(),
-      reason: "host_blocked",
     });
     throw new RemoteAssetError("host_blocked", `Host ${hostname} is blocked`);
   }
@@ -199,7 +198,6 @@ async function ensureUrlAllowed(
   ) {
     logger.warn("blocked host", {
       url: url.toString(),
-      reason: "host_not_allowed",
     });
     throw new RemoteAssetError(
       "host_not_allowed",
@@ -209,9 +207,8 @@ async function ensureUrlAllowed(
 
   if (isIP(hostname)) {
     if (isBlockedIp(hostname)) {
-      logger.warn("blocked ip", {
+      logger.warn("blocked private ip", {
         url: url.toString(),
-        reason: "private_ip",
       });
       throw new RemoteAssetError(
         "private_ip",
@@ -225,9 +222,8 @@ async function ensureUrlAllowed(
   try {
     records = await dnsLookup(hostname, { all: true });
   } catch (err) {
-    logger.warn("dns error", {
+    logger.error("unexpected lookup error", err, {
       url: url.toString(),
-      reason: err instanceof Error ? err.message : "dns_error",
     });
     throw new RemoteAssetError(
       "dns_error",
@@ -236,17 +232,15 @@ async function ensureUrlAllowed(
   }
 
   if (!records || records.length === 0) {
-    logger.warn("dns error", {
+    logger.warn("lookup returned no records", {
       url: url.toString(),
-      reason: "no_records",
     });
     throw new RemoteAssetError("dns_error", "DNS lookup returned no records");
   }
 
   if (records.some((record) => isBlockedIp(record.address))) {
-    logger.warn("blocked ip", {
+    logger.warn("blocked private ip", {
       url: url.toString(),
-      reason: "private_ip",
     });
     throw new RemoteAssetError(
       "private_ip",

@@ -15,7 +15,7 @@ const handler = async (req: Request) => {
     onError: async ({ path, error }) => {
       // Use logger for unhandled errors
       const { logger } = await import("@/lib/logger/server");
-      logger.error(`[trpc] unhandled error ${path}`, error, { path });
+      logger.error("unhandled error", error, { source: "trpc", path });
     },
     responseMeta: () => {
       // Add correlation ID to response headers for client tracking

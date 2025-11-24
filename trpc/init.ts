@@ -71,10 +71,11 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
   const { logger } = await import("@/lib/logger/server");
 
   // Log procedure start
-  logger.debug(`[trpc] start ${path}`, {
+  logger.debug("procedure start", {
+    source: "trpc",
     path,
     type,
-    ...(input && typeof input === "object" ? { ...input } : {}),
+    input: input && typeof input === "object" ? { ...input } : undefined,
   });
 
   try {
@@ -82,10 +83,12 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
     const durationMs = Math.round(performance.now() - start);
 
     // Log successful completion
-    logger.info(`[trpc] ok ${path}`, {
+    logger.debug("procedure ok", {
+      source: "trpc",
       path,
       type,
       durationMs,
+      input: input && typeof input === "object" ? { ...input } : undefined,
     });
 
     // Track slow requests (>5s threshold) in PostHog
@@ -101,15 +104,16 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
     return result;
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
-    const error = err instanceof Error ? err : new Error(String(err));
 
     // Log error with full details
-    logger.error(`[trpc] error ${path}`, error, {
+    logger.error("procedure error", err, {
+      source: "trpc",
       path,
       type,
       durationMs,
     });
 
+    // Re-throw the error to be handled by the error boundary
     throw err;
   }
 });
@@ -130,7 +134,8 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     const registrable = toRegistrableDomain(input.domain);
     if (registrable) {
       const { logger } = await import("@/lib/logger/server");
-      logger.debug("[trpc] recording access for domain", {
+      logger.info("recording access for domain", {
+        source: "trpc",
         domain: registrable,
       });
       after(() => updateLastAccessed(registrable));
