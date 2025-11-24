@@ -63,12 +63,25 @@ export async function resolveProviderId(
 }
 
 function isUniqueViolation(err: unknown): err is { code: string } {
-  return (
-    !!err &&
-    typeof err === "object" &&
-    "code" in err &&
-    (err as { code: string }).code === "23505"
-  );
+  if (!err || typeof err !== "object") return false;
+
+  // Check direct error
+  if ("code" in err && (err as { code: string }).code === "23505") {
+    return true;
+  }
+
+  // Check wrapped error (e.g. Drizzle/Postgres cause)
+  if (
+    "cause" in err &&
+    err.cause &&
+    typeof err.cause === "object" &&
+    "code" in err.cause &&
+    (err.cause as { code: string }).code === "23505"
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /** Resolve a provider id, creating a provider row when not found. */
@@ -95,8 +108,24 @@ export async function resolveOrCreateProviderId(
       .returning({ id: providers.id });
     return inserted[0]?.id ?? null;
   } catch (err) {
-    // Possible race with another insert; try resolve again on unique violation
-    if (isUniqueViolation(err)) return resolveProviderId(input);
+    // Possible race with another insert or slug collision; resolve on unique violation
+    if (isUniqueViolation(err)) {
+      // First try standard resolution (name/domain match)
+      const resolved = await resolveProviderId(input);
+      if (resolved) return resolved;
+
+      // If standard resolution failed, it's likely a slug collision with different name.
+      // Fetch by slug to return the existing provider ID.
+      const bySlug = await db
+        .select({ id: providers.id })
+        .from(providers)
+        .where(
+          and(eq(providers.category, input.category), eq(providers.slug, slug)),
+        )
+        .limit(1);
+
+      if (bySlug[0]?.id) return bySlug[0].id;
+    }
     throw err;
   }
 }
