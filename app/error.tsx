@@ -13,7 +13,9 @@ export default function RootError(props: {
   const { error, reset } = props;
 
   useEffect(() => {
-    logger.error("Root error boundary caught error", error);
+    logger.error("Root error boundary caught error", error, {
+      digest: error.digest,
+    });
   }, [error]);
 
   const isDev = process.env.NODE_ENV !== "production";

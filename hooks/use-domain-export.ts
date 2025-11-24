@@ -95,7 +95,7 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
         position: "bottom-center",
       });
     }
-  }, [domain, queryClient, queryKeys, logger.error]);
+  }, [domain, queryClient, queryKeys, logger]);
 
   return { handleExport, allDataLoaded };
 }
