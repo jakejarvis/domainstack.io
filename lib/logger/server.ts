@@ -1,7 +1,6 @@
 import "server-only";
 
 import { context, trace } from "@opentelemetry/api";
-import { after } from "next/server";
 import {
   createLogEntry,
   formatLogEntry,
@@ -188,21 +187,21 @@ class ServerLogger implements Logger {
     correlationId?: string,
   ): void {
     try {
-      // Use after() for non-blocking PostHog tracking
-      after(async () => {
-        try {
-          const { analytics } = await import("@/lib/analytics/server");
+      // Import analytics directly - the trackException method already handles
+      // wrapping itself in after() where appropriate, so we don't double-wrap here
+      import("@/lib/analytics/server")
+        .then(({ analytics }) => {
           analytics.trackException(error, {
             ...context,
             correlationId,
             source: "logger",
           });
-        } catch {
-          // Graceful degradation - don't throw if PostHog fails
-        }
-      });
+        })
+        .catch(() => {
+          // Graceful degradation
+        });
     } catch {
-      // If after() not available, silently skip PostHog tracking
+      // Silently skip
     }
   }
 

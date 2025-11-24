@@ -45,7 +45,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
 
     if (isPrerenderError) {
       // This is expected during static generation when accessing dynamic data
-      logger.debug("skipping domain suggestions during prerender");
+      logger.info("skipping domain suggestions during prerender");
     } else {
       // Log unexpected errors but still fail gracefully
       logger.error("failed to fetch domain suggestions", err);
