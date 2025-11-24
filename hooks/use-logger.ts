@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import type { LogContext, Logger } from "@/lib/logger";
 import { logger as clientLogger, createLogger } from "@/lib/logger/client";
-import type { LogContext, Logger } from "@/lib/logger/index";
 
 /**
  * React hook for component-level logging.

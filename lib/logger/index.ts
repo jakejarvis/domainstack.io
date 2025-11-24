@@ -37,8 +37,14 @@ export interface Logger {
   debug(message: string, context?: LogContext): void;
   info(message: string, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
-  error(message: string, error?: Error | unknown, context?: LogContext): void;
-  fatal(message: string, error?: Error | unknown, context?: LogContext): void;
+  // Overloaded signatures for flexible error/fatal logging
+  // Pattern 1: error(message, error, context) - traditional with error object
+  error(message: string, error: unknown, context?: LogContext): void;
+  // Pattern 2: error(message, context) - compatible with various logging interfaces
+  error(message: string, context?: LogContext): void;
+  fatal(message: string, error: unknown, context?: LogContext): void;
+  fatal(message: string, context?: LogContext): void;
+  child(context: LogContext): Logger;
 }
 
 // ============================================================================

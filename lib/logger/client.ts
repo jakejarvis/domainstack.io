@@ -1,6 +1,5 @@
 "use client";
 
-import { getOrGenerateClientCorrelationId } from "@/lib/logger/correlation";
 import {
   createLogEntry,
   formatLogEntry,
@@ -8,7 +7,8 @@ import {
   type Logger,
   type LogLevel,
   shouldLog,
-} from "@/lib/logger/index";
+} from "@/lib/logger";
+import { getOrGenerateClientCorrelationId } from "@/lib/logger/correlation";
 
 /**
  * Client-side logger with PostHog integration.
@@ -86,16 +86,25 @@ class ClientLogger implements Logger {
   private logWithError(
     level: LogLevel,
     message: string,
-    error?: Error | unknown,
+    errorOrContext?: unknown,
     context?: LogContext,
   ): void {
     if (!shouldLog(level, this.minLevel)) {
       return;
     }
 
+    // Determine error and context based on number of arguments:
+    // - 3 args: error(message, error, context) - traditional call
+    // - 2 args: error(message, context) - flexible call for compatibility
+    const error = context !== undefined ? errorOrContext : undefined;
+    const finalContext =
+      context !== undefined
+        ? context
+        : (errorOrContext as LogContext | undefined);
+
     try {
       const entry = createLogEntry(level, message, {
-        context,
+        context: finalContext,
         error,
         correlationId: this.correlationId,
       });
@@ -107,7 +116,7 @@ class ClientLogger implements Logger {
 
       // Track errors in PostHog
       if ((level === "error" || level === "fatal") && error instanceof Error) {
-        this.trackErrorInPostHog(error, context);
+        this.trackErrorInPostHog(error, finalContext);
       }
     } catch (err) {
       // Logging should never crash the application
@@ -150,12 +159,20 @@ class ClientLogger implements Logger {
     this.log("warn", message, context);
   }
 
-  error(message: string, error?: Error | unknown, context?: LogContext): void {
-    this.logWithError("error", message, error, context);
+  error(message: string, error: unknown, context?: LogContext): void;
+  error(message: string, context?: LogContext): void;
+  error(message: string, errorOrContext?: unknown, context?: LogContext): void {
+    this.logWithError("error", message, errorOrContext, context);
   }
 
-  fatal(message: string, error?: Error | unknown, context?: LogContext): void {
-    this.logWithError("fatal", message, error, context);
+  fatal(message: string, error: unknown, context?: LogContext): void;
+  fatal(message: string, context?: LogContext): void;
+  fatal(message: string, errorOrContext?: unknown, context?: LogContext): void {
+    this.logWithError("fatal", message, errorOrContext, context);
+  }
+
+  child(context: LogContext): Logger {
+    return createLogger(context);
   }
 }
 
@@ -188,7 +205,7 @@ export const logger = new ClientLogger();
  * ```
  */
 export function createLogger(baseContext: LogContext): Logger {
-  return {
+  const childLogger = {
     trace: (message: string, context?: LogContext) =>
       logger.trace(message, { ...baseContext, ...context }),
     debug: (message: string, context?: LogContext) =>
@@ -197,9 +214,35 @@ export function createLogger(baseContext: LogContext): Logger {
       logger.info(message, { ...baseContext, ...context }),
     warn: (message: string, context?: LogContext) =>
       logger.warn(message, { ...baseContext, ...context }),
-    error: (message: string, error?: Error | unknown, context?: LogContext) =>
-      logger.error(message, error, { ...baseContext, ...context }),
-    fatal: (message: string, error?: Error | unknown, context?: LogContext) =>
-      logger.fatal(message, error, { ...baseContext, ...context }),
+    error: (
+      message: string,
+      errorOrContext?: unknown,
+      context?: LogContext,
+    ) => {
+      if (context !== undefined) {
+        // Three args: error(message, error, context)
+        logger.error(message, errorOrContext, { ...baseContext, ...context });
+      } else {
+        // Two args: could be error(message, error) or error(message, context)
+        logger.error(message, errorOrContext, baseContext);
+      }
+    },
+    fatal: (
+      message: string,
+      errorOrContext?: unknown,
+      context?: LogContext,
+    ) => {
+      if (context !== undefined) {
+        // Three args: fatal(message, error, context)
+        logger.fatal(message, errorOrContext, { ...baseContext, ...context });
+      } else {
+        // Two args: could be fatal(message, error) or fatal(message, context)
+        logger.fatal(message, errorOrContext, baseContext);
+      }
+    },
+    child: (context: LogContext) =>
+      createLogger({ ...baseContext, ...context }),
   };
+
+  return childLogger as Logger;
 }
