@@ -1,7 +1,6 @@
 import "server-only";
 
 import * as ipaddr from "ipaddr.js";
-import { cacheLife, cacheTag } from "next/cache";
 import { CLOUDFLARE_IPS_URL } from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { createLogger } from "@/lib/logger/server";
@@ -20,13 +19,20 @@ let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
  * Fetch Cloudflare IP ranges from their API.
  */
 async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
-  const res = await fetch(CLOUDFLARE_IPS_URL);
+  const res = await fetch(CLOUDFLARE_IPS_URL, {
+    next: {
+      revalidate: 604800, // 1 week
+      tags: ["cloudflare-ip-ranges"],
+    },
+  });
 
   if (!res.ok) {
     throw new Error(`Failed to fetch Cloudflare IPs: ${res.status}`);
   }
 
   const data = await res.json();
+
+  logger.info("IP ranges fetched");
 
   return {
     ipv4Cidrs: data.result?.ipv4_cidrs || [],
@@ -79,18 +85,11 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
  *
  * The IP ranges change infrequently (when Cloudflare expands infrastructure),
  * so we cache for 1 week with stale-while-revalidate.
- *
- * Uses Next.js 16's "use cache" directive for automatic caching with tags.
  */
 async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
-  "use cache";
-  cacheLife("weeks");
-  cacheTag("cloudflare-ip-ranges");
-
   try {
     const ranges = await fetchCloudflareIpRanges();
     parseAndCacheRanges(ranges);
-    logger.info("IP ranges fetched");
     return ranges;
   } catch (err) {
     logger.error("fetch error", err);

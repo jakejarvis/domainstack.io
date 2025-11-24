@@ -1,4 +1,3 @@
-import { cacheLife, cacheTag } from "next/cache";
 import { getDomainTld } from "rdapper";
 import { createLogger } from "@/lib/logger/server";
 import type { Pricing } from "@/lib/schemas";
@@ -9,7 +8,7 @@ const logger = createLogger({ source: "pricing" });
  * Domain registration pricing service.
  *
  * Caching Strategy:
- * - Uses Next.js 16 Data Cache with "use cache" directive
+ * - Uses Next.js Data Cache with `fetch` configuration
  * - Automatic stale-while-revalidate (SWR): serves cached data instantly,
  *   revalidates in background when cache expires
  * - Cache TTLs: 7 days (Porkbun and Cloudflare)
@@ -46,7 +45,6 @@ interface PricingProvider {
 
 /**
  * Fetch pricing data from a provider with Next.js Data Cache.
- * Uses Next.js 16's "use cache" directive for automatic caching.
  */
 async function fetchProviderPricing(
   provider: PricingProvider,
@@ -71,10 +69,6 @@ const porkbunProvider: PricingProvider = {
   name: "porkbun",
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
-    "use cache";
-    cacheLife("weeks");
-    cacheTag("pricing", "pricing-porkbun");
-
     // Does not require authentication!
     // https://porkbun.com/api/json/v3/documentation#Domain%20Pricing
     const controller = new AbortController();
@@ -88,6 +82,10 @@ const porkbunProvider: PricingProvider = {
           headers: { "Content-Type": "application/json" },
           body: "{}",
           signal: controller.signal,
+          next: {
+            revalidate: 604800,
+            tags: ["pricing", "pricing-porkbun"],
+          },
         },
       );
 
@@ -124,10 +122,6 @@ const cloudflareProvider: PricingProvider = {
   name: "cloudflare",
 
   async fetchPricing(): Promise<RegistrarPricingResponse> {
-    "use cache";
-    cacheLife("weeks");
-    cacheTag("pricing", "pricing-cloudflare");
-
     // Third-party API that aggregates Cloudflare pricing
     // https://cfdomainpricing.com/
     const controller = new AbortController();
@@ -138,6 +132,10 @@ const cloudflareProvider: PricingProvider = {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: controller.signal,
+        next: {
+          revalidate: 604800,
+          tags: ["pricing", "pricing-cloudflare"],
+        },
       });
 
       if (!res.ok) {

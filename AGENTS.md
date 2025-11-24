@@ -77,7 +77,7 @@
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
-- All caching uses Next.js Data Cache (`"use cache"` directive) or Postgres.
+- All caching uses Next.js Data Cache (`fetch` with `next: { revalidate }`) or Postgres.
 - Database connections: Use Vercel's Postgres connection pooling (`@vercel/postgres`) for optimal performance.
 - Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.

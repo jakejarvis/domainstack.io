@@ -1,24 +1,26 @@
-import { cacheLife } from "next/cache";
 import { Button } from "@/components/ui/button";
+import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 async function fetchRepoStars(): Promise<number | null> {
-  "use cache";
-  cacheLife("hours");
-
   try {
-    const res = await fetch(
-      "https://api.github.com/repos/jakejarvis/domainstack.io",
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          ...(process.env.GITHUB_TOKEN
-            ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-            : {}),
-        },
+    const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        // token is optional but allows for more frequent/reliable API calls
+        ...(process.env.GITHUB_TOKEN
+          ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+          : {}),
       },
-    );
+      next: {
+        revalidate: 3600, // 1 hour
+        tags: ["github-stars"],
+      },
+    });
+
     if (!res.ok) return null;
+
     const json = (await res.json()) as { stargazers_count?: number };
+
     return typeof json.stargazers_count === "number"
       ? json.stargazers_count
       : null;
@@ -29,12 +31,18 @@ async function fetchRepoStars(): Promise<number | null> {
 
 export async function GithubStars() {
   const stars = await fetchRepoStars();
-  const label = stars === null ? "0" : `${stars}`;
+  const label =
+    stars === null
+      ? "0"
+      : new Intl.NumberFormat("en-US", {
+          notation: "compact",
+          compactDisplay: "short",
+        }).format(stars);
 
   return (
     <Button variant="ghost" size="sm" asChild>
       <a
-        href="https://github.com/jakejarvis/domainstack.io"
+        href={`https://github.com/${REPOSITORY_SLUG}`}
         target="_blank"
         rel="noopener"
         className="group flex select-none items-center gap-2 transition-colors"
