@@ -3,6 +3,7 @@
 import { CircleX } from "lucide-react";
 import { useParams } from "next/navigation";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useRouter } from "@/hooks/use-router";
@@ -62,20 +63,18 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
   }, [derivedInitial]);
 
   // Optional keyboard shortcut to focus the input (e.g., ⌘/Ctrl + K)
-  useEffect(() => {
-    if (!enableShortcut) return;
-    function onKey(e: KeyboardEvent) {
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        (e.key === shortcutKey || e.key === shortcutKey.toUpperCase())
-      ) {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [enableShortcut, shortcutKey]);
+  useHotkeys(
+    `mod+${shortcutKey}`,
+    (e) => {
+      e.preventDefault();
+      inputRef.current?.focus();
+    },
+    {
+      enabled: enableShortcut,
+      enableOnFormTags: false,
+    },
+    [enableShortcut, shortcutKey],
+  );
 
   function navigateToDomain(domain: string, navigateSource: Source = source) {
     const target = normalizeDomainInput(domain);
