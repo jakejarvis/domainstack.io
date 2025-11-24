@@ -9,9 +9,12 @@ import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
+import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { HttpHeader, HttpHeadersResponse } from "@/lib/schemas";
 import { ttlForHeaders } from "@/lib/ttl";
+
+const logger = createLogger({ source: "headers" });
 
 /**
  * Probe HTTP headers for a domain with Postgres caching.
@@ -24,7 +27,7 @@ export const probeHeaders = cache(async function probeHeaders(
   domain: string,
 ): Promise<HttpHeadersResponse> {
   const url = `https://${domain}/`;
-  console.debug(`[headers] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -62,9 +65,12 @@ export const probeHeaders = cache(async function probeHeaders(
       statusMessage = undefined;
     }
 
-    console.info(
-      `[headers] cache hit ${registrable} status=${row.status} count=${normalized.length}`,
-    );
+    logger.info(`cache hit ${registrable}`, {
+      domain: registrable,
+      status: row.status,
+      count: normalized.length,
+      cached: true,
+    });
     return { headers: normalized, status: row.status, statusMessage };
   }
 
@@ -104,16 +110,17 @@ export const probeHeaders = cache(async function probeHeaders(
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
         ).catch((err) => {
-          console.warn(
-            `[headers] schedule failed for ${registrable}`,
-            err instanceof Error ? err : new Error(String(err)),
-          );
+          logger.error("schedule failed", err, {
+            domain: registrable,
+          });
         });
       });
     }
-    console.info(
-      `[headers] ok ${registrable} status=${final.status} count=${normalized.length}`,
-    );
+    logger.info(`ok ${registrable}`, {
+      domain: registrable,
+      status: final.status,
+      count: normalized.length,
+    });
 
     // Get status message
     let statusMessage: string | undefined;
@@ -130,14 +137,11 @@ export const probeHeaders = cache(async function probeHeaders(
     const isDnsError = isExpectedDnsError(err);
 
     if (isDnsError) {
-      console.debug(
-        `[headers] no web hosting ${registrable} (no A/AAAA records)`,
-      );
+      logger.debug(`no web hosting ${registrable} (no A/AAAA records)`, {
+        domain: registrable,
+      });
     } else {
-      console.error(
-        `[headers] error ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
+      logger.error(`error ${registrable}`, err, { domain: registrable });
     }
 
     // Return empty on failure without caching to avoid long-lived negatives

@@ -1,11 +1,14 @@
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
 
 // Dynamic import via require pattern is recommended in community examples
 // to access drizzle-kit/api in Vitest.
 const { pushSchema } =
   require("drizzle-kit/api") as typeof import("drizzle-kit/api");
+
+const logger = createLogger({ source: "pglite" });
 
 type DbBundle = { db: ReturnType<typeof drizzle>; client: PGlite };
 let cached: DbBundle | null = null;
@@ -27,16 +30,17 @@ export async function makePGliteDb(): Promise<DbBundle> {
       cached.db as any,
     );
     // Silence noisy logs printed by drizzle-kit during schema sync in tests
-    const origLog = console.log;
+    const consoleObj = globalThis.console;
+    const origLog = consoleObj.log;
     try {
-      console.log = (...args: unknown[]) => {
+      consoleObj.log = (...args: unknown[]) => {
         const s = String(args[0] ?? "");
         if (s.includes("Pulling schema from database")) return;
-        origLog(...args);
+        origLog.apply(consoleObj, args as unknown[]);
       };
       await apply();
     } finally {
-      console.log = origLog;
+      consoleObj.log = origLog;
     }
     schemaApplied = true;
   }
@@ -52,9 +56,9 @@ export async function closePGliteDb(): Promise<void> {
   if (!cached) return;
   try {
     await cached.client.close();
-  } catch (error) {
+  } catch (err) {
     // Swallow errors on close (client may already be closed)
-    console.warn("PGlite close warning:", error);
+    logger.error("close warning", err);
   } finally {
     cached = null;
     schemaApplied = false;

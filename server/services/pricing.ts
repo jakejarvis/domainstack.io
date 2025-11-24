@@ -1,6 +1,9 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getDomainTld } from "rdapper";
+import { createLogger } from "@/lib/logger/server";
 import type { Pricing } from "@/lib/schemas";
+
+const logger = createLogger({ source: "pricing" });
 
 /**
  * Domain registration pricing service.
@@ -50,13 +53,12 @@ async function fetchProviderPricing(
 ): Promise<RegistrarPricingResponse | null> {
   try {
     const payload = await provider.fetchPricing();
-    console.info(`[pricing] fetch ok ${provider.name}`);
+    logger.info(`fetch ok ${provider.name}`, { provider: provider.name });
     return payload;
   } catch (err) {
-    console.error(
-      `[pricing] fetch error ${provider.name}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error(`fetch error ${provider.name}`, err, {
+      provider: provider.name,
+    });
     return null;
   }
 }
@@ -90,7 +92,10 @@ const porkbunProvider: PricingProvider = {
       );
 
       if (!res.ok) {
-        console.error(`[pricing] upstream error porkbun status=${res.status}`);
+        logger.error(`upstream error porkbun status=${res.status}`, undefined, {
+          provider: "porkbun",
+          status: res.status,
+        });
         throw new Error(`Porkbun API returned ${res.status}`);
       }
 
@@ -101,7 +106,7 @@ const porkbunProvider: PricingProvider = {
     } catch (err) {
       // Translate AbortError into a retryable timeout error
       if (err instanceof Error && err.name === "AbortError") {
-        console.error("[pricing] upstream timeout porkbun");
+        logger.error("upstream timeout porkbun", err, { provider: "porkbun" });
         throw new Error("Porkbun API request timed out");
       }
       throw err;
@@ -136,8 +141,13 @@ const cloudflareProvider: PricingProvider = {
       });
 
       if (!res.ok) {
-        console.error(
-          `[pricing] upstream error cloudflare status=${res.status}`,
+        logger.error(
+          `upstream error cloudflare status=${res.status}`,
+          undefined,
+          {
+            provider: "cloudflare",
+            status: res.status,
+          },
         );
         throw new Error(`Cloudflare pricing API returned ${res.status}`);
       }
@@ -166,7 +176,9 @@ const cloudflareProvider: PricingProvider = {
     } catch (err) {
       // Translate AbortError into a retryable timeout error
       if (err instanceof Error && err.name === "AbortError") {
-        console.error("[pricing] upstream timeout cloudflare");
+        logger.error("upstream timeout cloudflare", err, {
+          provider: "cloudflare",
+        });
         throw new Error("Cloudflare pricing API request timed out");
       }
       throw err;

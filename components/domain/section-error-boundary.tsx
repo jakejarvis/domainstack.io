@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { createLogger } from "@/lib/logger/client";
 
 interface Props {
   children: ReactNode;
@@ -22,6 +23,8 @@ interface State {
  * Catches rendering errors and provides a fallback UI without crashing the entire page.
  */
 export class SectionErrorBoundary extends Component<Props, State> {
+  private logger = createLogger({ component: "SectionErrorBoundary" });
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -38,14 +41,10 @@ export class SectionErrorBoundary extends Component<Props, State> {
       componentStack: errorInfo.componentStack,
     });
 
-    // Also log to console in development
-    if (process.env.NODE_ENV === "development") {
-      console.error(
-        `[SectionErrorBoundary] Error in ${this.props.sectionName}:`,
-        error,
-        errorInfo,
-      );
-    }
+    this.logger.error("render error", error, {
+      section: this.props.sectionName,
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   render() {

@@ -2,7 +2,10 @@ import "server-only";
 
 import { putBlob } from "@/lib/blob";
 import { deterministicHash } from "@/lib/hash";
+import { createLogger } from "@/lib/logger/server";
 import type { StorageKind } from "@/lib/schemas";
+
+const logger = createLogger({ source: "storage" });
 
 const UPLOAD_MAX_ATTEMPTS = 3;
 const UPLOAD_BACKOFF_BASE_MS = 100;
@@ -55,9 +58,9 @@ async function uploadWithRetry(
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      console.debug(
-        `[storage] upload attempt ${attempt + 1}/${maxAttempts} for ${pathname}`,
-      );
+      logger.debug(`upload attempt ${attempt + 1}/${maxAttempts}`, {
+        pathname,
+      });
 
       const result = await putBlob({
         pathname,
@@ -66,16 +69,19 @@ async function uploadWithRetry(
         cacheControlMaxAge,
       });
 
-      console.info(`[storage] upload ok ${pathname} (attempt ${attempt + 1})`);
+      logger.info(`upload ok ${pathname}`, {
+        pathname,
+        attempts: attempt + 1,
+      });
 
       return result;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      console.warn(
-        `[storage] upload attempt failed ${attempt + 1}/${maxAttempts} for ${pathname}`,
-        lastError,
-      );
+      logger.warn(`upload attempt failed ${attempt + 1}/${maxAttempts}`, {
+        pathname,
+        attempts: attempt + 1,
+      });
 
       // Don't sleep on last attempt
       if (attempt < maxAttempts - 1) {
@@ -84,9 +90,10 @@ async function uploadWithRetry(
           UPLOAD_BACKOFF_BASE_MS,
           UPLOAD_BACKOFF_MAX_MS,
         );
-        console.debug(
-          `[storage] retrying after ${delay}ms delay for ${pathname}`,
-        );
+        logger.debug(`retrying after ${delay}ms delay`, {
+          pathname,
+          durationMs: delay,
+        });
         await sleep(delay);
       }
     }

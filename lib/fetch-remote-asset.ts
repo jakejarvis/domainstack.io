@@ -1,6 +1,9 @@
 import { lookup as dnsLookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import * as ipaddr from "ipaddr.js";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "remote-asset" });
 
 // Hosts that should never be fetched regardless of DNS (fast path).
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);
@@ -112,7 +115,7 @@ export async function fetchRemoteAsset(
         `Remote asset request failed with ${response.status}`,
         response.status,
       );
-      console.warn("[remote-asset] response error", {
+      logger.warn("response error", {
         url: currentUrl.toString(),
         reason: error.message,
       });
@@ -127,7 +130,7 @@ export async function fetchRemoteAsset(
           "size_exceeded",
           `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
         );
-        console.warn("[remote-asset] size exceeded", {
+        logger.warn("size exceeded", {
           url: currentUrl.toString(),
           reason: error.message,
         });
@@ -183,7 +186,7 @@ async function ensureUrlAllowed(
     BLOCKED_HOSTNAMES.has(hostname) ||
     BLOCKED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
   ) {
-    console.warn("[remote-asset] blocked host", {
+    logger.warn("blocked host", {
       url: url.toString(),
       reason: "host_blocked",
     });
@@ -194,7 +197,7 @@ async function ensureUrlAllowed(
     options.allowedHosts.length > 0 &&
     !options.allowedHosts.includes(hostname)
   ) {
-    console.warn("[remote-asset] blocked host", {
+    logger.warn("blocked host", {
       url: url.toString(),
       reason: "host_not_allowed",
     });
@@ -206,7 +209,7 @@ async function ensureUrlAllowed(
 
   if (isIP(hostname)) {
     if (isBlockedIp(hostname)) {
-      console.warn("[remote-asset] blocked ip", {
+      logger.warn("blocked ip", {
         url: url.toString(),
         reason: "private_ip",
       });
@@ -222,7 +225,7 @@ async function ensureUrlAllowed(
   try {
     records = await dnsLookup(hostname, { all: true });
   } catch (err) {
-    console.warn("[remote-asset] dns error", {
+    logger.warn("dns error", {
       url: url.toString(),
       reason: err instanceof Error ? err.message : "dns_error",
     });
@@ -233,7 +236,7 @@ async function ensureUrlAllowed(
   }
 
   if (!records || records.length === 0) {
-    console.warn("[remote-asset] dns error", {
+    logger.warn("dns error", {
       url: url.toString(),
       reason: "no_records",
     });
@@ -241,7 +244,7 @@ async function ensureUrlAllowed(
   }
 
   if (records.some((record) => isBlockedIp(record.address))) {
-    console.warn("[remote-asset] blocked ip", {
+    logger.warn("blocked ip", {
       url: url.toString(),
       reason: "private_ip",
     });

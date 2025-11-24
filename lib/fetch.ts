@@ -1,3 +1,7 @@
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "fetch" });
+
 /**
  * Fetch a trusted upstream resource with a timeout and optional retries.
  * Do not use this for user-controlled URLs; prefer the hardened remote asset helper.
@@ -26,6 +30,14 @@ export async function fetchWithTimeoutAndRetry(
         throw err instanceof Error ? err : new Error("fetch aborted");
       }
       if (attempt < retries) {
+        logger.warn(
+          `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
+          {
+            url: input.toString(),
+            error: err,
+          },
+        );
+
         // Simple linear backoff — good enough for trusted upstream retry logic.
         await new Promise((r) => setTimeout(r, backoffMs));
       }
@@ -150,7 +162,7 @@ function createAbortSignal(
         fn();
       } catch (err) {
         // Ignore cleanup errors to ensure all cleanup functions run
-        console.warn("Cleanup error:", err);
+        logger.error("cleanup error", err);
       }
     }
   };

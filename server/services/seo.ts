@@ -12,6 +12,7 @@ import {
 } from "@/lib/fetch";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
+import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type {
   GeneralMeta,
@@ -24,12 +25,14 @@ import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "@/lib/seo";
 import { storeImage } from "@/lib/storage";
 import { ttlForSeo } from "@/lib/ttl";
 
+const logger = createLogger({ source: "seo" });
+
 const SOCIAL_WIDTH = 1200;
 const SOCIAL_HEIGHT = 630;
 const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function getSeo(domain: string): Promise<SeoResponse> {
-  console.debug(`[seo] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -274,17 +277,20 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       ).catch((err) => {
-        console.warn(
-          `[seo] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        logger.error("schedule failed", err, {
+          domain: registrable,
+        });
       });
     });
   }
 
-  console.info(
-    `[seo] ok ${registrable} status=${status ?? -1} has_meta=${!!meta} has_robots=${!!robots} has_errors=${Boolean(htmlError || robotsError)}`,
-  );
+  logger.info(`ok ${registrable}`, {
+    domain: registrable,
+    status: status ?? -1,
+    has_meta: !!meta,
+    has_robots: !!robots,
+    has_errors: Boolean(htmlError || robotsError),
+  });
 
   return response;
 }

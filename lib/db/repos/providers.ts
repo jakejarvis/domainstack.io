@@ -2,7 +2,10 @@ import "server-only";
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
 import { slugify } from "@/lib/slugify";
+
+const logger = createLogger({ source: "providers" });
 
 export type ResolveProviderInput = {
   category: (typeof providerCategory.enumValues)[number];
@@ -322,7 +325,10 @@ export async function batchResolveOrCreateProviderIds(
         }
       }
     } catch (err) {
-      console.warn("[providers] batch insert partial failure", err);
+      logger.error("batch insert partial failure", err, {
+        count: toCreate.length,
+      });
+
       // Fall back to individual resolution for failed items
       for (const input of toCreate) {
         const domainKey = makeProviderKey(

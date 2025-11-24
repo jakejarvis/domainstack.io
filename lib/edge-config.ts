@@ -1,4 +1,7 @@
 import { get } from "@vercel/edge-config";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "edge-config" });
 
 /**
  * Fetches the default domain suggestions from Vercel Edge Config.
@@ -34,12 +37,9 @@ export async function getDefaultSuggestions(): Promise<string[]> {
 
     // Return the suggestions if they exist, otherwise empty array
     return suggestions ?? [];
-  } catch (error) {
+  } catch (err) {
     // Log the error but fail gracefully
-    console.error(
-      "[edge-config] failed to fetch domain suggestions",
-      error instanceof Error ? error.message : String(error),
-    );
+    logger.error("failed to fetch domain suggestions", err);
     return [];
   }
 }

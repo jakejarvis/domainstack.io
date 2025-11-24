@@ -1,8 +1,8 @@
 "use client";
 
 import NextError from "next/error";
-import posthog from "posthog-js";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger/client";
 
 export default function GlobalError({
   error,
@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    posthog.captureException(error);
+    logger.error("Global error boundary caught error", error);
   }, [error]);
 
   return (

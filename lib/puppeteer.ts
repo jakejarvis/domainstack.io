@@ -1,5 +1,8 @@
 import "server-only";
 import type { Browser } from "puppeteer-core";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "puppeteer" });
 
 let browserPromise: Promise<Browser> | null = null;
 
@@ -115,7 +118,7 @@ export function getBrowser(
 ): Promise<Browser> {
   if (!browserPromise) {
     browserPromise = createBrowser(overrides).catch((err) => {
-      console.error("[puppeteer] failed to create browser", err);
+      logger.error("failed to create browser", err);
       // Reset promise to allow retry on next call
       browserPromise = null;
       throw err;
@@ -130,7 +133,7 @@ export async function closeBrowser(): Promise<void> {
       const browser = await browserPromise;
       await browser.close();
     } catch (err) {
-      console.error("[puppeteer] failed to close browser", err);
+      logger.error("failed to close browser", err);
     } finally {
       browserPromise = null;
     }
@@ -139,7 +142,7 @@ export async function closeBrowser(): Promise<void> {
 
 if (process.env.NODE_ENV !== "test") {
   const handleShutdown = async (signal: string) => {
-    console.log(`[puppeteer] received ${signal}, closing browser...`);
+    logger.info(`received ${signal}, closing browser`);
     await closeBrowser();
     process.exit(0);
   };

@@ -7,11 +7,14 @@ import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
 import { upsertRegistration } from "@/lib/db/repos/registrations";
 import { domains, providers, registrations } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { createLogger } from "@/lib/logger/server";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Registration, RegistrationContacts } from "@/lib/schemas";
 import { ttlForRegistration } from "@/lib/ttl";
+
+const logger = createLogger({ source: "registration" });
 
 /**
  * Normalize registrar provider information from raw rdapper data.
@@ -52,7 +55,7 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
  */
 export async function getRegistration(domain: string): Promise<Registration> {
-  console.debug(`[registration] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -123,16 +126,18 @@ export async function getRegistration(domain: string): Promise<Registration> {
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
       ).catch((err) => {
-        console.warn(
-          `[registration] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        logger.error("schedule failed", err, {
+          domain: registrable,
+        });
       });
     });
 
-    console.info(
-      `[registration] ok cached ${registrable} registered=${row.registration.isRegistered} registrar=${registrarProvider.name}`,
-    );
+    logger.info(`ok cached ${registrable}`, {
+      domain: registrable,
+      isRegistered: row.registration.isRegistered,
+      registrar: registrarProvider.name,
+      cached: true,
+    });
 
     return response;
   }
@@ -151,9 +156,10 @@ export async function getRegistration(domain: string): Promise<Registration> {
     const isKnownLimitation = isExpectedRegistrationError(error);
 
     if (isKnownLimitation) {
-      console.info(
-        `[registration] unavailable ${registrable} reason=${error || "unknown"}`,
-      );
+      logger.info("unavailable", {
+        domain: registrable,
+        reason: error || "unknown",
+      });
 
       // Return minimal unregistered response for TLDs without WHOIS/RDAP
       // (We can't determine registration status without WHOIS/RDAP access)
@@ -173,18 +179,16 @@ export async function getRegistration(domain: string): Promise<Registration> {
     const err = new Error(
       `Registration lookup failed for ${registrable}: ${error || "unknown error"}`,
     );
-    console.error(
-      `[registration] error ${registrable}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error("lookup failed", err, { domain: registrable });
     throw err;
   }
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
-    console.info(
-      `[registration] ok ${registrable} unregistered (not persisted)`,
-    );
+    logger.info(`ok ${registrable} unregistered (not persisted)`, {
+      domain: registrable,
+      isRegistered: false,
+    });
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -301,16 +305,17 @@ export async function getRegistration(domain: string): Promise<Registration> {
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     ).catch((err) => {
-      console.warn(
-        `[registration] schedule failed for ${registrable}`,
-        err instanceof Error ? err : new Error(String(err)),
-      );
+      logger.error("schedule failed", err, {
+        domain: registrable,
+      });
     });
   });
 
-  console.info(
-    `[registration] ok ${registrable} registered=${record.isRegistered} registrar=${withProvider.registrarProvider.name}`,
-  );
+  logger.info(`ok ${registrable}`, {
+    domain: registrable,
+    isRegistered: record.isRegistered,
+    registrar: withProvider.registrarProvider.name,
+  });
 
   return withProvider;
 }

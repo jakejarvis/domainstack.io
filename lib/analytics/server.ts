@@ -102,6 +102,9 @@ export const analytics = {
     }
   },
 
+  /**
+   * @internal Use logger.error() instead, which automatically tracks exceptions.
+   */
   trackException: (
     error: Error,
     properties: Record<string, unknown>,

@@ -14,6 +14,7 @@ import {
   providers as providersTable,
 } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { createLogger } from "@/lib/logger/server";
 import {
   detectDnsProvider,
   detectEmailProvider,
@@ -26,6 +27,8 @@ import { resolveAll } from "@/server/services/dns";
 import { probeHeaders } from "@/server/services/headers";
 import { lookupIpMeta } from "@/server/services/ip";
 
+const logger = createLogger({ source: "hosting" });
+
 /**
  * Detect hosting, email, and DNS providers for a domain with Postgres caching.
  *
@@ -36,7 +39,7 @@ import { lookupIpMeta } from "@/server/services/ip";
 export const detectHosting = cache(async function detectHosting(
   domain: string,
 ): Promise<Hosting> {
-  console.debug(`[hosting] start ${domain}`);
+  logger.debug(`start ${domain}`, { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -100,9 +103,13 @@ export const detectHosting = cache(async function detectHosting(
           lon: row.geoLon ?? null,
         },
       };
-      console.info(
-        `[hosting] cache hit ${domain} hosting=${info.hostingProvider.name} email=${info.emailProvider.name} dns=${info.dnsProvider.name}`,
-      );
+      logger.info(`cache hit ${domain}`, {
+        domain,
+        hosting: info.hostingProvider.name,
+        email: info.emailProvider.name,
+        dns: info.dnsProvider.name,
+        cached: true,
+      });
       return info;
     }
   }
@@ -119,10 +126,7 @@ export const detectHosting = cache(async function detectHosting(
   const [headersResponse, meta] = await Promise.all([
     hasWebHosting
       ? probeHeaders(domain).catch((err) => {
-          console.error(
-            `[hosting] headers probe error ${domain}`,
-            err instanceof Error ? err : new Error(String(err)),
-          );
+          logger.error(`headers probe error ${domain}`, err, { domain });
           return {
             headers: [] as { name: string; value: string }[],
             status: 0,
@@ -274,15 +278,17 @@ export const detectHosting = cache(async function detectHosting(
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       ).catch((err) => {
-        console.warn(
-          `[hosting] schedule failed for ${registrable}`,
-          err instanceof Error ? err : new Error(String(err)),
-        );
+        logger.error("schedule failed", err, {
+          domain: registrable,
+        });
       });
     });
   }
-  console.info(
-    `[hosting] ok ${registrable} hosting=${hostingName} email=${emailName} dns=${dnsName}`,
-  );
+  logger.info(`ok ${registrable}`, {
+    domain: registrable,
+    hosting: hostingName,
+    email: emailName,
+    dns: dnsName,
+  });
   return info;
 });

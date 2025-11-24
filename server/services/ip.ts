@@ -1,4 +1,7 @@
 import { cache } from "react";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "ip" });
 
 /**
  * Lookup IP metadata including geolocation and ownership information.
@@ -21,7 +24,7 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
   owner: string | null;
   domain: string | null;
 }> {
-  console.debug(`[ip] start lookup for ${ip}`);
+  logger.debug(`start lookup for ${ip}`, { type: "ip" });
   try {
     // Add timeout to prevent hanging requests to upstream IP service
     const controller = new AbortController();
@@ -34,7 +37,11 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        console.error(`[ip] error looking up ${ip}`, res.statusText);
+        logger.error(`error looking up ${ip}`, undefined, {
+          type: "ip",
+          status: res.status,
+          statusMessage: res.statusText,
+        });
         throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
       }
 
@@ -91,9 +98,11 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
         lon: typeof data.longitude === "number" ? data.longitude : null,
       };
 
-      console.info(
-        `[ip] ok ${ip} owner=${owner || "none"} domain=${domain || "none"}`,
-      );
+      logger.info(`ok ${ip}`, {
+        type: "ip",
+        owner: owner || "none",
+        domain: domain || "none",
+      });
 
       return { geo, owner, domain };
     } catch (fetchErr) {
@@ -102,10 +111,7 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
       throw fetchErr;
     }
   } catch (err) {
-    console.warn(
-      `[ip] error looking up ${ip}`,
-      err instanceof Error ? err : new Error(String(err)),
-    );
+    logger.error(`error looking up ${ip}`, err, { type: "ip" });
     return {
       owner: null,
       domain: null,

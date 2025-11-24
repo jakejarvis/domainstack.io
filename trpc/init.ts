@@ -4,6 +4,8 @@ import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { getOrGenerateCorrelationId } from "@/lib/logger/correlation";
+import { setCorrelationId } from "@/lib/logger/server";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -31,7 +33,18 @@ export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
   const ip = await resolveRequestIp();
 
-  return { req, ip } as const;
+  // Generate or extract correlation ID for request tracing
+  let correlationId: string | undefined;
+  try {
+    const headerList = await headers();
+    correlationId = getOrGenerateCorrelationId(headerList);
+    // Set in AsyncLocalStorage for propagation
+    setCorrelationId(correlationId);
+  } catch {
+    // headers() not available (tests/scripts)
+  }
+
+  return { req, ip, correlationId } as const;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
@@ -48,63 +61,32 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.
- * All logs are structured JSON for better parsing by log aggregators.
+ * All logs are structured JSON with OpenTelemetry tracing and correlation IDs.
  * Errors are tracked in PostHog for centralized monitoring.
- * @param path - The path of the procedure
- * @param type - The type of the procedure
- * @param input - The input to the procedure
- * @param next - The next middleware
- * @returns The result of the next middleware
  */
 const withLogging = t.middleware(async ({ path, type, input, next }) => {
   const start = performance.now();
 
-  // Sample input for debugging (only log safe fields, avoid PII)
-  const inputSample =
-    input && typeof input === "object"
-      ? Object.keys(input).reduce(
-          (acc, key) => {
-            // Log only safe fields, truncate long values
-            if (
-              key === "domain" ||
-              key === "type" ||
-              key === "types" ||
-              key === "limit"
-            ) {
-              const value = (input as Record<string, unknown>)[key];
-              acc[key] = String(value).slice(0, 100);
-            }
-            return acc;
-          },
-          {} as Record<string, string>,
-        )
-      : undefined;
+  // Import logger (dynamic to avoid circular deps)
+  const { logger } = await import("@/lib/logger/server");
 
-  console.debug(
-    JSON.stringify({
-      level: "debug",
-      message: "[trpc] start",
-      path,
-      type,
-      input: inputSample,
-      timestamp: new Date().toISOString(),
-    }),
-  );
+  // Log procedure start
+  logger.debug(`[trpc] start ${path}`, {
+    path,
+    type,
+    ...(input && typeof input === "object" ? { ...input } : {}),
+  });
 
   try {
     const result = await next();
     const durationMs = Math.round(performance.now() - start);
 
-    console.info(
-      JSON.stringify({
-        level: "info",
-        message: "[trpc] ok",
-        path,
-        type,
-        durationMs,
-        timestamp: new Date().toISOString(),
-      }),
-    );
+    // Log successful completion
+    logger.info(`[trpc] ok ${path}`, {
+      path,
+      type,
+      durationMs,
+    });
 
     // Track slow requests (>5s threshold) in PostHog
     if (durationMs > 5000) {
@@ -121,30 +103,11 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
     const durationMs = Math.round(performance.now() - start);
     const error = err instanceof Error ? err : new Error(String(err));
 
-    console.error(
-      JSON.stringify({
-        level: "error",
-        message: "[trpc] error",
-        path,
-        type,
-        durationMs,
-        timestamp: new Date().toISOString(),
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause,
-        },
-      }),
-    );
-
-    // Track exceptions in PostHog for centralized monitoring
-    const { analytics } = await import("@/lib/analytics/server");
-    analytics.trackException(error, {
+    // Log error with full details
+    logger.error(`[trpc] error ${path}`, error, {
       path,
       type,
       durationMs,
-      source: "trpc",
     });
 
     throw err;
@@ -166,14 +129,10 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   ) {
     const registrable = toRegistrableDomain(input.domain);
     if (registrable) {
-      console.debug(
-        JSON.stringify({
-          level: "debug",
-          message: "[trpc] recording access for domain",
-          domain: registrable,
-          timestamp: new Date().toISOString(),
-        }),
-      );
+      const { logger } = await import("@/lib/logger/server");
+      logger.debug("[trpc] recording access for domain", {
+        domain: registrable,
+      });
       after(() => updateLastAccessed(registrable));
     }
   }
