@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportView } from "@/components/domain/domain-report-view";
 import { analytics } from "@/lib/analytics/server";
-import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { getQueryClient, trpc } from "@/trpc/server";
 
@@ -17,10 +16,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
-  const normalized = normalizeDomainInput(decoded);
 
-  const isRegistrable = toRegistrableDomain(normalized);
-  if (!isRegistrable) {
+  const registrable = toRegistrableDomain(decoded);
+  if (!registrable) {
     // workaround, should match metadata from not-found.tsx
     return {
       title: "Not Found",
@@ -30,11 +28,11 @@ export async function generateMetadata({
 
   return {
     title: {
-      absolute: `${normalized} — Domain Report`,
+      absolute: `${registrable} — Domain Report`,
     },
-    description: `Domainstack report for ${normalized}: WHOIS lookup, DNS & SSL scan, HTTP headers, hosting & email provider data, and SEO metadata.`,
+    description: `Domainstack report for ${registrable}: WHOIS lookup, DNS & SSL scan, HTTP headers, hosting & email provider data, and SEO metadata.`,
     alternates: {
-      canonical: `/${normalized}`,
+      canonical: `/${registrable}`,
     },
   };
 }
@@ -46,30 +44,29 @@ export default async function DomainPage({
 }) {
   const { domain: raw } = await params;
   const decoded = decodeURIComponent(raw);
-  const normalized = normalizeDomainInput(decoded);
 
-  const isRegistrable = toRegistrableDomain(normalized);
-  if (!isRegistrable) notFound();
+  const registrable = toRegistrableDomain(decoded);
+  if (!registrable) notFound();
 
-  // Canonicalize URL to the normalized domain (middleware should already handle most cases)
-  if (normalized !== decoded) {
-    redirect(`/${encodeURIComponent(normalized)}`);
+  // Canonicalize URL to the registrable domain (middleware should already handle most cases)
+  if (registrable !== decoded) {
+    redirect(`/${encodeURIComponent(registrable)}`);
   }
 
   // Track server-side page view
-  analytics.track("report_viewed", { domain: normalized });
+  analytics.track("report_viewed", { domain: registrable });
 
   // Minimal prefetch: registration only, let sections stream progressively
   // Use getQueryClient() to ensure consistent query client across the request
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
-    trpc.domain.getRegistration.queryOptions({ domain: normalized }),
+    trpc.domain.getRegistration.queryOptions({ domain: registrable }),
   );
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <DomainReportView domain={normalized} />
+        <DomainReportView domain={registrable} />
       </HydrationBoundary>
     </div>
   );

@@ -24,6 +24,54 @@ describe("normalizeDomainInput", () => {
       "ex-ample.com",
     );
   });
+
+  it("handles malformed protocols (single slash)", () => {
+    expect(normalizeDomainInput("http:/example.com")).toBe("example.com");
+  });
+
+  it("handles malformed protocols (triple slash)", () => {
+    expect(normalizeDomainInput("http:///example.com")).toBe("example.com");
+  });
+
+  it("handles malformed protocols (multiple colons)", () => {
+    expect(normalizeDomainInput("https:::example.com/path")).toBe(
+      "example.com",
+    );
+  });
+
+  it("rejects IPv6 literals", () => {
+    expect(normalizeDomainInput("[::1]")).toBe("");
+    expect(normalizeDomainInput("[::1]:8080")).toBe("");
+    expect(normalizeDomainInput("http://[2001:db8::1]/path")).toBe("");
+  });
+
+  it("handles spaces and whitespace", () => {
+    expect(normalizeDomainInput("  example.com  ")).toBe("example.com");
+    expect(normalizeDomainInput("example.com /path")).toBe("example.com");
+  });
+
+  it("strips www from subdomains", () => {
+    expect(normalizeDomainInput("www.example.com")).toBe("example.com");
+    expect(normalizeDomainInput("WWW.EXAMPLE.COM")).toBe("example.com");
+  });
+
+  it("preserves non-www subdomains", () => {
+    expect(normalizeDomainInput("api.example.com")).toBe("api.example.com");
+    expect(normalizeDomainInput("sub.domain.example.com")).toBe(
+      "sub.domain.example.com",
+    );
+  });
+
+  it("handles query parameters and fragments", () => {
+    expect(normalizeDomainInput("example.com?query=value")).toBe("example.com");
+    expect(normalizeDomainInput("example.com#fragment")).toBe("example.com");
+    expect(normalizeDomainInput("example.com?q=1#frag")).toBe("example.com");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(normalizeDomainInput("")).toBe("");
+    expect(normalizeDomainInput("   ")).toBe("");
+  });
 });
 
 describe("isValidDomain", () => {

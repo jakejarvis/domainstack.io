@@ -1,51 +1,78 @@
 // Utilities for handling user-provided domain input
 
+// Matches beginning "http:" or "https:" followed by any number of slashes/colons
+// Captures the authority (host + userinfo + port)
+// This handles malformed protocols like "http:/example.com" or "http:///example.com"
+const SCHEME_PREFIX_REGEX = /^https?[:/]+([^/]+)/i;
+
 /**
- * Normalize arbitrary user input into a bare registrable domain string.
+ * Normalize arbitrary user input into a bare hostname string.
  * Accepts values like:
  *  - "example.com"
  *  - "www.example.com."
  *  - "https://example.com/path?x#y"
  *  - "http://user:pass@example.com:8080/"
+ *  - "http:/example.com" (malformed protocol)
  *  - "  EXAMPLE.COM  "
- * Returns a lowercased hostname without scheme, path, auth, port, or trailing dot.
+ * Returns a lowercased hostname without scheme, path, auth, port, trailing dot, or www. prefix.
+ * Returns empty string for invalid/unparseable input or IPv6 literals.
  */
 export function normalizeDomainInput(input: string): string {
   let value = (input ?? "").trim();
   if (value === "") return "";
 
-  // If it looks like a URL (has a scheme), use URL parsing
-  const hasScheme = /:\/\//.test(value);
-  if (hasScheme) {
+  // Reject IPv6 literals early (e.g., "[::1]", "[::1]:8080")
+  // These are not supported and would cause issues in URL parsing
+  if (value.includes("[") || value.includes("]")) {
+    return "";
+  }
+
+  // Try to extract authority (host) from scheme-prefixed input
+  // This handles both valid and malformed protocols
+  const schemeMatch = value.match(SCHEME_PREFIX_REGEX);
+  if (schemeMatch) {
+    // Extract authority from the scheme match
+    value = schemeMatch[1];
+  } else if (/:\/\//.test(value)) {
+    // Has scheme-like pattern but didn't match our regex (e.g., "fake+scheme://...")
+    // Try URL parsing first
     try {
       const url = new URL(value);
-      // URL applies IDNA (punycode) and strips auth/port/path for hostname
       value = url.hostname;
     } catch {
-      // If invalid URL with scheme, strip leading scheme-like prefix manually
+      // Fallback: strip scheme-like prefix manually
       value = value.replace(/^\w+:\/\//, "");
-      // Remove credentials if present
-      value = value.replace(/^[^@]+@/, "");
-      // Remove path/query/fragment
-      value = value.split("/")[0].split("?")[0].split("#")[0];
     }
   } else {
-    // No scheme: try URL parsing with implicit http:// to get punycoded hostname
+    // No scheme detected: try URL parsing with implicit http:// to get punycoded hostname
     try {
       const url = new URL(`http://${value}`);
       value = url.hostname;
     } catch {
-      // Fallback: remove any credentials, path, query, or fragment accidentally included
-      value = value.replace(/^[^@]+@/, "");
-      value = value.split("/")[0].split("?")[0].split("#")[0];
+      // Fallback: treat as raw authority and parse manually
     }
   }
 
-  // Strip port if present
-  value = value.replace(/:\d+$/, "");
+  // Strip query and fragment (in case they weren't already removed)
+  value = value.split(/[?#]/)[0];
+
+  // Strip User Info (credentials)
+  const atIndex = value.lastIndexOf("@");
+  if (atIndex !== -1) {
+    value = value.slice(atIndex + 1);
+  }
+
+  // Strip port
+  value = value.split(":")[0];
+
+  // Remove any path components that might remain
+  value = value.split("/")[0];
 
   // Strip trailing dot
   value = value.replace(/\.$/, "");
+
+  // Trim any remaining whitespace
+  value = value.trim();
 
   // Remove common leading www.
   value = value.replace(/^www\./i, "");
@@ -54,7 +81,7 @@ export function normalizeDomainInput(input: string): string {
 }
 
 /**
- * Basic domain validity check (hostname-like), not performing DNS or RDAP.
+ * An even more basic domain validity check (hostname-like), not performing DNS or RDAP.
  */
 export function isValidDomain(value: string): boolean {
   const v = (value ?? "").trim();

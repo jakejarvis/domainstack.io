@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   BlobUrlResponseSchema,
@@ -30,8 +29,7 @@ import {
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
   .transform(({ domain }) => {
-    const normalized = normalizeDomainInput(domain);
-    const registrable = toRegistrableDomain(normalized);
+    const registrable = toRegistrableDomain(domain);
     if (!registrable) {
       throw new TRPCError({
         code: "BAD_REQUEST",
