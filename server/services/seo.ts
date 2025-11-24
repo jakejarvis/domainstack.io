@@ -276,8 +276,8 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         "seo",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
-      ).catch((_err) => {
-        logger.warn(`schedule failed for ${registrable}`, {
+      ).catch((err) => {
+        logger.error("schedule failed", err, {
           domain: registrable,
         });
       });

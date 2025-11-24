@@ -181,8 +181,8 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           "certificates",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
-        ).catch((_err) => {
-          logger.warn(`schedule failed for ${registrable}`, {
+        ).catch((err) => {
+          logger.error("schedule failed", err, {
             domain: registrable,
           });
         });

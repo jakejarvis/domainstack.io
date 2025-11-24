@@ -125,8 +125,8 @@ export async function getRegistration(domain: string): Promise<Registration> {
         "registration",
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
-      ).catch((_err) => {
-        logger.warn(`schedule failed for ${registrable}`, {
+      ).catch((err) => {
+        logger.error("schedule failed", err, {
           domain: registrable,
         });
       });
@@ -156,7 +156,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     const isKnownLimitation = isExpectedRegistrationError(error);
 
     if (isKnownLimitation) {
-      logger.info(`unavailable ${registrable}`, {
+      logger.info("unavailable", {
         domain: registrable,
         reason: error || "unknown",
       });
@@ -179,7 +179,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     const err = new Error(
       `Registration lookup failed for ${registrable}: ${error || "unknown error"}`,
     );
-    logger.error(`error ${registrable}`, err, { domain: registrable });
+    logger.error("lookup failed", err, { domain: registrable });
     throw err;
   }
 
@@ -304,8 +304,8 @@ export async function getRegistration(domain: string): Promise<Registration> {
       "registration",
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
-    ).catch((_err) => {
-      logger.warn(`schedule failed for ${registrable}`, {
+    ).catch((err) => {
+      logger.error("schedule failed", err, {
         domain: registrable,
       });
     });

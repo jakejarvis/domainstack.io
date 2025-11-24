@@ -248,8 +248,8 @@ export const resolveAll = cache(async function resolveAll(
               "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
-            ).catch((_err) => {
-              logger.warn(`schedule failed partial ${registrable}`, {
+            ).catch((err) => {
+              logger.error("schedule failed partial", err, {
                 domain: registrable,
                 type: "partial",
               });
@@ -294,12 +294,12 @@ export const resolveAll = cache(async function resolveAll(
           records: merged,
           resolver: pinnedProvider.key,
         } as DnsResolveResult;
-      } catch (_err) {
-        logger.warn(`partial refresh failed ${registrable}`, {
+      } catch (err) {
+        // Fall through to full provider loop below
+        logger.error("partial refresh failed", err, {
           domain: registrable,
           provider: pinnedProvider.key,
         });
-        // Fall through to full provider loop below
       }
     }
   }
@@ -383,8 +383,8 @@ export const resolveAll = cache(async function resolveAll(
             "dns",
             soonest,
             existingDomain.lastAccessedAt ?? null,
-          ).catch((_err) => {
-            logger.warn(`schedule failed full ${registrable}`, {
+          ).catch((err) => {
+            logger.error("schedule failed full", err, {
               domain: registrable,
               type: "full",
             });

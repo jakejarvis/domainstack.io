@@ -295,8 +295,11 @@ export async function batchResolveOrCreateProviderIds(
           }
         }
       }
-    } catch (_err) {
-      logger.warn("batch insert partial failure", { count: toCreate.length });
+    } catch (err) {
+      logger.error("batch insert partial failure", err, {
+        count: toCreate.length,
+      });
+
       // Fall back to individual resolution for failed items
       for (const input of toCreate) {
         const domainKey = makeProviderKey(
