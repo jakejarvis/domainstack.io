@@ -1,10 +1,16 @@
 import "server-only";
 
 import type { BootstrapData } from "rdapper";
-import { RDAP_BOOTSTRAP_URL } from "@/lib/constants/external-apis";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "rdap-bootstrap" });
+
+/**
+ * RDAP Bootstrap Registry URL from IANA.
+ * This JSON file maps TLDs to their authoritative RDAP servers.
+ * @see https://datatracker.ietf.org/doc/html/rfc7484
+ */
+const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
 
 /**
  * Fetch RDAP bootstrap data with Next.js Data Cache.

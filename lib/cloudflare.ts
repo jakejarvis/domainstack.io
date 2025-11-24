@@ -1,11 +1,17 @@
 import "server-only";
 
 import * as ipaddr from "ipaddr.js";
-import { CLOUDFLARE_IPS_URL } from "@/lib/constants/external-apis";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "cloudflare-ips" });
+
+/**
+ * Cloudflare IP Ranges URL.
+ * This JSON file contains the IP ranges for Cloudflare's network.
+ * @see https://developers.cloudflare.com/api/resources/ips/methods/list/
+ */
+const CLOUDFLARE_IPS_URL = "https://api.cloudflare.com/client/v4/ips";
 
 export interface CloudflareIpRanges {
   ipv4Cidrs: string[];
