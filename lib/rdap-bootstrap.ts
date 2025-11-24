@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { BootstrapData } from "rdapper";
+import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "rdap-bootstrap" });
@@ -26,6 +27,9 @@ const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
  */
 export async function getRdapBootstrapData(): Promise<BootstrapData> {
   const res = await fetch(RDAP_BOOTSTRAP_URL, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
     next: {
       revalidate: 604800, // 1 week
       tags: ["rdap-bootstrap"],

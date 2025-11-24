@@ -12,10 +12,10 @@ import {
 export interface PricingProviderInfo {
   /** Provider display name */
   name: string;
+  /** Generate registration URL for a domain */
+  searchUrl: (domain: string) => string;
   /** Provider icon component */
   icon: React.ComponentType<{ className?: string }>;
-  /** Generate registration URL for a domain */
-  url: (domain: string) => string;
   /** Whether icon needs white background or is transparent */
   transparentIcon?: boolean;
 }
@@ -27,25 +27,21 @@ export interface PricingProviderInfo {
 export const PRICING_PROVIDERS: Record<string, PricingProviderInfo> = {
   porkbun: {
     name: "Porkbun",
+    searchUrl: (domain) => `https://porkbun.com/checkout/search?q=${domain}`,
     icon: PorkbunIcon,
-    url: (domain) => `https://porkbun.com/checkout/search?q=${domain}`,
     transparentIcon: false,
   },
   cloudflare: {
     name: "Cloudflare Registrar",
+    searchUrl: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
     icon: CloudflareIcon,
-    url: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
     transparentIcon: true,
   },
   dynadot: {
     name: "Dynadot",
+    searchUrl: (domain) =>
+      `https://www.dynadot.com/domain/search?domain=${domain}`,
     icon: DynadotIcon,
-    url: (domain) => `https://www.dynadot.com/domain/search?domain=${domain}`,
     transparentIcon: false,
   },
 } as const;
-
-/**
- * Type-safe provider keys
- */
-export type PricingProviderKey = keyof typeof PRICING_PROVIDERS;

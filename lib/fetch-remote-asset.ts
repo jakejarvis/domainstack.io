@@ -1,6 +1,6 @@
 import { lookup as dnsLookup } from "node:dns/promises";
-import { isIP } from "node:net";
 import * as ipaddr from "ipaddr.js";
+import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "remote-asset" });
@@ -205,7 +205,7 @@ async function ensureUrlAllowed(
     );
   }
 
-  if (isIP(hostname)) {
+  if (ipaddr.isValid(hostname)) {
     if (isBlockedIp(hostname)) {
       logger.warn("blocked private ip", {
         url: url.toString(),
@@ -261,7 +261,10 @@ async function timedFetch(
   try {
     return await fetch(url, {
       method: "GET",
-      headers: opts.headers,
+      headers: {
+        "User-Agent": USER_AGENT,
+        ...opts.headers,
+      },
       redirect: "manual",
       signal: controller.signal,
     });

@@ -1,3 +1,4 @@
+import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "fetch" });
@@ -20,7 +21,14 @@ export async function fetchWithTimeoutAndRetry(
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { signal, cleanup } = createAbortSignal(timeoutMs, externalSignal);
     try {
-      const res = await fetch(input, { ...init, signal });
+      const res = await fetch(input, {
+        ...init,
+        signal,
+        headers: {
+          "User-Agent": USER_AGENT,
+          ...init.headers,
+        },
+      });
       cleanup();
       return res;
     } catch (err) {
@@ -106,6 +114,10 @@ export async function fetchWithSelectiveRedirects(
     try {
       const response = await fetch(currentUrl, {
         ...init,
+        headers: {
+          "User-Agent": USER_AGENT,
+          ...init.headers,
+        },
         redirect: "manual",
         signal: controller.signal,
       });

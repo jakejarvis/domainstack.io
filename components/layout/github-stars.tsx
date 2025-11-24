@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { REPOSITORY_SLUG } from "@/lib/constants/app";
+import { REPOSITORY_SLUG, USER_AGENT } from "@/lib/constants/app";
 
 async function fetchRepoStars(): Promise<number | null> {
   try {
     const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
       headers: {
         Accept: "application/vnd.github+json",
+        "User-Agent": USER_AGENT,
         // token is optional but allows for more frequent/reliable API calls
         ...(process.env.GITHUB_TOKEN
           ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }

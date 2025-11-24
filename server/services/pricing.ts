@@ -1,4 +1,5 @@
 import { getDomainTld } from "rdapper";
+import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 import type { Pricing } from "@/lib/schemas";
 
@@ -77,6 +78,10 @@ export function createFetchWithTimeout(
     try {
       const res = await fetch(url, {
         ...options,
+        headers: {
+          "User-Agent": USER_AGENT,
+          ...options.headers,
+        },
         signal: controller.signal,
         next: {
           revalidate: config.revalidate,

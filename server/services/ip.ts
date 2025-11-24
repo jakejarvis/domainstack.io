@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "ip" });
@@ -34,6 +35,9 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
     try {
       const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
         signal: controller.signal,
+        headers: {
+          "User-Agent": USER_AGENT,
+        },
       });
       clearTimeout(timeoutId);
 

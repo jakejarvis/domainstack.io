@@ -18,12 +18,15 @@ export function DomainPricingCTASkeleton({
 }: {
   className?: string;
 }) {
+  const providerCount = Object.keys(PRICING_PROVIDERS ?? {}).length;
+
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
-      <Skeleton className="mt-1 h-3 w-20" aria-hidden />
-      <Skeleton className="mt-3 h-8 w-48" aria-hidden />
-      <Skeleton className="mt-2 h-8 w-48" aria-hidden />
-      <Skeleton className="mt-2 h-8 w-48" aria-hidden />
+      <Skeleton className="mt-1 mb-1 h-3 w-20" aria-hidden />
+      {Array.from({ length: providerCount }, (_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton elements never reorder
+        <Skeleton key={i} className="mt-2 h-8 w-48" aria-hidden />
+      ))}
       <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
     </div>
   );
@@ -100,7 +103,7 @@ export function DomainPricingCTA({
               className="w-full min-w-[250px]"
             >
               <a
-                href={config.url(domain)}
+                href={config.searchUrl(domain)}
                 target="_blank"
                 rel="noopener"
                 aria-label={`Register this domain with ${config.name}`}

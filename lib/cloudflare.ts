@@ -1,6 +1,7 @@
 import "server-only";
 
 import * as ipaddr from "ipaddr.js";
+import { USER_AGENT } from "@/lib/constants/app";
 import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { createLogger } from "@/lib/logger/server";
 
@@ -26,6 +27,9 @@ let lastLoadedIpv6Parsed: Array<[ipaddr.IPv6, number]> | undefined;
  */
 async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   const res = await fetch(CLOUDFLARE_IPS_URL, {
+    headers: {
+      "User-Agent": USER_AGENT,
+    },
     next: {
       revalidate: 604800, // 1 week
       tags: ["cloudflare-ip-ranges"],
