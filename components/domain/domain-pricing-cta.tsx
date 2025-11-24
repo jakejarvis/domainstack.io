@@ -23,6 +23,7 @@ export function DomainPricingCTASkeleton({
       <Skeleton className="mt-1 h-3 w-20" aria-hidden />
       <Skeleton className="mt-3 h-8 w-48" aria-hidden />
       <Skeleton className="mt-2 h-8 w-48" aria-hidden />
+      <Skeleton className="mt-2 h-8 w-48" aria-hidden />
       <Skeleton className="mt-7 mb-1 h-3 w-64" aria-hidden />
     </div>
   );

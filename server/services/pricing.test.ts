@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getPricingForTld } from "./pricing";
+import { getPricing } from "./pricing";
 
 // Mock the logger
 vi.mock("@/lib/logger/server", () => ({
@@ -15,14 +15,14 @@ describe("pricing service", () => {
     vi.clearAllMocks();
   });
 
-  describe("getPricingForTld", () => {
+  describe("getPricing", () => {
     it("should return null for invalid domains", async () => {
-      const result = await getPricingForTld("localhost");
+      const result = await getPricing("localhost");
       expect(result).toEqual({ tld: null, providers: [] });
     });
 
     it("should return null for empty input", async () => {
-      const result = await getPricingForTld("");
+      const result = await getPricing("");
       expect(result).toEqual({ tld: null, providers: [] });
     });
 
@@ -40,7 +40,7 @@ describe("pricing service", () => {
         json: async () => mockPorkbunResponse,
       });
 
-      const result = await getPricingForTld("example.com");
+      const result = await getPricing("example.com");
       expect(result.tld).toBe("com");
     });
 
@@ -73,7 +73,7 @@ describe("pricing service", () => {
         return Promise.reject(new Error("Unknown URL"));
       });
 
-      const result = await getPricingForTld("example.com");
+      const result = await getPricing("example.com");
       expect(result.providers).toHaveLength(2);
       expect(result.providers).toContainEqual({
         provider: "porkbun",
@@ -101,7 +101,7 @@ describe("pricing service", () => {
         });
       });
 
-      const result = await getPricingForTld("example.com");
+      const result = await getPricing("example.com");
       expect(result.providers).toHaveLength(1);
       expect(result.providers[0].provider).toBe("cloudflare");
     });
@@ -112,7 +112,7 @@ describe("pricing service", () => {
         json: async () => ({ pricing: {} }),
       });
 
-      const result = await getPricingForTld("example.xyz");
+      const result = await getPricing("example.xyz");
       expect(result.tld).toBe("xyz");
       expect(result.providers).toEqual([]);
     });

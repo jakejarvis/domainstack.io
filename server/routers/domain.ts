@@ -16,7 +16,7 @@ import { resolveAll } from "@/server/services/dns";
 import { getOrCreateFaviconBlobUrl } from "@/server/services/favicon";
 import { probeHeaders } from "@/server/services/headers";
 import { detectHosting } from "@/server/services/hosting";
-import { getPricingForTld } from "@/server/services/pricing";
+import { getPricing } from "@/server/services/pricing";
 import { getRegistration } from "@/server/services/registration";
 import { getOrCreateScreenshotBlobUrl } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
@@ -70,5 +70,5 @@ export const domainRouter = createTRPCRouter({
   pricing: publicProcedure
     .input(DomainInputSchema)
     .output(PricingSchema)
-    .query(({ input }) => getPricingForTld(input.domain)),
+    .query(({ input }) => getPricing(input.domain)),
 });

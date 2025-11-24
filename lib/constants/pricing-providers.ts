@@ -1,4 +1,8 @@
-import { CloudflareIcon, PorkbunIcon } from "@/components/brand-icons";
+import {
+  CloudflareIcon,
+  DynadotIcon,
+  PorkbunIcon,
+} from "@/components/brand-icons";
 
 /**
  * Provider configuration for domain pricing.
@@ -32,6 +36,12 @@ export const PRICING_PROVIDERS: Record<string, PricingProviderInfo> = {
     icon: CloudflareIcon,
     url: (domain) => `https://domains.cloudflare.com/?domain=${domain}`,
     transparentIcon: true,
+  },
+  dynadot: {
+    name: "Dynadot",
+    icon: DynadotIcon,
+    url: (domain) => `https://www.dynadot.com/domain/search?domain=${domain}`,
+    transparentIcon: false,
   },
 } as const;
 

@@ -216,11 +216,74 @@ const cloudflareProvider = createPricingProvider("cloudflare", {
   },
 });
 
+const dynadotProvider = createPricingProvider("dynadot", {
+  async fetchPricing(fetchWithTimeout) {
+    // Requires API key from environment
+    const apiKey = process.env.DYNADOT_API_KEY;
+
+    if (!apiKey) {
+      logger.warn("DYNADOT_API_KEY not set", { provider: "dynadot" });
+      throw new Error("Dynadot API key not configured");
+    }
+
+    // Build URL with required query parameters
+    // https://www.dynadot.com/domain/api-document#domain_get_tld_price
+    const url = new URL(
+      "https://api.dynadot.com/restful/v1/domains/get_tld_price",
+    );
+    url.searchParams.set("currency", "USD");
+
+    const res = await fetchWithTimeout(url.toString(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Accept: "application/json",
+      },
+    });
+
+    const data = await res.json();
+
+    // Check for API errors
+    if (data?.code !== 200) {
+      logger.error("dynadot api error", undefined, {
+        provider: "dynadot",
+        code: data?.code,
+        message: data?.message,
+        error: data?.error,
+      });
+      throw new Error(`Dynadot API error: ${data?.message ?? "Unknown error"}`);
+    }
+
+    // Dynadot returns: { code: 200, message: "success", data: { tldPriceList: [...] } }
+    const tldList = data?.data?.tldPriceList || [];
+    const pricing: RegistrarPricingResponse = {};
+
+    for (const item of tldList) {
+      // Dynadot includes the leading dot (e.g., ".com"), so we need to remove it
+      const tld = item.tld?.toLowerCase().replace(/^\./, "");
+      // allYearsRegisterPrice is an array, get the first year price
+      const registrationPrice = item.allYearsRegisterPrice?.[0];
+
+      if (tld && registrationPrice !== undefined) {
+        pricing[tld] = {
+          registration: String(registrationPrice),
+        };
+      }
+    }
+
+    return pricing;
+  },
+});
+
 /**
  * List of providers to check.
  * All enabled providers are queried in parallel.
  */
-const providers: PricingProvider[] = [porkbunProvider, cloudflareProvider];
+const providers: PricingProvider[] = [
+  porkbunProvider,
+  cloudflareProvider,
+  dynadotProvider,
+];
 
 // ============================================================================
 // Public API
@@ -230,7 +293,7 @@ const providers: PricingProvider[] = [porkbunProvider, cloudflareProvider];
  * Fetch domain pricing for the given domain's TLD from all providers.
  * Returns pricing from all providers that have data for this TLD.
  */
-export async function getPricingForTld(domain: string): Promise<Pricing> {
+export async function getPricing(domain: string): Promise<Pricing> {
   const input = (domain ?? "").trim().toLowerCase();
   // Ignore single-label hosts like "localhost" or invalid inputs
   if (!input.includes(".")) return { tld: null, providers: [] };
