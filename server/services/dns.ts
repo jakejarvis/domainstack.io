@@ -7,7 +7,6 @@ import { db } from "@/lib/db/client";
 import { replaceDns } from "@/lib/db/repos/dns";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { dnsRecords } from "@/lib/db/schema";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { simpleHash } from "@/lib/hash";
 import { createLogger } from "@/lib/logger/server";
@@ -84,6 +83,7 @@ function buildDohUrl(
 export const getDnsRecords = cache(async function getDnsRecords(
   domain: string,
 ): Promise<DnsRecordsResponse> {
+  // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
 
   const providers = providerOrderForLookup(domain);
@@ -91,18 +91,12 @@ export const getDnsRecords = cache(async function getDnsRecords(
   let lastError: unknown = null;
   const types = DnsTypeSchema.options;
 
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached DNS records
-  const existingDomain = await findDomainByName(registrable);
+  const existingDomain = await findDomainByName(domain);
   const rows = (
     existingDomain
       ? await db
@@ -171,7 +165,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
     const sorted = sortDnsRecordsByType(deduplicated, types);
     if (allFreshAcrossTypes) {
       logger.info("cache hit", {
-        domain: registrable,
+        domain,
         types: freshTypes.join(","),
         cached: true,
       });
@@ -244,13 +238,13 @@ export const getDnsRecords = cache(async function getDnsRecords(
             // Always schedule: use the soonest expiry if available, otherwise schedule immediately
             const soonest = times.length > 0 ? Math.min(...times) : Date.now();
             scheduleRevalidation(
-              registrable,
+              domain,
               "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
             ).catch((err) => {
               logger.error("schedule failed partial", err, {
-                domain: registrable,
+                domain,
                 type: "partial",
               });
             });
@@ -285,7 +279,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
         );
 
         logger.info("partial refresh done", {
-          domain: registrable,
+          domain,
           counts,
           resolver: pinnedProvider.key,
           durationMs: durationByProvider[pinnedProvider.key],
@@ -297,7 +291,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       } catch (err) {
         // Fall through to full provider loop below
         logger.error("partial refresh failed", err, {
-          domain: registrable,
+          domain,
           provider: pinnedProvider.key,
         });
       }
@@ -379,20 +373,20 @@ export const getDnsRecords = cache(async function getDnsRecords(
             );
           const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
           scheduleRevalidation(
-            registrable,
+            domain,
             "dns",
             soonest,
             existingDomain.lastAccessedAt ?? null,
           ).catch((err) => {
             logger.error("schedule failed full", err, {
-              domain: registrable,
+              domain,
               type: "full",
             });
           });
         });
       }
       logger.info("done", {
-        domain: registrable,
+        domain,
         counts,
         resolver: resolverUsed,
         durationByProvider,
@@ -404,7 +398,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       return { records: sorted, resolver: resolverUsed } as DnsRecordsResponse;
     } catch (err) {
       logger.warn("provider attempt failed", {
-        domain: registrable,
+        domain,
         provider: provider.key,
       });
       durationByProvider[provider.key] = Date.now() - attemptStart;
@@ -415,10 +409,10 @@ export const getDnsRecords = cache(async function getDnsRecords(
 
   // All providers failed
   const error = new Error(
-    `All DoH providers failed for ${registrable}: ${String(lastError)}`,
+    `All DoH providers failed for ${domain}: ${String(lastError)}`,
   );
   logger.error("all providers failed", error, {
-    domain: registrable,
+    domain,
     providers: providers.map((p) => p.key).join(","),
   });
   throw error;

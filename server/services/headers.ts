@@ -7,7 +7,6 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -26,21 +25,16 @@ const logger = createLogger({ source: "headers" });
 export const getHeaders = cache(async function getHeaders(
   domain: string,
 ): Promise<HeadersResponse> {
+  // Input domain is already normalized to registrable domain by router schema
   const url = `https://${domain}/`;
   logger.debug("start", { domain });
-
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
 
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached HTTP headers
-  const existingDomain = await findDomainByName(registrable);
+  const existingDomain = await findDomainByName(domain);
   const existing = existingDomain
     ? await db
         .select({
@@ -66,7 +60,7 @@ export const getHeaders = cache(async function getHeaders(
     }
 
     logger.info("cache hit", {
-      domain: registrable,
+      domain,
       status: row.status,
       count: normalized.length,
       cached: true,
@@ -105,19 +99,19 @@ export const getHeaders = cache(async function getHeaders(
 
       after(() => {
         scheduleRevalidation(
-          registrable,
+          domain,
           "headers",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
         ).catch((err) => {
           logger.error("schedule failed", err, {
-            domain: registrable,
+            domain,
           });
         });
       });
     }
     logger.info("done", {
-      domain: registrable,
+      domain,
       status: final.status,
       count: normalized.length,
     });
@@ -138,10 +132,10 @@ export const getHeaders = cache(async function getHeaders(
 
     if (isDnsError) {
       logger.debug("no web hosting (no A/AAAA records)", {
-        domain: registrable,
+        domain,
       });
     } else {
-      logger.error("probe failed", err, { domain: registrable });
+      logger.error("probe failed", err, { domain });
     }
 
     // Return empty on failure without caching to avoid long-lived negatives

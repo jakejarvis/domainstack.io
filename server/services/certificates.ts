@@ -9,7 +9,6 @@ import {
   makeProviderKey,
 } from "@/lib/db/repos/providers";
 import { certificates as certTable } from "@/lib/db/schema";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -19,20 +18,15 @@ import { ttlForCertificates } from "@/lib/ttl";
 const logger = createLogger({ source: "certificates" });
 
 export async function getCertificates(domain: string): Promise<Certificate[]> {
+  // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
-
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
 
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached certificate data
-  const existingDomain = await findDomainByName(registrable);
+  const existingDomain = await findDomainByName(domain);
   const existing = existingDomain
     ? await db
         .select({
@@ -68,7 +62,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       }));
 
       logger.info("cache hit", {
-        domain: registrable,
+        domain,
         count: out.length,
         cached: true,
       });
@@ -177,25 +171,25 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       after(() => {
         const dueAtMs = nextDue.getTime();
         scheduleRevalidation(
-          registrable,
+          domain,
           "certificates",
           dueAtMs,
           existingDomain.lastAccessedAt ?? null,
         ).catch((err) => {
           logger.error("schedule failed", err, {
-            domain: registrable,
+            domain,
           });
         });
       });
     }
 
     logger.info("done", {
-      domain: registrable,
+      domain,
       chainLength: out.length,
     });
     return out;
   } catch (err) {
-    logger.error("probe failed", err, { domain: registrable });
+    logger.error("probe failed", err, { domain });
     // Do not treat as fatal; return empty and avoid long-lived negative cache
     return [];
   }

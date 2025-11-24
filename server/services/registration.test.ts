@@ -38,21 +38,6 @@ vi.mock("@/lib/rdap-bootstrap", () => ({
   }),
 }));
 
-vi.mock("@/lib/domain-server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/domain-server")>();
-  return {
-    ...actual,
-    toRegistrableDomain: (input: string) => {
-      // Allow reserved TLDs for safe testing
-      if (input.endsWith(".invalid") || input.endsWith(".test")) {
-        return input.toLowerCase();
-      }
-      // Use real implementation for everything else
-      return actual.toRegistrableDomain(input);
-    },
-  };
-});
-
 describe("getRegistration", () => {
   // Setup DB mock once for all tests (expensive operations)
   beforeAll(async () => {

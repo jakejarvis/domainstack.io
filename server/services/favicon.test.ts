@@ -10,24 +10,6 @@ import {
 } from "vitest";
 import { RemoteAssetError } from "@/lib/fetch-remote-asset";
 
-// Mock toRegistrableDomain to allow .invalid and .example domains for testing
-vi.mock("@/lib/domain-server", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/domain-server")>(
-    "@/lib/domain-server",
-  );
-  return {
-    ...actual,
-    toRegistrableDomain: (input: string) => {
-      // Allow .invalid and .example domains (reserved, never resolve) for safe testing
-      if (input.endsWith(".invalid") || input.endsWith(".example")) {
-        return input.toLowerCase();
-      }
-      // Use real implementation for everything else
-      return actual.toRegistrableDomain(input);
-    },
-  };
-});
-
 const storageMock = vi.hoisted(() => ({
   storeImage: vi.fn(async () => ({
     url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",

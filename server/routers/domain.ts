@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { normalizeDomainInput } from "@/lib/domain";
 import { toRegistrableDomain } from "@/lib/domain-server";
@@ -28,10 +29,16 @@ import {
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
-  .transform(({ domain }) => ({ domain: normalizeDomainInput(domain) }))
-  .refine(({ domain }) => toRegistrableDomain(domain) !== null, {
-    message: "Invalid domain",
-    path: ["domain"],
+  .transform(({ domain }) => {
+    const normalized = normalizeDomainInput(domain);
+    const registrable = toRegistrableDomain(normalized);
+    if (!registrable) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: '"domain" must be a valid and registrable',
+      });
+    }
+    return { domain: registrable };
   });
 
 export const domainRouter = createTRPCRouter({

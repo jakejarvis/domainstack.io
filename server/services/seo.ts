@@ -5,7 +5,6 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   fetchWithSelectiveRedirects,
   fetchWithTimeoutAndRetry,
@@ -32,20 +31,15 @@ const SOCIAL_HEIGHT = 630;
 const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function getSeo(domain: string): Promise<SeoResponse> {
+  // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
-
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
 
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached SEO data
-  const existingDomain = await findDomainByName(registrable);
+  const existingDomain = await findDomainByName(domain);
   const existing = existingDomain
     ? await db
         .select({
@@ -123,7 +117,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     return response;
   }
 
-  let finalUrl: string = `https://${registrable}/`;
+  let finalUrl: string = `https://${domain}/`;
   let status: number | null = null;
   let htmlError: string | undefined;
   let robotsError: string | undefined;
@@ -165,7 +159,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
   // robots.txt fetch
   // Only follow redirects between apex/www or http/https versions
   try {
-    const robotsUrl = `https://${registrable}/robots.txt`;
+    const robotsUrl = `https://${domain}/robots.txt`;
     const res = await fetchWithSelectiveRedirects(
       robotsUrl,
       {
@@ -219,7 +213,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       }
       const { url } = await storeImage({
         kind: "opengraph",
-        domain: registrable,
+        domain,
         buffer: optimized,
         width: SOCIAL_WIDTH,
         height: SOCIAL_HEIGHT,
@@ -272,20 +266,20 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
 
     after(() => {
       scheduleRevalidation(
-        registrable,
+        domain,
         "seo",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       ).catch((err) => {
         logger.error("schedule failed", err, {
-          domain: registrable,
+          domain,
         });
       });
     });
   }
 
   logger.info("done", {
-    domain: registrable,
+    domain,
     status: status ?? -1,
     has_meta: !!meta,
     has_robots: !!robots,

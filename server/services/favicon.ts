@@ -2,7 +2,6 @@ import { cache } from "react";
 import { USER_AGENT } from "@/lib/constants/app";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
@@ -36,35 +35,35 @@ function buildSources(domain: string): string[] {
  * Internal function that does the actual work.
  */
 async function fetchFaviconPromise(
-  registrable: string,
+  domain: string,
 ): Promise<{ url: string | null }> {
   // Check for in-flight request across all SSR contexts
-  if (faviconPromises.has(registrable)) {
-    logger.debug("in-flight request hit", { domain: registrable });
+  if (faviconPromises.has(domain)) {
+    logger.debug("in-flight request hit", { domain });
     // biome-ignore lint/style/noNonNullAssertion: checked above
-    return faviconPromises.get(registrable)!;
+    return faviconPromises.get(domain)!;
   }
 
   // Create promise with guaranteed cleanup
   const promise = (async () => {
     try {
-      return await fetchFavicon(registrable);
+      return await fetchFavicon(domain);
     } finally {
-      faviconPromises.delete(registrable);
+      faviconPromises.delete(domain);
     }
   })();
 
   // Store promise with safety timeout cleanup
-  faviconPromises.set(registrable, promise);
+  faviconPromises.set(domain, promise);
 
   // Safety: Auto-cleanup stale promise after timeout
   const timeoutId = setTimeout(() => {
-    if (faviconPromises.get(registrable) === promise) {
+    if (faviconPromises.get(domain) === promise) {
       logger.warn("cleaning up stale promise", {
-        domain: registrable,
+        domain,
         timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
       });
-      faviconPromises.delete(registrable);
+      faviconPromises.delete(domain);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
 
@@ -77,12 +76,10 @@ async function fetchFaviconPromise(
 /**
  * Core favicon fetching logic (separated for cleaner promise management)
  */
-async function fetchFavicon(
-  registrable: string,
-): Promise<{ url: string | null }> {
+async function fetchFavicon(domain: string): Promise<{ url: string | null }> {
   // Check Postgres for cached favicon (optimized single query)
   try {
-    const faviconRecord = await getFaviconByDomain(registrable);
+    const faviconRecord = await getFaviconByDomain(domain);
     if (faviconRecord) {
       // Only treat as cache hit if we have a definitive result:
       // - url is present (string), OR
@@ -91,16 +88,16 @@ async function fetchFavicon(
         faviconRecord.url !== null || faviconRecord.notFound === true;
 
       if (isDefinitiveResult) {
-        logger.debug("db cache hit", { domain: registrable, cached: true });
+        logger.debug("db cache hit", { domain, cached: true });
         return { url: faviconRecord.url };
       }
     }
   } catch (err) {
-    logger.error("db read failed", err, { domain: registrable });
+    logger.error("db read failed", err, { domain });
   }
 
   // Generate favicon (cache missed)
-  const sources = buildSources(registrable);
+  const sources = buildSources(domain);
   let allNotFound = true; // Track if all sources returned 404/not found
 
   for (const src of sources) {
@@ -128,7 +125,7 @@ async function fetchFavicon(
       if (!webp) continue;
       const { url, pathname } = await storeImage({
         kind: "favicon",
-        domain: registrable,
+        domain,
         buffer: webp,
         width: DEFAULT_SIZE,
         height: DEFAULT_SIZE,
@@ -143,7 +140,7 @@ async function fetchFavicon(
 
       // Persist to Postgres
       try {
-        const domainRecord = await ensureDomainRecord(registrable);
+        const domainRecord = await ensureDomainRecord(domain);
         const now = new Date();
         const expiresAt = ttlForFavicon(now);
 
@@ -160,7 +157,7 @@ async function fetchFavicon(
           expiresAt,
         });
       } catch (err) {
-        logger.error("db persist error", err, { domain: registrable });
+        logger.error("db persist error", err, { domain });
       }
 
       return { url };
@@ -181,7 +178,7 @@ async function fetchFavicon(
 
   // All sources failed - persist null result with notFound flag if all were 404s
   try {
-    const domainRecord = await ensureDomainRecord(registrable);
+    const domainRecord = await ensureDomainRecord(domain);
     const now = new Date();
     const expiresAt = ttlForFavicon(now);
 
@@ -198,7 +195,7 @@ async function fetchFavicon(
       expiresAt,
     });
   } catch (err) {
-    logger.error("db persist error (null)", err, { domain: registrable });
+    logger.error("db persist error (null)", err, { domain });
   }
 
   return { url: null };
@@ -212,11 +209,6 @@ async function fetchFavicon(
 export const getFavicon = cache(async function getFavicon(
   domain: string,
 ): Promise<BlobUrlResponse> {
-  // Normalize to registrable domain
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
-
-  return fetchFaviconPromise(registrable);
+  // Input domain is already normalized to registrable domain by router schema
+  return fetchFaviconPromise(domain);
 });

@@ -5,7 +5,6 @@ import {
   getScreenshotByDomainId,
   upsertScreenshot,
 } from "@/lib/db/repos/screenshots";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import { getBrowser } from "@/lib/puppeteer";
@@ -56,41 +55,37 @@ export async function getScreenshot(
     backoffMaxMs?: number;
   },
 ): Promise<BlobUrlResponse> {
-  // Normalize to registrable domain
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
+  // Input domain is already normalized to registrable domain by router schema
 
   // Check for in-flight request
-  if (screenshotPromises.has(registrable)) {
-    logger.debug("in-flight request hit", { domain: registrable });
+  if (screenshotPromises.has(domain)) {
+    logger.debug("in-flight request hit", { domain });
     // biome-ignore lint/style/noNonNullAssertion: checked above
-    return screenshotPromises.get(registrable)!;
+    return screenshotPromises.get(domain)!;
   }
 
   // Create a new promise with guaranteed cleanup
   const promise = (async () => {
     try {
-      return await generateScreenshot(registrable, options);
+      return await generateScreenshot(domain, options);
     } finally {
       // Remove the promise from the map once it's settled
-      screenshotPromises.delete(registrable);
+      screenshotPromises.delete(domain);
     }
   })();
 
   // Store promise with safety timeout cleanup
-  screenshotPromises.set(registrable, promise);
+  screenshotPromises.set(domain, promise);
 
   // Safety: Auto-cleanup stale promise after timeout to prevent memory leak
   // This catches edge cases where promise never settles
   const timeoutId = setTimeout(() => {
-    if (screenshotPromises.get(registrable) === promise) {
+    if (screenshotPromises.get(domain) === promise) {
       logger.warn("cleaning up stale promise", {
-        domain: registrable,
+        domain,
         timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
       });
-      screenshotPromises.delete(registrable);
+      screenshotPromises.delete(domain);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
 
@@ -108,7 +103,7 @@ export async function getScreenshot(
 }
 
 async function generateScreenshot(
-  registrable: string,
+  domain: string,
   options?: {
     attempts?: number;
     backoffBaseMs?: number;
@@ -125,7 +120,7 @@ async function generateScreenshot(
 
   // Check Postgres for cached screenshot
   try {
-    const existingDomain = await findDomainByName(registrable);
+    const existingDomain = await findDomainByName(domain);
     if (existingDomain) {
       const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
       if (screenshotRecord) {
@@ -136,13 +131,13 @@ async function generateScreenshot(
           screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
         if (isDefinitiveResult) {
-          logger.debug("db cache hit", { domain: registrable, cached: true });
+          logger.debug("db cache hit", { domain, cached: true });
           return { url: screenshotRecord.url };
         }
       }
     }
   } catch (err) {
-    logger.error("db read failed", err, { domain: registrable });
+    logger.error("db read failed", err, { domain });
   }
 
   // Generate screenshot (cache missed)
@@ -151,7 +146,7 @@ async function generateScreenshot(
   try {
     browser = await getBrowser();
 
-    const tryUrls = buildHomepageUrls(registrable);
+    const tryUrls = buildHomepageUrls(domain);
 
     urlLoop: for (const url of tryUrls) {
       let lastError: unknown = null;
@@ -198,7 +193,7 @@ async function generateScreenshot(
           );
           const { url: storedUrl, pathname } = await storeImage({
             kind: "screenshot",
-            domain: registrable,
+            domain,
             buffer: withWatermark,
             width: VIEWPORT_WIDTH,
             height: VIEWPORT_HEIGHT,
@@ -210,7 +205,7 @@ async function generateScreenshot(
 
           // Persist to Postgres
           try {
-            const domainRecord = await ensureDomainRecord(registrable);
+            const domainRecord = await ensureDomainRecord(domain);
             const now = new Date();
             const expiresAt = ttlForScreenshot(now);
 
@@ -226,7 +221,7 @@ async function generateScreenshot(
               expiresAt,
             });
           } catch (err) {
-            logger.error("db persist error", err, { domain: registrable });
+            logger.error("db persist error", err, { domain });
           }
 
           resultUrl = storedUrl;
@@ -247,7 +242,7 @@ async function generateScreenshot(
               await page.close();
             } catch (err) {
               logger.error("failed to close page", err, {
-                domain: registrable,
+                domain,
               });
             }
           }
@@ -261,7 +256,7 @@ async function generateScreenshot(
     // All attempts failed - persist null result
     if (!resultUrl) {
       try {
-        const domainRecord = await ensureDomainRecord(registrable);
+        const domainRecord = await ensureDomainRecord(domain);
         const now = new Date();
         const expiresAt = ttlForScreenshot(now);
 
@@ -277,7 +272,7 @@ async function generateScreenshot(
           expiresAt,
         });
       } catch (err) {
-        logger.error("db persist error (null)", err, { domain: registrable });
+        logger.error("db persist error (null)", err, { domain });
       }
     }
   } finally {

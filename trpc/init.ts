@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { getOrGenerateCorrelationId } from "@/lib/logger/correlation";
 import { setCorrelationId } from "@/lib/logger/server";
 
@@ -93,6 +92,13 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
 
     // Track slow requests (>5s threshold) in PostHog
     if (durationMs > 5000) {
+      logger.warn("slow request", {
+        source: "trpc",
+        path,
+        type,
+        durationMs,
+      });
+
       const { analytics } = await import("@/lib/analytics/server");
       analytics.track("trpc_slow_request", {
         path,
@@ -131,15 +137,13 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    const registrable = toRegistrableDomain(input.domain);
-    if (registrable) {
-      const { logger } = await import("@/lib/logger/server");
-      logger.info("recording access for domain", {
-        source: "trpc",
-        domain: registrable,
-      });
-      after(() => updateLastAccessed(registrable));
-    }
+    const { logger } = await import("@/lib/logger/server");
+    logger.info("recording access for domain", {
+      source: "trpc",
+      domain: input.domain,
+    });
+
+    after(() => updateLastAccessed(input.domain as string));
   }
   return next();
 });

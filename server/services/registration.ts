@@ -6,7 +6,6 @@ import { upsertDomain } from "@/lib/db/repos/domains";
 import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
 import { upsertRegistration } from "@/lib/db/repos/registrations";
 import { domains, providers, registrations } from "@/lib/db/schema";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
@@ -57,13 +56,8 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
 export async function getRegistration(
   domain: string,
 ): Promise<RegistrationResponse> {
+  // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
-
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
 
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
@@ -84,7 +78,7 @@ export async function getRegistration(
     .from(domains)
     .innerJoin(registrations, eq(registrations.domainId, domains.id))
     .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
-    .where(eq(domains.name, registrable))
+    .where(eq(domains.name, domain))
     .limit(1);
 
   if (existing[0] && existing[0].registration.expiresAt > now) {
@@ -98,7 +92,7 @@ export async function getRegistration(
     const nameserversArray = row.registration.nameservers ?? [];
 
     const response: RegistrationResponse = {
-      domain: registrable,
+      domain,
       tld: row.domainTld,
       isRegistered: row.registration.isRegistered,
       privacyEnabled: row.registration.privacyEnabled ?? false,
@@ -123,18 +117,18 @@ export async function getRegistration(
     // Schedule background revalidation using actual last access time
     after(() => {
       scheduleRevalidation(
-        registrable,
+        domain,
         "registration",
         row.registration.expiresAt.getTime(),
         row.domainLastAccessedAt ?? null,
       ).catch((err) => {
         logger.error("schedule failed", err, {
-          domain: registrable,
+          domain,
         });
       });
     });
 
-    logger.info("cache hit", { domain: registrable });
+    logger.info("cache hit", { domain });
 
     return response;
   }
@@ -143,7 +137,7 @@ export async function getRegistration(
   // Fetch bootstrap data with Next.js caching to avoid redundant IANA requests
   const bootstrapData = await getRdapBootstrapData();
 
-  const { ok, record, error } = await lookup(registrable, {
+  const { ok, record, error } = await lookup(domain, {
     timeoutMs: 5000,
     customBootstrapData: bootstrapData,
   });
@@ -154,15 +148,15 @@ export async function getRegistration(
 
     if (isKnownLimitation) {
       logger.info("unavailable", {
-        domain: registrable,
+        domain,
         reason: error || "unknown",
       });
 
       // Return minimal unregistered response for TLDs without WHOIS/RDAP
       // (We can't determine registration status without WHOIS/RDAP access)
       return {
-        domain: registrable,
-        tld: getDomainTld(registrable) ?? "",
+        domain,
+        tld: getDomainTld(domain) ?? "",
         isRegistered: false,
         source: null,
         registrarProvider: {
@@ -174,15 +168,15 @@ export async function getRegistration(
 
     // Actual errors (timeouts, network failures, etc.) are still logged as errors
     const err = new Error(
-      `Registration lookup failed for ${registrable}: ${error || "unknown error"}`,
+      `Registration lookup failed for ${domain}: ${error || "unknown error"}`,
     );
-    logger.error("lookup failed", err, { domain: registrable });
+    logger.error("lookup failed", err, { domain });
     throw err;
   }
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
-    logger.info("unregistered (not persisted)", { domain: registrable });
+    logger.info("unregistered (not persisted)", { domain });
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -247,9 +241,9 @@ export async function getRegistration(
   // Upsert domain record and resolve registrar provider in parallel (independent operations)
   const [domainRecord, registrarProviderId] = await Promise.all([
     upsertDomain({
-      name: registrable,
-      tld: getDomainTld(registrable) ?? "",
-      unicodeName: record.unicodeName ?? registrable,
+      name: domain,
+      tld: getDomainTld(domain) ?? "",
+      unicodeName: record.unicodeName ?? domain,
     }),
     resolveOrCreateProviderId({
       category: "registrar",
@@ -294,18 +288,18 @@ export async function getRegistration(
   // Schedule background revalidation
   after(() => {
     scheduleRevalidation(
-      registrable,
+      domain,
       "registration",
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     ).catch((err) => {
       logger.error("schedule failed", err, {
-        domain: registrable,
+        domain,
       });
     });
   });
 
-  logger.info("done", { domain: registrable });
+  logger.info("done", { domain });
 
   return withProvider;
 }

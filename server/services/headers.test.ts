@@ -1,23 +1,5 @@
 /* @vitest-environment node */
 
-// Mock toRegistrableDomain to allow .invalid domains for testing
-vi.mock("@/lib/domain-server", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/domain-server")>(
-    "@/lib/domain-server",
-  );
-  return {
-    ...actual,
-    toRegistrableDomain: (input: string) => {
-      // Allow .invalid domains (reserved, never resolve) for safe testing
-      if (input.endsWith(".invalid")) {
-        return input.toLowerCase();
-      }
-      // Use real implementation for everything else
-      return actual.toRegistrableDomain(input);
-    },
-  };
-});
-
 // Mock scheduleRevalidation to avoid Inngest API calls in tests
 vi.mock("@/lib/schedule", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(true),

@@ -39,20 +39,15 @@ const logger = createLogger({ source: "hosting" });
 export const getHosting = cache(async function getHosting(
   domain: string,
 ): Promise<HostingResponse> {
+  // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
-
-  // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
-  const registrable = toRegistrableDomain(domain);
-  if (!registrable) {
-    throw new Error(`Cannot extract registrable domain from ${domain}`);
-  }
 
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached hosting data with providers in single query
-  const existingDomain = await findDomainByName(registrable);
+  const existingDomain = await findDomainByName(domain);
   if (existingDomain) {
     const hp = alias(providersTable, "hp");
     const ep = alias(providersTable, "ep");
@@ -273,20 +268,20 @@ export const getHosting = cache(async function getHosting(
 
     after(() => {
       scheduleRevalidation(
-        registrable,
+        domain,
         "hosting",
         dueAtMs,
         existingDomain.lastAccessedAt ?? null,
       ).catch((err) => {
         logger.error("schedule failed", err, {
-          domain: registrable,
+          domain,
         });
       });
     });
   }
 
   logger.info("done", {
-    domain: registrable,
+    domain,
     hosting: hostingName,
     email: emailName,
     dns: dnsName,

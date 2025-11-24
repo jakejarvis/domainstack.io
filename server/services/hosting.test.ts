@@ -35,22 +35,6 @@ vi.mock("@/server/services/ip", () => ({
   })),
 }));
 
-// Ensure toRegistrableDomain accepts our test domains (including .example)
-vi.mock("@/lib/domain-server", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/domain-server")>();
-  return {
-    ...actual,
-    toRegistrableDomain: (input: string) => {
-      const v = (input ?? "").trim().toLowerCase().replace(/\.$/, "");
-      if (!v) return null;
-      const parts = v.split(".").filter(Boolean);
-      if (parts.length >= 2)
-        return `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
-      return v;
-    },
-  };
-});
-
 beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
   const { db } = await makePGliteDb();
