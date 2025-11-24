@@ -27,7 +27,7 @@ export const probeHeaders = cache(async function probeHeaders(
   domain: string,
 ): Promise<HttpHeadersResponse> {
   const url = `https://${domain}/`;
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -65,7 +65,7 @@ export const probeHeaders = cache(async function probeHeaders(
       statusMessage = undefined;
     }
 
-    logger.info(`cache hit ${registrable}`, {
+    logger.info("cache hit", {
       domain: registrable,
       status: row.status,
       count: normalized.length,
@@ -116,7 +116,7 @@ export const probeHeaders = cache(async function probeHeaders(
         });
       });
     }
-    logger.info(`ok ${registrable}`, {
+    logger.info("done", {
       domain: registrable,
       status: final.status,
       count: normalized.length,
@@ -137,11 +137,11 @@ export const probeHeaders = cache(async function probeHeaders(
     const isDnsError = isExpectedDnsError(err);
 
     if (isDnsError) {
-      logger.debug(`no web hosting ${registrable} (no A/AAAA records)`, {
+      logger.debug("no web hosting (no A/AAAA records)", {
         domain: registrable,
       });
     } else {
-      logger.error(`error ${registrable}`, err, { domain: registrable });
+      logger.error("probe failed", err, { domain: registrable });
     }
 
     // Return empty on failure without caching to avoid long-lived negatives

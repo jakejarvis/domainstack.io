@@ -60,7 +60,7 @@ async function fetchFaviconInternal(
   // Safety: Auto-cleanup stale promise after timeout
   const timeoutId = setTimeout(() => {
     if (faviconPromises.get(registrable) === promise) {
-      logger.warn(`cleaning up stale promise for ${registrable}`, {
+      logger.warn("cleaning up stale promise", {
         domain: registrable,
         timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
       });

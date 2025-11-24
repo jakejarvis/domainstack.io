@@ -32,7 +32,7 @@ const SOCIAL_HEIGHT = 630;
 const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 export async function getSeo(domain: string): Promise<SeoResponse> {
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -284,7 +284,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     });
   }
 
-  logger.info(`ok ${registrable}`, {
+  logger.info("done", {
     domain: registrable,
     status: status ?? -1,
     has_meta: !!meta,

@@ -39,7 +39,7 @@ const logger = createLogger({ source: "hosting" });
 export const detectHosting = cache(async function detectHosting(
   domain: string,
 ): Promise<Hosting> {
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -103,7 +103,7 @@ export const detectHosting = cache(async function detectHosting(
           lon: row.geoLon ?? null,
         },
       };
-      logger.info(`cache hit ${domain}`, {
+      logger.info("cache hit", {
         domain,
         hosting: info.hostingProvider.name,
         email: info.emailProvider.name,
@@ -126,7 +126,7 @@ export const detectHosting = cache(async function detectHosting(
   const [headersResponse, meta] = await Promise.all([
     hasWebHosting
       ? probeHeaders(domain).catch((err) => {
-          logger.error(`headers probe error ${domain}`, err, { domain });
+          logger.error("headers probe error", err, { domain });
           return {
             headers: [] as { name: string; value: string }[],
             status: 0,
@@ -284,11 +284,13 @@ export const detectHosting = cache(async function detectHosting(
       });
     });
   }
-  logger.info(`ok ${registrable}`, {
+
+  logger.info("done", {
     domain: registrable,
     hosting: hostingName,
     email: emailName,
     dns: dnsName,
   });
+
   return info;
 });

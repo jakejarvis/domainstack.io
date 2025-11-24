@@ -24,7 +24,8 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
   owner: string | null;
   domain: string | null;
 }> {
-  logger.debug(`start lookup for ${ip}`, { type: "ip" });
+  logger.debug("start", { ip });
+
   try {
     // Add timeout to prevent hanging requests to upstream IP service
     const controller = new AbortController();
@@ -37,8 +38,8 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        logger.error(`error looking up ${ip}`, undefined, {
-          type: "ip",
+        logger.error("lookup failed", undefined, {
+          ip,
           status: res.status,
           statusMessage: res.statusText,
         });
@@ -98,8 +99,8 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
         lon: typeof data.longitude === "number" ? data.longitude : null,
       };
 
-      logger.info(`ok ${ip}`, {
-        type: "ip",
+      logger.info("done", {
+        ip,
         owner: owner || "none",
         domain: domain || "none",
       });
@@ -111,7 +112,7 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
       throw fetchErr;
     }
   } catch (err) {
-    logger.error(`error looking up ${ip}`, err, { type: "ip" });
+    logger.error("lookup failed", err, { ip });
     return {
       owner: null,
       domain: null,

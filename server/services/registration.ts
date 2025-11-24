@@ -55,7 +55,7 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
  */
 export async function getRegistration(domain: string): Promise<Registration> {
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -132,12 +132,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
       });
     });
 
-    logger.info(`ok cached ${registrable}`, {
-      domain: registrable,
-      isRegistered: row.registration.isRegistered,
-      registrar: registrarProvider.name,
-      cached: true,
-    });
+    logger.info("cache hit", { domain: registrable });
 
     return response;
   }
@@ -185,10 +180,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
-    logger.info(`ok ${registrable} unregistered (not persisted)`, {
-      domain: registrable,
-      isRegistered: false,
-    });
+    logger.info("unregistered (not persisted)", { domain: registrable });
 
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
 
@@ -311,11 +303,7 @@ export async function getRegistration(domain: string): Promise<Registration> {
     });
   });
 
-  logger.info(`ok ${registrable}`, {
-    domain: registrable,
-    isRegistered: record.isRegistered,
-    registrar: withProvider.registrarProvider.name,
-  });
+  logger.info("done", { domain: registrable });
 
   return withProvider;
 }

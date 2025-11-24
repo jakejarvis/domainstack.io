@@ -85,7 +85,7 @@ export async function getOrCreateScreenshotBlobUrl(
   // This catches edge cases where promise never settles
   const timeoutId = setTimeout(() => {
     if (screenshotPromises.get(registrable) === promise) {
-      logger.warn(`cleaning up stale promise for ${registrable}`, {
+      logger.warn("cleaning up stale promise", {
         domain: registrable,
         timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
       });

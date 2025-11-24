@@ -19,7 +19,7 @@ import { ttlForCertificates } from "@/lib/ttl";
 const logger = createLogger({ source: "certificates" });
 
 export async function getCertificates(domain: string): Promise<Certificate[]> {
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   // Only support registrable domains (no subdomains, IPs, or invalid TLDs)
   const registrable = toRegistrableDomain(domain);
@@ -67,7 +67,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         caProvider: detectCertificateAuthority(c.issuer),
       }));
 
-      logger.info(`cache hit ${registrable}`, {
+      logger.info("cache hit", {
         domain: registrable,
         count: out.length,
         cached: true,
@@ -189,13 +189,13 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       });
     }
 
-    logger.info(`ok ${registrable}`, {
+    logger.info("done", {
       domain: registrable,
       chainLength: out.length,
     });
     return out;
   } catch (err) {
-    logger.error(`error ${registrable}`, err, { domain: registrable });
+    logger.error("probe failed", err, { domain: registrable });
     // Do not treat as fatal; return empty and avoid long-lived negative cache
     return [];
   }

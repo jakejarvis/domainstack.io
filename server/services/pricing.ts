@@ -51,12 +51,10 @@ async function fetchProviderPricing(
 ): Promise<RegistrarPricingResponse | null> {
   try {
     const payload = await provider.fetchPricing();
-    logger.info(`fetch ok ${provider.name}`, { provider: provider.name });
+    logger.info("fetch ok", { provider: provider.name });
     return payload;
   } catch (err) {
-    logger.error(`fetch error ${provider.name}`, err, {
-      provider: provider.name,
-    });
+    logger.error("fetch error", err, { provider: provider.name });
     return null;
   }
 }
@@ -90,7 +88,7 @@ const porkbunProvider: PricingProvider = {
       );
 
       if (!res.ok) {
-        logger.error(`upstream error porkbun status=${res.status}`, undefined, {
+        logger.error("upstream error", undefined, {
           provider: "porkbun",
           status: res.status,
         });
@@ -139,14 +137,10 @@ const cloudflareProvider: PricingProvider = {
       });
 
       if (!res.ok) {
-        logger.error(
-          `upstream error cloudflare status=${res.status}`,
-          undefined,
-          {
-            provider: "cloudflare",
-            status: res.status,
-          },
-        );
+        logger.error("upstream error", undefined, {
+          provider: "cloudflare",
+          status: res.status,
+        });
         throw new Error(`Cloudflare pricing API returned ${res.status}`);
       }
 

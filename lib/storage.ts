@@ -69,7 +69,7 @@ async function uploadWithRetry(
         cacheControlMaxAge,
       });
 
-      logger.info(`upload ok ${pathname}`, {
+      logger.info("upload ok", {
         pathname,
         attempts: attempt + 1,
       });

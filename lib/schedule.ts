@@ -63,7 +63,7 @@ export async function scheduleRevalidation(
 
   // Check if domain should stop being revalidated due to inactivity
   if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
-    logger.info(`skip ${section} ${normalizedDomain} (stopped: inactive)`, {
+    logger.info("skip (stopped: inactive)", {
       domain: normalizedDomain,
       section,
       lastAccessedAt: lastAccessedAt?.toISOString() ?? "never",
@@ -85,7 +85,7 @@ export async function scheduleRevalidation(
     const daysInactive = lastAccessedAt
       ? Math.floor((now - lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24))
       : null;
-    logger.info(`decay ${section} ${normalizedDomain}`, {
+    logger.info("decay set", {
       domain: normalizedDomain,
       section,
       decayMultiplier,
@@ -120,14 +120,14 @@ export async function scheduleRevalidation(
       id: eventId,
     });
 
-    logger.debug(`ok ${section} ${normalizedDomain}`, {
+    logger.debug("done", {
       domain: normalizedDomain,
       section,
       scheduledAt: new Date(scheduledDueMs).toISOString(),
     });
     return true;
   } catch (err) {
-    logger.error(`failed ${section} ${normalizedDomain}`, err, {
+    logger.error("unexpected failure", err, {
       domain: normalizedDomain,
       section,
     });

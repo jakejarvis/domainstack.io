@@ -84,7 +84,7 @@ function buildDohUrl(
 export const resolveAll = cache(async function resolveAll(
   domain: string,
 ): Promise<DnsResolveResult> {
-  logger.debug(`start ${domain}`, { domain });
+  logger.debug("start", { domain });
 
   const providers = providerOrderForLookup(domain);
   const durationByProvider: Record<string, number> = {};
@@ -170,7 +170,7 @@ export const resolveAll = cache(async function resolveAll(
     const deduplicated = deduplicateDnsRecords(assembled);
     const sorted = sortDnsRecordsByType(deduplicated, types);
     if (allFreshAcrossTypes) {
-      logger.info(`cache hit ${registrable}`, {
+      logger.info("cache hit", {
         domain: registrable,
         types: freshTypes.join(","),
         cached: true,
@@ -284,7 +284,7 @@ export const resolveAll = cache(async function resolveAll(
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
 
-        logger.info(`ok partial ${registrable}`, {
+        logger.info("partial refresh done", {
           domain: registrable,
           counts,
           resolver: pinnedProvider.key,
@@ -391,7 +391,7 @@ export const resolveAll = cache(async function resolveAll(
           });
         });
       }
-      logger.info(`ok ${registrable}`, {
+      logger.info("done", {
         domain: registrable,
         counts,
         resolver: resolverUsed,
@@ -403,7 +403,7 @@ export const resolveAll = cache(async function resolveAll(
       const sorted = sortDnsRecordsByType(deduplicated, types);
       return { records: sorted, resolver: resolverUsed } as DnsResolveResult;
     } catch (err) {
-      logger.warn(`provider attempt failed ${registrable}`, {
+      logger.warn("provider attempt failed", {
         domain: registrable,
         provider: provider.key,
       });
@@ -417,7 +417,7 @@ export const resolveAll = cache(async function resolveAll(
   const error = new Error(
     `All DoH providers failed for ${registrable}: ${String(lastError)}`,
   );
-  logger.error(`all providers failed ${registrable}`, error, {
+  logger.error("all providers failed", error, {
     domain: registrable,
     providers: providers.map((p) => p.key).join(","),
   });
