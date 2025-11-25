@@ -43,7 +43,7 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/blob": "^2.0.0",
     "@vercel/edge-config": "^1.4.3",
-    "@vercel/functions": "^3.3.3",
+    "@vercel/functions": "^3.3.4",
     "@vercel/otel": "^2.1.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
