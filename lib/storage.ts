@@ -58,7 +58,7 @@ async function uploadWithRetry(
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      logger.debug(`upload attempt ${attempt + 1}/${maxAttempts}`, {
+      logger.info(`upload attempt ${attempt + 1}/${maxAttempts}`, {
         pathname,
       });
 
@@ -90,7 +90,7 @@ async function uploadWithRetry(
           UPLOAD_BACKOFF_BASE_MS,
           UPLOAD_BACKOFF_MAX_MS,
         );
-        logger.debug(`retrying after ${delay}ms delay`, {
+        logger.warn(`retrying after ${delay}ms delay`, {
           pathname,
           durationMs: delay,
         });

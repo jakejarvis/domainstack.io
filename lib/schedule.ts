@@ -120,7 +120,7 @@ export async function scheduleRevalidation(
       id: eventId,
     });
 
-    logger.debug("done", {
+    logger.info("done", {
       domain: normalizedDomain,
       section,
       scheduledAt: new Date(scheduledDueMs).toISOString(),

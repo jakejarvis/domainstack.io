@@ -70,7 +70,7 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
   const { logger } = await import("@/lib/logger/server");
 
   // Log procedure start
-  logger.debug("procedure start", {
+  logger.info("procedure start", {
     source: "trpc",
     path,
     type,
@@ -82,7 +82,7 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
     const durationMs = Math.round(performance.now() - start);
 
     // Log successful completion
-    logger.debug("procedure ok", {
+    logger.info("procedure ok", {
       source: "trpc",
       path,
       type,
