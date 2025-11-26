@@ -70,7 +70,7 @@
     "next-themes": "^0.4.6",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
-    "posthog-js": "^1.298.0",
+    "posthog-js": "^1.298.1",
     "posthog-node": "^5.14.0",
     "puppeteer-core": "24.26.1",
     "radix-ui": "^1.4.3",
