@@ -4,7 +4,6 @@ import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { getOrGenerateCorrelationId } from "@/lib/logger/correlation";
-import { setCorrelationId } from "@/lib/logger/server";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -37,8 +36,6 @@ export const createContext = async (opts?: { req?: Request }) => {
   try {
     const headerList = await headers();
     correlationId = getOrGenerateCorrelationId(headerList);
-    // Set in AsyncLocalStorage for propagation
-    setCorrelationId(correlationId);
   } catch {
     // headers() not available (tests/scripts)
   }
@@ -63,65 +60,72 @@ export const createCallerFactory = t.createCallerFactory;
  * All logs are structured JSON with OpenTelemetry tracing and correlation IDs.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, input, next }) => {
+const withLogging = t.middleware(async ({ path, type, input, next, ctx }) => {
   const start = performance.now();
 
-  // Import logger (dynamic to avoid circular deps)
-  const { logger } = await import("@/lib/logger/server");
+  // Import logger and correlation utilities (dynamic to avoid circular deps)
+  const { logger, withCorrelationId } = await import("@/lib/logger/server");
+  const { generateCorrelationId } = await import("@/lib/logger/correlation");
 
-  // Log procedure start
-  logger.info("procedure start", {
-    source: "trpc",
-    path,
-    type,
-    input: input && typeof input === "object" ? { ...input } : undefined,
-  });
+  // Get correlation ID from context (set in createContext), or generate if missing
+  const correlationId = ctx.correlationId ?? generateCorrelationId();
 
-  try {
-    const result = await next();
-    const durationMs = Math.round(performance.now() - start);
-
-    // Log successful completion
-    logger.info("procedure ok", {
+  // Wrap the entire procedure execution in correlation ID context
+  return withCorrelationId(correlationId, async () => {
+    // Log procedure start
+    logger.info("procedure start", {
       source: "trpc",
       path,
       type,
-      durationMs,
       input: input && typeof input === "object" ? { ...input } : undefined,
     });
 
-    // Track slow requests (>5s threshold) in PostHog
-    if (durationMs > 5000) {
-      logger.warn("slow request", {
+    try {
+      const result = await next();
+      const durationMs = Math.round(performance.now() - start);
+
+      // Log successful completion
+      logger.info("procedure ok", {
+        source: "trpc",
+        path,
+        type,
+        durationMs,
+        input: input && typeof input === "object" ? { ...input } : undefined,
+      });
+
+      // Track slow requests (>5s threshold) in PostHog
+      if (durationMs > 5000) {
+        logger.warn("slow request", {
+          source: "trpc",
+          path,
+          type,
+          durationMs,
+        });
+
+        const { analytics } = await import("@/lib/analytics/server");
+        analytics.track("trpc_slow_request", {
+          path,
+          type,
+          durationMs,
+        });
+      }
+
+      return result;
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
+
+      // Log error with full details
+      logger.error("procedure error", err, {
         source: "trpc",
         path,
         type,
         durationMs,
       });
 
-      const { analytics } = await import("@/lib/analytics/server");
-      analytics.track("trpc_slow_request", {
-        path,
-        type,
-        durationMs,
-      });
+      // Re-throw the error to be handled by the error boundary
+      throw err;
     }
-
-    return result;
-  } catch (err) {
-    const durationMs = Math.round(performance.now() - start);
-
-    // Log error with full details
-    logger.error("procedure error", err, {
-      source: "trpc",
-      path,
-      type,
-      durationMs,
-    });
-
-    // Re-throw the error to be handled by the error boundary
-    throw err;
-  }
+  });
 });
 
 /**
