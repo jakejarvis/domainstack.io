@@ -63,7 +63,7 @@
     "ipaddr.js": "^2.2.0",
     "lucide-react": "^0.555.0",
     "mapbox-gl": "^3.16.0",
-    "media-chrome": "^4.16.0",
+    "media-chrome": "^4.16.1",
     "motion": "^12.23.24",
     "ms": "3.0.0-canary.202508261828",
     "next": "16.0.5",
