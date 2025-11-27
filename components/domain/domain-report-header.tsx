@@ -6,6 +6,11 @@ import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { useAnalytics } from "@/lib/analytics/client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -25,27 +30,36 @@ export function DomainReportHeader({
   const analytics = useAnalytics();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-4 min-w-0">
       <ScreenshotTooltip domain={domain}>
         <a
           href={`https://${domain}`}
           target="_blank"
           rel="noopener"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 min-w-0 flex-1"
           onClick={() =>
             analytics.track("external_domain_link_clicked", { domain })
           }
         >
-          <Favicon domain={domain} size={20} className="rounded" />
-          <h2 className="font-semibold text-xl tracking-tight">{domain}</h2>
+          <Favicon domain={domain} size={20} className="rounded flex-shrink-0" />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h2 className="font-semibold text-xl tracking-tight truncate">
+                {domain}
+              </h2>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{domain}</p>
+            </TooltipContent>
+          </Tooltip>
           <ExternalLink
-            className="size-3.5 text-muted-foreground/60"
+            className="size-3.5 text-muted-foreground/60 flex-shrink-0"
             aria-hidden="true"
           />
         </a>
       </ScreenshotTooltip>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <ExportButton onExportAction={onExport} disabled={exportDisabled} />
 
         <ToolsDropdown domain={domain} />
