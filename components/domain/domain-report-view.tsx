@@ -1,9 +1,9 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
-import { createSectionWithData } from "@/components/domain/create-section-with-data";
 import { DnsSection } from "@/components/domain/dns/dns-section";
 import { DnsSectionSkeleton } from "@/components/domain/dns/dns-section-skeleton";
 import { DomainLoadingState } from "@/components/domain/domain-loading-state";
@@ -15,69 +15,71 @@ import { HostingSection } from "@/components/domain/hosting/hosting-section";
 import { HostingSectionSkeleton } from "@/components/domain/hosting/hosting-section-skeleton";
 import { RegistrationSection } from "@/components/domain/registration/registration-section";
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
+import { SectionErrorBoundary } from "@/components/domain/section-error-boundary";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { useDomainExport } from "@/hooks/use-domain-export";
 import { useDomainHistory } from "@/hooks/use-domain-history";
-import {
-  useCertificatesQuery,
-  useDnsQuery,
-  useHeadersQuery,
-  useHostingQuery,
-  useRegistrationQuery,
-  useSeoQuery,
-} from "@/hooks/use-domain-queries";
-import { useDomainQueryKeys } from "@/hooks/use-domain-query-keys";
+import { useTRPC } from "@/lib/trpc/client";
 
-// Create section components using the factory
-const RegistrationSectionWithData = createSectionWithData(
-  useRegistrationQuery,
-  RegistrationSection,
-  RegistrationSectionSkeleton,
-  "Registration",
-);
+// Section content components that fetch and render data
+function RegistrationSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getRegistration.queryOptions({ domain }),
+  );
+  return <RegistrationSection domain={domain} data={data} />;
+}
 
-const HostingSectionWithData = createSectionWithData(
-  useHostingQuery,
-  HostingSection,
-  HostingSectionSkeleton,
-  "Hosting",
-);
+function HostingSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getHosting.queryOptions({ domain }),
+  );
+  return <HostingSection domain={domain} data={data} />;
+}
 
-const DnsSectionWithData = createSectionWithData(
-  useDnsQuery,
-  DnsSection,
-  DnsSectionSkeleton,
-  "DNS",
-);
+function DnsSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getDnsRecords.queryOptions({ domain }),
+  );
+  return <DnsSection domain={domain} data={data} />;
+}
 
-const CertificatesSectionWithData = createSectionWithData(
-  useCertificatesQuery,
-  CertificatesSection,
-  CertificatesSectionSkeleton,
-  "Certificates",
-);
+function CertificatesSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getCertificates.queryOptions({ domain }),
+  );
+  return <CertificatesSection domain={domain} data={data} />;
+}
 
-const HeadersSectionWithData = createSectionWithData(
-  useHeadersQuery,
-  HeadersSection,
-  HeadersSectionSkeleton,
-  "Headers",
-);
+function HeadersSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getHeaders.queryOptions({ domain }),
+  );
+  return <HeadersSection domain={domain} data={data} />;
+}
 
-const SeoSectionWithData = createSectionWithData(
-  useSeoQuery,
-  SeoSection,
-  SeoSectionSkeleton,
-  "SEO",
-);
+function SeoSectionContent({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery(
+    trpc.domain.getSeo.queryOptions({ domain }),
+  );
+  return <SeoSection domain={domain} data={data} />;
+}
 
 /**
  * Inner content component - queries registration and conditionally shows sections.
  * This component suspends until registration data is ready.
  */
 function DomainReportContent({ domain }: { domain: string }) {
-  const { data: registration } = useRegistrationQuery(domain);
+  const trpc = useTRPC();
+  const { data: registration } = useSuspenseQuery(
+    trpc.domain.getRegistration.queryOptions({ domain }),
+  );
 
   // Show unregistered state if confirmed unregistered
   const isConfirmedUnregistered =
@@ -86,11 +88,8 @@ function DomainReportContent({ domain }: { domain: string }) {
   // Add to search history (only for registered domains)
   useDomainHistory(isConfirmedUnregistered ? "" : domain);
 
-  // Get memoized query keys for all sections
-  const queryKeys = useDomainQueryKeys(domain);
-
   // Track export state and get export handler
-  const { handleExport, allDataLoaded } = useDomainExport(domain, queryKeys);
+  const { handleExport, allDataLoaded } = useDomainExport(domain);
 
   if (isConfirmedUnregistered) {
     return <DomainUnregisteredState domain={domain} />;
@@ -105,12 +104,41 @@ function DomainReportContent({ domain }: { domain: string }) {
       />
 
       <div className="space-y-4">
-        <RegistrationSectionWithData domain={domain} />
-        <HostingSectionWithData domain={domain} />
-        <DnsSectionWithData domain={domain} />
-        <CertificatesSectionWithData domain={domain} />
-        <HeadersSectionWithData domain={domain} />
-        <SeoSectionWithData domain={domain} />
+        <SectionErrorBoundary sectionName="Registration">
+          <Suspense fallback={<RegistrationSectionSkeleton />}>
+            <RegistrationSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary sectionName="Hosting">
+          <Suspense fallback={<HostingSectionSkeleton />}>
+            <HostingSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary sectionName="DNS">
+          <Suspense fallback={<DnsSectionSkeleton />}>
+            <DnsSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary sectionName="Certificates">
+          <Suspense fallback={<CertificatesSectionSkeleton />}>
+            <CertificatesSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary sectionName="Headers">
+          <Suspense fallback={<HeadersSectionSkeleton />}>
+            <HeadersSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary sectionName="SEO">
+          <Suspense fallback={<SeoSectionSkeleton />}>
+            <SeoSectionContent domain={domain} />
+          </Suspense>
+        </SectionErrorBoundary>
       </div>
     </div>
   );

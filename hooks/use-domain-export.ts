@@ -1,27 +1,36 @@
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useLogger } from "@/hooks/use-logger";
 import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
-
-type QueryKeys = {
-  getRegistration: readonly unknown[];
-  getDnsRecords: readonly unknown[];
-  getHosting: readonly unknown[];
-  getCertificates: readonly unknown[];
-  getHeaders: readonly unknown[];
-  getSeo: readonly unknown[];
-};
+import { useTRPC } from "@/lib/trpc/client";
 
 /**
  * Hook to handle domain data export and track when all section data is loaded.
  * Subscribes to query cache updates and provides a handler to export all domain data.
  */
-export function useDomainExport(domain: string, queryKeys: QueryKeys) {
+export function useDomainExport(domain: string) {
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const logger = useLogger({ component: "DomainExport" });
   const [allDataLoaded, setAllDataLoaded] = useState(false);
+
+  // Build query keys directly using tRPC's queryOptions
+  const queryKeys = useMemo(
+    () => ({
+      registration: trpc.domain.getRegistration.queryOptions({ domain })
+        .queryKey,
+      dns: trpc.domain.getDnsRecords.queryOptions({ domain }).queryKey,
+      hosting: trpc.domain.getHosting.queryOptions({ domain }).queryKey,
+      certificates: trpc.domain.getCertificates.queryOptions({ domain })
+        .queryKey,
+      headers: trpc.domain.getHeaders.queryOptions({ domain }).queryKey,
+      seo: trpc.domain.getSeo.queryOptions({ domain }).queryKey,
+    }),
+    [trpc, domain],
+  );
+
   const queryKeysRef = useRef(queryKeys);
 
   // Update ref when queryKeys change
@@ -63,17 +72,13 @@ export function useDomainExport(domain: string, queryKeys: QueryKeys) {
     analytics.track("export_json_clicked", { domain });
 
     try {
-      // Read data from cache using provided query keys
-      const registrationData = queryClient.getQueryData(
-        queryKeys.getRegistration,
-      );
-      const dnsData = queryClient.getQueryData(queryKeys.getDnsRecords);
-      const hostingData = queryClient.getQueryData(queryKeys.getHosting);
-      const certificatesData = queryClient.getQueryData(
-        queryKeys.getCertificates,
-      );
-      const headersData = queryClient.getQueryData(queryKeys.getHeaders);
-      const seoData = queryClient.getQueryData(queryKeys.getSeo);
+      // Read data from cache using query keys
+      const registrationData = queryClient.getQueryData(queryKeys.registration);
+      const dnsData = queryClient.getQueryData(queryKeys.dns);
+      const hostingData = queryClient.getQueryData(queryKeys.hosting);
+      const certificatesData = queryClient.getQueryData(queryKeys.certificates);
+      const headersData = queryClient.getQueryData(queryKeys.headers);
+      const seoData = queryClient.getQueryData(queryKeys.seo);
 
       // Aggregate into export format
       const exportData = {
