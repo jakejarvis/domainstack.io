@@ -82,7 +82,7 @@
     "server-only": "0.0.1",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
-    "superjson": "^2.2.5",
+    "superjson": "^2.2.6",
     "tailwind-merge": "^3.4.0",
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
