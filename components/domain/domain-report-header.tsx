@@ -25,27 +25,36 @@ export function DomainReportHeader({
   const analytics = useAnalytics();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex min-w-0 items-center justify-between gap-4">
       <ScreenshotTooltip domain={domain}>
         <a
           href={`https://${domain}`}
           target="_blank"
           rel="noopener"
-          className="flex items-center gap-2"
+          className="flex min-w-0 flex-1 items-center gap-2"
           onClick={() =>
             analytics.track("external_domain_link_clicked", { domain })
           }
         >
-          <Favicon domain={domain} size={20} className="rounded" />
-          <h2 className="font-semibold text-xl tracking-tight">{domain}</h2>
+          <Favicon
+            domain={domain}
+            size={20}
+            className="flex-shrink-0 rounded"
+          />
+          <h2
+            className="truncate font-semibold text-xl tracking-tight"
+            title={domain}
+          >
+            {domain}
+          </h2>
           <ExternalLink
-            className="size-3.5 text-muted-foreground/60"
+            className="size-3.5 flex-shrink-0 text-muted-foreground/60"
             aria-hidden="true"
           />
         </a>
       </ScreenshotTooltip>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-shrink-0 items-center gap-2">
         <ExportButton onExportAction={onExport} disabled={exportDisabled} />
 
         <ToolsDropdown domain={domain} />
