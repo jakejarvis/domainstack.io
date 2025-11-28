@@ -35,6 +35,17 @@ type DnsAnswer = {
   TTL: number;
   data: string;
 };
+
+// DNS record type numbers (RFC 1035)
+const DNS_TYPE_NUMBERS = {
+  A: 1,
+  AAAA: 28,
+  CNAME: 5,
+  MX: 15,
+  TXT: 16,
+  NS: 2,
+} as const;
+
 export type DohProvider = {
   key: string;
   url: string;
@@ -449,6 +460,15 @@ async function normalizeAnswer(
 ): Promise<DnsRecord | undefined> {
   const name = trimDot(a.name);
   const ttl = a.TTL;
+
+  // Filter out records that don't match the requested type.
+  // DoH resolvers include CNAME records in the answer chain when resolving A/AAAA,
+  // but we only want the final resolved records of the requested type.
+  const expectedTypeNumber = DNS_TYPE_NUMBERS[type];
+  if (a.type !== expectedTypeNumber) {
+    return undefined;
+  }
+
   switch (type) {
     case "A":
     case "AAAA": {

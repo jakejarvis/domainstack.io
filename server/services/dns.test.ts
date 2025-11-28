@@ -36,9 +36,14 @@ afterAll(async () => {
 });
 
 function dohAnswer(
-  answers: Array<{ name: string; TTL: number; data: string }>,
+  answers: Array<{ name: string; TTL: number; data: string; type?: number }>,
 ) {
-  return new Response(JSON.stringify({ Status: 0, Answer: answers }), {
+  // Default to type 1 (A record) if not specified for backwards compatibility with existing tests
+  const answersWithType = answers.map((a) => ({
+    ...a,
+    type: a.type ?? 1,
+  }));
+  return new Response(JSON.stringify({ Status: 0, Answer: answersWithType }), {
     status: 200,
     headers: { "content-type": "application/dns-json" },
   });
@@ -79,22 +84,27 @@ describe("getDnsRecords", () => {
     const fetchMock = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
+        ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
-      ) // AAAA
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1", type: 28 }]),
+      ) // AAAA (type 28)
       .mockResolvedValueOnce(
         dohAnswer([
           {
             name: "example.com.",
             TTL: 300,
             data: "10 aspmx.l.google.com.",
+            type: 15,
           },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
@@ -102,6 +112,7 @@ describe("getDnsRecords", () => {
             name: "example.com.",
             TTL: 600,
             data: "ns1.cloudflare.com.",
+            type: 2,
           },
         ]),
       );
@@ -127,22 +138,26 @@ describe("getDnsRecords", () => {
     const fetchMock = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "jarv.net.", TTL: 300, data: "216.40.34.37" }]),
+        dohAnswer([
+          { name: "jarv.net.", TTL: 300, data: "216.40.34.37", type: 1 },
+        ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "jarv.net.", TTL: 300, data: "216.40.34.37" }]),
-      ) // AAAA (returns A for simplicity)
+        dohAnswer([{ name: "jarv.net.", TTL: 300, data: "::1", type: 28 }]),
+      ) // AAAA (type 28)
       .mockResolvedValueOnce(
         dohAnswer([
           {
             name: "jarv.net.",
             TTL: 300,
             data: "10 mx.netidentity.com.cust.hostedemail.com.",
+            type: 15,
           },
           {
             name: "jarv.net.",
             TTL: 300,
             data: "20 mx.netidentity.com.cust.hostedemail.com.",
+            type: 15,
           },
         ]),
       )
@@ -152,11 +167,14 @@ describe("getDnsRecords", () => {
             name: "jarv.net.",
             TTL: 300,
             data: '"v=spf1 include:_spf.hostedemail.com ~all"',
+            type: 16,
           },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "jarv.net.", TTL: 300, data: "ns1.mailbank.com." }]),
+        dohAnswer([
+          { name: "jarv.net.", TTL: 300, data: "ns1.mailbank.com.", type: 2 },
+        ]),
       );
 
     const out = await getDnsRecords("jarv.net");
@@ -196,21 +214,34 @@ describe("getDnsRecords", () => {
       const idx = call - 6;
       switch (idx) {
         case 0:
+          return dohAnswer([
+            { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
+          ]);
         case 1:
           return dohAnswer([
-            { name: "example.com.", TTL: 60, data: "1.2.3.4" },
+            { name: "example.com.", TTL: 60, data: "::1", type: 28 },
           ]);
         case 2:
           return dohAnswer([
-            { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+            {
+              name: "example.com.",
+              TTL: 300,
+              data: "10 aspmx.l.google.com.",
+              type: 15,
+            },
           ]);
         case 3:
           return dohAnswer([
-            { name: "example.com.", TTL: 120, data: '"v=spf1"' },
+            { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
           ]);
         default:
           return dohAnswer([
-            { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+            {
+              name: "example.com.",
+              TTL: 600,
+              data: "ns1.cloudflare.com.",
+              type: 2,
+            },
           ]);
       }
     });
@@ -235,10 +266,12 @@ describe("getDnsRecords", () => {
     const firstFetch = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
+        ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1" }]),
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1", type: 28 }]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
@@ -246,11 +279,14 @@ describe("getDnsRecords", () => {
             name: "example.com.",
             TTL: 300,
             data: "10 aspmx.l.google.com.",
+            type: 15,
           },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
@@ -258,6 +294,7 @@ describe("getDnsRecords", () => {
             name: "example.com.",
             TTL: 600,
             data: "ns1.cloudflare.com.",
+            type: 2,
           },
         ]),
       );
@@ -289,22 +326,36 @@ describe("getDnsRecords", () => {
     const fetchMock = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
-      )
-      .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1" }]),
-      )
-      .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+          { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1", type: 28 }]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+          {
+            name: "example.com.",
+            TTL: 300,
+            data: "10 aspmx.l.google.com.",
+            type: 15,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          {
+            name: "example.com.",
+            TTL: 600,
+            data: "ns1.cloudflare.com.",
+            type: 2,
+          },
         ]),
       );
 
@@ -339,7 +390,9 @@ describe("getDnsRecords", () => {
     const firstFetch = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
+        ]),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ Status: 0, Answer: [] }), {
@@ -349,15 +402,27 @@ describe("getDnsRecords", () => {
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+          {
+            name: "example.com.",
+            TTL: 300,
+            data: "10 aspmx.l.google.com.",
+            type: 15,
+          },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+          {
+            name: "example.com.",
+            TTL: 600,
+            data: "ns1.cloudflare.com.",
+            type: 2,
+          },
         ]),
       );
 
@@ -380,7 +445,7 @@ describe("getDnsRecords", () => {
         const type = url.searchParams.get("type");
         if (type === "AAAA") {
           return dohAnswer([
-            { name: "example.com.", TTL: 300, data: "2001:db8::1" },
+            { name: "example.com.", TTL: 300, data: "2001:db8::1", type: 28 },
           ]);
         }
         return dohAnswer([]);
@@ -476,22 +541,31 @@ describe("providerOrderForLookup (hash-based selection)", () => {
     const fetchMock1 = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "domain1.com.", TTL: 60, data: "1.2.3.4" }]),
-      )
-      .mockResolvedValueOnce(
-        dohAnswer([{ name: "domain1.com.", TTL: 60, data: "::1" }]),
-      )
-      .mockResolvedValueOnce(
         dohAnswer([
-          { name: "domain1.com.", TTL: 300, data: "10 mx.domain1.com." },
+          { name: "domain1.com.", TTL: 60, data: "1.2.3.4", type: 1 },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "domain1.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([{ name: "domain1.com.", TTL: 60, data: "::1", type: 28 }]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "domain1.com.", TTL: 600, data: "ns1.domain1.com." },
+          {
+            name: "domain1.com.",
+            TTL: 300,
+            data: "10 mx.domain1.com.",
+            type: 15,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "domain1.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
+      )
+      .mockResolvedValueOnce(
+        dohAnswer([
+          { name: "domain1.com.", TTL: 600, data: "ns1.domain1.com.", type: 2 },
         ]),
       );
 
@@ -524,28 +598,40 @@ describe("providerOrderForLookup (hash-based selection)", () => {
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 60, data: "151.101.194.133" },
-          { name: "example.com.", TTL: 60, data: "151.101.130.133" },
-          { name: "example.com.", TTL: 60, data: "151.101.66.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.194.133", type: 1 },
+          { name: "example.com.", TTL: 60, data: "151.101.130.133", type: 1 },
+          { name: "example.com.", TTL: 60, data: "151.101.66.133", type: 1 },
         ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 60, data: "2606:4700::1" },
-          { name: "example.com.", TTL: 60, data: "2606:4700::2" },
+          { name: "example.com.", TTL: 60, data: "2606:4700::1", type: 28 },
+          { name: "example.com.", TTL: 60, data: "2606:4700::2", type: 28 },
         ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+          {
+            name: "example.com.",
+            TTL: 300,
+            data: "10 aspmx.l.google.com.",
+            type: 15,
+          },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+          {
+            name: "example.com.",
+            TTL: 600,
+            data: "ns1.cloudflare.com.",
+            type: 2,
+          },
         ]),
       );
 
@@ -581,28 +667,40 @@ describe("providerOrderForLookup (hash-based selection)", () => {
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 60, data: "151.101.66.133" },
-          { name: "example.com.", TTL: 60, data: "151.101.194.133" },
-          { name: "example.com.", TTL: 60, data: "151.101.130.133" },
+          { name: "example.com.", TTL: 60, data: "151.101.66.133", type: 1 },
+          { name: "example.com.", TTL: 60, data: "151.101.194.133", type: 1 },
+          { name: "example.com.", TTL: 60, data: "151.101.130.133", type: 1 },
         ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 60, data: "2606:4700::2" },
-          { name: "example.com.", TTL: 60, data: "2606:4700::1" },
+          { name: "example.com.", TTL: 60, data: "2606:4700::2", type: 28 },
+          { name: "example.com.", TTL: 60, data: "2606:4700::1", type: 28 },
         ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+          {
+            name: "example.com.",
+            TTL: 300,
+            data: "10 aspmx.l.google.com.",
+            type: 15,
+          },
         ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 120, data: '"v=spf1"' }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 120, data: '"v=spf1"', type: 16 },
+        ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+          {
+            name: "example.com.",
+            TTL: 600,
+            data: "ns1.cloudflare.com.",
+            type: 2,
+          },
         ]),
       );
 
@@ -636,14 +734,21 @@ describe("providerOrderForLookup (hash-based selection)", () => {
     const firstFetch = vi
       .spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "1.2.3.4" }]),
+        dohAnswer([
+          { name: "example.com.", TTL: 60, data: "1.2.3.4", type: 1 },
+        ]),
       )
       .mockResolvedValueOnce(
-        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1" }]),
+        dohAnswer([{ name: "example.com.", TTL: 60, data: "::1", type: 28 }]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 300, data: "10 aspmx.l.google.com." },
+          {
+            name: "example.com.",
+            TTL: 300,
+            data: "10 aspmx.l.google.com.",
+            type: 15,
+          },
         ]),
       )
       .mockResolvedValueOnce(
@@ -652,12 +757,18 @@ describe("providerOrderForLookup (hash-based selection)", () => {
             name: "example.com.",
             TTL: 120,
             data: '"google-site-verification=RnrF88_2OaCBS9ziVuSmclMrmr4Q78QHNASfsAOe-jM"',
+            type: 16,
           },
         ]),
       )
       .mockResolvedValueOnce(
         dohAnswer([
-          { name: "example.com.", TTL: 600, data: "ns1.cloudflare.com." },
+          {
+            name: "example.com.",
+            TTL: 600,
+            data: "ns1.cloudflare.com.",
+            type: 2,
+          },
         ]),
       );
 
@@ -686,5 +797,141 @@ describe("providerOrderForLookup (hash-based selection)", () => {
     // Should be a cache hit (no network calls)
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it("filters out CNAME records from A/AAAA record responses (trae.ai case)", async () => {
+    const { getDnsRecords } = await import("./dns");
+
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "trae.ai",
+      tld: "ai",
+      unicodeName: "trae.ai",
+    });
+
+    // Simulate DoH response that includes both CNAME (type 5) and A records (type 1)
+    // This happens when querying a domain with a CNAME chain like:
+    // trae.ai → a675.t.akamai.net → IP addresses
+    const fetchMock = vi
+      .spyOn(global, "fetch")
+      .mockImplementation(async (input: RequestInfo | URL) => {
+        const url =
+          input instanceof URL
+            ? input
+            : new URL(
+                typeof input === "string"
+                  ? input
+                  : ((input as unknown as { url: string }).url as string),
+              );
+        const type = url.searchParams.get("type");
+
+        if (type === "A") {
+          // DoH returns both CNAME records and final A records in the answer chain
+          return new Response(
+            JSON.stringify({
+              Status: 0,
+              Answer: [
+                // CNAME records (type 5) should be filtered out
+                {
+                  name: "trae.ai.",
+                  type: 5,
+                  TTL: 21600,
+                  data: "a675.t.akamai.net.",
+                },
+                {
+                  name: "a675.t.akamai.net.",
+                  type: 5,
+                  TTL: 60,
+                  data: "trae.ai.edgesuite.net.",
+                },
+                {
+                  name: "trae.ai.edgesuite.net.",
+                  type: 5,
+                  TTL: 300,
+                  data: "trae.ai.ttdns2.com.",
+                },
+                // A records (type 1) should be kept
+                {
+                  name: "trae.ai.ttdns2.com.",
+                  type: 1,
+                  TTL: 20,
+                  data: "23.213.158.77",
+                },
+                {
+                  name: "trae.ai.ttdns2.com.",
+                  type: 1,
+                  TTL: 20,
+                  data: "23.213.158.81",
+                },
+              ],
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/dns-json" },
+            },
+          );
+        }
+
+        if (type === "AAAA") {
+          // Similar CNAME chain for AAAA records
+          return new Response(
+            JSON.stringify({
+              Status: 0,
+              Answer: [
+                // CNAME records (type 5) should be filtered out
+                {
+                  name: "trae.ai.",
+                  type: 5,
+                  TTL: 21600,
+                  data: "a675.t.akamai.net.",
+                },
+                {
+                  name: "a675.t.akamai.net.",
+                  type: 5,
+                  TTL: 60,
+                  data: "trae.ai.edgesuite.net.",
+                },
+                {
+                  name: "trae.ai.edgesuite.net.",
+                  type: 5,
+                  TTL: 300,
+                  data: "trae.ai.ttdns2.com.",
+                },
+                // No AAAA records in this case (empty final resolution)
+              ],
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/dns-json" },
+            },
+          );
+        }
+
+        // Other record types return empty
+        return new Response(JSON.stringify({ Status: 0, Answer: [] }), {
+          status: 200,
+          headers: { "content-type": "application/dns-json" },
+        });
+      });
+
+    const result = await getDnsRecords("trae.ai");
+    const aRecords = result.records.filter((r) => r.type === "A");
+    const aaaaRecords = result.records.filter((r) => r.type === "AAAA");
+
+    // Should only have A records, not CNAME records
+    expect(aRecords.length).toBe(2);
+    expect(aRecords[0].value).toBe("23.213.158.77");
+    expect(aRecords[1].value).toBe("23.213.158.81");
+
+    // Should not contain any CNAME hostnames in A records
+    expect(aRecords.some((r) => r.value.includes("akamai"))).toBe(false);
+    expect(aRecords.some((r) => r.value.includes("edgesuite"))).toBe(false);
+    expect(aRecords.some((r) => r.value.includes("ttdns2"))).toBe(false);
+
+    // AAAA should be empty (no AAAA records in the response)
+    expect(aaaaRecords.length).toBe(0);
+
+    fetchMock.mockRestore();
   });
 });
