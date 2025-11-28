@@ -270,4 +270,16 @@ export const EMAIL_PROVIDERS: Array<
     category: "email",
     rule: { kind: "mxSuffix", suffix: "messagelabs.com" },
   },
+  {
+    name: "Tuta",
+    domain: "tuta.com",
+    category: "email",
+    rule: { kind: "mxSuffix", suffix: "tutanota.de" },
+  },
+  {
+    name: "Mailbox.org",
+    domain: "mailbox.org",
+    category: "email",
+    rule: { kind: "mxSuffix", suffix: "mailbox.org" },
+  },
 ];

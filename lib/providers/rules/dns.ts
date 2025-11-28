@@ -415,4 +415,10 @@ export const DNS_PROVIDERS: Array<
     category: "dns",
     rule: { kind: "nsSuffix", suffix: "markmonitor.com" },
   },
+  {
+    name: "F5 Distributed Cloud DNS",
+    domain: "f5.com",
+    category: "dns",
+    rule: { kind: "nsSuffix", suffix: "f5clouddns.com" },
+  },
 ];
