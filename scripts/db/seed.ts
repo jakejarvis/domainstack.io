@@ -209,6 +209,8 @@ async function main() {
               ruleMatched = true;
 
               // Update the bySlug map to prevent duplicate matches
+              const oldSlugKey = `${existingProvider.category}:${existingProvider.slug}`;
+              bySlug.delete(oldSlugKey);
               bySlug.set(slugKey, {
                 ...existingProvider,
                 name: def.name,
@@ -423,47 +425,66 @@ async function main() {
       );
 
       if (!isDryRun) {
-        // Migrate foreign key references from discovered → catalog
-        // Update registrations table
-        await db
-          .update(registrations)
-          .set({ registrarProviderId: cleanup.catalogId })
-          .where(eq(registrations.registrarProviderId, cleanup.discoveredId));
+        try {
+          // Wrap all FK migrations and deletion in a single transaction
+          // to ensure atomicity - either all succeed or all rollback
+          await db.transaction(async (tx) => {
+            // Migrate foreign key references from discovered → catalog
+            // Update registrations table
+            await tx
+              .update(registrations)
+              .set({ registrarProviderId: cleanup.catalogId })
+              .where(
+                eq(registrations.registrarProviderId, cleanup.discoveredId),
+              );
 
-        await db
-          .update(registrations)
-          .set({ resellerProviderId: cleanup.catalogId })
-          .where(eq(registrations.resellerProviderId, cleanup.discoveredId));
+            await tx
+              .update(registrations)
+              .set({ resellerProviderId: cleanup.catalogId })
+              .where(
+                eq(registrations.resellerProviderId, cleanup.discoveredId),
+              );
 
-        // Update certificates table
-        await db
-          .update(certificates)
-          .set({ caProviderId: cleanup.catalogId })
-          .where(eq(certificates.caProviderId, cleanup.discoveredId));
+            // Update certificates table
+            await tx
+              .update(certificates)
+              .set({ caProviderId: cleanup.catalogId })
+              .where(eq(certificates.caProviderId, cleanup.discoveredId));
 
-        // Update hosting table
-        await db
-          .update(hosting)
-          .set({ hostingProviderId: cleanup.catalogId })
-          .where(eq(hosting.hostingProviderId, cleanup.discoveredId));
+            // Update hosting table
+            await tx
+              .update(hosting)
+              .set({ hostingProviderId: cleanup.catalogId })
+              .where(eq(hosting.hostingProviderId, cleanup.discoveredId));
 
-        await db
-          .update(hosting)
-          .set({ emailProviderId: cleanup.catalogId })
-          .where(eq(hosting.emailProviderId, cleanup.discoveredId));
+            await tx
+              .update(hosting)
+              .set({ emailProviderId: cleanup.catalogId })
+              .where(eq(hosting.emailProviderId, cleanup.discoveredId));
 
-        await db
-          .update(hosting)
-          .set({ dnsProviderId: cleanup.catalogId })
-          .where(eq(hosting.dnsProviderId, cleanup.discoveredId));
+            await tx
+              .update(hosting)
+              .set({ dnsProviderId: cleanup.catalogId })
+              .where(eq(hosting.dnsProviderId, cleanup.discoveredId));
 
-        // Delete the orphaned discovered provider
-        await db
-          .delete(providers)
-          .where(eq(providers.id, cleanup.discoveredId));
+            // Delete the orphaned discovered provider
+            await tx
+              .delete(providers)
+              .where(eq(providers.id, cleanup.discoveredId));
+          });
+
+          cleaned++;
+        } catch (err) {
+          console.error(
+            `❌ Failed to merge "${cleanup.discoveredName}" → "${cleanup.catalogName}":`,
+            err,
+          );
+          throw err; // Re-throw to fail the script and prevent incomplete migrations
+        }
+      } else {
+        // Dry run: just count what would be cleaned
+        cleaned++;
       }
-
-      cleaned++;
     }
   } else {
     console.log("  ✨ No orphaned providers found");
