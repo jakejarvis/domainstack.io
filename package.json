@@ -60,7 +60,7 @@
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "inngest": "^3.46.0",
-    "ipaddr.js": "^2.2.0",
+    "ipaddr.js": "^2.3.0",
     "lucide-react": "^0.555.0",
     "mapbox-gl": "^3.16.0",
     "media-chrome": "^4.16.0",
