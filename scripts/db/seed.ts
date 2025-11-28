@@ -272,17 +272,33 @@ async function main() {
 
   // Batch insert new providers
   if (toInsert.length > 0) {
+    // Deduplicate by (category, slug) to prevent constraint violations
+    // This handles cases where multiple catalog entries map to the same slug
+    // (e.g., multiple rules for the same provider)
+    const uniqueInserts = new Map<string, (typeof toInsert)[number]>();
+    for (const ins of toInsert) {
+      const key = `${ins.category}:${ins.slug}`;
+      if (!uniqueInserts.has(key)) {
+        uniqueInserts.set(key, ins);
+      } else {
+        console.warn(
+          `⚠️  Skipping duplicate insert for "${ins.name}" (slug: ${ins.slug}) - already queued`,
+        );
+      }
+    }
+    const deduplicatedInserts = Array.from(uniqueInserts.values());
+
     console.log(
-      `${isDryRun ? "[DRY RUN] Would insert" : "Inserting"} ${toInsert.length} new provider(s)...`,
+      `${isDryRun ? "[DRY RUN] Would insert" : "Inserting"} ${deduplicatedInserts.length} new provider(s)...`,
     );
     if (isDryRun) {
-      for (const ins of toInsert) {
+      for (const ins of deduplicatedInserts) {
         console.log(
           `  - ${ins.category}: ${ins.name} (${ins.domain || "no domain"})`,
         );
       }
     } else {
-      await db.insert(providers).values(toInsert);
+      await db.insert(providers).values(deduplicatedInserts);
     }
   }
 

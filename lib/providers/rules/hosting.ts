@@ -135,7 +135,12 @@ export const HOSTING_PROVIDERS: Array<
     name: "Render",
     domain: "render.com",
     category: "hosting",
-    rule: { kind: "headerEquals", name: "server", value: "render" },
+    rule: {
+      any: [
+        { kind: "headerEquals", name: "server", value: "render" },
+        { kind: "headerPresent", name: "x-render-origin-server" },
+      ],
+    },
   },
   {
     name: "Squarespace",
@@ -239,12 +244,6 @@ export const HOSTING_PROVIDERS: Array<
         { kind: "headerIncludes", name: "server", substr: "railway" },
       ],
     },
-  },
-  {
-    name: "Render",
-    domain: "render.com",
-    category: "hosting",
-    rule: { kind: "headerPresent", name: "x-render-origin-server" },
   },
   {
     name: "Ghost",
