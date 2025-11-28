@@ -6,11 +6,6 @@ import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { useAnalytics } from "@/lib/analytics/client";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -42,16 +37,12 @@ export function DomainReportHeader({
           }
         >
           <Favicon domain={domain} size={20} className="rounded flex-shrink-0" />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <h2 className="font-semibold text-xl tracking-tight truncate">
-                {domain}
-              </h2>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{domain}</p>
-            </TooltipContent>
-          </Tooltip>
+          <h2
+            className="font-semibold text-xl tracking-tight truncate"
+            title={domain}
+          >
+            {domain}
+          </h2>
           <ExternalLink
             className="size-3.5 text-muted-foreground/60 flex-shrink-0"
             aria-hidden="true"
