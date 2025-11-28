@@ -39,6 +39,9 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         })
         .from(certTable)
         .where(eq(certTable.domainId, existingDomain.id))
+        // Order by validTo DESC: leaf certificates typically expire first (shorter validity period)
+        // This preserves the chain order: leaf -> intermediate -> root
+        .orderBy(certTable.validTo)
     : ([] as Array<{
         issuer: string;
         subject: string;

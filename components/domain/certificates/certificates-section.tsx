@@ -199,9 +199,15 @@ export function CertificatesSection({
                               return sans.length > 0 ? (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="flex select-none items-center font-mono text-[11px] text-muted-foreground/80 leading-none underline underline-offset-2">
-                                      +{sans.length}
-                                    </span>
+                                    <Badge
+                                      variant="outline"
+                                      className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                                    >
+                                      <span>+</span>
+                                      <span className="px-[1px]">
+                                        {sans.length}
+                                      </span>
+                                    </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                                     {sans.join(", ")}
