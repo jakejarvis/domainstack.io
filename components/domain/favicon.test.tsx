@@ -69,14 +69,37 @@ describe("Favicon", () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it("shows Globe when no url and not loading", () => {
+  it("shows domain letter avatar when no url and not loading", () => {
     (useQuery as unknown as Mock).mockReturnValue({
       data: { url: null },
       isLoading: false,
     });
     render(<Favicon domain="example.com" size={16} />);
+
+    // Should show letter 'E' for example.com
+    const avatar = screen.getByText("E");
+    expect(avatar).toBeInTheDocument();
+    expect(avatar).toHaveAttribute("data-favicon", "example.com");
+    expect(avatar).toHaveAttribute("role", "img");
+
     // Ensure we did not render the next/image <img> fallback
     expect(document.querySelector('[data-slot="image"]')).toBeNull();
+  });
+
+  it("generates consistent colors for same domain", () => {
+    (useQuery as unknown as Mock).mockReturnValue({
+      data: { url: null },
+      isLoading: false,
+    });
+
+    const { unmount } = render(<Favicon domain="example.com" size={16} />);
+    const firstAvatar = screen.getByText("E");
+    const firstClass = firstAvatar.className;
+    unmount();
+
+    render(<Favicon domain="example.com" size={16} />);
+    const secondAvatar = screen.getByText("E");
+    expect(secondAvatar.className).toBe(firstClass);
   });
 
   it("renders Image when url present", () => {

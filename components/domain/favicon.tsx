@@ -1,12 +1,36 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Globe } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { simpleHash } from "@/lib/hash";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+
+// Deterministic color palette - vibrant but not overwhelming
+// Using actual color values to avoid Tailwind purging issues
+const PLACEHOLDER_COLORS = [
+  "#3b82f6", // blue
+  "#a855f7", // purple
+  "#ec4899", // pink
+  "#f43f5e", // rose
+  "#f97316", // orange
+  "#f59e0b", // amber
+  "#10b981", // emerald
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#6366f1", // indigo
+  "#8b5cf6", // violet
+  "#d946ef", // fuchsia
+] as const;
+
+function getEmptyPlaceholder(domain: string) {
+  const letter = domain[0]?.toUpperCase() || "?";
+  const colorIndex = simpleHash(domain) % PLACEHOLDER_COLORS.length;
+  const backgroundColor = PLACEHOLDER_COLORS[colorIndex];
+  return { letter, backgroundColor };
+}
 
 export function Favicon({
   domain,
@@ -47,14 +71,28 @@ export function Favicon({
   }
 
   if (!url || failedUrl === url) {
+    const { letter, backgroundColor } = getEmptyPlaceholder(domain);
+    const fontSize = Math.max(9, Math.floor(size * 0.55)); // ~55% of container size
+
     return (
-      <Globe
-        className={cn("text-muted-foreground", className)}
-        width={size}
-        height={size}
-        style={{ ...style, width: size, height: size }}
+      <div
+        className={cn(
+          "pointer-events-none inline-flex select-none items-center justify-center rounded font-bold text-white",
+          className,
+        )}
+        style={{
+          ...style,
+          width: size,
+          height: size,
+          fontSize,
+          backgroundColor,
+        }}
+        role="img"
+        aria-label={`${domain} icon`}
         data-favicon={domain}
-      />
+      >
+        {letter}
+      </div>
     );
   }
 
