@@ -100,7 +100,19 @@ export async function scheduleRevalidation(
 
   // Enforce minimum TTL for this section
   const minDueMs = now + minTtlSecondsForSection(section) * 1000;
-  const scheduledDueMs = Math.max(decayedDueMs, minDueMs);
+  let scheduledDueMs = Math.max(decayedDueMs, minDueMs);
+
+  // Ensure timestamp is always in the future to prevent negative timeout warnings
+  // This handles race conditions where dueAtMs was calculated in the past
+  if (scheduledDueMs <= now) {
+    scheduledDueMs = now + minTtlSecondsForSection(section) * 1000;
+    logger.warn("adjusted past timestamp", {
+      domain: normalizedDomain,
+      section,
+      originalDueMs: dueAtMs,
+      adjustedDueMs: scheduledDueMs,
+    });
+  }
 
   // Send event to Inngest
   // Use stable event ID (domain+section) to enable Inngest's built-in deduplication.

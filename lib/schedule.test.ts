@@ -97,6 +97,41 @@ describe("schedule", () => {
       expect(mockInngestSend).not.toHaveBeenCalled();
     });
 
+    it("adjusts timestamp when dueAtMs is in the past (prevents negative timeout)", async () => {
+      const now = Date.now();
+      const pastTimestamp = now - 5000; // 5 seconds ago
+
+      const scheduled = await scheduleRevalidation(
+        "example.com",
+        "headers",
+        pastTimestamp,
+      );
+
+      expect(scheduled).toBe(true);
+      expect(mockInngestSend).toHaveBeenCalled();
+
+      const callArgs = mockInngestSend.mock.calls[0][0];
+      // Should be adjusted to at least now + minTTL (6 hours for headers)
+      const minTtlMs = 6 * 60 * 60 * 1000; // 6 hours
+      expect(callArgs.ts).toBeGreaterThan(now);
+      expect(callArgs.ts).toBeGreaterThanOrEqual(now + minTtlMs - 100); // small tolerance
+    });
+
+    it("adjusts timestamp when dueAtMs equals current time (edge case)", async () => {
+      const now = Date.now();
+
+      const scheduled = await scheduleRevalidation("example.com", "dns", now);
+
+      expect(scheduled).toBe(true);
+      expect(mockInngestSend).toHaveBeenCalled();
+
+      const callArgs = mockInngestSend.mock.calls[0][0];
+      // Should be adjusted to now + minTTL (1 hour for dns)
+      const minTtlMs = 60 * 60 * 1000; // 1 hour
+      expect(callArgs.ts).toBeGreaterThan(now);
+      expect(callArgs.ts).toBeGreaterThanOrEqual(now + minTtlMs - 100); // small tolerance
+    });
+
     it("enforces minimum TTL for section", async () => {
       const now = Date.now();
       const tooSoon = now + 100; // Much less than dns min TTL of 1 hour
