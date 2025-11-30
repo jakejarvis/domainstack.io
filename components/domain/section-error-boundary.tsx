@@ -2,14 +2,13 @@
 
 import { Ban } from "lucide-react";
 import posthog from "posthog-js";
-import type { ReactNode } from "react";
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { createLogger } from "@/lib/logger/client";
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
   sectionName: string;
 }
 

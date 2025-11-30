@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
-import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@/lib/test-utils";
 import { HeaderSearch } from "./header-search";
 import { HeaderSearchProvider } from "./header-search-context";
 

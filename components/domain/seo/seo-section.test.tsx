@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { SeoResponse } from "@/lib/schemas";
+import { render, screen } from "@/lib/test-utils";
 
 // Mock child components to isolate main component testing
 vi.mock("@/components/domain/seo/meta-tags-grid", () => ({

@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@/lib/test-utils";
 import { DnsSection } from "./dns-section";
 
 vi.mock("@/components/domain/dns/dns-group", () => ({

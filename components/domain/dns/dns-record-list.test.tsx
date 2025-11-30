@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
+import { render, screen } from "@/lib/test-utils";
 
 vi.mock("@/components/domain/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,

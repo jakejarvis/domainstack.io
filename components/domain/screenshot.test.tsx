@@ -1,8 +1,7 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import { createElement } from "react";
-import type { Mock } from "vitest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@/lib/test-utils";
 import { Screenshot } from "./screenshot";
 
 vi.mock("next/image", () => ({
@@ -27,73 +26,79 @@ vi.mock("next/image", () => ({
     }),
 }));
 
+// Mock the tRPC client to return a mock queryOptions function
+const mockQueryOptions = vi.fn();
+
 vi.mock("@/lib/trpc/client", () => ({
   useTRPC: () => ({
     domain: {
       getScreenshot: {
-        queryOptions: (vars: unknown) => ({
-          queryKey: ["getScreenshot", vars],
-        }),
+        queryOptions: mockQueryOptions,
       },
     },
   }),
 }));
 
-vi.mock("@tanstack/react-query", async () => {
-  const actual = await vi.importActual<typeof import("@tanstack/react-query")>(
-    "@tanstack/react-query",
-  );
-  return {
-    ...actual,
-    useQuery: vi.fn(),
-  };
-});
-
-const { useQuery } = await import("@tanstack/react-query");
-
 describe("Screenshot", () => {
   beforeEach(() => {
-    (useQuery as unknown as Mock).mockReset();
+    mockQueryOptions.mockClear();
   });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("shows loading UI during fetch", () => {
-    (useQuery as unknown as Mock).mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isFetching: false,
-    });
+  it("shows loading UI during fetch", async () => {
+    // Configure mock to return queryOptions that keep loading state
+    mockQueryOptions.mockImplementation(({ domain }: { domain: string }) => ({
+      queryKey: ["getScreenshot", { domain }],
+      queryFn: () => new Promise(() => {}), // Never resolves to keep loading state
+    }));
+
     render(<Screenshot domain="example.com" />);
-    expect(screen.getByText(/taking screenshot/i)).toBeInTheDocument();
+
+    // Should show loading state
+    await waitFor(() => {
+      expect(screen.getByText(/taking screenshot/i)).toBeInTheDocument();
+    });
   });
 
-  it("renders image when url present", () => {
-    (useQuery as unknown as Mock).mockReturnValue({
-      data: {
-        url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/1200x630.webp",
-      },
-      isLoading: false,
-      isFetching: false,
-    });
+  it("renders image when url present", async () => {
+    const screenshotUrl =
+      "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/1200x630.webp";
+
+    mockQueryOptions.mockImplementation(({ domain }: { domain: string }) => ({
+      queryKey: ["getScreenshot", { domain }],
+      queryFn: async () => ({ url: screenshotUrl }),
+    }));
+
     render(<Screenshot domain="example.com" />);
+
+    // Wait for the image to be rendered
+    await waitFor(() => {
+      const img = screen.queryByRole("img", {
+        name: /homepage preview of example.com/i,
+      });
+      expect(img).toBeInTheDocument();
+    });
+
     const img = screen.getByRole("img", {
       name: /homepage preview of example.com/i,
     });
-    expect(img).toHaveAttribute(
-      "src",
-      "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/1200x630.webp",
-    );
+    expect(img).toHaveAttribute("src", screenshotUrl);
   });
 
-  it("shows fallback when no url and not loading", () => {
-    (useQuery as unknown as Mock).mockReturnValue({
-      data: { url: null },
-      isLoading: false,
-      isFetching: false,
-    });
+  it("shows fallback when no url and not loading", async () => {
+    mockQueryOptions.mockImplementation(({ domain }: { domain: string }) => ({
+      queryKey: ["getScreenshot", { domain }],
+      queryFn: async () => ({ url: null }),
+    }));
+
     render(<Screenshot domain="example.com" />);
-    expect(screen.getByText(/unable to take/i)).toBeInTheDocument();
+
+    // Wait for query to complete
+    await waitFor(() => {
+      expect(screen.getByText(/unable to take/i)).toBeInTheDocument();
+    });
   });
 });

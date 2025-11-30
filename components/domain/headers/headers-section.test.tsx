@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { render, screen } from "@/lib/test-utils";
 import { HeadersSection } from "./headers-section";
 
 // Keep TooltipContent empty in unit tests to avoid text duplication issues.

@@ -1,10 +1,10 @@
 /* @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSuggestionsClient } from "@/components/domain/domain-suggestions-client";
 import { HomeSearchProvider } from "@/components/layout/home-search-context";
+import { render, screen } from "@/lib/test-utils";
 
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: vi.fn() }),

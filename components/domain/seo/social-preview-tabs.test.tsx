@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
-import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@/lib/test-utils";
 import { SocialPreviewTabs } from "./social-preview-tabs";
 
 describe("SocialPreviewTabs", () => {
