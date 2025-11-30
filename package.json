@@ -15,9 +15,9 @@
     "dev": "concurrently --kill-others 'scripts/start-dev-infra.sh' 'next dev'",
     "build": "next build",
     "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "biome check",
     "format": "biome format --write",
-    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:migrate": "drizzle-kit migrate",
@@ -119,7 +119,7 @@
     "vitest": "^4.0.14"
   },
   "engines": {
-    "node": ">=22.x"
+    "node": ">=24.x"
   },
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "pnpm": {

@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
   certificates,
   dnsRecords,
-  dnsRecordType,
   domains,
   favicons,
   hosting,
@@ -17,9 +16,6 @@ import {
 // Factories: strict for reads; coerce dates for writes
 const zRead = createSchemaFactory({ zodInstance: z });
 const zWrite = createSchemaFactory({ zodInstance: z, coerce: { date: true } });
-
-// Enums
-export const DnsRecordTypeDbSchema = zRead.createSelectSchema(dnsRecordType);
 
 // Providers
 export const ProviderSelect = zRead.createSelectSchema(providers);
