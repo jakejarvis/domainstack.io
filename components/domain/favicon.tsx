@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { simpleHash } from "@/lib/hash";
 import { useTRPC } from "@/lib/trpc/client";
@@ -45,22 +45,40 @@ export function Favicon({
 }) {
   const trpc = useTRPC();
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  // No need to wait for hydration - if the data was prefetched on the server,
-  // it will be available immediately via the dehydrated state
+  // Only render data-dependent content after mount to avoid hydration mismatches
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { data, isPending } = useQuery(
     trpc.domain.getFavicon.queryOptions(
       { domain },
       {
         // Keep previous data while refetching to prevent flicker
         placeholderData: (prev) => prev,
+        // Keep in cache indefinitely during session
+        staleTime: Number.POSITIVE_INFINITY,
+        gcTime: Number.POSITIVE_INFINITY,
       },
     ),
   );
 
   const url = data?.url ?? null;
 
-  // Show skeleton only when truly pending (not when hydrating with prefetched data)
+  // During SSR and initial client render, always show skeleton
+  // This ensures server and client HTML match perfectly
+  if (!mounted) {
+    return (
+      <Skeleton
+        className={cn("bg-input", className)}
+        style={{ ...style, width: size, height: size }}
+      />
+    );
+  }
+
+  // After mount, show skeleton while query is still loading
   if (isPending) {
     return (
       <Skeleton
@@ -70,6 +88,7 @@ export function Favicon({
     );
   }
 
+  // Query completed: show letter avatar if no favicon found or failed to load
   if (!url || failedUrl === url) {
     const { letter, backgroundColor } = getEmptyPlaceholder(domain);
     const fontSize = Math.max(9, Math.floor(size * 0.55)); // ~55% of container size
@@ -96,6 +115,7 @@ export function Favicon({
     );
   }
 
+  // Query completed with URL: show the actual favicon image
   return (
     <Image
       key={url}

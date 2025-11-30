@@ -59,20 +59,44 @@ describe("Favicon", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows Skeleton while loading", () => {
+  it("shows skeleton while loading (after mount)", () => {
     (useQuery as unknown as Mock).mockReturnValue({
       data: undefined,
       isPending: true,
+      isPlaceholderData: false,
     });
+
     render(<Favicon domain="example.com" size={16} />);
+
+    // While loading, should show skeleton
     const skeletons = document.querySelectorAll('[data-slot="skeleton"]');
     expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it("shows letter avatar when no url (after mount)", () => {
+    (useQuery as unknown as Mock).mockReturnValue({
+      data: { url: null },
+      isPending: false,
+      isPlaceholderData: false,
+    });
+
+    render(<Favicon domain="example.com" size={16} />);
+
+    // After mount, when no favicon URL, should show letter avatar
+    const avatar = screen.getByText("E");
+    expect(avatar).toBeInTheDocument();
+    expect(avatar).toHaveAttribute("data-favicon", "example.com");
+    expect(avatar).toHaveAttribute("role", "img");
+
+    // Ensure we did not render the next/image <img> fallback
+    expect(document.querySelector('[data-slot="image"]')).toBeNull();
   });
 
   it("shows domain letter avatar when no url and not loading", () => {
     (useQuery as unknown as Mock).mockReturnValue({
       data: { url: null },
-      isLoading: false,
+      isPending: false,
+      isPlaceholderData: false,
     });
     render(<Favicon domain="example.com" size={16} />);
 
@@ -89,7 +113,8 @@ describe("Favicon", () => {
   it("generates consistent colors for same domain", () => {
     (useQuery as unknown as Mock).mockReturnValue({
       data: { url: null },
-      isLoading: false,
+      isPending: false,
+      isPlaceholderData: false,
     });
 
     const { unmount } = render(<Favicon domain="example.com" size={16} />);
@@ -107,7 +132,8 @@ describe("Favicon", () => {
       data: {
         url: "https://test-store.public.blob.vercel-storage.com/abcdef0123456789abcdef0123456789/32x32.webp",
       },
-      isLoading: false,
+      isPending: false,
+      isPlaceholderData: false,
     });
     render(<Favicon domain="example.com" size={16} />);
     const img = screen.getByRole("img", { name: /icon/i });
