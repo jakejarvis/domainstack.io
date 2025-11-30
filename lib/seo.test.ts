@@ -154,6 +154,32 @@ describe("robots.txt parsing", () => {
     expect(g2.rules[0]).toEqual({ type: "disallow", value: "/ducks" });
   });
 
+  it("parses content-signal directive with case-insensitive keys", () => {
+    const text = [
+      "User-Agent: *",
+      "Allow: /",
+      "Disallow: /admin",
+      "Content-Signal: https://example.com/content-signal.json",
+      "User-agent: Googlebot",
+      "content-signal: no-ai-training",
+    ].join("\n");
+
+    const robots = parseRobotsTxt(text);
+    expect(robots.fetched).toBe(true);
+    expect(robots.groups.length).toBe(2);
+    const any = robots.groups[0];
+    expect(any.userAgents).toContain("*");
+    expect(any.rules.find((r) => r.type === "contentSignal")?.value).toBe(
+      "https://example.com/content-signal.json",
+    );
+
+    const google = robots.groups[1];
+    expect(google.userAgents).toContain("Googlebot");
+    expect(google.rules.find((r) => r.type === "contentSignal")?.value).toBe(
+      "no-ai-training",
+    );
+  });
+
   it("parses keys case-insensitively and tolerates spacing around colon", () => {
     const text = ["uSeR-AgEnT :*", "DISALLOW:   /Admin", "allow:/"].join("\n");
     const robots = parseRobotsTxt(text);

@@ -1,7 +1,6 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { Section } from "@/components/domain/section";
-import { SocialPreviewSkeletonLarge } from "@/components/domain/seo/social-preview-skeleton-large";
 import { SubheadCountSkeleton } from "@/components/domain/subhead-count";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sections } from "@/lib/constants/sections";
@@ -42,7 +41,22 @@ export function SeoSectionSkeleton() {
           </div>
           {/* Preview skeleton */}
           <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">
-            <SocialPreviewSkeletonLarge />
+            <div className="overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
+              <div className="relative w-full overflow-hidden bg-[#f1f5f9] dark:bg-[#0f1419]">
+                <div className="aspect-[16/9] min-h-[160px] w-full">
+                  <Skeleton className="h-full w-full rounded-none" />
+                </div>
+              </div>
+              <div className="p-3">
+                <Skeleton className="h-[11px] w-24" />
+                <div className="mt-1.5">
+                  <Skeleton className="h-5 w-3/4" />
+                </div>
+                <div className="mt-1">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

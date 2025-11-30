@@ -208,6 +208,11 @@ export function parseRobotsTxt(
         currentRules.push({ type: "crawlDelay", value });
       continue;
     }
+    if (key === "content-signal") {
+      if (currentAgents.length > 0)
+        currentRules.push({ type: "contentSignal", value });
+      continue;
+    }
     if (key === "sitemap") {
       if (value) {
         let url = value;

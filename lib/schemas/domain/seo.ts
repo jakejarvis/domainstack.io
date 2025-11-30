@@ -14,6 +14,7 @@ export const RobotsRuleSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("allow"), value: z.string() }),
   z.object({ type: z.literal("disallow"), value: z.string() }),
   z.object({ type: z.literal("crawlDelay"), value: z.string() }),
+  z.object({ type: z.literal("contentSignal"), value: z.string() }),
 ]);
 
 export const RobotsGroupSchema = z.object({
