@@ -61,7 +61,7 @@
     "inngest": "^3.46.0",
     "ipaddr.js": "^2.3.0",
     "lucide-react": "^0.555.0",
-    "mapbox-gl": "^3.16.0",
+    "mapbox-gl": "^3.17.0",
     "media-chrome": "^4.16.1",
     "motion": "^12.23.24",
     "ms": "3.0.0-canary.202508261828",
