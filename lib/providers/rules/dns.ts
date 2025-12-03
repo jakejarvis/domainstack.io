@@ -146,7 +146,12 @@ export const DNS_PROVIDERS: Array<
     name: "NameSilo",
     domain: "namesilo.com",
     category: "dns",
-    rule: { kind: "nsSuffix", suffix: "namesilo.com" },
+    rule: {
+      any: [
+        { kind: "nsSuffix", suffix: "namesilo.com" },
+        { kind: "nsSuffix", suffix: "dnsowl.com" },
+      ],
+    },
   },
   {
     name: "DreamHost",
