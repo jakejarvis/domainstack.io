@@ -31,7 +31,7 @@ export function DomainReportHeader({
           href={`https://${domain}`}
           target="_blank"
           rel="noopener"
-          className="flex min-w-0 flex-1 items-center gap-2"
+          className="flex min-w-0 items-center gap-2"
           onClick={() =>
             analytics.track("external_domain_link_clicked", { domain })
           }
