@@ -2,17 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { LoginContent } from "@/components/auth/login-content";
+import { LoginDialog } from "@/components/auth/login-dialog";
 import { UserMenu } from "@/components/auth/user-menu";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@/lib/auth-client";
 
@@ -63,17 +56,7 @@ export function AuthButton() {
         </Link>
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm overflow-hidden rounded-3xl border-black/10 bg-background/80 p-0 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Sign In</DialogTitle>
-            <DialogDescription>
-              Sign in to track your domains and receive expiration alerts.
-            </DialogDescription>
-          </DialogHeader>
-          <LoginContent showCard={false} onNavigate={() => setOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <LoginDialog open={open} onOpenChange={setOpen} />
     </>
   );
 }

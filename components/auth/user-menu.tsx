@@ -2,7 +2,6 @@
 
 import { Bookmark, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { useState } from "react";
 import { SettingsContent } from "@/components/dashboard/settings-content";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
+import { useTheme } from "@/hooks/use-theme-toggle";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
@@ -31,28 +31,23 @@ export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { theme, setTheme, systemTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
-
-  const current = theme === "system" ? systemTheme : theme;
-  const isDark = current === "dark";
-
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
 
   if (!session?.user) {
     return null;
   }
 
   const user = session.user;
-  const initials = user.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials =
+    (user.name || "")
+      .split(" ")
+      .filter((n) => n.length > 0)
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?";
 
   const handleSignOut = async () => {
     try {
@@ -87,7 +82,10 @@ export function UserMenu() {
             aria-label="User menu"
           >
             <Avatar className="size-8">
-              <AvatarImage src={user.image || undefined} alt={user.name} />
+              <AvatarImage
+                src={user.image || undefined}
+                alt={user.name || "User avatar"}
+              />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {initials}
               </AvatarFallback>
@@ -118,12 +116,12 @@ export function UserMenu() {
                 className="cursor-pointer"
                 onSelect={toggleTheme}
               >
-                {isDark ? (
+                {theme === "dark" ? (
                   <Sun className="size-4" />
                 ) : (
                   <Moon className="size-4" />
                 )}
-                {isDark ? "Light mode" : "Dark mode"}
+                {theme === "dark" ? "Light mode" : "Dark mode"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
