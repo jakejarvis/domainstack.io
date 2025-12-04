@@ -1,10 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Info, RotateCcw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Favicon } from "@/components/domain/favicon";
+import {
+  CategoryLabel,
+  DomainNotificationRow,
+  GlobalNotificationRow,
+  SettingsSkeleton,
+} from "@/components/dashboard/settings";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,27 +18,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useSession } from "@/lib/auth-client";
 import {
   NOTIFICATION_CATEGORIES,
-  NOTIFICATION_CATEGORY_INFO,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
 import { logger } from "@/lib/logger/client";
-import type { NotificationOverrides } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -192,7 +187,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   };
 
   if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
-    return <SettingsContentSkeleton showCard={showCard} />;
+    return <SettingsSkeleton showCard={showCard} />;
   }
 
   // Surface query errors instead of silently falling back to defaults
@@ -327,268 +322,6 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
             Verify your domains to customize per-domain notifications.
           </p>
         )}
-      </CardContent>
-    </>
-  );
-
-  if (!showCard) {
-    return <div className="flex flex-col">{content}</div>;
-  }
-
-  return <Card>{content}</Card>;
-}
-
-function GlobalNotificationRow({
-  category,
-  enabled,
-  onToggle,
-  disabled,
-}: {
-  category: NotificationCategory;
-  enabled: boolean;
-  onToggle: (enabled: boolean) => void;
-  disabled: boolean;
-}) {
-  const info = NOTIFICATION_CATEGORY_INFO[category];
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border p-4">
-      <div className="flex items-center gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{info.label}</span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 cursor-help text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent>{info.description}</TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="text-muted-foreground text-sm">
-            {info.description}
-          </div>
-        </div>
-      </div>
-      <Switch
-        checked={enabled}
-        onCheckedChange={onToggle}
-        disabled={disabled}
-      />
-    </div>
-  );
-}
-
-function DomainNotificationRow({
-  domainName,
-  overrides,
-  globalPrefs,
-  onToggle,
-  onReset,
-  disabled,
-}: {
-  domainName: string;
-  overrides: NotificationOverrides;
-  globalPrefs: {
-    domainExpiry: boolean;
-    certificateExpiry: boolean;
-    verificationStatus: boolean;
-  };
-  onToggle: (
-    category: NotificationCategory,
-    value: boolean | undefined,
-  ) => void;
-  onReset: () => void;
-  disabled: boolean;
-}) {
-  const hasOverrides = Object.values(overrides).some((v) => v !== undefined);
-
-  // Mobile view
-  const mobileView = (
-    <div className="space-y-4 rounded-lg border p-4 sm:hidden">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Favicon domain={domainName} size={20} />
-          <span className="font-medium text-sm">{domainName}</span>
-        </div>
-        {hasOverrides && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-muted-foreground text-xs"
-            onClick={onReset}
-            disabled={disabled}
-          >
-            <RotateCcw className="mr-1 h-3 w-3" />
-            Reset
-          </Button>
-        )}
-      </div>
-      <div className="grid gap-3">
-        {NOTIFICATION_CATEGORIES.map((category) => {
-          const override = overrides[category];
-          const globalValue = globalPrefs[category];
-          const isInherited = override === undefined;
-
-          return (
-            <div
-              key={category}
-              className="flex items-center justify-between text-sm"
-            >
-              <span className={cn(isInherited && "text-muted-foreground")}>
-                {NOTIFICATION_CATEGORY_INFO[category].label}
-                {isInherited && " (default)"}
-              </span>
-              <ThreeStateCheckbox
-                value={override}
-                globalValue={globalValue}
-                onChange={(value) => onToggle(category, value)}
-                disabled={disabled}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  // Desktop view
-  const desktopView = (
-    <div className="hidden items-center gap-2 rounded-lg border p-4 sm:grid sm:grid-cols-[1fr_repeat(3,80px)_40px]">
-      <div className="flex min-w-0 items-center gap-2">
-        <Favicon domain={domainName} size={20} />
-        <span className="truncate font-medium text-sm">{domainName}</span>
-      </div>
-      {NOTIFICATION_CATEGORIES.map((category) => {
-        const override = overrides[category];
-        const globalValue = globalPrefs[category];
-
-        return (
-          <div key={category} className="flex justify-center">
-            <ThreeStateCheckbox
-              value={override}
-              globalValue={globalValue}
-              onChange={(value) => onToggle(category, value)}
-              disabled={disabled}
-            />
-          </div>
-        );
-      })}
-      <div className="flex justify-center">
-        {hasOverrides && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onReset}
-                disabled={disabled}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reset to defaults</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {mobileView}
-      {desktopView}
-    </>
-  );
-}
-
-function ThreeStateCheckbox({
-  value,
-  globalValue,
-  onChange,
-  disabled,
-}: {
-  value: boolean | undefined; // undefined = inherit from global
-  globalValue: boolean;
-  onChange: (value: boolean | undefined) => void;
-  disabled: boolean;
-}) {
-  const isInherited = value === undefined;
-  const effectiveValue = value ?? globalValue;
-
-  // Three-state cycle: inherit → on → off → inherit
-  const handleClick = () => {
-    if (isInherited) {
-      // If inheriting and global is on, set to explicit off (override)
-      // If inheriting and global is off, set to explicit on (override)
-      onChange(!globalValue);
-    } else if (value === true) {
-      onChange(false);
-    } else {
-      onChange(undefined); // Back to inherit
-    }
-  };
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="relative">
-          <Checkbox
-            checked={isInherited ? "indeterminate" : effectiveValue}
-            onCheckedChange={handleClick}
-            disabled={disabled}
-            className={cn("h-5 w-5", isInherited && "opacity-50")}
-          />
-        </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        {isInherited
-          ? `Inheriting from global (${globalValue ? "enabled" : "disabled"})`
-          : value
-            ? "Explicitly enabled"
-            : "Explicitly disabled"}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-function CategoryLabel({
-  category,
-  compact = false,
-}: {
-  category: NotificationCategory;
-  compact?: boolean;
-}) {
-  const info = NOTIFICATION_CATEGORY_INFO[category];
-  const shortLabels: Record<NotificationCategory, string> = {
-    domainExpiry: "Domain",
-    certificateExpiry: "Cert",
-    verificationStatus: "Verify",
-  };
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="cursor-help">
-          {compact ? shortLabels[category] : info.label}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{info.description}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function SettingsContentSkeleton({ showCard = true }: { showCard?: boolean }) {
-  const content = (
-    <>
-      <CardHeader>
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-4 w-56" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Skeleton className="h-20 rounded-lg" />
-        <Skeleton className="h-20 rounded-lg" />
-        <Skeleton className="h-20 rounded-lg" />
       </CardContent>
     </>
   );

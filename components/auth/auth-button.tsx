@@ -22,9 +22,10 @@ export function AuthButton() {
   const [open, setOpen] = useState(false);
 
   // While loading, show a placeholder to prevent layout shift
+  // Mobile: square (hamburger menu or avatar), Desktop: wider (Sign In button or avatar)
   if (isPending) {
     return (
-      <div className="mr-1 ml-2 size-8 animate-pulse rounded-full bg-muted" />
+      <div className="mr-1 ml-2 h-8 w-8 animate-pulse rounded-full bg-muted md:w-16 md:rounded-md" />
     );
   }
 
