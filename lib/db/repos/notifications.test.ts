@@ -25,6 +25,8 @@ import {
   users,
 } from "@/lib/db/schema";
 import {
+  clearCertificateExpiryNotifications,
+  clearDomainExpiryNotifications,
   createNotification,
   deleteNotificationsForTrackedDomain,
   getNotificationsForTrackedDomain,
@@ -266,5 +268,100 @@ describe("deleteNotificationsForTrackedDomain", () => {
     const result =
       await deleteNotificationsForTrackedDomain(testTrackedDomainId);
     expect(result).toBe(true);
+  });
+});
+
+describe("clearDomainExpiryNotifications", () => {
+  it("clears only domain_expiry_* notifications", async () => {
+    // Create domain expiry notifications
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+    });
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_14d",
+    });
+    // Create a non-domain-expiry notification
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "verification_failing",
+    });
+
+    const cleared = await clearDomainExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(2);
+
+    const remaining =
+      await getNotificationsForTrackedDomain(testTrackedDomainId);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].type).toBe("verification_failing");
+  });
+
+  it("returns 0 when no domain expiry notifications exist", async () => {
+    const cleared = await clearDomainExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(0);
+  });
+
+  it("returns 0 when only non-domain-expiry notifications exist", async () => {
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_14d",
+    });
+
+    const cleared = await clearDomainExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(0);
+
+    const remaining =
+      await getNotificationsForTrackedDomain(testTrackedDomainId);
+    expect(remaining).toHaveLength(1);
+  });
+});
+
+describe("clearCertificateExpiryNotifications", () => {
+  it("clears only certificate_expiry_* notifications", async () => {
+    // Create certificate expiry notifications
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_14d",
+    });
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_7d",
+    });
+    // Create a non-certificate-expiry notification
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+    });
+
+    const cleared =
+      await clearCertificateExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(2);
+
+    const remaining =
+      await getNotificationsForTrackedDomain(testTrackedDomainId);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].type).toBe("domain_expiry_30d");
+  });
+
+  it("returns 0 when no certificate expiry notifications exist", async () => {
+    const cleared =
+      await clearCertificateExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(0);
+  });
+
+  it("returns 0 when only non-certificate-expiry notifications exist", async () => {
+    await createNotification({
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+    });
+
+    const cleared =
+      await clearCertificateExpiryNotifications(testTrackedDomainId);
+    expect(cleared).toBe(0);
+
+    const remaining =
+      await getNotificationsForTrackedDomain(testTrackedDomainId);
+    expect(remaining).toHaveLength(1);
   });
 });

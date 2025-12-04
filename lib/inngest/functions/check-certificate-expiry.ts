@@ -7,6 +7,7 @@ import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
 import { BASE_URL } from "@/lib/constants";
 import { getVerifiedTrackedDomainsCertificates } from "@/lib/db/repos/certificates";
 import {
+  clearCertificateExpiryNotifications,
   createNotification,
   hasNotificationBeenSent,
   updateNotificationResendId,
@@ -56,10 +57,32 @@ export const checkCertificateExpiry = inngest.createFunction(
       notificationsSent: 0,
       skipped: 0,
       errors: 0,
+      renewalsDetected: 0,
     };
+
+    // Max threshold is 14 days - if cert has more days remaining, it may have been renewed
+    const MAX_THRESHOLD_DAYS = 14;
 
     for (const cert of trackedCertificates) {
       const daysRemaining = differenceInDays(cert.validTo, new Date());
+
+      // Detect certificate renewal: if validity is beyond max threshold,
+      // clear any existing notifications so we can send fresh ones for the new cert
+      if (daysRemaining > MAX_THRESHOLD_DAYS) {
+        const cleared = await step.run(
+          `clear-renewed-${cert.trackedDomainId}`,
+          async () => {
+            return await clearCertificateExpiryNotifications(
+              cert.trackedDomainId,
+            );
+          },
+        );
+        if (cleared > 0) {
+          results.renewalsDetected++;
+        }
+        results.skipped++;
+        continue;
+      }
 
       // Skip if not within any notification threshold
       const notificationType =

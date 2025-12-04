@@ -6,6 +6,7 @@ import type React from "react";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
 import { BASE_URL } from "@/lib/constants";
 import {
+  clearDomainExpiryNotifications,
   createNotification,
   hasNotificationBeenSent,
   updateNotificationResendId,
@@ -54,7 +55,11 @@ export const checkDomainExpiry = inngest.createFunction(
       notificationsSent: 0,
       skipped: 0,
       errors: 0,
+      renewalsDetected: 0,
     };
+
+    // Max threshold is 30 days - if domain has more days remaining, it may have been renewed
+    const MAX_THRESHOLD_DAYS = 30;
 
     for (const domain of trackedDomains) {
       // Skip if no expiration date
@@ -64,6 +69,22 @@ export const checkDomainExpiry = inngest.createFunction(
       }
 
       const daysRemaining = differenceInDays(domain.expirationDate, new Date());
+
+      // Detect domain renewal: if expiration is beyond max threshold,
+      // clear any existing notifications so we can send fresh ones for the new cycle
+      if (daysRemaining > MAX_THRESHOLD_DAYS) {
+        const cleared = await step.run(
+          `clear-renewed-${domain.id}`,
+          async () => {
+            return await clearDomainExpiryNotifications(domain.id);
+          },
+        );
+        if (cleared > 0) {
+          results.renewalsDetected++;
+        }
+        results.skipped++;
+        continue;
+      }
 
       // Skip if not within any notification threshold
       const notificationType = getDomainExpiryNotificationType(daysRemaining);

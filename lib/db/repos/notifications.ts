@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import type { NotificationType } from "@/lib/constants/notifications";
 import { db } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
@@ -141,5 +141,75 @@ export async function deleteNotificationsForTrackedDomain(
   } catch (err) {
     logger.error("failed to delete notifications", err, { trackedDomainId });
     return false;
+  }
+}
+
+/**
+ * Clear all domain expiry notifications for a tracked domain.
+ * Called when a domain renewal is detected (expiration date moved forward).
+ * This allows fresh notifications to be sent for the new expiration cycle.
+ */
+export async function clearDomainExpiryNotifications(
+  trackedDomainId: string,
+): Promise<number> {
+  try {
+    const deleted = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          like(notifications.type, "domain_expiry_%"),
+        ),
+      )
+      .returning();
+
+    if (deleted.length > 0) {
+      logger.info("cleared domain expiry notifications for renewal", {
+        trackedDomainId,
+        count: deleted.length,
+      });
+    }
+
+    return deleted.length;
+  } catch (err) {
+    logger.error("failed to clear domain expiry notifications", err, {
+      trackedDomainId,
+    });
+    return 0;
+  }
+}
+
+/**
+ * Clear all certificate expiry notifications for a tracked domain.
+ * Called when a certificate renewal is detected (validTo date moved forward).
+ * This allows fresh notifications to be sent for the new certificate.
+ */
+export async function clearCertificateExpiryNotifications(
+  trackedDomainId: string,
+): Promise<number> {
+  try {
+    const deleted = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          like(notifications.type, "certificate_expiry_%"),
+        ),
+      )
+      .returning();
+
+    if (deleted.length > 0) {
+      logger.info("cleared certificate expiry notifications for renewal", {
+        trackedDomainId,
+        count: deleted.length,
+      });
+    }
+
+    return deleted.length;
+  } catch (err) {
+    logger.error("failed to clear certificate expiry notifications", err, {
+      trackedDomainId,
+    });
+    return 0;
   }
 }
