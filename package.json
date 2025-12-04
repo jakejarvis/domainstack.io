@@ -108,7 +108,7 @@
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "bufferutil": "^4.0.9",
     "concurrently": "^9.2.1",
-    "drizzle-kit": "^0.31.7",
+    "drizzle-kit": "^0.31.8",
     "jsdom": "^27.2.0",
     "puppeteer": "24.26.1",
     "tailwindcss": "^4.1.17",
