@@ -31,7 +31,7 @@
   "dependencies": {
     "@bprogress/next": "^3.2.12",
     "@opentelemetry/api": "^1.9.0",
-    "@posthog/nextjs-config": "^1.6.3",
+    "@posthog/nextjs-config": "^1.6.4",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "141.0.0",
     "@tanstack/react-query": "^5.90.11",
