@@ -31,10 +31,11 @@ export function AppHeader() {
           <Suspense fallback={<GithubStarsSkeleton />}>
             <GithubStars />
           </Suspense>
-          <Separator orientation="vertical" className="!h-4" />
-          <BookmarkletDialog />
-          <Separator orientation="vertical" className="!h-4" />
-          <ThemeToggle />
+          {/* Desktop-only: bookmarklet and theme toggle (on mobile, these are in MobileMenu/UserMenu) */}
+          <Separator orientation="vertical" className="!h-4 hidden md:block" />
+          <BookmarkletDialog className="hidden md:flex" />
+          <Separator orientation="vertical" className="!h-4 hidden md:block" />
+          <ThemeToggle className="hidden md:flex" />
           <Separator orientation="vertical" className="!h-4" />
           <AuthButton />
         </HeaderButtons>

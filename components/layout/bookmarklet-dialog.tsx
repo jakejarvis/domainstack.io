@@ -25,7 +25,19 @@ import { cn } from "@/lib/utils";
 // retrieve this from the last segment of the icloud.com URL provided when sharing a shortcut
 const APPLE_SHORTCUT_ID = "fa17677a0d6440c2a195e608305d6f2b";
 
-export function BookmarkletDialog({ className }: { className?: string }) {
+interface BookmarkletDialogProps {
+  className?: string;
+  /** Controlled open state */
+  open?: boolean;
+  /** Callback when open state changes */
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function BookmarkletDialog({
+  className,
+  open,
+  onOpenChange,
+}: BookmarkletDialogProps) {
   // Capture the origin after mount to avoid SSR issues and ensure we have the correct origin
   const [origin, setOrigin] = useState<string>("");
 
@@ -43,20 +55,29 @@ export function BookmarkletDialog({ className }: { className?: string }) {
     [origin],
   );
 
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      toast.dismiss("bookmarklet-reminder");
-    }
-  }, []);
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        toast.dismiss("bookmarklet-reminder");
+      }
+      onOpenChange?.(newOpen);
+    },
+    [onOpenChange],
+  );
+
+  // Controlled mode: open/onOpenChange are provided
+  const isControlled = open !== undefined;
 
   return (
-    <Dialog onOpenChange={handleOpenChange}>
-      <DialogTrigger className={className} asChild>
-        <Button aria-label="Open bookmarklet info" variant="ghost" size="sm">
-          <Bookmark />
-          <span className="sr-only">Open bookmarklet info</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!isControlled && (
+        <DialogTrigger className={className} asChild>
+          <Button aria-label="Open bookmarklet info" variant="ghost" size="sm">
+            <Bookmark />
+            <span className="sr-only">Open bookmarklet info</span>
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="border-border/80 dark:border-border/50">
         <DialogHeader>

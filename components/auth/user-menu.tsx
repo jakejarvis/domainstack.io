@@ -1,9 +1,11 @@
 "use client";
 
-import { LogOut, Settings, User } from "lucide-react";
+import { Bookmark, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import { useState } from "react";
 import { SettingsContent } from "@/components/dashboard/settings-content";
+import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -20,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
@@ -27,7 +30,17 @@ import { logger } from "@/lib/logger/client";
 export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const { theme, setTheme, systemTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
+
+  const current = theme === "system" ? systemTheme : theme;
+  const isDark = current === "dark";
+
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   if (!session?.user) {
     return null;
@@ -91,6 +104,30 @@ export function UserMenu() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {/* Mobile-only items: bookmarklet and theme toggle */}
+          {isMobile && (
+            <>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => setBookmarkletOpen(true)}
+              >
+                <Bookmark className="size-4" />
+                Bookmarklet
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={toggleTheme}
+              >
+                {isDark ? (
+                  <Sun className="size-4" />
+                ) : (
+                  <Moon className="size-4" />
+                )}
+                {isDark ? "Light mode" : "Dark mode"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem asChild>
             <Link href="/dashboard" className="cursor-pointer">
               <User className="size-4" />
@@ -102,6 +139,7 @@ export function UserMenu() {
               href="/dashboard/settings"
               className="cursor-pointer"
               onClick={handleSettingsClick}
+              data-disable-progress={true}
             >
               <Settings className="size-4" />
               Settings
@@ -129,6 +167,12 @@ export function UserMenu() {
           <SettingsContent showCard={false} />
         </DialogContent>
       </Dialog>
+
+      {/* Bookmarklet Dialog - controlled externally */}
+      <BookmarkletDialog
+        open={bookmarkletOpen}
+        onOpenChange={setBookmarkletOpen}
+      />
     </>
   );
 }

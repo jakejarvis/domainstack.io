@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { LoginContent } from "@/components/auth/login-content";
 import { UserMenu } from "@/components/auth/user-menu";
+import { MobileMenu } from "@/components/layout/mobile-menu";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,10 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@/lib/auth-client";
 
 export function AuthButton() {
   const { data: session, isPending } = useSession();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
   // While loading, show a placeholder to prevent layout shift
@@ -25,6 +28,7 @@ export function AuthButton() {
     );
   }
 
+  // Logged in: show UserMenu (handles both mobile and desktop)
   if (session?.user) {
     return (
       <div className="mr-1 ml-2 h-8">
@@ -32,6 +36,13 @@ export function AuthButton() {
       </div>
     );
   }
+
+  // Logged out on mobile: show MobileMenu with hamburger
+  if (isMobile) {
+    return <MobileMenu />;
+  }
+
+  // Logged out on desktop: show Sign In button with dialog
 
   // Handle click - open dialog for normal clicks, let link work for modified clicks
   const handleClick = (e: React.MouseEvent) => {
@@ -46,7 +57,7 @@ export function AuthButton() {
   return (
     <>
       <Button asChild variant="ghost" size="sm">
-        <Link href="/login" onClick={handleClick}>
+        <Link href="/login" onClick={handleClick} data-disable-progress={true}>
           Sign In
         </Link>
       </Button>
