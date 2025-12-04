@@ -427,7 +427,6 @@ function DomainNotificationRow({
         {NOTIFICATION_CATEGORIES.map((category) => {
           const override = overrides[category];
           const globalValue = globalPrefs[category];
-          const _effectiveValue = override ?? globalValue;
           const isInherited = override === undefined;
 
           return (

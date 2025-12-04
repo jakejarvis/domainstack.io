@@ -17,7 +17,14 @@ vi.mock("@/lib/db/client", async () => {
 });
 
 import { db } from "@/lib/db/client";
-import { domains, trackedDomains, userLimits, users } from "@/lib/db/schema";
+import {
+  domains,
+  providers,
+  registrations,
+  trackedDomains,
+  userLimits,
+  users,
+} from "@/lib/db/schema";
 import {
   countTrackedDomainsForUser,
   createTrackedDomain,
@@ -78,8 +85,10 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  // Clear tracked domains before each test
+  // Clear test data before each test (order matters due to FK constraints)
   await db.delete(trackedDomains);
+  await db.delete(registrations);
+  await db.delete(providers);
 });
 
 describe("createTrackedDomain", () => {
@@ -566,5 +575,88 @@ describe("getVerifiedTrackedDomainsWithExpiry", () => {
 
     const result = await getVerifiedTrackedDomainsWithExpiry();
     expect(result).toEqual([]);
+  });
+
+  it("returns full structure with registration data and registrar", async () => {
+    // Create a registrar provider
+    const [registrar] = await db
+      .insert(providers)
+      .values({
+        category: "registrar",
+        name: "Test Registrar Inc",
+        slug: "test-registrar",
+        source: "catalog",
+      })
+      .returning();
+
+    // Create registration data with expiration date
+    const expirationDate = new Date("2025-12-31T00:00:00Z");
+    await db.insert(registrations).values({
+      domainId: testDomainId,
+      isRegistered: true,
+      expirationDate,
+      registrarProviderId: registrar.id,
+      source: "rdap",
+      fetchedAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000), // 1 day from now
+    });
+
+    // Create and verify tracked domain
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
+
+    const result = await getVerifiedTrackedDomainsWithExpiry();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: createdId,
+      userId: testUserId,
+      domainId: testDomainId,
+      domainName: "example.com",
+      notificationOverrides: {},
+      registrar: "Test Registrar Inc",
+      userEmail: "test@example.com",
+      userName: "Test User",
+    });
+    // Check expiration date separately due to Date comparison
+    expect(result[0].expirationDate).toEqual(expirationDate);
+  });
+
+  it("returns null registrar when no provider linked", async () => {
+    // Create registration data without registrar
+    const expirationDate = new Date("2026-06-15T00:00:00Z");
+    await db.insert(registrations).values({
+      domainId: testDomainId,
+      isRegistered: true,
+      expirationDate,
+      registrarProviderId: null,
+      source: "whois",
+      fetchedAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000),
+    });
+
+    // Create and verify tracked domain
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "html_file");
+
+    const result = await getVerifiedTrackedDomainsWithExpiry();
+
+    expect(result).toHaveLength(1);
+    expect(result[0].registrar).toBeNull();
+    expect(result[0].expirationDate).toEqual(expirationDate);
   });
 });
