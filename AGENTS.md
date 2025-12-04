@@ -2,19 +2,28 @@
 
 ## Project Structure & Module Organization
 - `app/` Next.js App Router. Default to server components; keep `app/page.tsx` and `app/api/*` thin and delegate to `server/` or `lib/`.
+- `app/@auth/` Parallel route slot for login modal (intercepting route pattern).
+- `app/dashboard/` Protected dashboard for domain tracking with `@settings/` parallel route slot.
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
+- `components/auth/` Authentication components (sign-in button, user menu, login content).
+- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog).
+- `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status).
 - `hooks/` shared stateful helpers (camelCase named exports).
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
-- `lib/constants/` modular constants organized by domain (app, decay, domain-validation, external-apis, headers, ttl).
-- `lib/inngest/` Inngest client and functions for event-driven background section revalidation.
+- `lib/auth.ts` better-auth server configuration with Drizzle adapter.
+- `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
+- `lib/constants/` modular constants organized by domain (app, decay, domain-validation, notifications, tier-limits, headers, ttl).
+- `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo).
+- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo, tracked-domains, user-limits, user-notification-preferences, notifications).
 - `lib/logger/` unified structured logging system with OpenTelemetry integration, correlation IDs, and PII-safe field filtering.
+- `lib/resend.ts` Resend email client for sending notifications.
+- `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
-- `server/routers/` tRPC router definitions (`_app.ts` and domain-specific routers).
-- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, registration, SEO, screenshot, favicon, etc.).
+- `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `tracking.ts`).
+- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, registration, SEO, screenshot, favicon, verification).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
-- `trpc/` tRPC client setup, query client, and error handling.
+- `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -74,6 +83,7 @@
 - Keep secrets in `.env.local`. See `.env.example` for required variables.
 - Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
+  - `tier_limits` (object): `{ free: 5, pro: 50 }` for domain tracking limits per tier
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
@@ -82,6 +92,104 @@
 - Background revalidation: Event-driven via Inngest functions in `lib/inngest/functions/` with built-in concurrency control.
 - Use Next.js 16 `after()` for fire-and-forget background operations (analytics, domain access tracking) with graceful degradation.
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.
+
+## Authentication (better-auth)
+- **Server config:** `lib/auth.ts` - betterAuth with Drizzle adapter, GitHub OAuth, session management.
+- **Client hooks:** `lib/auth-client.ts` - `useSession`, `signIn`, `signOut`, `getSession`.
+- **Protected routes:** Dashboard layout (`app/dashboard/layout.tsx`) checks session server-side and redirects to `/login`.
+- **tRPC integration:** `trpc/init.ts` exports `protectedProcedure` that requires valid session; throws `UNAUTHORIZED` otherwise.
+- **Schema tables:** `users`, `sessions`, `accounts`, `verifications` in `lib/db/schema.ts`.
+- **Parallel routes:** Login page uses intercepting route (`app/@auth/(.)login/page.tsx`) to show as modal when navigating from within app, full page on direct access.
+- **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`.
+
+## Domain Tracking System
+The domain tracking feature allows authenticated users to track domains they own, receive expiration notifications, and manage notification preferences.
+
+### Core Tables
+- `tracked_domains`: Links users to domains with verification status, token, and per-domain notification overrides.
+- `user_limits`: User tier (free/pro) with optional `maxDomainsOverride` for special cases.
+- `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, verificationStatus).
+- `notifications`: History of sent notifications with Resend email ID for troubleshooting.
+
+### Domain Verification
+Users must verify domain ownership via one of three methods:
+1. **DNS TXT record:** Add `_domainstack-verify.domain.com TXT "token"`.
+2. **HTML file:** Upload `/.well-known/domainstack-verify.txt` containing the token.
+3. **Meta tag:** Add `<meta name="domainstack-verify" content="token">` to homepage.
+
+Verification service: `server/services/verification.ts` with `tryAllVerificationMethods()` and `verifyDomainOwnership()`.
+
+### Re-verification & Grace Period
+- Inngest function `reverifyDomains` runs daily at 4 AM UTC.
+- Auto-verifies pending domains (users who added verification but never clicked "Verify").
+- Re-verifies existing domains; if failing, enters 7-day grace period before revocation.
+- Sends `verification_failing` email on first failure, `verification_revoked` on revocation.
+
+### Notification System
+- **Categories:** `domainExpiry`, `certificateExpiry`, `verificationStatus` (defined in `lib/constants/notifications.ts`).
+- **Thresholds:** Domain expiry: 30, 14, 7, 1 days. Certificate expiry: 14, 7, 3, 1 days.
+- **Per-domain overrides:** `notificationOverrides` JSONB column; `undefined` = inherit from global, explicit `true/false` = override.
+- **Idempotency:** Notification records created before email send; Resend idempotency keys prevent duplicates on retry.
+- **Troubleshooting:** `resendId` column stores Resend email ID for delivery debugging.
+
+### tRPC Router (`server/routers/tracking.ts`)
+Key procedures:
+- `addDomain`: Add domain to tracking (or resume unverified).
+- `verifyDomain`: Verify ownership.
+- `removeDomain`: Delete tracked domain.
+- `listDomains`: Get all tracked domains with details.
+- `getLimits`: Get user's current count and max domains.
+- `getNotificationPreferences` / `updateGlobalNotificationPreferences`: Global toggles.
+- `updateDomainNotificationOverrides` / `resetDomainNotificationOverrides`: Per-domain overrides.
+
+### Inngest Background Jobs
+- `check-domain-expiry`: Daily at 9 AM UTC; sends domain expiration notifications.
+- `check-certificate-expiry`: Daily at 10 AM UTC; sends certificate expiration notifications.
+- `reverify-domains`: Daily at 4 AM UTC; auto-verifies pending and re-verifies existing domains.
+
+## Email Notifications (Resend + React Email)
+- **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
+- **Templates:** `emails/` directory with React Email components (domain-expiry, certificate-expiry, verification-failing, verification-revoked).
+- **Idempotency:** Use `generateIdempotencyKey(trackedDomainId, notificationType)` and pass to `resend.emails.send()`.
+- **Pattern:** Create notification record → Send email → Update with `resendId` for troubleshooting.
+- **Environment variables:** `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+
+## TanStack Query Best Practices
+Dashboard components use optimistic updates for responsive UX:
+
+```typescript
+const removeMutation = useMutation({
+  ...trpc.tracking.removeDomain.mutationOptions(),
+  onMutate: async ({ trackedDomainId }) => {
+    await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+    const previousDomains = queryClient.getQueryData(domainsQueryKey);
+    
+    // Optimistically update
+    queryClient.setQueryData(domainsQueryKey, (old) =>
+      old?.filter((d) => d.id !== trackedDomainId)
+    );
+    
+    return { previousDomains }; // Snapshot for rollback
+  },
+  onError: (err, _variables, context) => {
+    // Rollback on error
+    if (context?.previousDomains) {
+      queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+    }
+  },
+  onSettled: () => {
+    // Always invalidate to ensure consistency
+    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+  },
+});
+```
+
+Key patterns:
+- Use `onMutate` for optimistic updates with snapshot.
+- Use `onError` for rollback.
+- Use `onSettled` (not `onSuccess`) for invalidation—runs on both success and error.
+- Call `cancelQueries` before optimistic update to prevent race conditions.
+- Use `typeof query.data` for type-safe updaters.
 
 ## Analytics & Observability
 - Uses **PostHog** for analytics and error tracking with reverse proxy via `/_proxy/ingest/*`.
