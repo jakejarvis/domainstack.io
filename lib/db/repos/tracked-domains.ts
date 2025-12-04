@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
@@ -57,6 +57,7 @@ export type TrackedDomainWithDetails = {
 
 /**
  * Create a new tracked domain record.
+ * Returns null if a record already exists (handles concurrent insert races).
  */
 export async function createTrackedDomain(params: CreateTrackedDomainParams) {
   const { userId, domainId, verificationToken, verificationMethod } = params;
@@ -69,7 +70,16 @@ export async function createTrackedDomain(params: CreateTrackedDomainParams) {
       verificationToken,
       verificationMethod,
     })
+    .onConflictDoNothing()
     .returning();
+
+  if (inserted.length === 0) {
+    logger.debug("tracked domain already exists, skipping insert", {
+      userId,
+      domainId,
+    });
+    return null;
+  }
 
   return inserted[0];
 }
@@ -99,6 +109,41 @@ export async function findTrackedDomainById(id: string) {
   const rows = await db
     .select()
     .from(trackedDomains)
+    .where(eq(trackedDomains.id, id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export type TrackedDomainWithDomainName = {
+  id: string;
+  userId: string;
+  domainName: string;
+  verificationToken: string;
+  verificationMethod: VerificationMethod | null;
+  verified: boolean;
+  verificationStatusEnum: VerificationStatusType;
+};
+
+/**
+ * Find a tracked domain by ID with its domain name (single targeted query).
+ * Useful when you need the domain name without fetching all tracked domains.
+ */
+export async function findTrackedDomainWithDomainName(
+  id: string,
+): Promise<TrackedDomainWithDomainName | null> {
+  const rows = await db
+    .select({
+      id: trackedDomains.id,
+      userId: trackedDomains.userId,
+      domainName: domains.name,
+      verificationToken: trackedDomains.verificationToken,
+      verificationMethod: trackedDomains.verificationMethod,
+      verified: trackedDomains.verified,
+      verificationStatusEnum: trackedDomains.verificationStatusEnum,
+    })
+    .from(trackedDomains)
+    .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
     .where(eq(trackedDomains.id, id))
     .limit(1);
 
@@ -189,13 +234,15 @@ export async function getTrackedDomainsForUser(
 /**
  * Count tracked domains for a user.
  */
-export async function countTrackedDomainsForUser(userId: string) {
-  const rows = await db
-    .select()
+export async function countTrackedDomainsForUser(
+  userId: string,
+): Promise<number> {
+  const [result] = await db
+    .select({ count: count() })
     .from(trackedDomains)
     .where(eq(trackedDomains.userId, userId));
 
-  return rows.length;
+  return result?.count ?? 0;
 }
 
 /**

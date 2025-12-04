@@ -17,15 +17,35 @@ import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-domain-expiry" });
 
-// Notification thresholds in days
-const _NOTIFICATION_THRESHOLDS = [30, 14, 7, 1] as const;
+// Notification thresholds in days (ordered from most to least urgent)
+const NOTIFICATION_THRESHOLDS = [1, 7, 14, 30] as const;
+type ThresholdDays = (typeof NOTIFICATION_THRESHOLDS)[number];
+
+const THRESHOLD_TO_TYPE: Record<ThresholdDays, NotificationType> = {
+  1: "domain_expiry_1d",
+  7: "domain_expiry_7d",
+  14: "domain_expiry_14d",
+  30: "domain_expiry_30d",
+};
 
 function getNotificationType(daysRemaining: number): NotificationType | null {
-  if (daysRemaining <= 1) return "domain_expiry_1d";
-  if (daysRemaining <= 7) return "domain_expiry_7d";
-  if (daysRemaining <= 14) return "domain_expiry_14d";
-  if (daysRemaining <= 30) return "domain_expiry_30d";
+  for (const threshold of NOTIFICATION_THRESHOLDS) {
+    if (daysRemaining <= threshold) {
+      return THRESHOLD_TO_TYPE[threshold];
+    }
+  }
   return null;
+}
+
+/**
+ * Generate a stable idempotency key for Resend.
+ * This ensures that if a step retries, Resend won't send duplicate emails.
+ */
+function generateIdempotencyKey(
+  trackedDomainId: string,
+  notificationType: NotificationType,
+): string {
+  return `${trackedDomainId}:${notificationType}`;
 }
 
 /**
@@ -79,6 +99,7 @@ export const checkDomainExpiry = inngest.createFunction(
       // Skip if not within any notification threshold
       const notificationType = getNotificationType(daysRemaining);
       if (!notificationType) {
+        results.skipped++;
         continue;
       }
 
@@ -147,10 +168,39 @@ async function sendExpiryNotification({
     return false;
   }
 
+  // Generate a stable idempotency key BEFORE any operations
+  // This ensures retries use the same key and Resend won't send duplicates
+  const idempotencyKey = generateIdempotencyKey(
+    trackedDomainId,
+    notificationType,
+  );
+
   try {
+    // Step 1: Create the notification record first (upsert with onConflictDoNothing)
+    // This acts as a lock - if we crash after this but before email sends,
+    // the next retry will still have this record, and hasNotificationBeenSent
+    // will return true (preventing re-entry to this function)
+    // However, if this step succeeds but email fails, Resend's idempotency
+    // key will prevent duplicate sends on retry
+    const notificationRecord = await createNotification({
+      trackedDomainId,
+      type: notificationType,
+    });
+
+    // If notification was already recorded (duplicate), skip sending
+    // This happens when the record exists from a previous partial run
+    if (!notificationRecord) {
+      logger.debug("Notification already recorded, checking if email sent", {
+        trackedDomainId,
+        notificationType,
+      });
+      // The notification exists - email may or may not have been sent
+      // Resend's idempotency key will handle deduplication if we proceed
+    }
+
     const dashboardUrl = `${BASE_URL}/dashboard`;
 
-    // Render the email
+    // Step 2: Render the email
     const emailHtml = await render(
       DomainExpiryEmail({
         userName: userName.split(" ")[0] || "there",
@@ -161,20 +211,31 @@ async function sendExpiryNotification({
       }) as React.ReactElement,
     );
 
-    // Send the email
-    const { data, error } = await resend.emails.send({
-      from: `DomainStack <${RESEND_FROM_EMAIL}>`,
-      to: userEmail,
-      subject: `${daysRemaining <= 7 ? "⚠️ " : ""}${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-      html: emailHtml,
-    });
+    // Step 3: Send the email with idempotency key
+    // If this request fails and retries with the same idempotencyKey,
+    // Resend will return the original response without sending again
+    const { data, error } = await resend.emails.send(
+      {
+        from: `DomainStack <${RESEND_FROM_EMAIL}>`,
+        to: userEmail,
+        subject: `${daysRemaining <= 7 ? "⚠️ " : ""}${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
+        html: emailHtml,
+      },
+      {
+        idempotencyKey,
+      },
+    );
 
     if (error) {
       logger.error("Failed to send expiry email", error, {
         domainName,
         userEmail,
+        idempotencyKey,
       });
-      return false;
+      // Don't return false here - the notification record is already created
+      // and idempotency key ensures no duplicates on retry
+      // Throwing will cause Inngest to retry the step
+      throw new Error(`Resend error: ${error.message}`);
     }
 
     logger.info("Sent expiry notification", {
@@ -182,12 +243,7 @@ async function sendExpiryNotification({
       userEmail,
       emailId: data?.id,
       daysRemaining,
-    });
-
-    // Record that this notification was sent
-    await createNotification({
-      trackedDomainId,
-      type: notificationType,
+      idempotencyKey,
     });
 
     return true;
@@ -195,7 +251,10 @@ async function sendExpiryNotification({
     logger.error("Error sending expiry notification", err, {
       domainName,
       userEmail,
+      idempotencyKey,
     });
-    return false;
+    // Re-throw to trigger Inngest retry
+    // The idempotency key ensures Resend won't send duplicates
+    throw err;
   }
 }

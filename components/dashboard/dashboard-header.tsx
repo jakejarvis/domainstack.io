@@ -29,7 +29,7 @@ export function DashboardHeader({
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="font-semibold text-2xl tracking-tight">
-          Welcome back, {userName.split(" ")[0]}
+          Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
       </div>
       <div className="flex items-center gap-4">

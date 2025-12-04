@@ -1,15 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { SignInButton } from "@/components/auth/sign-in-button";
-import { Logo } from "@/components/logo";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { LoginContent } from "@/components/auth/login-content";
 import { auth } from "@/lib/auth";
 
 export const metadata = {
@@ -36,23 +27,7 @@ export default async function LoginPage() {
         <div className="absolute right-1/4 bottom-1/4 h-96 w-96 animate-pulse rounded-full bg-accent-purple/10 blur-3xl delay-1000" />
       </div>
 
-      <Card className="w-full max-w-sm rounded-3xl border-black/10 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
-        <CardHeader className="text-center">
-          <Logo className="mx-auto mb-4 size-12" />
-          <CardTitle className="text-xl">Welcome to DomainStack</CardTitle>
-          <CardDescription>
-            Sign in to track your domains and receive expiration alerts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SignInButton />
-        </CardContent>
-        <CardFooter className="justify-center">
-          <p className="text-center text-muted-foreground text-xs">
-            By signing in, you agree to our Terms of Service and Privacy Policy.
-          </p>
-        </CardFooter>
-      </Card>
+      <LoginContent />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut, useSession } from "@/lib/auth-client";
+import { logger } from "@/lib/logger/client";
 
 export function UserMenu() {
   const { data: session } = useSession();
@@ -31,13 +32,17 @@ export function UserMenu() {
     .slice(0, 2);
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push("/");
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/");
+          },
         },
-      },
-    });
+      });
+    } catch (err) {
+      logger.error("Sign-out failed", err);
+    }
   };
 
   return (

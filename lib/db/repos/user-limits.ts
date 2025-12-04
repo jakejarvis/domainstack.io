@@ -101,44 +101,87 @@ export async function getOrCreateUserLimits(
 /**
  * Update user tier.
  * Clears any per-user override so they get the new tier's default limit.
+ * Creates a new user_limits row if one doesn't exist.
  */
 export async function updateUserTier(userId: string, tier: UserTier) {
-  const updated = await db
-    .update(userLimits)
-    .set({
-      tier,
-      maxDomainsOverride: null, // Clear override on tier change
-      updatedAt: new Date(),
-    })
-    .where(eq(userLimits.userId, userId))
-    .returning();
+  return await db.transaction(async (tx) => {
+    // Try to update existing row
+    const updated = await tx
+      .update(userLimits)
+      .set({
+        tier,
+        maxDomainsOverride: null, // Clear override on tier change
+        updatedAt: new Date(),
+      })
+      .where(eq(userLimits.userId, userId))
+      .returning();
 
-  return updated[0];
+    if (updated.length > 0) {
+      logger.info("updated user tier", { userId, tier });
+      return updated[0];
+    }
+
+    // No row existed, create one with the specified tier
+    const inserted = await tx
+      .insert(userLimits)
+      .values({
+        userId,
+        tier,
+        // maxDomainsOverride left null - will use Edge Config
+      })
+      .returning();
+
+    logger.info("created user limits with tier", { userId, tier });
+
+    return inserted[0];
+  });
 }
 
 /**
  * Set a per-user domain limit override.
  * Use this for special cases like beta testers, promotions, etc.
+ * Creates a new user_limits row if one doesn't exist.
  */
 export async function setMaxDomainsOverride(
   userId: string,
   maxDomains: number | null,
 ) {
-  const updated = await db
-    .update(userLimits)
-    .set({
+  return await db.transaction(async (tx) => {
+    // Try to update existing row
+    const updated = await tx
+      .update(userLimits)
+      .set({
+        maxDomainsOverride: maxDomains,
+        updatedAt: new Date(),
+      })
+      .where(eq(userLimits.userId, userId))
+      .returning();
+
+    if (updated.length > 0) {
+      logger.info("updated max domains override", {
+        userId,
+        maxDomainsOverride: maxDomains,
+      });
+      return updated[0];
+    }
+
+    // No row existed, create one with free tier and the override
+    const inserted = await tx
+      .insert(userLimits)
+      .values({
+        userId,
+        tier: "free",
+        maxDomainsOverride: maxDomains,
+      })
+      .returning();
+
+    logger.info("created user limits with max domains override", {
+      userId,
       maxDomainsOverride: maxDomains,
-      updatedAt: new Date(),
-    })
-    .where(eq(userLimits.userId, userId))
-    .returning();
+    });
 
-  logger.info("set max domains override", {
-    userId,
-    maxDomainsOverride: maxDomains,
+    return inserted[0];
   });
-
-  return updated[0];
 }
 
 /**

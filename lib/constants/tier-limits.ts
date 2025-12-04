@@ -18,6 +18,5 @@ export const DEFAULT_TIER_LIMITS = {
 } as const;
 
 export type TierLimits = {
-  free: number;
-  pro: number;
+  [K in keyof typeof DEFAULT_TIER_LIMITS]: number;
 };

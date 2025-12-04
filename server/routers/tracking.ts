@@ -7,6 +7,7 @@ import {
   deleteTrackedDomain,
   findTrackedDomain,
   findTrackedDomainById,
+  findTrackedDomainWithDomainName,
   getTrackedDomainsForUser,
   updateTrackedDomainNotifications,
   verifyTrackedDomain,
@@ -138,6 +139,45 @@ export const trackingRouter = createTRPCRouter({
         verificationToken,
       });
 
+      // Handle race condition: if another request created it first, fetch and resume
+      if (!tracked) {
+        const raceExisting = await findTrackedDomain(
+          ctx.user.id,
+          domainRecord.id,
+        );
+        if (raceExisting) {
+          const instructions = {
+            dns_txt: getVerificationInstructions(
+              domain,
+              raceExisting.verificationToken,
+              "dns_txt",
+            ),
+            html_file: getVerificationInstructions(
+              domain,
+              raceExisting.verificationToken,
+              "html_file",
+            ),
+            meta_tag: getVerificationInstructions(
+              domain,
+              raceExisting.verificationToken,
+              "meta_tag",
+            ),
+          };
+          return {
+            id: raceExisting.id,
+            domain,
+            verificationToken: raceExisting.verificationToken,
+            instructions,
+            resumed: true,
+          };
+        }
+        // This shouldn't happen, but guard against it
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create tracked domain",
+        });
+      }
+
       // Get verification instructions for all methods
       const instructions = {
         dns_txt: getVerificationInstructions(
@@ -180,8 +220,8 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId, method } = input;
 
-      // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
+      // Get tracked domain with domain name in a single query
+      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
       if (!tracked) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -202,26 +242,16 @@ export const trackingRouter = createTRPCRouter({
         return { verified: true, method: tracked.verificationMethod };
       }
 
-      // Get the domain name from the tracked domains (includes join with domains table)
-      const domains = await getTrackedDomainsForUser(ctx.user.id);
-      const domainData = domains.find((d) => d.id === trackedDomainId);
-      if (!domainData) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Domain not found",
-        });
-      }
-
       const result = method
         ? // Verify with specific method
           await verifyDomainOwnership(
-            domainData.domainName,
+            tracked.domainName,
             tracked.verificationToken,
             method,
           )
         : // Try all methods
           await tryAllVerificationMethods(
-            domainData.domainName,
+            tracked.domainName,
             tracked.verificationToken,
           );
 

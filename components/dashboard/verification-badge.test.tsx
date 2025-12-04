@@ -11,10 +11,9 @@ describe("VerificationBadge", () => {
       expect(screen.getByText("Verified")).toBeInTheDocument();
     });
 
-    it("includes check icon for verified state", () => {
+    it("applies success styling for verified state", () => {
       const { container } = render(<VerificationBadge verified={true} />);
 
-      // Check that the badge has success styling
       const badge = container.querySelector('[class*="success"]');
       expect(badge).toBeInTheDocument();
     });
@@ -27,10 +26,9 @@ describe("VerificationBadge", () => {
       expect(screen.getByText("Pending")).toBeInTheDocument();
     });
 
-    it("includes clock icon for pending state", () => {
+    it("applies amber styling for pending state", () => {
       const { container } = render(<VerificationBadge verified={false} />);
 
-      // Check that the badge has amber/warning styling
       const badge = container.querySelector('[class*="amber"]');
       expect(badge).toBeInTheDocument();
     });
@@ -45,12 +43,11 @@ describe("VerificationBadge", () => {
       expect(screen.getByText("Failing")).toBeInTheDocument();
     });
 
-    it("includes warning icon for failing state", () => {
+    it("applies amber styling for failing state", () => {
       const { container } = render(
         <VerificationBadge verified={true} verificationStatus="failing" />,
       );
 
-      // Check that the badge has amber/warning styling
       const badge = container.querySelector('[class*="amber"]');
       expect(badge).toBeInTheDocument();
     });

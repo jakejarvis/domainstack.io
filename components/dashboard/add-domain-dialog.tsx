@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CheckCircle, Info } from "lucide-react";
+import { AlertCircle, CheckCircle, Info, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -164,7 +165,11 @@ export function AddDomainDialog({
           result.error || "Verification failed. Please check your setup.",
         );
       }
-    } catch (_err) {
+    } catch (err) {
+      logger.error("Domain verification failed", err, {
+        trackedDomainId,
+        method,
+      });
       toast.error("Verification failed. Please try again.");
     } finally {
       setIsVerifying(false);
@@ -205,6 +210,9 @@ export function AddDomainDialog({
 
   const isResuming = !!resumeDomain;
   const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
+  const instructionsError = isResuming && instructionsQuery.isError;
+  const hasInstructionsError =
+    step === 2 && !isLoadingInstructions && !instructions;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -249,12 +257,24 @@ export function AddDomainDialog({
                   setDomain={setDomain}
                   error={domainError}
                   isLoading={addDomainMutation.isPending}
+                  onSubmit={handleNext}
                 />
               )}
               {step === 2 && isLoadingInstructions && (
                 <div className="flex h-[200px] items-center justify-center">
                   <Spinner className="size-6" />
                 </div>
+              )}
+              {step === 2 && hasInstructionsError && (
+                <StepInstructionsError
+                  error={
+                    instructionsError
+                      ? instructionsQuery.error?.message
+                      : "Verification instructions could not be loaded."
+                  }
+                  onRetry={() => instructionsQuery.refetch()}
+                  isRetrying={instructionsQuery.isFetching}
+                />
               )}
               {step === 2 && instructions && !isLoadingInstructions && (
                 <StepVerifyOwnership
@@ -277,7 +297,9 @@ export function AddDomainDialog({
           )}
           <Button
             onClick={handleNext}
-            disabled={!canProceed() || isLoadingInstructions}
+            disabled={
+              !canProceed() || isLoadingInstructions || hasInstructionsError
+            }
           >
             {(addDomainMutation.isPending || isVerifying) && (
               <Spinner className="size-4" />
@@ -301,11 +323,13 @@ function StepEnterDomain({
   setDomain,
   error,
   isLoading,
+  onSubmit,
 }: {
   domain: string;
   setDomain: (v: string) => void;
   error: string;
   isLoading: boolean;
+  onSubmit: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -321,6 +345,9 @@ function StepEnterDomain({
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
+              if (domain.trim().length > 0 && !isLoading) {
+                onSubmit();
+              }
             }
           }}
         />
@@ -418,6 +445,38 @@ function StepConfirmation({ domain }: { domain: string }) {
           expire.
         </p>
       </div>
+    </div>
+  );
+}
+
+function StepInstructionsError({
+  error,
+  onRetry,
+  isRetrying,
+}: {
+  error?: string;
+  onRetry: () => void;
+  isRetrying: boolean;
+}) {
+  return (
+    <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+        <AlertCircle className="size-6 text-destructive" />
+      </div>
+      <div className="text-center">
+        <h3 className="font-semibold">Unable to load instructions</h3>
+        <p className="text-muted-foreground text-sm">
+          {error || "Something went wrong. Please try again."}
+        </p>
+      </div>
+      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+        {isRetrying ? (
+          <Spinner className="size-4" />
+        ) : (
+          <RefreshCw className="size-4" />
+        )}
+        {isRetrying ? "Retrying..." : "Retry"}
+      </Button>
     </div>
   );
 }

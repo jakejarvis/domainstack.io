@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 
 type ResumeDomainData = {
@@ -40,8 +41,7 @@ export default function DashboardPage() {
 
   const handleAddSuccess = useCallback(() => {
     setResumeDomain(null);
-    limitsQuery.refetch();
-    domainsQuery.refetch();
+    void Promise.all([limitsQuery.refetch(), domainsQuery.refetch()]);
   }, [limitsQuery, domainsQuery]);
 
   const handleVerify = useCallback((domain: TrackedDomainWithDetails) => {
@@ -66,9 +66,9 @@ export default function DashboardPage() {
       try {
         await removeMutation.mutateAsync({ trackedDomainId: id });
         toast.success("Domain removed");
-        limitsQuery.refetch();
-        domainsQuery.refetch();
-      } catch {
+        void Promise.all([limitsQuery.refetch(), domainsQuery.refetch()]);
+      } catch (err) {
+        logger.error("Failed to remove domain", err);
         toast.error("Failed to remove domain");
       }
     },

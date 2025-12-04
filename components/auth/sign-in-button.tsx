@@ -5,6 +5,7 @@ import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { signIn } from "@/lib/auth-client";
+import { logger } from "@/lib/logger/client";
 
 export function SignInButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +17,9 @@ export function SignInButton() {
         provider: "github",
         callbackURL: "/dashboard",
       });
-    } catch {
+    } catch (err) {
+      logger.error("GitHub sign-in failed", err, { provider: "github" });
+    } finally {
       setIsLoading(false);
     }
   };

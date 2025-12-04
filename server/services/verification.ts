@@ -1,7 +1,5 @@
 import "server-only";
 
-import { cache } from "react";
-import { USER_AGENT } from "@/lib/constants/app";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
@@ -68,38 +66,36 @@ export async function verifyDomainOwnership(
 /**
  * Try all verification methods and return the first one that succeeds.
  */
-export const tryAllVerificationMethods = cache(
-  async function tryAllVerificationMethods(
-    domain: string,
-    token: string,
-  ): Promise<VerificationResult> {
-    logger.debug("trying all verification methods", { domain });
+export async function tryAllVerificationMethods(
+  domain: string,
+  token: string,
+): Promise<VerificationResult> {
+  logger.debug("trying all verification methods", { domain });
 
-    // Try DNS TXT first (most common/reliable)
-    const dnsResult = await verifyDnsTxt(domain, token);
-    if (dnsResult.verified) {
-      return dnsResult;
-    }
+  // Try DNS TXT first (most common/reliable)
+  const dnsResult = await verifyDnsTxt(domain, token);
+  if (dnsResult.verified) {
+    return dnsResult;
+  }
 
-    // Try HTML file next
-    const htmlResult = await verifyHtmlFile(domain, token);
-    if (htmlResult.verified) {
-      return htmlResult;
-    }
+  // Try HTML file next
+  const htmlResult = await verifyHtmlFile(domain, token);
+  if (htmlResult.verified) {
+    return htmlResult;
+  }
 
-    // Try meta tag last
-    const metaResult = await verifyMetaTag(domain, token);
-    if (metaResult.verified) {
-      return metaResult;
-    }
+  // Try meta tag last
+  const metaResult = await verifyMetaTag(domain, token);
+  if (metaResult.verified) {
+    return metaResult;
+  }
 
-    return { verified: false, method: null };
-  },
-);
+  return { verified: false, method: null };
+}
 
 /**
  * Verify ownership via DNS TXT record.
- * Expected record: _hoot-verify.example.com TXT "hoot-verify=<token>"
+ * Expected record: _domainstack-verify.example.com TXT "domainstack-verify=<token>"
  */
 async function verifyDnsTxt(
   domain: string,
@@ -119,7 +115,6 @@ async function verifyDnsTxt(
       {
         headers: {
           accept: "application/dns-json",
-          "user-agent": USER_AGENT,
         },
       },
       { timeoutMs: 5000, retries: 2, backoffMs: 200 },
@@ -160,8 +155,8 @@ async function verifyDnsTxt(
 
 /**
  * Verify ownership via HTML file.
- * Expected file: https://example.com/.well-known/hoot-verify.txt
- * Contents should contain the token.
+ * Expected file: https://example.com/.well-known/domainstack-verify.txt
+ * Contents should exactly match the token (after trimming whitespace).
  */
 async function verifyHtmlFile(
   domain: string,
@@ -178,9 +173,6 @@ async function verifyHtmlFile(
       const res = await fetchWithTimeoutAndRetry(
         urlStr,
         {
-          headers: {
-            "user-agent": USER_AGENT,
-          },
           redirect: "follow",
         },
         { timeoutMs: 5000, retries: 1, backoffMs: 200 },
@@ -191,8 +183,8 @@ async function verifyHtmlFile(
       }
 
       const text = await res.text();
-      // Check if the token appears anywhere in the file (trimmed)
-      if (text.trim().includes(token)) {
+      // Check if the trimmed file content exactly matches the token
+      if (text.trim() === token) {
         logger.info("HTML file verification successful", { domain });
         return { verified: true, method: "html_file" };
       }
@@ -205,7 +197,7 @@ async function verifyHtmlFile(
 
 /**
  * Verify ownership via meta tag.
- * Expected tag: <meta name="hoot-verify" content="<token>">
+ * Expected tag: <meta name="domainstack-verify" content="<token>">
  */
 async function verifyMetaTag(
   domain: string,
@@ -220,7 +212,6 @@ async function verifyMetaTag(
         urlStr,
         {
           headers: {
-            "user-agent": USER_AGENT,
             accept: "text/html",
           },
           redirect: "follow",
@@ -235,7 +226,7 @@ async function verifyMetaTag(
       const html = await res.text();
 
       // Look for the meta tag with a simple regex
-      // Matches: <meta name="hoot-verify" content="TOKEN">
+      // Matches: <meta name="domainstack-verify" content="TOKEN">
       // Also matches with single quotes and different attribute orders
       const metaRegex = new RegExp(
         `<meta[^>]*name=["']${META_TAG_NAME}["'][^>]*content=["']([^"']+)["'][^>]*/?>|<meta[^>]*content=["']([^"']+)["'][^>]*name=["']${META_TAG_NAME}["'][^>]*/?>`,
