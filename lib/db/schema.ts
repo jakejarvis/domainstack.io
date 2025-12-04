@@ -161,7 +161,7 @@ export const trackedDomains = pgTable(
     verificationMethod: verificationMethod("verification_method"),
     verificationToken: text("verification_token").notNull(),
     // Re-verification tracking
-    verificationStatusEnum: verificationStatus("verification_status")
+    verificationStatus: verificationStatus("verification_status")
       .notNull()
       .default("unverified"),
     verificationFailedAt: timestamp("verification_failed_at", {
@@ -183,7 +183,7 @@ export const trackedDomains = pgTable(
     index("i_tracked_domains_user").on(t.userId),
     index("i_tracked_domains_domain").on(t.domainId),
     index("i_tracked_domains_verified").on(t.verified),
-    index("i_tracked_domains_status").on(t.verificationStatusEnum),
+    index("i_tracked_domains_status").on(t.verificationStatus),
   ],
 );
 

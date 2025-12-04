@@ -6,10 +6,6 @@ import type React from "react";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
 import { BASE_URL } from "@/lib/constants";
 import {
-  getDomainExpiryNotificationType,
-  type NotificationType,
-} from "@/lib/constants/notifications";
-import {
   createNotification,
   hasNotificationBeenSent,
   updateNotificationResendId,
@@ -18,20 +14,14 @@ import { getVerifiedTrackedDomainsWithExpiry } from "@/lib/db/repos/tracked-doma
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
+import {
+  generateIdempotencyKey,
+  getDomainExpiryNotificationType,
+  type NotificationType,
+} from "@/lib/notifications";
 import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-domain-expiry" });
-
-/**
- * Generate a stable idempotency key for Resend.
- * This ensures that if a step retries, Resend won't send duplicate emails.
- */
-function generateIdempotencyKey(
-  trackedDomainId: string,
-  notificationType: NotificationType,
-): string {
-  return `${trackedDomainId}:${notificationType}`;
-}
 
 /**
  * Cron job to check for expiring domains and send email notifications.

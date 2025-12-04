@@ -24,12 +24,16 @@ import {
   deleteTrackedDomain,
   findTrackedDomain,
   findTrackedDomainById,
+  findTrackedDomainWithDomainName,
   getPendingDomainsForAutoVerification,
   getTrackedDomainsForUser,
   getVerifiedDomainsForReverification,
+  getVerifiedTrackedDomainsWithExpiry,
   markVerificationFailing,
   markVerificationSuccessful,
+  resetNotificationOverrides,
   revokeVerification,
+  updateNotificationOverrides,
   verifyTrackedDomain,
 } from "./tracked-domains";
 
@@ -91,7 +95,7 @@ describe("createTrackedDomain", () => {
     expect(result?.domainId).toBe(testDomainId);
     expect(result?.verificationToken).toBe("test-token-123");
     expect(result?.verified).toBe(false);
-    expect(result?.verificationStatusEnum).toBe("unverified");
+    expect(result?.verificationStatus).toBe("unverified");
   });
 
   it("creates with verification method if provided", async () => {
@@ -166,7 +170,7 @@ describe("verifyTrackedDomain", () => {
 
     expect(result.verified).toBe(true);
     expect(result.verificationMethod).toBe("dns_txt");
-    expect(result.verificationStatusEnum).toBe("verified");
+    expect(result.verificationStatus).toBe("verified");
     expect(result.verifiedAt).toBeInstanceOf(Date);
     expect(result.lastVerifiedAt).toBeInstanceOf(Date);
     expect(result.verificationFailedAt).toBeNull();
@@ -193,7 +197,7 @@ describe("markVerificationSuccessful", () => {
     // Now mark as successful
     const result = await markVerificationSuccessful(createdId);
 
-    expect(result.verificationStatusEnum).toBe("verified");
+    expect(result.verificationStatus).toBe("verified");
     expect(result.verificationFailedAt).toBeNull();
     expect(result.lastVerifiedAt).toBeInstanceOf(Date);
   });
@@ -213,7 +217,7 @@ describe("markVerificationFailing", () => {
 
     const result = await markVerificationFailing(createdId);
 
-    expect(result?.verificationStatusEnum).toBe("failing");
+    expect(result?.verificationStatus).toBe("failing");
     expect(result?.verificationFailedAt).toBeInstanceOf(Date);
   });
 
@@ -259,7 +263,7 @@ describe("revokeVerification", () => {
     const revokedDomain = result!;
 
     expect(revokedDomain.verified).toBe(false);
-    expect(revokedDomain.verificationStatusEnum).toBe("unverified");
+    expect(revokedDomain.verificationStatus).toBe("unverified");
     expect(revokedDomain.verificationFailedAt).toBeNull();
   });
 });
@@ -422,6 +426,145 @@ describe("getPendingDomainsForAutoVerification", () => {
     await verifyTrackedDomain(createdId, "dns_txt");
 
     const result = await getPendingDomainsForAutoVerification();
+    expect(result).toEqual([]);
+  });
+});
+
+describe("findTrackedDomainWithDomainName", () => {
+  it("returns null when ID does not exist", async () => {
+    const result = await findTrackedDomainWithDomainName(
+      "00000000-0000-0000-0000-000000000000",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("returns tracked domain with domain name", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+
+    const result = await findTrackedDomainWithDomainName(createdId);
+
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe(createdId);
+    expect(result?.userId).toBe(testUserId);
+    expect(result?.domainName).toBe("example.com");
+    expect(result?.verificationToken).toBe("test-token");
+  });
+});
+
+describe("updateNotificationOverrides", () => {
+  it("updates notification overrides for a domain", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+
+    const result = await updateNotificationOverrides(createdId, {
+      domainExpiry: false,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.notificationOverrides).toEqual({ domainExpiry: false });
+  });
+
+  it("merges overrides with existing values", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+
+    // Set first override
+    await updateNotificationOverrides(createdId, {
+      domainExpiry: false,
+    });
+
+    // Set second override
+    const result = await updateNotificationOverrides(createdId, {
+      certificateExpiry: true,
+    });
+
+    expect(result?.notificationOverrides).toEqual({
+      domainExpiry: false,
+      certificateExpiry: true,
+    });
+  });
+
+  it("returns null for non-existent domain", async () => {
+    const result = await updateNotificationOverrides(
+      "00000000-0000-0000-0000-000000000000",
+      { domainExpiry: false },
+    );
+    expect(result).toBeNull();
+  });
+});
+
+describe("resetNotificationOverrides", () => {
+  it("resets all notification overrides to empty object", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+
+    // Set some overrides first
+    await updateNotificationOverrides(createdId, {
+      domainExpiry: false,
+      certificateExpiry: true,
+    });
+
+    // Reset
+    const result = await resetNotificationOverrides(createdId);
+
+    expect(result).not.toBeNull();
+    expect(result?.notificationOverrides).toEqual({});
+  });
+
+  it("returns null for non-existent domain", async () => {
+    const result = await resetNotificationOverrides(
+      "00000000-0000-0000-0000-000000000000",
+    );
+    expect(result).toBeNull();
+  });
+});
+
+describe("getVerifiedTrackedDomainsWithExpiry", () => {
+  it("returns empty array when no verified domains with registration data", async () => {
+    // Create unverified domain
+    await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+
+    const result = await getVerifiedTrackedDomainsWithExpiry();
+    expect(result).toEqual([]);
+  });
+
+  it("excludes unverified domains", async () => {
+    await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+
+    const result = await getVerifiedTrackedDomainsWithExpiry();
     expect(result).toEqual([]);
   });
 });

@@ -5,11 +5,6 @@ import { differenceInDays, format } from "date-fns";
 import type React from "react";
 import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
 import { BASE_URL } from "@/lib/constants";
-import {
-  CERTIFICATE_EXPIRY_THRESHOLDS,
-  CERTIFICATE_THRESHOLD_TO_TYPE,
-  type NotificationType,
-} from "@/lib/constants/notifications";
 import { getVerifiedTrackedDomainsCertificates } from "@/lib/db/repos/certificates";
 import {
   createNotification,
@@ -19,30 +14,14 @@ import {
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
+import {
+  generateIdempotencyKey,
+  getCertificateExpiryNotificationType,
+  type NotificationType,
+} from "@/lib/notifications";
 import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-certificate-expiry" });
-
-function getCertificateExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
-  for (const threshold of CERTIFICATE_EXPIRY_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return CERTIFICATE_THRESHOLD_TO_TYPE[threshold];
-    }
-  }
-  return null;
-}
-
-/**
- * Generate a stable idempotency key for Resend.
- */
-function generateIdempotencyKey(
-  trackedDomainId: string,
-  notificationType: NotificationType,
-): string {
-  return `${trackedDomainId}:${notificationType}`;
-}
 
 /**
  * Cron job to check for expiring SSL certificates and send email notifications.

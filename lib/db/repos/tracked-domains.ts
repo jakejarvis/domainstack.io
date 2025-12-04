@@ -122,7 +122,7 @@ export type TrackedDomainWithDomainName = {
   verificationToken: string;
   verificationMethod: VerificationMethod | null;
   verified: boolean;
-  verificationStatusEnum: VerificationStatusType;
+  verificationStatus: VerificationStatusType;
 };
 
 /**
@@ -140,7 +140,7 @@ export async function findTrackedDomainWithDomainName(
       verificationToken: trackedDomains.verificationToken,
       verificationMethod: trackedDomains.verificationMethod,
       verified: trackedDomains.verified,
-      verificationStatusEnum: trackedDomains.verificationStatusEnum,
+      verificationStatus: trackedDomains.verificationStatus,
     })
     .from(trackedDomains)
     .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
@@ -171,7 +171,7 @@ export async function getTrackedDomainsForUser(
       verified: trackedDomains.verified,
       verificationMethod: trackedDomains.verificationMethod,
       verificationToken: trackedDomains.verificationToken,
-      verificationStatus: trackedDomains.verificationStatusEnum,
+      verificationStatus: trackedDomains.verificationStatus,
       verificationFailedAt: trackedDomains.verificationFailedAt,
       lastVerifiedAt: trackedDomains.lastVerifiedAt,
       notificationOverrides: trackedDomains.notificationOverrides,
@@ -257,7 +257,7 @@ export async function verifyTrackedDomain(
     .set({
       verified: true,
       verificationMethod: method,
-      verificationStatusEnum: "verified",
+      verificationStatus: "verified",
       verificationFailedAt: null,
       lastVerifiedAt: now,
       verifiedAt: now,
@@ -420,7 +420,7 @@ export async function getVerifiedDomainsForReverification(): Promise<
       domainName: domains.name,
       verificationToken: trackedDomains.verificationToken,
       verificationMethod: trackedDomains.verificationMethod,
-      verificationStatus: trackedDomains.verificationStatusEnum,
+      verificationStatus: trackedDomains.verificationStatus,
       verificationFailedAt: trackedDomains.verificationFailedAt,
       notificationOverrides: trackedDomains.notificationOverrides,
       userEmail: users.email,
@@ -482,7 +482,7 @@ export async function markVerificationSuccessful(id: string) {
   const updated = await db
     .update(trackedDomains)
     .set({
-      verificationStatusEnum: "verified",
+      verificationStatus: "verified",
       verificationFailedAt: null,
       lastVerifiedAt: new Date(),
     })
@@ -505,7 +505,7 @@ export async function markVerificationFailing(id: string) {
   const updated = await db
     .update(trackedDomains)
     .set({
-      verificationStatusEnum: "failing",
+      verificationStatus: "failing",
       // Only set verificationFailedAt if it's not already set (first failure)
       verificationFailedAt: existing.verificationFailedAt ?? new Date(),
     })
@@ -525,7 +525,7 @@ export async function revokeVerification(id: string) {
     .update(trackedDomains)
     .set({
       verified: false,
-      verificationStatusEnum: "unverified",
+      verificationStatus: "unverified",
       verificationFailedAt: null,
     })
     .where(eq(trackedDomains.id, id))

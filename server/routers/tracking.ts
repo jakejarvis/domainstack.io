@@ -293,14 +293,21 @@ export const trackingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      // Get tracked domain
-      const domains = await getTrackedDomainsForUser(ctx.user.id);
-      const tracked = domains.find((d) => d.id === trackedDomainId);
+      // Get tracked domain with domain name in a single targeted query
+      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
 
       if (!tracked) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
         });
       }
 

@@ -111,7 +111,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
               ? {
                   ...d,
                   notificationOverrides: {
-                    ...d.notificationOverrides,
+                    ...(d.notificationOverrides ?? {}),
                     ...overrides,
                   },
                 }
@@ -193,6 +193,38 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
 
   if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
     return <SettingsContentSkeleton showCard={showCard} />;
+  }
+
+  // Surface query errors instead of silently falling back to defaults
+  if (domainsQuery.isError || globalPrefsQuery.isError) {
+    const errorContent = (
+      <>
+        <CardHeader>
+          <CardTitle>Email Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4 py-8 text-center">
+            <p className="text-destructive">
+              Failed to load notification settings.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void domainsQuery.refetch();
+                void globalPrefsQuery.refetch();
+              }}
+            >
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </>
+    );
+
+    if (!showCard) {
+      return <div className="flex flex-col">{errorContent}</div>;
+    }
+    return <Card>{errorContent}</Card>;
   }
 
   const domains = domainsQuery.data ?? [];

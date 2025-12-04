@@ -66,33 +66,3 @@ export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<
   3: "certificate_expiry_3d",
   1: "certificate_expiry_1d",
 };
-
-/**
- * Get the domain expiry notification type for a given number of days remaining.
- * Returns null if no notification should be sent.
- */
-export function getDomainExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
-  for (const threshold of DOMAIN_EXPIRY_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return DOMAIN_THRESHOLD_TO_TYPE[threshold];
-    }
-  }
-  return null;
-}
-
-/**
- * Get the certificate expiry notification type for a given number of days remaining.
- * Returns null if no notification should be sent.
- */
-export function getCertificateExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
-  for (const threshold of CERTIFICATE_EXPIRY_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return CERTIFICATE_THRESHOLD_TO_TYPE[threshold];
-    }
-  }
-  return null;
-}

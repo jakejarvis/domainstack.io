@@ -34,6 +34,12 @@ const logger = createLogger({ source: "reverify-domains" });
 // Grace period before revoking verification (in days)
 const GRACE_PERIOD_DAYS = 7;
 
+// Result of handling a verification failure
+type VerificationFailureAction =
+  | "marked_failing"
+  | "revoked"
+  | "in_grace_period";
+
 /**
  * Check if verification status notifications should be sent for a domain.
  * Checks per-domain override first, then falls back to global user preference.
@@ -177,10 +183,20 @@ export const reverifyDomains = inngest.createFunction(
               ? new Date(domain.verificationFailedAt)
               : null,
           };
-          await step.run(`handle-failure-${domain.id}`, async () => {
-            await handleVerificationFailure(domainWithDate);
-          });
-          verifiedResults.failing++;
+          const action = await step.run(
+            `handle-failure-${domain.id}`,
+            async () => {
+              return await handleVerificationFailure(domainWithDate);
+            },
+          );
+
+          // Increment the correct counter based on the action taken
+          if (action === "revoked") {
+            verifiedResults.revoked++;
+          } else {
+            // "marked_failing" or "in_grace_period"
+            verifiedResults.failing++;
+          }
         }
       } catch (err) {
         logger.error("Error re-verifying domain", err, {
@@ -205,10 +221,12 @@ export const reverifyDomains = inngest.createFunction(
  * Handle a verification failure.
  * If within grace period, mark as failing and send warning.
  * If grace period exceeded, revoke verification.
+ *
+ * @returns The action taken: "marked_failing", "revoked", or "in_grace_period"
  */
 async function handleVerificationFailure(
   domain: TrackedDomainForReverification,
-) {
+): Promise<VerificationFailureAction> {
   const now = new Date();
 
   if (domain.verificationStatus === "verified") {
@@ -224,13 +242,15 @@ async function handleVerificationFailure(
       domainId: domain.id,
       domainName: domain.domainName,
     });
+
+    return "marked_failing";
   } else if (domain.verificationStatus === "failing") {
     // Already failing - check if grace period exceeded
     const failedAt = domain.verificationFailedAt;
     if (!failedAt) {
       // Shouldn't happen, but mark failing time now
       await markVerificationFailing(domain.id);
-      return;
+      return "marked_failing";
     }
 
     const daysFailing = differenceInDays(now, failedAt);
@@ -249,6 +269,8 @@ async function handleVerificationFailure(
         domainName: domain.domainName,
         daysFailing,
       });
+
+      return "revoked";
     } else {
       logger.debug("Domain still in grace period", {
         domainId: domain.id,
@@ -256,8 +278,13 @@ async function handleVerificationFailure(
         daysFailing,
         daysRemaining: GRACE_PERIOD_DAYS - daysFailing,
       });
+
+      return "in_grace_period";
     }
   }
+
+  // Shouldn't reach here, but default to in_grace_period
+  return "in_grace_period";
 }
 
 /**
@@ -305,14 +332,14 @@ async function sendVerificationFailingEmail(
     if (error) {
       logger.error("Failed to send verification failing email", error, {
         domainName: domain.domainName,
-        userEmail: domain.userEmail,
+        userId: domain.userId,
       });
       return false;
     }
 
     logger.info("Sent verification failing notification", {
       domainName: domain.domainName,
-      userEmail: domain.userEmail,
+      userId: domain.userId,
       emailId: data?.id,
     });
 
@@ -334,7 +361,7 @@ async function sendVerificationFailingEmail(
   } catch (err) {
     logger.error("Error sending verification failing email", err, {
       domainName: domain.domainName,
-      userEmail: domain.userEmail,
+      userId: domain.userId,
     });
     return false;
   }
@@ -383,14 +410,14 @@ async function sendVerificationRevokedEmail(
     if (error) {
       logger.error("Failed to send verification revoked email", error, {
         domainName: domain.domainName,
-        userEmail: domain.userEmail,
+        userId: domain.userId,
       });
       return false;
     }
 
     logger.info("Sent verification revoked notification", {
       domainName: domain.domainName,
-      userEmail: domain.userEmail,
+      userId: domain.userId,
       emailId: data?.id,
     });
 
@@ -412,7 +439,7 @@ async function sendVerificationRevokedEmail(
   } catch (err) {
     logger.error("Error sending verification revoked email", err, {
       domainName: domain.domainName,
-      userEmail: domain.userEmail,
+      userId: domain.userId,
     });
     return false;
   }

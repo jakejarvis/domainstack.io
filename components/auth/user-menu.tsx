@@ -2,7 +2,6 @@
 
 import { LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from "@/hooks/use-router";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 

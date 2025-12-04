@@ -1,6 +1,6 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { certificates, domains, trackedDomains, users } from "@/lib/db/schema";
 import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
@@ -77,9 +77,7 @@ export async function getVerifiedTrackedDomainsCertificates(): Promise<
     .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
     .innerJoin(users, eq(trackedDomains.userId, users.id))
-    .where(
-      and(eq(trackedDomains.verified, true), isNotNull(certificates.validTo)),
-    );
+    .where(eq(trackedDomains.verified, true));
 
   // Group by tracked domain and take the earliest expiring certificate
   const byTrackedDomain = new Map<string, TrackedDomainCertificate>();

@@ -18,6 +18,7 @@ export type CreateNotificationParams = {
 
 /**
  * Record a sent notification to prevent duplicates.
+ * Returns the notification record (new or existing) on success, null on error.
  */
 export async function createNotification(params: CreateNotificationParams) {
   const { trackedDomainId, type } = params;
@@ -33,7 +34,23 @@ export async function createNotification(params: CreateNotificationParams) {
       .onConflictDoNothing()
       .returning();
 
-    return inserted[0] ?? null;
+    if (inserted.length > 0) {
+      return inserted[0];
+    }
+
+    // Notification already exists, fetch and return it
+    const existing = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          eq(notifications.type, type),
+        ),
+      )
+      .limit(1);
+
+    return existing[0] ?? null;
   } catch (err) {
     logger.error("failed to create notification record", err, {
       trackedDomainId,
