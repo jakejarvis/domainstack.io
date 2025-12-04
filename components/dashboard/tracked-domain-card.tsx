@@ -10,6 +10,7 @@ import {
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
+import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,6 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type {
   ProviderInfo,
   VerificationStatusType,
@@ -75,7 +81,16 @@ export function TrackedDomainCard({
         <div className="flex items-center gap-3">
           <Favicon domain={domainName} size={32} />
           <div className="min-w-0 flex-1">
-            <CardTitle className="truncate text-base">{domainName}</CardTitle>
+            <ScreenshotTooltip domain={domainName}>
+              <Link
+                href={`/${domainName}`}
+                className="block min-w-0 hover:underline"
+              >
+                <CardTitle className="truncate text-base">
+                  {domainName}
+                </CardTitle>
+              </Link>
+            </ScreenshotTooltip>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {verified && (
                 <DomainHealthBadge
@@ -129,9 +144,16 @@ export function TrackedDomainCard({
             <InfoRow label="Expires">
               {expirationDate ? (
                 <>
-                  <span className="truncate">
-                    {format(expirationDate, "MMM d, yyyy")}
-                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-default truncate">
+                        {format(expirationDate, "MMM d, yyyy")}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {format(expirationDate, "yyyy-MM-dd HH:mm:ss")} UTC
+                    </TooltipContent>
+                  </Tooltip>
                   <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
                     <RelativeExpiryString
                       to={expirationDate}

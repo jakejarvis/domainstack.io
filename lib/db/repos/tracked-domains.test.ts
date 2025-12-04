@@ -87,11 +87,11 @@ describe("createTrackedDomain", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.userId).toBe(testUserId);
-    expect(result!.domainId).toBe(testDomainId);
-    expect(result!.verificationToken).toBe("test-token-123");
-    expect(result!.verified).toBe(false);
-    expect(result!.verificationStatusEnum).toBe("unverified");
+    expect(result?.userId).toBe(testUserId);
+    expect(result?.domainId).toBe(testDomainId);
+    expect(result?.verificationToken).toBe("test-token-123");
+    expect(result?.verified).toBe(false);
+    expect(result?.verificationStatusEnum).toBe("unverified");
   });
 
   it("creates with verification method if provided", async () => {
@@ -103,7 +103,7 @@ describe("createTrackedDomain", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.verificationMethod).toBe("dns_txt");
+    expect(result?.verificationMethod).toBe("dns_txt");
   });
 });
 
@@ -142,10 +142,12 @@ describe("findTrackedDomainById", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
 
-    const result = await findTrackedDomainById(created!.id);
+    const result = await findTrackedDomainById(createdId);
     expect(result).toBeDefined();
-    expect(result?.id).toBe(created!.id);
+    expect(result?.id).toBe(createdId);
   });
 });
 
@@ -157,8 +159,10 @@ describe("verifyTrackedDomain", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
 
-    const result = await verifyTrackedDomain(created!.id, "dns_txt");
+    const result = await verifyTrackedDomain(createdId, "dns_txt");
 
     expect(result.verified).toBe(true);
     expect(result.verificationMethod).toBe("dns_txt");
@@ -177,15 +181,17 @@ describe("markVerificationSuccessful", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
 
     // First verify the domain
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    await verifyTrackedDomain(createdId, "dns_txt");
 
     // Then mark as failing
-    await markVerificationFailing(created!.id);
+    await markVerificationFailing(createdId);
 
     // Now mark as successful
-    const result = await markVerificationSuccessful(created!.id);
+    const result = await markVerificationSuccessful(createdId);
 
     expect(result.verificationStatusEnum).toBe("verified");
     expect(result.verificationFailedAt).toBeNull();
@@ -201,9 +207,11 @@ describe("markVerificationFailing", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
 
-    const result = await markVerificationFailing(created!.id);
+    const result = await markVerificationFailing(createdId);
 
     expect(result?.verificationStatusEnum).toBe("failing");
     expect(result?.verificationFailedAt).toBeInstanceOf(Date);
@@ -216,14 +224,16 @@ describe("markVerificationFailing", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
 
     // First failure
-    const first = await markVerificationFailing(created!.id);
+    const first = await markVerificationFailing(createdId);
     const firstFailedAt = first?.verificationFailedAt;
 
     // Second failure - should keep original time
-    const second = await markVerificationFailing(created!.id);
+    const second = await markVerificationFailing(createdId);
 
     expect(second?.verificationFailedAt?.getTime()).toBe(
       firstFailedAt?.getTime(),
@@ -239,9 +249,11 @@ describe("revokeVerification", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
 
-    const result = await revokeVerification(created!.id);
+    const result = await revokeVerification(createdId);
 
     expect(result.verified).toBe(false);
     expect(result.verificationStatusEnum).toBe("unverified");
@@ -290,11 +302,13 @@ describe("deleteTrackedDomain", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
 
-    const result = await deleteTrackedDomain(created!.id);
+    const result = await deleteTrackedDomain(createdId);
     expect(result).toBe(true);
 
-    const found = await findTrackedDomainById(created!.id);
+    const found = await findTrackedDomainById(createdId);
     expect(found).toBeNull();
   });
 
@@ -358,13 +372,15 @@ describe("getVerifiedDomainsForReverification", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
 
     const result = await getVerifiedDomainsForReverification();
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
-      id: created!.id,
+      id: createdId,
       userId: testUserId,
       domainName: "example.com",
       verificationToken: "test-token",
@@ -399,7 +415,9 @@ describe("getPendingDomainsForAutoVerification", () => {
       verificationToken: "test-token",
     });
     expect(created).not.toBeNull();
-    await verifyTrackedDomain(created!.id, "dns_txt");
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+    await verifyTrackedDomain(createdId, "dns_txt");
 
     const result = await getPendingDomainsForAutoVerification();
     expect(result).toEqual([]);

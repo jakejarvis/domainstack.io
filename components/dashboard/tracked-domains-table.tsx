@@ -22,6 +22,7 @@ import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
+import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,6 +31,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type {
   ProviderInfo,
   TrackedDomainWithDetails,
@@ -103,12 +109,14 @@ export function TrackedDomainsTable({
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <Favicon domain={row.original.domainName} size={18} />
-            <Link
-              href={`/${row.original.domainName}`}
-              className="font-medium hover:underline"
-            >
-              {row.original.domainName}
-            </Link>
+            <ScreenshotTooltip domain={row.original.domainName}>
+              <Link
+                href={`/${row.original.domainName}`}
+                className="font-medium hover:underline"
+              >
+                {row.original.domainName}
+              </Link>
+            </ScreenshotTooltip>
           </div>
         ),
       },
@@ -156,7 +164,16 @@ export function TrackedDomainsTable({
           }
           return (
             <div className="flex items-center gap-1.5 whitespace-nowrap">
-              <span>{format(date, "MMM d, yyyy")}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-default">
+                    {format(date, "MMM d, yyyy")}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {format(date, "yyyy-MM-dd HH:mm:ss")} UTC
+                </TooltipContent>
+              </Tooltip>
               <span className="text-[11px] text-muted-foreground leading-none">
                 <RelativeExpiryString to={date} dangerDays={30} warnDays={45} />
               </span>
