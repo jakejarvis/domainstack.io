@@ -27,7 +27,7 @@ export default async function LoginPage() {
         <div className="absolute right-1/4 bottom-1/4 h-96 w-96 animate-pulse rounded-full bg-accent-purple/10 blur-3xl delay-1000" />
       </div>
 
-      <LoginContent />
+      <LoginContent className="max-w-md" />
     </div>
   );
 }

@@ -27,7 +27,7 @@ export function SignInButton() {
   return (
     <Button
       size="lg"
-      className="w-full gap-3 transition-transform active:scale-[0.98]"
+      className="w-full cursor-pointer gap-3 transition-transform active:scale-[0.98]"
       onClick={handleSignIn}
       disabled={isLoading}
     >
