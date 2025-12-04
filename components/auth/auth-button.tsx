@@ -70,7 +70,7 @@ export function AuthButton() {
               Sign in to track your domains and receive expiration alerts.
             </DialogDescription>
           </DialogHeader>
-          <LoginContent showCard={false} />
+          <LoginContent showCard={false} onNavigate={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </>

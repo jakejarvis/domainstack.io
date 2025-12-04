@@ -91,7 +91,7 @@ export function MobileMenu() {
               Sign in to track your domains and receive expiration alerts.
             </DialogDescription>
           </DialogHeader>
-          <LoginContent showCard={false} />
+          <LoginContent showCard={false} onNavigate={() => setLoginOpen(false)} />
         </DialogContent>
       </Dialog>
 

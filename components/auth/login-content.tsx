@@ -11,11 +11,14 @@ interface LoginContentProps {
   showCard?: boolean;
   /** Additional classes for the card wrapper */
   className?: string;
+  /** Callback when navigating away (e.g., to close modal) */
+  onNavigate?: () => void;
 }
 
 export function LoginContent({
   showCard = true,
   className,
+  onNavigate,
 }: LoginContentProps) {
   const content = (
     <div className="flex flex-col items-center px-6 py-8">
@@ -34,6 +37,7 @@ export function LoginContent({
         <Link
           href="/terms"
           className="underline underline-offset-2 hover:text-foreground"
+          onClick={onNavigate}
         >
           Terms of Service
         </Link>{" "}
@@ -41,6 +45,7 @@ export function LoginContent({
         <Link
           href="/privacy"
           className="underline underline-offset-2 hover:text-foreground"
+          onClick={onNavigate}
         >
           Privacy Policy
         </Link>
