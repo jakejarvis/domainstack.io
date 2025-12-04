@@ -254,10 +254,13 @@ describe("revokeVerification", () => {
     await verifyTrackedDomain(createdId, "dns_txt");
 
     const result = await revokeVerification(createdId);
+    expect(result).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(result).not.toBeNull()
+    const revokedDomain = result!;
 
-    expect(result.verified).toBe(false);
-    expect(result.verificationStatusEnum).toBe("unverified");
-    expect(result.verificationFailedAt).toBeNull();
+    expect(revokedDomain.verified).toBe(false);
+    expect(revokedDomain.verificationStatusEnum).toBe("unverified");
+    expect(revokedDomain.verificationFailedAt).toBeNull();
   });
 });
 
@@ -343,8 +346,7 @@ describe("getTrackedDomainsForUser", () => {
       verified: false,
       verificationToken: "test-token",
       verificationStatus: "unverified",
-      notifyDomainExpiry: true,
-      notifyVerificationFailing: true,
+      notificationOverrides: {},
     });
     expect(result[0].registrar).toEqual({ name: null, domain: null });
     expect(result[0].dns).toEqual({ name: null, domain: null });

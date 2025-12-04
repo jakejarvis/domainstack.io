@@ -1,7 +1,11 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronDown, Info, RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Favicon } from "@/components/domain/favicon";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,11 +13,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSession } from "@/lib/auth-client";
+import {
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_CATEGORY_INFO,
+  type NotificationCategory,
+} from "@/lib/constants/notifications";
 import { logger } from "@/lib/logger/client";
+import type { NotificationOverrides } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
 
 interface SettingsContentProps {
   /** Whether to show the card wrapper (false for modal usage) */
@@ -23,38 +45,172 @@ interface SettingsContentProps {
 export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
-  const updateMutation = useMutation(
-    trpc.tracking.updateNotifications.mutationOptions(),
-  );
+  const queryClient = useQueryClient();
+  const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
 
-  const handleToggleNotification = async (
-    id: string,
-    notifyDomainExpiry: boolean,
-  ) => {
-    try {
-      await updateMutation.mutateAsync({
-        trackedDomainId: id,
-        notifyDomainExpiry,
-      });
-      domainsQuery.refetch();
-      toast.success("Notification settings updated");
-    } catch (err) {
-      logger.error("Failed to update notification settings", err);
-      toast.error("Failed to update settings");
-    }
+  // Query keys for cache manipulation
+  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  const globalPrefsQueryKey =
+    trpc.tracking.getNotificationPreferences.queryKey();
+
+  // Type for global preferences
+  type GlobalPrefs = {
+    domainExpiry: boolean;
+    certificateExpiry: boolean;
+    verificationStatus: boolean;
   };
 
-  if (domainsQuery.isLoading) {
+  // Queries
+  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
+  const globalPrefsQuery = useQuery(
+    trpc.tracking.getNotificationPreferences.queryOptions(),
+  );
+
+  // Mutations with optimistic updates
+  const updateGlobalMutation = useMutation({
+    ...trpc.tracking.updateGlobalNotificationPreferences.mutationOptions(),
+    onMutate: async (newPrefs) => {
+      await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
+      const previousPrefs = queryClient.getQueryData(globalPrefsQueryKey);
+
+      // Optimistically update
+      queryClient.setQueryData(
+        globalPrefsQueryKey,
+        (old: GlobalPrefs | undefined) => (old ? { ...old, ...newPrefs } : old),
+      );
+
+      return { previousPrefs };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousPrefs) {
+        queryClient.setQueryData(globalPrefsQueryKey, context.previousPrefs);
+      }
+      logger.error("Failed to update global settings", err);
+      toast.error("Failed to update settings");
+    },
+    onSuccess: () => {
+      toast.success("Global settings updated");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: globalPrefsQueryKey });
+    },
+  });
+
+  const updateDomainMutation = useMutation({
+    ...trpc.tracking.updateDomainNotificationOverrides.mutationOptions(),
+    onMutate: async ({ trackedDomainId, overrides }) => {
+      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+      const previousDomains = queryClient.getQueryData(domainsQueryKey);
+
+      // Optimistically update the domain's overrides
+      queryClient.setQueryData(
+        domainsQueryKey,
+        (old: typeof domainsQuery.data) =>
+          old?.map((d) =>
+            d.id === trackedDomainId
+              ? {
+                  ...d,
+                  notificationOverrides: {
+                    ...d.notificationOverrides,
+                    ...overrides,
+                  },
+                }
+              : d,
+          ),
+      );
+
+      return { previousDomains };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousDomains) {
+        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+      }
+      logger.error("Failed to update domain settings", err);
+      toast.error("Failed to update settings");
+    },
+    onSuccess: () => {
+      toast.success("Domain settings updated");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+    },
+  });
+
+  const resetDomainMutation = useMutation({
+    ...trpc.tracking.resetDomainNotificationOverrides.mutationOptions(),
+    onMutate: async ({ trackedDomainId }) => {
+      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+      const previousDomains = queryClient.getQueryData(domainsQueryKey);
+
+      // Optimistically reset the domain's overrides
+      queryClient.setQueryData(
+        domainsQueryKey,
+        (old: typeof domainsQuery.data) =>
+          old?.map((d) =>
+            d.id === trackedDomainId ? { ...d, notificationOverrides: {} } : d,
+          ),
+      );
+
+      return { previousDomains };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousDomains) {
+        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+      }
+      logger.error("Failed to reset domain settings", err);
+      toast.error("Failed to reset settings");
+    },
+    onSuccess: () => {
+      toast.success("Domain reset to global defaults");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+    },
+  });
+
+  // Simplified handlers - no try/catch needed, mutations handle errors
+  const handleGlobalToggle = (
+    category: NotificationCategory,
+    enabled: boolean,
+  ) => {
+    updateGlobalMutation.mutate({ [category]: enabled });
+  };
+
+  const handleDomainToggle = (
+    trackedDomainId: string,
+    category: NotificationCategory,
+    value: boolean | undefined, // undefined = inherit
+  ) => {
+    updateDomainMutation.mutate({
+      trackedDomainId,
+      overrides: { [category]: value },
+    });
+  };
+
+  const handleResetDomain = (trackedDomainId: string) => {
+    resetDomainMutation.mutate({ trackedDomainId });
+  };
+
+  if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
     return <SettingsContentSkeleton showCard={showCard} />;
   }
 
   const domains = domainsQuery.data ?? [];
   const verifiedDomains = domains.filter((d) => d.verified);
+  const globalPrefs = globalPrefsQuery.data ?? {
+    domainExpiry: true,
+    certificateExpiry: true,
+    verificationStatus: true,
+  };
+
+  const isPending =
+    updateGlobalMutation.isPending ||
+    updateDomainMutation.isPending ||
+    resetDomainMutation.isPending;
 
   const content = (
     <>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <CardTitle>Email Notifications</CardTitle>
         <CardDescription>
           Alerts will be sent to{" "}
@@ -64,48 +220,79 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="rounded-lg border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium">Domain expiration alerts</div>
-              <div className="text-muted-foreground text-sm">
-                Notifications sent 30, 14, 7, and 1 day before expiration
-              </div>
-            </div>
+        {/* Global Defaults Section */}
+        <div className="space-y-4">
+          <h3 className="font-medium text-muted-foreground text-sm uppercase tracking-wide">
+            Global Defaults
+          </h3>
+          <div className="grid gap-3">
+            {NOTIFICATION_CATEGORIES.map((category) => (
+              <GlobalNotificationRow
+                key={category}
+                category={category}
+                enabled={globalPrefs[category]}
+                onToggle={(enabled) => handleGlobalToggle(category, enabled)}
+                disabled={isPending}
+              />
+            ))}
           </div>
         </div>
 
+        {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-medium text-sm">Per-domain settings</h3>
-            {verifiedDomains.map((domain) => (
-              <div
-                key={domain.id}
-                className="flex items-center justify-between rounded-lg border p-4"
+          <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex w-full items-center justify-between p-0 font-medium text-muted-foreground text-sm uppercase tracking-wide hover:bg-transparent hover:text-foreground"
               >
-                <div>
-                  <div className="font-medium">{domain.domainName}</div>
-                  <div className="text-muted-foreground text-sm">
-                    {domain.notifyDomainExpiry
-                      ? "Notifications enabled"
-                      : "Notifications disabled"}
-                  </div>
-                </div>
-                <Switch
-                  checked={domain.notifyDomainExpiry}
-                  onCheckedChange={(checked) =>
-                    handleToggleNotification(domain.id, checked)
-                  }
-                  disabled={updateMutation.isPending}
+                <span>Per-Domain Overrides</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    isPerDomainOpen && "rotate-180",
+                  )}
                 />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <div className="space-y-3">
+                {/* Column Headers */}
+                <div className="hidden gap-2 px-4 text-muted-foreground text-xs sm:grid sm:grid-cols-[1fr_repeat(3,80px)_40px]">
+                  <div />
+                  {NOTIFICATION_CATEGORIES.map((category) => (
+                    <div
+                      key={category}
+                      className="flex items-center justify-center"
+                    >
+                      <CategoryLabel category={category} compact />
+                    </div>
+                  ))}
+                  <div />
+                </div>
+
+                {/* Domain Rows */}
+                {verifiedDomains.map((domain) => (
+                  <DomainNotificationRow
+                    key={domain.id}
+                    domainName={domain.domainName}
+                    overrides={domain.notificationOverrides}
+                    globalPrefs={globalPrefs}
+                    onToggle={(category, value) =>
+                      handleDomainToggle(domain.id, category, value)
+                    }
+                    onReset={() => handleResetDomain(domain.id)}
+                    disabled={isPending}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {verifiedDomains.length === 0 && (
           <p className="text-muted-foreground text-sm">
-            Verify your domains to enable notifications.
+            Verify your domains to customize per-domain notifications.
           </p>
         )}
       </CardContent>
@@ -119,6 +306,247 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   return <Card>{content}</Card>;
 }
 
+function GlobalNotificationRow({
+  category,
+  enabled,
+  onToggle,
+  disabled,
+}: {
+  category: NotificationCategory;
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  disabled: boolean;
+}) {
+  const info = NOTIFICATION_CATEGORY_INFO[category];
+
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-4">
+      <div className="flex items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{info.label}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 cursor-help text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>{info.description}</TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="text-muted-foreground text-sm">
+            {info.description}
+          </div>
+        </div>
+      </div>
+      <Switch
+        checked={enabled}
+        onCheckedChange={onToggle}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+function DomainNotificationRow({
+  domainName,
+  overrides,
+  globalPrefs,
+  onToggle,
+  onReset,
+  disabled,
+}: {
+  domainName: string;
+  overrides: NotificationOverrides;
+  globalPrefs: {
+    domainExpiry: boolean;
+    certificateExpiry: boolean;
+    verificationStatus: boolean;
+  };
+  onToggle: (
+    category: NotificationCategory,
+    value: boolean | undefined,
+  ) => void;
+  onReset: () => void;
+  disabled: boolean;
+}) {
+  const hasOverrides = Object.values(overrides).some((v) => v !== undefined);
+
+  // Mobile view
+  const mobileView = (
+    <div className="space-y-4 rounded-lg border p-4 sm:hidden">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Favicon domain={domainName} size={20} />
+          <span className="font-medium text-sm">{domainName}</span>
+        </div>
+        {hasOverrides && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-muted-foreground text-xs"
+            onClick={onReset}
+            disabled={disabled}
+          >
+            <RotateCcw className="mr-1 h-3 w-3" />
+            Reset
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-3">
+        {NOTIFICATION_CATEGORIES.map((category) => {
+          const override = overrides[category];
+          const globalValue = globalPrefs[category];
+          const _effectiveValue = override ?? globalValue;
+          const isInherited = override === undefined;
+
+          return (
+            <div
+              key={category}
+              className="flex items-center justify-between text-sm"
+            >
+              <span className={cn(isInherited && "text-muted-foreground")}>
+                {NOTIFICATION_CATEGORY_INFO[category].label}
+                {isInherited && " (default)"}
+              </span>
+              <ThreeStateCheckbox
+                value={override}
+                globalValue={globalValue}
+                onChange={(value) => onToggle(category, value)}
+                disabled={disabled}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Desktop view
+  const desktopView = (
+    <div className="hidden items-center gap-2 rounded-lg border p-4 sm:grid sm:grid-cols-[1fr_repeat(3,80px)_40px]">
+      <div className="flex min-w-0 items-center gap-2">
+        <Favicon domain={domainName} size={20} />
+        <span className="truncate font-medium text-sm">{domainName}</span>
+      </div>
+      {NOTIFICATION_CATEGORIES.map((category) => {
+        const override = overrides[category];
+        const globalValue = globalPrefs[category];
+
+        return (
+          <div key={category} className="flex justify-center">
+            <ThreeStateCheckbox
+              value={override}
+              globalValue={globalValue}
+              onChange={(value) => onToggle(category, value)}
+              disabled={disabled}
+            />
+          </div>
+        );
+      })}
+      <div className="flex justify-center">
+        {hasOverrides && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onReset}
+                disabled={disabled}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reset to defaults</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {mobileView}
+      {desktopView}
+    </>
+  );
+}
+
+function ThreeStateCheckbox({
+  value,
+  globalValue,
+  onChange,
+  disabled,
+}: {
+  value: boolean | undefined; // undefined = inherit from global
+  globalValue: boolean;
+  onChange: (value: boolean | undefined) => void;
+  disabled: boolean;
+}) {
+  const isInherited = value === undefined;
+  const effectiveValue = value ?? globalValue;
+
+  // Three-state cycle: inherit → on → off → inherit
+  const handleClick = () => {
+    if (isInherited) {
+      // If inheriting and global is on, set to explicit off (override)
+      // If inheriting and global is off, set to explicit on (override)
+      onChange(!globalValue);
+    } else if (value === true) {
+      onChange(false);
+    } else {
+      onChange(undefined); // Back to inherit
+    }
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="relative">
+          <Checkbox
+            checked={isInherited ? "indeterminate" : effectiveValue}
+            onCheckedChange={handleClick}
+            disabled={disabled}
+            className={cn("h-5 w-5", isInherited && "opacity-50")}
+          />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isInherited
+          ? `Inheriting from global (${globalValue ? "enabled" : "disabled"})`
+          : value
+            ? "Explicitly enabled"
+            : "Explicitly disabled"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CategoryLabel({
+  category,
+  compact = false,
+}: {
+  category: NotificationCategory;
+  compact?: boolean;
+}) {
+  const info = NOTIFICATION_CATEGORY_INFO[category];
+  const shortLabels: Record<NotificationCategory, string> = {
+    domainExpiry: "Domain",
+    certificateExpiry: "Cert",
+    verificationStatus: "Verify",
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="cursor-help">
+          {compact ? shortLabels[category] : info.label}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{info.description}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function SettingsContentSkeleton({ showCard = true }: { showCard?: boolean }) {
   const content = (
     <>
@@ -127,6 +555,7 @@ function SettingsContentSkeleton({ showCard = true }: { showCard?: boolean }) {
         <Skeleton className="h-4 w-56" />
       </CardHeader>
       <CardContent className="space-y-4">
+        <Skeleton className="h-20 rounded-lg" />
         <Skeleton className="h-20 rounded-lg" />
         <Skeleton className="h-20 rounded-lg" />
       </CardContent>

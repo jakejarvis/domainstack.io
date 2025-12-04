@@ -9,14 +9,20 @@ import {
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
   getTrackedDomainsForUser,
-  updateTrackedDomainNotifications,
+  resetNotificationOverrides,
+  updateNotificationOverrides,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import {
   canUserAddDomain,
   getOrCreateUserLimits,
 } from "@/lib/db/repos/user-limits";
+import {
+  getOrCreateUserNotificationPreferences,
+  updateUserNotificationPreferences,
+} from "@/lib/db/repos/user-notification-preferences";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import type { NotificationOverrides } from "@/lib/schemas";
 import {
   generateVerificationToken,
   getVerificationInstructions,
@@ -24,6 +30,13 @@ import {
   verifyDomainOwnership,
 } from "@/server/services/verification";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+
+// Schema for notification overrides
+const NotificationOverridesSchema = z.object({
+  domainExpiry: z.boolean().optional(),
+  certificateExpiry: z.boolean().optional(),
+  verificationStatus: z.boolean().optional(),
+}) satisfies z.ZodType<NotificationOverrides>;
 
 const VerificationMethodSchema = z.enum(["dns_txt", "html_file", "meta_tag"]);
 
@@ -311,17 +324,38 @@ export const trackingRouter = createTRPCRouter({
     }),
 
   /**
-   * Update notification preferences for a tracked domain.
+   * Get global notification preferences for the current user.
    */
-  updateNotifications: protectedProcedure
+  getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const prefs = await getOrCreateUserNotificationPreferences(ctx.user.id);
+    return prefs;
+  }),
+
+  /**
+   * Update global notification preferences.
+   */
+  updateGlobalNotificationPreferences: protectedProcedure
+    .input(NotificationOverridesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await updateUserNotificationPreferences(
+        ctx.user.id,
+        input,
+      );
+      return updated;
+    }),
+
+  /**
+   * Update notification overrides for a specific tracked domain.
+   */
+  updateDomainNotificationOverrides: protectedProcedure
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
-        notifyDomainExpiry: z.boolean(),
+        overrides: NotificationOverridesSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { trackedDomainId, notifyDomainExpiry } = input;
+      const { trackedDomainId, overrides } = input;
 
       // Get tracked domain
       const tracked = await findTrackedDomainById(trackedDomainId);
@@ -340,14 +374,51 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      const updated = await updateTrackedDomainNotifications(
+      const updated = await updateNotificationOverrides(
         trackedDomainId,
-        notifyDomainExpiry,
+        overrides,
       );
 
       return {
-        id: updated.id,
-        notifyDomainExpiry: updated.notifyDomainExpiry,
+        id: updated?.id,
+        notificationOverrides: updated?.notificationOverrides,
+      };
+    }),
+
+  /**
+   * Reset all notification overrides for a domain (inherit from global).
+   */
+  resetDomainNotificationOverrides: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId } = input;
+
+      // Get tracked domain
+      const tracked = await findTrackedDomainById(trackedDomainId);
+      if (!tracked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
+        });
+      }
+
+      const updated = await resetNotificationOverrides(trackedDomainId);
+
+      return {
+        id: updated?.id,
+        notificationOverrides: updated?.notificationOverrides,
       };
     }),
 

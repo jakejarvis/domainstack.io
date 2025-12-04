@@ -1,13 +1,15 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
+import type { NotificationType } from "@/lib/constants/notifications";
 import { db } from "@/lib/db/client";
-import { notifications, type notificationType } from "@/lib/db/schema";
+import { notifications } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "notifications" });
 
-export type NotificationType = (typeof notificationType.enumValues)[number];
+// Re-export for convenience
+export type { NotificationType } from "@/lib/constants/notifications";
 
 export type CreateNotificationParams = {
   trackedDomainId: string;
@@ -38,6 +40,36 @@ export async function createNotification(params: CreateNotificationParams) {
       type,
     });
     return null;
+  }
+}
+
+/**
+ * Update the Resend email ID for a notification after successful send.
+ * Used for troubleshooting email delivery issues.
+ */
+export async function updateNotificationResendId(
+  trackedDomainId: string,
+  type: NotificationType,
+  resendId: string,
+) {
+  try {
+    await db
+      .update(notifications)
+      .set({ resendId })
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          eq(notifications.type, type),
+        ),
+      );
+    return true;
+  } catch (err) {
+    logger.error("failed to update notification resend ID", err, {
+      trackedDomainId,
+      type,
+      resendId,
+    });
+    return false;
   }
 }
 

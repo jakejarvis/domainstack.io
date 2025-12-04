@@ -1,9 +1,10 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { certificates } from "@/lib/db/schema";
+import { certificates, domains, trackedDomains, users } from "@/lib/db/schema";
 import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
+import type { NotificationOverrides } from "@/lib/schemas";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -39,4 +40,56 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
       );
     }
   });
+}
+
+export type TrackedDomainCertificate = {
+  trackedDomainId: string;
+  userId: string;
+  domainId: string;
+  domainName: string;
+  notificationOverrides: NotificationOverrides;
+  validTo: Date;
+  issuer: string;
+  userEmail: string;
+  userName: string;
+};
+
+/**
+ * Get all certificates for verified tracked domains.
+ * Returns the leaf certificate (first in chain) for each domain.
+ */
+export async function getVerifiedTrackedDomainsCertificates(): Promise<
+  TrackedDomainCertificate[]
+> {
+  const rows = await db
+    .select({
+      trackedDomainId: trackedDomains.id,
+      userId: trackedDomains.userId,
+      domainId: trackedDomains.domainId,
+      domainName: domains.name,
+      notificationOverrides: trackedDomains.notificationOverrides,
+      validTo: certificates.validTo,
+      issuer: certificates.issuer,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(trackedDomains)
+    .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
+    .innerJoin(certificates, eq(domains.id, certificates.domainId))
+    .innerJoin(users, eq(trackedDomains.userId, users.id))
+    .where(
+      and(eq(trackedDomains.verified, true), isNotNull(certificates.validTo)),
+    );
+
+  // Group by tracked domain and take the earliest expiring certificate
+  const byTrackedDomain = new Map<string, TrackedDomainCertificate>();
+
+  for (const row of rows) {
+    const existing = byTrackedDomain.get(row.trackedDomainId);
+    if (!existing || row.validTo < existing.validTo) {
+      byTrackedDomain.set(row.trackedDomainId, row);
+    }
+  }
+
+  return Array.from(byTrackedDomain.values());
 }

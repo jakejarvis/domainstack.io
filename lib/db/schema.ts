@@ -16,6 +16,7 @@ import {
 import type {
   GeneralMeta,
   Header,
+  NotificationOverrides,
   OpenGraphMeta,
   RegistrationContacts,
   RegistrationNameservers,
@@ -56,14 +57,6 @@ export const verificationStatus = pgEnum("verification_status", [
   "verified",
   "failing",
   "unverified",
-]);
-export const notificationType = pgEnum("notification_type", [
-  "domain_expiry_30d",
-  "domain_expiry_14d",
-  "domain_expiry_7d",
-  "domain_expiry_1d",
-  "verification_failing",
-  "verification_revoked",
 ]);
 export const userTier = pgEnum("user_tier", ["free", "pro"]);
 
@@ -175,11 +168,11 @@ export const trackedDomains = pgTable(
       withTimezone: true,
     }),
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
-    // Notification preferences
-    notifyDomainExpiry: boolean("notify_domain_expiry").notNull().default(true),
-    notifyVerificationFailing: boolean("notify_verification_failing")
+    // Per-domain notification overrides (empty = inherit from user preferences)
+    notificationOverrides: jsonb("notification_overrides")
+      .$type<NotificationOverrides>()
       .notNull()
-      .default(true),
+      .default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -202,8 +195,10 @@ export const notifications = pgTable(
     trackedDomainId: uuid("tracked_domain_id")
       .notNull()
       .references(() => trackedDomains.id, { onDelete: "cascade" }),
-    type: notificationType("type").notNull(),
+    type: text("type").notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+    // Resend email ID for troubleshooting delivery issues
+    resendId: text("resend_id"),
   },
   (t) => [
     unique("u_notification_unique").on(t.trackedDomainId, t.type),
@@ -228,6 +223,26 @@ export const userLimits = pgTable("user_limits", {
     .defaultNow()
     .notNull(),
 });
+
+// User notification preferences (global defaults for all domains)
+export const userNotificationPreferences = pgTable(
+  "user_notification_preferences",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Global toggles (defaults for all domains)
+    domainExpiry: boolean("domain_expiry").notNull().default(true),
+    certificateExpiry: boolean("certificate_expiry").notNull().default(true),
+    verificationStatus: boolean("verification_status").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);
 
 // ============================================================================
 // Domain Data Tables

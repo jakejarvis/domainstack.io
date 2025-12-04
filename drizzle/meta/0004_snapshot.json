@@ -1,5 +1,5 @@
 {
-  "id": "244bd707-2163-47ba-9720-eec2d82c3a64",
+  "id": "d2ff35e9-f902-49c7-aff1-a9a686175108",
   "prevId": "bf8400e6-deb1-4e9d-a9a0-4ccf8830acb6",
   "version": "7",
   "dialect": "postgresql",
@@ -906,8 +906,7 @@
         },
         "type": {
           "name": "type",
-          "type": "notification_type",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -916,6 +915,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "resend_id": {
+          "name": "resend_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1709,19 +1714,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "notify_domain_expiry": {
-          "name": "notify_domain_expiry",
-          "type": "boolean",
+        "notification_overrides": {
+          "name": "notification_overrides",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
-        },
-        "notify_verification_failing": {
-          "name": "notify_verification_failing",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
+          "default": "'{}'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -1903,6 +1901,74 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.user_notification_preferences": {
+      "name": "user_notification_preferences",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "domain_expiry": {
+          "name": "domain_expiry",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "certificate_expiry": {
+          "name": "certificate_expiry",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "verification_status": {
+          "name": "verification_status",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_notification_preferences_user_id_users_id_fk": {
+          "name": "user_notification_preferences_user_id_users_id_fk",
+          "tableFrom": "user_notification_preferences",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -2031,18 +2097,6 @@
         "MX",
         "TXT",
         "NS"
-      ]
-    },
-    "public.notification_type": {
-      "name": "notification_type",
-      "schema": "public",
-      "values": [
-        "domain_expiry_30d",
-        "domain_expiry_14d",
-        "domain_expiry_7d",
-        "domain_expiry_1d",
-        "verification_failing",
-        "verification_revoked"
       ]
     },
     "public.provider_category": {

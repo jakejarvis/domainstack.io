@@ -6,36 +6,21 @@ import type React from "react";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
 import { BASE_URL } from "@/lib/constants";
 import {
+  getDomainExpiryNotificationType,
+  type NotificationType,
+} from "@/lib/constants/notifications";
+import {
   createNotification,
   hasNotificationBeenSent,
-  type NotificationType,
+  updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getVerifiedTrackedDomainsWithExpiry } from "@/lib/db/repos/tracked-domains";
+import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
 import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-domain-expiry" });
-
-// Notification thresholds in days (ordered from most to least urgent)
-const NOTIFICATION_THRESHOLDS = [1, 7, 14, 30] as const;
-type ThresholdDays = (typeof NOTIFICATION_THRESHOLDS)[number];
-
-const THRESHOLD_TO_TYPE: Record<ThresholdDays, NotificationType> = {
-  1: "domain_expiry_1d",
-  7: "domain_expiry_7d",
-  14: "domain_expiry_14d",
-  30: "domain_expiry_30d",
-};
-
-function getNotificationType(daysRemaining: number): NotificationType | null {
-  for (const threshold of NOTIFICATION_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return THRESHOLD_TO_TYPE[threshold];
-    }
-  }
-  return null;
-}
 
 /**
  * Generate a stable idempotency key for Resend.
@@ -88,17 +73,32 @@ export const checkDomainExpiry = inngest.createFunction(
         continue;
       }
 
-      // Skip if notifications disabled
-      if (!domain.notifyDomainExpiry) {
+      const daysRemaining = differenceInDays(domain.expirationDate, new Date());
+
+      // Skip if not within any notification threshold
+      const notificationType = getDomainExpiryNotificationType(daysRemaining);
+      if (!notificationType) {
         results.skipped++;
         continue;
       }
 
-      const daysRemaining = differenceInDays(domain.expirationDate, new Date());
+      // Check notification preferences (per-domain override > global)
+      const shouldNotify = await step.run(
+        `check-prefs-${domain.id}`,
+        async () => {
+          // Check per-domain override first
+          if (domain.notificationOverrides.domainExpiry !== undefined) {
+            return domain.notificationOverrides.domainExpiry;
+          }
+          // Fall back to global preferences
+          const globalPrefs = await getOrCreateUserNotificationPreferences(
+            domain.userId,
+          );
+          return globalPrefs.domainExpiry;
+        },
+      );
 
-      // Skip if not within any notification threshold
-      const notificationType = getNotificationType(daysRemaining);
-      if (!notificationType) {
+      if (!shouldNotify) {
         results.skipped++;
         continue;
       }
@@ -117,7 +117,6 @@ export const checkDomainExpiry = inngest.createFunction(
       }
 
       // Send notification email
-      // We've already checked domain.expirationDate is not null above
       const expDate = domain.expirationDate;
       const sent = await step.run(`send-email-${domain.id}`, async () => {
         // Ensure expirationDate is a Date object (may be string or Date)
@@ -236,6 +235,15 @@ async function sendExpiryNotification({
       // and idempotency key ensures no duplicates on retry
       // Throwing will cause Inngest to retry the step
       throw new Error(`Resend error: ${error.message}`);
+    }
+
+    // Store Resend ID for troubleshooting
+    if (data?.id) {
+      await updateNotificationResendId(
+        trackedDomainId,
+        notificationType,
+        data.id,
+      );
     }
 
     logger.info("Sent expiry notification", {

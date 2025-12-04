@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { AddDomainDialog } from "@/components/dashboard/add-domain-dialog";
@@ -27,12 +27,70 @@ export default function DashboardPage() {
   const [viewMode, setViewMode] = useViewPreference();
   const { data: session } = useSession();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
-  const removeMutation = useMutation(
-    trpc.tracking.removeDomain.mutationOptions(),
-  );
+
+  // Get query keys for cache manipulation
+  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+
+  // Remove mutation with optimistic updates
+  const removeMutation = useMutation({
+    ...trpc.tracking.removeDomain.mutationOptions(),
+    onMutate: async ({ trackedDomainId }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
+      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
+
+      // Snapshot the previous values
+      const previousDomains = queryClient.getQueryData(domainsQueryKey);
+      const previousLimits = queryClient.getQueryData(limitsQueryKey);
+
+      // Optimistically update domains list
+      queryClient.setQueryData(
+        domainsQueryKey,
+        (old: TrackedDomainWithDetails[] | undefined) =>
+          old?.filter((d) => d.id !== trackedDomainId) ?? [],
+      );
+
+      // Optimistically update limits count
+      queryClient.setQueryData(
+        limitsQueryKey,
+        (old: typeof limitsQuery.data) =>
+          old
+            ? {
+                ...old,
+                currentCount: Math.max(0, old.currentCount - 1),
+                canAddMore: old.currentCount - 1 < old.maxDomains,
+              }
+            : old,
+      );
+
+      // Return snapshot for rollback
+      return { previousDomains, previousLimits };
+    },
+    onError: (err, _variables, context) => {
+      // Roll back to previous state on error
+      if (context?.previousDomains) {
+        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+      }
+      if (context?.previousLimits) {
+        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
+      }
+      logger.error("Failed to remove domain", err);
+      toast.error("Failed to remove domain");
+    },
+    onSuccess: () => {
+      toast.success("Domain removed");
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure consistency
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+    },
+  });
 
   const handleAddDomain = useCallback(() => {
     setResumeDomain(null); // Clear any resume state
@@ -41,8 +99,10 @@ export default function DashboardPage() {
 
   const handleAddSuccess = useCallback(() => {
     setResumeDomain(null);
-    void Promise.all([limitsQuery.refetch(), domainsQuery.refetch()]);
-  }, [limitsQuery, domainsQuery]);
+    // Invalidate queries to refetch fresh data
+    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+    void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+  }, [queryClient, domainsQueryKey, limitsQueryKey]);
 
   const handleVerify = useCallback((domain: TrackedDomainWithDetails) => {
     // Open dialog in resume mode with the domain's verification info
@@ -62,17 +122,10 @@ export default function DashboardPage() {
   }, []);
 
   const handleRemove = useCallback(
-    async (id: string) => {
-      try {
-        await removeMutation.mutateAsync({ trackedDomainId: id });
-        toast.success("Domain removed");
-        void Promise.all([limitsQuery.refetch(), domainsQuery.refetch()]);
-      } catch (err) {
-        logger.error("Failed to remove domain", err);
-        toast.error("Failed to remove domain");
-      }
+    (id: string) => {
+      removeMutation.mutate({ trackedDomainId: id });
     },
-    [removeMutation, limitsQuery, domainsQuery],
+    [removeMutation],
   );
 
   const isLoading = limitsQuery.isLoading || domainsQuery.isLoading;

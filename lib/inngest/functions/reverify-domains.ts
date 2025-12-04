@@ -9,6 +9,7 @@ import { BASE_URL } from "@/lib/constants";
 import {
   createNotification,
   hasNotificationBeenSent,
+  updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import {
   getPendingDomainsForAutoVerification,
@@ -19,6 +20,7 @@ import {
   type TrackedDomainForReverification,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
+import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
 import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
@@ -31,6 +33,24 @@ const logger = createLogger({ source: "reverify-domains" });
 
 // Grace period before revoking verification (in days)
 const GRACE_PERIOD_DAYS = 7;
+
+/**
+ * Check if verification status notifications should be sent for a domain.
+ * Checks per-domain override first, then falls back to global user preference.
+ */
+async function shouldNotifyVerificationStatus(
+  domain: TrackedDomainForReverification,
+): Promise<boolean> {
+  // Check per-domain override first
+  if (domain.notificationOverrides.verificationStatus !== undefined) {
+    return domain.notificationOverrides.verificationStatus;
+  }
+  // Fall back to global user preferences
+  const globalPrefs = await getOrCreateUserNotificationPreferences(
+    domain.userId,
+  );
+  return globalPrefs.verificationStatus;
+}
 
 /**
  * Cron job to re-verify domain ownership and auto-verify pending domains.
@@ -195,7 +215,8 @@ async function handleVerificationFailure(
     // First failure - mark as failing and send warning
     await markVerificationFailing(domain.id);
 
-    if (domain.notifyVerificationFailing) {
+    const shouldNotify = await shouldNotifyVerificationStatus(domain);
+    if (shouldNotify) {
       await sendVerificationFailingEmail(domain);
     }
 
@@ -218,7 +239,8 @@ async function handleVerificationFailure(
       // Grace period exceeded - revoke verification
       await revokeVerification(domain.id);
 
-      if (domain.notifyVerificationFailing) {
+      const shouldNotify = await shouldNotifyVerificationStatus(domain);
+      if (shouldNotify) {
         await sendVerificationRevokedEmail(domain);
       }
 
@@ -299,6 +321,15 @@ async function sendVerificationFailingEmail(
       type: "verification_failing",
     });
 
+    // Store Resend ID for troubleshooting
+    if (data?.id) {
+      await updateNotificationResendId(
+        domain.id,
+        "verification_failing",
+        data.id,
+      );
+    }
+
     return true;
   } catch (err) {
     logger.error("Error sending verification failing email", err, {
@@ -367,6 +398,15 @@ async function sendVerificationRevokedEmail(
       trackedDomainId: domain.id,
       type: "verification_revoked",
     });
+
+    // Store Resend ID for troubleshooting
+    if (data?.id) {
+      await updateNotificationResendId(
+        domain.id,
+        "verification_revoked",
+        data.id,
+      );
+    }
 
     return true;
   } catch (err) {

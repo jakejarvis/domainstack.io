@@ -14,6 +14,7 @@ import {
   type verificationStatus,
 } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
+import type { NotificationOverrides } from "@/lib/schemas";
 
 const logger = createLogger({ source: "tracked-domains" });
 
@@ -44,8 +45,7 @@ export type TrackedDomainWithDetails = {
   verificationStatus: VerificationStatusType;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
-  notifyDomainExpiry: boolean;
-  notifyVerificationFailing: boolean;
+  notificationOverrides: NotificationOverrides;
   createdAt: Date;
   verifiedAt: Date | null;
   expirationDate: Date | null;
@@ -174,8 +174,7 @@ export async function getTrackedDomainsForUser(
       verificationStatus: trackedDomains.verificationStatusEnum,
       verificationFailedAt: trackedDomains.verificationFailedAt,
       lastVerifiedAt: trackedDomains.lastVerifiedAt,
-      notifyDomainExpiry: trackedDomains.notifyDomainExpiry,
-      notifyVerificationFailing: trackedDomains.notifyVerificationFailing,
+      notificationOverrides: trackedDomains.notificationOverrides,
       createdAt: trackedDomains.createdAt,
       verifiedAt: trackedDomains.verifiedAt,
       expirationDate: registrations.expirationDate,
@@ -219,8 +218,7 @@ export async function getTrackedDomainsForUser(
     verificationStatus: row.verificationStatus,
     verificationFailedAt: row.verificationFailedAt,
     lastVerifiedAt: row.lastVerifiedAt,
-    notifyDomainExpiry: row.notifyDomainExpiry,
-    notifyVerificationFailing: row.notifyVerificationFailing,
+    notificationOverrides: row.notificationOverrides,
     createdAt: row.createdAt,
     verifiedAt: row.verifiedAt,
     expirationDate: row.expirationDate,
@@ -247,6 +245,7 @@ export async function countTrackedDomainsForUser(
 
 /**
  * Mark a tracked domain as verified.
+ * Returns null if the tracked domain doesn't exist.
  */
 export async function verifyTrackedDomain(
   id: string,
@@ -266,21 +265,71 @@ export async function verifyTrackedDomain(
     .where(eq(trackedDomains.id, id))
     .returning();
 
-  return updated[0];
+  return updated[0] ?? null;
 }
 
 /**
- * Update notification preferences for a tracked domain.
+ * Update notification overrides for a tracked domain.
+ * Pass partial overrides to update only specific categories.
+ * Pass null values to reset individual categories to inherit from global.
+ * Pass empty object {} to reset all overrides.
  */
-export async function updateTrackedDomainNotifications(
+export async function updateNotificationOverrides(
   id: string,
-  notifyDomainExpiry: boolean,
+  overrides: NotificationOverrides,
 ) {
+  // Get existing overrides to merge with new ones
+  const existing = await findTrackedDomainById(id);
+  if (!existing) return null;
+
+  // Merge existing overrides with new ones
+  // undefined values in new overrides means "don't change"
+  // explicit values replace existing ones
+  const mergedOverrides: NotificationOverrides = {
+    ...existing.notificationOverrides,
+  };
+
+  if (overrides.domainExpiry !== undefined) {
+    mergedOverrides.domainExpiry = overrides.domainExpiry;
+  }
+  if (overrides.certificateExpiry !== undefined) {
+    mergedOverrides.certificateExpiry = overrides.certificateExpiry;
+  }
+  if (overrides.verificationStatus !== undefined) {
+    mergedOverrides.verificationStatus = overrides.verificationStatus;
+  }
+
   const updated = await db
     .update(trackedDomains)
-    .set({ notifyDomainExpiry })
+    .set({ notificationOverrides: mergedOverrides })
     .where(eq(trackedDomains.id, id))
     .returning();
+
+  logger.info("updated notification overrides", {
+    trackedDomainId: id,
+    overrides: mergedOverrides,
+  });
+
+  return updated[0] ?? null;
+}
+
+/**
+ * Reset all notification overrides for a tracked domain.
+ * Domain will inherit all settings from global preferences.
+ * Returns null if the tracked domain doesn't exist.
+ */
+export async function resetNotificationOverrides(id: string) {
+  const updated = await db
+    .update(trackedDomains)
+    .set({ notificationOverrides: {} })
+    .where(eq(trackedDomains.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return null;
+  }
+
+  logger.info("reset notification overrides", { trackedDomainId: id });
 
   return updated[0];
 }
@@ -303,8 +352,7 @@ export type TrackedDomainForNotification = {
   userId: string;
   domainId: string;
   domainName: string;
-  notifyDomainExpiry: boolean;
-  notifyVerificationFailing: boolean;
+  notificationOverrides: NotificationOverrides;
   expirationDate: Date | string | null;
   userEmail: string;
   userName: string;
@@ -318,13 +366,14 @@ export type TrackedDomainForReverification = {
   verificationMethod: VerificationMethod;
   verificationStatus: VerificationStatusType;
   verificationFailedAt: Date | null;
-  notifyVerificationFailing: boolean;
+  notificationOverrides: NotificationOverrides;
   userEmail: string;
   userName: string;
 };
 
 /**
  * Get all verified tracked domains with expiration dates for notification processing.
+ * Returns all verified domains - filtering by notification preferences happens at processing time.
  */
 export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
   TrackedDomainForNotification[]
@@ -335,8 +384,7 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
       userId: trackedDomains.userId,
       domainId: trackedDomains.domainId,
       domainName: domains.name,
-      notifyDomainExpiry: trackedDomains.notifyDomainExpiry,
-      notifyVerificationFailing: trackedDomains.notifyVerificationFailing,
+      notificationOverrides: trackedDomains.notificationOverrides,
       expirationDate: registrations.expirationDate,
       userEmail: users.email,
       userName: users.name,
@@ -345,12 +393,7 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
     .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
     .innerJoin(registrations, eq(domains.id, registrations.domainId))
     .innerJoin(users, eq(trackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(trackedDomains.verified, true),
-        eq(trackedDomains.notifyDomainExpiry, true),
-      ),
-    );
+    .where(eq(trackedDomains.verified, true));
 
   return rows;
 }
@@ -371,7 +414,7 @@ export async function getVerifiedDomainsForReverification(): Promise<
       verificationMethod: trackedDomains.verificationMethod,
       verificationStatus: trackedDomains.verificationStatusEnum,
       verificationFailedAt: trackedDomains.verificationFailedAt,
-      notifyVerificationFailing: trackedDomains.notifyVerificationFailing,
+      notificationOverrides: trackedDomains.notificationOverrides,
       userEmail: users.email,
       userName: users.name,
     })
@@ -425,6 +468,7 @@ export async function getPendingDomainsForAutoVerification(): Promise<
 /**
  * Mark a domain's verification as successful.
  * Updates lastVerifiedAt and clears any failing status.
+ * Returns null if the tracked domain doesn't exist.
  */
 export async function markVerificationSuccessful(id: string) {
   const updated = await db
@@ -437,12 +481,13 @@ export async function markVerificationSuccessful(id: string) {
     .where(eq(trackedDomains.id, id))
     .returning();
 
-  return updated[0];
+  return updated[0] ?? null;
 }
 
 /**
  * Mark a domain's verification as failing.
  * Sets status to 'failing' and records when the failure started (if not already set).
+ * Returns null if the tracked domain doesn't exist.
  */
 export async function markVerificationFailing(id: string) {
   // First check if this is a new failure or an existing one
@@ -459,12 +504,13 @@ export async function markVerificationFailing(id: string) {
     .where(eq(trackedDomains.id, id))
     .returning();
 
-  return updated[0];
+  return updated[0] ?? null;
 }
 
 /**
  * Revoke a domain's verification.
  * Sets verified to false and status to 'unverified'.
+ * Returns null if the tracked domain doesn't exist.
  */
 export async function revokeVerification(id: string) {
   const updated = await db
@@ -476,6 +522,10 @@ export async function revokeVerification(id: string) {
     })
     .where(eq(trackedDomains.id, id))
     .returning();
+
+  if (updated.length === 0) {
+    return null;
+  }
 
   logger.info("verification revoked", { trackedDomainId: id });
   return updated[0];
