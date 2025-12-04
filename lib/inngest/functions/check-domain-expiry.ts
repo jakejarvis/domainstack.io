@@ -118,6 +118,7 @@ export const checkDomainExpiry = inngest.createFunction(
 
       // Send notification email
       const expDate = domain.expirationDate;
+      const registrar = domain.registrar;
       const sent = await step.run(`send-email-${domain.id}`, async () => {
         // Ensure expirationDate is a Date object (may be string or Date)
         const expirationDateObj = new Date(expDate);
@@ -129,6 +130,7 @@ export const checkDomainExpiry = inngest.createFunction(
           userEmail: domain.userEmail,
           expirationDate: expirationDateObj,
           daysRemaining,
+          registrar: registrar ?? undefined,
           notificationType,
         });
       });
@@ -152,6 +154,7 @@ async function sendExpiryNotification({
   userEmail,
   expirationDate,
   daysRemaining,
+  registrar,
   notificationType,
 }: {
   trackedDomainId: string;
@@ -160,6 +163,7 @@ async function sendExpiryNotification({
   userEmail: string;
   expirationDate: Date;
   daysRemaining: number;
+  registrar?: string;
   notificationType: NotificationType;
 }): Promise<boolean> {
   if (!resend) {
@@ -206,6 +210,7 @@ async function sendExpiryNotification({
         domainName,
         expirationDate: format(expirationDate, "MMMM d, yyyy"),
         daysRemaining,
+        registrar,
         dashboardUrl,
       }) as React.ReactElement,
     );
@@ -215,7 +220,7 @@ async function sendExpiryNotification({
     // Resend will return the original response without sending again
     const { data, error } = await resend.emails.send(
       {
-        from: `DomainStack <${RESEND_FROM_EMAIL}>`,
+        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject: `${daysRemaining <= 7 ? "⚠️ " : ""}${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
         html: emailHtml,

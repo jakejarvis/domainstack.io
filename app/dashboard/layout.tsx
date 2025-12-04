@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
 export const metadata = {
-  title: "Dashboard | DomainStack",
+  title: "Dashboard | Domainstack",
   description: "Manage your tracked domains and notification settings.",
 };
 

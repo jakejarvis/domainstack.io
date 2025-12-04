@@ -54,12 +54,14 @@ export function VerificationFailingEmail({
             incorrect.
           </Text>
 
-          <Section style={warningBox}>
-            <Text style={warningText}>
-              <strong>Action Required:</strong> You have{" "}
-              <strong>{gracePeriodDays} days</strong> to restore verification
-              before your domain is removed from tracking.
-            </Text>
+          <Section style={boxWrapper}>
+            <Section style={warningBox}>
+              <Text style={warningText}>
+                <strong>Action Required:</strong> You have{" "}
+                <strong>{gracePeriodDays} days</strong> to restore verification
+                before your domain is removed from tracking.
+              </Text>
+            </Section>
           </Section>
 
           <Text style={text}>
@@ -79,7 +81,7 @@ export function VerificationFailingEmail({
           <Text style={footer}>
             You received this email because you&apos;re tracking {domainName} on{" "}
             <Link href="https://domainstack.io" style={link}>
-              DomainStack
+              Domainstack
             </Link>
             . You can manage your notification settings in your{" "}
             <Link href={`${dashboardUrl}/settings`} style={link}>
@@ -109,39 +111,43 @@ const main = {
   backgroundColor: "#f6f9fc",
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif',
+  padding: "40px 0",
 };
 
 const container = {
   backgroundColor: "#ffffff",
   margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-  borderRadius: "8px",
-  maxWidth: "580px",
+  padding: "32px 0 40px",
+  borderRadius: "12px",
+  maxWidth: "560px",
+  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
 };
 
 const h1 = {
   color: "#1f2937",
-  fontSize: "24px",
+  fontSize: "22px",
   fontWeight: "600",
   lineHeight: "1.4",
-  margin: "0 0 20px",
-  padding: "0 48px",
+  margin: "0 0 24px",
+  padding: "0 40px",
 };
 
 const text = {
   color: "#374151",
-  fontSize: "16px",
-  lineHeight: "1.6",
+  fontSize: "15px",
+  lineHeight: "1.65",
   margin: "0 0 16px",
-  padding: "0 48px",
+  padding: "0 40px",
+};
+
+const boxWrapper = {
+  padding: "8px 40px 20px",
 };
 
 const warningBox = {
   backgroundColor: "#fffbeb",
   borderRadius: "8px",
-  padding: "16px 20px",
-  margin: "0 48px 24px",
+  padding: "14px 16px",
   borderLeft: "4px solid #f59e0b",
 };
 
@@ -150,37 +156,38 @@ const warningText = {
   fontSize: "14px",
   lineHeight: "1.5",
   margin: "0",
+  padding: "0",
 };
 
 const buttonContainer = {
-  padding: "0 48px",
-  marginTop: "24px",
+  padding: "0 40px",
+  marginTop: "28px",
+  textAlign: "center" as const,
 };
 
 const button = {
   backgroundColor: "#0f172a",
-  borderRadius: "6px",
+  borderRadius: "8px",
   color: "#fff",
   fontSize: "14px",
   fontWeight: "600",
   textDecoration: "none",
   textAlign: "center" as const,
-  display: "block",
-  width: "100%",
-  padding: "12px 0",
+  display: "inline-block",
+  padding: "14px 32px",
 };
 
 const hr = {
   borderColor: "#e5e7eb",
-  margin: "32px 48px",
+  margin: "32px 40px",
 };
 
 const footer = {
   color: "#6b7280",
   fontSize: "12px",
-  lineHeight: "1.5",
+  lineHeight: "1.6",
   margin: "0",
-  padding: "0 48px",
+  padding: "0 40px",
 };
 
 const link = {

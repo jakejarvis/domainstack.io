@@ -217,7 +217,7 @@ async function sendCertificateExpiryNotification({
 
     const { data, error } = await resend.emails.send(
       {
-        from: `DomainStack <${RESEND_FROM_EMAIL}>`,
+        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject: `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
         html: emailHtml,

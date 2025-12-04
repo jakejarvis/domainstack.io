@@ -21,7 +21,7 @@ export function LoginContent({ showCard = true }: LoginContentProps) {
     <>
       <CardHeader className="text-center">
         <Logo className="mx-auto mb-4 size-12" />
-        <CardTitle className="text-xl">Welcome to DomainStack</CardTitle>
+        <CardTitle className="text-xl">Welcome to Domainstack</CardTitle>
         <CardDescription>
           Sign in to track your domains and receive expiration alerts.
         </CardDescription>

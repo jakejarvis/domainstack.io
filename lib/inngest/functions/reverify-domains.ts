@@ -296,7 +296,7 @@ async function sendVerificationFailingEmail(
     );
 
     const { data, error } = await resend.emails.send({
-      from: `DomainStack <${RESEND_FROM_EMAIL}>`,
+      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
       to: domain.userEmail,
       subject: `⚠️ Verification failing for ${domain.domainName}`,
       html: emailHtml,
@@ -374,7 +374,7 @@ async function sendVerificationRevokedEmail(
     );
 
     const { data, error } = await resend.emails.send({
-      from: `DomainStack <${RESEND_FROM_EMAIL}>`,
+      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
       to: domain.userEmail,
       subject: `❌ Verification revoked for ${domain.domainName}`,
       html: emailHtml,

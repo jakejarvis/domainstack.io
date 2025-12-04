@@ -4,7 +4,7 @@ import { LoginContent } from "@/components/auth/login-content";
 import { auth } from "@/lib/auth";
 
 export const metadata = {
-  title: "Sign In | DomainStack",
+  title: "Sign In | Domainstack",
   description: "Sign in to track your domains and receive expiration alerts.",
 };
 

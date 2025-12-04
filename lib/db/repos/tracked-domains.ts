@@ -354,6 +354,7 @@ export type TrackedDomainForNotification = {
   domainName: string;
   notificationOverrides: NotificationOverrides;
   expirationDate: Date | string | null;
+  registrar: string | null;
   userEmail: string;
   userName: string;
 };
@@ -378,6 +379,8 @@ export type TrackedDomainForReverification = {
 export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
   TrackedDomainForNotification[]
 > {
+  const registrarProvider = alias(providers, "registrar_provider");
+
   const rows = await db
     .select({
       id: trackedDomains.id,
@@ -386,6 +389,7 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
       domainName: domains.name,
       notificationOverrides: trackedDomains.notificationOverrides,
       expirationDate: registrations.expirationDate,
+      registrar: registrarProvider.name,
       userEmail: users.email,
       userName: users.name,
     })
@@ -393,6 +397,10 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
     .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
     .innerJoin(registrations, eq(domains.id, registrations.domainId))
     .innerJoin(users, eq(trackedDomains.userId, users.id))
+    .leftJoin(
+      registrarProvider,
+      eq(registrations.registrarProviderId, registrarProvider.id),
+    )
     .where(eq(trackedDomains.verified, true));
 
   return rows;
