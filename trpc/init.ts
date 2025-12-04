@@ -1,4 +1,4 @@
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
@@ -40,7 +40,29 @@ export const createContext = async (opts?: { req?: Request }) => {
     // headers() not available (tests/scripts)
   }
 
-  return { req, ip, correlationId } as const;
+  // Get session if available (lazy-loaded to avoid circular deps)
+  let session: { user: { id: string; name: string; email: string } } | null =
+    null;
+  try {
+    const { auth } = await import("@/lib/auth");
+    const headerList = await headers();
+    const authSession = await auth.api.getSession({
+      headers: headerList,
+    });
+    if (authSession?.user) {
+      session = {
+        user: {
+          id: authSession.user.id,
+          name: authSession.user.name,
+          email: authSession.user.email,
+        },
+      };
+    }
+  } catch {
+    // Auth not available or error - session remains null
+  }
+
+  return { req, ip, correlationId, session } as const;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
@@ -163,3 +185,30 @@ export const publicProcedure = t.procedure.use(withLogging);
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
  */
 export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);
+
+/**
+ * Middleware to ensure user is authenticated.
+ * Throws UNAUTHORIZED if no valid session.
+ */
+const withAuth = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource",
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+      user: ctx.session.user,
+    },
+  });
+});
+
+/**
+ * Protected procedure requiring authentication.
+ * Use this for all endpoints that require a logged-in user.
+ */
+export const protectedProcedure = publicProcedure.use(withAuth);

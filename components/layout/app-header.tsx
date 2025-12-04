@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { AuthButton } from "@/components/auth/auth-button";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 import { GithubStars } from "@/components/layout/github-stars";
 import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
@@ -34,6 +35,8 @@ export function AppHeader() {
           <BookmarkletDialog />
           <Separator orientation="vertical" className="!h-4" />
           <ThemeToggle />
+          <Separator orientation="vertical" className="!h-4" />
+          <AuthButton />
         </HeaderButtons>
       </HeaderGrid>
     </HeaderSearchProvider>

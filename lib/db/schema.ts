@@ -47,8 +47,193 @@ export const registrationSource = pgEnum("registration_source", [
   "rdap",
   "whois",
 ]);
+export const verificationMethod = pgEnum("verification_method", [
+  "dns_txt",
+  "html_file",
+  "meta_tag",
+]);
+export const verificationStatus = pgEnum("verification_status", [
+  "verified",
+  "failing",
+  "unverified",
+]);
+export const notificationType = pgEnum("notification_type", [
+  "domain_expiry_30d",
+  "domain_expiry_14d",
+  "domain_expiry_7d",
+  "domain_expiry_1d",
+  "verification_failing",
+  "verification_revoked",
+]);
+export const userTier = pgEnum("user_tier", ["free", "pro"]);
 
-// Providers
+// ============================================================================
+// Authentication Tables (better-auth)
+// ============================================================================
+
+// Users
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// Sessions
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [index("i_sessions_user_id").on(t.userId)],
+);
+
+// Accounts (OAuth providers)
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
+    scope: text("scope"),
+    idToken: text("id_token"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [index("i_accounts_user_id").on(t.userId)],
+);
+
+// Verifications (email verification tokens)
+export const verifications = pgTable("verifications", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// ============================================================================
+// Domain Tracking Tables
+// ============================================================================
+
+// User's tracked domains
+export const trackedDomains = pgTable(
+  "tracked_domains",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    domainId: uuid("domain_id")
+      .notNull()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    verified: boolean("verified").notNull().default(false),
+    verificationMethod: verificationMethod("verification_method"),
+    verificationToken: text("verification_token").notNull(),
+    // Re-verification tracking
+    verificationStatusEnum: verificationStatus("verification_status")
+      .notNull()
+      .default("unverified"),
+    verificationFailedAt: timestamp("verification_failed_at", {
+      withTimezone: true,
+    }),
+    lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+    // Notification preferences
+    notifyDomainExpiry: boolean("notify_domain_expiry").notNull().default(true),
+    notifyVerificationFailing: boolean("notify_verification_failing")
+      .notNull()
+      .default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  },
+  (t) => [
+    unique("u_tracked_domain_user").on(t.userId, t.domainId),
+    index("i_tracked_domains_user").on(t.userId),
+    index("i_tracked_domains_domain").on(t.domainId),
+    index("i_tracked_domains_verified").on(t.verified),
+    index("i_tracked_domains_status").on(t.verificationStatusEnum),
+  ],
+);
+
+// Notification history (prevent duplicate emails)
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trackedDomainId: uuid("tracked_domain_id")
+      .notNull()
+      .references(() => trackedDomains.id, { onDelete: "cascade" }),
+    type: notificationType("type").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    unique("u_notification_unique").on(t.trackedDomainId, t.type),
+    index("i_notifications_tracked_domain").on(t.trackedDomainId),
+  ],
+);
+
+// User tier/limits (extensible for future paid plans)
+// Tier limits are fetched from Edge Config (see lib/edge-config.ts).
+// maxDomains is an optional per-user override for special cases (beta testers, etc).
+export const userLimits = pgTable("user_limits", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tier: userTier("tier").notNull().default("free"),
+  // Optional: per-user override. If null, uses Edge Config tier limit.
+  maxDomainsOverride: integer("max_domains_override"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// ============================================================================
+// Domain Data Tables
+// ============================================================================
+
+// Providers (hosting, email, dns, ca, registrar)
 export const providers = pgTable(
   "providers",
   {
