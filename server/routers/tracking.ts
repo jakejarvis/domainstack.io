@@ -386,9 +386,16 @@ export const trackingRouter = createTRPCRouter({
         overrides,
       );
 
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to update overrides - domain may have been deleted",
+        });
+      }
+
       return {
-        id: updated?.id,
-        notificationOverrides: updated?.notificationOverrides,
+        id: updated.id,
+        notificationOverrides: updated.notificationOverrides,
       };
     }),
 
@@ -423,9 +430,16 @@ export const trackingRouter = createTRPCRouter({
 
       const updated = await resetNotificationOverrides(trackedDomainId);
 
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to reset overrides - domain may have been deleted",
+        });
+      }
+
       return {
-        id: updated?.id,
-        notificationOverrides: updated?.notificationOverrides,
+        id: updated.id,
+        notificationOverrides: updated.notificationOverrides,
       };
     }),
 
