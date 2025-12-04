@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HeartAnimated } from "@/components/heart";
 
 export function AppFooter() {
@@ -40,6 +41,11 @@ export function AppFooter() {
           Noun Project
         </a>{" "}
         (CC BY 3.0).
+      </p>
+      <p className="mt-2">
+        <Link href="/privacy">Privacy Policy</Link>
+        <span className="mx-1.5 text-muted-foreground">•</span>
+        <Link href="/terms">Terms of Service</Link>
       </p>
     </footer>
   );
