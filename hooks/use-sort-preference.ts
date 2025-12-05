@@ -8,51 +8,45 @@ export type SortOption =
   | "name-desc"
   | "expiry-asc"
   | "expiry-desc"
-  | "health"
   | "recent";
 
 export type SortOptionConfig = {
   value: SortOption;
   label: string;
   shortLabel: string;
+  direction?: "asc" | "desc";
 };
 
 export const SORT_OPTIONS: SortOptionConfig[] = [
   {
     value: "expiry-asc",
     label: "Expiry (Soonest first)",
-    shortLabel: "Expiry ↑",
+    shortLabel: "Expiry",
+    direction: "asc",
   },
   {
     value: "expiry-desc",
-    label: "Expiry (Latest first)",
-    shortLabel: "Expiry ↓",
+    label: "Expiry (Furthest first)",
+    shortLabel: "Expiry",
+    direction: "desc",
   },
-  { value: "name-asc", label: "Name (A-Z)", shortLabel: "Name A-Z" },
-  { value: "name-desc", label: "Name (Z-A)", shortLabel: "Name Z-A" },
-  { value: "health", label: "Health (Needs attention)", shortLabel: "Health" },
+  {
+    value: "name-asc",
+    label: "Name (A-Z)",
+    shortLabel: "Name",
+    direction: "asc",
+  },
+  {
+    value: "name-desc",
+    label: "Name (Z-A)",
+    shortLabel: "Name",
+    direction: "desc",
+  },
   { value: "recent", label: "Recently added", shortLabel: "Recent" },
 ];
 
 const STORAGE_KEY = "dashboard-sort-preference";
 const DEFAULT_SORT: SortOption = "expiry-asc";
-
-/**
- * Get health priority for sorting (lower = more urgent)
- */
-function getHealthPriority(domain: TrackedDomainWithDetails): number {
-  if (!domain.verified) return 1; // Pending verification is high priority
-  if (!domain.expirationDate) return 3;
-
-  const now = new Date();
-  const daysUntil = Math.ceil(
-    (domain.expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (daysUntil <= 0) return 0; // Expired is highest priority
-  if (daysUntil <= 30) return 2; // Expiring soon
-  return 4; // Healthy
-}
 
 /**
  * Sort domains based on sort option
@@ -86,9 +80,6 @@ export function sortDomains(
         if (!b.expirationDate) return -1;
         return b.expirationDate.getTime() - a.expirationDate.getTime();
       });
-      break;
-    case "health":
-      sorted.sort((a, b) => getHealthPriority(a) - getHealthPriority(b));
       break;
     case "recent":
       sorted.sort((a, b) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Globe, Sparkles } from "lucide-react";
+import { Archive, ArrowLeft, Sparkles } from "lucide-react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -18,9 +18,8 @@ import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDomainFilters } from "@/hooks/use-domain-filters";
 import { useRouter } from "@/hooks/use-router";
 import { useSelection } from "@/hooks/use-selection";
@@ -48,6 +47,7 @@ function DashboardContent() {
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
   const [isBulkArchiving, setIsBulkArchiving] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [viewMode, setViewMode] = useViewPreference();
   const [sortOption, setSortOption] = useSortPreference();
   const { data: session } = useSession();
@@ -316,6 +316,8 @@ function DashboardContent() {
     },
     onSuccess: () => {
       toast.success("Domain reactivated");
+      // Switch to Active tab so user can see the reactivated domain
+      setActiveTab("active");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
@@ -551,8 +553,6 @@ function DashboardContent() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
-        sortOption={sortOption}
-        onSortChange={setSortOption}
       />
 
       {/* Pro upgrade success banner */}
@@ -579,40 +579,19 @@ function DashboardContent() {
         tier={tier}
       />
 
-      {/* Health summary - only show when there are domains */}
-      {domains.length > 0 && (
-        <HealthSummary
-          expiringSoon={stats.expiringSoon}
-          pendingVerification={stats.pendingVerification}
-          onExpiringClick={() => applyHealthFilter("expiring")}
-          onPendingClick={() => applyHealthFilter("pending")}
-        />
-      )}
+      {/* Active domains view */}
+      {activeTab === "active" && (
+        <div className="space-y-4">
+          {/* Health summary - only show when there are domains */}
+          {domains.length > 0 && (
+            <HealthSummary
+              expiringSoon={stats.expiringSoon}
+              pendingVerification={stats.pendingVerification}
+              onExpiringClick={() => applyHealthFilter("expiring")}
+              onPendingClick={() => applyHealthFilter("pending")}
+            />
+          )}
 
-      {/* Tabs for Active/Archived domains */}
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="active" className="gap-2">
-            <Globe className="size-4" />
-            Active
-            {activeCount > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {activeCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="archived" className="gap-2">
-            <Archive className="size-4" />
-            Archived
-            {archivedCount > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {archivedCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="space-y-4">
           {/* Filters - only show when there are domains */}
           {domains.length > 0 && (
             <DomainFilters
@@ -627,6 +606,9 @@ function DashboardContent() {
               onTldsChange={setTlds}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
+              viewMode={viewMode}
+              sortOption={sortOption}
+              onSortChange={setSortOption}
             />
           )}
 
@@ -646,9 +628,36 @@ function DashboardContent() {
             isBulkArchiving={isBulkArchiving}
             isBulkDeleting={isBulkDeleting}
           />
-        </TabsContent>
 
-        <TabsContent value="archived">
+          {/* Link to archived domains - only show when there are archived domains */}
+          {archivedCount > 0 && (
+            <div className="pt-4 text-center">
+              <Button
+                variant="ghost"
+                onClick={() => setActiveTab("archived")}
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <Archive className="size-4" />
+                View {archivedCount} archived domain{archivedCount !== 1 && "s"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Archived domains view */}
+      {activeTab === "archived" && (
+        <div className="space-y-4">
+          {/* Back to active domains */}
+          <Button
+            variant="ghost"
+            onClick={() => setActiveTab("active")}
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Back to domains
+          </Button>
+
           <ArchivedDomainsView
             domains={archivedDomains}
             onUnarchive={handleUnarchive}
@@ -656,8 +665,8 @@ function DashboardContent() {
             canUnarchive={canAddMore}
             tier={tier}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       <AddDomainDialog
         open={addDialogOpen}

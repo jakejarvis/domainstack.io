@@ -49,7 +49,7 @@ export function BulkActionsToolbar({
           )}
         >
           <div
-            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/10 bg-background/80 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-xl dark:border-white/10 dark:bg-background/90"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/20 bg-background/90 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-xl dark:border-white/20 dark:bg-background/95"
             role="toolbar"
             aria-label="Bulk actions"
           >

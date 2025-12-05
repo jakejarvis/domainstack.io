@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -65,9 +65,21 @@ export function AddDomainDialog({
   );
 
   const trpc = useTRPC();
-  const addDomainMutation = useMutation(
-    trpc.tracking.addDomain.mutationOptions(),
-  );
+  const queryClient = useQueryClient();
+
+  // Query keys for invalidation
+  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+
+  const addDomainMutation = useMutation({
+    ...trpc.tracking.addDomain.mutationOptions(),
+    onSuccess: () => {
+      // Invalidate queries immediately so the domain appears in the list
+      // (even if user closes dialog before completing verification)
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+    },
+  });
   const verifyDomainMutation = useMutation(
     trpc.tracking.verifyDomain.mutationOptions(),
   );

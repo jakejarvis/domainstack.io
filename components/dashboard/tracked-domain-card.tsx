@@ -71,7 +71,7 @@ export function TrackedDomainCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-black/10 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10",
+        "relative overflow-hidden rounded-3xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15",
         className,
       )}
       data-accent={accent}
@@ -224,7 +224,7 @@ function InfoRow({
   const hasProvider = provider?.name;
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-background/40 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/10">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">
       <span className="shrink-0 text-[10px] text-foreground/75 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
         {label}
       </span>

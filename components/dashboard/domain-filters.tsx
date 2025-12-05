@@ -1,6 +1,16 @@
 "use client";
 
-import { Check, ChevronDown, Filter, Search, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Check,
+  ChevronDown,
+  Filter,
+  Globe,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { useCallback, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +28,12 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
@@ -29,6 +45,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { HealthFilter, StatusFilter } from "@/hooks/use-domain-filters";
+import { SORT_OPTIONS, type SortOption } from "@/hooks/use-sort-preference";
+import type { ViewMode } from "@/hooks/use-view-preference";
 import { cn } from "@/lib/utils";
 
 type DomainFiltersProps = {
@@ -43,6 +61,10 @@ type DomainFiltersProps = {
   onHealthChange: (values: HealthFilter[]) => void;
   onTldsChange: (values: string[]) => void;
   onClearFilters: () => void;
+  // Sort (only shown in grid view)
+  viewMode: ViewMode;
+  sortOption?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 };
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
@@ -68,6 +90,9 @@ export function DomainFilters({
   onHealthChange,
   onTldsChange,
   onClearFilters,
+  viewMode,
+  sortOption,
+  onSortChange,
 }: DomainFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -134,12 +159,14 @@ export function DomainFilters({
       <div className="flex flex-wrap gap-2">
         <MultiSelect
           label="Status"
+          icon={ShieldCheck}
           options={STATUS_OPTIONS}
           selected={status}
           onSelectionChange={onStatusChange}
         />
         <MultiSelect
           label="Health"
+          icon={Activity}
           options={HEALTH_OPTIONS}
           selected={health}
           onSelectionChange={onHealthChange}
@@ -147,12 +174,60 @@ export function DomainFilters({
         {availableTlds.length > 0 && (
           <MultiSelect
             label="TLD"
+            icon={Globe}
             options={availableTlds.map((t) => ({ value: t, label: t }))}
             selected={tlds}
             onSelectionChange={onTldsChange}
             searchable
           />
         )}
+
+        {/* Sort dropdown - only for grid view */}
+        {viewMode === "grid" &&
+          sortOption &&
+          onSortChange &&
+          (() => {
+            const currentSort = SORT_OPTIONS.find(
+              (o) => o.value === sortOption,
+            );
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-9 gap-2 px-3">
+                    <span className="text-muted-foreground">Sort:</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      {currentSort?.shortLabel ?? "Sort"}
+                      {currentSort?.direction && (
+                        <span className="text-muted-foreground">
+                          {currentSort.direction === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronDown className="size-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {SORT_OPTIONS.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => onSortChange(option.value)}
+                      className="gap-2"
+                    >
+                      <Check
+                        className={cn(
+                          "size-4",
+                          sortOption === option.value
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      />
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
 
         {/* Clear all button */}
         {hasActiveFilters && (
@@ -216,7 +291,7 @@ export function DomainFilters({
               <button
                 type="button"
                 onClick={() => removeFilter(chip.type, chip.value)}
-                className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/30"
               >
                 <X className="size-3" />
               </button>
@@ -231,12 +306,14 @@ export function DomainFilters({
 // Multi-select dropdown component
 function MultiSelect<T extends string>({
   label,
+  icon: Icon,
   options,
   selected,
   onSelectionChange,
   searchable = false,
 }: {
   label: string;
+  icon: LucideIcon;
   options: { value: T; label: string }[];
   selected: T[];
   onSelectionChange: (values: T[]) => void;
@@ -257,22 +334,19 @@ function MultiSelect<T extends string>({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
           className={cn(
-            "gap-1",
-            selected.length > 0 && "border-primary/50 bg-primary/5",
+            "h-9 gap-2 px-3",
+            selected.length > 0 && "border-primary/50 bg-primary/10",
           )}
         >
+          <Icon className="size-4 opacity-60" />
           {label}
           {selected.length > 0 && (
-            <Badge
-              variant="secondary"
-              className="ml-1 size-5 justify-center rounded-full p-0 text-xs"
-            >
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-primary/15 px-1.5 font-semibold text-xs tabular-nums">
               {selected.length}
-            </Badge>
+            </span>
           )}
-          <ChevronDown className="size-3 opacity-50" />
+          <ChevronDown className="size-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-48 p-0" align="start">
@@ -294,7 +368,7 @@ function MultiSelect<T extends string>({
                         "mr-2 flex size-4 items-center justify-center rounded border",
                         isSelected
                           ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground/30",
+                          : "border-muted-foreground/50",
                       )}
                     >
                       {isSelected && <Check className="size-3" />}

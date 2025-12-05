@@ -75,7 +75,7 @@ export function SelectableDomainCard({
         onVerify={onVerify}
         onRemove={onRemove}
         onArchive={onArchive}
-        className={cn(isSelected && "bg-primary/5")}
+        className={cn(isSelected && "bg-primary/10")}
       />
     </motion.div>
   );

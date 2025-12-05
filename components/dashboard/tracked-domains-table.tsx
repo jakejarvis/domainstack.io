@@ -308,14 +308,14 @@ export function TrackedDomainsTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-black/10 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10">
+    <div className="overflow-hidden rounded-3xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="border-black/10 border-b bg-muted/30 dark:border-white/10"
+                className="border-black/15 border-b bg-muted/50 dark:border-white/15"
               >
                 {headerGroup.headers.map((header, index) => (
                   <th
@@ -337,7 +337,7 @@ export function TrackedDomainsTable({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-black/5 dark:divide-white/5">
+          <tbody className="divide-y divide-black/10 dark:divide-white/10">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
@@ -359,8 +359,8 @@ export function TrackedDomainsTable({
                     <tr
                       key={row.id}
                       className={cn(
-                        "transition-colors hover:bg-muted/30",
-                        isSelected && "bg-primary/5",
+                        "transition-colors hover:bg-muted/50",
+                        isSelected && "bg-primary/10",
                       )}
                     >
                       {/* Checkbox column */}
@@ -419,8 +419,8 @@ export function TrackedDomainsTable({
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-colors hover:bg-muted/30",
-                      isSelected && "bg-primary/5",
+                      "transition-colors hover:bg-muted/50",
+                      isSelected && "bg-primary/10",
                     )}
                   >
                     {cells.map((cell, index) => (

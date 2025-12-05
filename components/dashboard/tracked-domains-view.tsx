@@ -53,7 +53,7 @@ export function TrackedDomainsView({
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
-      <Empty className="rounded-3xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <Empty className="rounded-3xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <FilterX className="size-6" />
@@ -76,7 +76,7 @@ export function TrackedDomainsView({
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
     return (
-      <Empty className="relative overflow-hidden rounded-3xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <Empty className="relative overflow-hidden rounded-3xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
         {/* Decorative gradient orbs */}
         <div
           aria-hidden
