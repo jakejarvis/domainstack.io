@@ -7,8 +7,8 @@ import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 type TrackedDomainsGridProps = {
   domains: TrackedDomainWithDetails[];
   onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string) => void;
-  onArchive?: (id: string) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
 };
 
 export function TrackedDomainsGrid({
@@ -36,8 +36,12 @@ export function TrackedDomainsGrid({
             hosting={domain.hosting}
             email={domain.email}
             onVerify={() => onVerify(domain)}
-            onRemove={() => onRemove(domain.id)}
-            onArchive={onArchive ? () => onArchive(domain.id) : undefined}
+            onRemove={() => onRemove(domain.id, domain.domainName)}
+            onArchive={
+              onArchive
+                ? () => onArchive(domain.id, domain.domainName)
+                : undefined
+            }
           />
         </motion.div>
       ))}

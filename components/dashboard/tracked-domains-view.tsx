@@ -20,8 +20,8 @@ type TrackedDomainsViewProps = {
   domains: TrackedDomainWithDetails[];
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string) => void;
-  onArchive?: (id: string) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
 };
 
 export function TrackedDomainsView({

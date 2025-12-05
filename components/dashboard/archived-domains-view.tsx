@@ -23,7 +23,7 @@ import type { UserTier } from "@/lib/schemas";
 type ArchivedDomainsViewProps = {
   domains: TrackedDomainWithDetails[];
   onUnarchive: (id: string) => void;
-  onRemove: (id: string) => void;
+  onRemove: (id: string, domainName: string) => void;
   canUnarchive: boolean;
   tier: UserTier;
 };
@@ -108,7 +108,7 @@ export function ArchivedDomainsView({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onRemove(domain.id)}
+                      onClick={() => onRemove(domain.id, domain.domainName)}
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="size-4" />

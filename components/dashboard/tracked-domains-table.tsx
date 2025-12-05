@@ -46,8 +46,8 @@ import { cn } from "@/lib/utils";
 type TrackedDomainsTableProps = {
   domains: TrackedDomainWithDetails[];
   onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string) => void;
-  onArchive?: (id: string) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
@@ -253,7 +253,9 @@ export function TrackedDomainsTable({
               )}
               {onArchive && (
                 <DropdownMenuItem
-                  onClick={() => onArchive(row.original.id)}
+                  onClick={() =>
+                    onArchive(row.original.id, row.original.domainName)
+                  }
                   className="cursor-pointer"
                 >
                   <Archive className="size-3.5" />
@@ -262,7 +264,9 @@ export function TrackedDomainsTable({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => onRemove(row.original.id)}
+                onClick={() =>
+                  onRemove(row.original.id, row.original.domainName)
+                }
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <Trash2 className="size-3.5" />

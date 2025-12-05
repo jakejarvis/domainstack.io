@@ -1,11 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Globe } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Archive, Globe, Sparkles } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AddDomainDialog } from "@/components/dashboard/add-domain-dialog";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
+import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
+import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
@@ -13,6 +16,7 @@ import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "@/hooks/use-router";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -25,15 +29,36 @@ type ResumeDomainData = {
   verificationToken: string;
 };
 
+type ConfirmAction = {
+  type: "remove" | "archive";
+  domainId: string;
+  domainName: string;
+};
+
 export default function DashboardPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [resumeDomain, setResumeDomain] = useState<ResumeDomainData | null>(
     null,
   );
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
+    null,
+  );
+  const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
   const [viewMode, setViewMode] = useViewPreference();
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Handle ?upgraded=true query param
+  useEffect(() => {
+    if (searchParams.get("upgraded") === "true") {
+      setShowUpgradedBanner(true);
+      // Clear the query param from URL without triggering navigation
+      router.replace("/dashboard", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
@@ -285,19 +310,28 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const handleRemove = useCallback(
-    (id: string) => {
-      removeMutation.mutate({ trackedDomainId: id });
-    },
-    [removeMutation],
-  );
+  // Show confirmation dialog before removing
+  const handleRemove = useCallback((id: string, domainName: string) => {
+    setConfirmAction({ type: "remove", domainId: id, domainName });
+  }, []);
 
-  const handleArchive = useCallback(
-    (id: string) => {
-      archiveMutation.mutate({ trackedDomainId: id });
-    },
-    [archiveMutation],
-  );
+  // Show confirmation dialog before archiving
+  const handleArchive = useCallback((id: string, domainName: string) => {
+    setConfirmAction({ type: "archive", domainId: id, domainName });
+  }, []);
+
+  // Execute the confirmed action
+  const handleConfirmAction = useCallback(() => {
+    if (!confirmAction) return;
+
+    if (confirmAction.type === "remove") {
+      removeMutation.mutate({ trackedDomainId: confirmAction.domainId });
+    } else if (confirmAction.type === "archive") {
+      archiveMutation.mutate({ trackedDomainId: confirmAction.domainId });
+    }
+
+    setConfirmAction(null);
+  }, [confirmAction, removeMutation, archiveMutation]);
 
   const handleUnarchive = useCallback(
     (id: string) => {
@@ -335,6 +369,18 @@ export default function DashboardPage() {
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
       />
+
+      {/* Pro upgrade success banner */}
+      {showUpgradedBanner && (
+        <DashboardBanner
+          variant="success"
+          icon={Sparkles}
+          title="Welcome to Pro!"
+          description="You now have access to track up to 50 domains. Thank you for upgrading!"
+          dismissible
+          onDismiss={() => setShowUpgradedBanner(false)}
+        />
+      )}
 
       {/* Subscription ending banner for users who canceled */}
       {subscriptionEndsAt && (
@@ -377,8 +423,8 @@ export default function DashboardPage() {
             domains={domains}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
-            onRemove={handleRemove}
-            onArchive={handleArchive}
+            onRemove={(id, domainName) => handleRemove(id, domainName)}
+            onArchive={(id, domainName) => handleArchive(id, domainName)}
           />
         </TabsContent>
 
@@ -386,7 +432,7 @@ export default function DashboardPage() {
           <ArchivedDomainsView
             domains={archivedDomains}
             onUnarchive={handleUnarchive}
-            onRemove={handleRemove}
+            onRemove={(id, domainName) => handleRemove(id, domainName)}
             canUnarchive={canAddMore}
             tier={tier}
           />
@@ -398,6 +444,27 @@ export default function DashboardPage() {
         onOpenChange={handleDialogOpenChange}
         onSuccess={handleAddSuccess}
         resumeDomain={resumeDomain}
+      />
+
+      {/* Confirmation dialog for destructive actions */}
+      <ConfirmActionDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
+        title={
+          confirmAction?.type === "remove"
+            ? "Remove domain?"
+            : "Archive domain?"
+        }
+        description={
+          confirmAction?.type === "remove"
+            ? `Are you sure you want to remove "${confirmAction?.domainName}"? This action cannot be undone and you will stop receiving notifications for this domain.`
+            : `Are you sure you want to archive "${confirmAction?.domainName}"? You can reactivate it later from the Archived tab.`
+        }
+        confirmLabel={confirmAction?.type === "remove" ? "Remove" : "Archive"}
+        onConfirm={handleConfirmAction}
+        variant={confirmAction?.type === "remove" ? "destructive" : "default"}
       />
     </div>
   );
