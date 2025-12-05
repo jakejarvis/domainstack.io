@@ -47,16 +47,18 @@ describe("generateVerificationToken", () => {
 describe("getVerificationInstructions", () => {
   const token = "abc123def456";
 
-  it("returns DNS TXT instructions", () => {
+  it("returns DNS TXT instructions with structured fields", () => {
     const result = getVerificationInstructions("example.com", token, "dns_txt");
 
     expect(result.title).toContain("DNS");
-    expect(result.code).toContain("_domainstack-verify");
-    expect(result.code).toContain("TXT");
-    expect(result.copyValue).toBe(`domainstack-verify=${token}`);
+    expect(result.hostname).toBe("_domainstack-verify.example.com");
+    expect(result.recordType).toBe("TXT");
+    expect(result.value).toBe(`domainstack-verify=${token}`);
+    expect(result.suggestedTTL).toBe(3600);
+    expect(result.suggestedTTLLabel).toBe("1 hour");
   });
 
-  it("returns HTML file instructions", () => {
+  it("returns HTML file instructions with structured fields", () => {
     const result = getVerificationInstructions(
       "example.com",
       token,
@@ -64,11 +66,12 @@ describe("getVerificationInstructions", () => {
     );
 
     expect(result.title).toContain("HTML");
-    expect(result.code).toContain(".well-known/domainstack-verify.txt");
-    expect(result.copyValue).toBe(token);
+    expect(result.fullPath).toBe("/.well-known/domainstack-verify.txt");
+    expect(result.filename).toBe("domainstack-verify.txt");
+    expect(result.fileContent).toBe(token);
   });
 
-  it("returns meta tag instructions", () => {
+  it("returns meta tag instructions with structured fields", () => {
     const result = getVerificationInstructions(
       "example.com",
       token,
@@ -76,9 +79,9 @@ describe("getVerificationInstructions", () => {
     );
 
     expect(result.title).toContain("Meta");
-    expect(result.code).toContain("<meta");
-    expect(result.code).toContain('name="domainstack-verify"');
-    expect(result.copyValue).toContain(`content="${token}"`);
+    expect(result.metaTag).toContain("<meta");
+    expect(result.metaTag).toContain('name="domainstack-verify"');
+    expect(result.metaTag).toContain(`content="${token}"`);
   });
 });
 

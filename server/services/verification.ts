@@ -3,6 +3,11 @@ import "server-only";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
+import type {
+  DnsInstructions,
+  HtmlFileInstructions,
+  MetaTagInstructions,
+} from "@/lib/schemas";
 
 const logger = createLogger({ source: "verification" });
 
@@ -262,38 +267,51 @@ export function generateVerificationToken(): string {
  * Get verification instructions for a specific method.
  */
 export function getVerificationInstructions(
-  _domain: string,
+  domain: string,
+  token: string,
+  method: "dns_txt",
+): DnsInstructions;
+export function getVerificationInstructions(
+  domain: string,
+  token: string,
+  method: "html_file",
+): HtmlFileInstructions;
+export function getVerificationInstructions(
+  domain: string,
+  token: string,
+  method: "meta_tag",
+): MetaTagInstructions;
+export function getVerificationInstructions(
+  domain: string,
   token: string,
   method: VerificationMethod,
-): {
-  title: string;
-  description: string;
-  code: string;
-  copyValue: string;
-} {
+): DnsInstructions | HtmlFileInstructions | MetaTagInstructions {
   switch (method) {
     case "dns_txt":
       return {
         title: "Add a DNS TXT Record",
         description:
-          "Add the following TXT record to your domain's DNS settings. This may take up to 24 hours to propagate.",
-        code: `Host: ${DNS_VERIFICATION_HOST}\nType: TXT\nValue: ${DNS_VERIFICATION_PREFIX}${token}`,
-        copyValue: `${DNS_VERIFICATION_PREFIX}${token}`,
+          "Add the following TXT record to your domain's DNS settings. Changes may take a few minutes to propagate.",
+        hostname: `${DNS_VERIFICATION_HOST}.${domain}`,
+        recordType: "TXT",
+        value: `${DNS_VERIFICATION_PREFIX}${token}`,
+        suggestedTTL: 3600,
+        suggestedTTLLabel: "1 hour",
       };
     case "html_file":
       return {
         title: "Upload an HTML File",
-        description: `Create a text file at ${HTML_FILE_PATH} on your website's root directory.`,
-        code: `Path: ${HTML_FILE_PATH}\nContents: ${token}`,
-        copyValue: token,
+        description: `Upload a file to your website's root directory at the path shown below.`,
+        fullPath: HTML_FILE_PATH,
+        filename: "domainstack-verify.txt",
+        fileContent: token,
       };
     case "meta_tag":
       return {
         title: "Add a Meta Tag",
         description:
           "Add the following meta tag to the <head> section of your homepage.",
-        code: `<meta name="${META_TAG_NAME}" content="${token}">`,
-        copyValue: `<meta name="${META_TAG_NAME}" content="${token}">`,
+        metaTag: `<meta name="${META_TAG_NAME}" content="${token}">`,
       };
   }
 }

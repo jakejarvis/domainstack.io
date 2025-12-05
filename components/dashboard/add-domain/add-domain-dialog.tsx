@@ -1,12 +1,9 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle, Info, RefreshCw } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CopyButton } from "@/components/copy-button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,21 +13,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { logger } from "@/lib/logger/client";
+import type {
+  VerificationInstructions,
+  VerificationMethod,
+} from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { StepConfirmation } from "./step-confirmation";
+import { StepEnterDomain } from "./step-enter-domain";
+import { StepInstructionsError } from "./step-instructions-error";
+import { StepVerifyOwnership } from "./step-verify-ownership";
 
-type ResumeDomainData = {
+export type ResumeDomainData = {
   id: string;
   domainName: string;
   verificationToken: string;
 };
 
-type AddDomainDialogProps = {
+export type AddDomainDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -38,20 +40,10 @@ type AddDomainDialogProps = {
   resumeDomain?: ResumeDomainData | null;
 };
 
-type VerificationMethod = "dns_txt" | "html_file" | "meta_tag";
-
-type InstructionDetails = {
-  title: string;
-  description: string;
-  code: string;
-  copyValue: string;
-};
-
-type Instructions = {
-  dns_txt: InstructionDetails;
-  html_file: InstructionDetails;
-  meta_tag: InstructionDetails;
-};
+export type VerificationState =
+  | { status: "idle" }
+  | { status: "verifying" }
+  | { status: "failed"; error?: string };
 
 const STEP_TITLES = ["Enter domain", "Verify ownership", "Complete"];
 
@@ -66,8 +58,11 @@ export function AddDomainDialog({
   const [domainError, setDomainError] = useState("");
   const [method, setMethod] = useState<VerificationMethod>("dns_txt");
   const [trackedDomainId, setTrackedDomainId] = useState<string | null>(null);
-  const [instructions, setInstructions] = useState<Instructions | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [instructions, setInstructions] =
+    useState<VerificationInstructions | null>(null);
+  const [verificationState, setVerificationState] = useState<VerificationState>(
+    { status: "idle" },
+  );
 
   const trpc = useTRPC();
   const addDomainMutation = useMutation(
@@ -108,7 +103,7 @@ export function AddDomainDialog({
     setMethod("dns_txt");
     setTrackedDomainId(null);
     setInstructions(null);
-    setIsVerifying(false);
+    setVerificationState({ status: "idle" });
   }, []);
 
   const handleOpenChange = useCallback(
@@ -149,7 +144,7 @@ export function AddDomainDialog({
   const handleVerify = async () => {
     if (!trackedDomainId) return;
 
-    setIsVerifying(true);
+    setVerificationState({ status: "verifying" });
 
     try {
       const result = await verifyDomainMutation.mutateAsync({
@@ -158,22 +153,33 @@ export function AddDomainDialog({
       });
 
       if (result.verified) {
+        setVerificationState({ status: "idle" });
         setStep(3);
         toast.success("Domain verified successfully!");
       } else {
-        toast.error(
-          result.error || "Verification failed. Please check your setup.",
-        );
+        setVerificationState({
+          status: "failed",
+          error: result.error,
+        });
       }
     } catch (err) {
       logger.error("Domain verification failed", err, {
         trackedDomainId,
         method,
       });
-      toast.error("Verification failed. Please try again.");
-    } finally {
-      setIsVerifying(false);
+      setVerificationState({
+        status: "failed",
+        error: "Verification failed. Please try again.",
+      });
     }
+  };
+
+  const handleReturnLater = () => {
+    toast.info("Domain saved", {
+      description:
+        "We'll automatically verify your domain once the changes have propagated. Check back later!",
+    });
+    handleOpenChange(false);
   };
 
   const handleDone = () => {
@@ -186,7 +192,7 @@ export function AddDomainDialog({
       case 1:
         return domain.trim().length > 0 && !addDomainMutation.isPending;
       case 2:
-        return !isVerifying;
+        return verificationState.status !== "verifying";
       case 3:
         return true;
       default:
@@ -213,6 +219,11 @@ export function AddDomainDialog({
   const instructionsError = isResuming && instructionsQuery.isError;
   const hasInstructionsError =
     step === 2 && !isLoadingInstructions && !instructions;
+  const isVerifying = verificationState.status === "verifying";
+  const hasFailed = verificationState.status === "failed";
+
+  // Hide the main footer button when showing the failed state (it has its own buttons)
+  const showFooterButtons = step !== 2 || !hasFailed;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -245,7 +256,7 @@ export function AddDomainDialog({
         <div className="min-h-[280px]">
           <AnimatePresence mode="wait">
             <motion.div
-              key={step}
+              key={`${step}-${hasFailed}`}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -281,7 +292,9 @@ export function AddDomainDialog({
                   method={method}
                   setMethod={setMethod}
                   instructions={instructions}
-                  isVerifying={isVerifying}
+                  verificationState={verificationState}
+                  onVerify={handleVerify}
+                  onReturnLater={handleReturnLater}
                 />
               )}
               {step === 3 && <StepConfirmation domain={domain} />}
@@ -289,194 +302,39 @@ export function AddDomainDialog({
           </AnimatePresence>
         </div>
 
-        <DialogFooter>
-          {step === 2 && !isResuming && (
-            <Button variant="outline" onClick={() => setStep(1)}>
-              Back
-            </Button>
-          )}
-          <Button
-            onClick={handleNext}
-            disabled={
-              !canProceed() || isLoadingInstructions || hasInstructionsError
-            }
-          >
-            {(addDomainMutation.isPending || isVerifying) && (
-              <Spinner className="size-4" />
+        {showFooterButtons && (
+          <DialogFooter>
+            {step === 2 && !isResuming && !hasFailed && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setVerificationState({ status: "idle" });
+                  setStep(1);
+                }}
+              >
+                Back
+              </Button>
             )}
-            {step === 2
-              ? isVerifying
-                ? "Verifying..."
-                : "Verify & Continue"
-              : step === 3
-                ? "Done"
-                : "Continue"}
-          </Button>
-        </DialogFooter>
+            <Button
+              onClick={handleNext}
+              disabled={
+                !canProceed() || isLoadingInstructions || hasInstructionsError
+              }
+            >
+              {(addDomainMutation.isPending || isVerifying) && (
+                <Spinner className="size-4" />
+              )}
+              {step === 2
+                ? isVerifying
+                  ? "Verifying..."
+                  : "Verify & Continue"
+                : step === 3
+                  ? "Done"
+                  : "Continue"}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function StepEnterDomain({
-  domain,
-  setDomain,
-  error,
-  isLoading,
-  onSubmit,
-}: {
-  domain: string;
-  setDomain: (v: string) => void;
-  error: string;
-  isLoading: boolean;
-  onSubmit: () => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="domain">Domain name</Label>
-        <Input
-          id="domain"
-          placeholder="example.com"
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          disabled={isLoading}
-          aria-invalid={!!error}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              if (domain.trim().length > 0 && !isLoading) {
-                onSubmit();
-              }
-            }
-          }}
-        />
-        {error && <p className="text-destructive text-sm">{error}</p>}
-      </div>
-      <p className="text-muted-foreground text-sm">
-        Enter the domain you want to track. You&apos;ll need to verify ownership
-        in the next step.
-      </p>
-    </div>
-  );
-}
-
-function StepVerifyOwnership({
-  method,
-  setMethod,
-  instructions,
-  isVerifying,
-}: {
-  method: VerificationMethod;
-  setMethod: (m: VerificationMethod) => void;
-  instructions: Instructions;
-  isVerifying: boolean;
-}) {
-  return (
-    <div className="space-y-4">
-      <Tabs
-        value={method}
-        onValueChange={(v) => setMethod(v as VerificationMethod)}
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="dns_txt" disabled={isVerifying}>
-            DNS Record
-          </TabsTrigger>
-          <TabsTrigger value="html_file" disabled={isVerifying}>
-            HTML File
-          </TabsTrigger>
-          <TabsTrigger value="meta_tag" disabled={isVerifying}>
-            Meta Tag
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dns_txt" className="mt-4 space-y-3">
-          <VerificationInstructions instructions={instructions.dns_txt} />
-        </TabsContent>
-
-        <TabsContent value="html_file" className="mt-4 space-y-3">
-          <VerificationInstructions instructions={instructions.html_file} />
-        </TabsContent>
-
-        <TabsContent value="meta_tag" className="mt-4 space-y-3">
-          <VerificationInstructions instructions={instructions.meta_tag} />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-function VerificationInstructions({
-  instructions,
-}: {
-  instructions: InstructionDetails;
-}) {
-  return (
-    <>
-      <Alert>
-        <Info className="size-4" />
-        <AlertTitle>{instructions.title}</AlertTitle>
-        <AlertDescription>{instructions.description}</AlertDescription>
-      </Alert>
-
-      <div className="relative rounded-lg bg-muted p-4 font-mono text-sm">
-        <pre className="whitespace-pre-wrap break-all pr-10">
-          {instructions.code}
-        </pre>
-        <div className="absolute top-2 right-2">
-          <CopyButton value={instructions.copyValue} />
-        </div>
-      </div>
-    </>
-  );
-}
-
-function StepConfirmation({ domain }: { domain: string }) {
-  return (
-    <div className="space-y-4 text-center">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/10">
-        <CheckCircle className="size-6 text-success-foreground" />
-      </div>
-      <div>
-        <h3 className="font-semibold">Domain verified!</h3>
-        <p className="text-muted-foreground text-sm">
-          <span className="font-medium">{domain}</span> has been added to your
-          dashboard. You&apos;ll receive notifications when it&apos;s about to
-          expire.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function StepInstructionsError({
-  error,
-  onRetry,
-  isRetrying,
-}: {
-  error?: string;
-  onRetry: () => void;
-  isRetrying: boolean;
-}) {
-  return (
-    <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-        <AlertCircle className="size-6 text-destructive" />
-      </div>
-      <div className="text-center">
-        <h3 className="font-semibold">Unable to load instructions</h3>
-        <p className="text-muted-foreground text-sm">
-          {error || "Something went wrong. Please try again."}
-        </p>
-      </div>
-      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
-        {isRetrying ? (
-          <Spinner className="size-4" />
-        ) : (
-          <RefreshCw className="size-4" />
-        )}
-        {isRetrying ? "Retrying..." : "Retry"}
-      </Button>
-    </div>
   );
 }

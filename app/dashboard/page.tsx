@@ -5,7 +5,10 @@ import { Archive, Globe, Sparkles } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AddDomainDialog } from "@/components/dashboard/add-domain-dialog";
+import {
+  AddDomainDialog,
+  type ResumeDomainData,
+} from "@/components/dashboard/add-domain/add-domain-dialog";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
@@ -22,12 +25,6 @@ import { useSession } from "@/lib/auth-client";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
-
-type ResumeDomainData = {
-  id: string;
-  domainName: string;
-  verificationToken: string;
-};
 
 type ConfirmAction = {
   type: "remove" | "archive";
