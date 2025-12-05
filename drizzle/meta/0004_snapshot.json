@@ -1,5 +1,5 @@
 {
-  "id": "b213f5b7-1569-4513-b022-cba1c3f7e2bb",
+  "id": "1645c4de-92c6-4e81-9641-51d4b448970c",
   "prevId": "bf8400e6-deb1-4e9d-a9a0-4ccf8830acb6",
   "version": "7",
   "dialect": "postgresql",
@@ -1761,6 +1761,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "last_expiry_notification": {
+          "name": "last_expiry_notification",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1780,7 +1786,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "u_user_subscription_user": {
+          "name": "u_user_subscription_user",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -15,6 +15,16 @@ import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 const logger = createLogger({ source: "polar-emails" });
 
 /**
+ * Safely extract first name from a name string.
+ * Handles null, undefined, empty, or whitespace-only names.
+ */
+function getFirstName(name: string | null | undefined): string {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return "there";
+  return trimmed.split(/\s+/)[0] || "there";
+}
+
+/**
  * Send Pro upgrade success email.
  * Called when a subscription becomes active (payment confirmed).
  */
@@ -32,7 +42,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const firstName = user.name.split(" ")[0] || "there";
+    const firstName = getFirstName(user.name);
 
     const emailHtml = await render(
       ProUpgradeSuccessEmail({
@@ -55,8 +65,14 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
 
     logger.info("Sent Pro upgrade email", { userId, emailId: data?.id });
 
-    // Also send the welcome/tips email
-    await sendProWelcomeEmail(userId, user.name, user.email);
+    // Also send the welcome/tips email (best-effort, non-critical)
+    try {
+      await sendProWelcomeEmail(userId, user.name, user.email);
+    } catch (err) {
+      logger.error("Failed to send Pro welcome email (non-critical)", err, {
+        userId,
+      });
+    }
 
     return true;
   } catch (err) {
@@ -74,12 +90,13 @@ async function sendProWelcomeEmail(
   userEmail: string,
 ): Promise<boolean> {
   if (!resend) {
+    logger.warn("Resend not configured, skipping email", { userId });
     return false;
   }
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const firstName = userName.split(" ")[0] || "there";
+    const firstName = getFirstName(userName);
 
     const emailHtml = await render(
       ProWelcomeEmail({
@@ -130,7 +147,7 @@ export async function sendSubscriptionCancelingEmail(
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const firstName = user.name.split(" ")[0] || "there";
+    const firstName = getFirstName(user.name);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
     const emailHtml = await render(
@@ -189,7 +206,7 @@ export async function sendSubscriptionExpiredEmail(
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const firstName = user.name.split(" ")[0] || "there";
+    const firstName = getFirstName(user.name);
 
     const emailHtml = await render(
       SubscriptionExpiredEmail({

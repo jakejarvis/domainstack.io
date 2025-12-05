@@ -31,6 +31,7 @@ vi.mock("@/lib/polar/products", () => ({
 }));
 
 vi.mock("@/lib/polar/emails", () => ({
+  sendProUpgradeEmail: vi.fn(),
   sendSubscriptionExpiredEmail: vi.fn(),
 }));
 
@@ -40,7 +41,10 @@ import {
   updateUserTier,
 } from "@/lib/db/repos/user-subscription";
 import { handleDowngrade } from "@/lib/polar/downgrade";
-import { sendSubscriptionExpiredEmail } from "@/lib/polar/emails";
+import {
+  sendProUpgradeEmail,
+  sendSubscriptionExpiredEmail,
+} from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
 import {
   handleSubscriptionActive,
@@ -126,7 +130,7 @@ function createRevokedPayload(
 
 describe("handleSubscriptionCreated", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("only logs (does not upgrade tier - payment not confirmed yet)", async () => {
@@ -142,7 +146,7 @@ describe("handleSubscriptionCreated", () => {
 
 describe("handleSubscriptionActive", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("upgrades user tier when product ID is recognized", async () => {
@@ -191,11 +195,32 @@ describe("handleSubscriptionActive", () => {
       handleSubscriptionActive(createActivePayload()),
     ).rejects.toThrow("Database error");
   });
+
+  it("sends pro upgrade email after tier upgrade", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+
+    await handleSubscriptionActive(createActivePayload());
+
+    expect(sendProUpgradeEmail).toHaveBeenCalledWith("user-456");
+  });
+
+  it("does not fail webhook if upgrade email fails", async () => {
+    vi.mocked(getTierForProductId).mockReturnValue("pro");
+    vi.mocked(sendProUpgradeEmail).mockRejectedValue(new Error("Email failed"));
+
+    // Should not throw - email errors are logged but swallowed
+    await expect(
+      handleSubscriptionActive(createActivePayload()),
+    ).resolves.not.toThrow();
+
+    expect(updateUserTier).toHaveBeenCalled();
+    expect(clearSubscriptionEndsAt).toHaveBeenCalled();
+  });
 });
 
 describe("handleSubscriptionCanceled", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it("sets subscription end date when currentPeriodEnd is provided", async () => {
@@ -253,7 +278,7 @@ describe("handleSubscriptionCanceled", () => {
 
 describe("handleSubscriptionRevoked", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     // Default: handleDowngrade returns 0 archived domains
     vi.mocked(handleDowngrade).mockResolvedValue(0);
   });

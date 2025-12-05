@@ -53,7 +53,9 @@ CREATE TABLE "user_subscriptions" (
 	"tier" "user_tier" DEFAULT 'free' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"ends_at" timestamp with time zone
+	"ends_at" timestamp with time zone,
+	"last_expiry_notification" integer,
+	CONSTRAINT "u_user_subscription_user" UNIQUE("user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "user_tracked_domains" (

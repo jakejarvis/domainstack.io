@@ -8,7 +8,10 @@ import {
 } from "@/lib/db/repos/user-subscription";
 import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
-import { sendSubscriptionExpiredEmail } from "@/lib/polar/emails";
+import {
+  sendProUpgradeEmail,
+  sendSubscriptionExpiredEmail,
+} from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
 
 const logger = createLogger({ source: "polar-webhooks" });
@@ -95,6 +98,13 @@ export async function handleSubscriptionActive(
     await updateUserTier(userId, tier);
     await clearSubscriptionEndsAt(userId);
     logger.info("upgraded user tier", { userId, tier });
+
+    // Send welcome email (best-effort, don't fail webhook on email error)
+    try {
+      await sendProUpgradeEmail(userId);
+    } catch (emailErr) {
+      logger.error("failed to send pro upgrade email", emailErr, { userId });
+    }
   } catch (err) {
     logger.error("failed to upgrade user tier", err, { userId, tier });
     throw err; // Re-throw to trigger webhook retry
@@ -130,6 +140,7 @@ export async function handleSubscriptionCanceled(
   }
 
   // Store the end date so we can show a banner in the dashboard
+  // Reminder emails are sent via the check-subscription-expiry cron job
   if (currentPeriodEnd) {
     try {
       await setSubscriptionEndsAt(userId, new Date(currentPeriodEnd));

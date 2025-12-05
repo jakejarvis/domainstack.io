@@ -1,8 +1,8 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { userSubscriptions } from "@/lib/db/schema";
+import { userSubscriptions, users } from "@/lib/db/schema";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 import type { UserTier } from "@/lib/schemas";
@@ -25,7 +25,7 @@ export type UserSubscriptionData = {
 export async function getUserSubscription(
   userId: string,
 ): Promise<UserSubscriptionData> {
-  const sub = await db
+  const [record] = await db
     .select({
       userId: userSubscriptions.userId,
       tier: userSubscriptions.tier,
@@ -35,7 +35,6 @@ export async function getUserSubscription(
     .where(eq(userSubscriptions.userId, userId))
     .limit(1);
 
-  const record = sub[0];
   if (!record) {
     throw new Error(`Subscription not found for user: ${userId}`);
   }
@@ -106,11 +105,16 @@ export async function setSubscriptionEndsAt(
 
 /**
  * Clear subscription end date (re-subscribed or revoked).
+ * Also clears lastExpiryNotification so fresh notifications can be sent for the next cycle.
  */
 export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
-    .set({ endsAt: null, updatedAt: new Date() })
+    .set({
+      endsAt: null,
+      lastExpiryNotification: null,
+      updatedAt: new Date(),
+    })
     .where(eq(userSubscriptions.userId, userId))
     .returning({ userId: userSubscriptions.userId });
 
@@ -141,4 +145,65 @@ export async function createSubscription(userId: string): Promise<void> {
     // Log but don't rethrow - user signup should not fail due to subscription creation
     logger.error("failed to create subscription for new user", err, { userId });
   }
+}
+
+export type UserWithEndingSubscription = {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  endsAt: Date;
+  /** Last subscription expiry notification threshold sent (7, 3, or 1 days). Null if none sent. */
+  lastExpiryNotification: number | null;
+};
+
+/**
+ * Get all users with ending subscriptions (canceled but still active).
+ * Returns users where endsAt is set and in the future.
+ * Used by the check-subscription-expiry cron job to send reminder emails.
+ */
+export async function getUsersWithEndingSubscriptions(): Promise<
+  UserWithEndingSubscription[]
+> {
+  const now = new Date();
+
+  const rows = await db
+    .select({
+      userId: userSubscriptions.userId,
+      userName: users.name,
+      userEmail: users.email,
+      endsAt: userSubscriptions.endsAt,
+      lastExpiryNotification: userSubscriptions.lastExpiryNotification,
+    })
+    .from(userSubscriptions)
+    .innerJoin(users, eq(userSubscriptions.userId, users.id))
+    .where(
+      and(
+        isNotNull(userSubscriptions.endsAt),
+        gt(userSubscriptions.endsAt, now),
+      ),
+    );
+
+  // Filter out nulls (TypeScript doesn't narrow properly after isNotNull)
+  return rows.filter(
+    (row): row is UserWithEndingSubscription => row.endsAt !== null,
+  );
+}
+
+/**
+ * Update the last expiry notification threshold sent.
+ * Used by the subscription expiry cron job to track which notifications have been sent.
+ */
+export async function setLastExpiryNotification(
+  userId: string,
+  threshold: number,
+): Promise<void> {
+  await db
+    .update(userSubscriptions)
+    .set({
+      lastExpiryNotification: threshold,
+      updatedAt: new Date(),
+    })
+    .where(eq(userSubscriptions.userId, userId));
+
+  logger.debug("set last expiry notification", { userId, threshold });
 }

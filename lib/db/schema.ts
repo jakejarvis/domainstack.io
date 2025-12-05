@@ -160,22 +160,30 @@ export const accountRelations = relations(accounts, ({ one }) => ({
 // ============================================================================
 
 // User subscriptions (tier and subscription state)
-export const userSubscriptions = pgTable("user_subscriptions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  tier: userTier("tier").notNull().default("free"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  // When a canceled subscription ends and user downgrades to free
-  // Null means: no pending cancellation (subscription active or user is on free tier)
-  endsAt: timestamp("ends_at", { withTimezone: true }),
-});
+export const userSubscriptions = pgTable(
+  "user_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tier: userTier("tier").notNull().default("free"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    // When a canceled subscription ends and user downgrades to free
+    // Null means: no pending cancellation (subscription active or user is on free tier)
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    // Last subscription expiry notification threshold sent (7, 3, or 1 days)
+    // Null means no notification sent for current cancellation cycle
+    // Cleared when endsAt is cleared (resubscribed or revoked)
+    lastExpiryNotification: integer("last_expiry_notification"),
+  },
+  (t) => [unique("u_user_subscription_user").on(t.userId)],
+);
 
 // User's tracked domains
 export const userTrackedDomains = pgTable(
