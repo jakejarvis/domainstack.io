@@ -551,6 +551,7 @@ function DashboardContent() {
         trackedCount={activeCount}
         maxDomains={maxDomains}
         viewMode={viewMode}
+        tier={tier}
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
       />
@@ -618,6 +619,7 @@ function DashboardContent() {
             totalDomains={domains.length}
             hasActiveFilters={hasActiveFilters}
             selection={selection}
+            tier={tier}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
             onRemove={(id, domainName) => handleRemove(id, domainName)}

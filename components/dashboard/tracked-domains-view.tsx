@@ -16,6 +16,7 @@ import {
 import type { SelectionState } from "@/hooks/use-selection";
 import type { ViewMode } from "@/hooks/use-view-preference";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { UserTier } from "@/lib/schemas";
 
 type TrackedDomainsViewProps = {
   viewMode: ViewMode;
@@ -23,6 +24,7 @@ type TrackedDomainsViewProps = {
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
   selection: SelectionState;
+  tier: UserTier;
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
@@ -40,6 +42,7 @@ export function TrackedDomainsView({
   totalDomains,
   hasActiveFilters,
   selection,
+  tier,
   onAddDomain,
   onVerify,
   onRemove,
@@ -53,7 +56,7 @@ export function TrackedDomainsView({
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
-      <Empty className="rounded-3xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+      <Empty className="rounded-xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <FilterX className="size-6" />
@@ -76,7 +79,7 @@ export function TrackedDomainsView({
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
     return (
-      <Empty className="relative overflow-hidden rounded-3xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+      <Empty className="relative overflow-hidden rounded-xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
         {/* Decorative gradient orbs */}
         <div
           aria-hidden
@@ -121,6 +124,7 @@ export function TrackedDomainsView({
           onVerify={onVerify}
           onRemove={onRemove}
           onArchive={onArchive}
+          tier={tier}
         />
       ) : (
         <TrackedDomainsGrid
@@ -130,6 +134,7 @@ export function TrackedDomainsView({
           onVerify={onVerify}
           onRemove={onRemove}
           onArchive={onArchive}
+          tier={tier}
         />
       )}
 

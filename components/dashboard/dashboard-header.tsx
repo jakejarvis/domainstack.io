@@ -1,9 +1,10 @@
 "use client";
 
-import { LayoutGrid, Plus, TableIcon } from "lucide-react";
+import { Crown, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { ViewMode } from "@/hooks/use-view-preference";
+import type { UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type DashboardHeaderProps = {
@@ -11,6 +12,7 @@ type DashboardHeaderProps = {
   trackedCount: number;
   maxDomains: number;
   viewMode: ViewMode;
+  tier: UserTier;
   onViewModeChange: (mode: ViewMode) => void;
   onAddDomain: () => void;
 };
@@ -20,6 +22,7 @@ export function DashboardHeader({
   trackedCount,
   maxDomains,
   viewMode,
+  tier,
   onViewModeChange,
   onAddDomain,
 }: DashboardHeaderProps) {
@@ -27,10 +30,20 @@ export function DashboardHeader({
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+      <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
+        {tier === "pro" ? (
+          <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
+            <Crown className="size-3" />
+            PRO
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-foreground/70 text-xs">
+            FREE
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3">

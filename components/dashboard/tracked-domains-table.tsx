@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
@@ -42,6 +43,7 @@ import type {
   ProviderInfo,
   TrackedDomainWithDetails,
 } from "@/lib/db/repos/tracked-domains";
+import type { UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type TrackedDomainsTableProps = {
@@ -51,6 +53,7 @@ type TrackedDomainsTableProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
+  tier: UserTier;
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
@@ -104,6 +107,7 @@ export function TrackedDomainsTable({
   onVerify,
   onRemove,
   onArchive,
+  tier,
 }: TrackedDomainsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -308,7 +312,7 @@ export function TrackedDomainsTable({
   });
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+    <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
@@ -445,6 +449,9 @@ export function TrackedDomainsTable({
           </tbody>
         </table>
       </div>
+
+      {/* Upgrade CTA banner for free tier users */}
+      {tier === "free" && <UpgradeBanner />}
     </div>
   );
 }

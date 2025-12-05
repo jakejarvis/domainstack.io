@@ -25,14 +25,14 @@ export function SelectableDomainCard({
 }: SelectableDomainCardProps) {
   return (
     <motion.div
-      className="relative"
+      className="relative h-full"
       animate={{ scale: isSelected ? 1.01 : 1 }}
       transition={{ duration: 0.15 }}
     >
       {/* Selection ring overlay */}
       <div
         className={cn(
-          "pointer-events-none absolute inset-0 rounded-3xl transition-all duration-150",
+          "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
           isSelected
             ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
             : "ring-0",
@@ -75,7 +75,7 @@ export function SelectableDomainCard({
         onVerify={onVerify}
         onRemove={onRemove}
         onArchive={onArchive}
-        className={cn(isSelected && "bg-primary/10")}
+        className={cn("h-full", isSelected && "bg-primary/10")}
       />
     </motion.div>
   );

@@ -71,7 +71,7 @@ export function TrackedDomainCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15",
+        "relative flex h-full flex-col overflow-hidden rounded-xl border border-black/15 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15",
         className,
       )}
       data-accent={accent}
@@ -85,7 +85,7 @@ export function TrackedDomainCard({
         )}
       />
 
-      <CardHeader className="relative pb-2">
+      <CardHeader className="relative pt-6 pb-2">
         <div className="flex items-center gap-3">
           <Favicon domain={domainName} size={32} />
           <div className="min-w-0 flex-1">
@@ -154,7 +154,7 @@ export function TrackedDomainCard({
         </div>
       </CardHeader>
 
-      <CardContent className="relative space-y-2 pt-2">
+      <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
         {verified ? (
           <div className="space-y-2">
             {/* Expires */}
@@ -197,11 +197,13 @@ export function TrackedDomainCard({
             <InfoRow label="Email" provider={email} />
           </div>
         ) : (
-          <div className="space-y-3 py-2">
+          <div className="flex flex-1 flex-col pt-2">
             <p className="text-muted-foreground text-sm">
               Complete verification to start receiving expiration alerts.
             </p>
-            <Button onClick={onVerify} size="sm" className="w-full">
+            {/* Spacer to ensure minimum gap above button */}
+            <div className="min-h-4 flex-1" />
+            <Button onClick={onVerify} className="w-full">
               <RefreshCw className="size-4" />
               Complete Verification
             </Button>

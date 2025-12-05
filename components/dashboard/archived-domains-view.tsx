@@ -38,7 +38,7 @@ export function ArchivedDomainsView({
 }: ArchivedDomainsViewProps) {
   if (domains.length === 0) {
     return (
-      <Empty className="rounded-3xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <Empty className="rounded-xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Archive className="size-6" />
