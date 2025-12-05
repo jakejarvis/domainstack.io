@@ -5,8 +5,7 @@ import {
   archiveTrackedDomain,
   countActiveTrackedDomainsForUser,
   countArchivedTrackedDomainsForUser,
-  countTrackedDomainsForUser,
-  createTrackedDomain,
+  createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
   findTrackedDomain,
   findTrackedDomainById,
@@ -22,10 +21,7 @@ import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
-import {
-  canUserAddDomain,
-  getUserSubscription,
-} from "@/lib/db/repos/user-subscription";
+import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   NotificationOverridesSchema,
@@ -141,30 +137,31 @@ export const trackingRouter = createTRPCRouter({
         };
       }
 
-      // Check limits (only for new domains, not resumed ones)
-      const currentCount = await countTrackedDomainsForUser(ctx.user.id);
-      const canAdd = await canUserAddDomain(ctx.user.id, currentCount);
-
-      if (!canAdd) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message:
-            "You have reached your domain tracking limit. Upgrade to add more domains.",
-        });
-      }
+      // Get user's subscription to know their limit
+      const sub = await getUserSubscription(ctx.user.id);
 
       // Generate verification token
       const verificationToken = generateVerificationToken();
 
-      // Create tracked domain record
-      const tracked = await createTrackedDomain({
+      // Create tracked domain with atomic limit check (prevents race conditions)
+      const result = await createTrackedDomainWithLimitCheck({
         userId: ctx.user.id,
         domainId: domainRecord.id,
         verificationToken,
+        maxDomains: sub.maxDomains,
       });
 
-      // Handle race condition: if another request created it first, fetch and resume
-      if (!tracked) {
+      // Handle different failure cases
+      if (!result.success) {
+        if (result.reason === "limit_exceeded") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "You have reached your domain tracking limit. Upgrade to add more domains.",
+          });
+        }
+
+        // "already_exists" - race condition where another request created it first
         const raceExisting = await findTrackedDomain(
           ctx.user.id,
           domainRecord.id,
@@ -190,6 +187,8 @@ export const trackingRouter = createTRPCRouter({
           message: "Failed to create tracked domain",
         });
       }
+
+      const tracked = result.trackedDomain;
 
       // Get verification instructions for all methods
       const instructions = buildVerificationInstructions(

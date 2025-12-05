@@ -1,7 +1,16 @@
 import "server-only";
 
 import type { SQL } from "drizzle-orm";
-import { and, asc, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
@@ -84,6 +93,80 @@ export async function createTrackedDomain(params: CreateTrackedDomainParams) {
   }
 
   return inserted[0];
+}
+
+export type CreateTrackedDomainWithLimitCheckResult =
+  | { success: true; trackedDomain: typeof userTrackedDomains.$inferSelect }
+  | { success: false; reason: "limit_exceeded" | "already_exists" };
+
+/**
+ * Create a new tracked domain record with atomic limit checking.
+ * Uses a transaction to prevent race conditions where multiple concurrent
+ * requests could exceed the user's domain limit.
+ *
+ * @returns Object indicating success or failure reason
+ */
+export async function createTrackedDomainWithLimitCheck(
+  params: CreateTrackedDomainParams & { maxDomains: number },
+): Promise<CreateTrackedDomainWithLimitCheckResult> {
+  const {
+    userId,
+    domainId,
+    verificationToken,
+    verificationMethod,
+    maxDomains,
+  } = params;
+
+  return await db.transaction(async (tx) => {
+    // Count active (non-archived) domains for this user within the transaction
+    const [countResult] = await tx
+      .select({ count: count() })
+      .from(userTrackedDomains)
+      .where(
+        and(
+          eq(userTrackedDomains.userId, userId),
+          isNull(userTrackedDomains.archivedAt),
+        ),
+      );
+
+    const currentCount = countResult?.count ?? 0;
+
+    // Check if adding would exceed limit
+    if (currentCount >= maxDomains) {
+      logger.debug("domain limit would be exceeded", {
+        userId,
+        currentCount,
+        maxDomains,
+      });
+      return { success: false, reason: "limit_exceeded" } as const;
+    }
+
+    // Insert the new tracked domain
+    const inserted = await tx
+      .insert(userTrackedDomains)
+      .values({
+        userId,
+        domainId,
+        verificationToken,
+        verificationMethod,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (inserted.length === 0) {
+      logger.debug("tracked domain already exists", { userId, domainId });
+      return { success: false, reason: "already_exists" } as const;
+    }
+
+    logger.info("created tracked domain with limit check", {
+      userId,
+      domainId,
+      currentCount: currentCount + 1,
+      maxDomains,
+    });
+
+    return { success: true, trackedDomain: inserted[0] } as const;
+  });
 }
 
 /**
@@ -777,4 +860,50 @@ export async function getArchivedDomainsForUser(
     whereCondition as SQL,
     userTrackedDomains.archivedAt,
   );
+}
+
+/**
+ * Get all stale unverified domains (unverified and older than the cutoff date).
+ * Used by the cleanup cron job to identify domains to delete.
+ */
+export async function getStaleUnverifiedDomains(cutoffDate: Date) {
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainName: domains.name,
+      createdAt: userTrackedDomains.createdAt,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .where(
+      and(
+        eq(userTrackedDomains.verified, false),
+        lt(userTrackedDomains.createdAt, cutoffDate),
+      ),
+    );
+
+  return rows;
+}
+
+/**
+ * Delete stale unverified domains.
+ * Returns the number of domains deleted.
+ */
+export async function deleteStaleUnverifiedDomains(
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const deleted = await db
+    .delete(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, ids))
+    .returning({ id: userTrackedDomains.id });
+
+  logger.info("deleted stale unverified domains", {
+    requested: ids.length,
+    deleted: deleted.length,
+  });
+
+  return deleted.length;
 }
