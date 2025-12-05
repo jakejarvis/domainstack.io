@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Globe, Sparkles } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AddDomainDialog,
@@ -13,13 +13,17 @@ import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-vie
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DomainFilters } from "@/components/dashboard/domain-filters";
+import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDomainFilters } from "@/hooks/use-domain-filters";
 import { useRouter } from "@/hooks/use-router";
+import { sortDomains, useSortPreference } from "@/hooks/use-sort-preference";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -32,7 +36,7 @@ type ConfirmAction = {
   domainName: string;
 };
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [resumeDomain, setResumeDomain] = useState<ResumeDomainData | null>(
     null,
@@ -42,26 +46,55 @@ export default function DashboardPage() {
   );
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
   const [viewMode, setViewMode] = useViewPreference();
+  const [sortOption, setSortOption] = useSortPreference();
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
   const router = useRouter();
-
-  // Handle ?upgraded=true query param
-  useEffect(() => {
-    if (searchParams.get("upgraded") === "true") {
-      setShowUpgradedBanner(true);
-      // Clear the query param from URL without triggering navigation
-      router.replace("/dashboard", { scroll: false });
-    }
-  }, [searchParams, router]);
 
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
   const archivedDomainsQuery = useQuery(
     trpc.tracking.listArchivedDomains.queryOptions(),
   );
+
+  // Filter domains
+  const domains = domainsQuery.data ?? [];
+  const {
+    search,
+    status,
+    health,
+    tlds,
+    setSearch,
+    setStatus,
+    setHealth,
+    setTlds,
+    filteredDomains: filteredUnsorted,
+    availableTlds,
+    hasActiveFilters,
+    clearFilters,
+    applyHealthFilter,
+    stats,
+  } = useDomainFilters(domains);
+
+  // Apply sorting after filtering (only for grid view - table has its own column sorting)
+  const filteredDomains = useMemo(
+    () =>
+      viewMode === "grid"
+        ? sortDomains(filteredUnsorted, sortOption)
+        : filteredUnsorted,
+    [filteredUnsorted, sortOption, viewMode],
+  );
+
+  // Handle ?upgraded=true query param (after nuqs adapter)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "true") {
+      setShowUpgradedBanner(true);
+      // Clear the query param from URL without triggering navigation
+      router.replace("/dashboard", { scroll: false });
+    }
+  }, [router]);
 
   // Get query keys for cache manipulation
   const limitsQueryKey = trpc.tracking.getLimits.queryKey();
@@ -356,11 +389,10 @@ export default function DashboardPage() {
   const tier = limitsQuery.data?.tier ?? "free";
   const canAddMore = limitsQuery.data?.canAddMore ?? true;
   const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
-  const domains = domainsQuery.data ?? [];
   const archivedDomains = archivedDomainsQuery.data ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <DashboardHeader
         userName={userName}
         trackedCount={activeCount}
@@ -368,6 +400,8 @@ export default function DashboardPage() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
+        sortOption={sortOption}
+        onSortChange={setSortOption}
       />
 
       {/* Pro upgrade success banner */}
@@ -394,6 +428,16 @@ export default function DashboardPage() {
         tier={tier}
       />
 
+      {/* Health summary - only show when there are domains */}
+      {domains.length > 0 && (
+        <HealthSummary
+          expiringSoon={stats.expiringSoon}
+          pendingVerification={stats.pendingVerification}
+          onExpiringClick={() => applyHealthFilter("expiring")}
+          onPendingClick={() => applyHealthFilter("pending")}
+        />
+      )}
+
       {/* Tabs for Active/Archived domains */}
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="mb-4">
@@ -417,14 +461,34 @@ export default function DashboardPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active">
+        <TabsContent value="active" className="space-y-4">
+          {/* Filters - only show when there are domains */}
+          {domains.length > 0 && (
+            <DomainFilters
+              search={search}
+              status={status}
+              health={health}
+              tlds={tlds}
+              availableTlds={availableTlds}
+              onSearchChange={setSearch}
+              onStatusChange={setStatus}
+              onHealthChange={setHealth}
+              onTldsChange={setTlds}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={clearFilters}
+            />
+          )}
+
           <TrackedDomainsView
             viewMode={viewMode}
-            domains={domains}
+            domains={filteredDomains}
+            totalDomains={domains.length}
+            hasActiveFilters={hasActiveFilters}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
             onRemove={(id, domainName) => handleRemove(id, domainName)}
             onArchive={(id, domainName) => handleArchive(id, domainName)}
+            onClearFilters={clearFilters}
           />
         </TabsContent>
 
@@ -470,9 +534,17 @@ export default function DashboardPage() {
   );
 }
 
+export default function DashboardPage() {
+  return (
+    <NuqsAdapter>
+      <DashboardContent />
+    </NuqsAdapter>
+  );
+}
+
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header skeleton */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
@@ -485,6 +557,16 @@ function DashboardSkeleton() {
           <Skeleton className="h-9 w-32" />
         </div>
       </div>
+
+      {/* Health summary skeleton */}
+      <div className="flex gap-2">
+        <Skeleton className="h-8 w-24 rounded-full" />
+        <Skeleton className="h-8 w-28 rounded-full" />
+        <Skeleton className="h-8 w-20 rounded-full" />
+      </div>
+
+      {/* Tabs skeleton */}
+      <Skeleton className="h-10 w-56" />
 
       {/* Grid skeleton */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
