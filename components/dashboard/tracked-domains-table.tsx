@@ -330,28 +330,85 @@ export function TrackedDomainsTable({
                 </td>
               </tr>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="transition-colors hover:bg-muted/30"
-                >
-                  {row.getVisibleCells().map((cell, index) => (
-                    <td
-                      key={cell.id}
-                      className={cn(
-                        "h-12 px-3 align-middle",
-                        index === 0 && "pl-5",
-                        index === row.getVisibleCells().length - 1 && "pr-5",
-                      )}
+              table.getRowModel().rows.map((row) => {
+                const isUnverified = !row.original.verified;
+                const cells = row.getVisibleCells();
+
+                // For unverified domains, show simplified row with verify CTA
+                if (isUnverified) {
+                  return (
+                    <tr
+                      key={row.id}
+                      className="transition-colors hover:bg-muted/30"
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+                      {/* Domain column */}
+                      <td className="h-12 pr-3 pl-5 align-middle">
+                        {flexRender(
+                          cells[0].column.columnDef.cell,
+                          cells[0].getContext(),
+                        )}
+                      </td>
+                      {/* Status column */}
+                      <td className="h-12 px-3 align-middle">
+                        {flexRender(
+                          cells[1].column.columnDef.cell,
+                          cells[1].getContext(),
+                        )}
+                      </td>
+                      {/* Span remaining detail columns with verify message */}
+                      <td
+                        colSpan={cells.length - 3}
+                        className="h-12 px-3 align-middle"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-muted-foreground text-sm">
+                            Verify ownership to see domain details
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onVerify(row.original)}
+                          >
+                            <RefreshCw className="size-3.5" />
+                            Verify
+                          </Button>
+                        </div>
+                      </td>
+                      {/* Actions column */}
+                      <td className="h-12 px-3 pr-5 align-middle">
+                        {flexRender(
+                          cells[cells.length - 1].column.columnDef.cell,
+                          cells[cells.length - 1].getContext(),
+                        )}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                // Verified domains show full row
+                return (
+                  <tr
+                    key={row.id}
+                    className="transition-colors hover:bg-muted/30"
+                  >
+                    {cells.map((cell, index) => (
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "h-12 px-3 align-middle",
+                          index === 0 && "pl-5",
+                          index === cells.length - 1 && "pr-5",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

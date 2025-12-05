@@ -266,7 +266,10 @@ export default function DashboardPage() {
         queryClient.setQueryData(limitsQueryKey, context.previousLimits);
       }
       logger.error("Failed to unarchive domain", err);
-      toast.error("Failed to unarchive domain");
+      // Show server error message (e.g., "You've reached your domain limit")
+      const message =
+        err instanceof Error ? err.message : "Failed to reactivate domain";
+      toast.error(message);
     },
     onSuccess: () => {
       toast.success("Domain reactivated");

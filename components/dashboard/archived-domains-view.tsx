@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { Archive, Crown, RotateCcw, Trash2 } from "lucide-react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
+import { Favicon } from "@/components/domain/favicon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -71,15 +72,20 @@ export function ArchivedDomainsView({
         {domains.map((domain) => (
           <Card key={domain.id} className="opacity-75">
             <CardContent className="flex items-center justify-between p-4">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">{domain.domainName}</div>
-                <div className="text-muted-foreground text-sm">
-                  Archived{" "}
-                  {domain.archivedAt
-                    ? formatDistanceToNow(new Date(domain.archivedAt), {
-                        addSuffix: true,
-                      })
-                    : "recently"}
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Favicon domain={domain.domainName} size={24} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">
+                    {domain.domainName}
+                  </div>
+                  <div className="text-muted-foreground text-sm">
+                    Archived{" "}
+                    {domain.archivedAt
+                      ? formatDistanceToNow(new Date(domain.archivedAt), {
+                          addSuffix: true,
+                        })
+                      : "recently"}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
