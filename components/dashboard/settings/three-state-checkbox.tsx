@@ -20,8 +20,14 @@ interface ThreeStateCheckboxProps {
 }
 
 /**
- * A three-state checkbox that cycles through: inherit → on → off → inherit.
- * Used for per-domain notification overrides.
+ * A three-state checkbox for per-domain notification overrides.
+ *
+ * Cycling behavior depends on the global setting:
+ * - When global is OFF: inherit → on → off → inherit (full 3-state)
+ * - When global is ON:  inherit → off → inherit (skips explicit ON since it matches global)
+ *
+ * This UX always starts by overriding with the opposite of global,
+ * allowing users to quickly toggle away from the default.
  */
 export function ThreeStateCheckbox({
   value,
@@ -32,16 +38,16 @@ export function ThreeStateCheckbox({
   const isInherited = value === undefined;
   const effectiveValue = value ?? globalValue;
 
-  // Three-state cycle: inherit → on → off → inherit
   const handleClick = () => {
     if (isInherited) {
-      // If inheriting and global is on, set to explicit off (override)
-      // If inheriting and global is off, set to explicit on (override)
+      // First click: override with opposite of global
       onChange(!globalValue);
     } else if (value === true) {
+      // Explicit ON → explicit OFF
       onChange(false);
     } else {
-      onChange(undefined); // Back to inherit
+      // Explicit OFF → back to inherit
+      onChange(undefined);
     }
   };
 

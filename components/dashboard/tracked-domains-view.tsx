@@ -21,6 +21,7 @@ type TrackedDomainsViewProps = {
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string) => void;
+  onArchive?: (id: string) => void;
 };
 
 export function TrackedDomainsView({
@@ -29,6 +30,7 @@ export function TrackedDomainsView({
   onAddDomain,
   onVerify,
   onRemove,
+  onArchive,
 }: TrackedDomainsViewProps) {
   // Show empty state for both views
   if (domains.length === 0) {
@@ -60,6 +62,7 @@ export function TrackedDomainsView({
         domains={domains}
         onVerify={onVerify}
         onRemove={onRemove}
+        onArchive={onArchive}
       />
     );
   }
@@ -70,6 +73,7 @@ export function TrackedDomainsView({
       onAddDomain={onAddDomain}
       onVerify={onVerify}
       onRemove={onRemove}
+      onArchive={onArchive}
     />
   );
 }

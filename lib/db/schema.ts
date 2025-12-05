@@ -177,6 +177,8 @@ export const trackedDomains = pgTable(
       .defaultNow()
       .notNull(),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    // Soft-archive timestamp (null = active, set = archived)
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (t) => [
     unique("u_tracked_domain_user").on(t.userId, t.domainId),
@@ -184,6 +186,7 @@ export const trackedDomains = pgTable(
     index("i_tracked_domains_domain").on(t.domainId),
     index("i_tracked_domains_verified").on(t.verified),
     index("i_tracked_domains_status").on(t.verificationStatus),
+    index("i_tracked_domains_archived").on(t.archivedAt),
   ],
 );
 

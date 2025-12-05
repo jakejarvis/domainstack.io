@@ -2,11 +2,10 @@
 
 ## Project Structure & Module Organization
 - `app/` Next.js App Router. Default to server components; keep `app/page.tsx` and `app/api/*` thin and delegate to `server/` or `lib/`.
-- `app/@auth/` Parallel route slot for login modal (intercepting route pattern).
-- `app/dashboard/` Protected dashboard for domain tracking with `@settings/` parallel route slot.
+- `app/dashboard/` Protected dashboard for domain tracking with Active/Archived tabs.
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
-- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog).
+- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status).
 - `hooks/` shared stateful helpers (camelCase named exports).
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
@@ -17,6 +16,7 @@
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo, tracked-domains, user-limits, user-notification-preferences, notifications).
 - `lib/logger/` unified structured logging system with OpenTelemetry integration, correlation IDs, and PII-safe field filtering.
+- `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
@@ -94,19 +94,19 @@
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.
 
 ## Authentication (better-auth)
-- **Server config:** `lib/auth.ts` - betterAuth with Drizzle adapter, GitHub OAuth, session management.
-- **Client hooks:** `lib/auth-client.ts` - `useSession`, `signIn`, `signOut`, `getSession`.
+- **Server config:** `lib/auth.ts` - betterAuth with Drizzle adapter, GitHub OAuth, Polar plugin for subscriptions.
+- **Client hooks:** `lib/auth-client.ts` - `useSession`, `signIn`, `signOut`, `getSession`, `checkout`, `customerPortal`.
 - **Protected routes:** Dashboard layout (`app/dashboard/layout.tsx`) checks session server-side and redirects to `/login`.
 - **tRPC integration:** `trpc/init.ts` exports `protectedProcedure` that requires valid session; throws `UNAUTHORIZED` otherwise.
 - **Schema tables:** `users`, `sessions`, `accounts`, `verifications` in `lib/db/schema.ts`.
-- **Parallel routes:** Login page uses intercepting route (`app/@auth/(.)login/page.tsx`) to show as modal when navigating from within app, full page on direct access.
+- **Login modal:** Uses simple React dialog triggered from header; fallback full page at `/login`.
 - **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`.
 
 ## Domain Tracking System
 The domain tracking feature allows authenticated users to track domains they own, receive expiration notifications, and manage notification preferences.
 
 ### Core Tables
-- `tracked_domains`: Links users to domains with verification status, token, and per-domain notification overrides.
+- `tracked_domains`: Links users to domains with verification status, token, per-domain notification overrides, and `archivedAt` for soft-archiving.
 - `user_limits`: User tier (free/pro) with optional `maxDomainsOverride` for special cases.
 - `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, verificationStatus).
 - `notifications`: History of sent notifications with Resend email ID for troubleshooting.
@@ -137,8 +137,9 @@ Key procedures:
 - `addDomain`: Add domain to tracking (or resume unverified).
 - `verifyDomain`: Verify ownership.
 - `removeDomain`: Delete tracked domain.
-- `listDomains`: Get all tracked domains with details.
-- `getLimits`: Get user's current count and max domains.
+- `archiveDomain` / `unarchiveDomain`: Soft-archive or reactivate domains.
+- `listDomains` / `listArchivedDomains`: Get active or archived tracked domains.
+- `getLimits`: Get user's tier, active/archived counts, and max domains.
 - `getNotificationPreferences` / `updateGlobalNotificationPreferences`: Global toggles.
 - `updateDomainNotificationOverrides` / `resetDomainNotificationOverrides`: Per-domain overrides.
 
@@ -153,6 +154,35 @@ Key procedures:
 - **Idempotency:** Use `generateIdempotencyKey(trackedDomainId, notificationType)` and pass to `resend.emails.send()`.
 - **Pattern:** Create notification record → Send email → Update with `resendId` for troubleshooting.
 - **Environment variables:** `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+
+## Subscriptions (Polar)
+Polar handles Pro tier subscriptions with automatic tier management via webhooks.
+
+### Product Configuration
+- **Config file:** `lib/polar/products.ts` defines products with IDs, slugs, tiers, and pricing.
+- **Pro tier:** Two products for billing flexibility: `pro-monthly` ($2/month) and `pro-yearly` ($20/year).
+- **Checkout:** Pass both product IDs to let users choose billing interval at checkout.
+
+### Integration
+- **Server:** `lib/auth.ts` includes Polar plugin with `checkout`, `portal`, and `webhooks` handlers.
+- **Client:** `lib/auth-client.ts` exports `checkout()` and `customerPortal()` for UI triggers.
+- **Webhook handlers:** `lib/polar/handlers.ts` with `handleSubscriptionCreated` (upgrades tier) and `handleSubscriptionRevoked` (triggers downgrade).
+- **Downgrade logic:** `lib/polar/downgrade.ts` archives oldest domains beyond free tier limit.
+
+### UI Components
+- **Upgrade prompt:** `components/dashboard/upgrade-prompt.tsx` - contextual banner when near/at domain limit.
+- **Subscription section:** `components/dashboard/subscription-section.tsx` - settings page with plan info and manage/upgrade buttons.
+- **Archived domains:** `components/dashboard/archived-domains-view.tsx` - view and reactivate archived domains.
+
+### Domain Archiving
+- Archived domains don't count against user's limit.
+- Users can manually archive/unarchive from dashboard tabs.
+- On downgrade, oldest domains are auto-archived to enforce free tier limit.
+- Unarchiving checks capacity before allowing reactivation.
+
+### Environment variables
+- `POLAR_ACCESS_TOKEN`: API token from Polar dashboard.
+- `POLAR_WEBHOOK_SECRET`: Webhook secret for signature verification.
 
 ## TanStack Query Best Practices
 Dashboard components use optimistic updates for responsive UX:

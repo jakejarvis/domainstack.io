@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import {
+  Archive,
   ArrowUpDown,
   ExternalLink,
   MoreVertical,
@@ -46,6 +47,7 @@ type TrackedDomainsTableProps = {
   domains: TrackedDomainWithDetails[];
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string) => void;
+  onArchive?: (id: string) => void;
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
@@ -96,6 +98,7 @@ export function TrackedDomainsTable({
   domains,
   onVerify,
   onRemove,
+  onArchive,
 }: TrackedDomainsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -248,6 +251,15 @@ export function TrackedDomainsTable({
                   Verify Now
                 </DropdownMenuItem>
               )}
+              {onArchive && (
+                <DropdownMenuItem
+                  onClick={() => onArchive(row.original.id)}
+                  className="cursor-pointer"
+                >
+                  <Archive className="size-3.5" />
+                  Archive
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => onRemove(row.original.id)}
@@ -261,7 +273,7 @@ export function TrackedDomainsTable({
         ),
       },
     ],
-    [onVerify, onRemove],
+    [onVerify, onRemove, onArchive],
   );
 
   const table = useReactTable({

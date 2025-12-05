@@ -48,12 +48,8 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const globalPrefsQueryKey =
     trpc.tracking.getNotificationPreferences.queryKey();
 
-  // Type for global preferences
-  type GlobalPrefs = {
-    domainExpiry: boolean;
-    certificateExpiry: boolean;
-    verificationStatus: boolean;
-  };
+  // Type for global preferences - derived from notification constants
+  type GlobalPrefs = Record<NotificationCategory, boolean>;
 
   // Queries
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());

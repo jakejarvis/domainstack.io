@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
@@ -48,6 +48,7 @@ export type TrackedDomainWithDetails = {
   notificationOverrides: NotificationOverrides;
   createdAt: Date;
   verifiedAt: Date | null;
+  archivedAt: Date | null;
   expirationDate: Date | null;
   registrar: ProviderInfo;
   dns: ProviderInfo;
@@ -152,15 +153,22 @@ export async function findTrackedDomainWithDomainName(
 
 /**
  * Get all tracked domains for a user with domain details.
+ * @param includeArchived - If true, returns all domains including archived. Default false.
  */
 export async function getTrackedDomainsForUser(
   userId: string,
+  includeArchived = false,
 ): Promise<TrackedDomainWithDetails[]> {
   // Create aliases for the providers table (joined multiple times)
   const registrarProvider = alias(providers, "registrar_provider");
   const dnsProvider = alias(providers, "dns_provider");
   const hostingProvider = alias(providers, "hosting_provider");
   const emailProvider = alias(providers, "email_provider");
+
+  // Build where condition based on includeArchived flag
+  const whereCondition = includeArchived
+    ? eq(trackedDomains.userId, userId)
+    : and(eq(trackedDomains.userId, userId), isNull(trackedDomains.archivedAt));
 
   const rows = await db
     .select({
@@ -177,6 +185,7 @@ export async function getTrackedDomainsForUser(
       notificationOverrides: trackedDomains.notificationOverrides,
       createdAt: trackedDomains.createdAt,
       verifiedAt: trackedDomains.verifiedAt,
+      archivedAt: trackedDomains.archivedAt,
       expirationDate: registrations.expirationDate,
       // Registrar from registrations table
       registrarName: registrarProvider.name,
@@ -203,7 +212,7 @@ export async function getTrackedDomainsForUser(
       eq(hosting.hostingProviderId, hostingProvider.id),
     )
     .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
-    .where(eq(trackedDomains.userId, userId))
+    .where(whereCondition)
     .orderBy(trackedDomains.createdAt);
 
   // Transform flat rows into nested structure
@@ -221,6 +230,7 @@ export async function getTrackedDomainsForUser(
     notificationOverrides: row.notificationOverrides,
     createdAt: row.createdAt,
     verifiedAt: row.verifiedAt,
+    archivedAt: row.archivedAt,
     expirationDate: row.expirationDate,
     registrar: { name: row.registrarName, domain: row.registrarDomain },
     dns: { name: row.dnsName, domain: row.dnsDomain },
@@ -231,14 +241,49 @@ export async function getTrackedDomainsForUser(
 
 /**
  * Count tracked domains for a user.
+ * @param includeArchived - If true, counts all domains including archived. Default false.
  */
 export async function countTrackedDomainsForUser(
+  userId: string,
+  includeArchived = false,
+): Promise<number> {
+  const whereCondition = includeArchived
+    ? eq(trackedDomains.userId, userId)
+    : and(eq(trackedDomains.userId, userId), isNull(trackedDomains.archivedAt));
+
+  const [result] = await db
+    .select({ count: count() })
+    .from(trackedDomains)
+    .where(whereCondition);
+
+  return result?.count ?? 0;
+}
+
+/**
+ * Count active (non-archived) tracked domains for a user.
+ * Alias for countTrackedDomainsForUser(userId, false).
+ */
+export async function countActiveTrackedDomainsForUser(
+  userId: string,
+): Promise<number> {
+  return countTrackedDomainsForUser(userId, false);
+}
+
+/**
+ * Count archived tracked domains for a user.
+ */
+export async function countArchivedTrackedDomainsForUser(
   userId: string,
 ): Promise<number> {
   const [result] = await db
     .select({ count: count() })
     .from(trackedDomains)
-    .where(eq(trackedDomains.userId, userId));
+    .where(
+      and(
+        eq(trackedDomains.userId, userId),
+        isNotNull(trackedDomains.archivedAt),
+      ),
+    );
 
   return result?.count ?? 0;
 }
@@ -537,4 +582,180 @@ export async function revokeVerification(id: string) {
 
   logger.info("verification revoked", { trackedDomainId: id });
   return updated[0];
+}
+
+// ============================================================================
+// Archive/Unarchive Functions
+// ============================================================================
+
+/**
+ * Archive a tracked domain.
+ * Archived domains are soft-deleted and don't count against user's limit.
+ * Returns null if the tracked domain doesn't exist.
+ */
+export async function archiveTrackedDomain(id: string) {
+  const updated = await db
+    .update(trackedDomains)
+    .set({ archivedAt: new Date() })
+    .where(eq(trackedDomains.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return null;
+  }
+
+  logger.info("tracked domain archived", { trackedDomainId: id });
+  return updated[0];
+}
+
+/**
+ * Unarchive (reactivate) a tracked domain.
+ * Returns null if the tracked domain doesn't exist.
+ */
+export async function unarchiveTrackedDomain(id: string) {
+  const updated = await db
+    .update(trackedDomains)
+    .set({ archivedAt: null })
+    .where(eq(trackedDomains.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return null;
+  }
+
+  logger.info("tracked domain unarchived", { trackedDomainId: id });
+  return updated[0];
+}
+
+/**
+ * Archive the oldest active domains for a user.
+ * Used when downgrading to enforce tier limits.
+ * @param userId - The user ID
+ * @param count - Number of domains to archive
+ * @returns Number of domains actually archived
+ */
+export async function archiveOldestActiveDomains(
+  userId: string,
+  countToArchive: number,
+): Promise<number> {
+  if (countToArchive <= 0) return 0;
+
+  // Find the oldest active domains
+  const domainsToArchive = await db
+    .select({ id: trackedDomains.id })
+    .from(trackedDomains)
+    .where(
+      and(eq(trackedDomains.userId, userId), isNull(trackedDomains.archivedAt)),
+    )
+    .orderBy(asc(trackedDomains.createdAt))
+    .limit(countToArchive);
+
+  if (domainsToArchive.length === 0) return 0;
+
+  const now = new Date();
+
+  // Archive each domain individually
+  let archivedCount = 0;
+  for (const { id } of domainsToArchive) {
+    const result = await db
+      .update(trackedDomains)
+      .set({ archivedAt: now })
+      .where(eq(trackedDomains.id, id))
+      .returning();
+
+    if (result.length > 0) {
+      archivedCount++;
+    }
+  }
+
+  logger.info("archived oldest active domains", {
+    userId,
+    requested: countToArchive,
+    archived: archivedCount,
+  });
+
+  return archivedCount;
+}
+
+/**
+ * Get all archived domains for a user.
+ */
+export async function getArchivedDomainsForUser(
+  userId: string,
+): Promise<TrackedDomainWithDetails[]> {
+  // Create aliases for the providers table (joined multiple times)
+  const registrarProvider = alias(providers, "registrar_provider");
+  const dnsProvider = alias(providers, "dns_provider");
+  const hostingProvider = alias(providers, "hosting_provider");
+  const emailProvider = alias(providers, "email_provider");
+
+  const rows = await db
+    .select({
+      id: trackedDomains.id,
+      userId: trackedDomains.userId,
+      domainId: trackedDomains.domainId,
+      domainName: domains.name,
+      verified: trackedDomains.verified,
+      verificationMethod: trackedDomains.verificationMethod,
+      verificationToken: trackedDomains.verificationToken,
+      verificationStatus: trackedDomains.verificationStatus,
+      verificationFailedAt: trackedDomains.verificationFailedAt,
+      lastVerifiedAt: trackedDomains.lastVerifiedAt,
+      notificationOverrides: trackedDomains.notificationOverrides,
+      createdAt: trackedDomains.createdAt,
+      verifiedAt: trackedDomains.verifiedAt,
+      archivedAt: trackedDomains.archivedAt,
+      expirationDate: registrations.expirationDate,
+      registrarName: registrarProvider.name,
+      registrarDomain: registrarProvider.domain,
+      dnsName: dnsProvider.name,
+      dnsDomain: dnsProvider.domain,
+      hostingName: hostingProvider.name,
+      hostingDomain: hostingProvider.domain,
+      emailName: emailProvider.name,
+      emailDomain: emailProvider.domain,
+    })
+    .from(trackedDomains)
+    .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
+    .leftJoin(registrations, eq(domains.id, registrations.domainId))
+    .leftJoin(
+      registrarProvider,
+      eq(registrations.registrarProviderId, registrarProvider.id),
+    )
+    .leftJoin(hosting, eq(domains.id, hosting.domainId))
+    .leftJoin(dnsProvider, eq(hosting.dnsProviderId, dnsProvider.id))
+    .leftJoin(
+      hostingProvider,
+      eq(hosting.hostingProviderId, hostingProvider.id),
+    )
+    .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
+    .where(
+      and(
+        eq(trackedDomains.userId, userId),
+        isNotNull(trackedDomains.archivedAt),
+      ),
+    )
+    .orderBy(trackedDomains.archivedAt);
+
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.userId,
+    domainId: row.domainId,
+    domainName: row.domainName,
+    verified: row.verified,
+    verificationMethod: row.verificationMethod,
+    verificationToken: row.verificationToken,
+    verificationStatus: row.verificationStatus,
+    verificationFailedAt: row.verificationFailedAt,
+    lastVerifiedAt: row.lastVerifiedAt,
+    notificationOverrides: row.notificationOverrides,
+    createdAt: row.createdAt,
+    verifiedAt: row.verifiedAt,
+    archivedAt: row.archivedAt,
+    expirationDate: row.expirationDate,
+    registrar: { name: row.registrarName, domain: row.registrarDomain },
+    dns: { name: row.dnsName, domain: row.dnsDomain },
+    hosting: { name: row.hostingName, domain: row.hostingDomain },
+    email: { name: row.emailName, domain: row.emailDomain },
+  }));
 }

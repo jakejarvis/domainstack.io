@@ -45,7 +45,9 @@ export function DomainNotificationRow({
   onReset,
   disabled,
 }: DomainNotificationRowProps) {
-  const hasOverrides = Object.values(overrides).some((v) => v !== undefined);
+  const hasOverrides = Object.values(overrides ?? {}).some(
+    (v) => v !== undefined,
+  );
 
   // Mobile view
   const mobileView = (

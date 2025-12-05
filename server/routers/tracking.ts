@@ -2,14 +2,19 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
+  archiveTrackedDomain,
+  countActiveTrackedDomainsForUser,
+  countArchivedTrackedDomainsForUser,
   countTrackedDomainsForUser,
   createTrackedDomain,
   deleteTrackedDomain,
   findTrackedDomain,
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
+  getArchivedDomainsForUser,
   getTrackedDomainsForUser,
   resetNotificationOverrides,
+  unarchiveTrackedDomain,
   updateNotificationOverrides,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
@@ -59,21 +64,32 @@ export const trackingRouter = createTRPCRouter({
    */
   getLimits: protectedProcedure.query(async ({ ctx }) => {
     const limits = await getOrCreateUserLimits(ctx.user.id);
-    const currentCount = await countTrackedDomainsForUser(ctx.user.id);
+    const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
+    const archivedCount = await countArchivedTrackedDomainsForUser(ctx.user.id);
 
     return {
       tier: limits.tier,
       maxDomains: limits.maxDomains,
-      currentCount,
-      canAddMore: currentCount < limits.maxDomains,
+      activeCount,
+      archivedCount,
+      // Only active domains count against limit
+      canAddMore: activeCount < limits.maxDomains,
     };
   }),
 
   /**
-   * List all tracked domains for the current user.
+   * List all active (non-archived) tracked domains for the current user.
    */
   listDomains: protectedProcedure.query(async ({ ctx }) => {
-    const domains = await getTrackedDomainsForUser(ctx.user.id);
+    const domains = await getTrackedDomainsForUser(ctx.user.id, false);
+    return domains;
+  }),
+
+  /**
+   * List all archived tracked domains for the current user.
+   */
+  listArchivedDomains: protectedProcedure.query(async ({ ctx }) => {
+    const domains = await getArchivedDomainsForUser(ctx.user.id);
     return domains;
   }),
 
@@ -473,6 +489,118 @@ export const trackingRouter = createTRPCRouter({
       }
 
       await deleteTrackedDomain(trackedDomainId);
+
+      return { success: true };
+    }),
+
+  /**
+   * Archive a tracked domain.
+   * Archived domains don't count against the user's limit.
+   */
+  archiveDomain: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId } = input;
+
+      // Get tracked domain
+      const tracked = await findTrackedDomainById(trackedDomainId);
+      if (!tracked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
+        });
+      }
+
+      // Check if already archived
+      if (tracked.archivedAt) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Domain is already archived",
+        });
+      }
+
+      const updated = await archiveTrackedDomain(trackedDomainId);
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to archive domain",
+        });
+      }
+
+      return { success: true, archivedAt: updated.archivedAt };
+    }),
+
+  /**
+   * Unarchive (reactivate) a tracked domain.
+   * Checks that user has capacity before unarchiving.
+   */
+  unarchiveDomain: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId } = input;
+
+      // Get tracked domain
+      const tracked = await findTrackedDomainById(trackedDomainId);
+      if (!tracked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
+        });
+      }
+
+      // Check if actually archived
+      if (!tracked.archivedAt) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Domain is not archived",
+        });
+      }
+
+      // Check user has capacity to unarchive
+      const limits = await getOrCreateUserLimits(ctx.user.id);
+      const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
+
+      if (activeCount >= limits.maxDomains) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "You have reached your domain tracking limit. Upgrade to Pro or archive other domains first.",
+        });
+      }
+
+      const updated = await unarchiveTrackedDomain(trackedDomainId);
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to unarchive domain",
+        });
+      }
 
       return { success: true };
     }),

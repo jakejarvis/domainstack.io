@@ -1,7 +1,13 @@
 "use client";
 
 import { format } from "date-fns";
-import { ExternalLink, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ExternalLink,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import {
   DomainHealthBadge,
@@ -42,6 +48,7 @@ type TrackedDomainCardProps = {
   email: ProviderInfo;
   onVerify: () => void;
   onRemove: () => void;
+  onArchive?: () => void;
   className?: string;
 };
 
@@ -56,6 +63,7 @@ export function TrackedDomainCard({
   email,
   onVerify,
   onRemove,
+  onArchive,
   className,
 }: TrackedDomainCardProps) {
   const accent = getHealthAccent(expirationDate, verified);
@@ -122,6 +130,15 @@ export function TrackedDomainCard({
                 <DropdownMenuItem onClick={onVerify} className="cursor-pointer">
                   <RefreshCw className="size-4" />
                   Verify Now
+                </DropdownMenuItem>
+              )}
+              {onArchive && (
+                <DropdownMenuItem
+                  onClick={onArchive}
+                  className="cursor-pointer"
+                >
+                  <Archive className="size-4" />
+                  Archive
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

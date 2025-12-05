@@ -9,6 +9,7 @@ type TrackedDomainsGridProps = {
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string) => void;
+  onArchive?: (id: string) => void;
 };
 
 export function TrackedDomainsGrid({
@@ -16,6 +17,7 @@ export function TrackedDomainsGrid({
   onAddDomain: _onAddDomain,
   onVerify,
   onRemove,
+  onArchive,
 }: TrackedDomainsGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -37,6 +39,7 @@ export function TrackedDomainsGrid({
             email={domain.email}
             onVerify={() => onVerify(domain)}
             onRemove={() => onRemove(domain.id)}
+            onArchive={onArchive ? () => onArchive(domain.id) : undefined}
           />
         </motion.div>
       ))}
