@@ -125,8 +125,20 @@ export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
 /**
  * Create a subscription for a new user.
  * Called by better-auth database hook on user creation.
+ *
+ * Uses onConflictDoNothing for idempotency (handles retries/race conditions).
+ * Errors are logged but not rethrown to avoid breaking user signup.
  */
 export async function createSubscription(userId: string): Promise<void> {
-  await db.insert(userSubscriptions).values({ userId });
-  logger.debug("created subscription for new user", { userId });
+  try {
+    await db
+      .insert(userSubscriptions)
+      .values({ userId })
+      .onConflictDoNothing({ target: userSubscriptions.userId });
+
+    logger.debug("created subscription for new user", { userId });
+  } catch (err) {
+    // Log but don't rethrow - user signup should not fail due to subscription creation
+    logger.error("failed to create subscription for new user", err, { userId });
+  }
 }

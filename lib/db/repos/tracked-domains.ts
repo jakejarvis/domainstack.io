@@ -300,12 +300,13 @@ export async function countTrackedDomainsForUser(
   userId: string,
   includeArchived = false,
 ): Promise<number> {
+  // and() returns SQL | undefined, but with 2+ args it always returns SQL
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
-    : and(
+    : (and(
         eq(userTrackedDomains.userId, userId),
         isNull(userTrackedDomains.archivedAt),
-      );
+      ) as SQL);
 
   const [result] = await db
     .select({ count: count() })
@@ -331,15 +332,16 @@ export async function countActiveTrackedDomainsForUser(
 export async function countArchivedTrackedDomainsForUser(
   userId: string,
 ): Promise<number> {
+  // and() returns SQL | undefined, but with 2+ args it always returns SQL
+  const whereCondition = and(
+    eq(userTrackedDomains.userId, userId),
+    isNotNull(userTrackedDomains.archivedAt),
+  ) as SQL;
+
   const [result] = await db
     .select({ count: count() })
     .from(userTrackedDomains)
-    .where(
-      and(
-        eq(userTrackedDomains.userId, userId),
-        isNotNull(userTrackedDomains.archivedAt),
-      ),
-    );
+    .where(whereCondition);
 
   return result?.count ?? 0;
 }
@@ -478,7 +480,8 @@ export type TrackedDomainForReverification = {
 
 /**
  * Get all verified tracked domains with expiration dates for notification processing.
- * Returns all verified domains - filtering by notification preferences happens at processing time.
+ * Returns all verified, non-archived domains - filtering by notification preferences happens at processing time.
+ * Archived domains are excluded since archiving pauses monitoring.
  */
 export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
   TrackedDomainForNotification[]
@@ -505,7 +508,12 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
       registrarProvider,
       eq(registrations.registrarProviderId, registrarProvider.id),
     )
-    .where(eq(userTrackedDomains.verified, true));
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
 
   return rows;
 }
@@ -513,6 +521,7 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
 /**
  * Get all verified domains for re-verification.
  * Only returns domains with a verification method set.
+ * Archived domains are excluded since archiving pauses monitoring.
  */
 export async function getVerifiedDomainsForReverification(): Promise<
   TrackedDomainForReverification[]
@@ -533,7 +542,12 @@ export async function getVerifiedDomainsForReverification(): Promise<
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(eq(userTrackedDomains.verified, true));
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
 
   // Filter out domains without a verification method (shouldn't happen, but safe)
   return rows.filter(
@@ -559,6 +573,7 @@ export type PendingDomainForAutoVerification = {
  * Note: This excludes domains that were previously verified and then revoked
  * (those have verificationStatus = 'unverified' but may have had verificationFailedAt set).
  * We only want truly new pending domains that have never been verified.
+ * Archived domains are excluded since archiving pauses monitoring.
  */
 export async function getPendingDomainsForAutoVerification(): Promise<
   PendingDomainForAutoVerification[]
@@ -581,6 +596,8 @@ export async function getPendingDomainsForAutoVerification(): Promise<
         eq(userTrackedDomains.verified, false),
         // Exclude revoked domains (those that were previously verified)
         isNull(userTrackedDomains.verifiedAt),
+        // Exclude archived domains (archiving pauses monitoring)
+        isNull(userTrackedDomains.archivedAt),
       ),
     );
 

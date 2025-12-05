@@ -49,18 +49,11 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
     });
 
     if (error) {
-      logger.error("Failed to send Pro upgrade email", error, {
-        userId,
-        email: user.email,
-      });
+      logger.error("Failed to send Pro upgrade email", error, { userId });
       return false;
     }
 
-    logger.info("Sent Pro upgrade email", {
-      userId,
-      email: user.email,
-      emailId: data?.id,
-    });
+    logger.info("Sent Pro upgrade email", { userId, emailId: data?.id });
 
     // Also send the welcome/tips email
     await sendProWelcomeEmail(userId, user.name, user.email);
@@ -103,18 +96,11 @@ async function sendProWelcomeEmail(
     });
 
     if (error) {
-      logger.error("Failed to send Pro welcome email", error, {
-        userId,
-        email: userEmail,
-      });
+      logger.error("Failed to send Pro welcome email", error, { userId });
       return false;
     }
 
-    logger.info("Sent Pro welcome email", {
-      userId,
-      email: userEmail,
-      emailId: data?.id,
-    });
+    logger.info("Sent Pro welcome email", { userId, emailId: data?.id });
 
     return true;
   } catch (err) {
@@ -165,14 +151,12 @@ export async function sendSubscriptionCancelingEmail(
     if (error) {
       logger.error("Failed to send subscription canceling email", error, {
         userId,
-        email: user.email,
       });
       return false;
     }
 
     logger.info("Sent subscription canceling email", {
       userId,
-      email: user.email,
       emailId: data?.id,
       endsAt: endsAt.toISOString(),
     });
@@ -225,14 +209,12 @@ export async function sendSubscriptionExpiredEmail(
     if (error) {
       logger.error("Failed to send subscription expired email", error, {
         userId,
-        email: user.email,
       });
       return false;
     }
 
     logger.info("Sent subscription expired email", {
       userId,
-      email: user.email,
       emailId: data?.id,
       archivedCount,
     });

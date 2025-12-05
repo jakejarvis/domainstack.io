@@ -30,12 +30,17 @@ vi.mock("@/lib/polar/products", () => ({
   getTierForProductId: vi.fn(),
 }));
 
+vi.mock("@/lib/polar/emails", () => ({
+  sendSubscriptionExpiredEmail: vi.fn(),
+}));
+
 import {
   clearSubscriptionEndsAt,
   setSubscriptionEndsAt,
   updateUserTier,
 } from "@/lib/db/repos/user-subscription";
 import { handleDowngrade } from "@/lib/polar/downgrade";
+import { sendSubscriptionExpiredEmail } from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
 import {
   handleSubscriptionActive,
@@ -249,6 +254,8 @@ describe("handleSubscriptionCanceled", () => {
 describe("handleSubscriptionRevoked", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: handleDowngrade returns 0 archived domains
+    vi.mocked(handleDowngrade).mockResolvedValue(0);
   });
 
   it("calls handleDowngrade with user ID from customer.externalId", async () => {
@@ -263,11 +270,34 @@ describe("handleSubscriptionRevoked", () => {
     expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
   });
 
+  it("sends subscription expired email with archived count", async () => {
+    vi.mocked(handleDowngrade).mockResolvedValue(3);
+
+    await handleSubscriptionRevoked(createRevokedPayload());
+
+    expect(sendSubscriptionExpiredEmail).toHaveBeenCalledWith("user-456", 3);
+  });
+
+  it("does not fail webhook if email sending fails", async () => {
+    vi.mocked(sendSubscriptionExpiredEmail).mockRejectedValue(
+      new Error("Email failed"),
+    );
+
+    // Should not throw - email errors are logged but swallowed
+    await expect(
+      handleSubscriptionRevoked(createRevokedPayload()),
+    ).resolves.not.toThrow();
+
+    expect(handleDowngrade).toHaveBeenCalled();
+    expect(clearSubscriptionEndsAt).toHaveBeenCalled();
+  });
+
   it("does not downgrade when externalId (userId) is missing", async () => {
     await handleSubscriptionRevoked(createRevokedPayload({ userId: null }));
 
     expect(handleDowngrade).not.toHaveBeenCalled();
     expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+    expect(sendSubscriptionExpiredEmail).not.toHaveBeenCalled();
   });
 
   it("re-throws errors from handleDowngrade for webhook retry", async () => {

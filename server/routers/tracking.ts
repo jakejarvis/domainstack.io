@@ -52,6 +52,18 @@ const DomainInputSchema = z
     return { domain: registrable };
   });
 
+/**
+ * Build verification instructions for all methods.
+ * Centralizes instruction generation to avoid drift if methods are added.
+ */
+function buildVerificationInstructions(domain: string, token: string) {
+  return {
+    dns_txt: getVerificationInstructions(domain, token, "dns_txt"),
+    html_file: getVerificationInstructions(domain, token, "html_file"),
+    meta_tag: getVerificationInstructions(domain, token, "meta_tag"),
+  };
+}
+
 export const trackingRouter = createTRPCRouter({
   /**
    * Get user's limits and current usage.
@@ -115,23 +127,10 @@ export const trackingRouter = createTRPCRouter({
         }
 
         // If unverified, return the existing record so user can resume verification
-        const instructions = {
-          dns_txt: getVerificationInstructions(
-            domain,
-            existing.verificationToken,
-            "dns_txt",
-          ),
-          html_file: getVerificationInstructions(
-            domain,
-            existing.verificationToken,
-            "html_file",
-          ),
-          meta_tag: getVerificationInstructions(
-            domain,
-            existing.verificationToken,
-            "meta_tag",
-          ),
-        };
+        const instructions = buildVerificationInstructions(
+          domain,
+          existing.verificationToken,
+        );
 
         return {
           id: existing.id,
@@ -171,23 +170,11 @@ export const trackingRouter = createTRPCRouter({
           domainRecord.id,
         );
         if (raceExisting) {
-          const instructions = {
-            dns_txt: getVerificationInstructions(
-              domain,
-              raceExisting.verificationToken,
-              "dns_txt",
-            ),
-            html_file: getVerificationInstructions(
-              domain,
-              raceExisting.verificationToken,
-              "html_file",
-            ),
-            meta_tag: getVerificationInstructions(
-              domain,
-              raceExisting.verificationToken,
-              "meta_tag",
-            ),
-          };
+          const instructions = buildVerificationInstructions(
+            domain,
+            raceExisting.verificationToken,
+          );
+
           return {
             id: raceExisting.id,
             domain,
@@ -196,6 +183,7 @@ export const trackingRouter = createTRPCRouter({
             resumed: true,
           };
         }
+
         // This shouldn't happen, but guard against it
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -204,23 +192,10 @@ export const trackingRouter = createTRPCRouter({
       }
 
       // Get verification instructions for all methods
-      const instructions = {
-        dns_txt: getVerificationInstructions(
-          domain,
-          verificationToken,
-          "dns_txt",
-        ),
-        html_file: getVerificationInstructions(
-          domain,
-          verificationToken,
-          "html_file",
-        ),
-        meta_tag: getVerificationInstructions(
-          domain,
-          verificationToken,
-          "meta_tag",
-        ),
-      };
+      const instructions = buildVerificationInstructions(
+        domain,
+        verificationToken,
+      );
 
       return {
         id: tracked.id,
@@ -334,23 +309,10 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      return {
-        dns_txt: getVerificationInstructions(
-          tracked.domainName,
-          tracked.verificationToken,
-          "dns_txt",
-        ),
-        html_file: getVerificationInstructions(
-          tracked.domainName,
-          tracked.verificationToken,
-          "html_file",
-        ),
-        meta_tag: getVerificationInstructions(
-          tracked.domainName,
-          tracked.verificationToken,
-          "meta_tag",
-        ),
-      };
+      return buildVerificationInstructions(
+        tracked.domainName,
+        tracked.verificationToken,
+      );
     }),
 
   /**
@@ -495,7 +457,14 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      await deleteTrackedDomain(trackedDomainId);
+      const deleted = await deleteTrackedDomain(trackedDomainId);
+
+      if (!deleted) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to remove domain",
+        });
+      }
 
       return { success: true };
     }),

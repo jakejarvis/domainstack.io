@@ -5,6 +5,8 @@ import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { useLogger } from "@/hooks/use-logger";
 import { cn } from "@/lib/utils";
 
 const bannerVariants = cva(
@@ -61,7 +63,7 @@ const titleVariants = cva("font-medium text-sm", {
   },
 });
 
-const buttonVariants = cva("", {
+const bannerButtonVariants = cva("", {
   variants: {
     variant: {
       info: "bg-info-foreground text-white hover:bg-info-foreground/90 dark:text-info",
@@ -116,12 +118,32 @@ export function DashboardBanner({
   className,
 }: DashboardBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false);
+  const logger = useLogger({ component: "DashboardBanner" });
 
   if (isDismissed) return null;
 
   const handleDismiss = () => {
     setIsDismissed(true);
+    logger.debug("banner dismissed", { variant, title });
     onDismiss?.();
+  };
+
+  const handleActionClick = () => {
+    logger.debug("banner action clicked", {
+      variant,
+      title,
+      label: action?.label,
+    });
+    action?.onClick();
+  };
+
+  const handleSecondaryActionClick = () => {
+    logger.debug("banner secondary action clicked", {
+      variant,
+      title,
+      label: secondaryAction?.label,
+    });
+    secondaryAction?.onClick();
   };
 
   return (
@@ -150,21 +172,35 @@ export function DashboardBanner({
             <Button
               variant="ghost"
               size="sm"
-              onClick={secondaryAction.onClick}
+              onClick={handleSecondaryActionClick}
               disabled={secondaryAction.loading || secondaryAction.disabled}
               className="text-muted-foreground hover:text-foreground"
             >
-              {secondaryAction.loading ? "Loading..." : secondaryAction.label}
+              {secondaryAction.loading ? (
+                <>
+                  <Spinner />
+                  Loading...
+                </>
+              ) : (
+                secondaryAction.label
+              )}
             </Button>
           )}
           {action && (
             <Button
               size="sm"
-              onClick={action.onClick}
+              onClick={handleActionClick}
               disabled={action.loading || action.disabled}
-              className={buttonVariants({ variant })}
+              className={bannerButtonVariants({ variant })}
             >
-              {action.loading ? "Loading..." : action.label}
+              {action.loading ? (
+                <>
+                  <Spinner />
+                  Loading...
+                </>
+              ) : (
+                action.label
+              )}
             </Button>
           )}
         </div>

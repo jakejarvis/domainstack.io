@@ -6,6 +6,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
+import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";
 import {
   handleSubscriptionActive,
@@ -15,7 +16,20 @@ import {
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
 
-// Initialize Polar client (only if configured)
+// Validate required env vars
+if (!process.env.BETTER_AUTH_SECRET) {
+  throw new Error("BETTER_AUTH_SECRET is required");
+}
+if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+  throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required");
+}
+// Polar is optional, but webhook secret is required if Polar is enabled
+if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
+  throw new Error(
+    "POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set",
+  );
+}
+
 const polarClient = process.env.POLAR_ACCESS_TOKEN
   ? new Polar({
       accessToken: process.env.POLAR_ACCESS_TOKEN,
@@ -35,16 +49,15 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // Create subscription record for new user (defaults to free tier)
-          await db.insert(schema.userSubscriptions).values({ userId: user.id });
+          await createSubscription(user.id);
         },
       },
     },
   },
   socialProviders: {
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID || "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
     },
   },
   session: {
@@ -68,7 +81,6 @@ export const auth = betterAuth({
     ? [
         polar({
           client: polarClient,
-          // Automatically create Polar customer when user signs up
           createCustomerOnSignUp: true,
           use: [
             checkout({
@@ -78,7 +90,8 @@ export const auth = betterAuth({
             }),
             portal(),
             webhooks({
-              secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+              // biome-ignore lint/style/noNonNullAssertion: webhook secret is asserted above
+              secret: process.env.POLAR_WEBHOOK_SECRET!,
               onSubscriptionCreated: handleSubscriptionCreated,
               onSubscriptionActive: handleSubscriptionActive,
               onSubscriptionCanceled: handleSubscriptionCanceled,

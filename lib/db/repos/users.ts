@@ -1,14 +1,13 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, type InferSelectModel } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 
-export type UserData = {
-  id: string;
-  name: string;
-  email: string;
-};
+export type UserData = Pick<
+  InferSelectModel<typeof users>,
+  "id" | "name" | "email"
+>;
 
 /**
  * Get user by ID.

@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/repos/user-subscription";
 import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
+import { sendSubscriptionExpiredEmail } from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
 
 const logger = createLogger({ source: "polar-webhooks" });
@@ -170,9 +171,18 @@ export async function handleSubscriptionRevoked(
   }
 
   try {
-    await handleDowngrade(userId);
+    const archivedCount = await handleDowngrade(userId);
     await clearSubscriptionEndsAt(userId);
-    logger.info("downgraded user", { userId });
+    logger.info("downgraded user", { userId, archivedCount });
+
+    // Send expiration email (best-effort, don't fail webhook on email error)
+    try {
+      await sendSubscriptionExpiredEmail(userId, archivedCount);
+    } catch (emailErr) {
+      logger.error("failed to send subscription expired email", emailErr, {
+        userId,
+      });
+    }
   } catch (err) {
     logger.error("failed to downgrade user", err, { userId });
     throw err; // Re-throw to trigger webhook retry

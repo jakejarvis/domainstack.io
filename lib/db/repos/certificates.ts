@@ -62,7 +62,7 @@ export type TrackedDomainCertificate = {
 
 /**
  * Get all certificates for verified tracked domains.
- * Returns the leaf certificate (first in chain) for each domain.
+ * Returns the earliest expiring certificate for each tracked domain.
  */
 export async function getVerifiedTrackedDomainsCertificates(): Promise<
   TrackedDomainCertificate[]
