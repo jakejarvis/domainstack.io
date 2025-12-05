@@ -6,7 +6,7 @@ vi.mock("@/lib/db/repos/tracked-domains", () => ({
   countActiveTrackedDomainsForUser: vi.fn(),
 }));
 
-vi.mock("@/lib/db/repos/user-limits", () => ({
+vi.mock("@/lib/db/repos/user-subscription", () => ({
   updateUserTier: vi.fn(),
 }));
 
@@ -18,7 +18,7 @@ import {
   archiveOldestActiveDomains,
   countActiveTrackedDomainsForUser,
 } from "@/lib/db/repos/tracked-domains";
-import { updateUserTier } from "@/lib/db/repos/user-limits";
+import { updateUserTier } from "@/lib/db/repos/user-subscription";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { handleDowngrade } from "./downgrade";
 

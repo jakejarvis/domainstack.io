@@ -22,9 +22,8 @@ import {
   domains,
   providers,
   registrations,
-  trackedDomains,
-  userLimits,
   users,
+  userTrackedDomains,
 } from "@/lib/db/schema";
 import {
   archiveOldestActiveDomains,
@@ -67,13 +66,6 @@ beforeAll(async () => {
     .returning();
   testUserId = insertedUser[0].id;
 
-  // Create user limits
-  await db.insert(userLimits).values({
-    userId: testUserId,
-    tier: "free",
-    maxDomainsOverride: null,
-  });
-
   // Create a test domain
   const insertedDomain = await db
     .insert(domains)
@@ -93,7 +85,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   // Clear test data before each test (order matters due to FK constraints)
-  await db.delete(trackedDomains);
+  await db.delete(userTrackedDomains);
   await db.delete(registrations);
   await db.delete(providers);
   // Clean up domains created mid-test, but preserve the main test domain

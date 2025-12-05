@@ -26,15 +26,21 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
-    schema: {
-      user: schema.users,
-      session: schema.sessions,
-      account: schema.accounts,
-      verification: schema.verifications,
-    },
+    schema,
+    usePlural: true,
   }),
   baseURL: BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Create subscription record for new user (defaults to free tier)
+          await db.insert(schema.userSubscriptions).values({ userId: user.id });
+        },
+      },
+    },
+  },
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
@@ -54,6 +60,9 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: ["github"],
     },
+  },
+  experimental: {
+    joins: true,
   },
   plugins: polarClient
     ? [

@@ -19,13 +19,13 @@ import {
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import {
-  canUserAddDomain,
-  getOrCreateUserLimits,
-} from "@/lib/db/repos/user-limits";
-import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
+import {
+  canUserAddDomain,
+  getUserSubscription,
+} from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   NotificationOverridesSchema,
@@ -57,19 +57,19 @@ export const trackingRouter = createTRPCRouter({
    * Get user's limits and current usage.
    */
   getLimits: protectedProcedure.query(async ({ ctx }) => {
-    const limits = await getOrCreateUserLimits(ctx.user.id);
+    const sub = await getUserSubscription(ctx.user.id);
     const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
     const archivedCount = await countArchivedTrackedDomainsForUser(ctx.user.id);
 
     return {
-      tier: limits.tier,
-      maxDomains: limits.maxDomains,
+      tier: sub.tier,
+      maxDomains: sub.maxDomains,
       activeCount,
       archivedCount,
       // Only active domains count against limit
-      canAddMore: activeCount < limits.maxDomains,
+      canAddMore: activeCount < sub.maxDomains,
       // When a canceled subscription expires (null = no pending cancellation)
-      subscriptionEndsAt: limits.subscriptionEndsAt,
+      subscriptionEndsAt: sub.endsAt,
     };
   }),
 
@@ -589,10 +589,10 @@ export const trackingRouter = createTRPCRouter({
       }
 
       // Check user has capacity to unarchive
-      const limits = await getOrCreateUserLimits(ctx.user.id);
+      const sub = await getUserSubscription(ctx.user.id);
       const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
 
-      if (activeCount >= limits.maxDomains) {
+      if (activeCount >= sub.maxDomains) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message:

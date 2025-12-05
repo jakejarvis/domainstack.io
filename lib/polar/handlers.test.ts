@@ -16,7 +16,7 @@ type SubscriptionRevokedPayload = Parameters<
 >[0];
 
 // Mock the dependencies
-vi.mock("@/lib/db/repos/user-limits", () => ({
+vi.mock("@/lib/db/repos/user-subscription", () => ({
   updateUserTier: vi.fn(),
   setSubscriptionEndsAt: vi.fn(),
   clearSubscriptionEndsAt: vi.fn(),
@@ -34,7 +34,7 @@ import {
   clearSubscriptionEndsAt,
   setSubscriptionEndsAt,
   updateUserTier,
-} from "@/lib/db/repos/user-limits";
+} from "@/lib/db/repos/user-subscription";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import { getTierForProductId } from "@/lib/polar/products";
 import {

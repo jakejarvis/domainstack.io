@@ -1,8 +1,14 @@
 import "server-only";
+
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { certificates, domains, trackedDomains, users } from "@/lib/db/schema";
+import {
+  certificates,
+  domains,
+  users,
+  userTrackedDomains,
+} from "@/lib/db/schema";
 import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
 import type { NotificationOverrides } from "@/lib/schemas";
 
@@ -63,21 +69,21 @@ export async function getVerifiedTrackedDomainsCertificates(): Promise<
 > {
   const rows = await db
     .select({
-      trackedDomainId: trackedDomains.id,
-      userId: trackedDomains.userId,
-      domainId: trackedDomains.domainId,
+      trackedDomainId: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainId: userTrackedDomains.domainId,
       domainName: domains.name,
-      notificationOverrides: trackedDomains.notificationOverrides,
+      notificationOverrides: userTrackedDomains.notificationOverrides,
       validTo: certificates.validTo,
       issuer: certificates.issuer,
       userEmail: users.email,
       userName: users.name,
     })
-    .from(trackedDomains)
-    .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
     .innerJoin(certificates, eq(domains.id, certificates.domainId))
-    .innerJoin(users, eq(trackedDomains.userId, users.id))
-    .where(eq(trackedDomains.verified, true));
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .where(eq(userTrackedDomains.verified, true));
 
   // Group by tracked domain and take the earliest expiring certificate
   const byTrackedDomain = new Map<string, TrackedDomainCertificate>();

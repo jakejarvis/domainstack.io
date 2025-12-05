@@ -4,7 +4,7 @@ import {
   archiveOldestActiveDomains,
   countActiveTrackedDomainsForUser,
 } from "@/lib/db/repos/tracked-domains";
-import { updateUserTier } from "@/lib/db/repos/user-limits";
+import { updateUserTier } from "@/lib/db/repos/user-subscription";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 

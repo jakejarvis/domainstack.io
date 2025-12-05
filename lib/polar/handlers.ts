@@ -5,7 +5,7 @@ import {
   clearSubscriptionEndsAt,
   setSubscriptionEndsAt,
   updateUserTier,
-} from "@/lib/db/repos/user-limits";
+} from "@/lib/db/repos/user-subscription";
 import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import { getTierForProductId } from "@/lib/polar/products";

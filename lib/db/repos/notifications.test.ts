@@ -20,9 +20,8 @@ import { db } from "@/lib/db/client";
 import {
   domains,
   notifications,
-  trackedDomains,
-  userLimits,
   users,
+  userTrackedDomains,
 } from "@/lib/db/schema";
 import {
   clearCertificateExpiryNotifications,
@@ -51,13 +50,6 @@ beforeAll(async () => {
     .returning();
   testUserId = insertedUser[0].id;
 
-  // Create user limits
-  await db.insert(userLimits).values({
-    userId: testUserId,
-    tier: "free",
-    maxDomainsOverride: null,
-  });
-
   // Create a test domain
   const insertedDomain = await db
     .insert(domains)
@@ -71,7 +63,7 @@ beforeAll(async () => {
 
   // Create a tracked domain
   const insertedTracked = await db
-    .insert(trackedDomains)
+    .insert(userTrackedDomains)
     .values({
       userId: testUserId,
       domainId: testDomainId,
