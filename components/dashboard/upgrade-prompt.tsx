@@ -2,6 +2,7 @@
 
 import { Crown } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -49,6 +50,7 @@ export function UpgradePrompt({
       });
     } catch (err) {
       logger.error("Failed to open checkout", err);
+      toast.error("Failed to open checkout. Please try again.");
     } finally {
       setIsLoading(false);
     }

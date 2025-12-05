@@ -11,3 +11,4 @@ export * from "./internal/notifications";
 export * from "./internal/provider";
 export * from "./internal/sections";
 export * from "./internal/user";
+export * from "./internal/verification";

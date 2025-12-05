@@ -52,6 +52,7 @@ export function SubscriptionEndingBanner({
   };
 
   const handleManage = async () => {
+    if (isManageLoading) return;
     setIsManageLoading(true);
     try {
       await customerPortal();
@@ -84,8 +85,9 @@ export function SubscriptionEndingBanner({
         loading: isLoading,
       }}
       secondaryAction={{
-        label: isManageLoading ? "Opening..." : "Manage",
+        label: "Manage",
         onClick: handleManage,
+        loading: isManageLoading,
       }}
     />
   );

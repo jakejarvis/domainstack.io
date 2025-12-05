@@ -88,11 +88,14 @@ type DashboardBannerProps = VariantProps<typeof bannerVariants> & {
     label: string;
     onClick: () => void;
     loading?: boolean;
+    disabled?: boolean;
   };
   /** Secondary action (e.g., "Learn more") */
   secondaryAction?: {
     label: string;
     onClick: () => void;
+    loading?: boolean;
+    disabled?: boolean;
   };
   /** Allow dismissing the banner */
   dismissible?: boolean;
@@ -148,16 +151,17 @@ export function DashboardBanner({
               variant="ghost"
               size="sm"
               onClick={secondaryAction.onClick}
+              disabled={secondaryAction.loading || secondaryAction.disabled}
               className="text-muted-foreground hover:text-foreground"
             >
-              {secondaryAction.label}
+              {secondaryAction.loading ? "Loading..." : secondaryAction.label}
             </Button>
           )}
           {action && (
             <Button
               size="sm"
               onClick={action.onClick}
-              disabled={action.loading}
+              disabled={action.loading || action.disabled}
               className={buttonVariants({ variant })}
             >
               {action.loading ? "Loading..." : action.label}

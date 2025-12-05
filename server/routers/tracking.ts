@@ -27,7 +27,10 @@ import {
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import type { NotificationOverrides } from "@/lib/schemas";
+import {
+  NotificationOverridesSchema,
+  VerificationMethodSchema,
+} from "@/lib/schemas";
 import {
   generateVerificationToken,
   getVerificationInstructions,
@@ -35,15 +38,6 @@ import {
   verifyDomainOwnership,
 } from "@/server/services/verification";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-
-// Schema for notification overrides
-const NotificationOverridesSchema = z.object({
-  domainExpiry: z.boolean().optional(),
-  certificateExpiry: z.boolean().optional(),
-  verificationStatus: z.boolean().optional(),
-}) satisfies z.ZodType<NotificationOverrides>;
-
-const VerificationMethodSchema = z.enum(["dns_txt", "html_file", "meta_tag"]);
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })

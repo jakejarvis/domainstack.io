@@ -202,18 +202,31 @@ export async function canUserAddDomain(
 /**
  * Set the subscription end date (when a canceled subscription expires).
  * Used when a user cancels their subscription but still has access until period end.
+ *
+ * Note: This should only be called for users with an existing subscription.
+ * If no user_limits row exists, this logs a warning and no-ops since a user
+ * without a row has never had a subscription to cancel.
  */
 export async function setSubscriptionEndsAt(
   userId: string,
   endsAt: Date,
 ): Promise<void> {
-  await db
+  const updated = await db
     .update(userLimits)
     .set({
       subscriptionEndsAt: endsAt,
       updatedAt: new Date(),
     })
-    .where(eq(userLimits.userId, userId));
+    .where(eq(userLimits.userId, userId))
+    .returning({ userId: userLimits.userId });
+
+  if (updated.length === 0) {
+    logger.warn(
+      "attempted to set subscription end date for user without limits row",
+      { userId },
+    );
+    return;
+  }
 
   logger.info("set subscription end date", {
     userId,
@@ -226,15 +239,25 @@ export async function setSubscriptionEndsAt(
  * Used when:
  * - User re-subscribes after canceling
  * - Subscription is revoked (downgrade already happened)
+ *
+ * Note: If no user_limits row exists, this is a no-op since there's nothing to clear.
  */
 export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
-  await db
+  const updated = await db
     .update(userLimits)
     .set({
       subscriptionEndsAt: null,
       updatedAt: new Date(),
     })
-    .where(eq(userLimits.userId, userId));
+    .where(eq(userLimits.userId, userId))
+    .returning({ userId: userLimits.userId });
+
+  if (updated.length === 0) {
+    logger.debug("no subscription end date to clear (user has no limits row)", {
+      userId,
+    });
+    return;
+  }
 
   logger.info("cleared subscription end date", { userId });
 }
