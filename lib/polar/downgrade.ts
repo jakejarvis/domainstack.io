@@ -15,8 +15,9 @@ const logger = createLogger({ source: "polar-downgrade" });
  * Archives oldest domains that exceed the free tier limit.
  *
  * @param userId - The user ID (Polar customer ID maps to our user ID)
+ * @returns The number of domains that were archived (0 if none)
  */
-export async function handleDowngrade(userId: string): Promise<void> {
+export async function handleDowngrade(userId: string): Promise<number> {
   // 1. Update user tier to free
   await updateUserTier(userId, "free");
 
@@ -41,5 +42,9 @@ export async function handleDowngrade(userId: string): Promise<void> {
       userId,
       archivedCount,
     });
+
+    return archivedCount;
   }
+
+  return 0;
 }
