@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, asc, count, eq, isNotNull, isNull } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
@@ -151,24 +152,77 @@ export async function findTrackedDomainWithDomainName(
   return rows[0] ?? null;
 }
 
+// Shared row type for the complex tracked domains query
+type TrackedDomainRow = {
+  id: string;
+  userId: string;
+  domainId: string;
+  domainName: string;
+  verified: boolean;
+  verificationMethod: VerificationMethod | null;
+  verificationToken: string;
+  verificationStatus: VerificationStatusType;
+  verificationFailedAt: Date | null;
+  lastVerifiedAt: Date | null;
+  notificationOverrides: NotificationOverrides;
+  createdAt: Date;
+  verifiedAt: Date | null;
+  archivedAt: Date | null;
+  expirationDate: Date | null;
+  registrarName: string | null;
+  registrarDomain: string | null;
+  dnsName: string | null;
+  dnsDomain: string | null;
+  hostingName: string | null;
+  hostingDomain: string | null;
+  emailName: string | null;
+  emailDomain: string | null;
+};
+
 /**
- * Get all tracked domains for a user with domain details.
- * @param includeArchived - If true, returns all domains including archived. Default false.
+ * Transform flat query rows into nested TrackedDomainWithDetails structure.
  */
-export async function getTrackedDomainsForUser(
-  userId: string,
-  includeArchived = false,
+function transformToTrackedDomainWithDetails(
+  row: TrackedDomainRow,
+): TrackedDomainWithDetails {
+  return {
+    id: row.id,
+    userId: row.userId,
+    domainId: row.domainId,
+    domainName: row.domainName,
+    verified: row.verified,
+    verificationMethod: row.verificationMethod,
+    verificationToken: row.verificationToken,
+    verificationStatus: row.verificationStatus,
+    verificationFailedAt: row.verificationFailedAt,
+    lastVerifiedAt: row.lastVerifiedAt,
+    notificationOverrides: row.notificationOverrides,
+    createdAt: row.createdAt,
+    verifiedAt: row.verifiedAt,
+    archivedAt: row.archivedAt,
+    expirationDate: row.expirationDate,
+    registrar: { name: row.registrarName, domain: row.registrarDomain },
+    dns: { name: row.dnsName, domain: row.dnsDomain },
+    hosting: { name: row.hostingName, domain: row.hostingDomain },
+    email: { name: row.emailName, domain: row.emailDomain },
+  };
+}
+
+/**
+ * Internal helper to query tracked domains with full details.
+ * Centralizes the complex select/join logic used by multiple public functions.
+ */
+async function queryTrackedDomainsWithDetails(
+  whereCondition: SQL,
+  orderByColumn:
+    | typeof trackedDomains.createdAt
+    | typeof trackedDomains.archivedAt,
 ): Promise<TrackedDomainWithDetails[]> {
   // Create aliases for the providers table (joined multiple times)
   const registrarProvider = alias(providers, "registrar_provider");
   const dnsProvider = alias(providers, "dns_provider");
   const hostingProvider = alias(providers, "hosting_provider");
   const emailProvider = alias(providers, "email_provider");
-
-  // Build where condition based on includeArchived flag
-  const whereCondition = includeArchived
-    ? eq(trackedDomains.userId, userId)
-    : and(eq(trackedDomains.userId, userId), isNull(trackedDomains.archivedAt));
 
   const rows = await db
     .select({
@@ -187,10 +241,8 @@ export async function getTrackedDomainsForUser(
       verifiedAt: trackedDomains.verifiedAt,
       archivedAt: trackedDomains.archivedAt,
       expirationDate: registrations.expirationDate,
-      // Registrar from registrations table
       registrarName: registrarProvider.name,
       registrarDomain: registrarProvider.domain,
-      // DNS, Hosting, Email from hosting table
       dnsName: dnsProvider.name,
       dnsDomain: dnsProvider.domain,
       hostingName: hostingProvider.name,
@@ -213,30 +265,28 @@ export async function getTrackedDomainsForUser(
     )
     .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
     .where(whereCondition)
-    .orderBy(trackedDomains.createdAt);
+    .orderBy(orderByColumn);
 
-  // Transform flat rows into nested structure
-  return rows.map((row) => ({
-    id: row.id,
-    userId: row.userId,
-    domainId: row.domainId,
-    domainName: row.domainName,
-    verified: row.verified,
-    verificationMethod: row.verificationMethod,
-    verificationToken: row.verificationToken,
-    verificationStatus: row.verificationStatus,
-    verificationFailedAt: row.verificationFailedAt,
-    lastVerifiedAt: row.lastVerifiedAt,
-    notificationOverrides: row.notificationOverrides,
-    createdAt: row.createdAt,
-    verifiedAt: row.verifiedAt,
-    archivedAt: row.archivedAt,
-    expirationDate: row.expirationDate,
-    registrar: { name: row.registrarName, domain: row.registrarDomain },
-    dns: { name: row.dnsName, domain: row.dnsDomain },
-    hosting: { name: row.hostingName, domain: row.hostingDomain },
-    email: { name: row.emailName, domain: row.emailDomain },
-  }));
+  return rows.map(transformToTrackedDomainWithDetails);
+}
+
+/**
+ * Get all tracked domains for a user with domain details.
+ * @param includeArchived - If true, returns all domains including archived. Default false.
+ */
+export async function getTrackedDomainsForUser(
+  userId: string,
+  includeArchived = false,
+): Promise<TrackedDomainWithDetails[]> {
+  const whereCondition = includeArchived
+    ? eq(trackedDomains.userId, userId)
+    : and(eq(trackedDomains.userId, userId), isNull(trackedDomains.archivedAt));
+
+  // and() returns SQL | undefined, but with 2+ args it always returns SQL
+  return queryTrackedDomainsWithDetails(
+    whereCondition as SQL,
+    trackedDomains.createdAt,
+  );
 }
 
 /**
@@ -315,9 +365,12 @@ export async function verifyTrackedDomain(
 
 /**
  * Update notification overrides for a tracked domain.
- * Pass partial overrides to update only specific categories.
- * Pass null values to reset individual categories to inherit from global.
- * Pass empty object {} to reset all overrides.
+ * Performs a partial merge: only fields with explicit values are updated,
+ * undefined fields are left unchanged.
+ *
+ * To reset all overrides (inherit all from global), use `resetNotificationOverrides`.
+ *
+ * Returns null if the tracked domain doesn't exist.
  */
 export async function updateNotificationOverrides(
   id: string,
@@ -496,6 +549,10 @@ export type PendingDomainForAutoVerification = {
 /**
  * Get all pending (unverified) domains that might have added verification.
  * These are domains where the user started the add flow but never clicked "Verify".
+ *
+ * Note: This excludes domains that were previously verified and then revoked
+ * (those have verificationStatus = 'unverified' but may have had verificationFailedAt set).
+ * We only want truly new pending domains that have never been verified.
  */
 export async function getPendingDomainsForAutoVerification(): Promise<
   PendingDomainForAutoVerification[]
@@ -513,7 +570,13 @@ export async function getPendingDomainsForAutoVerification(): Promise<
     .from(trackedDomains)
     .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
     .innerJoin(users, eq(trackedDomains.userId, users.id))
-    .where(eq(trackedDomains.verified, false));
+    .where(
+      and(
+        eq(trackedDomains.verified, false),
+        // Exclude revoked domains (those that were previously verified)
+        isNull(trackedDomains.verifiedAt),
+      ),
+    );
 
   return rows;
 }
@@ -652,21 +715,16 @@ export async function archiveOldestActiveDomains(
 
   if (domainsToArchive.length === 0) return 0;
 
-  const now = new Date();
+  const idsToArchive = domainsToArchive.map((d) => d.id);
 
-  // Archive each domain individually
-  let archivedCount = 0;
-  for (const { id } of domainsToArchive) {
-    const result = await db
-      .update(trackedDomains)
-      .set({ archivedAt: now })
-      .where(eq(trackedDomains.id, id))
-      .returning();
+  // Archive all domains in a single batch update
+  const result = await db
+    .update(trackedDomains)
+    .set({ archivedAt: new Date() })
+    .where(inArray(trackedDomains.id, idsToArchive))
+    .returning({ id: trackedDomains.id });
 
-    if (result.length > 0) {
-      archivedCount++;
-    }
-  }
+  const archivedCount = result.length;
 
   logger.info("archived oldest active domains", {
     userId,
@@ -683,79 +741,14 @@ export async function archiveOldestActiveDomains(
 export async function getArchivedDomainsForUser(
   userId: string,
 ): Promise<TrackedDomainWithDetails[]> {
-  // Create aliases for the providers table (joined multiple times)
-  const registrarProvider = alias(providers, "registrar_provider");
-  const dnsProvider = alias(providers, "dns_provider");
-  const hostingProvider = alias(providers, "hosting_provider");
-  const emailProvider = alias(providers, "email_provider");
+  const whereCondition = and(
+    eq(trackedDomains.userId, userId),
+    isNotNull(trackedDomains.archivedAt),
+  );
 
-  const rows = await db
-    .select({
-      id: trackedDomains.id,
-      userId: trackedDomains.userId,
-      domainId: trackedDomains.domainId,
-      domainName: domains.name,
-      verified: trackedDomains.verified,
-      verificationMethod: trackedDomains.verificationMethod,
-      verificationToken: trackedDomains.verificationToken,
-      verificationStatus: trackedDomains.verificationStatus,
-      verificationFailedAt: trackedDomains.verificationFailedAt,
-      lastVerifiedAt: trackedDomains.lastVerifiedAt,
-      notificationOverrides: trackedDomains.notificationOverrides,
-      createdAt: trackedDomains.createdAt,
-      verifiedAt: trackedDomains.verifiedAt,
-      archivedAt: trackedDomains.archivedAt,
-      expirationDate: registrations.expirationDate,
-      registrarName: registrarProvider.name,
-      registrarDomain: registrarProvider.domain,
-      dnsName: dnsProvider.name,
-      dnsDomain: dnsProvider.domain,
-      hostingName: hostingProvider.name,
-      hostingDomain: hostingProvider.domain,
-      emailName: emailProvider.name,
-      emailDomain: emailProvider.domain,
-    })
-    .from(trackedDomains)
-    .innerJoin(domains, eq(trackedDomains.domainId, domains.id))
-    .leftJoin(registrations, eq(domains.id, registrations.domainId))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
-    .leftJoin(hosting, eq(domains.id, hosting.domainId))
-    .leftJoin(dnsProvider, eq(hosting.dnsProviderId, dnsProvider.id))
-    .leftJoin(
-      hostingProvider,
-      eq(hosting.hostingProviderId, hostingProvider.id),
-    )
-    .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
-    .where(
-      and(
-        eq(trackedDomains.userId, userId),
-        isNotNull(trackedDomains.archivedAt),
-      ),
-    )
-    .orderBy(trackedDomains.archivedAt);
-
-  return rows.map((row) => ({
-    id: row.id,
-    userId: row.userId,
-    domainId: row.domainId,
-    domainName: row.domainName,
-    verified: row.verified,
-    verificationMethod: row.verificationMethod,
-    verificationToken: row.verificationToken,
-    verificationStatus: row.verificationStatus,
-    verificationFailedAt: row.verificationFailedAt,
-    lastVerifiedAt: row.lastVerifiedAt,
-    notificationOverrides: row.notificationOverrides,
-    createdAt: row.createdAt,
-    verifiedAt: row.verifiedAt,
-    archivedAt: row.archivedAt,
-    expirationDate: row.expirationDate,
-    registrar: { name: row.registrarName, domain: row.registrarDomain },
-    dns: { name: row.dnsName, domain: row.dnsDomain },
-    hosting: { name: row.hostingName, domain: row.hostingDomain },
-    email: { name: row.emailName, domain: row.emailDomain },
-  }));
+  // and() returns SQL | undefined, but with 2+ args it always returns SQL
+  return queryTrackedDomainsWithDetails(
+    whereCondition as SQL,
+    trackedDomains.archivedAt,
+  );
 }

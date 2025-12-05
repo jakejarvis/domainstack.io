@@ -107,7 +107,7 @@ The domain tracking feature allows authenticated users to track domains they own
 
 ### Core Tables
 - `tracked_domains`: Links users to domains with verification status, token, per-domain notification overrides, and `archivedAt` for soft-archiving.
-- `user_limits`: User tier (free/pro) with optional `maxDomainsOverride` for special cases.
+- `user_limits`: User tier (free/pro) with optional `maxDomainsOverride` for special cases, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 - `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, verificationStatus).
 - `notifications`: History of sent notifications with Resend email ID for troubleshooting.
 
@@ -166,11 +166,17 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
 ### Integration
 - **Server:** `lib/auth.ts` includes Polar plugin with `checkout`, `portal`, and `webhooks` handlers.
 - **Client:** `lib/auth-client.ts` exports `checkout()` and `customerPortal()` for UI triggers.
-- **Webhook handlers:** `lib/polar/handlers.ts` with `handleSubscriptionCreated` (upgrades tier) and `handleSubscriptionRevoked` (triggers downgrade).
+- **Webhook handlers:** `lib/polar/handlers.ts`:
+  - `handleSubscriptionCreated` - logs subscription initiation (payment may still be pending)
+  - `handleSubscriptionActive` - upgrades tier after payment confirmed, clears any pending cancellation
+  - `handleSubscriptionCanceled` - stores `subscriptionEndsAt` to show banner (user keeps access until period ends)
+  - `handleSubscriptionRevoked` - triggers downgrade and clears `subscriptionEndsAt`
 - **Downgrade logic:** `lib/polar/downgrade.ts` archives oldest domains beyond free tier limit.
 
 ### UI Components
 - **Upgrade prompt:** `components/dashboard/upgrade-prompt.tsx` - contextual banner when near/at domain limit.
+- **Subscription ending banner:** `components/dashboard/subscription-ending-banner.tsx` - shows when subscription is canceled but still active.
+- **Dashboard banner:** `components/dashboard/dashboard-banner.tsx` - generic banner with variants (info, warning, success, danger, pro).
 - **Subscription section:** `components/dashboard/subscription-section.tsx` - settings page with plan info and manage/upgrade buttons.
 - **Archived domains:** `components/dashboard/archived-domains-view.tsx` - view and reactivate archived domains.
 

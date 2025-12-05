@@ -1,4 +1,4 @@
-import type { UserTier } from "@/lib/db/repos/user-limits";
+import type { UserTier } from "@/lib/schemas";
 
 /**
  * Polar product configuration.

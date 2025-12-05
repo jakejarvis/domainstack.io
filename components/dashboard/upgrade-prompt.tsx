@@ -11,12 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { checkout } from "@/lib/auth-client";
+import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
+import type { UserTier } from "@/lib/schemas";
 
 type UpgradePromptProps = {
   currentCount: number;
   maxDomains: number;
-  tier: string;
+  tier: UserTier;
 };
 
 export function UpgradePrompt({
@@ -46,7 +48,7 @@ export function UpgradePrompt({
         ],
       });
     } catch (err) {
-      console.error("Failed to open checkout:", err);
+      logger.error("Failed to open checkout", err);
     } finally {
       setIsLoading(false);
     }

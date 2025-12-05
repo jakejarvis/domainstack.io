@@ -23,7 +23,7 @@ export async function handleDowngrade(userId: string): Promise<void> {
   // 2. Get the free tier limit
   const freeLimit = await getMaxDomainsForTier("free");
 
-  // 3. Count user's active (non-archived) verified domains
+  // 3. Count user's active (non-archived) tracked domains
   const activeCount = await countActiveTrackedDomainsForUser(userId);
 
   // 4. If over limit, archive the oldest domains

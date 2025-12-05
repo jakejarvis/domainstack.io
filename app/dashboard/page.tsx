@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AddDomainDialog } from "@/components/dashboard/add-domain-dialog";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Badge } from "@/components/ui/badge";
@@ -145,7 +146,7 @@ export default function DashboardPage() {
                 ...old,
                 activeCount: Math.max(0, old.activeCount - 1),
                 archivedCount: old.archivedCount + 1,
-                canAddMore: true,
+                canAddMore: old.activeCount - 1 < old.maxDomains,
               }
             : old,
       );
@@ -320,6 +321,7 @@ export default function DashboardPage() {
   const maxDomains = limitsQuery.data?.maxDomains ?? 5;
   const tier = limitsQuery.data?.tier ?? "free";
   const canAddMore = limitsQuery.data?.canAddMore ?? true;
+  const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
   const domains = domainsQuery.data ?? [];
   const archivedDomains = archivedDomainsQuery.data ?? [];
 
@@ -333,6 +335,11 @@ export default function DashboardPage() {
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
       />
+
+      {/* Subscription ending banner for users who canceled */}
+      {subscriptionEndsAt && (
+        <SubscriptionEndingBanner subscriptionEndsAt={subscriptionEndsAt} />
+      )}
 
       {/* Upgrade prompt when near limit */}
       <UpgradePrompt

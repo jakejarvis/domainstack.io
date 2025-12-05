@@ -16,6 +16,7 @@ vi.mock("@/lib/db/client", async () => {
   return { db };
 });
 
+import { ne } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   domains,
@@ -95,6 +96,8 @@ beforeEach(async () => {
   await db.delete(trackedDomains);
   await db.delete(registrations);
   await db.delete(providers);
+  // Clean up domains created mid-test, but preserve the main test domain
+  await db.delete(domains).where(ne(domains.id, testDomainId));
 });
 
 describe("createTrackedDomain", () => {

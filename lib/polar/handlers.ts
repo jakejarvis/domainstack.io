@@ -1,46 +1,70 @@
 import "server-only";
 
-import { updateUserTier } from "@/lib/db/repos/user-limits";
+import type { WebhooksOptions } from "@polar-sh/better-auth";
+import {
+  clearSubscriptionEndsAt,
+  setSubscriptionEndsAt,
+  updateUserTier,
+} from "@/lib/db/repos/user-limits";
 import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import { getTierForProductId } from "@/lib/polar/products";
 
 const logger = createLogger({ source: "polar-webhooks" });
 
-/**
- * Subscription webhook payload from Polar.
- * The customer.externalId contains our user ID (set by better-auth when createCustomerOnSignUp: true).
- */
-type SubscriptionWebhookPayload = {
-  data: {
-    id: string;
-    customerId: string; // Polar's internal customer ID
-    customer: {
-      id: string;
-      externalId: string | null; // Our user ID
-      email: string;
-      name: string | null;
-    };
-    product: {
-      id: string;
-      name: string;
-    };
-    status: string;
-    metadata?: Record<string, unknown>;
-  };
-};
+// Extract payload types from WebhooksOptions to ensure compatibility with better-auth.
+// Note: We use better-auth's webhooks() plugin which handles validation internally
+// (using @polar-sh/sdk/webhooks under the hood), so we don't call validateEvent directly.
+// These types are inferred from the callback signatures to match what better-auth passes to us.
+type SubscriptionCreatedPayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionCreated"]>
+>[0];
+type SubscriptionActivePayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionActive"]>
+>[0];
+type SubscriptionCanceledPayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionCanceled"]>
+>[0];
+type SubscriptionRevokedPayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionRevoked"]>
+>[0];
 
 /**
  * Handle Polar subscription created webhook.
- * Called when a user successfully subscribes to a plan.
+ * Called when a user initiates a subscription.
+ *
+ * Note: When this event occurs, the subscription status might not be "active" yet,
+ * as we may still be waiting for the first payment to be processed.
+ * We use subscription.active for the actual tier upgrade.
  */
 export async function handleSubscriptionCreated(
-  payload: SubscriptionWebhookPayload,
+  payload: SubscriptionCreatedPayload,
+) {
+  const { customer, product } = payload.data;
+
+  // Log for observability, but don't upgrade tier yet
+  logger.info("subscription created (pending payment)", {
+    polarCustomerId: customer.id,
+    userId: customer.externalId,
+    productId: product.id,
+    subscriptionId: payload.data.id,
+    status: payload.data.status,
+  });
+}
+
+/**
+ * Handle Polar subscription active webhook.
+ * Called when a subscription becomes active (payment confirmed).
+ *
+ * This is when we actually upgrade the user's tier and clear any pending cancellation.
+ */
+export async function handleSubscriptionActive(
+  payload: SubscriptionActivePayload,
 ) {
   const { customer, product } = payload.data;
   const userId = customer.externalId;
 
-  logger.info("subscription created", {
+  logger.info("subscription active (payment confirmed)", {
     polarCustomerId: customer.id,
     userId,
     productId: product.id,
@@ -50,7 +74,6 @@ export async function handleSubscriptionCreated(
   if (!userId) {
     logger.error("subscription webhook missing customer.externalId (userId)", {
       polarCustomerId: customer.id,
-      customerEmail: customer.email,
     });
     return;
   }
@@ -67,7 +90,9 @@ export async function handleSubscriptionCreated(
   }
 
   try {
+    // Upgrade tier and clear any pending cancellation (e.g., user re-subscribed)
     await updateUserTier(userId, tier);
+    await clearSubscriptionEndsAt(userId);
     logger.info("upgraded user tier", { userId, tier });
   } catch (err) {
     logger.error("failed to upgrade user tier", err, { userId, tier });
@@ -76,16 +101,62 @@ export async function handleSubscriptionCreated(
 }
 
 /**
+ * Handle Polar subscription canceled webhook.
+ * Called when a user cancels their subscription (but still has access until period ends).
+ *
+ * This is different from "revoked" - the user keeps their Pro access until currentPeriodEnd.
+ * We store the end date to show a "Subscription ending" banner in the dashboard.
+ */
+export async function handleSubscriptionCanceled(
+  payload: SubscriptionCanceledPayload,
+) {
+  const { customer, currentPeriodEnd, canceledAt } = payload.data;
+  const userId = customer.externalId;
+
+  logger.info("subscription canceled (still active until period end)", {
+    polarCustomerId: customer.id,
+    userId,
+    subscriptionId: payload.data.id,
+    currentPeriodEnd,
+    canceledAt,
+  });
+
+  if (!userId) {
+    logger.error("subscription webhook missing customer.externalId (userId)", {
+      polarCustomerId: customer.id,
+    });
+    return;
+  }
+
+  // Store the end date so we can show a banner in the dashboard
+  if (currentPeriodEnd) {
+    try {
+      await setSubscriptionEndsAt(userId, new Date(currentPeriodEnd));
+    } catch (err) {
+      logger.error("failed to set subscription end date", err, { userId });
+      throw err; // Re-throw to trigger webhook retry
+    }
+  }
+}
+
+/**
  * Handle Polar subscription revoked webhook.
- * Called when a subscription is cancelled or expires.
+ * Called when access actually ends - the user loses access immediately.
+ *
+ * This happens when:
+ * - The billing period ends after cancellation
+ * - Immediately if canceled with cancel_at_period_end: false
+ * - Payment is past due after retries exhausted
+ *
+ * This is when we actually downgrade the user's tier and clear the subscription end date.
  */
 export async function handleSubscriptionRevoked(
-  payload: SubscriptionWebhookPayload,
+  payload: SubscriptionRevokedPayload,
 ) {
   const { customer } = payload.data;
   const userId = customer.externalId;
 
-  logger.info("subscription revoked", {
+  logger.info("subscription revoked (access ended)", {
     polarCustomerId: customer.id,
     userId,
     subscriptionId: payload.data.id,
@@ -94,13 +165,13 @@ export async function handleSubscriptionRevoked(
   if (!userId) {
     logger.error("subscription webhook missing customer.externalId (userId)", {
       polarCustomerId: customer.id,
-      customerEmail: customer.email,
     });
     return;
   }
 
   try {
     await handleDowngrade(userId);
+    await clearSubscriptionEndsAt(userId);
     logger.info("downgraded user", { userId });
   } catch (err) {
     logger.error("failed to downgrade user", err, { userId });

@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { checkout, customerPortal } from "@/lib/auth-client";
+import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
+import type { UserTier } from "@/lib/schemas";
 
 type SubscriptionSectionProps = {
-  tier: string;
+  tier: UserTier;
   activeCount: number;
   maxDomains: number;
 };
@@ -43,7 +45,7 @@ export function SubscriptionSection({
         ],
       });
     } catch (err) {
-      console.error("Failed to open checkout:", err);
+      logger.error("Failed to open checkout", err);
     } finally {
       setIsLoading(null);
     }
@@ -54,7 +56,7 @@ export function SubscriptionSection({
     try {
       await customerPortal();
     } catch (err) {
-      console.error("Failed to open customer portal:", err);
+      logger.error("Failed to open customer portal", err);
     } finally {
       setIsLoading(null);
     }

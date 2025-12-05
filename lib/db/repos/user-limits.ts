@@ -2,19 +2,20 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { userLimits, type userTier } from "@/lib/db/schema";
+import { userLimits } from "@/lib/db/schema";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
+import type { UserTier } from "@/lib/schemas";
 
 const logger = createLogger({ source: "user-limits" });
-
-export type UserTier = (typeof userTier.enumValues)[number];
 
 export type UserLimitsData = {
   userId: string;
   tier: UserTier;
   maxDomains: number;
   hasOverride: boolean;
+  /** When a canceled subscription expires. Null = no pending cancellation. */
+  subscriptionEndsAt: Date | null;
 };
 
 /**
@@ -46,6 +47,7 @@ export async function getOrCreateUserLimits(
       tier: existing[0].tier,
       maxDomains,
       hasOverride: existing[0].maxDomainsOverride !== null,
+      subscriptionEndsAt: existing[0].subscriptionEndsAt,
     };
   }
 
@@ -67,6 +69,7 @@ export async function getOrCreateUserLimits(
       tier: inserted[0].tier,
       maxDomains,
       hasOverride: false,
+      subscriptionEndsAt: null,
     };
   } catch (err) {
     // Handle race condition - another request may have created it
@@ -90,6 +93,7 @@ export async function getOrCreateUserLimits(
         tier: retry[0].tier,
         maxDomains,
         hasOverride: retry[0].maxDomainsOverride !== null,
+        subscriptionEndsAt: retry[0].subscriptionEndsAt,
       };
     }
 
@@ -193,4 +197,44 @@ export async function canUserAddDomain(
 ): Promise<boolean> {
   const limits = await getOrCreateUserLimits(userId);
   return currentCount < limits.maxDomains;
+}
+
+/**
+ * Set the subscription end date (when a canceled subscription expires).
+ * Used when a user cancels their subscription but still has access until period end.
+ */
+export async function setSubscriptionEndsAt(
+  userId: string,
+  endsAt: Date,
+): Promise<void> {
+  await db
+    .update(userLimits)
+    .set({
+      subscriptionEndsAt: endsAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(userLimits.userId, userId));
+
+  logger.info("set subscription end date", {
+    userId,
+    subscriptionEndsAt: endsAt.toISOString(),
+  });
+}
+
+/**
+ * Clear the subscription end date (subscription is no longer pending cancellation).
+ * Used when:
+ * - User re-subscribes after canceling
+ * - Subscription is revoked (downgrade already happened)
+ */
+export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
+  await db
+    .update(userLimits)
+    .set({
+      subscriptionEndsAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(userLimits.userId, userId));
+
+  logger.info("cleared subscription end date", { userId });
 }

@@ -3,20 +3,20 @@
 import { createContext, useContext } from "react";
 
 type HomeSearchContextType = {
-  onSuggestionClickAction: (domain: string) => void;
+  onSuggestionClick: (domain: string) => void;
 };
 
 const HomeSearchContext = createContext<HomeSearchContextType | null>(null);
 
 export function HomeSearchProvider({
   children,
-  onSuggestionClickAction,
+  onSuggestionClick,
 }: {
   children: React.ReactNode;
-  onSuggestionClickAction: (domain: string) => void;
+  onSuggestionClick: (domain: string) => void;
 }) {
   return (
-    <HomeSearchContext.Provider value={{ onSuggestionClickAction }}>
+    <HomeSearchContext.Provider value={{ onSuggestionClick }}>
       {children}
     </HomeSearchContext.Provider>
   );

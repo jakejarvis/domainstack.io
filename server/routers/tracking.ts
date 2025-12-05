@@ -74,6 +74,8 @@ export const trackingRouter = createTRPCRouter({
       archivedCount,
       // Only active domains count against limit
       canAddMore: activeCount < limits.maxDomains,
+      // When a canceled subscription expires (null = no pending cancellation)
+      subscriptionEndsAt: limits.subscriptionEndsAt,
     };
   }),
 
@@ -286,7 +288,18 @@ export const trackingRouter = createTRPCRouter({
 
       if (result.verified && result.method) {
         // Update the tracked domain as verified
-        await verifyTrackedDomain(trackedDomainId, result.method);
+        const updated = await verifyTrackedDomain(
+          trackedDomainId,
+          result.method,
+        );
+
+        if (!updated) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to verify domain - it may have been deleted",
+          });
+        }
+
         return { verified: true, method: result.method };
       }
 

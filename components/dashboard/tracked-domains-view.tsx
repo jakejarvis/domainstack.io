@@ -70,7 +70,6 @@ export function TrackedDomainsView({
   return (
     <TrackedDomainsGrid
       domains={domains}
-      onAddDomain={onAddDomain}
       onVerify={onVerify}
       onRemove={onRemove}
       onArchive={onArchive}

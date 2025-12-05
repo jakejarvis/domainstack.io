@@ -22,6 +22,10 @@ export default function SettingsPage() {
       {/* Subscription section */}
       {limitsQuery.isLoading ? (
         <Skeleton className="h-48 rounded-xl" />
+      ) : limitsQuery.isError ? (
+        <p className="text-destructive text-sm">
+          Unable to load subscription details. Please try again later.
+        </p>
       ) : limitsQuery.data ? (
         <SubscriptionSection
           tier={limitsQuery.data.tier}

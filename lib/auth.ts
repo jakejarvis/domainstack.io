@@ -8,6 +8,8 @@ import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema";
 import {
+  handleSubscriptionActive,
+  handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
 } from "@/lib/polar/handlers";
@@ -69,6 +71,8 @@ export const auth = betterAuth({
             webhooks({
               secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
               onSubscriptionCreated: handleSubscriptionCreated,
+              onSubscriptionActive: handleSubscriptionActive,
+              onSubscriptionCanceled: handleSubscriptionCanceled,
               onSubscriptionRevoked: handleSubscriptionRevoked,
             }),
           ],

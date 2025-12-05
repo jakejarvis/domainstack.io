@@ -10,3 +10,4 @@ export * from "./internal/export";
 export * from "./internal/notifications";
 export * from "./internal/provider";
 export * from "./internal/sections";
+export * from "./internal/user";

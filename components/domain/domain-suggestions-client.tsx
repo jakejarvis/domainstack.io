@@ -31,7 +31,7 @@ export function DomainSuggestionsClient({
 }: DomainSuggestionsClientProps) {
   const router = useRouter();
   const analytics = useAnalytics();
-  const { onSuggestionClickAction } = useHomeSearch();
+  const { onSuggestionClick } = useHomeSearch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const updateGradientsRef = useRef<(() => void) | null>(null);
 
@@ -108,8 +108,8 @@ export function DomainSuggestionsClient({
       domain,
       source: "suggestion",
     });
-    if (onSuggestionClickAction) {
-      onSuggestionClickAction(domain);
+    if (onSuggestionClick) {
+      onSuggestionClick(domain);
       return;
     }
     router.push(`/${encodeURIComponent(domain)}`);

@@ -55,7 +55,7 @@ export function DomainReportHeader({
       </ScreenshotTooltip>
 
       <div className="flex flex-shrink-0 items-center gap-2">
-        <ExportButton onExportAction={onExport} disabled={exportDisabled} />
+        <ExportButton onExport={onExport} disabled={exportDisabled} />
 
         <ToolsDropdown domain={domain} />
       </div>

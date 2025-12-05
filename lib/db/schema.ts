@@ -219,6 +219,9 @@ export const userLimits = pgTable("user_limits", {
   tier: userTier("tier").notNull().default("free"),
   // Optional: per-user override. If null, uses Edge Config tier limit.
   maxDomainsOverride: integer("max_domains_override"),
+  // When a subscription is canceled but still active, this is when access ends
+  // Null means: no pending cancellation (either never had subscription, or subscription is active)
+  subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

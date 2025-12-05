@@ -2,14 +2,9 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { Archive, Crown, RotateCcw, Trash2 } from "lucide-react";
+import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -23,13 +18,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { UserTier } from "@/lib/schemas";
 
 type ArchivedDomainsViewProps = {
   domains: TrackedDomainWithDetails[];
   onUnarchive: (id: string) => void;
   onRemove: (id: string) => void;
   canUnarchive: boolean;
-  tier: string;
+  tier: UserTier;
 };
 
 export function ArchivedDomainsView({
@@ -62,20 +58,12 @@ export function ArchivedDomainsView({
     <div className="space-y-4">
       {/* Info banner when at limit */}
       {!canUnarchive && !isPro && (
-        <Card className="border-amber-500/20 bg-amber-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Crown className="size-4 text-amber-500" />
-              Upgrade to Reactivate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>
-              You've reached your domain tracking limit. Upgrade to Pro or
-              remove active domains to reactivate archived ones.
-            </CardDescription>
-          </CardContent>
-        </Card>
+        <DashboardBanner
+          variant="warning"
+          icon={Crown}
+          title="Upgrade to Reactivate"
+          description="You've reached your domain tracking limit. Upgrade to Pro or remove active domains to reactivate archived ones."
+        />
       )}
 
       {/* Archived domains list */}
