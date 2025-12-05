@@ -1,6 +1,7 @@
 "use client";
 
 import { FilterX, Globe, Plus, Sparkles } from "lucide-react";
+import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";
 import { TrackedDomainsTable } from "@/components/dashboard/tracked-domains-table";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import type { SelectionState } from "@/hooks/use-selection";
 import type { ViewMode } from "@/hooks/use-view-preference";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
@@ -20,11 +22,16 @@ type TrackedDomainsViewProps = {
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
+  selection: SelectionState;
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
   onClearFilters?: () => void;
+  onBulkArchive: () => void;
+  onBulkDelete: () => void;
+  isBulkArchiving?: boolean;
+  isBulkDeleting?: boolean;
 };
 
 export function TrackedDomainsView({
@@ -32,11 +39,16 @@ export function TrackedDomainsView({
   domains,
   totalDomains,
   hasActiveFilters,
+  selection,
   onAddDomain,
   onVerify,
   onRemove,
   onArchive,
   onClearFilters,
+  onBulkArchive,
+  onBulkDelete,
+  isBulkArchiving = false,
+  isBulkDeleting = false,
 }: TrackedDomainsViewProps) {
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
@@ -99,23 +111,41 @@ export function TrackedDomainsView({
     );
   }
 
-  if (viewMode === "table") {
-    return (
-      <TrackedDomainsTable
-        domains={domains}
-        onVerify={onVerify}
-        onRemove={onRemove}
-        onArchive={onArchive}
-      />
-    );
-  }
-
   return (
-    <TrackedDomainsGrid
-      domains={domains}
-      onVerify={onVerify}
-      onRemove={onRemove}
-      onArchive={onArchive}
-    />
+    <>
+      {viewMode === "table" ? (
+        <TrackedDomainsTable
+          domains={domains}
+          selectedIds={selection.selectedIds}
+          onToggleSelect={selection.toggle}
+          onVerify={onVerify}
+          onRemove={onRemove}
+          onArchive={onArchive}
+        />
+      ) : (
+        <TrackedDomainsGrid
+          domains={domains}
+          selectedIds={selection.selectedIds}
+          onToggleSelect={selection.toggle}
+          onVerify={onVerify}
+          onRemove={onRemove}
+          onArchive={onArchive}
+        />
+      )}
+
+      {/* Bulk actions toolbar - appears when items are selected */}
+      <BulkActionsToolbar
+        selectedCount={selection.selectedCount}
+        totalCount={domains.length}
+        isAllSelected={selection.isAllSelected}
+        isPartiallySelected={selection.isPartiallySelected}
+        onToggleAll={selection.toggleAll}
+        onArchive={onBulkArchive}
+        onDelete={onBulkDelete}
+        onCancel={selection.clearSelection}
+        isArchiving={isBulkArchiving}
+        isDeleting={isBulkDeleting}
+      />
+    </>
   );
 }

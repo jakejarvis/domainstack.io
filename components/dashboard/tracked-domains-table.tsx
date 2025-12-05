@@ -25,6 +25,7 @@ import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,8 @@ import { cn } from "@/lib/utils";
 
 type TrackedDomainsTableProps = {
   domains: TrackedDomainWithDetails[];
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
@@ -96,6 +99,8 @@ function SortableHeader({
 
 export function TrackedDomainsTable({
   domains,
+  selectedIds = new Set(),
+  onToggleSelect,
   onVerify,
   onRemove,
   onArchive,
@@ -104,6 +109,19 @@ export function TrackedDomainsTable({
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
+      // Selection checkbox column
+      {
+        id: "select",
+        header: () => null, // No header checkbox here - it's in the bulk toolbar
+        cell: ({ row }) => (
+          <Checkbox
+            checked={selectedIds.has(row.original.id)}
+            onCheckedChange={() => onToggleSelect?.(row.original.id)}
+            aria-label={`Select ${row.original.domainName}`}
+          />
+        ),
+        size: 40,
+      },
       {
         accessorKey: "domainName",
         header: ({ column }) => (
@@ -277,7 +295,7 @@ export function TrackedDomainsTable({
         ),
       },
     ],
-    [onVerify, onRemove, onArchive],
+    [selectedIds, onToggleSelect, onVerify, onRemove, onArchive],
   );
 
   const table = useReactTable({
@@ -304,7 +322,7 @@ export function TrackedDomainsTable({
                     key={header.id}
                     className={cn(
                       "h-10 px-3 text-left align-middle font-medium text-muted-foreground uppercase tracking-wider",
-                      index === 0 && "pl-5",
+                      index === 0 && "w-10 pl-5", // Checkbox column
                       index === headerGroup.headers.length - 1 && "pr-5",
                     )}
                   >
@@ -332,6 +350,7 @@ export function TrackedDomainsTable({
             ) : (
               table.getRowModel().rows.map((row) => {
                 const isUnverified = !row.original.verified;
+                const isSelected = selectedIds.has(row.original.id);
                 const cells = row.getVisibleCells();
 
                 // For unverified domains, show simplified row with verify CTA
@@ -339,25 +358,35 @@ export function TrackedDomainsTable({
                   return (
                     <tr
                       key={row.id}
-                      className="transition-colors hover:bg-muted/30"
+                      className={cn(
+                        "transition-colors hover:bg-muted/30",
+                        isSelected && "bg-primary/5",
+                      )}
                     >
-                      {/* Domain column */}
-                      <td className="h-12 pr-3 pl-5 align-middle">
+                      {/* Checkbox column */}
+                      <td className="h-12 w-10 pr-3 pl-5 align-middle">
                         {flexRender(
                           cells[0].column.columnDef.cell,
                           cells[0].getContext(),
                         )}
                       </td>
-                      {/* Status column */}
+                      {/* Domain column */}
                       <td className="h-12 px-3 align-middle">
                         {flexRender(
                           cells[1].column.columnDef.cell,
                           cells[1].getContext(),
                         )}
                       </td>
+                      {/* Status column */}
+                      <td className="h-12 px-3 align-middle">
+                        {flexRender(
+                          cells[2].column.columnDef.cell,
+                          cells[2].getContext(),
+                        )}
+                      </td>
                       {/* Span remaining detail columns with verify message */}
                       <td
-                        colSpan={cells.length - 3}
+                        colSpan={cells.length - 4}
                         className="h-12 px-3 align-middle"
                       >
                         <div className="flex items-center gap-3">
@@ -389,14 +418,17 @@ export function TrackedDomainsTable({
                 return (
                   <tr
                     key={row.id}
-                    className="transition-colors hover:bg-muted/30"
+                    className={cn(
+                      "transition-colors hover:bg-muted/30",
+                      isSelected && "bg-primary/5",
+                    )}
                   >
                     {cells.map((cell, index) => (
                       <td
                         key={cell.id}
                         className={cn(
                           "h-12 px-3 align-middle",
-                          index === 0 && "pl-5",
+                          index === 0 && "w-10 pl-5",
                           index === cells.length - 1 && "pr-5",
                         )}
                       >
