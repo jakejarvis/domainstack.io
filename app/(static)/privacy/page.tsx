@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <header className="mb-8 border-border/50 border-b pb-8">
         <h1>Privacy Policy</h1>
         <p className="mt-2 text-muted-foreground text-sm">
-          Last updated: December 4, 2025
+          Last updated: December 6, 2025
         </p>
       </header>
 
@@ -81,12 +81,75 @@ export default function PrivacyPage() {
       </section>
 
       <section>
+        <h2>Payment Information</h2>
+        <p>
+          When you subscribe to our Pro plan, payment processing is handled by
+          our third-party partners:
+        </p>
+        <ul>
+          <li>
+            <strong>
+              <a
+                href="https://polar.sh"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Polar
+              </a>
+            </strong>{" "}
+            — Our merchant of record for subscription management. Polar collects
+            and processes your payment information, including billing address
+            and payment method. See{" "}
+            <a
+              href="https://polar.sh/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Polar&apos;s Privacy Policy
+            </a>
+            .
+          </li>
+          <li>
+            <strong>
+              <a
+                href="https://stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Stripe
+              </a>
+            </strong>{" "}
+            — Payment processing infrastructure. Stripe handles your payment
+            card data securely. See{" "}
+            <a
+              href="https://stripe.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Stripe&apos;s Privacy Policy
+            </a>
+            .
+          </li>
+        </ul>
+        <p>
+          We do not store your full payment card details. We receive only
+          limited information from our payment partners, such as subscription
+          status, billing email, and the last four digits of your card for
+          display purposes.
+        </p>
+      </section>
+
+      <section>
         <h2>Data Sharing</h2>
         <p>We do not sell your personal information. We may share data with:</p>
         <ul>
           <li>
             <strong>Service providers:</strong> Companies that help us operate
             our service (hosting, email delivery, analytics)
+          </li>
+          <li>
+            <strong>Payment processors:</strong> Polar and Stripe for
+            subscription billing (see Payment Information section above)
           </li>
           <li>
             <strong>Legal requirements:</strong> When required by law or to

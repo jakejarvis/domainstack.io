@@ -13,7 +13,7 @@ export default function TermsPage() {
       <header className="mb-8 border-border/50 border-b pb-8">
         <h1>Terms of Service</h1>
         <p className="mt-2 text-muted-foreground text-sm">
-          Last updated: December 4, 2025
+          Last updated: December 6, 2025
         </p>
       </header>
 
@@ -110,14 +110,100 @@ export default function TermsPage() {
       <section>
         <h2>Service Tiers and Limits</h2>
         <p>
-          The Service may offer different tiers with varying limits on tracked
-          domains and features. We reserve the right to:
+          The Service offers a free tier and a paid Pro tier with different
+          limits on tracked domains and features:
         </p>
         <ul>
-          <li>Modify service tiers and their features</li>
-          <li>Adjust usage limits with reasonable notice</li>
-          <li>Introduce paid features in the future</li>
+          <li>
+            <strong>Free tier:</strong> Limited number of tracked domains
+          </li>
+          <li>
+            <strong>Pro tier:</strong> Increased domain tracking limits and
+            priority support
+          </li>
         </ul>
+        <p>We reserve the right to:</p>
+        <ul>
+          <li>
+            Modify service tiers and their features with reasonable notice
+          </li>
+          <li>Adjust usage limits with reasonable notice</li>
+          <li>Change pricing with 30 days notice to existing subscribers</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Paid Subscriptions</h2>
+        <p>
+          Pro subscriptions are billed on a recurring basis (monthly or
+          annually) through our payment partners.
+        </p>
+
+        <h3>Payment Processing</h3>
+        <p>
+          Payments are processed by{" "}
+          <a href="https://polar.sh" target="_blank" rel="noopener noreferrer">
+            Polar
+          </a>{" "}
+          (our merchant of record) and{" "}
+          <a
+            href="https://stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Stripe
+          </a>{" "}
+          (payment infrastructure). By subscribing, you also agree to:
+        </p>
+        <ul>
+          <li>
+            <a
+              href="https://polar.sh/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Polar&apos;s Terms of Service
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://stripe.com/legal/consumer"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Stripe&apos;s Consumer Terms
+            </a>
+          </li>
+        </ul>
+
+        <h3>Billing and Renewal</h3>
+        <ul>
+          <li>Subscriptions automatically renew unless cancelled</li>
+          <li>You will be charged at the start of each billing period</li>
+          <li>
+            Price changes will be communicated 30 days before they take effect
+          </li>
+        </ul>
+
+        <h3>Cancellation</h3>
+        <ul>
+          <li>You may cancel your subscription at any time</li>
+          <li>
+            Cancellation takes effect at the end of the current billing period
+          </li>
+          <li>You retain Pro access until the end of your paid period</li>
+          <li>
+            Upon downgrade, domains exceeding the free tier limit will be
+            archived (not deleted)
+          </li>
+        </ul>
+
+        <h3>Refunds</h3>
+        <p>
+          Refund requests are handled on a case-by-case basis. Please contact us
+          within 14 days of your charge if you believe a refund is warranted. We
+          reserve the right to deny refunds for extended use of the Service.
+        </p>
       </section>
 
       <section>
