@@ -31,15 +31,13 @@ export function StepVerifyOwnership({
   onReturnLater,
 }: StepVerifyOwnershipProps) {
   const isVerifying = verificationState.status === "verifying";
-  const hasFailed = verificationState.status === "failed";
 
   // If verification has failed, show the troubleshooting UI
-  if (hasFailed) {
+  if (verificationState.status === "failed") {
     return (
       <VerificationFailed
         method={method}
         error={verificationState.error}
-        isVerifying={isVerifying}
         onCheckAgain={onVerify}
         onReturnLater={onReturnLater}
       />

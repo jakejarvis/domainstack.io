@@ -3,13 +3,11 @@
 import { AlertTriangle, Clock, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import type { VerificationMethod } from "@/lib/schemas";
 
 type VerificationFailedProps = {
   method: VerificationMethod;
   error?: string;
-  isVerifying: boolean;
   onCheckAgain: () => void;
   onReturnLater: () => void;
 };
@@ -53,7 +51,6 @@ const TROUBLESHOOTING_TIPS: Record<
 export function VerificationFailed({
   method,
   error,
-  isVerifying,
   onCheckAgain,
   onReturnLater,
 }: VerificationFailedProps) {
@@ -83,24 +80,11 @@ export function VerificationFailed({
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          onClick={onCheckAgain}
-          disabled={isVerifying}
-          className="flex-1"
-        >
-          {isVerifying ? (
-            <Spinner className="size-4" />
-          ) : (
-            <RefreshCw className="size-4" />
-          )}
-          {isVerifying ? "Checking..." : "Check Again"}
+        <Button onClick={onCheckAgain} className="flex-1">
+          <RefreshCw className="size-4" />
+          Check Again
         </Button>
-        <Button
-          variant="outline"
-          onClick={onReturnLater}
-          disabled={isVerifying}
-          className="flex-1"
-        >
+        <Button variant="outline" onClick={onReturnLater} className="flex-1">
           <Clock className="size-4" />
           Return Later
         </Button>
