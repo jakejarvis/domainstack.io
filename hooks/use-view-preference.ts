@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useLocalStorageState from "use-local-storage-state";
 
 export type ViewMode = "grid" | "table";
 
@@ -12,32 +12,9 @@ const DEFAULT_VIEW: ViewMode = "grid";
  * Returns the current view mode and a setter function.
  */
 export function useViewPreference(): [ViewMode, (mode: ViewMode) => void] {
-  const [viewMode, setViewModeState] = useState<ViewMode>(DEFAULT_VIEW);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [viewMode, setViewMode] = useLocalStorageState<ViewMode>(STORAGE_KEY, {
+    defaultValue: DEFAULT_VIEW,
+  });
 
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === "grid" || stored === "table") {
-        setViewModeState(stored);
-      }
-    } catch {
-      // localStorage not available (SSR or private browsing)
-    }
-    setIsHydrated(true);
-  }, []);
-
-  // Persist preference to localStorage when changed
-  const setViewMode = useCallback((mode: ViewMode) => {
-    setViewModeState(mode);
-    try {
-      localStorage.setItem(STORAGE_KEY, mode);
-    } catch {
-      // localStorage not available
-    }
-  }, []);
-
-  // Return default during SSR to prevent hydration mismatch
-  return [isHydrated ? viewMode : DEFAULT_VIEW, setViewMode];
+  return [viewMode, setViewMode];
 }
