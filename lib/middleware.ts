@@ -16,8 +16,9 @@ export function setConsentCookieIfNeeded(
 ): NextResponse {
   if (request.cookies.has(CONSENT_REQUIRED_COOKIE)) return response;
 
-  const country = request.headers.get("x-vercel-ip-country") ?? "";
-  const requiresConsent = GDPR_COUNTRY_CODES.has(country);
+  const country = request.headers.get("x-vercel-ip-country");
+  // Default to requiring consent if geo-location is unknown (safer default)
+  const requiresConsent = country === null || GDPR_COUNTRY_CODES.has(country);
 
   response.cookies.set(CONSENT_REQUIRED_COOKIE, requiresConsent ? "1" : "0", {
     maxAge: 60 * 60 * 24 * 365, // 1 year

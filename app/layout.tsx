@@ -57,7 +57,7 @@ export default function RootLayout({
           </div>
 
           <Toaster />
-          <Suspense>
+          <Suspense fallback={null}>
             <CookieBanner />
           </Suspense>
         </Providers>

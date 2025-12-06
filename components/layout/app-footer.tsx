@@ -1,4 +1,4 @@
-import { CircleHelp, FileText, ShieldCheck } from "lucide-react";
+import { CircleHelp, Handshake, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { HeartAnimated } from "@/components/heart";
 
@@ -55,7 +55,7 @@ export function AppFooter() {
         </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
         <Link href="/terms">
-          <FileText />
+          <Handshake />
           Terms of Service
         </Link>
       </p>
