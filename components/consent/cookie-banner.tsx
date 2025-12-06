@@ -67,8 +67,14 @@ export function CookieBanner() {
     const consentRequired = isConsentRequired();
 
     if (storedConsent !== "pending") {
-      // User has already made a choice
+      // User has already made a choice - re-apply PostHog state
+      // in case it was reset (cleared cookies, new session, etc.)
       setConsent(storedConsent);
+      if (storedConsent === "accepted") {
+        posthog.opt_in_capturing();
+      } else {
+        posthog.opt_out_capturing();
+      }
       setShow(false);
     } else if (!consentRequired) {
       // Non-EU user with no stored consent - auto-accept silently
