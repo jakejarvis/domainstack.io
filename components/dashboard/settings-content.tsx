@@ -2,9 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ChevronDown, Crown, ExternalLink, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  Crown,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DeleteAccountDialog } from "@/components/dashboard/delete-account-dialog";
 import {
   CategoryLabel,
   DomainNotificationRow,
@@ -48,6 +55,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Subscription hooks
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
@@ -458,6 +466,46 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
           )}
         </CardContent>
       </div>
+
+      {/* Divider */}
+      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
+
+      {/* Danger Zone Section */}
+      <div>
+        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="size-5" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>
+            Irreversible actions that affect your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0 pb-0"}>
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium">Delete account</p>
+                <p className="text-muted-foreground text-sm">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="shrink-0"
+              >
+                Delete Account
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </div>
+
+      <DeleteAccountDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      />
     </div>
   );
 

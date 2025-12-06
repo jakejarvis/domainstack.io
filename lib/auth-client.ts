@@ -7,8 +7,15 @@ export const authClient = createAuthClient({
   plugins: [polarClient()],
 });
 
-export const { signIn, signOut, signUp, useSession, getSession, checkout } =
-  authClient;
+export const {
+  signIn,
+  signOut,
+  signUp,
+  useSession,
+  getSession,
+  checkout,
+  deleteUser,
+} = authClient;
 
 /**
  * Open the Polar customer portal.

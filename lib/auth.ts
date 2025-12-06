@@ -4,10 +4,12 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
 import {
   handleSubscriptionActive,
   handleSubscriptionCanceled,
@@ -15,6 +17,9 @@ import {
   handleSubscriptionRevoked,
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
+import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+
+const logger = createLogger({ source: "auth" });
 
 // Validate required env vars
 if (!process.env.BETTER_AUTH_SECRET) {
@@ -54,6 +59,53 @@ export const auth = betterAuth({
         after: async (user) => {
           await createSubscription(user.id);
         },
+      },
+    },
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        // Cancel Polar subscription if user has one
+        // This deletes the Polar customer, which automatically cancels any active
+        // subscriptions and revokes benefits
+        if (polarClient) {
+          try {
+            await polarClient.customers.deleteExternal({
+              externalId: user.id,
+            });
+            logger.info("deleted Polar customer on account deletion", {
+              userId: user.id,
+            });
+          } catch (err) {
+            // Ignore 404 errors - user may never have had a Polar subscription
+            // (free tier users who never upgraded)
+            const isNotFound =
+              err instanceof Error &&
+              "statusCode" in err &&
+              (err as { statusCode: number }).statusCode === 404;
+            if (!isNotFound) {
+              logger.error("failed to delete Polar customer", err, {
+                userId: user.id,
+              });
+              // Don't block account deletion if Polar cleanup fails
+            }
+          }
+        }
+      },
+      sendDeleteAccountVerification: async ({ user, url }) => {
+        if (!resend) {
+          throw new Error("Email service not configured");
+        }
+        await resend.emails.send({
+          from: RESEND_FROM_EMAIL,
+          to: user.email,
+          subject: "Confirm your account deletion",
+          react: DeleteAccountVerifyEmail({
+            userName: user.name,
+            confirmUrl: url,
+          }),
+        });
       },
     },
   },
