@@ -51,13 +51,23 @@ function getSubscriptionExpiryThreshold(
 
 /**
  * Generate idempotency key for subscription expiry email.
- * Format: subscription_expiry:{userId}:{threshold}d
+ * Format: subscription_expiry:{userId}:{threshold}d:{endsAtDate}
+ *
+ * Includes the endsAt date to handle the case where a user:
+ * 1. Cancels subscription → gets 7-day notification
+ * 2. Resubscribes (clears lastExpiryNotification)
+ * 3. Cancels again with a new endsAt date
+ *
+ * Without the date, if steps 2-3 happen within Resend's idempotency window
+ * (~24-48 hours), the new notification would be suppressed.
  */
 function generateSubscriptionIdempotencyKey(
   userId: string,
   threshold: SubscriptionExpiryThreshold,
+  endsAt: Date,
 ): string {
-  return `subscription_expiry:${userId}:${threshold}d`;
+  const dateStr = endsAt.toISOString().split("T")[0];
+  return `subscription_expiry:${userId}:${threshold}d:${dateStr}`;
 }
 
 /**
@@ -201,7 +211,11 @@ async function sendSubscriptionExpiryNotification({
     return false;
   }
 
-  const idempotencyKey = generateSubscriptionIdempotencyKey(userId, threshold);
+  const idempotencyKey = generateSubscriptionIdempotencyKey(
+    userId,
+    threshold,
+    endsAt,
+  );
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;

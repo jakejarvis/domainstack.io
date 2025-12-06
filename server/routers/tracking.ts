@@ -13,7 +13,7 @@ import {
   getArchivedDomainsForUser,
   getTrackedDomainsForUser,
   resetNotificationOverrides,
-  unarchiveTrackedDomain,
+  unarchiveTrackedDomainWithLimitCheck,
   updateNotificationOverrides,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
@@ -532,7 +532,7 @@ export const trackingRouter = createTRPCRouter({
 
   /**
    * Unarchive (reactivate) a tracked domain.
-   * Checks that user has capacity before unarchiving.
+   * Uses atomic limit checking to prevent race conditions.
    */
   unarchiveDomain: protectedProcedure
     .input(
@@ -543,50 +543,40 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
-        });
-      }
-
-      // Check if actually archived
-      if (!tracked.archivedAt) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Domain is not archived",
-        });
-      }
-
-      // Check user has capacity to unarchive
+      // Get user's subscription to know their limit
       const sub = await getUserSubscription(ctx.user.id);
-      const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
 
-      if (activeCount >= sub.maxDomains) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message:
-            "You have reached your domain tracking limit. Upgrade to Pro or archive other domains first.",
-        });
-      }
+      // Atomic unarchive with limit check (prevents race conditions)
+      const result = await unarchiveTrackedDomainWithLimitCheck(
+        trackedDomainId,
+        ctx.user.id,
+        sub.maxDomains,
+      );
 
-      const updated = await unarchiveTrackedDomain(trackedDomainId);
-
-      if (!updated) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to unarchive domain",
-        });
+      if (!result.success) {
+        switch (result.reason) {
+          case "not_found":
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Tracked domain not found",
+            });
+          case "wrong_user":
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You do not have access to this domain",
+            });
+          case "not_archived":
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Domain is not archived",
+            });
+          case "limit_exceeded":
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message:
+                "You have reached your domain tracking limit. Upgrade to Pro or archive other domains first.",
+            });
+        }
       }
 
       return { success: true };

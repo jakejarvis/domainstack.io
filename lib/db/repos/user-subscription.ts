@@ -51,6 +51,10 @@ export async function getUserSubscription(
 
 /**
  * Update user tier.
+ *
+ * If the subscription record doesn't exist (edge case where database hook failed
+ * during user signup), creates the subscription with the specified tier.
+ * This ensures webhook handlers don't fail permanently when subscription is missing.
  */
 export async function updateUserTier(
   userId: string,
@@ -63,7 +67,17 @@ export async function updateUserTier(
     .returning({ userId: userSubscriptions.userId });
 
   if (updated.length === 0) {
-    throw new Error(`Subscription not found for user: ${userId}`);
+    // Subscription record doesn't exist - create it with the specified tier.
+    // This handles the edge case where the database hook failed during user signup.
+    logger.warn("subscription not found, creating missing record", {
+      userId,
+      tier,
+    });
+
+    await db.insert(userSubscriptions).values({ userId, tier });
+
+    logger.info("created missing subscription with tier", { userId, tier });
+    return;
   }
 
   logger.info("updated user tier", { userId, tier });

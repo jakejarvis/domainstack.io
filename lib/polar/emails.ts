@@ -127,8 +127,25 @@ async function sendProWelcomeEmail(
 }
 
 /**
+ * Generate idempotency key for immediate subscription cancellation email.
+ * Format: subscription_cancel_immediate:{userId}:{endsAtDate}
+ *
+ * Uses the date portion of endsAt to allow re-sending if user cancels again
+ * with a different end date (e.g., cancels, resubscribes, cancels again).
+ */
+function generateCancellationIdempotencyKey(
+  userId: string,
+  endsAt: Date,
+): string {
+  const dateStr = endsAt.toISOString().split("T")[0];
+  return `subscription_cancel_immediate:${userId}:${dateStr}`;
+}
+
+/**
  * Send subscription canceling email.
  * Called when user cancels but still has access until period ends.
+ *
+ * Uses idempotency key to prevent duplicate emails on webhook retries.
  */
 export async function sendSubscriptionCancelingEmail(
   userId: string,
@@ -145,6 +162,8 @@ export async function sendSubscriptionCancelingEmail(
     return false;
   }
 
+  const idempotencyKey = generateCancellationIdempotencyKey(userId, endsAt);
+
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
@@ -158,16 +177,22 @@ export async function sendSubscriptionCancelingEmail(
       }) as React.ReactElement,
     );
 
-    const { data, error } = await resend.emails.send({
-      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
-      to: user.email,
-      subject: `Your Pro subscription ends on ${endDate}`,
-      html: emailHtml,
-    });
+    const { data, error } = await resend.emails.send(
+      {
+        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+        to: user.email,
+        subject: `Your Pro subscription ends on ${endDate}`,
+        html: emailHtml,
+      },
+      {
+        idempotencyKey,
+      },
+    );
 
     if (error) {
       logger.error("Failed to send subscription canceling email", error, {
         userId,
+        idempotencyKey,
       });
       return false;
     }
@@ -176,11 +201,15 @@ export async function sendSubscriptionCancelingEmail(
       userId,
       emailId: data?.id,
       endsAt: endsAt.toISOString(),
+      idempotencyKey,
     });
 
     return true;
   } catch (err) {
-    logger.error("Error sending subscription canceling email", err, { userId });
+    logger.error("Error sending subscription canceling email", err, {
+      userId,
+      idempotencyKey,
+    });
     return false;
   }
 }

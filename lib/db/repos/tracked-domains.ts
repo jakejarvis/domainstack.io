@@ -780,6 +780,9 @@ export async function archiveTrackedDomain(id: string) {
 /**
  * Unarchive (reactivate) a tracked domain.
  * Returns null if the tracked domain doesn't exist.
+ *
+ * NOTE: This function does NOT check limits. Use `unarchiveTrackedDomainWithLimitCheck`
+ * for user-facing operations that need to respect tier limits.
  */
 export async function unarchiveTrackedDomain(id: string) {
   const updated = await db
@@ -794,6 +797,91 @@ export async function unarchiveTrackedDomain(id: string) {
 
   logger.info("tracked domain unarchived", { trackedDomainId: id });
   return updated[0];
+}
+
+export type UnarchiveTrackedDomainWithLimitCheckResult =
+  | { success: true; trackedDomain: typeof userTrackedDomains.$inferSelect }
+  | {
+      success: false;
+      reason: "not_found" | "not_archived" | "limit_exceeded" | "wrong_user";
+    };
+
+/**
+ * Unarchive a tracked domain with atomic limit checking.
+ * Uses a transaction to prevent race conditions where multiple concurrent
+ * unarchive requests could exceed the user's domain limit.
+ *
+ * @param id - The tracked domain ID to unarchive
+ * @param userId - The user ID (for ownership verification)
+ * @param maxDomains - The user's current domain limit
+ * @returns Object indicating success or failure reason
+ */
+export async function unarchiveTrackedDomainWithLimitCheck(
+  id: string,
+  userId: string,
+  maxDomains: number,
+): Promise<UnarchiveTrackedDomainWithLimitCheckResult> {
+  return await db.transaction(async (tx) => {
+    // Get the tracked domain within the transaction
+    const [tracked] = await tx
+      .select()
+      .from(userTrackedDomains)
+      .where(eq(userTrackedDomains.id, id))
+      .limit(1);
+
+    if (!tracked) {
+      return { success: false, reason: "not_found" } as const;
+    }
+
+    // Verify ownership
+    if (tracked.userId !== userId) {
+      return { success: false, reason: "wrong_user" } as const;
+    }
+
+    // Check if actually archived
+    if (!tracked.archivedAt) {
+      return { success: false, reason: "not_archived" } as const;
+    }
+
+    // Count active (non-archived) domains for this user within the transaction
+    const [countResult] = await tx
+      .select({ count: count() })
+      .from(userTrackedDomains)
+      .where(
+        and(
+          eq(userTrackedDomains.userId, userId),
+          isNull(userTrackedDomains.archivedAt),
+        ),
+      );
+
+    const currentCount = countResult?.count ?? 0;
+
+    // Check if unarchiving would exceed limit
+    if (currentCount >= maxDomains) {
+      logger.debug("domain limit would be exceeded on unarchive", {
+        userId,
+        currentCount,
+        maxDomains,
+      });
+      return { success: false, reason: "limit_exceeded" } as const;
+    }
+
+    // Unarchive the domain
+    const [updated] = await tx
+      .update(userTrackedDomains)
+      .set({ archivedAt: null })
+      .where(eq(userTrackedDomains.id, id))
+      .returning();
+
+    logger.info("unarchived tracked domain with limit check", {
+      userId,
+      trackedDomainId: id,
+      currentCount: currentCount + 1,
+      maxDomains,
+    });
+
+    return { success: true, trackedDomain: updated } as const;
+  });
 }
 
 /**
