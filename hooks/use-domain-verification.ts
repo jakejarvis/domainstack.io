@@ -26,6 +26,8 @@ type UseDomainVerificationOptions = {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   resumeDomain?: ResumeDomainData | null;
+  /** Pre-fill the domain input (e.g., from domain report "Track" button) */
+  prefillDomain?: string;
 };
 
 export function useDomainVerification({
@@ -33,9 +35,10 @@ export function useDomainVerification({
   onOpenChange,
   onSuccess,
   resumeDomain,
+  prefillDomain,
 }: UseDomainVerificationOptions) {
   const [step, setStep] = useState(1);
-  const [domain, setDomain] = useState("");
+  const [domain, setDomain] = useState(prefillDomain ?? "");
   const [domainError, setDomainError] = useState("");
   const [method, setMethod] = useState<VerificationMethod>("dns_txt");
   const [trackedDomainId, setTrackedDomainId] = useState<string | null>(null);
@@ -98,13 +101,13 @@ export function useDomainVerification({
 
   const resetDialog = useCallback(() => {
     setStep(1);
-    setDomain("");
+    setDomain(prefillDomain ?? "");
     setDomainError("");
     setMethod("dns_txt");
     setTrackedDomainId(null);
     setInstructions(null);
     setVerificationState({ status: "idle" });
-  }, []);
+  }, [prefillDomain]);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {

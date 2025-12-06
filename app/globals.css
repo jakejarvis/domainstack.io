@@ -186,6 +186,16 @@
 }
 
 @layer utilities {
+  /* Shimmer animation for announcement pill */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   /* Variable-driven accent glow */
   .accent-glow {
     background: var(--section-accent-glow, var(--glow-slate));

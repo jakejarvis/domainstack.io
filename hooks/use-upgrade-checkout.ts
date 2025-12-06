@@ -14,9 +14,7 @@ export function useUpgradeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
   const isMountedRef = useRef(true);
 
-  // Track mounted state to prevent setState on unmounted component
   useEffect(() => {
-    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };

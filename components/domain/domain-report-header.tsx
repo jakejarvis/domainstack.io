@@ -5,6 +5,7 @@ import { ExportButton } from "@/components/domain/export-button";
 import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
+import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { useAnalytics } from "@/lib/analytics/client";
 
 interface DomainReportHeaderProps {
@@ -55,6 +56,8 @@ export function DomainReportHeader({
       </ScreenshotTooltip>
 
       <div className="flex flex-shrink-0 items-center gap-2">
+        <TrackDomainButton domain={domain} />
+
         <ExportButton onExport={onExport} disabled={exportDisabled} />
 
         <ToolsDropdown domain={domain} />

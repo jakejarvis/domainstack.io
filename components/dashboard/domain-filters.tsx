@@ -121,9 +121,9 @@ export function DomainFilters({
   );
 
   const filterContent = (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center">
       {/* Search input */}
-      <div className="flex-1 sm:max-w-xs">
+      <div className="flex-1 md:max-w-xs">
         <InputGroup>
           <InputGroupAddon>
             <Search />
@@ -230,10 +230,10 @@ export function DomainFilters({
   return (
     <div className="space-y-3">
       {/* Desktop: always visible */}
-      <div className="hidden sm:block">{filterContent}</div>
+      <div className="hidden md:block">{filterContent}</div>
 
-      {/* Mobile: collapsible */}
-      <div className="sm:hidden">
+      {/* Mobile/tablet: collapsible */}
+      <div className="md:hidden">
         <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="outline" className="w-full justify-between">

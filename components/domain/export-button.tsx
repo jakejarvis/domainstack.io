@@ -27,7 +27,7 @@ export function ExportButton({ disabled, onExport }: ExportButtonProps) {
           <span className="hidden sm:inline-block">Export</span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="left">
+      <TooltipContent>
         <p>
           Save this report as a <span className="font-mono">JSON</span> file.
         </p>

@@ -828,13 +828,13 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header skeleton */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-32" />
         </div>
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-2 w-32 rounded-full" />
+        <div className="flex flex-wrap items-center gap-3">
+          <Skeleton className="h-2 w-24 rounded-full md:w-32" />
           <Skeleton className="h-9 w-20" />
           <Skeleton className="h-9 w-32" />
         </div>
@@ -847,8 +847,14 @@ export function DashboardSkeleton() {
         <Skeleton className="h-8 w-20 rounded-full" />
       </div>
 
-      {/* Tabs skeleton */}
-      <Skeleton className="h-10 w-56" />
+      {/* Filters skeleton */}
+      <Skeleton className="h-10 w-full md:hidden" />
+      <div className="hidden md:flex md:gap-2">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-10 w-24" />
+      </div>
 
       {/* Grid skeleton */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -29,6 +29,8 @@ export type AddDomainDialogProps = {
   onSuccess: () => void;
   /** If provided, skips step 1 and goes directly to verification */
   resumeDomain?: ResumeDomainData | null;
+  /** Pre-fill the domain input (e.g., from domain report "Track" button) */
+  prefillDomain?: string;
 };
 
 const STEP_TITLES = ["Enter domain", "Verify ownership", "Complete"];
@@ -38,6 +40,7 @@ export function AddDomainDialog({
   onOpenChange,
   onSuccess,
   resumeDomain,
+  prefillDomain,
 }: AddDomainDialogProps) {
   const {
     // State
@@ -77,6 +80,7 @@ export function AddDomainDialog({
     onOpenChange,
     onSuccess,
     resumeDomain,
+    prefillDomain,
   });
 
   return (

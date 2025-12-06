@@ -34,7 +34,7 @@ export function DashboardHeader({
   const percentage = maxDomains > 0 ? (trackedCount / maxDomains) * 100 : 0;
 
   return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
@@ -50,9 +50,9 @@ export function DashboardHeader({
           </span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-3">
-          <Progress value={percentage} className="w-24 sm:w-32" />
+          <Progress value={percentage} className="w-24 md:w-32" />
           <span className="text-[13px] text-muted-foreground tabular-nums">
             {trackedCount}/{maxDomains}
           </span>
