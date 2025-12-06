@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics/client";
 import { customerPortal } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
@@ -24,6 +25,7 @@ export function useCustomerPortal() {
   const openPortal = async () => {
     if (isLoading) return;
     setIsLoading(true);
+    analytics.track("customer_portal_opened");
     try {
       await customerPortal();
     } catch (err) {

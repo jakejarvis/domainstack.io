@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics/client";
 import { logger } from "@/lib/logger/client";
 import type {
   VerificationInstructions,
@@ -174,9 +175,17 @@ export function useDomainVerification({
         setVerificationState({ status: "idle" });
         setStep(3);
         toast.success("Domain verified successfully!");
+        analytics.track("domain_verification_succeeded", {
+          domain,
+          method: result.method,
+        });
       } else {
         setVerificationState({
           status: "failed",
+          error: result.error,
+        });
+        analytics.track("domain_verification_failed", {
+          domain,
           error: result.error,
         });
       }
@@ -189,8 +198,12 @@ export function useDomainVerification({
         status: "failed",
         error: "Verification failed. Please try again.",
       });
+      analytics.track("domain_verification_failed", {
+        domain,
+        error: "exception",
+      });
     }
-  }, [trackedDomainId, method, verifyDomainMutation]);
+  }, [trackedDomainId, domain, method, verifyDomainMutation]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {

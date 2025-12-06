@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
@@ -28,6 +29,7 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [state, setState] = useState<DialogState>("confirm");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const analytics = useAnalytics();
 
   const handleDelete = async () => {
     setState("loading");
@@ -45,6 +47,7 @@ export function DeleteAccountDialog({
         return;
       }
 
+      analytics.track("delete_account_initiated");
       setState("success");
     } catch (err) {
       logger.error("Failed to request account deletion", err);

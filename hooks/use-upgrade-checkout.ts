@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics/client";
 import { checkout } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
@@ -23,6 +24,7 @@ export function useUpgradeCheckout() {
   const handleUpgrade = async () => {
     if (isLoading) return;
     setIsLoading(true);
+    analytics.track("upgrade_clicked");
     try {
       await checkout({
         products: [

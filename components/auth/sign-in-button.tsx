@@ -4,14 +4,17 @@ import { useState } from "react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
 export function SignInButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const analytics = useAnalytics();
 
   const handleSignIn = async () => {
     setIsLoading(true);
+    analytics.track("sign_in_clicked", { provider: "github" });
     try {
       await signIn.social({
         provider: "github",

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WebhooksOptions } from "@polar-sh/better-auth";
+import { analytics } from "@/lib/analytics/server";
 import {
   clearSubscriptionEndsAt,
   setSubscriptionEndsAt,
@@ -55,6 +56,15 @@ export async function handleSubscriptionCreated(
     subscriptionId: payload.data.id,
     status: payload.data.status,
   });
+
+  const tier = getTierForProductId(product.id);
+  if (customer.externalId) {
+    analytics.track(
+      "subscription_created",
+      { productId: product.id, tier: tier ?? "unknown" },
+      customer.externalId,
+    );
+  }
 }
 
 /**
@@ -99,6 +109,8 @@ export async function handleSubscriptionActive(
     await updateUserTier(userId, tier);
     await clearSubscriptionEndsAt(userId);
     logger.info("upgraded user tier", { userId, tier });
+
+    analytics.track("subscription_activated", { tier }, userId);
 
     // Send welcome email (best-effort, don't fail webhook on email error)
     try {
@@ -146,6 +158,12 @@ export async function handleSubscriptionCanceled(
     const endsAt = new Date(currentPeriodEnd);
     try {
       await setSubscriptionEndsAt(userId, endsAt);
+
+      analytics.track(
+        "subscription_canceled",
+        { endsAt: endsAt.toISOString() },
+        userId,
+      );
 
       // Send immediate cancellation confirmation email (best-effort, don't fail webhook on email error)
       try {
@@ -196,6 +214,8 @@ export async function handleSubscriptionRevoked(
     const archivedCount = await handleDowngrade(userId);
     await clearSubscriptionEndsAt(userId);
     logger.info("downgraded user", { userId, archivedCount });
+
+    analytics.track("subscription_revoked", { archivedCount }, userId);
 
     // Send expiration email (best-effort, don't fail webhook on email error)
     try {

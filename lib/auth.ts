@@ -5,6 +5,7 @@ import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
+import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
@@ -62,6 +63,7 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           await createSubscription(user.id);
+          analytics.track("user_signed_up", { provider: "github" }, user.id);
         },
       },
     },
@@ -70,6 +72,9 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
+        // Track account deletion (best-effort, user is being deleted)
+        analytics.track("delete_account_completed", {}, user.id);
+
         // Cancel Polar subscription if user has one
         // This deletes the Polar customer, which automatically cancels any active
         // subscriptions and revokes benefits

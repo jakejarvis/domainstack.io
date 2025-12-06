@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+import { analytics } from "@/lib/analytics/server";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
   archiveTrackedDomain,
@@ -212,6 +213,8 @@ export const trackingRouter = createTRPCRouter({
         },
       });
 
+      analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
+
       return {
         id: tracked.id,
         domain,
@@ -348,6 +351,13 @@ export const trackingRouter = createTRPCRouter({
         ctx.user.id,
         input,
       );
+
+      analytics.track(
+        "notification_preferences_updated",
+        { ...input },
+        ctx.user.id,
+      );
+
       return updated;
     }),
 
@@ -392,6 +402,12 @@ export const trackingRouter = createTRPCRouter({
           message: "Failed to update overrides - domain may have been deleted",
         });
       }
+
+      analytics.track(
+        "domain_notification_overrides_updated",
+        { ...overrides },
+        ctx.user.id,
+      );
 
       return {
         id: updated.id,
@@ -481,6 +497,8 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
+      analytics.track("domain_removed", {}, ctx.user.id);
+
       return { success: true };
     }),
 
@@ -530,6 +548,8 @@ export const trackingRouter = createTRPCRouter({
           message: "Failed to archive domain",
         });
       }
+
+      analytics.track("domain_archived", {}, ctx.user.id);
 
       return { success: true, archivedAt: updated.archivedAt };
     }),
@@ -583,6 +603,8 @@ export const trackingRouter = createTRPCRouter({
         }
       }
 
+      analytics.track("domain_unarchived", {}, ctx.user.id);
+
       return { success: true };
     }),
 
@@ -631,6 +653,14 @@ export const trackingRouter = createTRPCRouter({
       ).length;
       const failedCount = results.filter((r) => r.status === "rejected").length;
 
+      if (successCount > 0) {
+        analytics.track(
+          "domains_bulk_archived",
+          { count: successCount },
+          ctx.user.id,
+        );
+      }
+
       return { successCount, failedCount };
     }),
 
@@ -673,6 +703,14 @@ export const trackingRouter = createTRPCRouter({
         (r) => r.status === "fulfilled",
       ).length;
       const failedCount = results.filter((r) => r.status === "rejected").length;
+
+      if (successCount > 0) {
+        analytics.track(
+          "domains_bulk_removed",
+          { count: successCount },
+          ctx.user.id,
+        );
+      }
 
       return { successCount, failedCount };
     }),

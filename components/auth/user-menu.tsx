@@ -24,6 +24,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme-toggle";
+import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
@@ -34,6 +35,7 @@ export function UserMenu() {
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
+  const analytics = useAnalytics();
 
   if (!session?.user) {
     return null;
@@ -50,6 +52,7 @@ export function UserMenu() {
       .slice(0, 2) || "?";
 
   const handleSignOut = async () => {
+    analytics.track("sign_out_clicked");
     try {
       await signOut({
         fetchOptions: {
