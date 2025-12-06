@@ -6,18 +6,17 @@ import {
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
-import { createLogger } from "@/lib/logger/server";
 import { tryAllVerificationMethods } from "@/server/services/verification";
-
-const logger = createLogger({ source: "auto-verify-pending-domain" });
 
 /**
  * Event schema for triggering auto-verification of a pending domain.
+ * Note: verificationToken is optional since we always read it fresh from the DB
+ * to ensure we use the current value even if it changed after the event was queued.
  */
 const eventSchema = z.object({
   trackedDomainId: z.string().uuid(),
   domainName: z.string().min(1),
-  verificationToken: z.string().min(1),
+  verificationToken: z.string().min(1).optional(),
 });
 
 export type AutoVerifyPendingDomainEvent = z.infer<typeof eventSchema>;
@@ -47,11 +46,15 @@ const RETRY_DELAYS = [
  * - Checks frequently at first (when verification is most likely to succeed)
  * - Backs off over time to avoid unnecessary checks
  * - Stops after ~2 hours (daily cron catches stragglers)
+ *
+ * Retries: Set to 0 because the manual retry loop handles expected failures
+ * (DNS propagation delays). Inngest retries are for unhandled errors only,
+ * and the daily cron provides a robust fallback for infrastructure issues.
  */
 export const autoVerifyPendingDomain = inngest.createFunction(
   {
     id: "auto-verify-pending-domain",
-    retries: 2,
+    retries: 0,
     // Prevent multiple verification attempts for the same domain
     concurrency: {
       limit: 1,
@@ -82,7 +85,10 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         }
         // If already verified, no need to continue
         if (domain.verified) {
-          return { status: "already-verified" as const };
+          return {
+            status: "already-verified" as const,
+            domainName: domain.domainName,
+          };
         }
         return {
           status: "pending" as const,
@@ -103,7 +109,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       if (tracked.status === "already-verified") {
         inngestLogger.info("Domain already verified, stopping schedule", {
           trackedDomainId,
-          domainName,
+          domainName: tracked.domainName,
         });
         return { result: "cancelled", reason: "already_verified" };
       }
@@ -122,7 +128,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
           await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
 
-        logger.info("Auto-verified pending domain", {
+        inngestLogger.info("Auto-verified pending domain", {
           trackedDomainId,
           domainName: currentDomainName,
           method: result.method,
@@ -145,7 +151,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
     }
 
     // All attempts exhausted - daily cron will catch it
-    logger.info("Auto-verification schedule exhausted", {
+    inngestLogger.info("Auto-verification schedule exhausted", {
       trackedDomainId,
       domainName,
       totalAttempts: RETRY_DELAYS.length,
