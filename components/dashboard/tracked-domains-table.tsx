@@ -100,9 +100,11 @@ function SortableHeader({
   );
 }
 
+const EMPTY_SET = new Set<string>();
+
 export function TrackedDomainsTable({
   domains,
-  selectedIds = new Set(),
+  selectedIds = EMPTY_SET,
   onToggleSelect,
   onVerify,
   onRemove,

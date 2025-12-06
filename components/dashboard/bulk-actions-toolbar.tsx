@@ -58,11 +58,7 @@ export function BulkActionsToolbar({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={
-                    isAllSelected
-                      ? true
-                      : isPartiallySelected
-                        ? "indeterminate"
-                        : false
+                    isPartiallySelected ? "indeterminate" : isAllSelected
                   }
                   onCheckedChange={onToggleAll}
                   disabled={isLoading}

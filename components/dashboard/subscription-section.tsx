@@ -1,7 +1,6 @@
 "use client";
 
 import { Crown, ExternalLink } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { checkout, customerPortal } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
+import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
 
@@ -27,40 +26,12 @@ export function SubscriptionSection({
   activeCount,
   maxDomains,
 }: SubscriptionSectionProps) {
-  const [isLoading, setIsLoading] = useState<"checkout" | "portal" | null>(
-    null,
-  );
+  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
+  const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
+    useCustomerPortal();
 
   const isPro = tier === "pro";
   const percentage = maxDomains > 0 ? (activeCount / maxDomains) * 100 : 0;
-
-  const handleUpgrade = async () => {
-    setIsLoading("checkout");
-    try {
-      // Pass both products so user can choose billing interval
-      await checkout({
-        products: [
-          PRO_TIER_INFO.monthly.productId,
-          PRO_TIER_INFO.yearly.productId,
-        ],
-      });
-    } catch (err) {
-      logger.error("Failed to open checkout", err);
-    } finally {
-      setIsLoading(null);
-    }
-  };
-
-  const handleManageSubscription = async () => {
-    setIsLoading("portal");
-    try {
-      await customerPortal();
-    } catch (err) {
-      logger.error("Failed to open customer portal", err);
-    } finally {
-      setIsLoading(null);
-    }
-  };
 
   return (
     <Card>
@@ -99,11 +70,11 @@ export function SubscriptionSection({
           <Button
             variant="outline"
             onClick={handleManageSubscription}
-            disabled={isLoading === "portal"}
+            disabled={isPortalLoading}
             className="w-full"
           >
             <ExternalLink className="size-4" />
-            {isLoading === "portal" ? "Opening..." : "Manage Subscription"}
+            {isPortalLoading ? "Opening..." : "Manage Subscription"}
           </Button>
         ) : (
           <div className="space-y-3">
@@ -129,11 +100,11 @@ export function SubscriptionSection({
             </div>
             <Button
               onClick={handleUpgrade}
-              disabled={isLoading === "checkout"}
+              disabled={isCheckoutLoading}
               className="w-full bg-accent-purple hover:bg-accent-purple/90"
             >
               <Crown className="size-4" />
-              {isLoading === "checkout" ? "Opening..." : "Upgrade to Pro"}
+              {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
             </Button>
           </div>
         )}

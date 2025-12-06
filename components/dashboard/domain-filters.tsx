@@ -115,6 +115,11 @@ export function DomainFilters({
     })),
   ];
 
+  // Compute current sort option for grid view dropdown
+  const currentSort = sortOption
+    ? SORT_OPTIONS.find((o) => o.value === sortOption)
+    : undefined;
+
   const removeFilter = useCallback(
     (type: "status" | "health" | "tld", value: string) => {
       if (type === "status") {
@@ -183,51 +188,41 @@ export function DomainFilters({
         )}
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" &&
-          sortOption &&
-          onSortChange &&
-          (() => {
-            const currentSort = SORT_OPTIONS.find(
-              (o) => o.value === sortOption,
-            );
-            return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="h-9 gap-2 px-3">
-                    <span className="text-muted-foreground">Sort:</span>
-                    <span className="inline-flex items-center gap-1.5">
-                      {currentSort?.shortLabel ?? "Sort"}
-                      {currentSort?.direction && (
-                        <span className="text-muted-foreground">
-                          {currentSort.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
+        {viewMode === "grid" && currentSort && onSortChange && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 gap-2 px-3">
+                <span className="text-muted-foreground">Sort:</span>
+                <span className="inline-flex items-center gap-1.5">
+                  {currentSort.shortLabel}
+                  {currentSort.direction && (
+                    <span className="text-muted-foreground">
+                      {currentSort.direction === "asc" ? "↑" : "↓"}
                     </span>
-                    <ChevronDown className="size-4 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {SORT_OPTIONS.map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => onSortChange(option.value)}
-                      className="gap-2"
-                    >
-                      <Check
-                        className={cn(
-                          "size-4",
-                          sortOption === option.value
-                            ? "opacity-100"
-                            : "opacity-0",
-                        )}
-                      />
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            );
-          })()}
+                  )}
+                </span>
+                <ChevronDown className="size-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {SORT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => onSortChange(option.value)}
+                  className="gap-2"
+                >
+                  <Check
+                    className={cn(
+                      "size-4",
+                      sortOption === option.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Clear all button */}
         {hasActiveFilters && (

@@ -1,8 +1,6 @@
 "use client";
 
 import { Crown } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { checkout } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
+import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
 
@@ -27,7 +24,7 @@ export function UpgradePrompt({
   maxDomains,
   tier,
 }: UpgradePromptProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const { handleUpgrade, isLoading } = useUpgradeCheckout();
 
   // Don't show if already on Pro or not near limit
   if (tier === "pro") return null;
@@ -37,24 +34,6 @@ export function UpgradePrompt({
   const atLimit = currentCount >= maxDomains;
 
   if (!nearLimit) return null;
-
-  const handleUpgrade = async () => {
-    setIsLoading(true);
-    try {
-      // Open Polar checkout - pass both products so user can choose interval
-      await checkout({
-        products: [
-          PRO_TIER_INFO.monthly.productId,
-          PRO_TIER_INFO.yearly.productId,
-        ],
-      });
-    } catch (err) {
-      logger.error("Failed to open checkout", err);
-      toast.error("Failed to open checkout. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <Card className="border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5">

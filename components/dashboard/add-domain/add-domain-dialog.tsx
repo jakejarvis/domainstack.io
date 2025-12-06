@@ -93,11 +93,17 @@ export function AddDomainDialog({
   });
 
   // When resumeDomain changes and dialog opens, set up resume state
+  // Reset all state to avoid showing stale data from a previous domain
   useEffect(() => {
     if (resumeDomain && open) {
       setDomain(resumeDomain.domainName);
       setTrackedDomainId(resumeDomain.id);
       setStep(2);
+      // Reset state that could be stale from a previous domain
+      setVerificationState({ status: "idle" });
+      setDomainError("");
+      setMethod("dns_txt");
+      setInstructions(null); // Will be set by instructionsQuery effect
     }
   }, [resumeDomain, open]);
 
@@ -159,9 +165,10 @@ export function AddDomainDialog({
     setVerificationState({ status: "verifying" });
 
     try {
+      // Try all verification methods - user may have set up a different method
+      // than the tab they're currently viewing
       const result = await verifyDomainMutation.mutateAsync({
         trackedDomainId,
-        method,
       });
 
       if (result.verified) {
@@ -250,11 +257,17 @@ export function AddDomainDialog({
               : `Step ${step} of 3 — ${STEP_TITLES[step - 1]}`}
           </DialogDescription>
           {/* Step indicator dots - only show for new domain flow */}
+          {/* Step info is already in DialogDescription, dots are decorative */}
           {!isResuming && (
-            <div className="flex gap-1.5 pt-2">
+            <div
+              className="flex gap-1.5 pt-2"
+              role="group"
+              aria-label={`Step ${step} of 3: ${STEP_TITLES[step - 1]}`}
+            >
               {[1, 2, 3].map((s) => (
                 <div
                   key={s}
+                  aria-hidden="true"
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-300",
                     s === step ? "w-6 bg-primary" : "w-1.5 bg-muted",

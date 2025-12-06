@@ -1,32 +1,12 @@
 "use client";
 
 import { Crown, Sparkles } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { checkout } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
+import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export function UpgradeBanner() {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleUpgrade = async () => {
-    setIsLoading(true);
-    try {
-      await checkout({
-        products: [
-          PRO_TIER_INFO.monthly.productId,
-          PRO_TIER_INFO.yearly.productId,
-        ],
-      });
-    } catch (err) {
-      logger.error("Failed to open checkout", err);
-      toast.error("Failed to open checkout. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { handleUpgrade, isLoading } = useUpgradeCheckout();
 
   return (
     <div className="relative overflow-hidden rounded-b-xl border border-accent-purple/30 bg-gradient-to-r from-accent-purple/15 via-accent-purple/10 to-accent-blue/15 p-4">
