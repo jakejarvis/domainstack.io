@@ -65,6 +65,7 @@ export function BulkActionsToolbar({
                         : false
                   }
                   onCheckedChange={onToggleAll}
+                  disabled={isLoading}
                   aria-label={
                     isAllSelected ? "Deselect all" : `Select all ${totalCount}`
                   }
@@ -72,7 +73,8 @@ export function BulkActionsToolbar({
                 <button
                   type="button"
                   onClick={onToggleAll}
-                  className="text-sm hover:underline"
+                  disabled={isLoading}
+                  className="text-sm hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Select all ({totalCount})
                 </button>
