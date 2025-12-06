@@ -14,15 +14,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function DomainLoadingState() {
   return (
     <div className="space-y-4">
-      {/* Domain header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-5 w-5 rounded" />
-          <Skeleton className="h-6 w-40" />
+      {/* Domain header skeleton - matches DomainReportHeader */}
+      <div className="flex min-w-0 items-center justify-between gap-4">
+        {/* Left: favicon + domain name */}
+        <div className="flex min-w-0 items-center gap-2">
+          <Skeleton className="size-5 shrink-0 rounded" />
+          <Skeleton className="h-7 w-40" />
         </div>
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-22 rounded-md" />
-          <Skeleton className="h-9 w-9 rounded-md" />
+
+        {/* Right: Track button + Export button + Tools dropdown */}
+        {/* Buttons show icon-only on mobile, icon+text on desktop */}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Track button: icon on mobile, icon+"Track" on desktop */}
+          <Skeleton className="size-9 rounded-md sm:h-9 sm:w-[76px]" />
+          {/* Export button: icon on mobile, icon+"Export" on desktop */}
+          <Skeleton className="size-9 rounded-md sm:h-9 sm:w-[88px]" />
+          {/* Tools dropdown: always icon-only */}
+          <Skeleton className="size-9 rounded-md" />
         </div>
       </div>
 
