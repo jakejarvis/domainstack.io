@@ -3,23 +3,20 @@
 import { ArrowUpRight, BellRing, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import useLocalStorageState from "use-local-storage-state";
 import { useSession } from "@/lib/auth-client";
 
 const STORAGE_KEY = "announcement-dismissed-accounts-launch";
 
 export function AnnouncementPill() {
   const { data: session } = useSession();
-  const [dismissed, setDismissed] = useState(true); // Start hidden to avoid flash
-
-  useEffect(() => {
-    setDismissed(localStorage.getItem(STORAGE_KEY) === "true");
-  }, []);
+  const [dismissed, setDismissed] = useLocalStorageState(STORAGE_KEY, {
+    defaultValue: false,
+  });
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    localStorage.setItem(STORAGE_KEY, "true");
     setDismissed(true);
   };
 

@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { logger } from "@/lib/logger/server";
 
 // PostHog clients maintain background flushers; keep a single shared instance
 // per runtime to avoid reopening sockets for every event. We deliberately avoid
@@ -30,17 +31,31 @@ function getServerPosthog(): PostHog | null {
 const getDistinctId = cache(async (): Promise<string> => {
   let distinctId: string | undefined;
 
-  const cookieStore = await cookies();
-  const phCookie = cookieStore.get(
-    `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`,
-  );
-  if (phCookie?.value) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(phCookie.value));
-      if (parsed && typeof parsed.distinct_id === "string") {
-        distinctId = parsed.distinct_id;
-      }
-    } catch {}
+  try {
+    const cookieStore = await cookies();
+    const phCookie = cookieStore.get(
+      `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`,
+    );
+    if (phCookie?.value) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(phCookie.value));
+        if (parsed && typeof parsed.distinct_id === "string") {
+          distinctId = parsed.distinct_id;
+        }
+      } catch {}
+    }
+  } catch (err) {
+    // cookies() throws when called outside request scope (e.g., during prerender)
+    // Log unexpected errors that don't match the known pattern
+    const isExpectedError =
+      err instanceof Error && err.message.includes("outside a request scope");
+    if (!isExpectedError) {
+      logger.warn("unexpected error accessing cookies", {
+        source: "analytics",
+        error: err,
+      });
+    }
+    // Fall through to generate a UUID
   }
 
   // fallback to distinct uuid

@@ -1,8 +1,36 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
+import {
+  CONSENT_REQUIRED_COOKIE,
+  GDPR_COUNTRY_CODES,
+} from "@/lib/constants/gdpr";
 import { toRegistrableDomain } from "@/lib/domain-server";
 
-export type ProxyAction =
+/**
+ * Set GDPR consent requirement cookie based on Vercel's geolocation header.
+ * Only sets if the cookie doesn't already exist.
+ * Returns the response for chaining.
+ */
+export function setConsentCookieIfNeeded(
+  request: NextRequest,
+  response: NextResponse,
+): NextResponse {
+  if (request.cookies.has(CONSENT_REQUIRED_COOKIE)) return response;
+
+  const country = request.headers.get("x-vercel-ip-country");
+  // Default to requiring consent if geo-location is unknown (safer default)
+  const requiresConsent = country === null || GDPR_COUNTRY_CODES.has(country);
+
+  response.cookies.set(CONSENT_REQUIRED_COOKIE, requiresConsent ? "1" : "0", {
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    httpOnly: false, // Needs to be readable by client JS
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return response;
+}
+
+export type MiddlewareRedirectAction =
   | { type: "match" }
   | { type: "redirect"; destination: string }
   | null;
@@ -12,7 +40,9 @@ export type ProxyAction =
  * Decoupled from NextRequest/NextResponse for easier testing.
  * Returns null to skip processing (e.g. invalid domains, root path, etc).
  */
-export function getProxyAction(path: string): ProxyAction {
+export function getMiddlewareRedirectAction(
+  path: string,
+): MiddlewareRedirectAction {
   // Fast path: root path or empty
   if (path.length <= 1) {
     return null;
@@ -53,30 +83,4 @@ export function getProxyAction(path: string): ProxyAction {
   }
 
   return { type: "match" };
-}
-
-export function handleProxyRequest(request: NextRequest) {
-  const action = getProxyAction(request.nextUrl.pathname);
-
-  if (action === null) {
-    return NextResponse.next();
-  }
-
-  if (action.type === "redirect") {
-    const url = request.nextUrl.clone();
-    url.pathname = action.destination;
-    url.search = "";
-    url.hash = "";
-    return NextResponse.redirect(url, {
-      headers: {
-        "x-middleware-decision": action.type,
-      },
-    });
-  }
-
-  return NextResponse.next({
-    headers: {
-      "x-middleware-decision": action.type,
-    },
-  });
 }

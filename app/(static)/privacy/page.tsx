@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         </p>
       </header>
 
-      <section>
+      <section id="introduction">
         <h2>Introduction</h2>
         <p>
           Domainstack (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="information-we-collect">
         <h2>Information We Collect</h2>
 
         <h3>Account Information</h3>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="how-we-use-your-information">
         <h2>How We Use Your Information</h2>
         <p>We use your information to:</p>
         <ul>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="data-retention">
         <h2>Data Retention</h2>
         <p>
           We retain your account information for as long as your account is
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="payment-information">
         <h2>Payment Information</h2>
         <p>
           When you subscribe to our Pro plan, payment processing is handled by
@@ -144,7 +144,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="email-communications">
         <h2>Email Communications</h2>
         <p>
           We use{" "}
@@ -177,7 +177,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="analytics">
         <h2>Analytics</h2>
         <p>
           We use{" "}
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="data-sharing">
         <h2>Data Sharing</h2>
         <p>We do not sell your personal information. We may share data with:</p>
         <ul>
@@ -238,7 +238,7 @@ export default function PrivacyPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="your-rights">
         <h2>Your Rights</h2>
         <p>You have the right to:</p>
         <ul>
@@ -256,16 +256,61 @@ export default function PrivacyPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="cookies">
         <h2>Cookies</h2>
         <p>
-          We use essential cookies to maintain your session and preferences. We
-          also use analytics cookies (via PostHog) to understand how our service
-          is used. You can control cookie settings in your browser.
+          We use cookies to provide and improve our service. Our approach to
+          cookies depends on your location:
+        </p>
+
+        <h3>For EU/EEA Visitors</h3>
+        <p>
+          If you visit from a country covered by GDPR (EU member states, EEA
+          countries, and the UK), you&apos;ll see a cookie consent banner on
+          your first visit. You can choose to:
+        </p>
+        <ul>
+          <li>
+            <strong>Accept:</strong> We&apos;ll use analytics cookies to
+            understand how you use our service and improve your experience.
+          </li>
+          <li>
+            <strong>Decline:</strong> We&apos;ll switch to cookieless tracking
+            mode, collecting only anonymized usage data without storing any
+            cookies on your device.
+          </li>
+        </ul>
+
+        <h3>For Visitors Outside the EU/EEA</h3>
+        <p>
+          If you visit from outside the EU/EEA, analytics cookies are enabled by
+          default to provide the best experience. You can still opt out using
+          your browser&apos;s built-in cookie controls.
+        </p>
+
+        <h3>Types of Cookies We Use</h3>
+        <ul>
+          <li>
+            <strong>Essential cookies:</strong> Required for basic functionality
+            like authentication and session management. These are always active
+            regardless of your consent choice.
+          </li>
+          <li>
+            <strong>Analytics cookies:</strong> Used by PostHog to understand
+            how you use our service, track errors, and improve the user
+            experience. For EU/EEA visitors, these require your consent.
+          </li>
+        </ul>
+
+        <h3>Changing Your Preferences</h3>
+        <p>
+          To change your cookie preferences, you can clear your browser&apos;s
+          cookies and local storage for this site, then revisit to see the
+          consent banner again (EU/EEA visitors only).
         </p>
       </section>
 
-      <section>
+      <section id="security">
         <h2>Security</h2>
         <p>
           We implement industry-standard security measures to protect your data,
@@ -274,7 +319,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="changes-to-this-policy">
         <h2>Changes to This Policy</h2>
         <p>
           We may update this privacy policy from time to time. We will notify
@@ -282,7 +327,7 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section>
+      <section id="contact-us">
         <h2>Contact Us</h2>
         <p>
           If you have questions about this privacy policy or your data, please

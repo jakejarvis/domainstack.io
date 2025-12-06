@@ -17,7 +17,7 @@ export default function TermsPage() {
         </p>
       </header>
 
-      <section>
+      <section id="acceptance-of-terms">
         <h2>Acceptance of Terms</h2>
         <p>
           By accessing or using Domainstack (&quot;the Service&quot;), you agree
@@ -26,7 +26,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="description-of-service">
         <h2>Description of Service</h2>
         <p>
           Domainstack is a domain intelligence platform that provides
@@ -41,7 +41,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="account-registration">
         <h2>Account Registration</h2>
         <p>
           To access certain features, you must create an account using GitHub
@@ -55,7 +55,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="acceptable-use">
         <h2>Acceptable Use</h2>
         <p>You agree not to:</p>
         <ul>
@@ -72,7 +72,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="domain-verification">
         <h2>Domain Verification</h2>
         <p>
           When tracking domains, you may be required to verify ownership through
@@ -90,7 +90,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="data-accuracy">
         <h2>Data Accuracy</h2>
         <p>
           The Service provides information from various public sources including
@@ -107,7 +107,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="service-tiers-and-limits">
         <h2>Service Tiers and Limits</h2>
         <p>
           The Service offers a free tier and a paid Pro tier with different
@@ -132,7 +132,7 @@ export default function TermsPage() {
         </ul>
       </section>
 
-      <section>
+      <section id="paid-subscriptions">
         <h2>Paid Subscriptions</h2>
         <p>
           Pro subscriptions are billed on a recurring basis (monthly or
@@ -206,7 +206,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="intellectual-property">
         <h2>Intellectual Property</h2>
         <p>
           The Service and its original content, features, and functionality are
@@ -217,7 +217,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="disclaimer-of-warranties">
         <h2>Disclaimer of Warranties</h2>
         <p>
           THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot;
@@ -226,7 +226,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="limitation-of-liability">
         <h2>Limitation of Liability</h2>
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, DOMAINSTACK SHALL NOT BE
@@ -236,7 +236,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="termination">
         <h2>Termination</h2>
         <p>
           We may terminate or suspend your account at any time for violation of
@@ -245,7 +245,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="changes-to-terms">
         <h2>Changes to Terms</h2>
         <p>
           We reserve the right to modify these terms at any time. We will notify
@@ -254,7 +254,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="governing-law">
         <h2>Governing Law</h2>
         <p>
           These terms shall be governed by and construed in accordance with the
@@ -263,7 +263,7 @@ export default function TermsPage() {
         </p>
       </section>
 
-      <section>
+      <section id="contact">
         <h2>Contact</h2>
         <p>
           For questions about these Terms of Service, please contact us at{" "}

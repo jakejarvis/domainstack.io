@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import useLocalStorageState from "use-local-storage-state";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 export type SortOption =
@@ -96,32 +96,12 @@ export function sortDomains(
  * Hook to manage sort preference with localStorage persistence.
  */
 export function useSortPreference(): [SortOption, (sort: SortOption) => void] {
-  const [sortOption, setSortOptionState] = useState<SortOption>(DEFAULT_SORT);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [sortOption, setSortOption] = useLocalStorageState<SortOption>(
+    STORAGE_KEY,
+    {
+      defaultValue: DEFAULT_SORT,
+    },
+  );
 
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && SORT_OPTIONS.some((o) => o.value === stored)) {
-        setSortOptionState(stored as SortOption);
-      }
-    } catch {
-      // localStorage not available
-    }
-    setIsHydrated(true);
-  }, []);
-
-  // Persist preference to localStorage when changed
-  const setSortOption = useCallback((sort: SortOption) => {
-    setSortOptionState(sort);
-    try {
-      localStorage.setItem(STORAGE_KEY, sort);
-    } catch {
-      // localStorage not available
-    }
-  }, []);
-
-  // Return default during SSR to prevent hydration mismatch
-  return [isHydrated ? sortOption : DEFAULT_SORT, setSortOption];
+  return [sortOption, setSortOption];
 }
