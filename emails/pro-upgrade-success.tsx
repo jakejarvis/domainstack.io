@@ -15,11 +15,13 @@ import {
 type ProUpgradeSuccessEmailProps = {
   userName: string;
   dashboardUrl: string;
+  proMaxDomains: number;
 };
 
 export function ProUpgradeSuccessEmail({
   userName,
   dashboardUrl,
+  proMaxDomains,
 }: ProUpgradeSuccessEmailProps) {
   const previewText = "Welcome to Domainstack Pro!";
 
@@ -43,7 +45,9 @@ export function ProUpgradeSuccessEmail({
               <Text style={successText}>
                 <strong>Your Pro benefits are now active:</strong>
               </Text>
-              <Text style={benefitItem}>• Track up to 50 domains</Text>
+              <Text style={benefitItem}>
+                • Track up to {proMaxDomains} domains
+              </Text>
               <Text style={benefitItem}>• Priority email notifications</Text>
               <Text style={benefitItem}>• Support ongoing development</Text>
             </Section>
@@ -83,6 +87,7 @@ export function ProUpgradeSuccessEmail({
 ProUpgradeSuccessEmail.PreviewProps = {
   userName: "Jake",
   dashboardUrl: "https://domainstack.io/dashboard",
+  proMaxDomains: 50,
 } as ProUpgradeSuccessEmailProps;
 
 export default ProUpgradeSuccessEmail;

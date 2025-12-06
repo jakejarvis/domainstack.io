@@ -54,6 +54,7 @@ type TrackedDomainsTableProps = {
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
   tier: UserTier;
+  proMaxDomains: number;
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
@@ -110,6 +111,7 @@ export function TrackedDomainsTable({
   onRemove,
   onArchive,
   tier,
+  proMaxDomains,
 }: TrackedDomainsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -479,7 +481,7 @@ export function TrackedDomainsTable({
       </div>
 
       {/* Upgrade CTA banner for free tier users */}
-      {tier === "free" && <UpgradeBanner />}
+      {tier === "free" && <UpgradeBanner proMaxDomains={proMaxDomains} />}
     </div>
   );
 }

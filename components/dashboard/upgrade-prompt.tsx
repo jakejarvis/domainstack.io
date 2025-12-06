@@ -16,12 +16,14 @@ import type { UserTier } from "@/lib/schemas";
 type UpgradePromptProps = {
   currentCount: number;
   maxDomains: number;
+  proMaxDomains: number;
   tier: UserTier;
 };
 
 export function UpgradePrompt({
   currentCount,
   maxDomains,
+  proMaxDomains,
   tier,
 }: UpgradePromptProps) {
   const { handleUpgrade, isLoading } = useUpgradeCheckout();
@@ -56,7 +58,7 @@ export function UpgradePrompt({
           <span className="font-medium text-foreground">
             {PRO_TIER_INFO.name}
           </span>
-          : Track up to 50 domains •{" "}
+          : Track up to {proMaxDomains} domains •{" "}
           <span className="text-accent-purple">
             {PRO_TIER_INFO.monthly.label}
           </span>{" "}

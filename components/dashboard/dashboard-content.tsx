@@ -26,6 +26,7 @@ import { useSelection } from "@/hooks/use-selection";
 import { sortDomains, useSortPreference } from "@/hooks/use-sort-preference";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
+import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
@@ -670,7 +671,9 @@ export function DashboardContent() {
   const userName = session?.user?.name || "there";
   const activeCount = limitsQuery.data?.activeCount ?? 0;
   const archivedCount = limitsQuery.data?.archivedCount ?? 0;
-  const maxDomains = limitsQuery.data?.maxDomains ?? 5;
+  const maxDomains = limitsQuery.data?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains =
+    limitsQuery.data?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
   const tier = limitsQuery.data?.tier ?? "free";
   const canAddMore = limitsQuery.data?.canAddMore ?? true;
   const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
@@ -694,7 +697,7 @@ export function DashboardContent() {
           variant="success"
           icon={Sparkles}
           title="Welcome to Pro!"
-          description="You now have access to track up to 50 domains. Thank you for upgrading!"
+          description={`You now have access to track up to ${proMaxDomains} domains. Thank you for upgrading!`}
           dismissible
           onDismiss={() => setShowUpgradedBanner(false)}
         />
@@ -709,6 +712,7 @@ export function DashboardContent() {
       <UpgradePrompt
         currentCount={activeCount}
         maxDomains={maxDomains}
+        proMaxDomains={proMaxDomains}
         tier={tier}
       />
 
@@ -752,6 +756,7 @@ export function DashboardContent() {
             hasActiveFilters={hasActiveFilters}
             selection={selection}
             tier={tier}
+            proMaxDomains={proMaxDomains}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
             onRemove={(id, domainName) => handleRemove(id, domainName)}

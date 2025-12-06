@@ -9,6 +9,7 @@ import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import SubscriptionExpiredEmail from "@/emails/subscription-expired";
 import { BASE_URL } from "@/lib/constants";
 import { getUserById } from "@/lib/db/repos/users";
+import { getTierLimits } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
@@ -43,11 +44,13 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
+    const tierLimits = await getTierLimits();
 
     const emailHtml = await render(
       ProUpgradeSuccessEmail({
         userName: firstName,
         dashboardUrl,
+        proMaxDomains: tierLimits.pro,
       }) as React.ReactElement,
     );
 
@@ -67,7 +70,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
 
     // Also send the welcome/tips email (best-effort, non-critical)
     try {
-      await sendProWelcomeEmail(userId, user.name, user.email);
+      await sendProWelcomeEmail(userId, user.name, user.email, tierLimits.pro);
     } catch (err) {
       logger.error("Failed to send Pro welcome email (non-critical)", err, {
         userId,
@@ -88,6 +91,7 @@ async function sendProWelcomeEmail(
   userId: string,
   userName: string,
   userEmail: string,
+  proMaxDomains: number,
 ): Promise<boolean> {
   if (!resend) {
     logger.warn("Resend not configured, skipping email", { userId });
@@ -102,6 +106,7 @@ async function sendProWelcomeEmail(
       ProWelcomeEmail({
         userName: firstName,
         dashboardUrl,
+        proMaxDomains,
       }) as React.ReactElement,
     );
 
@@ -236,12 +241,15 @@ export async function sendSubscriptionExpiredEmail(
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
+    const tierLimits = await getTierLimits();
 
     const emailHtml = await render(
       SubscriptionExpiredEmail({
         userName: firstName,
         archivedCount,
         dashboardUrl,
+        freeMaxDomains: tierLimits.free,
+        proMaxDomains: tierLimits.pro,
       }) as React.ReactElement,
     );
 

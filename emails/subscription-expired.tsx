@@ -16,12 +16,16 @@ type SubscriptionExpiredEmailProps = {
   userName: string;
   archivedCount: number;
   dashboardUrl: string;
+  freeMaxDomains: number;
+  proMaxDomains: number;
 };
 
 export function SubscriptionExpiredEmail({
   userName,
   archivedCount,
   dashboardUrl,
+  freeMaxDomains,
+  proMaxDomains,
 }: SubscriptionExpiredEmailProps) {
   const previewText = "Your Pro subscription has ended";
 
@@ -58,12 +62,12 @@ export function SubscriptionExpiredEmail({
 
           <Text style={text}>
             You can continue using Domainstack with the free tier, which
-            includes tracking up to 5 domains.
+            includes tracking up to {freeMaxDomains} domains.
           </Text>
 
           <Text style={text}>
             Miss Pro? You can resubscribe anytime to unlock all your domains and
-            get back to tracking up to 50 domains.
+            get back to tracking up to {proMaxDomains} domains.
           </Text>
 
           <Section style={buttonContainer}>
@@ -98,6 +102,8 @@ SubscriptionExpiredEmail.PreviewProps = {
   userName: "Jake",
   archivedCount: 12,
   dashboardUrl: "https://domainstack.io/dashboard",
+  freeMaxDomains: 5,
+  proMaxDomains: 50,
 } as SubscriptionExpiredEmailProps;
 
 export default SubscriptionExpiredEmail;

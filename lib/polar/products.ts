@@ -74,15 +74,26 @@ export function getTierForProductId(productId: string): UserTier | null {
 
 /**
  * Pro tier display info for UI components.
+ * Use getProTierInfo() when you need dynamic limit from Edge Config.
  */
 export const PRO_TIER_INFO = {
   name: "Pro",
-  description: "Track up to 50 domains with advanced monitoring",
-  features: [
-    "Track up to 50 domains",
-    "Priority email notifications",
-    "Support development",
-  ],
   monthly: POLAR_PRODUCTS["pro-monthly"],
   yearly: POLAR_PRODUCTS["pro-yearly"],
 } as const;
+
+/**
+ * Get Pro tier info with dynamic domain limit.
+ * Use this when you have access to the proMaxDomains from getLimits query.
+ */
+export function getProTierInfo(proMaxDomains: number) {
+  return {
+    ...PRO_TIER_INFO,
+    description: `Track up to ${proMaxDomains} domains with advanced monitoring`,
+    features: [
+      `Track up to ${proMaxDomains} domains`,
+      "Priority email notifications",
+      "Support development",
+    ],
+  };
+}

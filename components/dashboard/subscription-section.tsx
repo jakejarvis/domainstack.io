@@ -12,7 +12,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
+import { getProTierInfo } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ type SubscriptionSectionProps = {
   tier: UserTier;
   activeCount: number;
   maxDomains: number;
+  proMaxDomains: number;
   /** Whether to show the card wrapper (false for modal usage) */
   showCard?: boolean;
 };
@@ -28,6 +29,7 @@ export function SubscriptionSection({
   tier,
   activeCount,
   maxDomains,
+  proMaxDomains,
   showCard = true,
 }: SubscriptionSectionProps) {
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
@@ -37,6 +39,7 @@ export function SubscriptionSection({
   const isPro = tier === "pro";
   const percentage =
     maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
+  const proTierInfo = getProTierInfo(proMaxDomains);
 
   const content = (
     <>
@@ -89,22 +92,22 @@ export function SubscriptionSection({
         ) : (
           <div className="space-y-3">
             <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
-              <div className="mb-2 font-medium">{PRO_TIER_INFO.name}</div>
+              <div className="mb-2 font-medium">{proTierInfo.name}</div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
-                {PRO_TIER_INFO.features.map((feature) => (
+                {proTierInfo.features.map((feature) => (
                   <li key={feature}>• {feature}</li>
                 ))}
               </ul>
               <div className="flex items-baseline gap-2 text-sm">
                 <span className="font-semibold text-accent-purple">
-                  {PRO_TIER_INFO.monthly.label}
+                  {proTierInfo.monthly.label}
                 </span>
                 <span className="text-muted-foreground">or</span>
                 <span className="font-semibold text-accent-purple">
-                  {PRO_TIER_INFO.yearly.label}
+                  {proTierInfo.yearly.label}
                 </span>
                 <span className="text-muted-foreground/70 text-xs">
-                  ({PRO_TIER_INFO.yearly.savings})
+                  ({proTierInfo.yearly.savings})
                 </span>
               </div>
             </div>

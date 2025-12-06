@@ -25,6 +25,7 @@ type TrackedDomainsViewProps = {
   hasActiveFilters: boolean;
   selection: SelectionState;
   tier: UserTier;
+  proMaxDomains: number;
   onAddDomain: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
@@ -43,6 +44,7 @@ export function TrackedDomainsView({
   hasActiveFilters,
   selection,
   tier,
+  proMaxDomains,
   onAddDomain,
   onVerify,
   onRemove,
@@ -125,6 +127,7 @@ export function TrackedDomainsView({
           onRemove={onRemove}
           onArchive={onArchive}
           tier={tier}
+          proMaxDomains={proMaxDomains}
         />
       ) : (
         <TrackedDomainsGrid
@@ -135,6 +138,7 @@ export function TrackedDomainsView({
           onRemove={onRemove}
           onArchive={onArchive}
           tier={tier}
+          proMaxDomains={proMaxDomains}
         />
       )}
 

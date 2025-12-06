@@ -15,11 +15,13 @@ import {
 type ProWelcomeEmailProps = {
   userName: string;
   dashboardUrl: string;
+  proMaxDomains: number;
 };
 
 export function ProWelcomeEmail({
   userName,
   dashboardUrl,
+  proMaxDomains,
 }: ProWelcomeEmailProps) {
   const previewText = "Get the most out of Domainstack Pro";
 
@@ -42,8 +44,8 @@ export function ProWelcomeEmail({
             <Section style={tipBox}>
               <Text style={tipTitle}>1. Add Your Domains</Text>
               <Text style={tipText}>
-                You can now track up to 50 domains. Add them from your dashboard
-                and verify ownership to start receiving alerts.
+                You can now track up to {proMaxDomains} domains. Add them from
+                your dashboard and verify ownership to start receiving alerts.
               </Text>
             </Section>
           </Section>
@@ -103,6 +105,7 @@ export function ProWelcomeEmail({
 ProWelcomeEmail.PreviewProps = {
   userName: "Jake",
   dashboardUrl: "https://domainstack.io/dashboard",
+  proMaxDomains: 50,
 } as ProWelcomeEmailProps;
 
 export default ProWelcomeEmail;

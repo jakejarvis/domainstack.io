@@ -23,6 +23,7 @@ import {
 } from "@/lib/db/repos/user-notification-preferences";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { inngest } from "@/lib/inngest/client";
 import {
   NotificationOverridesSchema,
@@ -69,6 +70,8 @@ export const trackingRouter = createTRPCRouter({
     const sub = await getUserSubscription(ctx.user.id);
     const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
     const archivedCount = await countArchivedTrackedDomainsForUser(ctx.user.id);
+    // Get pro tier max domains for upgrade prompts (from Edge Config)
+    const proMaxDomains = await getMaxDomainsForTier("pro");
 
     return {
       tier: sub.tier,
@@ -79,6 +82,8 @@ export const trackingRouter = createTRPCRouter({
       canAddMore: activeCount < sub.maxDomains,
       // When a canceled subscription expires (null = no pending cancellation)
       subscriptionEndsAt: sub.endsAt,
+      // Pro tier limit for upgrade prompts
+      proMaxDomains,
     };
   }),
 

@@ -31,10 +31,13 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { MultiSelect } from "@/components/ui/multi-select";
-import type { HealthFilter, StatusFilter } from "@/lib/constants/domain-filters";
 import { SORT_OPTIONS, type SortOption } from "@/hooks/use-sort-preference";
 import type { ViewMode } from "@/hooks/use-view-preference";
 import { HEALTH_OPTIONS, STATUS_OPTIONS } from "@/lib/constants";
+import type {
+  HealthFilter,
+  StatusFilter,
+} from "@/lib/constants/domain-filters";
 import { cn } from "@/lib/utils";
 
 type DomainFiltersProps = {

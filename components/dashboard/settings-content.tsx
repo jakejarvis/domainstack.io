@@ -27,12 +27,13 @@ import { Progress } from "@/components/ui/progress";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { useSession } from "@/lib/auth-client";
+import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
 import { logger } from "@/lib/logger/client";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
+import { getProTierInfo } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -249,8 +250,11 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   // Subscription data
   const isPro = limits?.tier === "pro";
   const activeCount = limits?.activeCount ?? 0;
-  const maxDomains = limits?.maxDomains ?? 5;
-  const percentage = maxDomains > 0 ? (activeCount / maxDomains) * 100 : 0;
+  const maxDomains = limits?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains = limits?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const percentage =
+    maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
+  const proTierInfo = getProTierInfo(proMaxDomains);
 
   const content = (
     <div className={cn("space-y-6", !showCard && "py-1")}>
@@ -302,22 +306,22 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
           ) : (
             <div className="space-y-3">
               <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
-                <div className="mb-2 font-medium">{PRO_TIER_INFO.name}</div>
+                <div className="mb-2 font-medium">{proTierInfo.name}</div>
                 <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
-                  {PRO_TIER_INFO.features.map((feature) => (
+                  {proTierInfo.features.map((feature) => (
                     <li key={feature}>• {feature}</li>
                   ))}
                 </ul>
                 <div className="flex items-baseline gap-2 text-sm">
                   <span className="font-semibold text-accent-purple">
-                    {PRO_TIER_INFO.monthly.label}
+                    {proTierInfo.monthly.label}
                   </span>
                   <span className="text-muted-foreground">or</span>
                   <span className="font-semibold text-accent-purple">
-                    {PRO_TIER_INFO.yearly.label}
+                    {proTierInfo.yearly.label}
                   </span>
                   <span className="text-muted-foreground/70 text-xs">
-                    ({PRO_TIER_INFO.yearly.savings})
+                    ({proTierInfo.yearly.savings})
                   </span>
                 </div>
               </div>

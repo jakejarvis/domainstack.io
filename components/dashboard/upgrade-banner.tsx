@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
-export function UpgradeBanner() {
+type UpgradeBannerProps = {
+  proMaxDomains: number;
+};
+
+export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
   const { handleUpgrade, isLoading } = useUpgradeCheckout();
 
   return (
@@ -29,7 +33,7 @@ export function UpgradeBanner() {
           <div>
             <h3 className="font-semibold">Upgrade to Pro</h3>
             <p className="text-muted-foreground text-sm">
-              Track up to 50 domains •{" "}
+              Track up to {proMaxDomains} domains •{" "}
               <span className="text-accent-purple">
                 {PRO_TIER_INFO.monthly.label}
               </span>{" "}

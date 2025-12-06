@@ -14,6 +14,7 @@ type TrackedDomainsGridProps = {
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
   tier: UserTier;
+  proMaxDomains: number;
 };
 
 export function TrackedDomainsGrid({
@@ -24,6 +25,7 @@ export function TrackedDomainsGrid({
   onRemove,
   onArchive,
   tier,
+  proMaxDomains,
 }: TrackedDomainsGridProps) {
   const showUpgradeCard = tier === "free";
 
@@ -63,7 +65,7 @@ export function TrackedDomainsGrid({
             duration: 0.3,
           }}
         >
-          <UpgradeCard />
+          <UpgradeCard proMaxDomains={proMaxDomains} />
         </motion.div>
       )}
     </div>
