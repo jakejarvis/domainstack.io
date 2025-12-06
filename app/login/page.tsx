@@ -21,7 +21,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex flex-1 items-center justify-center p-4">
       <AnimatedBackground />
       <LoginContent className="max-w-md" />
     </div>

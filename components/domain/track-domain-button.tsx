@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellPlus, Check, Shield } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import {
@@ -104,7 +105,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
             <Button
               variant="outline"
               onClick={handleResume}
-              className="gap-2 border-info-border bg-info/30 text-info-foreground hover:bg-info/40"
+              className="cursor-pointer gap-2 border-info-border bg-info/30 text-info-foreground hover:bg-info/40"
             >
               <Check className="size-4" />
               <span className="hidden sm:inline">Verify</span>
@@ -129,26 +130,54 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   }
 
   // Not tracked - show track button
-  const handleClick = () => {
-    if (!session?.user) {
-      setLoginOpen(true);
+  // For logged-out users, use hybrid Link/modal pattern (ctrl+click goes to /login)
+  const handleClick = (e: React.MouseEvent) => {
+    if (session?.user) {
+      // Logged in - open add domain dialog
+      setAddDialogOpen(true);
       return;
     }
-    setAddDialogOpen(true);
+    // Logged out - open login modal (unless modifier key pressed)
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+      return; // Let link work normally
+    }
+    e.preventDefault();
+    setLoginOpen(true);
   };
+
+  const buttonContent = (
+    <>
+      <BellPlus className="size-4 text-accent-purple" />
+      <span className="hidden sm:inline">Track</span>
+    </>
+  );
+
+  const buttonClassName =
+    "cursor-pointer gap-2 border-accent-purple/30 bg-gradient-to-r from-accent-purple/5 to-accent-blue/5 text-foreground hover:border-accent-purple/50 hover:from-accent-purple/10 hover:to-accent-blue/10";
 
   return (
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            onClick={handleClick}
-            className="gap-2 border-accent-purple/30 bg-gradient-to-r from-accent-purple/5 to-accent-blue/5 text-foreground hover:border-accent-purple/50 hover:from-accent-purple/10 hover:to-accent-blue/10"
-          >
-            <BellPlus className="size-4 text-accent-purple" />
-            <span className="hidden sm:inline">Track</span>
-          </Button>
+          {session?.user ? (
+            <Button
+              variant="outline"
+              onClick={handleClick}
+              className={buttonClassName}
+            >
+              {buttonContent}
+            </Button>
+          ) : (
+            <Button asChild variant="outline" className={buttonClassName}>
+              <Link
+                href="/login"
+                onClick={handleClick}
+                data-disable-progress={true}
+              >
+                {buttonContent}
+              </Link>
+            </Button>
+          )}
         </TooltipTrigger>
         <TooltipContent>
           <p>Get alerts for this domain</p>
