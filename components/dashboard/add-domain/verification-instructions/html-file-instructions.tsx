@@ -3,10 +3,14 @@
 import { Download, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 import { CopyableField } from "./copyable-field";
 
-function downloadVerificationFile(filename: string, content: string): boolean {
+function downloadVerificationFile(
+  filename: string,
+  content: string,
+): { success: true } | { success: false; error: unknown } {
   try {
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -23,9 +27,9 @@ function downloadVerificationFile(filename: string, content: string): boolean {
       a.remove();
     }, 1000);
 
-    return true;
-  } catch {
-    return false;
+    return { success: true };
+  } catch (error) {
+    return { success: false, error };
   }
 }
 
@@ -37,15 +41,18 @@ export function HtmlFileVerificationInstructions({
   instructions,
 }: HtmlFileVerificationInstructionsProps) {
   const handleDownload = () => {
-    const success = downloadVerificationFile(
+    const result = downloadVerificationFile(
       instructions.filename,
       instructions.fileContent,
     );
-    if (success) {
+    if (result.success) {
       toast.success("File downloaded!", {
         description: `Upload ${instructions.filename} to your website.`,
       });
     } else {
+      logger.error("Failed to download verification file", result.error, {
+        filename: instructions.filename,
+      });
       toast.error("Failed to download file");
     }
   };

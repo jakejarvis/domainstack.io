@@ -11,6 +11,7 @@ import {
   InputGroupButton,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { logger } from "@/lib/logger/client";
 import { cn } from "@/lib/utils";
 
 type CopyableFieldProps = {
@@ -59,7 +60,8 @@ export function CopyableField({
         setCopied(false);
         resetTimerRef.current = null;
       }, 1200);
-    } catch {
+    } catch (error) {
+      logger.error("Failed to copy to clipboard", error, { value });
       toast.error("Failed to copy", {
         icon: <CircleX className="h-4 w-4" />,
         position: "bottom-center",
