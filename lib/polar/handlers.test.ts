@@ -140,9 +140,10 @@ describe("handleSubscriptionCreated", () => {
 
     await handleSubscriptionCreated(createCreatedPayload());
 
-    // Should NOT call any tier-changing functions - just logs
+    // Should NOT upgrade tier - payment not confirmed yet
+    // getTierForProductId is called for analytics tracking, but updateUserTier should not be called
     expect(updateUserTier).not.toHaveBeenCalled();
-    expect(getTierForProductId).not.toHaveBeenCalled();
+    expect(getTierForProductId).toHaveBeenCalledWith("prod-789");
   });
 });
 

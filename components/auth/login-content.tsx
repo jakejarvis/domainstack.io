@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { SignInButton } from "@/components/auth/sign-in-button";
+import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { Card } from "@/components/ui/card";
+import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
 interface LoginContentProps {
@@ -29,8 +30,10 @@ export function LoginContent({
       <p className="mb-8 text-center text-muted-foreground text-sm">
         Sign in to track your domains and receive expiration alerts.
       </p>
-      <div className="w-full">
-        <SignInButton />
+      <div className="flex w-full flex-col gap-3">
+        {getEnabledProviders().map((provider) => (
+          <OAuthButton key={provider.id} provider={provider} />
+        ))}
       </div>
       <p className="mt-6 text-center text-muted-foreground text-xs leading-relaxed">
         By signing in, you agree to our{" "}

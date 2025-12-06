@@ -7,6 +7,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
+import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";
@@ -62,8 +63,21 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          // Create free tier subscription for new users
           await createSubscription(user.id);
-          analytics.track("user_signed_up", { provider: "github" }, user.id);
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          // Track signup with the actual OAuth provider used
+          // This fires after user.create, so we have accurate provider info
+          analytics.track(
+            "user_signed_up",
+            { provider: account.providerId },
+            account.userId,
+          );
         },
       },
     },
@@ -135,7 +149,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["github"],
+      trustedProviders: getEnabledProviders().map((p) => p.id),
     },
   },
   experimental: {
