@@ -23,6 +23,7 @@ import {
 } from "@/lib/db/repos/user-notification-preferences";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { inngest } from "@/lib/inngest/client";
 import {
   NotificationOverridesSchema,
   VerificationMethodSchema,
@@ -195,6 +196,17 @@ export const trackingRouter = createTRPCRouter({
         domain,
         verificationToken,
       );
+
+      // Trigger auto-verification schedule in the background
+      // This will check at 1min, 3min, 10min, 30min, 1hr intervals
+      await inngest.send({
+        name: "tracked-domain/verify-pending",
+        data: {
+          trackedDomainId: tracked.id,
+          domainName: domain,
+          verificationToken,
+        },
+      });
 
       return {
         id: tracked.id,
