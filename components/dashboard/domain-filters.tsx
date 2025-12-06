@@ -67,6 +67,7 @@ const HEALTH_OPTIONS: { value: HealthFilter; label: string }[] = [
 
 /** Discriminated union for type-safe filter chip handling */
 type FilterChip =
+  | { type: "search"; value: string; label: string }
   | { type: "status"; value: StatusFilter; label: string }
   | { type: "health"; value: HealthFilter; label: string }
   | { type: "tld"; value: string; label: string };
@@ -97,6 +98,16 @@ export function DomainFilters({
 
   // Get labels for active filters to show as chips
   const activeFilterChips: FilterChip[] = [
+    // Include search term as a chip if present
+    ...(search.length > 0
+      ? [
+          {
+            type: "search" as const,
+            value: search,
+            label: `Search: "${search}"`,
+          },
+        ]
+      : []),
     ...status.map((s) => ({
       type: "status" as const,
       value: s,
@@ -121,7 +132,9 @@ export function DomainFilters({
 
   const removeFilter = useCallback(
     (chip: FilterChip) => {
-      if (chip.type === "status") {
+      if (chip.type === "search") {
+        onSearchChange("");
+      } else if (chip.type === "status") {
         onStatusChange(status.filter((s) => s !== chip.value));
       } else if (chip.type === "health") {
         onHealthChange(health.filter((h) => h !== chip.value));
@@ -129,7 +142,15 @@ export function DomainFilters({
         onTldsChange(tlds.filter((t) => t !== chip.value));
       }
     },
-    [status, health, tlds, onStatusChange, onHealthChange, onTldsChange],
+    [
+      status,
+      health,
+      tlds,
+      onSearchChange,
+      onStatusChange,
+      onHealthChange,
+      onTldsChange,
+    ],
   );
 
   const filterContent = (
