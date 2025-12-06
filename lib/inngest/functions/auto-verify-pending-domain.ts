@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import {
-  findTrackedDomainById,
+  findTrackedDomainWithDomainName,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
@@ -60,8 +60,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
   },
   { event: "tracked-domain/verify-pending" },
   async ({ event, step, logger: inngestLogger }) => {
-    const { trackedDomainId, domainName, verificationToken } =
-      eventSchema.parse(event.data);
+    const { trackedDomainId, domainName } = eventSchema.parse(event.data);
 
     inngestLogger.info("Starting auto-verification schedule", {
       trackedDomainId,
@@ -74,10 +73,10 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       // Wait before checking (gives DNS time to propagate)
       await step.sleep(`wait-${attempt}`, delay);
 
-      // Check if the domain is still pending before attempting verification
-      // A domain is "pending" when verified=false (verificationStatus will be "unverified")
+      // Check if the domain is still pending and fetch latest verification inputs
+      // This ensures we use current domainName/token even if they changed after the event was queued
       const tracked = await step.run(`check-status-${attempt}`, async () => {
-        const domain = await findTrackedDomainById(trackedDomainId);
+        const domain = await findTrackedDomainWithDomainName(trackedDomainId);
         if (!domain) {
           return { status: "deleted" as const };
         }
@@ -85,7 +84,11 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         if (domain.verified) {
           return { status: "already-verified" as const };
         }
-        return { status: "pending" as const };
+        return {
+          status: "pending" as const,
+          domainName: domain.domainName,
+          verificationToken: domain.verificationToken,
+        };
       });
 
       // If domain was deleted or already verified, stop the schedule
@@ -105,9 +108,11 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         return { result: "cancelled", reason: "already_verified" };
       }
 
-      // Attempt verification
+      // Attempt verification using fresh values from DB
+      const { domainName: currentDomainName, verificationToken: currentToken } =
+        tracked;
       const result = await step.run(`verify-attempt-${attempt}`, async () => {
-        return await tryAllVerificationMethods(domainName, verificationToken);
+        return await tryAllVerificationMethods(currentDomainName, currentToken);
       });
 
       if (result.verified && result.method) {
@@ -119,7 +124,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
 
         logger.info("Auto-verified pending domain", {
           trackedDomainId,
-          domainName,
+          domainName: currentDomainName,
           method: result.method,
           attempt: attempt + 1,
         });
@@ -133,7 +138,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
 
       inngestLogger.debug("Verification attempt failed, will retry", {
         trackedDomainId,
-        domainName,
+        domainName: currentDomainName,
         attempt: attempt + 1,
         nextDelay: RETRY_DELAYS[attempt + 1] ?? "none (final attempt)",
       });
