@@ -12,8 +12,9 @@
 - **Fast, private, no sign-up required for reports**: Live fetches with intelligent multi-layer caching.
 - **Domain tracking dashboard**: Sign in with GitHub to track domains you own, verify ownership, and receive expiration alerts.
 - **Pro tier subscriptions**: Upgrade via [Polar](https://polar.sh) for expanded domain tracking limits (50 vs 5 domains).
-- **Email notifications**: Configurable alerts for domain expiration, SSL certificate expiration, and verification status changes.
+- **Email notifications**: Configurable alerts for domain expiration, SSL certificate expiration, subscription lifecycle, and verification status changes.
 - **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
+- **Advanced dashboard**: Domain filtering by status/health/TLD, URL-persisted filters, bulk archive/delete actions, and sortable table/grid views.
 - **Dynamic configuration**: Vercel Edge Config for runtime-adjustable domain suggestions and tier limits without redeployment.
 
 ## 🛠️ Tech Stack

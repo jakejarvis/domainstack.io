@@ -5,18 +5,18 @@
 - `app/dashboard/` Protected dashboard for domain tracking with Active/Archived tabs.
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
-- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view).
-- `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status).
-- `hooks/` shared stateful helpers (camelCase named exports).
+- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view, bulk actions toolbar, domain filters, health summary).
+- `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
+- `hooks/` shared stateful helpers (camelCase named exports): `useDomainFilters`, `useSelection`, `useSortPreference`, `useViewPreference`, `useDomainExport`, `useCustomerPortal`, `useUpgradeCheckout`, `useLogger`, etc.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
-- `lib/constants/` modular constants organized by domain (app, decay, domain-validation, notifications, tier-limits, headers, ttl).
+- `lib/constants/` modular constants organized by domain (app, decay, domain-filters, domain-validation, notifications, pricing-providers, sections, tier-limits, headers, ttl).
 - `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, providers, registrations, screenshots, seo, tracked-domains, user-limits, user-notification-preferences, notifications).
+- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, registrations, screenshots, seo, tracked-domains, user-notification-preferences, user-subscription, users).
 - `lib/logger/` unified structured logging system with OpenTelemetry integration, correlation IDs, and PII-safe field filtering.
-- `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic).
+- `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
@@ -107,9 +107,16 @@ The domain tracking feature allows authenticated users to track domains they own
 
 ### Core Tables
 - `tracked_domains`: Links users to domains with verification status, token, per-domain notification overrides, and `archivedAt` for soft-archiving.
-- `user_limits`: User tier (free/pro) with optional `maxDomainsOverride` for special cases, and `subscriptionEndsAt` for canceled-but-active subscriptions.
+- `user_subscriptions`: User tier (free/pro), `endsAt` for canceled-but-active subscriptions, and `lastExpiryNotification` for tracking sent reminders.
 - `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, verificationStatus).
 - `notifications`: History of sent notifications with Resend email ID for troubleshooting.
+
+### Subscription Repository (`lib/db/repos/user-subscription.ts`)
+- `getUserSubscription`: Get user's tier, max domains, and subscription end date.
+- `updateUserTier`: Upgrade/downgrade user tier (creates missing record if needed).
+- `setSubscriptionEndsAt` / `clearSubscriptionEndsAt`: Track canceled subscription end dates.
+- `getUsersWithEndingSubscriptions`: Query for subscription expiry cron job.
+- `setLastExpiryNotification`: Track which expiry notifications have been sent.
 
 ### Domain Verification
 Users must verify domain ownership via one of three methods:
@@ -134,23 +141,36 @@ Verification service: `server/services/verification.ts` with `tryAllVerification
 
 ### tRPC Router (`server/routers/tracking.ts`)
 Key procedures:
-- `addDomain`: Add domain to tracking (or resume unverified).
+- `addDomain`: Add domain to tracking (or resume unverified). Triggers `auto-verify-pending-domain` Inngest job.
 - `verifyDomain`: Verify ownership.
 - `removeDomain`: Delete tracked domain.
 - `archiveDomain` / `unarchiveDomain`: Soft-archive or reactivate domains.
+- `bulkArchiveDomains` / `bulkRemoveDomains`: Bulk operations on multiple domains (parallel execution, max 100).
 - `listDomains` / `listArchivedDomains`: Get active or archived tracked domains.
-- `getLimits`: Get user's tier, active/archived counts, and max domains.
+- `getLimits`: Get user's tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 - `getNotificationPreferences` / `updateGlobalNotificationPreferences`: Global toggles.
 - `updateDomainNotificationOverrides` / `resetDomainNotificationOverrides`: Per-domain overrides.
 
 ### Inngest Background Jobs
 - `check-domain-expiry`: Daily at 9 AM UTC; sends domain expiration notifications.
 - `check-certificate-expiry`: Daily at 10 AM UTC; sends certificate expiration notifications.
+- `check-subscription-expiry`: Daily at 9:30 AM UTC; sends Pro subscription expiry reminders at 7, 3, and 1 days before end.
 - `reverify-domains`: Daily at 4 AM UTC; auto-verifies pending and re-verifies existing domains.
+- `cleanup-stale-domains`: Weekly on Sundays at 3 AM UTC; deletes unverified domains older than 30 days.
+- `auto-verify-pending-domain`: Event-driven; auto-verifies newly added domains with smart retry schedule (1m, 3m, 10m, 30m, 1hr).
 
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
-- **Templates:** `emails/` directory with React Email components (domain-expiry, certificate-expiry, verification-failing, verification-revoked).
+- **Templates:** `emails/` directory with React Email components:
+  - `domain-expiry.tsx` - Domain expiration reminders (30, 14, 7, 1 days before)
+  - `certificate-expiry.tsx` - SSL certificate expiration alerts (14, 7, 3, 1 days before)
+  - `verification-failing.tsx` - Domain verification started failing (7-day grace period begins)
+  - `verification-revoked.tsx` - Domain verification revoked (grace period expired)
+  - `pro-upgrade-success.tsx` - Welcome email when Pro subscription becomes active
+  - `pro-welcome.tsx` - Tips email sent after Pro upgrade
+  - `subscription-canceling.tsx` - Confirmation when subscription is canceled (still active until period end)
+  - `subscription-expired.tsx` - Notification when Pro access ends with archived domain count
+- **Subscription emails:** `lib/polar/emails.ts` exports `sendProUpgradeEmail()`, `sendSubscriptionCancelingEmail()`, `sendSubscriptionExpiredEmail()`.
 - **Idempotency:** Use `generateIdempotencyKey(trackedDomainId, notificationType)` and pass to `resend.emails.send()`.
 - **Pattern:** Create notification record → Send email → Update with `resendId` for troubleshooting.
 - **Environment variables:** `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
@@ -185,6 +205,13 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
 - Users can manually archive/unarchive from dashboard tabs.
 - On downgrade, oldest domains are auto-archived to enforce free tier limit.
 - Unarchiving checks capacity before allowing reactivation.
+
+### Dashboard Features
+- **Filtering:** URL-persisted filters via `nuqs` (search, status, health, TLDs). Hook: `hooks/use-domain-filters.ts`.
+- **Bulk actions:** Multi-select with floating toolbar for archive/delete. Hook: `hooks/use-selection.ts`. Component: `components/dashboard/bulk-actions-toolbar.tsx`.
+- **Health summary:** Clickable badges showing expiring/pending counts. Component: `components/dashboard/health-summary.tsx`.
+- **View modes:** Grid (sortable) and table (column sorting via TanStack Table). Hooks: `hooks/use-view-preference.ts`, `hooks/use-sort-preference.ts`.
+- **Filter constants:** `lib/constants/domain-filters.ts` defines `STATUS_OPTIONS` and `HEALTH_OPTIONS`.
 
 ### Environment variables
 - `POLAR_ACCESS_TOKEN`: API token from Polar dashboard.
