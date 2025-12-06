@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
+import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
 import { logger } from "@/lib/logger/client";
 import type {
   VerificationInstructions,
@@ -23,8 +24,10 @@ export type VerificationState =
   | { status: "failed"; error?: string };
 
 type UseDomainVerificationOptions = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** Whether the verification flow is open/visible (default: true for page usage) */
+  open?: boolean;
+  /** Handler when the flow should close (required for dialog, optional for page) */
+  onOpenChange?: (open: boolean) => void;
   onSuccess: () => void;
   resumeDomain?: ResumeDomainData | null;
   /** Pre-fill the domain input (e.g., from domain report "Track" button) */
@@ -32,7 +35,7 @@ type UseDomainVerificationOptions = {
 };
 
 export function useDomainVerification({
-  open,
+  open = true,
   onOpenChange,
   onSuccess,
   resumeDomain,
@@ -48,6 +51,8 @@ export function useDomainVerification({
   const [verificationState, setVerificationState] = useState<VerificationState>(
     { status: "idle" },
   );
+  const [hasAttemptedDomainSubmit, setHasAttemptedDomainSubmit] =
+    useState(false);
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -122,6 +127,7 @@ export function useDomainVerification({
     setTrackedDomainId(null);
     setInstructions(null);
     setVerificationState({ status: "idle" });
+    setHasAttemptedDomainSubmit(false);
   }, [prefillDomain]);
 
   const handleOpenChange = useCallback(
@@ -129,13 +135,20 @@ export function useDomainVerification({
       if (!open) {
         resetDialog();
       }
-      onOpenChange(open);
+      onOpenChange?.(open);
     },
     [onOpenChange, resetDialog],
   );
 
   const handleAddDomain = useCallback(async () => {
     setDomainError("");
+    setHasAttemptedDomainSubmit(true);
+
+    // Client-side validation - don't hit the server if domain is invalid
+    const normalized = normalizeDomainInput(domain);
+    if (!isValidDomain(normalized)) {
+      return;
+    }
 
     try {
       const result = await addDomainMutation.mutateAsync({ domain });
@@ -270,6 +283,7 @@ export function useDomainVerification({
     setMethod,
     instructions,
     verificationState,
+    hasAttemptedDomainSubmit,
 
     // Handlers
     handleOpenChange,

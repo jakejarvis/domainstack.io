@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { Crown, LayoutGrid, Plus, TableIcon } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -118,10 +119,41 @@ export function DashboardHeader({
           </Tooltip>
         </div>
 
-        <Button onClick={onAddDomain} disabled={trackedCount >= maxDomains}>
-          <Plus className="size-4" />
-          Add Domain
-        </Button>
+        {trackedCount >= maxDomains ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button disabled className="pointer-events-none">
+                  <Plus className="size-4" />
+                  Add Domain
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {tier === "free"
+                ? "Upgrade to Pro for more domains"
+                : "Domain limit reached"}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button asChild>
+            <Link
+              href="/dashboard/add-domain"
+              data-disable-progress={true}
+              onClick={(e) => {
+                // Allow modifier clicks to open in new tab/window
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+                  return;
+                }
+                e.preventDefault();
+                onAddDomain();
+              }}
+            >
+              <Plus className="size-4" />
+              Add Domain
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

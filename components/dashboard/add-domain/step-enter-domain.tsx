@@ -11,6 +11,8 @@ type StepEnterDomainProps = {
   error: string;
   isLoading: boolean;
   onSubmit: () => void;
+  /** Whether the user has attempted to submit (controlled by parent) */
+  hasAttemptedSubmit: boolean;
 };
 
 export function StepEnterDomain({
@@ -19,8 +21,9 @@ export function StepEnterDomain({
   error,
   isLoading,
   onSubmit,
+  hasAttemptedSubmit,
 }: StepEnterDomainProps) {
-  // Client-side validation for immediate feedback
+  // Client-side validation
   const clientError = useMemo(() => {
     if (!domain.trim()) return "";
     const normalized = normalizeDomainInput(domain);
@@ -30,16 +33,17 @@ export function StepEnterDomain({
     return "";
   }, [domain]);
 
-  // Show server error first, then client error
-  const displayError = error || clientError;
+  // Only show client error after user has attempted to submit
+  // Always show server errors immediately
+  const displayError = error || (hasAttemptedSubmit ? clientError : "");
   const canSubmit = domain.trim().length > 0 && !isLoading && !clientError;
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="domain">Domain name</Label>
+        <Label htmlFor="add-domain-input">Domain name</Label>
         <Input
-          id="domain"
+          id="add-domain-input"
           placeholder="example.com"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
@@ -50,7 +54,7 @@ export function StepEnterDomain({
           autoCapitalize="none"
           spellCheck={false}
           aria-invalid={!!displayError}
-          aria-describedby={displayError ? "domain-error" : undefined}
+          aria-describedby={displayError ? "add-domain-error" : undefined}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -61,7 +65,7 @@ export function StepEnterDomain({
           }}
         />
         {displayError && (
-          <p id="domain-error" className="text-destructive text-sm">
+          <p id="add-domain-error" className="text-destructive text-sm">
             {displayError}
           </p>
         )}
