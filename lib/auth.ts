@@ -53,6 +53,10 @@ export const auth = betterAuth({
   }),
   baseURL: BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
+  logger: {
+    log: (level, message, ...args) =>
+      logger.log(level, message, args.length > 0 ? { args } : undefined),
+  },
   databaseHooks: {
     user: {
       create: {

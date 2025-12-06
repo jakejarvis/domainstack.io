@@ -44,7 +44,11 @@ class ClientLogger implements Logger {
     }
   }
 
-  private log(level: LogLevel, message: string, context?: LogContext): void {
+  private logInternal(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+  ): void {
     if (!shouldLog(level, this.minLevel)) {
       return;
     }
@@ -143,20 +147,44 @@ class ClientLogger implements Logger {
     }
   }
 
+  /** Generic log method for dynamic log levels or library adapters */
+  log(level: LogLevel, message: string, context?: LogContext): void {
+    switch (level) {
+      case "trace":
+        this.logInternal("trace", message, context);
+        break;
+      case "debug":
+        this.logInternal("debug", message, context);
+        break;
+      case "info":
+        this.logInternal("info", message, context);
+        break;
+      case "warn":
+        this.logInternal("warn", message, context);
+        break;
+      case "error":
+        this.logWithError("error", message, undefined, context);
+        break;
+      case "fatal":
+        this.logWithError("fatal", message, undefined, context);
+        break;
+    }
+  }
+
   trace(message: string, context?: LogContext): void {
-    this.log("trace", message, context);
+    this.logInternal("trace", message, context);
   }
 
   debug(message: string, context?: LogContext): void {
-    this.log("debug", message, context);
+    this.logInternal("debug", message, context);
   }
 
   info(message: string, context?: LogContext): void {
-    this.log("info", message, context);
+    this.logInternal("info", message, context);
   }
 
   warn(message: string, context?: LogContext): void {
-    this.log("warn", message, context);
+    this.logInternal("warn", message, context);
   }
 
   error(message: string, error: unknown, context?: LogContext): void;
@@ -206,6 +234,8 @@ export const logger = new ClientLogger();
  */
 export function createLogger(baseContext: LogContext): Logger {
   const childLogger = {
+    log: (level: LogLevel, message: string, context?: LogContext) =>
+      logger.log(level, message, { ...baseContext, ...context }),
     trace: (message: string, context?: LogContext) =>
       logger.trace(message, { ...baseContext, ...context }),
     debug: (message: string, context?: LogContext) =>

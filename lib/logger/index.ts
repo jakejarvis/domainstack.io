@@ -33,6 +33,8 @@ export interface SerializedError {
 }
 
 export interface Logger {
+  /** Generic log method - useful for dynamic log levels or library adapters */
+  log(level: LogLevel, message: string, context?: LogContext): void;
   trace(message: string, context?: LogContext): void;
   debug(message: string, context?: LogContext): void;
   info(message: string, context?: LogContext): void;
