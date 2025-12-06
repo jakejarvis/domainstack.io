@@ -65,6 +65,12 @@ const HEALTH_OPTIONS: { value: HealthFilter; label: string }[] = [
   { value: "expired", label: "Expired" },
 ];
 
+/** Discriminated union for type-safe filter chip handling */
+type FilterChip =
+  | { type: "status"; value: StatusFilter; label: string }
+  | { type: "health"; value: HealthFilter; label: string }
+  | { type: "tld"; value: string; label: string };
+
 export function DomainFilters({
   search,
   status,
@@ -84,7 +90,7 @@ export function DomainFilters({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Get labels for active filters to show as chips
-  const activeFilterChips = [
+  const activeFilterChips: FilterChip[] = [
     ...status.map((s) => ({
       type: "status" as const,
       value: s,
@@ -102,19 +108,19 @@ export function DomainFilters({
     })),
   ];
 
-  // Compute current sort option for grid view dropdown
+  // Compute current sort option for grid view dropdown (may be undefined if stale)
   const currentSort = sortOption
     ? SORT_OPTIONS.find((o) => o.value === sortOption)
     : undefined;
 
   const removeFilter = useCallback(
-    (type: "status" | "health" | "tld", value: string) => {
-      if (type === "status") {
-        onStatusChange(status.filter((s) => s !== value));
-      } else if (type === "health") {
-        onHealthChange(health.filter((h) => h !== value));
+    (chip: FilterChip) => {
+      if (chip.type === "status") {
+        onStatusChange(status.filter((s) => s !== chip.value));
+      } else if (chip.type === "health") {
+        onHealthChange(health.filter((h) => h !== chip.value));
       } else {
-        onTldsChange(tlds.filter((t) => t !== value));
+        onTldsChange(tlds.filter((t) => t !== chip.value));
       }
     },
     [status, health, tlds, onStatusChange, onHealthChange, onTldsChange],
@@ -175,14 +181,14 @@ export function DomainFilters({
         )}
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" && currentSort && onSortChange && (
+        {viewMode === "grid" && sortOption && onSortChange && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 gap-2 px-3">
                 <span className="text-muted-foreground">Sort:</span>
                 <span className="inline-flex items-center gap-1.5">
-                  {currentSort.shortLabel}
-                  {currentSort.direction && (
+                  {currentSort?.shortLabel ?? "Select"}
+                  {currentSort?.direction && (
                     <span className="text-muted-foreground">
                       {currentSort.direction === "asc" ? "↑" : "↓"}
                     </span>
@@ -272,7 +278,7 @@ export function DomainFilters({
               {chip.label}
               <button
                 type="button"
-                onClick={() => removeFilter(chip.type, chip.value)}
+                onClick={() => removeFilter(chip)}
                 className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/30"
                 aria-label={`Remove ${chip.label} filter`}
               >
