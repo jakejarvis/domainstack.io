@@ -579,4 +579,95 @@ export const trackingRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  /**
+   * Bulk archive multiple tracked domains.
+   * Performs all operations in parallel for efficiency.
+   */
+  bulkArchiveDomains: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainIds } = input;
+
+      const results = await Promise.allSettled(
+        trackedDomainIds.map(async (trackedDomainId) => {
+          // Get tracked domain
+          const tracked = await findTrackedDomainById(trackedDomainId);
+          if (!tracked) {
+            throw new Error("Tracked domain not found");
+          }
+
+          // Ensure user owns this tracked domain
+          if (tracked.userId !== ctx.user.id) {
+            throw new Error("You do not have access to this domain");
+          }
+
+          // Skip if already archived
+          if (tracked.archivedAt) {
+            return { id: trackedDomainId, alreadyArchived: true };
+          }
+
+          const updated = await archiveTrackedDomain(trackedDomainId);
+          if (!updated) {
+            throw new Error("Failed to archive domain");
+          }
+
+          return { id: trackedDomainId, archivedAt: updated.archivedAt };
+        }),
+      );
+
+      const successCount = results.filter(
+        (r) => r.status === "fulfilled",
+      ).length;
+      const failedCount = results.filter((r) => r.status === "rejected").length;
+
+      return { successCount, failedCount };
+    }),
+
+  /**
+   * Bulk remove multiple tracked domains.
+   * Performs all operations in parallel for efficiency.
+   */
+  bulkRemoveDomains: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainIds: z.array(z.string().uuid()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainIds } = input;
+
+      const results = await Promise.allSettled(
+        trackedDomainIds.map(async (trackedDomainId) => {
+          // Get tracked domain
+          const tracked = await findTrackedDomainById(trackedDomainId);
+          if (!tracked) {
+            throw new Error("Tracked domain not found");
+          }
+
+          // Ensure user owns this tracked domain
+          if (tracked.userId !== ctx.user.id) {
+            throw new Error("You do not have access to this domain");
+          }
+
+          const deleted = await deleteTrackedDomain(trackedDomainId);
+          if (!deleted) {
+            throw new Error("Failed to remove domain");
+          }
+
+          return { id: trackedDomainId };
+        }),
+      );
+
+      const successCount = results.filter(
+        (r) => r.status === "fulfilled",
+      ).length;
+      const failedCount = results.filter((r) => r.status === "rejected").length;
+
+      return { successCount, failedCount };
+    }),
 });
