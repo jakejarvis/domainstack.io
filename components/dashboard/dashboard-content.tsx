@@ -11,6 +11,7 @@ import {
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
+import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DomainFilters } from "@/components/dashboard/domain-filters";
 import { HealthSummary } from "@/components/dashboard/health-summary";
@@ -648,8 +649,21 @@ export function DashboardContent() {
     domainsQuery.isLoading ||
     archivedDomainsQuery.isLoading;
 
+  const hasError =
+    limitsQuery.isError || domainsQuery.isError || archivedDomainsQuery.isError;
+
+  const handleRetry = useCallback(() => {
+    if (limitsQuery.isError) void limitsQuery.refetch();
+    if (domainsQuery.isError) void domainsQuery.refetch();
+    if (archivedDomainsQuery.isError) void archivedDomainsQuery.refetch();
+  }, [limitsQuery, domainsQuery, archivedDomainsQuery]);
+
   if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (hasError) {
+    return <DashboardError onRetry={handleRetry} />;
   }
 
   const userName = session?.user?.name || "there";

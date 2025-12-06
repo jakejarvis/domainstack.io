@@ -58,7 +58,11 @@ export function BulkActionsToolbar({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={
-                    isAllSelected ? true : isPartiallySelected ? "indeterminate" : false
+                    isAllSelected
+                      ? true
+                      : isPartiallySelected
+                        ? "indeterminate"
+                        : false
                   }
                   onCheckedChange={onToggleAll}
                   aria-label={

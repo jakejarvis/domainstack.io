@@ -2,8 +2,8 @@
 
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useMemo } from "react";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants";
+import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 // Filter types
 export type StatusFilter = "verified" | "pending";
