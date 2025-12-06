@@ -265,7 +265,7 @@ export function AddDomainDialog({
           )}
         </DialogHeader>
 
-        <div className="min-h-[280px]">
+        <div className="min-h-[280px] overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${step}-${hasFailed}`}

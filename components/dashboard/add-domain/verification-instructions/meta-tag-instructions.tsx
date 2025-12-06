@@ -1,9 +1,8 @@
 "use client";
 
 import { Info } from "lucide-react";
-import { CopyButton } from "@/components/copy-button";
-import { Label } from "@/components/ui/label";
 import type { MetaTagInstructions } from "@/lib/schemas";
+import { CopyableField } from "./copyable-field";
 
 type MetaTagVerificationInstructionsProps = {
   instructions: MetaTagInstructions;
@@ -12,6 +11,10 @@ type MetaTagVerificationInstructionsProps = {
 export function MetaTagVerificationInstructions({
   instructions,
 }: MetaTagVerificationInstructionsProps) {
+  // Extract token from the meta tag (format: <meta name="domainstack-verify" content="TOKEN">)
+  const tokenMatch = instructions.metaTag.match(/content="([^"]+)"/);
+  const token = tokenMatch?.[1] ?? "";
+
   return (
     <>
       <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
@@ -26,19 +29,25 @@ export function MetaTagVerificationInstructions({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-border/70 bg-secondary/70 p-4">
-        {/* Meta tag field */}
-        <div className="space-y-1.5">
-          <Label className="text-muted-foreground text-xs uppercase tracking-wide">
-            Meta Tag
-          </Label>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 break-all rounded-md border border-border bg-background px-3 py-2 font-mono text-sm">
-              {instructions.metaTag}
-            </code>
-            <CopyButton value={instructions.metaTag} label="meta tag" />
-          </div>
-        </div>
+      <div className="space-y-3 overflow-hidden rounded-lg border border-border bg-muted/50 p-4 dark:border-white/15 dark:bg-white/5">
+        <CopyableField label="Meta Tag" value={instructions.metaTag}>
+          {/* Syntax highlighted meta tag */}
+          <span>
+            <span className="text-zinc-500 dark:text-zinc-400">&lt;</span>
+            <span className="text-rose-600 dark:text-rose-400">meta</span>
+            <span className="text-sky-600 dark:text-sky-400"> name</span>
+            <span className="text-zinc-500 dark:text-zinc-400">=</span>
+            <span className="text-emerald-600 dark:text-emerald-400">
+              "domainstack-verify"
+            </span>
+            <span className="text-sky-600 dark:text-sky-400"> content</span>
+            <span className="text-zinc-500 dark:text-zinc-400">=</span>
+            <span className="text-emerald-600 dark:text-emerald-400">
+              "{token}"
+            </span>
+            <span className="text-zinc-500 dark:text-zinc-400">&gt;</span>
+          </span>
+        </CopyableField>
       </div>
     </>
   );
