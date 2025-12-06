@@ -24,7 +24,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { useSession } from "@/lib/auth-client";
@@ -439,42 +438,4 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   }
 
   return <Card className="overflow-hidden">{content}</Card>;
-}
-
-/**
- * Loading skeleton for settings content
- */
-export function SettingsContentSkeleton({
-  showCard = true,
-}: {
-  showCard?: boolean;
-}) {
-  const skeletonContent = (
-    <div className="space-y-6">
-      {/* Subscription skeleton */}
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-lg" />
-      </div>
-      <div className="h-px bg-border/50" />
-      {/* Notifications skeleton */}
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-40" />
-        <Skeleton className="h-4 w-56" />
-        <div className="space-y-2">
-          <Skeleton className="h-14 w-full rounded-xl" />
-          <Skeleton className="h-14 w-full rounded-xl" />
-          <Skeleton className="h-14 w-full rounded-xl" />
-        </div>
-      </div>
-    </div>
-  );
-
-  if (!showCard) {
-    return <div className="py-1">{skeletonContent}</div>;
-  }
-
-  return <Card className="p-6">{skeletonContent}</Card>;
 }

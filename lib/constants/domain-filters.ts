@@ -1,4 +1,8 @@
-import type { HealthFilter, StatusFilter } from "@/hooks/use-domain-filters";
+/** Filter types for domain verification status */
+export type StatusFilter = "verified" | "pending";
+
+/** Filter types for domain health status */
+export type HealthFilter = "healthy" | "expiring" | "expired";
 
 /** Filter options for domain verification status */
 export const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [

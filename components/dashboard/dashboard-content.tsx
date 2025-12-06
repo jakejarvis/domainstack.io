@@ -344,6 +344,8 @@ export function DashboardContent() {
       const domainsToArchive = (
         previousDomains as TrackedDomainWithDetails[] | undefined
       )?.filter((d) => idsSet.has(d.id));
+      // Use actual count of domains found in cache for consistent optimistic updates
+      const archiveDelta = domainsToArchive?.length ?? 0;
 
       // Move from active to archived
       queryClient.setQueryData(
@@ -368,11 +370,8 @@ export function DashboardContent() {
           old
             ? {
                 ...old,
-                activeCount: Math.max(
-                  0,
-                  old.activeCount - trackedDomainIds.length,
-                ),
-                archivedCount: old.archivedCount + trackedDomainIds.length,
+                activeCount: Math.max(0, old.activeCount - archiveDelta),
+                archivedCount: old.archivedCount + archiveDelta,
                 canAddMore: true,
               }
             : old,
@@ -414,6 +413,11 @@ export function DashboardContent() {
       const previousLimits = queryClient.getQueryData(limitsQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
+      // Use actual count of domains found in cache for consistent optimistic updates
+      const domainsToDelete = (
+        previousDomains as TrackedDomainWithDetails[] | undefined
+      )?.filter((d) => idsSet.has(d.id));
+      const deleteDelta = domainsToDelete?.length ?? 0;
 
       queryClient.setQueryData(
         domainsQueryKey,
@@ -427,10 +431,7 @@ export function DashboardContent() {
           old
             ? {
                 ...old,
-                activeCount: Math.max(
-                  0,
-                  old.activeCount - trackedDomainIds.length,
-                ),
+                activeCount: Math.max(0, old.activeCount - deleteDelta),
                 canAddMore: true,
               }
             : old,

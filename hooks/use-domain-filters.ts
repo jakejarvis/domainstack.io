@@ -3,11 +3,11 @@
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useMemo } from "react";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants";
+import type { HealthFilter, StatusFilter } from "@/lib/constants/domain-filters";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
-// Filter types
-export type StatusFilter = "verified" | "pending";
-export type HealthFilter = "healthy" | "expiring" | "expired";
+// Re-export filter types for convenience
+export type { HealthFilter, StatusFilter } from "@/lib/constants/domain-filters";
 
 /**
  * Extract TLD from domain name (e.g., "example.com" -> ".com")

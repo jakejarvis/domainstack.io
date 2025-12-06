@@ -14,6 +14,7 @@ import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
+import { cn } from "@/lib/utils";
 
 type SubscriptionSectionProps = {
   tier: UserTier;
@@ -34,11 +35,12 @@ export function SubscriptionSection({
     useCustomerPortal();
 
   const isPro = tier === "pro";
-  const percentage = maxDomains > 0 ? (activeCount / maxDomains) * 100 : 0;
+  const percentage =
+    maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
 
   const content = (
     <>
-      <CardHeader className={showCard ? undefined : "px-0 pt-0"}>
+      <CardHeader className={cn(!showCard && "px-0 pt-0")}>
         <CardTitle className="flex items-center gap-2">
           {isPro && <Crown className="size-5 text-accent-purple" />}
           Subscription
@@ -49,7 +51,7 @@ export function SubscriptionSection({
             : "Upgrade to Pro for more tracked domains."}
         </CardDescription>
       </CardHeader>
-      <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0 pb-0"}>
+      <CardContent className={cn("space-y-4", !showCard && "px-0 pb-0")}>
         {/* Current plan info */}
         <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div>
@@ -65,7 +67,12 @@ export function SubscriptionSection({
               {activeCount} of {maxDomains} domains used
             </p>
           </div>
-          <Progress value={percentage} className="w-24" />
+          <Progress
+            value={percentage}
+            className="w-24"
+            aria-label="Domain usage"
+            aria-valuetext={`${activeCount} of ${maxDomains} domains used`}
+          />
         </div>
 
         {/* Actions */}
