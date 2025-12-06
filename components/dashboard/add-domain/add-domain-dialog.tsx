@@ -1,9 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,23 +11,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { logger } from "@/lib/logger/client";
-import type {
-  VerificationInstructions,
-  VerificationMethod,
-} from "@/lib/schemas";
-import { useTRPC } from "@/lib/trpc/client";
+import {
+  type ResumeDomainData,
+  useDomainVerification,
+} from "@/hooks/use-domain-verification";
 import { cn } from "@/lib/utils";
 import { StepConfirmation } from "./step-confirmation";
 import { StepEnterDomain } from "./step-enter-domain";
 import { StepInstructionsError } from "./step-instructions-error";
 import { StepVerifyOwnership } from "./step-verify-ownership";
 
-export type ResumeDomainData = {
-  id: string;
-  domainName: string;
-  verificationToken: string;
-};
+export type { ResumeDomainData };
 
 export type AddDomainDialogProps = {
   open: boolean;
@@ -40,11 +31,6 @@ export type AddDomainDialogProps = {
   resumeDomain?: ResumeDomainData | null;
 };
 
-export type VerificationState =
-  | { status: "idle" }
-  | { status: "verifying" }
-  | { status: "failed"; error?: string };
-
 const STEP_TITLES = ["Enter domain", "Verify ownership", "Complete"];
 
 export function AddDomainDialog({
@@ -53,196 +39,45 @@ export function AddDomainDialog({
   onSuccess,
   resumeDomain,
 }: AddDomainDialogProps) {
-  const [step, setStep] = useState(1);
-  const [domain, setDomain] = useState("");
-  const [domainError, setDomainError] = useState("");
-  const [method, setMethod] = useState<VerificationMethod>("dns_txt");
-  const [trackedDomainId, setTrackedDomainId] = useState<string | null>(null);
-  const [instructions, setInstructions] =
-    useState<VerificationInstructions | null>(null);
-  const [verificationState, setVerificationState] = useState<VerificationState>(
-    { status: "idle" },
-  );
+  const {
+    // State
+    step,
+    domain,
+    setDomain,
+    domainError,
+    method,
+    setMethod,
+    instructions,
+    verificationState,
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
+    // Handlers
+    handleOpenChange,
+    handleNext,
+    handleVerify,
+    handleReturnLater,
+    goBack,
+    canProceed,
+    refetchInstructions,
 
-  // Query keys for invalidation
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+    // Query/mutation state
+    isAddingDomain,
+    isRefetchingInstructions,
+    instructionsErrorMessage,
 
-  const addDomainMutation = useMutation({
-    ...trpc.tracking.addDomain.mutationOptions(),
-    onSuccess: () => {
-      // Invalidate queries immediately so the domain appears in the list
-      // (even if user closes dialog before completing verification)
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
+    // Derived state
+    isResuming,
+    isLoadingInstructions,
+    instructionsError,
+    hasInstructionsError,
+    isVerifying,
+    hasFailed,
+    showFooterButtons,
+  } = useDomainVerification({
+    open,
+    onOpenChange,
+    onSuccess,
+    resumeDomain,
   });
-  const verifyDomainMutation = useMutation(
-    trpc.tracking.verifyDomain.mutationOptions(),
-  );
-
-  // Fetch instructions when resuming verification
-  const instructionsQuery = useQuery({
-    ...trpc.tracking.getVerificationInstructions.queryOptions({
-      trackedDomainId: resumeDomain?.id ?? "",
-    }),
-    enabled: !!resumeDomain && open,
-  });
-
-  // When resumeDomain changes and dialog opens, set up resume state
-  // Reset all state to avoid showing stale data from a previous domain
-  useEffect(() => {
-    if (resumeDomain && open) {
-      setDomain(resumeDomain.domainName);
-      setTrackedDomainId(resumeDomain.id);
-      setStep(2);
-      // Reset state that could be stale from a previous domain
-      setVerificationState({ status: "idle" });
-      setDomainError("");
-      setMethod("dns_txt");
-      setInstructions(null); // Will be set by instructionsQuery effect
-    }
-  }, [resumeDomain, open]);
-
-  // When instructions are fetched for resume mode, set them
-  useEffect(() => {
-    if (instructionsQuery.data && resumeDomain) {
-      setInstructions(instructionsQuery.data);
-    }
-  }, [instructionsQuery.data, resumeDomain]);
-
-  const resetDialog = useCallback(() => {
-    setStep(1);
-    setDomain("");
-    setDomainError("");
-    setMethod("dns_txt");
-    setTrackedDomainId(null);
-    setInstructions(null);
-    setVerificationState({ status: "idle" });
-  }, []);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        resetDialog();
-      }
-      onOpenChange(open);
-    },
-    [onOpenChange, resetDialog],
-  );
-
-  const handleAddDomain = async () => {
-    setDomainError("");
-
-    try {
-      const result = await addDomainMutation.mutateAsync({ domain });
-      setTrackedDomainId(result.id);
-      setInstructions(result.instructions);
-      setStep(2);
-
-      // Let user know if they're resuming a previous verification attempt
-      if (result.resumed) {
-        toast.info("Resuming verification", {
-          description:
-            "You previously started tracking this domain. Your verification token is unchanged.",
-        });
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setDomainError(err.message);
-      } else {
-        setDomainError("Failed to add domain");
-      }
-    }
-  };
-
-  const handleVerify = async () => {
-    if (!trackedDomainId) return;
-
-    setVerificationState({ status: "verifying" });
-
-    try {
-      // Try all verification methods - user may have set up a different method
-      // than the tab they're currently viewing
-      const result = await verifyDomainMutation.mutateAsync({
-        trackedDomainId,
-      });
-
-      if (result.verified) {
-        setVerificationState({ status: "idle" });
-        setStep(3);
-        toast.success("Domain verified successfully!");
-      } else {
-        setVerificationState({
-          status: "failed",
-          error: result.error,
-        });
-      }
-    } catch (err) {
-      logger.error("Domain verification failed", err, {
-        trackedDomainId,
-        method,
-      });
-      setVerificationState({
-        status: "failed",
-        error: "Verification failed. Please try again.",
-      });
-    }
-  };
-
-  const handleReturnLater = () => {
-    toast.info("Domain saved", {
-      description:
-        "We'll automatically verify your domain once the changes have propagated. Check back later!",
-    });
-    handleOpenChange(false);
-  };
-
-  const handleDone = () => {
-    onSuccess();
-    handleOpenChange(false);
-  };
-
-  const canProceed = () => {
-    switch (step) {
-      case 1:
-        return domain.trim().length > 0 && !addDomainMutation.isPending;
-      case 2:
-        return verificationState.status !== "verifying";
-      case 3:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const handleNext = async () => {
-    switch (step) {
-      case 1:
-        await handleAddDomain();
-        break;
-      case 2:
-        await handleVerify();
-        break;
-      case 3:
-        handleDone();
-        break;
-    }
-  };
-
-  const isResuming = !!resumeDomain;
-  const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
-  const instructionsError = isResuming && instructionsQuery.isError;
-  const hasInstructionsError =
-    step === 2 && !isLoadingInstructions && !instructions;
-  const isVerifying = verificationState.status === "verifying";
-  const hasFailed = verificationState.status === "failed";
-
-  // Hide the main footer button when showing the failed state (it has its own buttons)
-  const showFooterButtons = step !== 2 || !hasFailed;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -292,7 +127,7 @@ export function AddDomainDialog({
                   domain={domain}
                   setDomain={setDomain}
                   error={domainError}
-                  isLoading={addDomainMutation.isPending}
+                  isLoading={isAddingDomain}
                   onSubmit={handleNext}
                 />
               )}
@@ -305,11 +140,11 @@ export function AddDomainDialog({
                 <StepInstructionsError
                   error={
                     instructionsError
-                      ? instructionsQuery.error?.message
+                      ? instructionsErrorMessage
                       : "Verification instructions could not be loaded."
                   }
-                  onRetry={() => instructionsQuery.refetch()}
-                  isRetrying={instructionsQuery.isFetching}
+                  onRetry={() => refetchInstructions()}
+                  isRetrying={isRefetchingInstructions}
                 />
               )}
               {step === 2 && instructions && !isLoadingInstructions && (
@@ -330,13 +165,7 @@ export function AddDomainDialog({
         {showFooterButtons && (
           <DialogFooter>
             {step === 2 && !isResuming && !hasFailed && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setVerificationState({ status: "idle" });
-                  setStep(1);
-                }}
-              >
+              <Button variant="outline" onClick={goBack}>
                 Back
               </Button>
             )}
@@ -346,7 +175,7 @@ export function AddDomainDialog({
                 !canProceed() || isLoadingInstructions || hasInstructionsError
               }
             >
-              {(addDomainMutation.isPending || isVerifying) && (
+              {(isAddingDomain || isVerifying) && (
                 <Spinner className="size-4" />
               )}
               {step === 2
