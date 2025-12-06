@@ -1,10 +1,23 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
+import type { AppRouter } from "@/server/routers/_app";
+
+/**
+ * Inferred router outputs for type-safe cache updates.
+ */
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+
+/**
+ * Limits data shape inferred from tracking.getLimits procedure.
+ * Using inference ensures client types stay in sync with server.
+ */
+type LimitsData = RouterOutputs["tracking"]["getLimits"];
 
 /**
  * Shared context type for optimistic update rollback.
@@ -16,17 +29,10 @@ type MutationContext = {
 };
 
 /**
- * Limits data shape from getLimits query.
+ * Return type for useDomainMutations hook.
+ * Uses ReturnType to capture the exact inferred type from the hook.
  */
-type LimitsData = {
-  tier: "free" | "pro";
-  maxDomains: number;
-  activeCount: number;
-  archivedCount: number;
-  canAddMore: boolean;
-  subscriptionEndsAt: Date | null;
-  proMaxDomains: number;
-};
+export type UseDomainMutationsReturn = ReturnType<typeof useDomainMutations>;
 
 /**
  * Options for domain mutation handlers.

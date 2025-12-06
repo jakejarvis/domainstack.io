@@ -113,8 +113,12 @@ export function DashboardContent() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("upgraded") === "true") {
       setShowUpgradedBanner(true);
-      // Clear the query param from URL without triggering navigation
-      router.replace("/dashboard", { scroll: false });
+      // Clear only the `upgraded` param while preserving others (e.g., filters)
+      params.delete("upgraded");
+      const newSearch = params.toString();
+      const newUrl =
+        window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      router.replace(newUrl, { scroll: false });
     }
   }, [router]);
 
@@ -421,8 +425,8 @@ export function DashboardContent() {
             proMaxDomains={proMaxDomains}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
-            onRemove={(id, domainName) => handleRemove(id, domainName)}
-            onArchive={(id, domainName) => handleArchive(id, domainName)}
+            onRemove={handleRemove}
+            onArchive={handleArchive}
             onClearFilters={clearFilters}
             onBulkArchive={handleBulkArchive}
             onBulkDelete={handleBulkDelete}
@@ -462,7 +466,7 @@ export function DashboardContent() {
           <ArchivedDomainsView
             domains={archivedDomains}
             onUnarchive={handleUnarchive}
-            onRemove={(id, domainName) => handleRemove(id, domainName)}
+            onRemove={handleRemove}
             canUnarchive={canAddMore}
             tier={tier}
           />

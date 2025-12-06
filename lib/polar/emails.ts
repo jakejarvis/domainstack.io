@@ -26,6 +26,13 @@ function getFirstName(name: string | null | undefined): string {
 }
 
 /**
+ * Get today's date as YYYY-MM-DD string for idempotency keys.
+ */
+function getTodayDateString(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+/**
  * Generate idempotency key for Pro upgrade email.
  * Format: pro_upgrade_success:{userId}:{date}
  *
@@ -34,8 +41,7 @@ function getFirstName(name: string | null | undefined): string {
  * - Re-subscribing on a different day sends a fresh welcome email
  */
 function generateUpgradeIdempotencyKey(userId: string): string {
-  const dateStr = new Date().toISOString().split("T")[0];
-  return `pro_upgrade_success:${userId}:${dateStr}`;
+  return `pro_upgrade_success:${userId}:${getTodayDateString()}`;
 }
 
 /**
@@ -43,8 +49,7 @@ function generateUpgradeIdempotencyKey(userId: string): string {
  * Format: pro_welcome:{userId}:{date}
  */
 function generateWelcomeIdempotencyKey(userId: string): string {
-  const dateStr = new Date().toISOString().split("T")[0];
-  return `pro_welcome:${userId}:${dateStr}`;
+  return `pro_welcome:${userId}:${getTodayDateString()}`;
 }
 
 /**
@@ -288,8 +293,7 @@ export async function sendSubscriptionCancelingEmail(
  * - If subscription expires again on a different day, a fresh email is sent
  */
 function generateExpiredIdempotencyKey(userId: string): string {
-  const dateStr = new Date().toISOString().split("T")[0];
-  return `subscription_expired:${userId}:${dateStr}`;
+  return `subscription_expired:${userId}:${getTodayDateString()}`;
 }
 
 /**
