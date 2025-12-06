@@ -1,11 +1,12 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AnimatedBackground } from "@/components/auth/animated-background";
 import { LoginContent } from "@/components/auth/login-content";
 import { auth } from "@/lib/auth";
 
-export const metadata = {
-  title: "Sign In | Domainstack",
+export const metadata: Metadata = {
+  title: "Sign In",
   description: "Sign in to track your domains and receive expiration alerts.",
 };
 
