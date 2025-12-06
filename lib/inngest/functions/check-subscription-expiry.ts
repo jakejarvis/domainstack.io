@@ -22,13 +22,18 @@ const logger = createLogger({ source: "check-subscription-expiry" });
 function getFirstName(name: string | null | undefined): string {
   const trimmed = (name || "").trim();
   if (!trimmed) return "there";
-  return trimmed.split(/\s+/)[0] || "there";
+  return trimmed.split(/\s+/)[0];
 }
 
 // Thresholds for subscription expiry reminders (days before expiration)
 const SUBSCRIPTION_EXPIRY_THRESHOLDS = [7, 3, 1] as const;
 type SubscriptionExpiryThreshold =
   (typeof SUBSCRIPTION_EXPIRY_THRESHOLDS)[number];
+
+// Pre-sorted ascending for threshold lookup (most urgent first)
+const SORTED_THRESHOLDS = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort(
+  (a, b) => a - b,
+);
 
 /**
  * Get the subscription expiry notification threshold for a given number of days remaining.
@@ -37,13 +42,9 @@ type SubscriptionExpiryThreshold =
 function getSubscriptionExpiryThreshold(
   daysRemaining: number,
 ): SubscriptionExpiryThreshold | null {
-  // Sort ascending so we find the smallest (most urgent) threshold first
-  const sortedThresholds = [...SUBSCRIPTION_EXPIRY_THRESHOLDS].sort(
-    (a, b) => a - b,
-  );
-  for (const threshold of sortedThresholds) {
+  for (const threshold of SORTED_THRESHOLDS) {
     if (daysRemaining <= threshold) {
-      return threshold;
+      return threshold as SubscriptionExpiryThreshold;
     }
   }
   return null;

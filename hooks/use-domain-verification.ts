@@ -69,12 +69,12 @@ export function useDomainVerification({
     trpc.tracking.verifyDomain.mutationOptions(),
   );
 
-  // Fetch instructions when resuming verification
+  // Fetch instructions when resuming verification (keyed on trackedDomainId for safety)
   const instructionsQuery = useQuery({
     ...trpc.tracking.getVerificationInstructions.queryOptions({
-      trackedDomainId: resumeDomain?.id ?? "",
+      trackedDomainId: trackedDomainId ?? "",
     }),
-    enabled: !!resumeDomain && open,
+    enabled: !!trackedDomainId && open,
   });
 
   // When resumeDomain changes and dialog opens, set up resume state
@@ -92,12 +92,12 @@ export function useDomainVerification({
     }
   }, [resumeDomain, open]);
 
-  // When instructions are fetched for resume mode, set them
+  // When instructions are fetched (resume mode), set them
   useEffect(() => {
-    if (instructionsQuery.data && resumeDomain) {
+    if (instructionsQuery.data) {
       setInstructions(instructionsQuery.data);
     }
-  }, [instructionsQuery.data, resumeDomain]);
+  }, [instructionsQuery.data]);
 
   // Sync domain state when prefillDomain changes (only when dialog is closed)
   useEffect(() => {
@@ -105,6 +105,13 @@ export function useDomainVerification({
       setDomain(prefillDomain);
     }
   }, [prefillDomain, open]);
+
+  // Clear domain error when user edits the domain input
+  useEffect(() => {
+    if (domainError) {
+      setDomainError("");
+    }
+  }, [domainError]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally omit domainError to avoid infinite loop
 
   const resetDialog = useCallback(() => {
     setStep(1);

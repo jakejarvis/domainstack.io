@@ -10,13 +10,12 @@ import { tryAllVerificationMethods } from "@/server/services/verification";
 
 /**
  * Event schema for triggering auto-verification of a pending domain.
- * Note: verificationToken is optional since we always read it fresh from the DB
- * to ensure we use the current value even if it changed after the event was queued.
+ * The verification token is read fresh from the DB at each attempt to ensure
+ * we use the current value even if it changed after the event was queued.
  */
 const eventSchema = z.object({
   trackedDomainId: z.string().uuid(),
   domainName: z.string().min(1),
-  verificationToken: z.string().min(1).optional(),
 });
 
 export type AutoVerifyPendingDomainEvent = z.infer<typeof eventSchema>;
@@ -117,6 +116,20 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       // Attempt verification using fresh values from DB
       const { domainName: currentDomainName, verificationToken: currentToken } =
         tracked;
+
+      // Defensive check: skip if token is missing (shouldn't happen for pending domains)
+      if (!currentToken) {
+        inngestLogger.warn(
+          "Skipping auto-verification: missing verification token",
+          {
+            trackedDomainId,
+            domainName: currentDomainName,
+            attempt: attempt + 1,
+          },
+        );
+        continue;
+      }
+
       const result = await step.run(`verify-attempt-${attempt}`, async () => {
         return await tryAllVerificationMethods(currentDomainName, currentToken);
       });

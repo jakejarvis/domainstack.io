@@ -211,13 +211,24 @@ export async function setLastExpiryNotification(
   userId: string,
   threshold: number,
 ): Promise<void> {
-  await db
+  const updated = await db
     .update(userSubscriptions)
     .set({
       lastExpiryNotification: threshold,
       updatedAt: new Date(),
     })
-    .where(eq(userSubscriptions.userId, userId));
+    .where(eq(userSubscriptions.userId, userId))
+    .returning({ userId: userSubscriptions.userId });
+
+  if (updated.length === 0) {
+    // Log but don't throw - avoid breaking the cron job for this edge case.
+    // The user's subscription record should exist since we just fetched it.
+    logger.warn("subscription not found when setting expiry notification", {
+      userId,
+      threshold,
+    });
+    return;
+  }
 
   logger.debug("set last expiry notification", { userId, threshold });
 }

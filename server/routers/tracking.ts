@@ -204,7 +204,6 @@ export const trackingRouter = createTRPCRouter({
         data: {
           trackedDomainId: tracked.id,
           domainName: domain,
-          verificationToken,
         },
       });
 

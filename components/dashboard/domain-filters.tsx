@@ -208,7 +208,7 @@ export function DomainFilters({
         )}
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" && sortOption && onSortChange && (
+        {viewMode === "grid" && onSortChange && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 gap-2 px-3">
