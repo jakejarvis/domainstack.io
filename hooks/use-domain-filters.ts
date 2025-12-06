@@ -3,13 +3,11 @@
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useMemo } from "react";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import { EXPIRING_SOON_DAYS } from "@/lib/constants";
 
 // Filter types
 export type StatusFilter = "verified" | "pending";
 export type HealthFilter = "healthy" | "expiring" | "expired";
-
-// Days until expiry thresholds
-const EXPIRING_SOON_DAYS = 30;
 
 /**
  * Extract TLD from domain name (e.g., "example.com" -> ".com")

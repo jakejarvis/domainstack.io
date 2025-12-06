@@ -7,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { EXPIRING_SOON_DAYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type HealthSummaryProps = {
@@ -46,8 +47,8 @@ export function HealthSummary({
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            {expiringSoon} domain{expiringSoon === 1 ? "" : "s"} expiring within
-            30 days. Click to filter.
+            {expiringSoon} domain{expiringSoon === 1 ? "" : "s"} expiring within{" "}
+            {EXPIRING_SOON_DAYS} days. Click to filter.
           </TooltipContent>
         </Tooltip>
       )}

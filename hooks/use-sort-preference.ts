@@ -84,9 +84,7 @@ export function sortDomains(
     case "recent":
       sorted.sort((a, b) => {
         // Sort by createdAt descending (most recent first)
-        const aTime = a.createdAt?.getTime() ?? 0;
-        const bTime = b.createdAt?.getTime() ?? 0;
-        return bTime - aTime;
+        return b.createdAt.getTime() - a.createdAt.getTime();
       });
       break;
   }

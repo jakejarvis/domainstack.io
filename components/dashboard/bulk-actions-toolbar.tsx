@@ -57,15 +57,9 @@ export function BulkActionsToolbar({
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Checkbox
-                  checked={isAllSelected}
-                  ref={(ref) => {
-                    if (ref) {
-                      // Set indeterminate state for partial selection
-                      (
-                        ref as HTMLButtonElement & { indeterminate?: boolean }
-                      ).indeterminate = isPartiallySelected;
-                    }
-                  }}
+                  checked={
+                    isAllSelected ? true : isPartiallySelected ? "indeterminate" : false
+                  }
                   onCheckedChange={onToggleAll}
                   aria-label={
                     isAllSelected ? "Deselect all" : `Select all ${totalCount}`

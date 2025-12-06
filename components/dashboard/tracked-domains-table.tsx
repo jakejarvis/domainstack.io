@@ -359,6 +359,24 @@ export function TrackedDomainsTable({
 
                 // For unverified domains, show simplified row with verify CTA
                 if (isUnverified) {
+                  // Find cells by column ID for maintainability
+                  const cellMap = new Map(
+                    cells.map((cell) => [cell.column.id, cell]),
+                  );
+                  const selectCell = cellMap.get("select");
+                  const domainCell = cellMap.get("domainName");
+                  const statusCell = cellMap.get("verified");
+                  const actionsCell = cellMap.get("actions");
+
+                  // Calculate colspan: total cells minus the 4 we render explicitly
+                  const explicitColumns = [
+                    "select",
+                    "domainName",
+                    "verified",
+                    "actions",
+                  ];
+                  const collapseCount = cells.length - explicitColumns.length;
+
                   return (
                     <tr
                       key={row.id}
@@ -368,29 +386,35 @@ export function TrackedDomainsTable({
                       )}
                     >
                       {/* Checkbox column */}
-                      <td className="h-12 w-10 pr-3 pl-5 align-middle">
-                        {flexRender(
-                          cells[0].column.columnDef.cell,
-                          cells[0].getContext(),
-                        )}
-                      </td>
+                      {selectCell && (
+                        <td className="h-12 w-10 pr-3 pl-5 align-middle">
+                          {flexRender(
+                            selectCell.column.columnDef.cell,
+                            selectCell.getContext(),
+                          )}
+                        </td>
+                      )}
                       {/* Domain column */}
-                      <td className="h-12 px-3 align-middle">
-                        {flexRender(
-                          cells[1].column.columnDef.cell,
-                          cells[1].getContext(),
-                        )}
-                      </td>
+                      {domainCell && (
+                        <td className="h-12 px-3 align-middle">
+                          {flexRender(
+                            domainCell.column.columnDef.cell,
+                            domainCell.getContext(),
+                          )}
+                        </td>
+                      )}
                       {/* Status column */}
-                      <td className="h-12 px-3 align-middle">
-                        {flexRender(
-                          cells[2].column.columnDef.cell,
-                          cells[2].getContext(),
-                        )}
-                      </td>
+                      {statusCell && (
+                        <td className="h-12 px-3 align-middle">
+                          {flexRender(
+                            statusCell.column.columnDef.cell,
+                            statusCell.getContext(),
+                          )}
+                        </td>
+                      )}
                       {/* Span remaining detail columns with verify message */}
                       <td
-                        colSpan={cells.length - 4}
+                        colSpan={collapseCount}
                         className="h-12 px-3 align-middle"
                       >
                         <div className="flex items-center gap-3">
@@ -408,12 +432,14 @@ export function TrackedDomainsTable({
                         </div>
                       </td>
                       {/* Actions column */}
-                      <td className="h-12 px-3 pr-5 align-middle">
-                        {flexRender(
-                          cells[cells.length - 1].column.columnDef.cell,
-                          cells[cells.length - 1].getContext(),
-                        )}
-                      </td>
+                      {actionsCell && (
+                        <td className="h-12 px-3 pr-5 align-middle">
+                          {flexRender(
+                            actionsCell.column.columnDef.cell,
+                            actionsCell.getContext(),
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 }

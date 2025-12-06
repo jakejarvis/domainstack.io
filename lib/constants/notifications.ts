@@ -35,6 +35,9 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
 export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 
+// Dashboard "expiring soon" threshold (first notification threshold)
+export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
+
 export type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
 export type CertificateExpiryThreshold =
   (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];

@@ -6,9 +6,6 @@ import {
   getStaleUnverifiedDomains,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
-import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "cleanup-stale-domains" });
 
 // Domains that remain unverified after this many days will be deleted
 const STALE_DOMAIN_DAYS = 30;
@@ -54,7 +51,7 @@ export const cleanupStaleDomains = inngest.createFunction(
 
     // Log details for debugging
     for (const domain of staleDomains) {
-      logger.debug("stale domain found", {
+      inngestLogger.debug("stale domain found", {
         trackedDomainId: domain.id,
         userId: domain.userId,
         domainName: domain.domainName,

@@ -292,6 +292,7 @@ export function DomainFilters({
                 type="button"
                 onClick={() => removeFilter(chip.type, chip.value)}
                 className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/30"
+                aria-label={`Remove ${chip.label} filter`}
               >
                 <X className="size-3" />
               </button>

@@ -20,7 +20,7 @@ export function StepInstructionsError({
       <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
         <AlertCircle className="size-6 text-destructive" />
       </div>
-      <div className="text-center">
+      <div className="text-center" aria-live="polite">
         <h3 className="font-semibold">Unable to load instructions</h3>
         <p className="text-muted-foreground text-sm">
           {error || "Something went wrong. Please try again."}

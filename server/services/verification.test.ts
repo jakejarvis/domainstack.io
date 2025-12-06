@@ -1,11 +1,9 @@
 /* @vitest-environment node */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
+// Use vi.hoisted to make mock hoisting explicit for ESM modules
+const mockFetch = vi.hoisted(() => vi.fn());
 
-// Mock fetchWithTimeoutAndRetry to use our mock
 vi.mock("@/lib/fetch", () => ({
   fetchWithTimeoutAndRetry: vi.fn(
     async (url: string | URL, options?: RequestInit) => {
@@ -13,6 +11,9 @@ vi.mock("@/lib/fetch", () => ({
     },
   ),
 }));
+
+// Mock fetch globally
+vi.stubGlobal("fetch", mockFetch);
 
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 import {

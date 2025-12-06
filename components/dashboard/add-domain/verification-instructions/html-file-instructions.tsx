@@ -7,14 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
-function downloadVerificationFile(filename: string, content: string) {
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function downloadVerificationFile(filename: string, content: string): boolean {
+  try {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 type HtmlFileVerificationInstructionsProps = {
@@ -25,10 +30,17 @@ export function HtmlFileVerificationInstructions({
   instructions,
 }: HtmlFileVerificationInstructionsProps) {
   const handleDownload = () => {
-    downloadVerificationFile(instructions.filename, instructions.fileContent);
-    toast.success("File downloaded!", {
-      description: `Upload ${instructions.filename} to your website.`,
-    });
+    const success = downloadVerificationFile(
+      instructions.filename,
+      instructions.fileContent,
+    );
+    if (success) {
+      toast.success("File downloaded!", {
+        description: `Upload ${instructions.filename} to your website.`,
+      });
+    } else {
+      toast.error("Failed to download file");
+    }
   };
 
   return (
