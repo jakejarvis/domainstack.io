@@ -35,6 +35,7 @@ import type {
   ProviderInfo,
   VerificationStatusType,
 } from "@/lib/db/repos/tracked-domains";
+import { formatDateTimeUtc } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type TrackedDomainCardProps = {
@@ -168,7 +169,7 @@ export function TrackedDomainCard({
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {format(expirationDate, "yyyy-MM-dd HH:mm:ss")} UTC
+                      {formatDateTimeUtc(expirationDate.toISOString())}
                     </TooltipContent>
                   </Tooltip>
                   <span className="shrink-0 text-[11px] text-muted-foreground leading-none">

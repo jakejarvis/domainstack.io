@@ -43,6 +43,7 @@ import type {
   ProviderInfo,
   TrackedDomainWithDetails,
 } from "@/lib/db/repos/tracked-domains";
+import { formatDateTimeUtc } from "@/lib/format";
 import type { UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
@@ -200,7 +201,7 @@ export function TrackedDomainsTable({
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {format(date, "yyyy-MM-dd HH:mm:ss")} UTC
+                  {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
               </Tooltip>
               <span className="text-[11px] text-muted-foreground leading-none">
