@@ -36,10 +36,10 @@ export function HealthSummary({
               <Badge
                 variant="outline"
                 className={cn(
-                  "cursor-pointer gap-1.5 border-amber-500/30 bg-amber-500/10 text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400",
+                  "cursor-pointer border-amber-500/30 bg-amber-500/10 px-2.5 py-1 font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400",
                 )}
               >
-                <AlertTriangle className="size-3" />
+                <AlertTriangle className="mr-1 size-3.5" />
                 <span className="tabular-nums">{expiringSoon}</span>
                 <span className="hidden sm:inline">expiring soon</span>
               </Badge>
@@ -59,10 +59,10 @@ export function HealthSummary({
               <Badge
                 variant="outline"
                 className={cn(
-                  "cursor-pointer gap-1.5 border-blue-500/30 bg-blue-500/10 text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400",
+                  "cursor-pointer border-blue-500/30 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400",
                 )}
               >
-                <Clock className="size-3" />
+                <Clock className="mr-1 size-3.5" />
                 <span className="tabular-nums">{pendingVerification}</span>
                 <span className="hidden sm:inline">pending verification</span>
               </Badge>

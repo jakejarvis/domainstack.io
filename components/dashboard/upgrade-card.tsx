@@ -52,7 +52,7 @@ export function UpgradeCard() {
 
         {/* Value prop */}
         <p className="mb-4 text-muted-foreground text-sm">
-          Track up to 50 domains with priority notifications
+          Track up to 50 domains with priority notifications.
         </p>
 
         {/* Pricing */}

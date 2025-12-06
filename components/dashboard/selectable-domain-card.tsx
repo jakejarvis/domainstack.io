@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react";
 import { TrackedDomainCard } from "@/components/dashboard/tracked-domain-card";
-import { Checkbox } from "@/components/ui/checkbox";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +24,7 @@ export function SelectableDomainCard({
 }: SelectableDomainCardProps) {
   return (
     <motion.div
-      className="relative h-full"
+      className="group relative h-full"
       animate={{ scale: isSelected ? 1.01 : 1 }}
       transition={{ duration: 0.15 }}
     >
@@ -40,26 +39,43 @@ export function SelectableDomainCard({
         aria-hidden
       />
 
-      {/* Checkbox overlay */}
-      <div className="absolute top-3 left-3 z-10">
-        <div
+      {/* Checkbox - hidden by default, shown on hover/focus or when selected */}
+      <div
+        className={cn(
+          "absolute top-3 left-3 z-10 transition-all duration-150",
+          isSelected
+            ? "opacity-100"
+            : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+        )}
+      >
+        <button
+          type="button"
+          onClick={onToggleSelect}
+          aria-label={`Select ${domain.domainName}`}
+          aria-pressed={isSelected}
           className={cn(
-            "flex size-6 items-center justify-center rounded-lg transition-all",
+            "flex size-5 items-center justify-center rounded transition-all",
             isSelected
-              ? "bg-primary shadow-md"
-              : "bg-background/80 shadow-sm backdrop-blur-sm hover:bg-background",
+              ? "bg-primary text-primary-foreground"
+              : "border-2 border-foreground/40 bg-transparent hover:border-foreground/60",
           )}
         >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={onToggleSelect}
-            aria-label={`Select ${domain.domainName}`}
-            className={cn(
-              "border-0",
-              isSelected && "bg-transparent text-primary-foreground",
-            )}
-          />
-        </div>
+          {isSelected && (
+            <svg
+              className="size-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* The actual card */}
