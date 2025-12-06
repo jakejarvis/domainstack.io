@@ -76,12 +76,10 @@ export function getProductsForTier(tier: UserTier) {
  * Used by webhooks to determine which tier to assign.
  */
 export function getTierForProductId(productId: string): UserTier | null {
-  for (const product of Object.values(POLAR_PRODUCTS)) {
-    if (product.productId === productId) {
-      return product.tier;
-    }
-  }
-  return null;
+  const product = Object.values(POLAR_PRODUCTS).find(
+    (p) => p.productId === productId,
+  );
+  return product?.tier ?? null;
 }
 
 /**

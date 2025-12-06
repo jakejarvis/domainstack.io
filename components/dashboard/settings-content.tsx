@@ -300,7 +300,12 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
                 {activeCount} of {maxDomains} domains used
               </p>
             </div>
-            <Progress value={percentage} className="w-24" />
+            <Progress
+              value={percentage}
+              className="w-24"
+              aria-label="Domain usage"
+              aria-valuetext={`${activeCount} of ${maxDomains} domains used`}
+            />
           </div>
 
           {/* Actions */}

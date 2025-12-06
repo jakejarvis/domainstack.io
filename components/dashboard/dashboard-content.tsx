@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Archive, ArrowLeft, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDomainFilters } from "@/hooks/use-domain-filters";
+import { useDomainMutations } from "@/hooks/use-domain-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useSelection } from "@/hooks/use-selection";
 import { sortDomains, useSortPreference } from "@/hooks/use-sort-preference";
@@ -28,7 +29,6 @@ import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 
 type ConfirmAction =
@@ -53,7 +53,6 @@ export function DashboardContent() {
   const [sortOption, setSortOption] = useSortPreference();
   const { data: session } = useSession();
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
@@ -61,6 +60,18 @@ export function DashboardContent() {
   const archivedDomainsQuery = useQuery(
     trpc.tracking.listArchivedDomains.queryOptions(),
   );
+
+  // Domain mutations with optimistic updates
+  const {
+    removeMutation,
+    archiveMutation,
+    unarchiveMutation,
+    bulkArchiveMutation,
+    bulkDeleteMutation,
+    invalidateQueries,
+  } = useDomainMutations({
+    onUnarchiveSuccess: () => setActiveTab("active"),
+  });
 
   // Filter domains
   const domains = domainsQuery.data ?? [];
@@ -107,355 +118,6 @@ export function DashboardContent() {
     }
   }, [router]);
 
-  // Get query keys for cache manipulation
-  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const archivedDomainsQueryKey = trpc.tracking.listArchivedDomains.queryKey();
-
-  // Remove mutation with optimistic updates
-  const removeMutation = useMutation({
-    ...trpc.tracking.removeDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-
-      // Snapshot the previous values
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
-      const previousLimits = queryClient.getQueryData(limitsQueryKey);
-
-      // Optimistically update domains list
-      queryClient.setQueryData(
-        domainsQueryKey,
-        (old: TrackedDomainWithDetails[] | undefined) =>
-          old?.filter((d) => d.id !== trackedDomainId) ?? [],
-      );
-
-      // Optimistically update limits count
-      queryClient.setQueryData(
-        limitsQueryKey,
-        (old: typeof limitsQuery.data) =>
-          old
-            ? {
-                ...old,
-                activeCount: Math.max(0, old.activeCount - 1),
-                canAddMore: old.activeCount - 1 < old.maxDomains,
-              }
-            : old,
-      );
-
-      // Return snapshot for rollback
-      return { previousDomains, previousLimits };
-    },
-    onError: (err, _variables, context) => {
-      // Roll back to previous state on error
-      if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
-      }
-      if (context?.previousLimits) {
-        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
-      }
-      logger.error("Failed to remove domain", err);
-      toast.error("Failed to remove domain");
-    },
-    onSuccess: () => {
-      toast.success("Domain removed");
-    },
-    onSettled: () => {
-      // Always refetch after error or success to ensure consistency
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
-  });
-
-  // Archive mutation with optimistic updates
-  const archiveMutation = useMutation({
-    ...trpc.tracking.archiveDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: archivedDomainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
-      const previousArchived = queryClient.getQueryData(
-        archivedDomainsQueryKey,
-      );
-      const previousLimits = queryClient.getQueryData(limitsQueryKey);
-
-      // Find the domain being archived
-      const domainToArchive = (
-        previousDomains as TrackedDomainWithDetails[] | undefined
-      )?.find((d) => d.id === trackedDomainId);
-
-      // Move from active to archived
-      queryClient.setQueryData(
-        domainsQueryKey,
-        (old: TrackedDomainWithDetails[] | undefined) =>
-          old?.filter((d) => d.id !== trackedDomainId) ?? [],
-      );
-
-      if (domainToArchive) {
-        queryClient.setQueryData(
-          archivedDomainsQueryKey,
-          (old: TrackedDomainWithDetails[] | undefined) => [
-            ...(old ?? []),
-            { ...domainToArchive, archivedAt: new Date() },
-          ],
-        );
-      }
-
-      queryClient.setQueryData(
-        limitsQueryKey,
-        (old: typeof limitsQuery.data) =>
-          old
-            ? {
-                ...old,
-                activeCount: Math.max(0, old.activeCount - 1),
-                archivedCount: old.archivedCount + 1,
-                canAddMore: old.activeCount - 1 < old.maxDomains,
-              }
-            : old,
-      );
-
-      return { previousDomains, previousArchived, previousLimits };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
-      }
-      if (context?.previousArchived) {
-        queryClient.setQueryData(
-          archivedDomainsQueryKey,
-          context.previousArchived,
-        );
-      }
-      if (context?.previousLimits) {
-        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
-      }
-      logger.error("Failed to archive domain", err);
-      toast.error("Failed to archive domain");
-    },
-    onSuccess: () => {
-      toast.success("Domain archived");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: archivedDomainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
-  });
-
-  // Unarchive mutation with optimistic updates
-  const unarchiveMutation = useMutation({
-    ...trpc.tracking.unarchiveDomain.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: archivedDomainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
-      const previousArchived = queryClient.getQueryData(
-        archivedDomainsQueryKey,
-      );
-      const previousLimits = queryClient.getQueryData(limitsQueryKey);
-
-      // Find the domain being unarchived
-      const domainToUnarchive = (
-        previousArchived as TrackedDomainWithDetails[] | undefined
-      )?.find((d) => d.id === trackedDomainId);
-
-      // Move from archived to active
-      queryClient.setQueryData(
-        archivedDomainsQueryKey,
-        (old: TrackedDomainWithDetails[] | undefined) =>
-          old?.filter((d) => d.id !== trackedDomainId) ?? [],
-      );
-
-      if (domainToUnarchive) {
-        queryClient.setQueryData(
-          domainsQueryKey,
-          (old: TrackedDomainWithDetails[] | undefined) => [
-            ...(old ?? []),
-            { ...domainToUnarchive, archivedAt: null },
-          ],
-        );
-      }
-
-      queryClient.setQueryData(
-        limitsQueryKey,
-        (old: typeof limitsQuery.data) =>
-          old
-            ? {
-                ...old,
-                activeCount: old.activeCount + 1,
-                archivedCount: Math.max(0, old.archivedCount - 1),
-                canAddMore: old.activeCount + 1 < old.maxDomains,
-              }
-            : old,
-      );
-
-      return { previousDomains, previousArchived, previousLimits };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
-      }
-      if (context?.previousArchived) {
-        queryClient.setQueryData(
-          archivedDomainsQueryKey,
-          context.previousArchived,
-        );
-      }
-      if (context?.previousLimits) {
-        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
-      }
-      logger.error("Failed to unarchive domain", err);
-      // Show server error message (e.g., "You've reached your domain limit")
-      const message =
-        err instanceof Error ? err.message : "Failed to reactivate domain";
-      toast.error(message);
-    },
-    onSuccess: () => {
-      toast.success("Domain reactivated");
-      // Switch to Active tab so user can see the reactivated domain
-      setActiveTab("active");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: archivedDomainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
-  });
-
-  // Bulk archive mutation
-  const bulkArchiveMutation = useMutation({
-    mutationFn: trpc.tracking.bulkArchiveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: archivedDomainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
-      const previousArchived = queryClient.getQueryData(
-        archivedDomainsQueryKey,
-      );
-      const previousLimits = queryClient.getQueryData(limitsQueryKey);
-
-      const idsSet = new Set(trackedDomainIds);
-      const domainsToArchive = (
-        previousDomains as TrackedDomainWithDetails[] | undefined
-      )?.filter((d) => idsSet.has(d.id));
-      // Use actual count of domains found in cache for consistent optimistic updates
-      const archiveDelta = domainsToArchive?.length ?? 0;
-
-      // Move from active to archived
-      queryClient.setQueryData(
-        domainsQueryKey,
-        (old: TrackedDomainWithDetails[] | undefined) =>
-          old?.filter((d) => !idsSet.has(d.id)) ?? [],
-      );
-
-      if (domainsToArchive) {
-        queryClient.setQueryData(
-          archivedDomainsQueryKey,
-          (old: TrackedDomainWithDetails[] | undefined) => [
-            ...(old ?? []),
-            ...domainsToArchive.map((d) => ({ ...d, archivedAt: new Date() })),
-          ],
-        );
-      }
-
-      queryClient.setQueryData(
-        limitsQueryKey,
-        (old: typeof limitsQuery.data) =>
-          old
-            ? {
-                ...old,
-                activeCount: Math.max(0, old.activeCount - archiveDelta),
-                archivedCount: old.archivedCount + archiveDelta,
-                canAddMore: true,
-              }
-            : old,
-      );
-
-      return { previousDomains, previousArchived, previousLimits };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
-      }
-      if (context?.previousArchived) {
-        queryClient.setQueryData(
-          archivedDomainsQueryKey,
-          context.previousArchived,
-        );
-      }
-      if (context?.previousLimits) {
-        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
-      }
-      logger.error("Failed to bulk archive domains", err);
-      toast.error("Failed to archive domains");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: archivedDomainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
-  });
-
-  // Bulk delete mutation
-  const bulkDeleteMutation = useMutation({
-    mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
-    onMutate: async ({ trackedDomainIds }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
-      const previousLimits = queryClient.getQueryData(limitsQueryKey);
-
-      const idsSet = new Set(trackedDomainIds);
-      // Use actual count of domains found in cache for consistent optimistic updates
-      const domainsToDelete = (
-        previousDomains as TrackedDomainWithDetails[] | undefined
-      )?.filter((d) => idsSet.has(d.id));
-      const deleteDelta = domainsToDelete?.length ?? 0;
-
-      queryClient.setQueryData(
-        domainsQueryKey,
-        (old: TrackedDomainWithDetails[] | undefined) =>
-          old?.filter((d) => !idsSet.has(d.id)) ?? [],
-      );
-
-      queryClient.setQueryData(
-        limitsQueryKey,
-        (old: typeof limitsQuery.data) =>
-          old
-            ? {
-                ...old,
-                activeCount: Math.max(0, old.activeCount - deleteDelta),
-                canAddMore: true,
-              }
-            : old,
-      );
-
-      return { previousDomains, previousLimits };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
-      }
-      if (context?.previousLimits) {
-        queryClient.setQueryData(limitsQueryKey, context.previousLimits);
-      }
-      logger.error("Failed to bulk delete domains", err);
-      toast.error("Failed to delete domains");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    },
-  });
-
   const handleAddDomain = useCallback(() => {
     setResumeDomain(null); // Clear any resume state
     setAddDialogOpen(true);
@@ -464,9 +126,8 @@ export function DashboardContent() {
   const handleAddSuccess = useCallback(() => {
     setResumeDomain(null);
     // Invalidate queries to refetch fresh data
-    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-  }, [queryClient, domainsQueryKey, limitsQueryKey]);
+    invalidateQueries(true);
+  }, [invalidateQueries]);
 
   const handleVerify = useCallback((domain: TrackedDomainWithDetails) => {
     // Open dialog in resume mode with the domain's verification info
