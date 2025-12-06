@@ -32,6 +32,7 @@ vi.mock("@/lib/polar/products", () => ({
 
 vi.mock("@/lib/polar/emails", () => ({
   sendProUpgradeEmail: vi.fn(),
+  sendSubscriptionCancelingEmail: vi.fn(),
   sendSubscriptionExpiredEmail: vi.fn(),
 }));
 
@@ -43,6 +44,7 @@ import {
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import {
   sendProUpgradeEmail,
+  sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
 } from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
@@ -273,6 +275,38 @@ describe("handleSubscriptionCanceled", () => {
         }),
       ),
     ).rejects.toThrow("Database error");
+  });
+
+  it("sends immediate cancellation confirmation email", async () => {
+    const periodEnd = new Date("2025-02-01T00:00:00Z");
+
+    await handleSubscriptionCanceled(
+      createCanceledPayload({
+        currentPeriodEnd: periodEnd,
+      }),
+    );
+
+    expect(sendSubscriptionCancelingEmail).toHaveBeenCalledWith(
+      "user-456",
+      periodEnd,
+    );
+  });
+
+  it("does not fail webhook if cancellation email fails", async () => {
+    vi.mocked(sendSubscriptionCancelingEmail).mockRejectedValue(
+      new Error("Email failed"),
+    );
+
+    // Should not throw - email errors are logged but swallowed
+    await expect(
+      handleSubscriptionCanceled(
+        createCanceledPayload({
+          currentPeriodEnd: new Date("2025-02-01T00:00:00Z"),
+        }),
+      ),
+    ).resolves.not.toThrow();
+
+    expect(setSubscriptionEndsAt).toHaveBeenCalled();
   });
 });
 

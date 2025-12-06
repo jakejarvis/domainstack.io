@@ -10,6 +10,7 @@ import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import {
   sendProUpgradeEmail,
+  sendSubscriptionCancelingEmail,
   sendSubscriptionExpiredEmail,
 } from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
@@ -140,10 +141,20 @@ export async function handleSubscriptionCanceled(
   }
 
   // Store the end date so we can show a banner in the dashboard
-  // Reminder emails are sent via the check-subscription-expiry cron job
+  // Additional reminder emails are sent via the check-subscription-expiry cron job
   if (currentPeriodEnd) {
+    const endsAt = new Date(currentPeriodEnd);
     try {
-      await setSubscriptionEndsAt(userId, new Date(currentPeriodEnd));
+      await setSubscriptionEndsAt(userId, endsAt);
+
+      // Send immediate cancellation confirmation email (best-effort, don't fail webhook on email error)
+      try {
+        await sendSubscriptionCancelingEmail(userId, endsAt);
+      } catch (emailErr) {
+        logger.error("failed to send subscription canceling email", emailErr, {
+          userId,
+        });
+      }
     } catch (err) {
       logger.error("failed to set subscription end date", err, { userId });
       throw err; // Re-throw to trigger webhook retry

@@ -30,10 +30,13 @@ if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
   );
 }
 
+// Use VERCEL_ENV to determine Polar environment (not NODE_ENV, which is "production" on preview deployments too)
+// This prevents preview deployments from hitting the production Polar API
 const polarClient = process.env.POLAR_ACCESS_TOKEN
   ? new Polar({
       accessToken: process.env.POLAR_ACCESS_TOKEN,
-      server: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+      server:
+        process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
     })
   : null;
 

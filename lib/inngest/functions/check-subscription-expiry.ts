@@ -15,6 +15,16 @@ import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-subscription-expiry" });
 
+/**
+ * Safely extract first name from a name string.
+ * Handles null, undefined, empty, or whitespace-only names.
+ */
+function getFirstName(name: string | null | undefined): string {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return "there";
+  return trimmed.split(/\s+/)[0] || "there";
+}
+
 // Thresholds for subscription expiry reminders (days before expiration)
 const SUBSCRIPTION_EXPIRY_THRESHOLDS = [7, 3, 1] as const;
 type SubscriptionExpiryThreshold =
@@ -195,7 +205,7 @@ async function sendSubscriptionExpiryNotification({
 
   try {
     const dashboardUrl = `${BASE_URL}/dashboard`;
-    const firstName = userName.split(" ")[0] || "there";
+    const firstName = getFirstName(userName);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
     const emailHtml = await render(
