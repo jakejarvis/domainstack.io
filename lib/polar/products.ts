@@ -1,10 +1,22 @@
 import type { UserTier } from "@/lib/schemas";
 
 /**
+ * Polar product IDs from environment variables.
+ * These allow different product IDs for staging vs production environments.
+ *
+ * Fallbacks are the production Polar product IDs.
+ */
+const POLAR_MONTHLY_PRODUCT_ID =
+  process.env.POLAR_MONTHLY_PRODUCT_ID ??
+  "bc96d339-45e0-41e9-8877-cfdcc689977e";
+const POLAR_YEARLY_PRODUCT_ID =
+  process.env.POLAR_YEARLY_PRODUCT_ID ?? "894304fc-8f36-43ac-9e90-7a70abd81671";
+
+/**
  * Polar product configuration.
  *
  * Polar requires separate products for each billing interval (monthly vs yearly).
- * Create these products in the Polar dashboard and update the IDs here.
+ * Create these products in the Polar dashboard and set the IDs via environment variables.
  *
  * - Sandbox: https://sandbox.polar.sh
  * - Production: https://polar.sh
@@ -13,7 +25,7 @@ import type { UserTier } from "@/lib/schemas";
  */
 export const POLAR_PRODUCTS = {
   "pro-monthly": {
-    productId: "bc96d339-45e0-41e9-8877-cfdcc689977e",
+    productId: POLAR_MONTHLY_PRODUCT_ID,
     slug: "pro-monthly",
     tier: "pro" as UserTier,
     name: "Pro Monthly",
@@ -22,7 +34,7 @@ export const POLAR_PRODUCTS = {
     label: "$2/month",
   },
   "pro-yearly": {
-    productId: "894304fc-8f36-43ac-9e90-7a70abd81671",
+    productId: POLAR_YEARLY_PRODUCT_ID,
     slug: "pro-yearly",
     tier: "pro" as UserTier,
     name: "Pro Yearly",
@@ -31,7 +43,7 @@ export const POLAR_PRODUCTS = {
     label: "$20/year",
     savings: "Save ~17%",
   },
-} as const;
+};
 
 export type ProductSlug = keyof typeof POLAR_PRODUCTS;
 
