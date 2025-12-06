@@ -10,5 +10,6 @@ export * from "./internal/export";
 export * from "./internal/notifications";
 export * from "./internal/provider";
 export * from "./internal/sections";
+export * from "./internal/stats";
 export * from "./internal/user";
 export * from "./internal/verification";
