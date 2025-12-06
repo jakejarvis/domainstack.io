@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Archive, ArrowLeft, Sparkles } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -107,20 +108,21 @@ export function DashboardContent() {
     [filteredDomains],
   );
   const selection = useSelection(filteredDomainIds);
+  const searchParams = useSearchParams();
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("upgraded") === "true") {
+    if (searchParams.get("upgraded") === "true") {
       setShowUpgradedBanner(true);
       // Clear only the `upgraded` param while preserving others (e.g., filters)
+      const params = new URLSearchParams(searchParams.toString());
       params.delete("upgraded");
       const newSearch = params.toString();
       const newUrl =
         window.location.pathname + (newSearch ? `?${newSearch}` : "");
       router.replace(newUrl, { scroll: false });
     }
-  }, [router]);
+  }, [router, searchParams]);
 
   const handleAddDomain = useCallback(() => {
     setResumeDomain(null); // Clear any resume state

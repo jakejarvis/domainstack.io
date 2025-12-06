@@ -161,6 +161,7 @@ export function TrackedDomainsTable({
             verificationStatus={row.original.verificationStatus}
           />
         ),
+        // Sort verified domains first (verified = -1, unverified = 1)
         sortingFn: (rowA, rowB) => {
           return rowA.original.verified === rowB.original.verified
             ? 0
