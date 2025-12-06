@@ -99,6 +99,13 @@ export function useDomainVerification({
     }
   }, [instructionsQuery.data, resumeDomain]);
 
+  // Sync domain state when prefillDomain changes (only when dialog is closed)
+  useEffect(() => {
+    if (!open && prefillDomain !== undefined) {
+      setDomain(prefillDomain);
+    }
+  }, [prefillDomain, open]);
+
   const resetDialog = useCallback(() => {
     setStep(1);
     setDomain(prefillDomain ?? "");

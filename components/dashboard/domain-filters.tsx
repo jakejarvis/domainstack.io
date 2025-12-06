@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,6 +88,12 @@ export function DomainFilters({
   onSortChange,
 }: DomainFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Memoize TLD options to avoid re-allocating on every render
+  const tldOptions = useMemo(
+    () => availableTlds.map((t) => ({ value: t, label: t })),
+    [availableTlds],
+  );
 
   // Get labels for active filters to show as chips
   const activeFilterChips: FilterChip[] = [
@@ -173,7 +179,7 @@ export function DomainFilters({
           <MultiSelect
             label="TLD"
             icon={Globe}
-            options={availableTlds.map((t) => ({ value: t, label: t }))}
+            options={tldOptions}
             selected={tlds}
             onSelectionChange={onTldsChange}
             searchable

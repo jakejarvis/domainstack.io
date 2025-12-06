@@ -21,6 +21,7 @@ export function useUpgradeCheckout() {
   }, []);
 
   const handleUpgrade = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await checkout({
