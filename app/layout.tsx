@@ -2,7 +2,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Providers } from "@/app/providers";
+import { CookieBanner } from "@/components/consent/cookie-banner";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
@@ -55,6 +57,9 @@ export default function RootLayout({
           </div>
 
           <Toaster />
+          <Suspense>
+            <CookieBanner />
+          </Suspense>
         </Providers>
         <Analytics />
       </body>

@@ -30,17 +30,22 @@ function getServerPosthog(): PostHog | null {
 const getDistinctId = cache(async (): Promise<string> => {
   let distinctId: string | undefined;
 
-  const cookieStore = await cookies();
-  const phCookie = cookieStore.get(
-    `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`,
-  );
-  if (phCookie?.value) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(phCookie.value));
-      if (parsed && typeof parsed.distinct_id === "string") {
-        distinctId = parsed.distinct_id;
-      }
-    } catch {}
+  try {
+    const cookieStore = await cookies();
+    const phCookie = cookieStore.get(
+      `ph_${process.env.NEXT_PUBLIC_POSTHOG_KEY}_posthog`,
+    );
+    if (phCookie?.value) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(phCookie.value));
+        if (parsed && typeof parsed.distinct_id === "string") {
+          distinctId = parsed.distinct_id;
+        }
+      } catch {}
+    }
+  } catch {
+    // cookies() throws when called outside request scope (e.g., during prerender)
+    // Fall through to generate a UUID
   }
 
   // fallback to distinct uuid

@@ -1,9 +1,10 @@
+import { CircleHelp, FileText, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { HeartAnimated } from "@/components/heart";
 
 export function AppFooter() {
   return (
-    <footer className="px-4 py-6 text-center text-muted-foreground text-xs leading-relaxed sm:px-6 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px] [&_svg]:align-text-bottom">
+    <footer className="px-4 py-6 text-center text-muted-foreground text-xs leading-relaxed sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px] [&_svg]:align-text-bottom">
       <p>
         Made with{" "}
         <HeartAnimated className="fill-destructive stroke-destructive" /> and{" "}
@@ -42,12 +43,21 @@ export function AppFooter() {
         </a>{" "}
         (CC BY 3.0).
       </p>
-      <p className="mt-2">
-        <Link href="/help">Help</Link>
+      <p className="mt-2 flex flex-wrap items-center justify-center">
+        <Link href="/help">
+          <CircleHelp />
+          Help
+        </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
-        <Link href="/privacy">Privacy Policy</Link>
+        <Link href="/privacy">
+          <ShieldCheck />
+          Privacy Policy
+        </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
-        <Link href="/terms">Terms of Service</Link>
+        <Link href="/terms">
+          <FileText />
+          Terms of Service
+        </Link>
       </p>
     </footer>
   );

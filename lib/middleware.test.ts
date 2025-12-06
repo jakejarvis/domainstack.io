@@ -1,45 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { getProxyAction } from "./middleware";
+import { getMiddlewareRedirectAction } from "./middleware";
 
-describe("getProxyAction", () => {
+describe("getMiddlewareRedirectAction", () => {
   it("skips root path", () => {
-    expect(getProxyAction("/")).toBeNull();
+    expect(getMiddlewareRedirectAction("/")).toBeNull();
   });
 
   it("skips opengraph-image route", () => {
     // This is essential for the dynamic OG image route [domain]/opengraph-image.tsx
-    expect(getProxyAction("/example.com/opengraph-image")).toBeNull();
+    expect(
+      getMiddlewareRedirectAction("/example.com/opengraph-image"),
+    ).toBeNull();
+
     // Also check nested paths just in case, though our routing is [domain]
-    expect(getProxyAction("/https://example.com/opengraph-image")).toBeNull();
+    expect(
+      getMiddlewareRedirectAction("/https://example.com/opengraph-image"),
+    ).toBeNull();
   });
 
   it("matches clean domain", () => {
-    expect(getProxyAction("/example.com")).toEqual({ type: "match" });
+    expect(getMiddlewareRedirectAction("/example.com")).toEqual({
+      type: "match",
+    });
   });
 
   it("redirects full URL to domain", () => {
-    expect(getProxyAction("/https://example.com")).toEqual({
+    expect(getMiddlewareRedirectAction("/https://example.com")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("redirects dirty path to domain", () => {
-    expect(getProxyAction("/example.com/foo")).toEqual({
+    expect(getMiddlewareRedirectAction("/example.com/foo")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("redirects query params to domain", () => {
-    expect(getProxyAction("/example.com?q=1")).toEqual({
+    expect(getMiddlewareRedirectAction("/example.com?q=1")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("redirects subdomain to registrable domain", () => {
-    expect(getProxyAction("/www.example.com")).toEqual({
+    expect(getMiddlewareRedirectAction("/www.example.com")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
@@ -48,31 +55,33 @@ describe("getProxyAction", () => {
   it("handles user info", () => {
     // "user:pass@example.com" parses to "example.com"
     // Since input != registrable, it redirects to clean domain
-    expect(getProxyAction("/user:pass@example.com")).toEqual({
+    expect(getMiddlewareRedirectAction("/user:pass@example.com")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("handles user info in URL", () => {
-    expect(getProxyAction("/https://user:pass@example.com/foo")).toEqual({
+    expect(
+      getMiddlewareRedirectAction("/https://user:pass@example.com/foo"),
+    ).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("skips IPv6 literals", () => {
-    expect(getProxyAction("/[::1]")).toBeNull();
+    expect(getMiddlewareRedirectAction("/[::1]")).toBeNull();
   });
 
   it("skips IPv6 literals with port", () => {
-    expect(getProxyAction("/[::1]:8080")).toBeNull();
+    expect(getMiddlewareRedirectAction("/[::1]:8080")).toBeNull();
   });
 
   it("redirects port on valid domain", () => {
     // "example.com:8080" -> "example.com"
     // Input has port, so it redirects to clean domain
-    expect(getProxyAction("/example.com:8080")).toEqual({
+    expect(getMiddlewareRedirectAction("/example.com:8080")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
@@ -80,13 +89,13 @@ describe("getProxyAction", () => {
 
   it("skips invalid domains", () => {
     // toRegistrableDomain returns null for "invalid-domain"
-    expect(getProxyAction("/invalid-domain")).toBeNull();
+    expect(getMiddlewareRedirectAction("/invalid-domain")).toBeNull();
   });
 
   it("redirects messy input", () => {
     // "/  example.com  " -> "example.com"
     // Input has spaces, so it redirects to clean domain
-    expect(getProxyAction("/  example.com  ")).toEqual({
+    expect(getMiddlewareRedirectAction("/  example.com  ")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
@@ -95,21 +104,21 @@ describe("getProxyAction", () => {
   it("redirects messy input with encoded spaces", () => {
     // URL encoded space: "/%20example.com%20" -> " example.com " -> "example.com"
     // Decoded input " example.com " != "example.com", so it redirects
-    expect(getProxyAction("/%20example.com%20")).toEqual({
+    expect(getMiddlewareRedirectAction("/%20example.com%20")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("redirects malformed protocol", () => {
-    expect(getProxyAction("/http:/example.com")).toEqual({
+    expect(getMiddlewareRedirectAction("/http:/example.com")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
   });
 
   it("redirects malformed protocol 2", () => {
-    expect(getProxyAction("/http:///example.com")).toEqual({
+    expect(getMiddlewareRedirectAction("/http:///example.com")).toEqual({
       type: "redirect",
       destination: "/example.com",
     });
