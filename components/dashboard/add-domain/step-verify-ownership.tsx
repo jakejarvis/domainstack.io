@@ -1,11 +1,11 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { VerificationState } from "@/hooks/use-domain-verification";
 import type {
   VerificationInstructions,
   VerificationMethod,
 } from "@/lib/schemas";
-import type { VerificationState } from "./add-domain-dialog";
 import { VerificationFailed } from "./verification-failed";
 import {
   DnsVerificationInstructions,
