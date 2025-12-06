@@ -13,8 +13,16 @@ function downloadVerificationFile(filename: string, content: string): boolean {
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+
+    // Delay cleanup to ensure the download starts before revoking the URL
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
+
     return true;
   } catch {
     return false;

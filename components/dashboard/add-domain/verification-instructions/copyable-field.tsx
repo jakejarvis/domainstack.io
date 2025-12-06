@@ -3,7 +3,7 @@
 import clipboardCopy from "clipboard-copy";
 import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   InputGroup,
@@ -30,6 +30,16 @@ export function CopyableField({
   const [copied, setCopied] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
   const contentRef = useRef<HTMLSpanElement>(null);
+
+  // Clear the reset timer on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) {
+        window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     try {
