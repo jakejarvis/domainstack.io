@@ -35,7 +35,7 @@ interface DomainNotificationRowProps {
 
 /**
  * A row for managing per-domain notification overrides.
- * Shows both mobile and desktop layouts.
+ * Clean design with subtle hover states matching the global row aesthetic.
  */
 export function DomainNotificationRow({
   domainName,
@@ -49,26 +49,31 @@ export function DomainNotificationRow({
 
   // Mobile view
   const mobileView = (
-    <div className="space-y-4 rounded-lg border p-4 sm:hidden">
+    <div
+      className={cn(
+        "rounded-xl border border-black/10 bg-muted/20 p-3 sm:hidden dark:border-white/10",
+        disabled && "pointer-events-none opacity-60",
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Favicon domain={domainName} size={20} />
+          <Favicon domain={domainName} size={18} />
           <span className="font-medium text-sm">{domainName}</span>
         </div>
         {hasOverrides && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-muted-foreground text-xs"
+            className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
             onClick={onReset}
             disabled={disabled}
           >
-            <RotateCcw className="mr-1 h-3 w-3" />
+            <RotateCcw className="size-3" />
             Reset
           </Button>
         )}
       </div>
-      <div className="grid gap-3">
+      <div className="mt-3 space-y-2">
         {NOTIFICATION_CATEGORIES.map((category) => {
           const override = overrides[category];
           const globalValue = globalPrefs[category];
@@ -77,11 +82,20 @@ export function DomainNotificationRow({
           return (
             <div
               key={category}
-              className="flex items-center justify-between text-sm"
+              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/50"
             >
-              <span className={cn(isInherited && "text-muted-foreground")}>
+              <span
+                className={cn(
+                  "text-xs",
+                  isInherited ? "text-muted-foreground" : "text-foreground",
+                )}
+              >
                 {NOTIFICATION_CATEGORY_INFO[category].label}
-                {isInherited && " (default)"}
+                {isInherited && (
+                  <span className="ml-1 text-muted-foreground/60">
+                    (default)
+                  </span>
+                )}
               </span>
               <ThreeStateCheckbox
                 value={override}
@@ -98,10 +112,16 @@ export function DomainNotificationRow({
 
   // Desktop view
   const desktopView = (
-    <div className="hidden items-center gap-2 rounded-lg border p-4 sm:grid sm:grid-cols-[1fr_repeat(3,80px)_40px]">
+    <div
+      className={cn(
+        "group hidden items-center gap-2 rounded-xl border border-black/10 bg-muted/20 px-3 py-2.5 transition-colors sm:grid sm:grid-cols-[1fr_repeat(3,72px)_36px] dark:border-white/10",
+        !disabled && "hover:bg-muted/40",
+        disabled && "pointer-events-none opacity-60",
+      )}
+    >
       <div className="flex min-w-0 items-center gap-2">
-        <Favicon domain={domainName} size={20} />
-        <span className="truncate font-medium text-sm">{domainName}</span>
+        <Favicon domain={domainName} size={18} />
+        <span className="truncate text-sm">{domainName}</span>
       </div>
       {NOTIFICATION_CATEGORIES.map((category) => {
         const override = overrides[category];
@@ -119,21 +139,23 @@ export function DomainNotificationRow({
         );
       })}
       <div className="flex justify-center">
-        {hasOverrides && (
+        {hasOverrides ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="size-7 text-muted-foreground hover:text-foreground"
                 onClick={onReset}
                 disabled={disabled}
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Reset to defaults</TooltipContent>
           </Tooltip>
+        ) : (
+          <div className="size-7" /> // Spacer to maintain grid alignment
         )}
       </div>
     </div>

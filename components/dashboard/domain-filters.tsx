@@ -34,6 +34,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import type { HealthFilter, StatusFilter } from "@/hooks/use-domain-filters";
 import { SORT_OPTIONS, type SortOption } from "@/hooks/use-sort-preference";
 import type { ViewMode } from "@/hooks/use-view-preference";
+import { HEALTH_OPTIONS, STATUS_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type DomainFiltersProps = {
@@ -53,17 +54,6 @@ type DomainFiltersProps = {
   sortOption?: SortOption;
   onSortChange?: (sort: SortOption) => void;
 };
-
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: "verified", label: "Verified" },
-  { value: "pending", label: "Pending Verification" },
-];
-
-const HEALTH_OPTIONS: { value: HealthFilter; label: string }[] = [
-  { value: "healthy", label: "Healthy" },
-  { value: "expiring", label: "Expiring Soon" },
-  { value: "expired", label: "Expired" },
-];
 
 /** Discriminated union for type-safe filter chip handling */
 type FilterChip =

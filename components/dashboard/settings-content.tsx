@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Crown, ExternalLink, Info } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,12 +23,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { useSession } from "@/lib/auth-client";
 import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
 import { logger } from "@/lib/logger/client";
+import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +48,11 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const queryClient = useQueryClient();
   const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
 
+  // Subscription hooks
+  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
+  const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
+    useCustomerPortal();
+
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const globalPrefsQueryKey =
@@ -56,6 +66,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const globalPrefsQuery = useQuery(
     trpc.tracking.getNotificationPreferences.queryOptions(),
   );
+  const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
 
   // Mutations with optimistic updates
   const updateGlobalMutation = useMutation({
@@ -182,27 +193,31 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
     resetDomainMutation.mutate({ trackedDomainId });
   };
 
-  if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
+  const isLoading =
+    domainsQuery.isLoading ||
+    globalPrefsQuery.isLoading ||
+    limitsQuery.isLoading;
+
+  if (isLoading) {
     return <SettingsSkeleton showCard={showCard} />;
   }
 
   // Surface query errors instead of silently falling back to defaults
-  if (domainsQuery.isError || globalPrefsQuery.isError) {
+  if (domainsQuery.isError || globalPrefsQuery.isError || limitsQuery.isError) {
     const errorContent = (
       <>
         <CardHeader>
-          <CardTitle>Email Notifications</CardTitle>
+          <CardTitle>Settings</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-4 py-8 text-center">
-            <p className="text-destructive">
-              Failed to load notification settings.
-            </p>
+            <p className="text-destructive">Failed to load settings.</p>
             <Button
               variant="outline"
               onClick={() => {
                 void domainsQuery.refetch();
                 void globalPrefsQuery.refetch();
+                void limitsQuery.refetch();
               }}
             >
               Try Again
@@ -225,30 +240,118 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
     certificateExpiry: true,
     verificationStatus: true,
   };
+  const limits = limitsQuery.data;
 
   const isPending =
     updateGlobalMutation.isPending ||
     updateDomainMutation.isPending ||
     resetDomainMutation.isPending;
 
+  // Subscription data
+  const isPro = limits?.tier === "pro";
+  const activeCount = limits?.activeCount ?? 0;
+  const maxDomains = limits?.maxDomains ?? 5;
+  const percentage = maxDomains > 0 ? (activeCount / maxDomains) * 100 : 0;
+
   const content = (
-    <>
-      <CardHeader className="pb-4">
-        <CardTitle>Email Notifications</CardTitle>
-        <CardDescription>
-          Alerts will be sent to{" "}
-          <span className="font-medium text-foreground">
-            {session?.user?.email}
-          </span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Global Defaults Section */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-muted-foreground text-sm uppercase tracking-wide">
-            Global Defaults
-          </h3>
-          <div className="grid gap-3">
+    <div className={cn("space-y-6", !showCard && "py-1")}>
+      {/* Subscription Section */}
+      <div>
+        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+          <CardTitle className="flex items-center gap-2">
+            {isPro && <Crown className="size-5 text-accent-purple" />}
+            Subscription
+          </CardTitle>
+          <CardDescription>
+            {isPro
+              ? "You're on the Pro plan. Thank you for your support!"
+              : "Upgrade to Pro for more tracked domains."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0"}>
+          {/* Current plan info */}
+          <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">
+                  {isPro ? "Pro" : "Free"} Plan
+                </span>
+                {isPro && (
+                  <span className="rounded-full bg-accent-purple/10 px-2 py-0.5 text-accent-purple text-xs">
+                    Active
+                  </span>
+                )}
+              </div>
+              <p className="text-muted-foreground text-sm">
+                {activeCount} of {maxDomains} domains used
+              </p>
+            </div>
+            <Progress value={percentage} className="w-24" />
+          </div>
+
+          {/* Actions */}
+          {isPro ? (
+            <Button
+              variant="outline"
+              onClick={handleManageSubscription}
+              disabled={isPortalLoading}
+              className="w-full"
+            >
+              <ExternalLink className="size-4" />
+              {isPortalLoading ? "Opening..." : "Manage Subscription"}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
+                <div className="mb-2 font-medium">{PRO_TIER_INFO.name}</div>
+                <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
+                  {PRO_TIER_INFO.features.map((feature) => (
+                    <li key={feature}>• {feature}</li>
+                  ))}
+                </ul>
+                <div className="flex items-baseline gap-2 text-sm">
+                  <span className="font-semibold text-accent-purple">
+                    {PRO_TIER_INFO.monthly.label}
+                  </span>
+                  <span className="text-muted-foreground">or</span>
+                  <span className="font-semibold text-accent-purple">
+                    {PRO_TIER_INFO.yearly.label}
+                  </span>
+                  <span className="text-muted-foreground/70 text-xs">
+                    ({PRO_TIER_INFO.yearly.savings})
+                  </span>
+                </div>
+              </div>
+              <Button
+                onClick={handleUpgrade}
+                disabled={isCheckoutLoading}
+                className="w-full bg-accent-purple hover:bg-accent-purple/90"
+              >
+                <Crown className="size-4" />
+                {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </div>
+
+      {/* Divider */}
+      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
+
+      {/* Email Notifications Section */}
+      <div>
+        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+          <CardTitle>Email Notifications</CardTitle>
+          <CardDescription>
+            Alerts will be sent to{" "}
+            <span className="font-medium text-foreground">
+              {session?.user?.email}
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className={showCard ? "space-y-5" : "space-y-5 px-0 pb-0"}>
+          {/* Global Notifications */}
+          <div className="space-y-1">
             {NOTIFICATION_CATEGORIES.map((category) => (
               <GlobalNotificationRow
                 key={category}
@@ -259,72 +362,119 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
               />
             ))}
           </div>
-        </div>
 
-        {/* Per-Domain Overrides Section */}
-        {verifiedDomains.length > 0 && (
-          <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex w-full items-center justify-between p-0 font-medium text-muted-foreground text-sm uppercase tracking-wide hover:bg-transparent hover:text-foreground"
-              >
-                <span>Per-Domain Overrides</span>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    isPerDomainOpen && "rotate-180",
-                  )}
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <div className="space-y-3">
-                {/* Column Headers */}
-                <div className="hidden gap-2 px-4 text-muted-foreground text-xs sm:grid sm:grid-cols-[1fr_repeat(3,80px)_40px]">
-                  <div />
-                  {NOTIFICATION_CATEGORIES.map((category) => (
-                    <div
-                      key={category}
-                      className="flex items-center justify-center"
-                    >
-                      <CategoryLabel category={category} compact />
-                    </div>
-                  ))}
-                  <div />
-                </div>
-
-                {/* Domain Rows */}
-                {verifiedDomains.map((domain) => (
-                  <DomainNotificationRow
-                    key={domain.id}
-                    domainName={domain.domainName}
-                    overrides={domain.notificationOverrides}
-                    globalPrefs={globalPrefs}
-                    onToggle={(category, value) =>
-                      handleDomainToggle(domain.id, category, value)
-                    }
-                    onReset={() => handleResetDomain(domain.id)}
-                    disabled={isPending}
+          {/* Per-Domain Overrides Section */}
+          {verifiedDomains.length > 0 && (
+            <Collapsible
+              open={isPerDomainOpen}
+              onOpenChange={setIsPerDomainOpen}
+            >
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                >
+                  <span className="font-medium text-muted-foreground text-xs">
+                    Per-domain overrides
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 text-muted-foreground transition-transform duration-200",
+                      isPerDomainOpen && "rotate-180",
+                    )}
                   />
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="space-y-2">
+                  {/* Column Headers */}
+                  <div className="hidden gap-2 px-3 text-[10px] text-muted-foreground uppercase tracking-wider sm:grid sm:grid-cols-[1fr_repeat(3,72px)_36px]">
+                    <div>Domain</div>
+                    {NOTIFICATION_CATEGORIES.map((category) => (
+                      <div
+                        key={category}
+                        className="flex items-center justify-center"
+                      >
+                        <CategoryLabel category={category} compact />
+                      </div>
+                    ))}
+                    <div />
+                  </div>
 
-        {verifiedDomains.length === 0 && (
-          <p className="text-muted-foreground text-sm">
-            Verify your domains to customize per-domain notifications.
-          </p>
-        )}
-      </CardContent>
-    </>
+                  {/* Domain Rows */}
+                  {verifiedDomains.map((domain) => (
+                    <DomainNotificationRow
+                      key={domain.id}
+                      domainName={domain.domainName}
+                      overrides={domain.notificationOverrides}
+                      globalPrefs={globalPrefs}
+                      onToggle={(category, value) =>
+                        handleDomainToggle(domain.id, category, value)
+                      }
+                      onReset={() => handleResetDomain(domain.id)}
+                      disabled={isPending}
+                    />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Info note */}
+          {verifiedDomains.length === 0 && (
+            <div className="flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
+              <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              <p className="text-muted-foreground text-xs">
+                Verify your domains to customize per-domain notifications.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </div>
+    </div>
   );
 
   if (!showCard) {
-    return <div className="flex flex-col">{content}</div>;
+    return content;
   }
 
-  return <Card>{content}</Card>;
+  return <Card className="overflow-hidden">{content}</Card>;
+}
+
+/**
+ * Loading skeleton for settings content
+ */
+export function SettingsContentSkeleton({
+  showCard = true,
+}: {
+  showCard?: boolean;
+}) {
+  const skeletonContent = (
+    <div className="space-y-6">
+      {/* Subscription skeleton */}
+      <div className="space-y-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+      <div className="h-px bg-border/50" />
+      {/* Notifications skeleton */}
+      <div className="space-y-4">
+        <Skeleton className="h-6 w-40" />
+        <Skeleton className="h-4 w-56" />
+        <div className="space-y-2">
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+          <Skeleton className="h-14 w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!showCard) {
+    return <div className="py-1">{skeletonContent}</div>;
+  }
+
+  return <Card className="p-6">{skeletonContent}</Card>;
 }

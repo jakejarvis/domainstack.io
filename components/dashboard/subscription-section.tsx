@@ -19,12 +19,15 @@ type SubscriptionSectionProps = {
   tier: UserTier;
   activeCount: number;
   maxDomains: number;
+  /** Whether to show the card wrapper (false for modal usage) */
+  showCard?: boolean;
 };
 
 export function SubscriptionSection({
   tier,
   activeCount,
   maxDomains,
+  showCard = true,
 }: SubscriptionSectionProps) {
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
   const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
@@ -33,9 +36,9 @@ export function SubscriptionSection({
   const isPro = tier === "pro";
   const percentage = maxDomains > 0 ? (activeCount / maxDomains) * 100 : 0;
 
-  return (
-    <Card>
-      <CardHeader>
+  const content = (
+    <>
+      <CardHeader className={showCard ? undefined : "px-0 pt-0"}>
         <CardTitle className="flex items-center gap-2">
           {isPro && <Crown className="size-5 text-accent-purple" />}
           Subscription
@@ -46,9 +49,9 @@ export function SubscriptionSection({
             : "Upgrade to Pro for more tracked domains."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0 pb-0"}>
         {/* Current plan info */}
-        <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-4">
+        <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div>
             <div className="flex items-center gap-2">
               <span className="font-medium">{isPro ? "Pro" : "Free"} Plan</span>
@@ -78,7 +81,7 @@ export function SubscriptionSection({
           </Button>
         ) : (
           <div className="space-y-3">
-            <div className="rounded-lg border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
+            <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
               <div className="mb-2 font-medium">{PRO_TIER_INFO.name}</div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
                 {PRO_TIER_INFO.features.map((feature) => (
@@ -109,6 +112,12 @@ export function SubscriptionSection({
           </div>
         )}
       </CardContent>
-    </Card>
+    </>
   );
+
+  if (!showCard) {
+    return <div className="flex flex-col">{content}</div>;
+  }
+
+  return <Card>{content}</Card>;
 }

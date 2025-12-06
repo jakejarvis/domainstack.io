@@ -157,11 +157,11 @@ export function UserMenu() {
       </DropdownMenu>
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-lg overflow-hidden rounded-3xl border-black/10 bg-background/80 p-0 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto rounded-3xl border-black/10 bg-background/80 p-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
           <DialogHeader className="sr-only">
-            <DialogTitle>Notification Settings</DialogTitle>
+            <DialogTitle>Settings</DialogTitle>
             <DialogDescription>
-              Manage how and when you receive alerts.
+              Manage your subscription and notification preferences.
             </DialogDescription>
           </DialogHeader>
           <SettingsContent showCard={false} />
