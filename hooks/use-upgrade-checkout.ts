@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { checkout } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
@@ -12,6 +12,15 @@ import { PRO_TIER_INFO } from "@/lib/polar/products";
  */
 export function useUpgradeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track mounted state to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleUpgrade = async () => {
     setIsLoading(true);
@@ -26,7 +35,9 @@ export function useUpgradeCheckout() {
       logger.error("Failed to open checkout", err);
       toast.error("Failed to open checkout. Please try again.");
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { customerPortal } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
@@ -11,6 +11,15 @@ import { logger } from "@/lib/logger/client";
  */
 export function useCustomerPortal() {
   const [isLoading, setIsLoading] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track mounted state to prevent setState on unmounted component
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const openPortal = async () => {
     if (isLoading) return;
@@ -21,7 +30,9 @@ export function useCustomerPortal() {
       logger.error("Failed to open customer portal", err);
       toast.error("Failed to open customer portal. Please try again.");
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
