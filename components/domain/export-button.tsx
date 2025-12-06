@@ -29,7 +29,7 @@ export function ExportButton({ disabled, onExport }: ExportButtonProps) {
       </TooltipTrigger>
       <TooltipContent>
         <p>
-          Save this report as a <span className="font-mono">JSON</span> file.
+          Save this report as a <span className="font-mono">JSON</span> file
         </p>
       </TooltipContent>
     </Tooltip>

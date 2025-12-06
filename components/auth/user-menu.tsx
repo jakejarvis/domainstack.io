@@ -1,6 +1,14 @@
 "use client";
 
-import { Bookmark, LogOut, Moon, Settings, Sun, User } from "lucide-react";
+import {
+  Bookmark,
+  CircleHelp,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  User,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { SettingsContent } from "@/components/dashboard/settings-content";
@@ -146,6 +154,12 @@ export function UserMenu() {
             >
               <Settings className="size-4" />
               Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/help" className="cursor-pointer">
+              <CircleHelp className="size-4" />
+              Help
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

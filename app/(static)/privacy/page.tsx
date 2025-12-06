@@ -75,8 +75,13 @@ export default function PrivacyPage() {
         <p>
           We retain your account information for as long as your account is
           active. Domain data is cached temporarily to improve performance and
-          is refreshed periodically. You can delete your account at any time,
-          which will remove your personal data from our systems.
+          is refreshed periodically.
+        </p>
+        <p>
+          You can delete your account at any time through the self-service
+          option in your dashboard settings. Account deletion is permanent and
+          will remove all your personal data, tracked domains, notification
+          preferences, and subscription information from our systems.
         </p>
       </section>
 
@@ -140,12 +145,87 @@ export default function PrivacyPage() {
       </section>
 
       <section>
+        <h2>Email Communications</h2>
+        <p>
+          We use{" "}
+          <a
+            href="https://resend.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Resend
+          </a>{" "}
+          to send transactional emails, including:
+        </p>
+        <ul>
+          <li>Domain and certificate expiration alerts</li>
+          <li>Domain verification status notifications</li>
+          <li>Subscription and account-related emails</li>
+          <li>Account deletion confirmation emails</li>
+        </ul>
+        <p>
+          When we send you an email, your email address is shared with Resend
+          for delivery purposes. See{" "}
+          <a
+            href="https://resend.com/legal/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Resend&apos;s Privacy Policy
+          </a>
+          .
+        </p>
+      </section>
+
+      <section>
+        <h2>Analytics</h2>
+        <p>
+          We use{" "}
+          <a
+            href="https://posthog.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            PostHog
+          </a>{" "}
+          for product analytics and error tracking to understand how our service
+          is used and to improve the user experience. PostHog collects:
+        </p>
+        <ul>
+          <li>Pages viewed and features used</li>
+          <li>Device and browser information</li>
+          <li>IP address (used for approximate location, then discarded)</li>
+          <li>Error reports and performance metrics</li>
+        </ul>
+        <p>
+          Analytics data is used in aggregate to improve our service and is not
+          sold to third parties. See{" "}
+          <a
+            href="https://posthog.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            PostHog&apos;s Privacy Policy
+          </a>
+          .
+        </p>
+      </section>
+
+      <section>
         <h2>Data Sharing</h2>
         <p>We do not sell your personal information. We may share data with:</p>
         <ul>
           <li>
             <strong>Service providers:</strong> Companies that help us operate
-            our service (hosting, email delivery, analytics)
+            our service (hosting)
+          </li>
+          <li>
+            <strong>Analytics:</strong> PostHog for product analytics (see
+            Analytics section above)
+          </li>
+          <li>
+            <strong>Email delivery:</strong> Resend for transactional email (see
+            Email Communications section above)
           </li>
           <li>
             <strong>Payment processors:</strong> Polar and Stripe for
@@ -164,7 +244,13 @@ export default function PrivacyPage() {
         <ul>
           <li>Access your personal data</li>
           <li>Correct inaccurate data</li>
-          <li>Delete your account and data</li>
+          <li>
+            Delete your account and data — You can permanently delete your
+            account at any time from your dashboard settings. This will remove
+            all your personal data, tracked domains, and notification
+            preferences. If you have an active subscription, it will be
+            automatically canceled.
+          </li>
           <li>Export your data</li>
           <li>Opt out of marketing communications</li>
         </ul>
@@ -174,8 +260,8 @@ export default function PrivacyPage() {
         <h2>Cookies</h2>
         <p>
           We use essential cookies to maintain your session and preferences. We
-          also use analytics cookies to understand how our service is used. You
-          can control cookie settings in your browser.
+          also use analytics cookies (via PostHog) to understand how our service
+          is used. You can control cookie settings in your browser.
         </p>
       </section>
 

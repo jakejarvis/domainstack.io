@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, LogIn, Menu, Moon, Sun } from "lucide-react";
+import { Bookmark, CircleHelp, LogIn, Menu, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
@@ -56,6 +56,12 @@ export function MobileMenu() {
               <Moon className="size-4" />
             )}
             {theme === "dark" ? "Light mode" : "Dark mode"}
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/help" className="cursor-pointer">
+              <CircleHelp className="size-4" />
+              Help
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
