@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { Crown, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +19,8 @@ type DashboardHeaderProps = {
   maxDomains: number;
   viewMode: ViewMode;
   tier: UserTier;
+  /** When a canceled subscription ends (null = active subscription) */
+  subscriptionEndsAt?: Date | null;
   onViewModeChange: (mode: ViewMode) => void;
   onAddDomain: () => void;
 };
@@ -28,6 +31,7 @@ export function DashboardHeader({
   maxDomains,
   viewMode,
   tier,
+  subscriptionEndsAt,
   onViewModeChange,
   onAddDomain,
 }: DashboardHeaderProps) {
@@ -40,10 +44,24 @@ export function DashboardHeader({
           Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
         {tier === "pro" ? (
-          <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
-            <Crown className="size-3" />
-            PRO
-          </span>
+          subscriptionEndsAt ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
+                  <Crown className="size-3" />
+                  PRO
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Access until {format(subscriptionEndsAt, "MMM d, yyyy")}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
+              <Crown className="size-3" />
+              PRO
+            </span>
+          )
         ) : (
           <span className="inline-flex items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-foreground/70 text-xs">
             FREE

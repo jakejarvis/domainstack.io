@@ -687,6 +687,7 @@ export function DashboardContent() {
         maxDomains={maxDomains}
         viewMode={viewMode}
         tier={tier}
+        subscriptionEndsAt={subscriptionEndsAt}
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
       />

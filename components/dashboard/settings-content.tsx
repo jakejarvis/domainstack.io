@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { ChevronDown, Crown, ExternalLink, Info } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -252,6 +253,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const activeCount = limits?.activeCount ?? 0;
   const maxDomains = limits?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
   const proMaxDomains = limits?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const subscriptionEndsAt = limits?.subscriptionEndsAt ?? null;
   const percentage =
     maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
   const proTierInfo = getProTierInfo(proMaxDomains);
@@ -280,8 +282,17 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
                   {isPro ? "Pro" : "Free"} Plan
                 </span>
                 {isPro && (
-                  <span className="rounded-full bg-accent-purple/10 px-2 py-0.5 text-accent-purple text-xs">
-                    Active
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs",
+                      subscriptionEndsAt
+                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        : "bg-accent-purple/10 text-accent-purple",
+                    )}
+                  >
+                    {subscriptionEndsAt
+                      ? `Ends ${format(subscriptionEndsAt, "MMM d")}`
+                      : "Active"}
                   </span>
                 )}
               </div>
@@ -294,15 +305,23 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
 
           {/* Actions */}
           {isPro ? (
-            <Button
-              variant="outline"
-              onClick={handleManageSubscription}
-              disabled={isPortalLoading}
-              className="w-full"
-            >
-              <ExternalLink className="size-4" />
-              {isPortalLoading ? "Opening..." : "Manage Subscription"}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                onClick={handleManageSubscription}
+                disabled={isPortalLoading}
+                className="w-full"
+              >
+                <ExternalLink className="size-4" />
+                {isPortalLoading ? "Opening..." : "Manage Subscription"}
+              </Button>
+              {subscriptionEndsAt && (
+                <p className="text-center text-muted-foreground text-xs">
+                  Your Pro access continues until{" "}
+                  {format(subscriptionEndsAt, "MMMM d, yyyy")}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
