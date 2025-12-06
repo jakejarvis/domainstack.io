@@ -119,7 +119,7 @@ export function useDomainVerification({
     [onOpenChange, resetDialog],
   );
 
-  const handleAddDomain = async () => {
+  const handleAddDomain = useCallback(async () => {
     setDomainError("");
 
     try {
@@ -142,9 +142,9 @@ export function useDomainVerification({
         setDomainError("Failed to add domain");
       }
     }
-  };
+  }, [domain, addDomainMutation]);
 
-  const handleVerify = async () => {
+  const handleVerify = useCallback(async () => {
     if (!trackedDomainId) return;
 
     setVerificationState({ status: "verifying" });
@@ -176,22 +176,22 @@ export function useDomainVerification({
         error: "Verification failed. Please try again.",
       });
     }
-  };
+  }, [trackedDomainId, method, verifyDomainMutation]);
 
-  const handleReturnLater = () => {
+  const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {
       description:
         "We'll automatically verify your domain once the changes have propagated. Check back later!",
     });
     handleOpenChange(false);
-  };
+  }, [handleOpenChange]);
 
-  const handleDone = () => {
+  const handleDone = useCallback(() => {
     onSuccess();
     handleOpenChange(false);
-  };
+  }, [onSuccess, handleOpenChange]);
 
-  const canProceed = () => {
+  const canProceed = useCallback(() => {
     switch (step) {
       case 1:
         return domain.trim().length > 0 && !addDomainMutation.isPending;
@@ -202,9 +202,9 @@ export function useDomainVerification({
       default:
         return false;
     }
-  };
+  }, [step, domain, addDomainMutation.isPending, verificationState.status]);
 
-  const handleNext = async () => {
+  const handleNext = useCallback(async () => {
     switch (step) {
       case 1:
         await handleAddDomain();
@@ -216,18 +216,18 @@ export function useDomainVerification({
         handleDone();
         break;
     }
-  };
+  }, [step, handleAddDomain, handleVerify, handleDone]);
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     setVerificationState({ status: "idle" });
     setStep(1);
-  };
+  }, []);
 
   // Derived state
   const isResuming = !!resumeDomain;
   const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
-  const instructionsError = isResuming && instructionsQuery.isError;
-  const hasInstructionsError =
+  const isInstructionsQueryError = isResuming && instructionsQuery.isError;
+  const isMissingInstructions =
     step === 2 && !isLoadingInstructions && !instructions;
   const isVerifying = verificationState.status === "verifying";
   const hasFailed = verificationState.status === "failed";
@@ -261,8 +261,8 @@ export function useDomainVerification({
     // Derived state
     isResuming,
     isLoadingInstructions,
-    instructionsError,
-    hasInstructionsError,
+    isInstructionsQueryError,
+    isMissingInstructions,
     isVerifying,
     hasFailed,
     showFooterButtons,

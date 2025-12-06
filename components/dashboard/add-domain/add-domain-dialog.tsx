@@ -70,8 +70,8 @@ export function AddDomainDialog({
     // Derived state
     isResuming,
     isLoadingInstructions,
-    instructionsError,
-    hasInstructionsError,
+    isInstructionsQueryError,
+    isMissingInstructions,
     isVerifying,
     hasFailed,
     showFooterButtons,
@@ -140,10 +140,10 @@ export function AddDomainDialog({
                   <Spinner className="size-6" />
                 </div>
               )}
-              {step === 2 && hasInstructionsError && (
+              {step === 2 && isMissingInstructions && (
                 <StepInstructionsError
                   error={
-                    instructionsError
+                    isInstructionsQueryError
                       ? instructionsErrorMessage
                       : "Verification instructions could not be loaded."
                   }
@@ -176,7 +176,7 @@ export function AddDomainDialog({
             <Button
               onClick={handleNext}
               disabled={
-                !canProceed() || isLoadingInstructions || hasInstructionsError
+                !canProceed() || isLoadingInstructions || isMissingInstructions
               }
             >
               {(isAddingDomain || isVerifying) && (
