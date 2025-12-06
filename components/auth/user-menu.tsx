@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollAreaWithIndicators } from "@/components/ui/scroll-area-with-indicators";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme-toggle";
@@ -174,14 +175,16 @@ export function UserMenu() {
       </DropdownMenu>
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto rounded-3xl border-black/10 bg-background/80 p-6 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
+        <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 bg-background/80 p-0 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
           <DialogHeader className="sr-only">
             <DialogTitle>Settings</DialogTitle>
             <DialogDescription>
               Manage your subscription and notification preferences.
             </DialogDescription>
           </DialogHeader>
-          <SettingsContent showCard={false} />
+          <ScrollAreaWithIndicators className="max-h-full px-6 py-6">
+            <SettingsContent showCard={false} />
+          </ScrollAreaWithIndicators>
         </DialogContent>
       </Dialog>
 

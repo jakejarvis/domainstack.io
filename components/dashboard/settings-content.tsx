@@ -55,6 +55,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
+  const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Subscription hooks
@@ -470,28 +471,53 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       {/* Divider */}
       <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
 
-      {/* Danger Zone Section */}
-      <div>
-        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="size-5" />
-            Danger Zone
-          </CardTitle>
-          <CardDescription>
-            Irreversible actions that affect your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0 pb-0"}>
-          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+      {/* Danger Zone Section - Collapsible */}
+      <Collapsible
+        open={isDangerZoneOpen}
+        onOpenChange={setIsDangerZoneOpen}
+        className={showCard ? "px-6" : ""}
+      >
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "group flex w-full items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
+              "hover:border-destructive/30 hover:bg-destructive/10",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2",
+              isDangerZoneOpen && "rounded-b-none border-b-0",
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="size-4 text-destructive" />
+              <div>
+                <span className="font-medium text-destructive text-sm">
+                  Danger Zone
+                </span>
+                <p className="text-muted-foreground text-xs">
+                  Irreversible account actions
+                </p>
+              </div>
+            </div>
+            <ChevronDown
+              className={cn(
+                "size-4 text-destructive/60 transition-transform duration-200",
+                isDangerZoneOpen && "rotate-180",
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 overflow-hidden data-[state=closed]:animate-out data-[state=open]:animate-in">
+          <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/5 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="font-medium">Delete account</p>
-                <p className="text-muted-foreground text-sm">
+                <p className="font-medium text-sm">Delete account</p>
+                <p className="text-muted-foreground text-xs">
                   Permanently delete your account and all associated data
                 </p>
               </div>
               <Button
                 variant="destructive"
+                size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
                 className="shrink-0"
               >
@@ -499,8 +525,8 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <DeleteAccountDialog
         open={isDeleteDialogOpen}
