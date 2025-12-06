@@ -10,24 +10,24 @@ import {
 
 type ExportButtonProps = {
   disabled?: boolean;
-  onExportAction: () => void;
+  onExport: () => void;
 };
 
-export function ExportButton({ disabled, onExportAction }: ExportButtonProps) {
+export function ExportButton({ disabled, onExport }: ExportButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           variant="outline"
           className="cursor-pointer"
-          onClick={onExportAction}
+          onClick={onExport}
           disabled={disabled}
         >
           <Download />
           <span className="hidden sm:inline-block">Export</span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="left">
+      <TooltipContent>
         <p>
           Save this report as a <span className="font-mono">JSON</span> file.
         </p>

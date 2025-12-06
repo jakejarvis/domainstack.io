@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { AuthButton } from "@/components/auth/auth-button";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 import { GithubStars } from "@/components/layout/github-stars";
 import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
@@ -30,10 +31,13 @@ export function AppHeader() {
           <Suspense fallback={<GithubStarsSkeleton />}>
             <GithubStars />
           </Suspense>
+          {/* Desktop-only: bookmarklet and theme toggle (on mobile, these are in MobileMenu/UserMenu) */}
+          <Separator orientation="vertical" className="!h-4 hidden md:block" />
+          <BookmarkletDialog className="hidden md:flex" />
+          <Separator orientation="vertical" className="!h-4 hidden md:block" />
+          <ThemeToggle className="hidden md:flex" />
           <Separator orientation="vertical" className="!h-4" />
-          <BookmarkletDialog />
-          <Separator orientation="vertical" className="!h-4" />
-          <ThemeToggle />
+          <AuthButton />
         </HeaderButtons>
       </HeaderGrid>
     </HeaderSearchProvider>

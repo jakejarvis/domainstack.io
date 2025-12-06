@@ -53,6 +53,7 @@ export default function RootLayout({
             <main className="flex min-h-0 flex-1 flex-col">{children}</main>
             <AppFooter />
           </div>
+
           <Toaster />
         </Providers>
         <Analytics />

@@ -7,5 +7,8 @@ export * from "./domain/registration";
 export * from "./domain/seo";
 export * from "./internal/blob";
 export * from "./internal/export";
+export * from "./internal/notifications";
 export * from "./internal/provider";
 export * from "./internal/sections";
+export * from "./internal/user";
+export * from "./internal/verification";

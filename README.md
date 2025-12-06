@@ -9,18 +9,26 @@
 - **Instant domain reports**: Registration, DNS, certificates, HTTP headers, hosting & email, and geolocation.
 - **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
 - **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
-- **Fast, private, no sign-up**: Live fetches with intelligent multi-layer caching.
+- **Fast, private, no sign-up required for reports**: Live fetches with intelligent multi-layer caching.
+- **Domain tracking dashboard**: Sign in with GitHub to track domains you own, verify ownership, and receive expiration alerts.
+- **Pro tier subscriptions**: Upgrade via [Polar](https://polar.sh) for expanded domain tracking limits (50 vs 5 domains).
+- **Email notifications**: Configurable alerts for domain expiration, SSL certificate expiration, subscription lifecycle, and verification status changes.
 - **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
-- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable domain suggestions without redeployment.
+- **Advanced dashboard**: Domain filtering by status/health/TLD, URL-persisted filters, bulk archive/delete actions, and sortable table/grid views.
+- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable domain suggestions and tier limits without redeployment.
 
 ## 🛠️ Tech Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Tailwind CSS v4**
-- **tRPC** API
-- **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
-- **Inngest** for event-driven background revalidation with built-in concurrency control
-- **Vercel Edge Config** for runtime configuration (domain suggestions)
+- **Tailwind CSS v4** + **shadcn/ui** components
+- **tRPC** API with **TanStack Query** for data fetching and optimistic updates
+- **TanStack Table** for sortable dashboard table view
+- **Vercel Postgres** + **Drizzle ORM** with connection pooling
+- **Better Auth** for authentication with GitHub OAuth
+- **Polar** for subscription payments and customer portal (Pro tier)
+- **Inngest** for event-driven background jobs (revalidation, expiry checks, domain re-verification)
+- **Resend** + **React Email** for transactional email notifications
+- **Vercel Edge Config** for runtime configuration (domain suggestions, tier limits)
 - **Vercel Blob** for favicon/screenshot storage with Postgres metadata caching
 - [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
 - **Puppeteer** (with `@sparticuz/chromium` on Vercel) for server-side screenshots

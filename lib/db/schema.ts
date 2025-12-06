@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
@@ -16,6 +16,7 @@ import {
 import type {
   GeneralMeta,
   Header,
+  NotificationOverrides,
   OpenGraphMeta,
   RegistrationContacts,
   RegistrationNameservers,
@@ -47,8 +48,231 @@ export const registrationSource = pgEnum("registration_source", [
   "rdap",
   "whois",
 ]);
+export const verificationMethod = pgEnum("verification_method", [
+  "dns_txt",
+  "html_file",
+  "meta_tag",
+]);
+export const verificationStatus = pgEnum("verification_status", [
+  "verified",
+  "failing",
+  "unverified",
+]);
+export const userTier = pgEnum("user_tier", ["free", "pro"]);
 
-// Providers
+// ============================================================================
+// Authentication Tables (better-auth)
+// ============================================================================
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("sessions_userId_idx").on(table.userId)],
+);
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("accounts_userId_idx").on(table.userId)],
+);
+
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("verifications_identifier_idx").on(table.identifier)],
+);
+
+export const userRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+  accounts: many(accounts),
+}));
+
+export const sessionRelations = relations(sessions, ({ one }) => ({
+  users: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const accountRelations = relations(accounts, ({ one }) => ({
+  users: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
+// Domain Tracking Tables
+// ============================================================================
+
+// User subscriptions (tier and subscription state)
+export const userSubscriptions = pgTable(
+  "user_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tier: userTier("tier").notNull().default("free"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    // When a canceled subscription ends and user downgrades to free
+    // Null means: no pending cancellation (subscription active or user is on free tier)
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    // Last subscription expiry notification threshold sent (7, 3, or 1 days)
+    // Null means no notification sent for current cancellation cycle
+    // Cleared when endsAt is cleared (resubscribed or revoked)
+    lastExpiryNotification: integer("last_expiry_notification"),
+  },
+  (t) => [unique("u_user_subscription_user").on(t.userId)],
+);
+
+// User's tracked domains
+export const userTrackedDomains = pgTable(
+  "user_tracked_domains",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    domainId: uuid("domain_id")
+      .notNull()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    verified: boolean("verified").notNull().default(false),
+    verificationMethod: verificationMethod("verification_method"),
+    verificationToken: text("verification_token").notNull(),
+    // Re-verification tracking
+    verificationStatus: verificationStatus("verification_status")
+      .notNull()
+      .default("unverified"),
+    verificationFailedAt: timestamp("verification_failed_at", {
+      withTimezone: true,
+    }),
+    lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+    // Per-domain notification overrides (empty = inherit from user preferences)
+    notificationOverrides: jsonb("notification_overrides")
+      .$type<NotificationOverrides>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    // Soft-archive timestamp (null = active, set = archived)
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (t) => [
+    unique("u_tracked_domain_user").on(t.userId, t.domainId),
+    index("i_tracked_domains_user").on(t.userId),
+    index("i_tracked_domains_domain").on(t.domainId),
+    index("i_tracked_domains_verified").on(t.verified),
+    index("i_tracked_domains_status").on(t.verificationStatus),
+    index("i_tracked_domains_archived").on(t.archivedAt),
+  ],
+);
+
+// Notification history (prevent duplicate emails)
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trackedDomainId: uuid("tracked_domain_id")
+      .notNull()
+      .references(() => userTrackedDomains.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
+    // Resend email ID for troubleshooting delivery issues
+    resendId: text("resend_id"),
+  },
+  (t) => [
+    unique("u_notification_unique").on(t.trackedDomainId, t.type),
+    index("i_notifications_tracked_domain").on(t.trackedDomainId),
+  ],
+);
+
+// User notification preferences (global defaults for all domains)
+export const userNotificationPreferences = pgTable(
+  "user_notification_preferences",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Global toggles (defaults for all domains)
+    domainExpiry: boolean("domain_expiry").notNull().default(true),
+    certificateExpiry: boolean("certificate_expiry").notNull().default(true),
+    verificationStatus: boolean("verification_status").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+// ============================================================================
+// Domain Data Tables
+// ============================================================================
+
+// Providers (hosting, email, dns, ca, registrar)
 export const providers = pgTable(
   "providers",
   {

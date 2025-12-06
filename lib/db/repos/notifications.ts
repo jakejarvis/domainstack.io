@@ -1,0 +1,215 @@
+import "server-only";
+
+import { and, eq, like } from "drizzle-orm";
+import type { NotificationType } from "@/lib/constants/notifications";
+import { db } from "@/lib/db/client";
+import { notifications } from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "notifications" });
+
+// Re-export for convenience
+export type { NotificationType } from "@/lib/constants/notifications";
+
+export type CreateNotificationParams = {
+  trackedDomainId: string;
+  type: NotificationType;
+};
+
+/**
+ * Record a sent notification to prevent duplicates.
+ * Returns the notification record (new or existing) on success, null on error.
+ */
+export async function createNotification(params: CreateNotificationParams) {
+  const { trackedDomainId, type } = params;
+
+  try {
+    const inserted = await db
+      .insert(notifications)
+      .values({
+        trackedDomainId,
+        type,
+        sentAt: new Date(),
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (inserted.length > 0) {
+      return inserted[0];
+    }
+
+    // Notification already exists, fetch and return it
+    const existing = await db
+      .select()
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          eq(notifications.type, type),
+        ),
+      )
+      .limit(1);
+
+    return existing[0] ?? null;
+  } catch (err) {
+    logger.error("failed to create notification record", err, {
+      trackedDomainId,
+      type,
+    });
+    return null;
+  }
+}
+
+/**
+ * Update the Resend email ID for a notification after successful send.
+ * Used for troubleshooting email delivery issues.
+ */
+export async function updateNotificationResendId(
+  trackedDomainId: string,
+  type: NotificationType,
+  resendId: string,
+) {
+  try {
+    await db
+      .update(notifications)
+      .set({ resendId })
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          eq(notifications.type, type),
+        ),
+      );
+    return true;
+  } catch (err) {
+    logger.error("failed to update notification resend ID", err, {
+      trackedDomainId,
+      type,
+      resendId,
+    });
+    return false;
+  }
+}
+
+/**
+ * Check if a notification has already been sent.
+ */
+export async function hasNotificationBeenSent(
+  trackedDomainId: string,
+  type: NotificationType,
+): Promise<boolean> {
+  const rows = await db
+    .select()
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.trackedDomainId, trackedDomainId),
+        eq(notifications.type, type),
+      ),
+    )
+    .limit(1);
+
+  return rows.length > 0;
+}
+
+/**
+ * Get all notifications for a tracked domain.
+ */
+export async function getNotificationsForTrackedDomain(
+  trackedDomainId: string,
+) {
+  const rows = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.trackedDomainId, trackedDomainId))
+    .orderBy(notifications.sentAt);
+
+  return rows;
+}
+
+/**
+ * Delete all notifications for a tracked domain.
+ * Called when a tracked domain is removed.
+ */
+export async function deleteNotificationsForTrackedDomain(
+  trackedDomainId: string,
+) {
+  try {
+    await db
+      .delete(notifications)
+      .where(eq(notifications.trackedDomainId, trackedDomainId));
+    return true;
+  } catch (err) {
+    logger.error("failed to delete notifications", err, { trackedDomainId });
+    return false;
+  }
+}
+
+/**
+ * Clear all domain expiry notifications for a tracked domain.
+ * Called when a domain renewal is detected (expiration date moved forward).
+ * This allows fresh notifications to be sent for the new expiration cycle.
+ */
+export async function clearDomainExpiryNotifications(
+  trackedDomainId: string,
+): Promise<number> {
+  try {
+    const deleted = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          like(notifications.type, "domain_expiry_%"),
+        ),
+      )
+      .returning();
+
+    if (deleted.length > 0) {
+      logger.info("cleared domain expiry notifications for renewal", {
+        trackedDomainId,
+        count: deleted.length,
+      });
+    }
+
+    return deleted.length;
+  } catch (err) {
+    logger.error("failed to clear domain expiry notifications", err, {
+      trackedDomainId,
+    });
+    return 0;
+  }
+}
+
+/**
+ * Clear all certificate expiry notifications for a tracked domain.
+ * Called when a certificate renewal is detected (validTo date moved forward).
+ * This allows fresh notifications to be sent for the new certificate.
+ */
+export async function clearCertificateExpiryNotifications(
+  trackedDomainId: string,
+): Promise<number> {
+  try {
+    const deleted = await db
+      .delete(notifications)
+      .where(
+        and(
+          eq(notifications.trackedDomainId, trackedDomainId),
+          like(notifications.type, "certificate_expiry_%"),
+        ),
+      )
+      .returning();
+
+    if (deleted.length > 0) {
+      logger.info("cleared certificate expiry notifications for renewal", {
+        trackedDomainId,
+        count: deleted.length,
+      });
+    }
+
+    return deleted.length;
+  } catch (err) {
+    logger.error("failed to clear certificate expiry notifications", err, {
+      trackedDomainId,
+    });
+    return 0;
+  }
+}

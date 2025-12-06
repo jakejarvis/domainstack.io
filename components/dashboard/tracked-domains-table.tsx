@@ -1,0 +1,489 @@
+"use client";
+
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import { format } from "date-fns";
+import {
+  Archive,
+  ArrowUpDown,
+  ExternalLink,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
+import { VerificationBadge } from "@/components/dashboard/verification-badge";
+import { Favicon } from "@/components/domain/favicon";
+import { RelativeExpiryString } from "@/components/domain/relative-expiry";
+import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type {
+  ProviderInfo,
+  TrackedDomainWithDetails,
+} from "@/lib/db/repos/tracked-domains";
+import { formatDateTimeUtc } from "@/lib/format";
+import type { UserTier } from "@/lib/schemas";
+import { cn } from "@/lib/utils";
+
+type TrackedDomainsTableProps = {
+  domains: TrackedDomainWithDetails[];
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onVerify: (domain: TrackedDomainWithDetails) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
+  tier: UserTier;
+  proMaxDomains: number;
+};
+
+function ProviderCell({ provider }: { provider: ProviderInfo }) {
+  if (!provider.name) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {provider.domain && (
+        <Favicon domain={provider.domain} size={14} className="shrink-0" />
+      )}
+      <span className="truncate">{provider.name}</span>
+    </div>
+  );
+}
+
+function SortableHeader({
+  column,
+  children,
+}: {
+  column: {
+    getIsSorted: () => false | "asc" | "desc";
+    toggleSorting: () => void;
+  };
+  children: React.ReactNode;
+}) {
+  const sorted = column.getIsSorted();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-2 h-7 px-2 font-medium text-[12px] text-muted-foreground hover:text-foreground"
+      onClick={() => column.toggleSorting()}
+    >
+      {children}
+      <ArrowUpDown
+        className={cn(
+          "ml-1 size-3 opacity-50",
+          sorted && "text-foreground opacity-100",
+        )}
+      />
+    </Button>
+  );
+}
+
+const EMPTY_SET = new Set<string>();
+
+export function TrackedDomainsTable({
+  domains,
+  selectedIds = EMPTY_SET,
+  onToggleSelect,
+  onVerify,
+  onRemove,
+  onArchive,
+  tier,
+  proMaxDomains,
+}: TrackedDomainsTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
+    () => [
+      // Selection checkbox column
+      {
+        id: "select",
+        header: () => null, // No header checkbox here - it's in the bulk toolbar
+        cell: ({ row }) => (
+          <Checkbox
+            checked={selectedIds.has(row.original.id)}
+            onCheckedChange={() => onToggleSelect?.(row.original.id)}
+            aria-label={`Select ${row.original.domainName}`}
+          />
+        ),
+        size: 40,
+      },
+      {
+        accessorKey: "domainName",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Domain</SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Favicon domain={row.original.domainName} size={18} />
+            <ScreenshotTooltip domain={row.original.domainName}>
+              <Link
+                href={`/${row.original.domainName}`}
+                className="font-medium hover:underline"
+              >
+                {row.original.domainName}
+              </Link>
+            </ScreenshotTooltip>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "verified",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Status</SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <VerificationBadge
+            verified={row.original.verified}
+            verificationStatus={row.original.verificationStatus}
+          />
+        ),
+        // Sort verified domains first (verified = -1, unverified = 1)
+        sortingFn: (rowA, rowB) => {
+          return rowA.original.verified === rowB.original.verified
+            ? 0
+            : rowA.original.verified
+              ? -1
+              : 1;
+        },
+      },
+      {
+        id: "health",
+        accessorFn: (row) => row.expirationDate?.getTime() ?? 0,
+        header: ({ column }) => (
+          <SortableHeader column={column}>Health</SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <DomainHealthBadge
+            expirationDate={row.original.expirationDate}
+            verified={row.original.verified}
+          />
+        ),
+      },
+      {
+        accessorKey: "expirationDate",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Expires</SortableHeader>
+        ),
+        cell: ({ row }) => {
+          const date = row.original.expirationDate;
+          if (!date) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          return (
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-default">
+                    {format(date, "MMM d, yyyy")}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {formatDateTimeUtc(date.toISOString())}
+                </TooltipContent>
+              </Tooltip>
+              <span className="text-[11px] text-muted-foreground leading-none">
+                <RelativeExpiryString to={date} dangerDays={30} warnDays={45} />
+              </span>
+            </div>
+          );
+        },
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.expirationDate?.getTime() ?? 0;
+          const b = rowB.original.expirationDate?.getTime() ?? 0;
+          return a - b;
+        },
+      },
+      {
+        id: "registrar",
+        accessorFn: (row) => row.registrar.name ?? "",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Registrar</SortableHeader>
+        ),
+        cell: ({ row }) => <ProviderCell provider={row.original.registrar} />,
+      },
+      {
+        id: "dns",
+        accessorFn: (row) => row.dns.name ?? "",
+        header: ({ column }) => (
+          <SortableHeader column={column}>DNS</SortableHeader>
+        ),
+        cell: ({ row }) => <ProviderCell provider={row.original.dns} />,
+      },
+      {
+        id: "hosting",
+        accessorFn: (row) => row.hosting.name ?? "",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Hosting</SortableHeader>
+        ),
+        cell: ({ row }) => <ProviderCell provider={row.original.hosting} />,
+      },
+      {
+        id: "email",
+        accessorFn: (row) => row.email.name ?? "",
+        header: ({ column }) => (
+          <SortableHeader column={column}>Email</SortableHeader>
+        ),
+        cell: ({ row }) => <ProviderCell provider={row.original.email} />,
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm">
+                <MoreVertical className="size-3.5" />
+                <span className="sr-only">Actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/${row.original.domainName}`}
+                  className="cursor-pointer"
+                >
+                  <ExternalLink className="size-3.5" />
+                  View Report
+                </Link>
+              </DropdownMenuItem>
+              {!row.original.verified && (
+                <DropdownMenuItem
+                  onClick={() => onVerify(row.original)}
+                  className="cursor-pointer"
+                >
+                  <RefreshCw className="size-3.5" />
+                  Verify Now
+                </DropdownMenuItem>
+              )}
+              {onArchive && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    onArchive(row.original.id, row.original.domainName)
+                  }
+                  className="cursor-pointer"
+                >
+                  <Archive className="size-3.5" />
+                  Archive
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() =>
+                  onRemove(row.original.id, row.original.domainName)
+                }
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+                Remove
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [selectedIds, onToggleSelect, onVerify, onRemove, onArchive],
+  );
+
+  const table = useReactTable({
+    data: domains,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+      <div className="overflow-x-auto">
+        <table className="w-full text-[13px]">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr
+                key={headerGroup.id}
+                className="border-black/15 border-b bg-muted/50 dark:border-white/15"
+              >
+                {headerGroup.headers.map((header, index) => (
+                  <th
+                    key={header.id}
+                    className={cn(
+                      "h-10 px-3 text-left align-middle font-medium text-muted-foreground uppercase tracking-wider",
+                      index === 0 && "w-10 pl-5", // Checkbox column
+                      index === headerGroup.headers.length - 1 && "pr-5",
+                    )}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-black/10 dark:divide-white/10">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="h-20 text-center text-muted-foreground text-sm"
+                >
+                  No domains tracked yet.
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => {
+                const isUnverified = !row.original.verified;
+                const isSelected = selectedIds.has(row.original.id);
+                const cells = row.getVisibleCells();
+
+                // For unverified domains, show simplified row with verify CTA
+                if (isUnverified) {
+                  // Find cells by column ID for maintainability
+                  const cellMap = new Map(
+                    cells.map((cell) => [cell.column.id, cell]),
+                  );
+                  const selectCell = cellMap.get("select");
+                  const domainCell = cellMap.get("domainName");
+                  const statusCell = cellMap.get("verified");
+                  const actionsCell = cellMap.get("actions");
+
+                  // Calculate colspan: total cells minus the 4 we render explicitly
+                  const explicitColumns = [
+                    "select",
+                    "domainName",
+                    "verified",
+                    "actions",
+                  ];
+                  const collapseCount = cells.length - explicitColumns.length;
+
+                  return (
+                    <tr
+                      key={row.id}
+                      className={cn(
+                        "transition-colors hover:bg-muted/50",
+                        isSelected && "bg-primary/10",
+                      )}
+                    >
+                      {/* Checkbox column */}
+                      {selectCell && (
+                        <td className="h-12 w-10 pr-3 pl-5 align-middle">
+                          {flexRender(
+                            selectCell.column.columnDef.cell,
+                            selectCell.getContext(),
+                          )}
+                        </td>
+                      )}
+                      {/* Domain column */}
+                      {domainCell && (
+                        <td className="h-12 px-3 align-middle">
+                          {flexRender(
+                            domainCell.column.columnDef.cell,
+                            domainCell.getContext(),
+                          )}
+                        </td>
+                      )}
+                      {/* Status column */}
+                      {statusCell && (
+                        <td className="h-12 px-3 align-middle">
+                          {flexRender(
+                            statusCell.column.columnDef.cell,
+                            statusCell.getContext(),
+                          )}
+                        </td>
+                      )}
+                      {/* Span remaining detail columns with verify message */}
+                      <td
+                        colSpan={collapseCount}
+                        className="h-12 px-3 align-middle"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-muted-foreground text-sm">
+                            Verify ownership to see domain details
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onVerify(row.original)}
+                          >
+                            <RefreshCw className="size-3.5" />
+                            Verify
+                          </Button>
+                        </div>
+                      </td>
+                      {/* Actions column */}
+                      {actionsCell && (
+                        <td className="h-12 px-3 pr-5 align-middle">
+                          {flexRender(
+                            actionsCell.column.columnDef.cell,
+                            actionsCell.getContext(),
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                }
+
+                // Verified domains show full row
+                return (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      "transition-colors hover:bg-muted/50",
+                      isSelected && "bg-primary/10",
+                    )}
+                  >
+                    {cells.map((cell, index) => (
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "h-12 px-3 align-middle",
+                          index === 0 && "w-10 pl-5",
+                          index === cells.length - 1 && "pr-5",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Upgrade CTA banner for free tier users */}
+      {tier === "free" && <UpgradeBanner proMaxDomains={proMaxDomains} />}
+    </div>
+  );
+}

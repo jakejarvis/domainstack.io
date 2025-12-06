@@ -1,7 +1,19 @@
+import { getSessionCookie } from "better-auth/cookies";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { handleProxyRequest } from "@/lib/middleware";
 
 export function proxy(request: NextRequest) {
+  // Quick redirect for unauthenticated users trying to access dashboard
+  // This is NOT for security - just a faster redirect path before hitting the page
+  // The actual security check happens in the dashboard layout
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    const sessionCookie = getSessionCookie(request);
+    if (!sessionCookie) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   return handleProxyRequest(request);
 }
 

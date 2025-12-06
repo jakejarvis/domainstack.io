@@ -33,7 +33,7 @@ export function HomeSearchSection({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <HomeSearchProvider onSuggestionClickAction={handleSuggestionClick}>
+    <HomeSearchProvider onSuggestionClick={handleSuggestionClick}>
       <div className="mx-auto w-full max-w-3xl space-y-5">
         <DomainSearch
           variant="lg"

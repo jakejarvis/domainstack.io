@@ -1,9 +1,16 @@
 import "server-only";
+
 import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { certificates } from "@/lib/db/schema";
+import {
+  certificates,
+  domains,
+  users,
+  userTrackedDomains,
+} from "@/lib/db/schema";
 import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
+import type { NotificationOverrides } from "@/lib/schemas";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -39,4 +46,60 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
       );
     }
   });
+}
+
+export type TrackedDomainCertificate = {
+  trackedDomainId: string;
+  userId: string;
+  domainId: string;
+  domainName: string;
+  notificationOverrides: NotificationOverrides;
+  validTo: Date;
+  issuer: string;
+  userEmail: string;
+  userName: string;
+};
+
+/**
+ * Get all certificates for verified, non-archived tracked domains.
+ * Archived domains are excluded since archiving pauses monitoring.
+ * Returns the earliest expiring certificate for each tracked domain.
+ */
+export async function getVerifiedTrackedDomainsCertificates(): Promise<
+  TrackedDomainCertificate[]
+> {
+  const rows = await db
+    .select({
+      trackedDomainId: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainId: userTrackedDomains.domainId,
+      domainName: domains.name,
+      notificationOverrides: userTrackedDomains.notificationOverrides,
+      validTo: certificates.validTo,
+      issuer: certificates.issuer,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(certificates, eq(domains.id, certificates.domainId))
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
+
+  // Group by tracked domain and take the earliest expiring certificate
+  const byTrackedDomain = new Map<string, TrackedDomainCertificate>();
+
+  for (const row of rows) {
+    const existing = byTrackedDomain.get(row.trackedDomainId);
+    if (!existing || row.validTo < existing.validTo) {
+      byTrackedDomain.set(row.trackedDomainId, row);
+    }
+  }
+
+  return Array.from(byTrackedDomain.values());
 }
