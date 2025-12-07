@@ -44,6 +44,7 @@ import { logger } from "@/lib/logger/client";
 import { getProTierInfo } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 interface SettingsContentProps {
   /** Whether to show the card wrapper (false for modal usage) */
@@ -285,7 +286,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       <div>
         <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
           <CardTitle className="flex items-center gap-2">
-            {isPro && <Crown className="size-5 text-accent-purple" />}
+            {isPro && <Crown className="size-5 text-accent-gold" />}
             Subscription
           </CardTitle>
           <CardDescription>
@@ -305,10 +306,10 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
                 {isPro && (
                   <span
                     className={cn(
-                      "rounded-full px-2 py-0.5 text-xs",
+                      "rounded-full px-2 py-0.5 font-medium text-xs",
                       subscriptionEndsAt
                         ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                        : "bg-accent-purple/10 text-accent-purple",
+                        : "bg-accent-gold/10 text-accent-gold",
                     )}
                   >
                     {subscriptionEndsAt
@@ -338,7 +339,11 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
                 disabled={isPortalLoading}
                 className="w-full"
               >
-                <ExternalLink className="size-4" />
+                {isPortalLoading ? (
+                  <Spinner />
+                ) : (
+                  <ExternalLink className="size-4" />
+                )}
                 {isPortalLoading ? "Opening..." : "Manage Subscription"}
               </Button>
               {subscriptionEndsAt && (
@@ -350,7 +355,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
+              <div className="rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
                 <div className="mb-2 font-medium">{proTierInfo.name}</div>
                 <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
                   {proTierInfo.features.map((feature) => (
@@ -358,11 +363,11 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
                   ))}
                 </ul>
                 <div className="flex items-baseline gap-2 text-sm">
-                  <span className="font-semibold text-accent-purple">
+                  <span className="font-semibold text-accent-gold">
                     {proTierInfo.monthly.label}
                   </span>
                   <span className="text-muted-foreground">or</span>
-                  <span className="font-semibold text-accent-purple">
+                  <span className="font-semibold text-accent-gold">
                     {proTierInfo.yearly.label}
                   </span>
                   <span className="text-muted-foreground/70 text-xs">
@@ -373,9 +378,9 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
               <Button
                 onClick={handleUpgrade}
                 disabled={isCheckoutLoading}
-                className="w-full bg-accent-purple hover:bg-accent-purple/90"
+                className="w-full bg-foreground text-background hover:bg-foreground/90"
               >
-                <Crown className="size-4" />
+                {isCheckoutLoading ? <Spinner /> : <Crown className="size-4" />}
                 {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
               </Button>
             </div>

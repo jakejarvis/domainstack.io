@@ -44,6 +44,8 @@
   --color-accent-orange: var(--accent-orange);
   --color-accent-cyan: var(--accent-cyan);
   --color-accent-slate: var(--accent-slate);
+  --color-accent-gold: var(--accent-gold);
+  --color-accent-gold-muted: var(--accent-gold-muted);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -92,6 +94,10 @@
   --accent-orange: oklch(78% 0.17 70);
   --accent-cyan: oklch(64% 0.16 195);
   --accent-slate: oklch(48% 0 0);
+
+  /* Gold accent - warm orange-gold for premium CTAs */
+  --accent-gold: oklch(65% 0.18 55);
+  --accent-gold-muted: oklch(70% 0.13 55);
 
   /* Section accent glows */
   --glow-blue: radial-gradient(closest-side, var(--accent-blue), transparent);
@@ -152,6 +158,10 @@
   --accent-orange: oklch(86% 0.14 70);
   --accent-cyan: oklch(78% 0.12 195);
   --accent-slate: oklch(81% 0 54.26);
+
+  /* Gold accent (dark) - brighter gold for dark backgrounds */
+  --accent-gold: oklch(80% 0.12 70);
+  --accent-gold-muted: oklch(70% 0.08 65);
 }
 
 @layer base {
@@ -186,10 +196,13 @@
 }
 
 @layer utilities {
-  /* Shimmer animation for announcement pill */
+  /* Shimmer animation for announcement pill - shimmers quickly then pauses */
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);
+    }
+    40% {
+      transform: translateX(100%);
     }
     100% {
       transform: translateX(100%);

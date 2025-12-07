@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
@@ -38,10 +39,10 @@ export function UpgradePrompt({
   if (!nearLimit) return null;
 
   return (
-    <Card className="border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5">
+    <Card className="border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Crown className="size-5 text-accent-purple" />
+          <Crown className="size-5 text-accent-gold" />
           <CardTitle className="text-lg">
             {atLimit ? "Domain Limit Reached" : "Running Low on Slots"}
           </CardTitle>
@@ -59,11 +60,11 @@ export function UpgradePrompt({
             {PRO_TIER_INFO.name}
           </span>
           : Track up to {proMaxDomains} domains •{" "}
-          <span className="text-accent-purple">
+          <span className="font-medium text-accent-gold">
             {PRO_TIER_INFO.monthly.label}
           </span>{" "}
           or{" "}
-          <span className="text-accent-purple">
+          <span className="font-medium text-accent-gold">
             {PRO_TIER_INFO.yearly.label}
           </span>{" "}
           <span className="text-muted-foreground/70">
@@ -73,9 +74,9 @@ export function UpgradePrompt({
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="bg-accent-purple hover:bg-accent-purple/90"
+          className="bg-foreground text-background hover:bg-foreground/90"
         >
-          <Crown className="size-4" />
+          {isLoading ? <Spinner /> : <Crown className="size-4" />}
           {isLoading ? "Opening..." : "Upgrade to Pro"}
         </Button>
       </CardContent>

@@ -381,7 +381,7 @@ export function DashboardContent() {
       {/* Pro upgrade success banner */}
       {showUpgradedBanner && (
         <DashboardBanner
-          variant="success"
+          variant="gold"
           icon={Sparkles}
           title="Welcome to Pro!"
           description={`You now have access to track up to ${proMaxDomains} domains. Thank you for upgrading!`}

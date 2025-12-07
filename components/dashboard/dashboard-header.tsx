@@ -48,7 +48,7 @@ export function DashboardHeader({
           subscriptionEndsAt ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
+                <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-foreground px-2 py-0.5 font-semibold text-background text-xs">
                   <Crown className="size-3" />
                   PRO
                 </span>
@@ -58,7 +58,7 @@ export function DashboardHeader({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-gradient-to-r from-accent-purple to-accent-blue px-2 py-0.5 font-semibold text-white text-xs">
+            <span className="inline-flex items-center gap-1 rounded-md bg-foreground px-2 py-0.5 font-semibold text-background text-xs">
               <Crown className="size-3" />
               PRO
             </span>

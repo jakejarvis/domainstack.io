@@ -147,13 +147,13 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
 
   const buttonContent = (
     <>
-      <BellPlus className="size-4 text-accent-purple" />
+      <BellPlus className="size-4 text-accent-gold" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
 
   const buttonClassName =
-    "cursor-pointer gap-2 border-accent-purple/30 bg-gradient-to-r from-accent-purple/5 to-accent-blue/5 text-foreground hover:border-accent-purple/50 hover:from-accent-purple/10 hover:to-accent-blue/10";
+    "cursor-pointer gap-2 border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-foreground hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]";
 
   return (
     <>

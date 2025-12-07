@@ -21,7 +21,7 @@ const bannerVariants = cva(
           "border-success-border bg-gradient-to-r from-success/50 to-success/30 dark:from-success/20 dark:to-success/10",
         danger:
           "border-danger-border bg-gradient-to-r from-danger/50 to-danger/30 dark:from-danger/20 dark:to-danger/10",
-        pro: "border-accent-purple/20 bg-gradient-to-r from-accent-purple/10 to-accent-blue/10 dark:from-accent-purple/15 dark:to-accent-blue/15",
+        gold: "border-accent-gold/15 bg-gradient-to-r from-accent-gold/5 to-accent-gold/10 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]",
       },
     },
     defaultVariants: {
@@ -31,15 +31,15 @@ const bannerVariants = cva(
 );
 
 const iconVariants = cva(
-  "flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20",
+  "flex size-8 shrink-0 items-center justify-center rounded-lg",
   {
     variants: {
       variant: {
-        info: "text-info-foreground",
-        warning: "text-warning-foreground",
-        success: "text-success-foreground",
-        danger: "text-danger-foreground",
-        pro: "text-accent-purple",
+        info: "bg-white/50 text-info-foreground dark:bg-black/20",
+        warning: "bg-white/50 text-warning-foreground dark:bg-black/20",
+        success: "bg-white/50 text-success-foreground dark:bg-black/20",
+        danger: "bg-white/50 text-danger-foreground dark:bg-black/20",
+        gold: "bg-black/5 text-accent-gold dark:bg-white/5",
       },
     },
     defaultVariants: {
@@ -55,7 +55,7 @@ const titleVariants = cva("font-medium text-sm", {
       warning: "text-warning-foreground",
       success: "text-success-foreground",
       danger: "text-danger-foreground",
-      pro: "text-accent-purple",
+      gold: "text-accent-gold",
     },
   },
   defaultVariants: {
@@ -73,7 +73,7 @@ const bannerButtonVariants = cva("", {
         "bg-success-foreground text-white hover:bg-success-foreground/90 dark:text-success",
       danger:
         "bg-danger-foreground text-white hover:bg-danger-foreground/90 dark:text-danger",
-      pro: "bg-accent-purple text-white hover:bg-accent-purple/90",
+      gold: "bg-foreground text-background hover:bg-foreground/90",
     },
   },
   defaultVariants: {

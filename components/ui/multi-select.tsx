@@ -74,14 +74,15 @@ export function MultiSelect<T extends string>({
           variant="outline"
           className={cn(
             "h-9 gap-2 px-3",
-            selected.length > 0 && "border-primary/50 bg-primary/10",
+            selected.length > 0 &&
+              "border-foreground/30 bg-foreground/5 dark:border-foreground/40 dark:bg-foreground/10",
             className,
           )}
         >
           <Icon className="size-4 opacity-60" />
           {label}
           {selected.length > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-primary/15 px-1.5 font-semibold text-xs tabular-nums">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
               {selected.length}
             </span>
           )}

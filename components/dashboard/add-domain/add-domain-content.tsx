@@ -192,7 +192,7 @@ export function AddDomainContent({
           {tier === "free" ? (
             <>
               {/* Pro upgrade option */}
-              <div className="rounded-xl border border-accent-purple/20 bg-gradient-to-br from-accent-purple/5 to-accent-blue/5 p-4">
+              <div className="rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
                 <div className="mb-2 font-medium">{proTierInfo.name}</div>
                 <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
                   {proTierInfo.features.map((feature) => (
@@ -200,11 +200,11 @@ export function AddDomainContent({
                   ))}
                 </ul>
                 <div className="flex items-baseline gap-2 text-sm">
-                  <span className="font-semibold text-accent-purple">
+                  <span className="font-semibold text-accent-gold">
                     {proTierInfo.monthly.label}
                   </span>
                   <span className="text-muted-foreground">or</span>
-                  <span className="font-semibold text-accent-purple">
+                  <span className="font-semibold text-accent-gold">
                     {proTierInfo.yearly.label}
                   </span>
                   <span className="text-muted-foreground/70 text-xs">
@@ -217,9 +217,13 @@ export function AddDomainContent({
                 <Button
                   onClick={handleUpgrade}
                   disabled={isCheckoutLoading}
-                  className="w-full bg-accent-purple hover:bg-accent-purple/90"
+                  className="w-full bg-foreground text-background hover:bg-foreground/90"
                 >
-                  <Crown className="size-4" />
+                  {isCheckoutLoading ? (
+                    <Spinner />
+                  ) : (
+                    <Crown className="size-4" />
+                  )}
                   {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
                 </Button>
                 {showCard ? (

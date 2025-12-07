@@ -46,10 +46,10 @@ export function AnnouncementPill() {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="absolute top-0 right-0 left-0 flex items-center justify-center"
           >
-            <div className="relative inline-flex items-center rounded-full border border-accent-purple/20 bg-gradient-to-r from-accent-purple/10 to-accent-blue/10 text-sm backdrop-blur-sm transition-all hover:border-accent-purple/40 hover:from-accent-purple/15 hover:to-accent-blue/15">
+            <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-all hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">
               {/* Shimmer effect */}
               <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
-                <div className="absolute inset-0 animate-[shimmer_3s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <div className="absolute inset-0 animate-[shimmer_6s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
               </div>
 
               <Link
@@ -59,9 +59,9 @@ export function AnnouncementPill() {
                 data-disable-progress={!session?.user}
                 className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3"
               >
-                <BellRing className="size-3.5 text-accent-purple" />
+                <BellRing className="size-3.5 text-accent-gold" />
                 <div className="text-foreground/90">
-                  <span className="mr-1.5 font-medium text-accent-purple">
+                  <span className="mr-1.5 font-medium text-accent-gold">
                     New!
                   </span>
                   <span>Track domains &amp; get expiry alerts.</span>
@@ -69,7 +69,7 @@ export function AnnouncementPill() {
                 <ArrowUpRight className="group-hover:-translate-y-[1px] size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px]" />
               </Link>
 
-              <div className="h-4 w-px bg-accent-purple/20" />
+              <div className="h-4 w-px bg-black/10 dark:bg-white/10" />
 
               <button
                 type="button"
