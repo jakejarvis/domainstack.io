@@ -13,6 +13,8 @@ import {
 import { format } from "date-fns";
 import {
   Archive,
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown,
   ExternalLink,
   MoreVertical,
@@ -80,33 +82,14 @@ function ProviderCell({ provider }: { provider: ProviderInfo }) {
   );
 }
 
-function SortableHeader({
-  column,
-  children,
-}: {
-  column: {
-    getIsSorted: () => false | "asc" | "desc";
-    toggleSorting: () => void;
-  };
-  children: React.ReactNode;
-}) {
-  const sorted = column.getIsSorted();
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-2 h-7 px-2 font-medium text-[12px] text-muted-foreground hover:text-foreground"
-      onClick={() => column.toggleSorting()}
-    >
-      {children}
-      <ArrowUpDown
-        className={cn(
-          "ml-1 size-3 opacity-50",
-          sorted && "text-foreground opacity-100",
-        )}
-      />
-    </Button>
-  );
+function SortIndicator({ isSorted }: { isSorted: false | "asc" | "desc" }) {
+  if (isSorted === "asc") {
+    return <ArrowUp className="size-3 text-primary" />;
+  }
+  if (isSorted === "desc") {
+    return <ArrowDown className="size-3 text-primary" />;
+  }
+  return <ArrowUpDown className="size-3 opacity-50" />;
 }
 
 const EMPTY_SET = new Set<string>();
@@ -145,9 +128,7 @@ export function TrackedDomainsTable({
       },
       {
         accessorKey: "domainName",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Domain</SortableHeader>
-        ),
+        header: "Domain",
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <Favicon domain={row.original.domainName} size={18} />
@@ -164,9 +145,7 @@ export function TrackedDomainsTable({
       },
       {
         accessorKey: "verified",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Status</SortableHeader>
-        ),
+        header: "Status",
         cell: ({ row }) => (
           <VerificationBadge
             verified={row.original.verified}
@@ -185,9 +164,7 @@ export function TrackedDomainsTable({
       {
         id: "health",
         accessorFn: (row) => row.expirationDate?.getTime() ?? 0,
-        header: ({ column }) => (
-          <SortableHeader column={column}>Health</SortableHeader>
-        ),
+        header: "Health",
         cell: ({ row }) => (
           <DomainHealthBadge
             expirationDate={row.original.expirationDate}
@@ -197,9 +174,7 @@ export function TrackedDomainsTable({
       },
       {
         accessorKey: "expirationDate",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Expires</SortableHeader>
-        ),
+        header: "Expires",
         cell: ({ row }) => {
           const date = row.original.expirationDate;
           if (!date) {
@@ -232,33 +207,25 @@ export function TrackedDomainsTable({
       {
         id: "registrar",
         accessorFn: (row) => row.registrar.name ?? "",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Registrar</SortableHeader>
-        ),
+        header: "Registrar",
         cell: ({ row }) => <ProviderCell provider={row.original.registrar} />,
       },
       {
         id: "dns",
         accessorFn: (row) => row.dns.name ?? "",
-        header: ({ column }) => (
-          <SortableHeader column={column}>DNS</SortableHeader>
-        ),
+        header: "DNS",
         cell: ({ row }) => <ProviderCell provider={row.original.dns} />,
       },
       {
         id: "hosting",
         accessorFn: (row) => row.hosting.name ?? "",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Hosting</SortableHeader>
-        ),
+        header: "Hosting",
         cell: ({ row }) => <ProviderCell provider={row.original.hosting} />,
       },
       {
         id: "email",
         accessorFn: (row) => row.email.name ?? "",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Email</SortableHeader>
-        ),
+        header: "Email",
         cell: ({ row }) => <ProviderCell provider={row.original.email} />,
       },
       {
@@ -351,23 +318,52 @@ export function TrackedDomainsTable({
                 key={headerGroup.id}
                 className="border-black/15 border-b bg-muted/50 dark:border-white/15"
               >
-                {headerGroup.headers.map((header, index) => (
-                  <th
-                    key={header.id}
-                    className={cn(
-                      "h-10 px-3 text-left align-middle font-medium text-muted-foreground uppercase tracking-wider",
-                      index === 0 && "w-10 pl-5", // Checkbox column
-                      index === headerGroup.headers.length - 1 && "pr-5",
-                    )}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
+                {headerGroup.headers.map((header, index) => {
+                  const canSort = header.column.getCanSort();
+                  // Get sort state directly from our state instead of table API
+                  // (header.column.getIsSorted() can return stale values)
+                  const sortEntry = sorting.find(
+                    (s) => s.id === header.column.id,
+                  );
+                  const isSorted = sortEntry
+                    ? sortEntry.desc
+                      ? "desc"
+                      : "asc"
+                    : false;
+
+                  return (
+                    <th
+                      key={header.id}
+                      className={cn(
+                        "h-10 px-3 text-left align-middle font-medium text-muted-foreground uppercase tracking-wider",
+                        index === 0 && "w-10 pl-5", // Checkbox column
+                        index === headerGroup.headers.length - 1 && "pr-5",
+                      )}
+                    >
+                      {header.isPlaceholder ? null : canSort ? (
+                        <button
+                          type="button"
+                          className={cn(
+                            "-ml-2 inline-flex h-7 cursor-pointer select-none items-center gap-1 rounded-md px-2 text-[12px] transition-colors hover:bg-accent hover:text-foreground",
+                            isSorted && "text-foreground",
+                          )}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                          <SortIndicator isSorted={isSorted} />
+                        </button>
+                      ) : (
+                        flexRender(
                           header.column.columnDef.header,
                           header.getContext(),
-                        )}
-                  </th>
-                ))}
+                        )
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
@@ -411,7 +407,7 @@ export function TrackedDomainsTable({
                     <tr
                       key={row.id}
                       className={cn(
-                        "transition-colors hover:bg-muted/50",
+                        "transition-colors hover:bg-muted/35",
                         isSelected && "bg-primary/10",
                       )}
                     >
