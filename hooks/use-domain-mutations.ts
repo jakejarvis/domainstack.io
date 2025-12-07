@@ -20,10 +20,15 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type LimitsData = RouterOutputs["tracking"]["getLimits"];
 
 /**
+ * Paginated domains data shape from tracking.listDomains procedure.
+ */
+type DomainsData = RouterOutputs["tracking"]["listDomains"];
+
+/**
  * Shared context type for optimistic update rollback.
  */
 type MutationContext = {
-  previousDomains?: TrackedDomainWithDetails[];
+  previousDomains?: DomainsData;
   previousArchived?: TrackedDomainWithDetails[];
   previousLimits?: LimitsData;
 };
@@ -154,14 +159,19 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       await cancelQueries();
 
       const previousDomains =
-        queryClient.getQueryData<TrackedDomainWithDetails[]>(domainsQueryKey);
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       // Optimistically update domains list
-      queryClient.setQueryData<TrackedDomainWithDetails[]>(
-        domainsQueryKey,
-        (old) => old?.filter((d) => d.id !== trackedDomainId) ?? [],
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((d) => d.id !== trackedDomainId),
+              totalCount: old.totalCount - 1,
+            }
+          : old,
       );
 
       // Optimistically update limits
@@ -191,7 +201,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       await cancelQueries(true);
 
       const previousDomains =
-        queryClient.getQueryData<TrackedDomainWithDetails[]>(domainsQueryKey);
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousArchived = queryClient.getQueryData<
         TrackedDomainWithDetails[]
       >(archivedDomainsQueryKey);
@@ -199,14 +209,19 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       // Find the domain being archived
-      const domainToArchive = previousDomains?.find(
+      const domainToArchive = previousDomains?.items.find(
         (d) => d.id === trackedDomainId,
       );
 
       // Move from active to archived
-      queryClient.setQueryData<TrackedDomainWithDetails[]>(
-        domainsQueryKey,
-        (old) => old?.filter((d) => d.id !== trackedDomainId) ?? [],
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((d) => d.id !== trackedDomainId),
+              totalCount: old.totalCount - 1,
+            }
+          : old,
       );
 
       if (domainToArchive) {
@@ -246,7 +261,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       await cancelQueries(true);
 
       const previousDomains =
-        queryClient.getQueryData<TrackedDomainWithDetails[]>(domainsQueryKey);
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousArchived = queryClient.getQueryData<
         TrackedDomainWithDetails[]
       >(archivedDomainsQueryKey);
@@ -265,9 +280,17 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       );
 
       if (domainToUnarchive) {
-        queryClient.setQueryData<TrackedDomainWithDetails[]>(
-          domainsQueryKey,
-          (old) => [...(old ?? []), { ...domainToUnarchive, archivedAt: null }],
+        queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) =>
+          old
+            ? {
+                ...old,
+                items: [
+                  ...old.items,
+                  { ...domainToUnarchive, archivedAt: null },
+                ],
+                totalCount: old.totalCount + 1,
+              }
+            : old,
         );
       }
 
@@ -301,7 +324,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       await cancelQueries(true);
 
       const previousDomains =
-        queryClient.getQueryData<TrackedDomainWithDetails[]>(domainsQueryKey);
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousArchived = queryClient.getQueryData<
         TrackedDomainWithDetails[]
       >(archivedDomainsQueryKey);
@@ -309,14 +332,21 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
-      const domainsToArchive = previousDomains?.filter((d) => idsSet.has(d.id));
+      const domainsToArchive = previousDomains?.items.filter((d) =>
+        idsSet.has(d.id),
+      );
       // Use actual count of domains found in cache for consistent optimistic updates
       const archiveDelta = domainsToArchive?.length ?? 0;
 
       // Move from active to archived
-      queryClient.setQueryData<TrackedDomainWithDetails[]>(
-        domainsQueryKey,
-        (old) => old?.filter((d) => !idsSet.has(d.id)) ?? [],
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((d) => !idsSet.has(d.id)),
+              totalCount: old.totalCount - archiveDelta,
+            }
+          : old,
       );
 
       if (domainsToArchive && domainsToArchive.length > 0) {
@@ -352,18 +382,25 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       await cancelQueries();
 
       const previousDomains =
-        queryClient.getQueryData<TrackedDomainWithDetails[]>(domainsQueryKey);
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
       // Use actual count of domains found in cache for consistent optimistic updates
-      const domainsToDelete = previousDomains?.filter((d) => idsSet.has(d.id));
+      const domainsToDelete = previousDomains?.items.filter((d) =>
+        idsSet.has(d.id),
+      );
       const deleteDelta = domainsToDelete?.length ?? 0;
 
-      queryClient.setQueryData<TrackedDomainWithDetails[]>(
-        domainsQueryKey,
-        (old) => old?.filter((d) => !idsSet.has(d.id)) ?? [],
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.filter((d) => !idsSet.has(d.id)),
+              totalCount: old.totalCount - deleteDelta,
+            }
+          : old,
       );
 
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>

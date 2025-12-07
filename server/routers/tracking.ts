@@ -13,6 +13,7 @@ import {
   findTrackedDomainWithDomainName,
   getArchivedDomainsForUser,
   getTrackedDomainsForUser,
+  getTrackedDomainsForUserPaginated,
   resetNotificationOverrides,
   unarchiveTrackedDomainWithLimitCheck,
   updateNotificationOverrides,
@@ -89,12 +90,40 @@ export const trackingRouter = createTRPCRouter({
   }),
 
   /**
-   * List all active (non-archived) tracked domains for the current user.
+   * List active (non-archived) tracked domains for the current user.
+   * Supports optional cursor-based pagination for infinite scroll.
+   *
+   * @param cursor - Optional cursor from previous page
+   * @param limit - Optional page size (defaults to returning all if not provided)
+   * @returns { items, nextCursor, totalCount } - Paginated result
    */
-  listDomains: protectedProcedure.query(async ({ ctx }) => {
-    const domains = await getTrackedDomainsForUser(ctx.user.id, false);
-    return domains;
-  }),
+  listDomains: protectedProcedure
+    .input(
+      z
+        .object({
+          cursor: z.string().optional(),
+          limit: z.number().min(1).max(100).optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      // If pagination params provided, use paginated query
+      if (input?.limit) {
+        return getTrackedDomainsForUserPaginated(
+          ctx.user.id,
+          input.cursor,
+          input.limit,
+        );
+      }
+
+      // Otherwise return all domains (wrapped in same shape for consistency)
+      const items = await getTrackedDomainsForUser(ctx.user.id, false);
+      return {
+        items,
+        nextCursor: null,
+        totalCount: items.length,
+      };
+    }),
 
   /**
    * List all archived tracked domains for the current user.

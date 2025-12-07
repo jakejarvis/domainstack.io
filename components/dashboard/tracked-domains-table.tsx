@@ -4,7 +4,9 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
+  type PaginationState,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -20,6 +22,7 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
@@ -39,6 +42,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  type PageSize,
+  usePageSizePreference,
+} from "@/hooks/use-page-size-preference";
 import type {
   ProviderInfo,
   TrackedDomainWithDetails,
@@ -115,6 +122,11 @@ export function TrackedDomainsTable({
   proMaxDomains,
 }: TrackedDomainsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [pageSize, setPageSize] = usePageSizePreference();
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize,
+  });
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
@@ -308,13 +320,25 @@ export function TrackedDomainsTable({
     [selectedIds, onToggleSelect, onVerify, onRemove, onArchive],
   );
 
+  // Sync page size changes to pagination state
+  const handlePageSizeChange = (newSize: PageSize) => {
+    setPageSize(newSize);
+    setPagination((prev) => ({
+      ...prev,
+      pageSize: newSize,
+      pageIndex: 0, // Reset to first page when changing page size
+    }));
+  };
+
   const table = useReactTable({
     data: domains,
     columns,
-    state: { sorting },
+    state: { sorting, pagination },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   return (
@@ -481,6 +505,20 @@ export function TrackedDomainsTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination controls - only show if there are domains */}
+      {domains.length > 0 && (
+        <TablePagination
+          pageIndex={table.getState().pagination.pageIndex}
+          pageSize={pageSize}
+          pageCount={table.getPageCount()}
+          totalItems={domains.length}
+          canPreviousPage={table.getCanPreviousPage()}
+          canNextPage={table.getCanNextPage()}
+          onPageChange={(index) => table.setPageIndex(index)}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      )}
 
       {/* Upgrade CTA banner for free tier users */}
       {tier === "free" && <UpgradeBanner proMaxDomains={proMaxDomains} />}

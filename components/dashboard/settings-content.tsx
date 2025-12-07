@@ -118,17 +118,22 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       queryClient.setQueryData(
         domainsQueryKey,
         (old: typeof domainsQuery.data) =>
-          old?.map((d) =>
-            d.id === trackedDomainId
-              ? {
-                  ...d,
-                  notificationOverrides: {
-                    ...(d.notificationOverrides ?? {}),
-                    ...overrides,
-                  },
-                }
-              : d,
-          ),
+          old
+            ? {
+                ...old,
+                items: old.items.map((d) =>
+                  d.id === trackedDomainId
+                    ? {
+                        ...d,
+                        notificationOverrides: {
+                          ...(d.notificationOverrides ?? {}),
+                          ...overrides,
+                        },
+                      }
+                    : d,
+                ),
+              }
+            : old,
       );
 
       return { previousDomains };
@@ -158,9 +163,16 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       queryClient.setQueryData(
         domainsQueryKey,
         (old: typeof domainsQuery.data) =>
-          old?.map((d) =>
-            d.id === trackedDomainId ? { ...d, notificationOverrides: {} } : d,
-          ),
+          old
+            ? {
+                ...old,
+                items: old.items.map((d) =>
+                  d.id === trackedDomainId
+                    ? { ...d, notificationOverrides: {} }
+                    : d,
+                ),
+              }
+            : old,
       );
 
       return { previousDomains };
@@ -243,7 +255,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
     return <Card>{errorContent}</Card>;
   }
 
-  const domains = domainsQuery.data ?? [];
+  const domains = domainsQuery.data?.items ?? [];
   const verifiedDomains = domains.filter((d) => d.verified);
   const globalPrefs = globalPrefsQuery.data ?? {
     domainExpiry: true,

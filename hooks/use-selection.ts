@@ -5,12 +5,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 /**
  * Hook for managing multi-select state with O(1) operations.
  * Provides selection state and actions for bulk operations.
+ *
+ * Supports pagination-aware selection:
+ * - `allIds`: All selectable item IDs
+ * - `visibleIds`: Currently visible item IDs (for pagination). Defaults to allIds.
+ * - `toggleAll` operates on visible items only
+ * - Selection persists across page changes
  */
 export function useSelection<T extends string = string>(
-  /** All selectable item IDs (used for "select all") */
+  /** All selectable item IDs */
   allIds: T[] = [],
+  /** Currently visible item IDs (defaults to allIds). Used for pagination-aware "select all". */
+  visibleIds?: T[],
 ) {
   const [selectedIds, setSelectedIds] = useState<Set<T>>(new Set());
+
+  // Use visibleIds if provided, otherwise default to allIds
+  const effectiveVisibleIds = visibleIds ?? allIds;
 
   // Clear selection when allIds changes (e.g., filter applied)
   useEffect(() => {
@@ -43,24 +54,42 @@ export function useSelection<T extends string = string>(
   // Check if an item is selected
   const isSelected = useCallback((id: T) => selectedIds.has(id), [selectedIds]);
 
-  // Select all items
+  // Select all visible items
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(allIds));
-  }, [allIds]);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of effectiveVisibleIds) {
+        next.add(id);
+      }
+      return next;
+    });
+  }, [effectiveVisibleIds]);
 
   // Clear all selections
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
 
-  // Toggle all (select all if not all selected, otherwise clear)
+  // Toggle all visible items (select all visible if not all visible selected, otherwise clear visible)
   const toggleAll = useCallback(() => {
-    if (selectedIds.size === allIds.length && allIds.length > 0) {
-      clearSelection();
+    const allVisibleSelected = effectiveVisibleIds.every((id) =>
+      selectedIds.has(id),
+    );
+
+    if (allVisibleSelected && effectiveVisibleIds.length > 0) {
+      // Deselect all visible items
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        for (const id of effectiveVisibleIds) {
+          next.delete(id);
+        }
+        return next;
+      });
     } else {
+      // Select all visible items
       selectAll();
     }
-  }, [selectedIds.size, allIds.length, clearSelection, selectAll]);
+  }, [effectiveVisibleIds, selectedIds, selectAll]);
 
   // Keyboard handler for Escape to clear selection
   useEffect(() => {
@@ -74,12 +103,21 @@ export function useSelection<T extends string = string>(
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [selectedIds.size, clearSelection]);
 
-  // Computed state
+  // Computed state - based on visible items for pagination support
   const selectedCount = selectedIds.size;
   const hasSelection = selectedCount > 0;
-  const isAllSelected = allIds.length > 0 && selectedCount === allIds.length;
+
+  // Check if all visible items are selected (for checkbox indeterminate state)
+  const visibleSelectedCount = useMemo(
+    () => effectiveVisibleIds.filter((id) => selectedIds.has(id)).length,
+    [effectiveVisibleIds, selectedIds],
+  );
+  const isAllSelected =
+    effectiveVisibleIds.length > 0 &&
+    visibleSelectedCount === effectiveVisibleIds.length;
   const isPartiallySelected =
-    selectedCount > 0 && selectedCount < allIds.length;
+    visibleSelectedCount > 0 &&
+    visibleSelectedCount < effectiveVisibleIds.length;
 
   // Get selected IDs as array (for iteration)
   const selectedArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
@@ -92,6 +130,7 @@ export function useSelection<T extends string = string>(
     hasSelection,
     isAllSelected,
     isPartiallySelected,
+    visibleSelectedCount,
 
     // Actions
     toggle,

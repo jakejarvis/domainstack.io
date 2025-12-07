@@ -35,6 +35,10 @@ type TrackedDomainsViewProps = {
   onBulkDelete: () => void;
   isBulkArchiving?: boolean;
   isBulkDeleting?: boolean;
+  // Infinite scroll props (grid view only)
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
 };
 
 export function TrackedDomainsView({
@@ -54,6 +58,9 @@ export function TrackedDomainsView({
   onBulkDelete,
   isBulkArchiving = false,
   isBulkDeleting = false,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
 }: TrackedDomainsViewProps) {
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
@@ -139,6 +146,9 @@ export function TrackedDomainsView({
           onArchive={onArchive}
           tier={tier}
           proMaxDomains={proMaxDomains}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={onLoadMore}
         />
       )}
 

@@ -41,7 +41,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   });
 
   // Find if this domain is already tracked
-  const trackedDomain = trackedDomains?.find(
+  const trackedDomain = trackedDomains?.items.find(
     (d) => d.domainName.toLowerCase() === domain.toLowerCase(),
   );
   const isTracked = !!trackedDomain;
