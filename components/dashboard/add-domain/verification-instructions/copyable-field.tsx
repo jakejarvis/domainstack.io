@@ -85,14 +85,17 @@ export function CopyableField({
         {label}
       </Label>
       <InputGroup className="max-w-full border-border bg-background">
-        <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <button
             type="button"
             data-slot="input-group-control"
             onClick={handleSelect}
-            className="flex h-10 w-full cursor-text items-center overflow-x-auto bg-transparent px-3 text-left font-mono text-sm outline-none selection:bg-primary selection:text-primary-foreground"
+            className="h-10 w-full cursor-text overflow-x-auto bg-transparent px-3 text-left font-mono text-sm outline-none selection:bg-primary selection:text-primary-foreground"
           >
-            <span ref={contentRef} className="whitespace-nowrap">
+            <span
+              ref={contentRef}
+              className="inline-block whitespace-nowrap leading-10"
+            >
               {children ?? value}
             </span>
           </button>

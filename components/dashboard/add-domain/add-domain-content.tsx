@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Gauge, Gem } from "lucide-react";
+import { Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -297,7 +297,7 @@ export function AddDomainContent({
   );
 
   const mainContent = (
-    <div className="min-h-[280px] overflow-hidden">
+    <div className="min-h-[280px]">
       <AnimatePresence mode="wait">
         <motion.div
           key={`${step}-${hasFailed}`}
@@ -349,9 +349,9 @@ export function AddDomainContent({
   );
 
   const footerContent = showFooterButtons && (
-    <div className="flex items-center justify-end gap-2">
+    <div className="mt-6 flex items-center justify-end gap-2">
       {step === 2 && !isResuming && !hasFailed && (
-        <Button variant="outline" onClick={goBack}>
+        <Button variant="outline" onClick={goBack} className="cursor-pointer">
           Back
         </Button>
       )}
@@ -360,12 +360,17 @@ export function AddDomainContent({
         disabled={
           !canProceed() || isLoadingInstructions || isMissingInstructions
         }
+        className="cursor-pointer"
       >
-        {(isAddingDomain || isVerifying) && <Spinner className="size-4" />}
+        {isAddingDomain || isVerifying ? (
+          <Spinner className="size-4" />
+        ) : (
+          <Check className="size-4" />
+        )}
         {step === 2
           ? isVerifying
-            ? "Verifying..."
-            : "Verify & Continue"
+            ? "Checking..."
+            : "Check Now"
           : step === 3
             ? "Done"
             : "Continue"}
@@ -388,7 +393,7 @@ export function AddDomainContent({
       <CardHeader>{headerContent}</CardHeader>
       <CardContent>{mainContent}</CardContent>
       {footerContent && (
-        <CardFooter className="justify-end border-t pt-6">
+        <CardFooter className="justify-end border-t">
           {footerContent}
         </CardFooter>
       )}

@@ -204,7 +204,7 @@ export function TrackedDomainCard({
             </p>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
-            <Button onClick={onVerify} className="cursor-pointer w-full">
+            <Button onClick={onVerify} className="w-full cursor-pointer">
               <RefreshCw className="size-4" />
               Complete Verification
             </Button>

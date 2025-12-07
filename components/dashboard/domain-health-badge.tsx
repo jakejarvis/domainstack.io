@@ -21,7 +21,10 @@ export function DomainHealthBadge({
   const { label, variant, colorClass } = getStatusConfig(status);
 
   return (
-    <Badge variant={variant} className={cn(colorClass, className)}>
+    <Badge
+      variant={variant}
+      className={cn("select-none", colorClass, className)}
+    >
       {label}
     </Badge>
   );

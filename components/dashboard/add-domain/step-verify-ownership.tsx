@@ -37,7 +37,6 @@ export function StepVerifyOwnership({
     return (
       <VerificationFailed
         method={method}
-        error={verificationState.error}
         onCheckAgain={onVerify}
         onReturnLater={onReturnLater}
       />
@@ -45,7 +44,7 @@ export function StepVerifyOwnership({
   }
 
   return (
-    <div className="min-w-0 space-y-4 overflow-hidden">
+    <div className="min-w-0 space-y-4">
       <Tabs
         value={method}
         onValueChange={(v) => setMethod(v as VerificationMethod)}

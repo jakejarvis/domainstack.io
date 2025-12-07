@@ -21,7 +21,7 @@ export function VerificationBadge({
     return (
       <Badge
         className={cn(
-          "gap-1 border-amber-300 bg-amber-500/10 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+          "select-none gap-1 border-amber-300 bg-amber-500/10 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
           className,
         )}
       >
@@ -35,7 +35,7 @@ export function VerificationBadge({
     return (
       <Badge
         className={cn(
-          "gap-1 border-success-border bg-success/10 font-semibold text-success-foreground",
+          "select-none gap-1 border-success-border bg-success/10 font-semibold text-success-foreground",
           className,
         )}
       >
@@ -49,7 +49,7 @@ export function VerificationBadge({
     <Badge
       variant="outline"
       className={cn(
-        "gap-1 border-amber-300 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+        "select-none gap-1 border-amber-300 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
         className,
       )}
     >

@@ -50,7 +50,6 @@ const TROUBLESHOOTING_TIPS: Record<
 
 export function VerificationFailed({
   method,
-  error,
   onCheckAgain,
   onReturnLater,
 }: VerificationFailedProps) {
@@ -58,16 +57,18 @@ export function VerificationFailed({
 
   return (
     <div className="space-y-4">
-      <Alert variant="destructive">
-        <AlertTriangle className="size-4" />
-        <AlertTitle>Verification Failed</AlertTitle>
+      <Alert className="bg-card/60">
+        <AlertTriangle className="size-4 stroke-danger-foreground" />
+        <AlertTitle className="font-medium text-danger-foreground">
+          Verification Failed
+        </AlertTitle>
         <AlertDescription>
-          {error ||
-            "We couldn't verify your domain ownership. Please check your setup and try again."}
+          We couldn&apos;t verify your domain ownership. Please check your setup
+          and try again.
         </AlertDescription>
       </Alert>
 
-      <div className="rounded-lg bg-muted p-4">
+      <div className="rounded-lg border bg-card/60 p-4 text-card-foreground">
         <h4 className="mb-2 font-medium text-sm">{troubleshooting.title}</h4>
         <ul className="space-y-1.5 text-muted-foreground text-sm">
           {troubleshooting.tips.map((tip) => (
@@ -80,11 +81,15 @@ export function VerificationFailed({
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button onClick={onCheckAgain} className="flex-1">
+        <Button onClick={onCheckAgain} className="flex-1 cursor-pointer">
           <RefreshCw className="size-4" />
           Check Again
         </Button>
-        <Button variant="outline" onClick={onReturnLater} className="flex-1">
+        <Button
+          variant="outline"
+          onClick={onReturnLater}
+          className="flex-1 cursor-pointer"
+        >
           <Clock className="size-4" />
           Return Later
         </Button>
