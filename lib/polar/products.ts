@@ -1,19 +1,22 @@
 import type { UserTier } from "@/lib/schemas";
 
 /**
- * Polar product IDs from environment variables.
+ * Get Polar product IDs from environment variables with validation.
  * These are required and must be set for the application to function.
  *
  * Uses NEXT_PUBLIC_ prefix because these are needed client-side for checkout.
  */
-const POLAR_MONTHLY_PRODUCT_ID =
-  process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
-const POLAR_YEARLY_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
+function getProductIds() {
+  const monthlyId = process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
+  const yearlyId = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
 
-if (!POLAR_MONTHLY_PRODUCT_ID || !POLAR_YEARLY_PRODUCT_ID) {
-  throw new Error(
-    "Missing required Polar product IDs. Set NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID and NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID environment variables.",
-  );
+  if (!monthlyId || !yearlyId) {
+    throw new Error(
+      "Missing required Polar product IDs. Set NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID and NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID environment variables.",
+    );
+  }
+
+  return { monthlyId, yearlyId };
 }
 
 /**
@@ -29,7 +32,9 @@ if (!POLAR_MONTHLY_PRODUCT_ID || !POLAR_YEARLY_PRODUCT_ID) {
  */
 export const POLAR_PRODUCTS = {
   "pro-monthly": {
-    productId: POLAR_MONTHLY_PRODUCT_ID,
+    get productId() {
+      return getProductIds().monthlyId;
+    },
     slug: "pro-monthly",
     tier: "pro" as UserTier,
     name: "Pro Monthly",
@@ -38,7 +43,9 @@ export const POLAR_PRODUCTS = {
     label: "$2/month",
   },
   "pro-yearly": {
-    productId: POLAR_YEARLY_PRODUCT_ID,
+    get productId() {
+      return getProductIds().yearlyId;
+    },
     slug: "pro-yearly",
     tier: "pro" as UserTier,
     name: "Pro Yearly",

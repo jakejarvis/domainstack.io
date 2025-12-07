@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   getProduct,
   getProductsForCheckout,
@@ -8,6 +8,12 @@ import {
   POLAR_PRODUCTS,
   PRO_TIER_INFO,
 } from "./products";
+
+// Stub required Polar product IDs before accessing them
+beforeAll(() => {
+  vi.stubEnv("NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID", "test-monthly-id");
+  vi.stubEnv("NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID", "test-yearly-id");
+});
 
 describe("getProduct", () => {
   it("returns pro-monthly product by slug", () => {

@@ -12,6 +12,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { type Source, useDomainSearch } from "@/hooks/use-domain-search";
 import { useIsMac } from "@/hooks/use-is-mac";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 export type DomainSearchVariant = "sm" | "lg";
@@ -41,6 +42,7 @@ export function DomainSearch({
     });
 
   const isMac = useIsMac();
+  const isMobile = useIsMobile();
   const [mounted, setMounted] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -157,7 +159,11 @@ export function DomainSearch({
               spellCheck={false}
               disabled={loading}
               placeholder={
-                variant === "lg" ? "domainstack.io" : "Search any domain"
+                variant === "lg"
+                  ? "domainstack.io"
+                  : isMobile
+                    ? "Search"
+                    : "Search any domain"
               }
               aria-label="Search any domain"
               value={value}

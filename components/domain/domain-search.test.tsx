@@ -8,8 +8,14 @@ const nav = vi.hoisted(() => ({
   push: vi.fn(),
 }));
 
+const useIsMobile = vi.hoisted(() => vi.fn(() => false));
+
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: nav.push }),
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+  useIsMobile,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,6 +27,7 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 describe("DomainSearch (form variant)", () => {
   beforeEach(() => {
     nav.push.mockClear();
+    useIsMobile.mockReturnValue(false);
   });
 
   it("submits valid domain and navigates", async () => {
@@ -73,5 +80,52 @@ describe("DomainSearch (form variant)", () => {
       expect(nav.push).toHaveBeenCalledWith("/example.com");
       expect(onComplete).toHaveBeenCalled();
     });
+  });
+});
+
+describe("DomainSearch (header variant)", () => {
+  beforeEach(() => {
+    nav.push.mockClear();
+    useIsMobile.mockReturnValue(false);
+  });
+
+  it("shows full placeholder on desktop screens", async () => {
+    useIsMobile.mockReturnValue(false);
+
+    render(<DomainSearch variant="sm" />);
+
+    const input = screen.getByLabelText(
+      /Search any domain/i,
+    ) as HTMLInputElement;
+    expect(input.placeholder).toBe("Search any domain");
+  });
+
+  it("shows short placeholder on mobile screens", async () => {
+    useIsMobile.mockReturnValue(true);
+
+    render(<DomainSearch variant="sm" />);
+
+    const input = screen.getByLabelText(
+      /Search any domain/i,
+    ) as HTMLInputElement;
+    expect(input.placeholder).toBe("Search");
+  });
+
+  it("updates placeholder when window is resized", async () => {
+    // Start with desktop
+    useIsMobile.mockReturnValue(false);
+    const { rerender } = render(<DomainSearch variant="sm" />);
+
+    // Verify desktop placeholder
+    let input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
+    expect(input.placeholder).toBe("Search any domain");
+
+    // Simulate resize to mobile
+    useIsMobile.mockReturnValue(true);
+    rerender(<DomainSearch variant="sm" />);
+
+    // Verify mobile placeholder
+    input = screen.getByLabelText(/Search any domain/i) as HTMLInputElement;
+    expect(input.placeholder).toBe("Search");
   });
 });

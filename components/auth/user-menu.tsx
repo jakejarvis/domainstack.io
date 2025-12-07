@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Bookmark,
-  CircleHelp,
-  LogOut,
-  Moon,
-  Settings,
-  Sun,
-  User,
-} from "lucide-react";
+import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { SettingsContent } from "@/components/dashboard/settings-content";
@@ -106,26 +98,30 @@ export function UserMenu() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="font-medium text-sm leading-none">
-                {user.name || "User"}
-              </p>
-              <p className="text-muted-foreground text-xs leading-none">
-                {user.email}
-              </p>
+            <div className="flex items-center gap-2.5">
+              <Avatar className="size-8">
+                <AvatarImage
+                  src={user.image || undefined}
+                  alt={user.name || "User avatar"}
+                />
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-1">
+                <p className="font-medium text-sm leading-none">
+                  {user.name || "User"}
+                </p>
+                <p className="text-muted-foreground text-xs leading-none">
+                  {user.email}
+                </p>
+              </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {/* Mobile-only items: bookmarklet and theme toggle */}
           {isMobile && (
             <>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onSelect={() => setBookmarkletOpen(true)}
-              >
-                <Bookmark className="size-4" />
-                Bookmarklet
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"
                 onSelect={toggleTheme}
@@ -137,12 +133,19 @@ export function UserMenu() {
                 )}
                 {theme === "dark" ? "Light mode" : "Dark mode"}
               </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onSelect={() => setBookmarkletOpen(true)}
+              >
+                <Bookmark className="size-4" />
+                Bookmarklet
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           )}
           <DropdownMenuItem asChild>
             <Link href="/dashboard" className="cursor-pointer">
-              <User className="size-4" />
+              <Table2 className="size-4" />
               Dashboard
             </Link>
           </DropdownMenuItem>
@@ -157,18 +160,9 @@ export function UserMenu() {
               Settings
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/help" className="cursor-pointer">
-              <CircleHelp className="size-4" />
-              Help
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer text-destructive focus:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="size-4" />
+          <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
+            <LogOut className="size-4 text-danger-foreground" />
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

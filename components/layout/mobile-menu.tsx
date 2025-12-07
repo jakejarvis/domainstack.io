@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, CircleHelp, LogIn, Menu, Moon, Sun } from "lucide-react";
+import { Bookmark, LogIn, Menu, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
@@ -42,13 +42,6 @@ export function MobileMenu() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onSelect={() => setBookmarkletOpen(true)}
-          >
-            <Bookmark className="size-4" />
-            Bookmarklet
-          </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer" onSelect={toggleTheme}>
             {theme === "dark" ? (
               <Sun className="size-4" />
@@ -57,11 +50,12 @@ export function MobileMenu() {
             )}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/help" className="cursor-pointer">
-              <CircleHelp className="size-4" />
-              Help
-            </Link>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => setBookmarkletOpen(true)}
+          >
+            <Bookmark className="size-4" />
+            Bookmarklet
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
