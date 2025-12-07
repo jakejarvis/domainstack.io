@@ -2,15 +2,19 @@ import type { UserTier } from "@/lib/schemas";
 
 /**
  * Polar product IDs from environment variables.
- * These allow different product IDs for staging vs production environments.
+ * These are required and must be set for the application to function.
  *
- * Fallbacks are the production Polar product IDs.
+ * Uses NEXT_PUBLIC_ prefix because these are needed client-side for checkout.
  */
 const POLAR_MONTHLY_PRODUCT_ID =
-  process.env.POLAR_MONTHLY_PRODUCT_ID ??
-  "bc96d339-45e0-41e9-8877-cfdcc689977e";
-const POLAR_YEARLY_PRODUCT_ID =
-  process.env.POLAR_YEARLY_PRODUCT_ID ?? "894304fc-8f36-43ac-9e90-7a70abd81671";
+  process.env.NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID;
+const POLAR_YEARLY_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID;
+
+if (!POLAR_MONTHLY_PRODUCT_ID || !POLAR_YEARLY_PRODUCT_ID) {
+  throw new Error(
+    "Missing required Polar product IDs. Set NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID and NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID environment variables.",
+  );
+}
 
 /**
  * Polar product configuration.
