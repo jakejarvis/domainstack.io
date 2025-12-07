@@ -1,7 +1,17 @@
 import "server-only";
 
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
+import {
+  buildDohUrl,
+  DNS_TYPE_NUMBERS,
+  type DnsJson,
+  DOH_HEADERS,
+  providerOrderForLookup,
+} from "@/lib/dns-utils";
+import {
+  fetchWithSelectiveRedirects,
+  fetchWithTimeoutAndRetry,
+} from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import type {
   DnsInstructions,
@@ -25,16 +35,6 @@ type VerificationResult = {
   verified: boolean;
   method: VerificationMethod | null;
   error?: string;
-};
-
-type DnsJson = {
-  Status: number;
-  Answer?: Array<{
-    name: string;
-    type: number;
-    TTL: number;
-    data: string;
-  }>;
 };
 
 /**
@@ -101,6 +101,9 @@ export async function tryAllVerificationMethods(
 /**
  * Verify ownership via DNS TXT record.
  * Expected record: _domainstack-verify.example.com TXT "domainstack-verify=<token>"
+ *
+ * Uses multiple DoH providers for reliability and cache busting.
+ * Leverages the same provider ordering and fallback logic as dns.ts.
  */
 async function verifyDnsTxt(
   domain: string,
@@ -109,53 +112,75 @@ async function verifyDnsTxt(
   const expectedValue = `${DNS_VERIFICATION_PREFIX}${token}`;
   const verifyHost = `${DNS_VERIFICATION_HOST}.${domain}`;
 
-  try {
-    // Use Cloudflare DNS over HTTPS for resolution
-    const url = new URL("https://cloudflare-dns.com/dns-query");
-    url.searchParams.set("name", verifyHost);
-    url.searchParams.set("type", "TXT");
+  // Use the same provider ordering logic as dns.ts for consistency
+  const providers = providerOrderForLookup(domain);
 
-    const res = await fetchWithTimeoutAndRetry(
-      url,
-      {
-        headers: {
-          accept: "application/dns-json",
+  let lastError: unknown = null;
+
+  // Try providers in sequence
+  for (const provider of providers) {
+    try {
+      const url = buildDohUrl(provider, verifyHost, "TXT");
+      // Add random parameter to bypass HTTP caches
+      url.searchParams.set("t", Date.now().toString());
+
+      const res = await fetchWithTimeoutAndRetry(
+        url,
+        {
+          headers: { ...DOH_HEADERS, ...provider.headers },
         },
-      },
-      { timeoutMs: 5000, retries: 2, backoffMs: 200 },
-    );
+        { timeoutMs: 5000, retries: 1, backoffMs: 200 },
+      );
 
-    if (!res.ok) {
-      logger.warn("DNS query failed", { domain, status: res.status });
-      return { verified: false, method: null, error: "DNS query failed" };
-    }
+      if (!res.ok) {
+        logger.warn("DNS query failed", {
+          domain,
+          provider: provider.key,
+          status: res.status,
+        });
+        continue;
+      }
 
-    const json = (await res.json()) as DnsJson;
-    const answers = json.Answer ?? [];
+      const json = (await res.json()) as DnsJson;
+      const answers = json.Answer ?? [];
 
-    // Check if any TXT record matches
-    for (const answer of answers) {
-      // TXT record type is 16
-      if (answer.type === 16) {
-        // Remove surrounding quotes from TXT record value
-        const value = answer.data.replace(/^"|"$/g, "").trim();
-        if (value === expectedValue) {
-          logger.info("DNS TXT verification successful", { domain });
-          return { verified: true, method: "dns_txt" };
+      // Check if any TXT record matches
+      for (const answer of answers) {
+        if (answer.type === DNS_TYPE_NUMBERS.TXT) {
+          // TXT
+          // Remove surrounding quotes from TXT record value
+          const value = answer.data.replace(/^"|"$/g, "").trim();
+          if (value === expectedValue) {
+            logger.info("DNS TXT verification successful", {
+              domain,
+              provider: provider.key,
+            });
+            return { verified: true, method: "dns_txt" };
+          }
         }
       }
+    } catch (err) {
+      logger.warn("DNS provider error", {
+        domain,
+        provider: provider.key,
+        error: err,
+      });
+      lastError = err;
     }
-
-    logger.debug("DNS TXT record not found or mismatched", { domain });
-    return { verified: false, method: null };
-  } catch (err) {
-    logger.error("DNS TXT verification error", err, { domain });
-    return {
-      verified: false,
-      method: null,
-      error: "DNS resolution failed",
-    };
   }
+
+  logger.debug(
+    "DNS TXT record not found or mismatched after checking providers",
+    {
+      domain,
+    },
+  );
+
+  if (lastError) {
+    logger.error("DNS TXT verification final error", lastError, { domain });
+  }
+
+  return { verified: false, method: null };
 }
 
 /**
@@ -175,12 +200,12 @@ async function verifyHtmlFile(
 
   for (const urlStr of urls) {
     try {
-      const res = await fetchWithTimeoutAndRetry(
+      const res = await fetchWithSelectiveRedirects(
         urlStr,
         {
-          redirect: "follow",
+          redirect: "manual", // Controlled by fetchWithSelectiveRedirects
         },
-        { timeoutMs: 5000, retries: 1, backoffMs: 200 },
+        { timeoutMs: 5000, maxRedirects: 3 },
       );
 
       if (!res.ok) {
@@ -295,8 +320,8 @@ export function getVerificationInstructions(
         hostname: `${DNS_VERIFICATION_HOST}.${domain}`,
         recordType: "TXT",
         value: `${DNS_VERIFICATION_PREFIX}${token}`,
-        suggestedTTL: 3600,
-        suggestedTTLLabel: "1 hour",
+        suggestedTTL: 60,
+        suggestedTTLLabel: "1 minute",
       };
     case "html_file":
       return {

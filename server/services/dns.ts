@@ -2,13 +2,21 @@ import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { cache } from "react";
 import { isCloudflareIp } from "@/lib/cloudflare";
-import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
 import { replaceDns } from "@/lib/db/repos/dns";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { dnsRecords } from "@/lib/db/schema";
+import {
+  buildDohUrl,
+  DNS_TYPE_NUMBERS,
+  type DnsAnswer,
+  type DnsJson,
+  DOH_HEADERS,
+  DOH_PROVIDERS,
+  type DohProvider,
+  providerOrderForLookup,
+} from "@/lib/dns-utils";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-import { simpleHash } from "@/lib/hash";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import {
@@ -24,65 +32,6 @@ const logger = createLogger({ source: "dns" });
 // ============================================================================
 // DNS resolution
 // ============================================================================
-
-type DnsJson = {
-  Status: number;
-  Answer?: DnsAnswer[];
-};
-type DnsAnswer = {
-  name: string;
-  type: number;
-  TTL: number;
-  data: string;
-};
-
-// DNS record type numbers (RFC 1035)
-const DNS_TYPE_NUMBERS = {
-  A: 1,
-  AAAA: 28,
-  CNAME: 5,
-  MX: 15,
-  TXT: 16,
-  NS: 2,
-} as const;
-
-export type DohProvider = {
-  key: string;
-  url: string;
-  headers?: Record<string, string>;
-};
-
-const DEFAULT_HEADERS: Record<string, string> = {
-  accept: "application/dns-json",
-  "user-agent": USER_AGENT,
-};
-
-export const DOH_PROVIDERS: DohProvider[] = [
-  {
-    key: "cloudflare",
-    url: "https://cloudflare-dns.com/dns-query",
-  },
-  {
-    key: "google",
-    url: "https://dns.google/resolve",
-  },
-  // {
-  //   key: "quad9",
-  //   // dns10 is the unfiltered server
-  //   url: "https://dns10.quad9.net/dns-query",
-  // },
-];
-
-function buildDohUrl(
-  provider: DohProvider,
-  domain: string,
-  type: DnsType,
-): URL {
-  const url = new URL(provider.url);
-  url.searchParams.set("name", domain);
-  url.searchParams.set("type", type);
-  return url;
-}
 
 /**
  * Resolve all DNS record types for a domain with Postgres caching.
@@ -439,7 +388,7 @@ async function resolveTypeWithProvider(
   const res = await fetchWithTimeoutAndRetry(
     url,
     {
-      headers: { ...DEFAULT_HEADERS, ...provider.headers },
+      headers: { ...DOH_HEADERS, ...provider.headers },
     },
     { timeoutMs: 2000, retries: 1, backoffMs: 150 },
   );
@@ -568,17 +517,4 @@ function sortDnsRecordsForType(arr: DnsRecord[], type: DnsType): DnsRecord[] {
   // This ensures server and client render the same order
   arr.sort((a, b) => a.value.localeCompare(b.value));
   return arr;
-}
-
-export function providerOrderForLookup(domain: string): DohProvider[] {
-  // Deterministic provider selection based on domain hash for cache consistency
-  // Same domain always uses same primary provider, with others as fallbacks
-  const hash = simpleHash(domain.toLowerCase());
-  const primaryIndex = hash % DOH_PROVIDERS.length;
-
-  // Return primary provider first, followed by others in original order
-  const primary = DOH_PROVIDERS[primaryIndex] as DohProvider;
-  const fallbacks = DOH_PROVIDERS.filter((_, i) => i !== primaryIndex);
-
-  return [primary, ...fallbacks];
 }

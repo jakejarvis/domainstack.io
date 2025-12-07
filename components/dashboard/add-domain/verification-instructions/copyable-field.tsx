@@ -92,10 +92,7 @@ export function CopyableField({
             onClick={handleSelect}
             className="h-10 w-full cursor-text overflow-x-auto bg-transparent px-3 text-left font-mono text-sm outline-none selection:bg-primary selection:text-primary-foreground"
           >
-            <span
-              ref={contentRef}
-              className="inline-block whitespace-nowrap leading-10"
-            >
+            <span ref={contentRef} className="inline-block whitespace-nowrap">
               {children ?? value}
             </span>
           </button>

@@ -10,6 +10,11 @@ vi.mock("@/lib/fetch", () => ({
       return mockFetch(url.toString(), options);
     },
   ),
+  fetchWithSelectiveRedirects: vi.fn(
+    async (url: string | URL, options?: RequestInit) => {
+      return mockFetch(url.toString(), options);
+    },
+  ),
 }));
 
 // Mock fetch globally
@@ -55,8 +60,8 @@ describe("getVerificationInstructions", () => {
     expect(result.hostname).toBe("_domainstack-verify.example.com");
     expect(result.recordType).toBe("TXT");
     expect(result.value).toBe(`domainstack-verify=${token}`);
-    expect(result.suggestedTTL).toBe(3600);
-    expect(result.suggestedTTLLabel).toBe("1 hour");
+    expect(result.suggestedTTL).toBe(60);
+    expect(result.suggestedTTLLabel).toBe("1 minute");
   });
 
   it("returns HTML file instructions with structured fields", () => {
@@ -117,7 +122,8 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns not verified when TXT record is missing", async () => {
-      mockFetch.mockResolvedValueOnce({
+      // Both providers return no records
+      mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           Status: 0,
@@ -133,10 +139,13 @@ describe("verifyDomainOwnership", () => {
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
+      // Should try both providers
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
     it("returns not verified when TXT record value is wrong", async () => {
-      mockFetch.mockResolvedValueOnce({
+      // Both providers return wrong token
+      mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           Status: 0,
@@ -158,10 +167,13 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(false);
+      // Should try both providers
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
     it("handles DNS query failure", async () => {
-      mockFetch.mockResolvedValueOnce({
+      // Mock both providers failing
+      mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
       });
@@ -173,11 +185,12 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(false);
-      expect(result.error).toBe("DNS query failed");
+      // Error is not set when all providers fail (method returns null)
     });
 
     it("handles network error", async () => {
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+      // Mock all providers failing with network error
+      mockFetch.mockRejectedValue(new Error("Network error"));
 
       const result = await verifyDomainOwnership(
         "example.com",
@@ -186,7 +199,9 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(false);
-      expect(result.error).toBe("DNS resolution failed");
+      // verifyDnsTxt catches all errors and returns { verified: false, method: null }
+      // without propagating the error (this is expected behavior - fail gracefully after trying all providers)
+      expect(result.method).toBeNull();
     });
   });
 
@@ -376,6 +391,7 @@ describe("tryAllVerificationMethods", () => {
   const token = "testtoken123";
 
   it("returns dns_txt when DNS verification succeeds first", async () => {
+    // First provider succeeds
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -395,12 +411,16 @@ describe("tryAllVerificationMethods", () => {
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("dns_txt");
-    // Should only call DNS, not other methods
+    // Should only call first DNS provider
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to html_file when DNS fails", async () => {
-    // DNS fails
+    // Both DNS providers fail (no matching TXT records)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ Status: 0, Answer: [] }),
+    });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
@@ -418,7 +438,11 @@ describe("tryAllVerificationMethods", () => {
   });
 
   it("falls back to meta_tag when DNS and HTML fail", async () => {
-    // DNS fails
+    // Both DNS providers fail
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ Status: 0, Answer: [] }),
+    });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
@@ -441,7 +465,11 @@ describe("tryAllVerificationMethods", () => {
   });
 
   it("returns not verified when all methods fail", async () => {
-    // DNS fails
+    // Both DNS providers fail
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ Status: 0, Answer: [] }),
+    });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),

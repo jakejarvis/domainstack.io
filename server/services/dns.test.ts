@@ -465,7 +465,9 @@ describe("getDnsRecords", () => {
 
 describe("providerOrderForLookup (hash-based selection)", () => {
   it("returns deterministic provider order for same domain", async () => {
-    const { DOH_PROVIDERS, providerOrderForLookup } = await import("./dns");
+    const { DOH_PROVIDERS, providerOrderForLookup } = await import(
+      "@/lib/dns-utils"
+    );
 
     const order1 = providerOrderForLookup("example.com");
     const order2 = providerOrderForLookup("example.com");
@@ -477,7 +479,7 @@ describe("providerOrderForLookup (hash-based selection)", () => {
   });
 
   it("is case-insensitive for domain hashing", async () => {
-    const { providerOrderForLookup } = await import("./dns");
+    const { providerOrderForLookup } = await import("@/lib/dns-utils");
 
     const order1 = providerOrderForLookup("Example.COM");
     const order2 = providerOrderForLookup("example.com");
@@ -488,7 +490,9 @@ describe("providerOrderForLookup (hash-based selection)", () => {
   });
 
   it("distributes different domains across providers", async () => {
-    const { DOH_PROVIDERS, providerOrderForLookup } = await import("./dns");
+    const { DOH_PROVIDERS, providerOrderForLookup } = await import(
+      "@/lib/dns-utils"
+    );
 
     const domains = [
       "example.com",
@@ -515,7 +519,9 @@ describe("providerOrderForLookup (hash-based selection)", () => {
   });
 
   it("maintains consistent fallback order for a domain", async () => {
-    const { DOH_PROVIDERS, providerOrderForLookup } = await import("./dns");
+    const { DOH_PROVIDERS, providerOrderForLookup } = await import(
+      "@/lib/dns-utils"
+    );
 
     const order = providerOrderForLookup("test-domain.com");
 

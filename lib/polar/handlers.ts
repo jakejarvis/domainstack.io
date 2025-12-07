@@ -96,7 +96,7 @@ export async function handleSubscriptionActive(
   // Determine tier from product ID
   const tier = getTierForProductId(product.id);
   if (!tier) {
-    logger.warn("unknown product ID in subscription", {
+    logger.error("unknown product ID in subscription webhook", {
       productId: product.id,
       productName: product.name,
       userId,
