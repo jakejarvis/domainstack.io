@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Archive, ArrowLeft, Sparkles } from "lucide-react";
+import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -382,7 +382,7 @@ export function DashboardContent() {
       {showUpgradedBanner && (
         <DashboardBanner
           variant="gold"
-          icon={Sparkles}
+          icon={HeartHandshake}
           title="Welcome to Pro!"
           description={`You now have access to track up to ${proMaxDomains} domains. Thank you for upgrading!`}
           dismissible

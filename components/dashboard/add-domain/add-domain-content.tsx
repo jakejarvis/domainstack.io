@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Crown } from "lucide-react";
+import { Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -148,7 +148,7 @@ export function AddDomainContent({
         {showCard ? (
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
-              <Crown className="size-6 text-amber-600 dark:text-amber-400" />
+              <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
             </div>
             <CardTitle>Domain Limit Reached</CardTitle>
             <CardDescription>
@@ -159,7 +159,7 @@ export function AddDomainContent({
         ) : (
           <div className="mb-4 flex flex-col items-center text-center">
             <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
-              <Crown className="size-6 text-amber-600 dark:text-amber-400" />
+              <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
             </div>
             <h2 className="font-semibold text-lg leading-none tracking-tight">
               Domain Limit Reached
@@ -217,13 +217,9 @@ export function AddDomainContent({
                 <Button
                   onClick={handleUpgrade}
                   disabled={isCheckoutLoading}
-                  className="w-full bg-foreground text-background hover:bg-foreground/90"
+                  className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
                 >
-                  {isCheckoutLoading ? (
-                    <Spinner />
-                  ) : (
-                    <Crown className="size-4" />
-                  )}
+                  {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
                   {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
                 </Button>
                 {showCard ? (

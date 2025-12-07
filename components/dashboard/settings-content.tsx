@@ -5,8 +5,8 @@ import { format } from "date-fns";
 import {
   AlertTriangle,
   ChevronDown,
-  Crown,
   ExternalLink,
+  Gem,
   Info,
 } from "lucide-react";
 import { useState } from "react";
@@ -32,6 +32,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { useSession } from "@/lib/auth-client";
@@ -44,7 +45,6 @@ import { logger } from "@/lib/logger/client";
 import { getProTierInfo } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { Spinner } from "@/components/ui/spinner";
 
 interface SettingsContentProps {
   /** Whether to show the card wrapper (false for modal usage) */
@@ -285,10 +285,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       {/* Subscription Section */}
       <div>
         <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
-          <CardTitle className="flex items-center gap-2">
-            {isPro && <Crown className="size-5 text-accent-gold" />}
-            Subscription
-          </CardTitle>
+          <CardTitle>Subscription</CardTitle>
           <CardDescription>
             {isPro
               ? "You're on the Pro plan. Thank you for your support!"
@@ -378,9 +375,9 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
               <Button
                 onClick={handleUpgrade}
                 disabled={isCheckoutLoading}
-                className="w-full bg-foreground text-background hover:bg-foreground/90"
+                className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
               >
-                {isCheckoutLoading ? <Spinner /> : <Crown className="size-4" />}
+                {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
                 {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
               </Button>
             </div>

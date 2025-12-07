@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Crown, LayoutGrid, Plus, TableIcon } from "lucide-react";
+import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -48,9 +48,9 @@ export function DashboardHeader({
           subscriptionEndsAt ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex cursor-help items-center gap-1 rounded-md bg-foreground px-2 py-0.5 font-semibold text-background text-xs">
-                  <Crown className="size-3" />
-                  PRO
+                <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-accent-gold text-xs uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+                  <Gem className="size-3" />
+                  Pro
                 </span>
               </TooltipTrigger>
               <TooltipContent>
@@ -58,14 +58,14 @@ export function DashboardHeader({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-foreground px-2 py-0.5 font-semibold text-background text-xs">
-              <Crown className="size-3" />
-              PRO
+            <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-accent-gold text-xs uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+              <Gem className="size-3" />
+              Pro
             </span>
           )
         ) : (
-          <span className="inline-flex items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-foreground/70 text-xs">
-            FREE
+          <span className="pointer-events-none inline-flex select-none items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-foreground/70 text-xs uppercase">
+            Free
           </span>
         )}
       </div>

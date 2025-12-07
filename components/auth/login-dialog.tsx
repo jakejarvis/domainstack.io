@@ -25,7 +25,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
         <DialogHeader className="sr-only">
           <DialogTitle>Sign In</DialogTitle>
           <DialogDescription>
-            Sign in to track your domains and receive expiration alerts.
+            Sign in to track your domains and receive health alerts.
           </DialogDescription>
         </DialogHeader>
         <LoginContent showCard={false} onNavigate={() => onOpenChange(false)} />

@@ -200,11 +200,11 @@ export function TrackedDomainCard({
         ) : (
           <div className="flex flex-1 flex-col pt-2">
             <p className="text-muted-foreground text-sm">
-              Complete verification to start receiving expiration alerts.
+              Complete verification to start receiving health alerts.
             </p>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
-            <Button onClick={onVerify} className="w-full">
+            <Button onClick={onVerify} className="cursor-pointer w-full">
               <RefreshCw className="size-4" />
               Complete Verification
             </Button>

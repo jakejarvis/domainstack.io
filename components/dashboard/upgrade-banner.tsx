@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Sparkles } from "lucide-react";
+import { CircleFadingArrowUp, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
@@ -29,7 +29,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         {/* Left side - Icon and text */}
         <div className="flex items-center gap-4">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5">
-            <Crown className="size-5 text-accent-gold" />
+            <CircleFadingArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
             <h3 className="font-semibold">Upgrade to Pro</h3>
@@ -50,9 +50,9 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="w-full bg-foreground text-background hover:bg-foreground/90 sm:w-auto"
+          className="w-full cursor-pointer sm:w-auto"
         >
-          {isLoading ? <Spinner /> : <Sparkles className="size-4" />}
+          {isLoading ? <Spinner /> : <Gem className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
         </Button>
       </div>

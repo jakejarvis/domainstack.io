@@ -1,6 +1,7 @@
 "use client";
 
-import { FilterX, Globe, Plus, Sparkles } from "lucide-react";
+import { BadgeCheck, FilterX, Globe, Plus } from "lucide-react";
+import Link from "next/link";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";
 import { TrackedDomainsTable } from "@/components/dashboard/tracked-domains-table";
@@ -110,12 +111,25 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
-          <Button onClick={onAddDomain} size="lg">
-            <Plus className="size-4" />
-            Add Your First Domain
+          <Button asChild size="lg">
+            <Link
+              href="/dashboard/add-domain"
+              data-disable-progress={true}
+              onClick={(e) => {
+                // Allow modifier clicks to open in new tab/window
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+                  return;
+                }
+                e.preventDefault();
+                onAddDomain();
+              }}
+            >
+              <Plus className="size-4" />
+              Add Your First Domain
+            </Link>
           </Button>
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
-            <Sparkles className="size-4" />
+            <BadgeCheck className="size-4" />
             <span>Verification takes less than 2 minutes</span>
           </div>
         </EmptyContent>

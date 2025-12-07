@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, Sparkles } from "lucide-react";
+import { CircleFadingArrowUp, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -28,8 +28,8 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
 
       <CardContent className="relative flex h-full flex-1 flex-col items-center p-6 text-center">
         {/* Icon */}
-        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-black/5 dark:bg-white/5">
-          <Crown className="size-7 text-accent-gold" />
+        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-gold/5 dark:bg-white/5">
+          <CircleFadingArrowUp className="size-7 text-accent-gold" />
         </div>
 
         {/* Heading */}
@@ -58,9 +58,10 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="w-full bg-foreground text-background hover:bg-foreground/90"
+          variant="outline"
+          className="w-full cursor-pointer"
         >
-          {isLoading ? <Spinner /> : <Sparkles className="size-4" />}
+          {isLoading ? <Spinner /> : <Gem className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
         </Button>
       </CardContent>

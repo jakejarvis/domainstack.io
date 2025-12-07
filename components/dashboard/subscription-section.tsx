@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, ExternalLink } from "lucide-react";
+import { ExternalLink, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,10 +45,7 @@ export function SubscriptionSection({
   const content = (
     <>
       <CardHeader className={cn(!showCard && "px-0 pt-0")}>
-        <CardTitle className="flex items-center gap-2">
-          {isPro && <Crown className="size-5 text-accent-gold" />}
-          Subscription
-        </CardTitle>
+        <CardTitle>Subscription</CardTitle>
         <CardDescription>
           {isPro
             ? "You're on the Pro plan. Thank you for your support!"
@@ -119,9 +116,9 @@ export function SubscriptionSection({
             <Button
               onClick={handleUpgrade}
               disabled={isCheckoutLoading}
-              className="w-full bg-foreground text-background hover:bg-foreground/90"
+              className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
             >
-              {isCheckoutLoading ? <Spinner /> : <Crown className="size-4" />}
+              {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
               {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
             </Button>
           </div>

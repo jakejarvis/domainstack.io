@@ -64,7 +64,7 @@ export function AnnouncementPill() {
                   <span className="mr-1.5 font-medium text-accent-gold">
                     New!
                   </span>
-                  <span>Track domains &amp; get expiry alerts.</span>
+                  <span>Track domains &amp; get health alerts.</span>
                 </div>
                 <ArrowUpRight className="group-hover:-translate-y-[1px] size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px]" />
               </Link>

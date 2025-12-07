@@ -39,7 +39,7 @@ const iconVariants = cva(
         warning: "bg-white/50 text-warning-foreground dark:bg-black/20",
         success: "bg-white/50 text-success-foreground dark:bg-black/20",
         danger: "bg-white/50 text-danger-foreground dark:bg-black/20",
-        gold: "bg-black/5 text-accent-gold dark:bg-white/5",
+        gold: "bg-accent-gold/5 text-accent-gold dark:bg-white/5",
       },
     },
     defaultVariants: {

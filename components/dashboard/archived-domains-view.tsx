@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { Archive, Crown, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, CircleFadingArrowUp, RotateCcw, Trash2 } from "lucide-react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { Favicon } from "@/components/domain/favicon";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ export function ArchivedDomainsView({
       {!canUnarchive && !isPro && (
         <DashboardBanner
           variant="warning"
-          icon={Crown}
+          icon={CircleFadingArrowUp}
           title="Upgrade to Reactivate"
           description="You've reached your domain tracking limit. Upgrade to Pro or remove active domains to reactivate archived ones."
         />

@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sign In",
-  description: "Sign in to track your domains and receive expiration alerts.",
+  description: "Sign in to track your domains and receive health alerts.",
 };
 
 export default async function LoginPage() {

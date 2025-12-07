@@ -28,7 +28,7 @@ export function LoginContent({
         Welcome to Domainstack
       </h1>
       <p className="mb-8 text-center text-muted-foreground text-sm">
-        Sign in to track your domains and receive expiration alerts.
+        Sign in to track your domains and receive health alerts.
       </p>
       <div className="flex w-full flex-col gap-3">
         {getEnabledProviders().map((provider) => (

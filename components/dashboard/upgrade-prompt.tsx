@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown } from "lucide-react";
+import { Gauge, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,9 +42,9 @@ export function UpgradePrompt({
     <Card className="border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Crown className="size-5 text-accent-gold" />
+          <Gauge className="size-5 text-accent-gold" />
           <CardTitle className="text-lg">
-            {atLimit ? "Domain Limit Reached" : "Running Low on Slots"}
+            {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
           </CardTitle>
         </div>
         <CardDescription>
@@ -74,9 +74,9 @@ export function UpgradePrompt({
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="bg-foreground text-background hover:bg-foreground/90"
+          className="cursor-pointer bg-foreground text-background hover:bg-foreground/90"
         >
-          {isLoading ? <Spinner /> : <Crown className="size-4" />}
+          {isLoading ? <Spinner /> : <Gem className="size-4" />}
           {isLoading ? "Opening..." : "Upgrade to Pro"}
         </Button>
       </CardContent>

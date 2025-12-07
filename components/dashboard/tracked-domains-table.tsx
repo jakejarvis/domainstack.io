@@ -455,6 +455,7 @@ export function TrackedDomainsTable({
                             size="sm"
                             variant="outline"
                             onClick={() => onVerify(row.original)}
+                            className="cursor-pointer"
                           >
                             <RefreshCw className="size-3.5" />
                             Verify
