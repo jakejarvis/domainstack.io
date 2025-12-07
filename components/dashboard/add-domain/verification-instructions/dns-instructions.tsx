@@ -34,8 +34,8 @@ export function DnsVerificationInstructions({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 dark:border-white/15 dark:bg-white/5">
-        <CopyableField label="Host / Name" value={instructions.hostname}>
+      <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 dark:border-white/15 dark:bg-white/3">
+        <CopyableField label="Host / Name" value={hostnamePrefix}>
           <span>
             {hostnamePrefix}
             <span className="select-none text-muted-foreground">

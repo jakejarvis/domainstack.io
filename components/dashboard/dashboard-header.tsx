@@ -44,11 +44,11 @@ export function DashboardHeader({
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
-        {tier === "pro" ? (
+        {tier !== "pro" ? (
           subscriptionEndsAt ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-accent-gold text-xs uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+                <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
                   <Gem className="size-3" />
                   Pro
                 </span>
@@ -58,13 +58,13 @@ export function DashboardHeader({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-accent-gold text-xs uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
+            <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
               <Gem className="size-3" />
               Pro
             </span>
           )
         ) : (
-          <span className="pointer-events-none inline-flex select-none items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-foreground/70 text-xs uppercase">
+          <span className="pointer-events-none inline-flex select-none items-center rounded-md border border-foreground/30 px-2 py-0.5 font-medium text-[10px] text-foreground/70 uppercase">
             Free
           </span>
         )}

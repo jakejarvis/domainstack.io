@@ -301,7 +301,7 @@ export function getVerificationInstructions(
     case "html_file":
       return {
         title: "Upload an HTML File",
-        description: `Upload a file to your website's root directory at the path shown below.`,
+        description: `Upload a file to your website at the path shown below.`,
         fullPath: HTML_FILE_PATH,
         filename: "domainstack-verify.txt",
         fileContent: token,

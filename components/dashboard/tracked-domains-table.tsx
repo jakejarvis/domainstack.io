@@ -69,15 +69,15 @@ type TrackedDomainsTableProps = {
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
   if (!provider.name) {
-    return <span className="text-muted-foreground">—</span>;
+    return <span className="text-muted-foreground text-xs">—</span>;
   }
 
   return (
     <div className="flex items-center gap-1.5">
       {provider.domain && (
-        <Favicon domain={provider.domain} size={14} className="shrink-0" />
+        <Favicon domain={provider.domain} size={13} className="shrink-0" />
       )}
-      <span className="truncate">{provider.name}</span>
+      <span className="truncate text-[13px]">{provider.name}</span>
     </div>
   );
 }
@@ -130,17 +130,17 @@ export function TrackedDomainsTable({
         accessorKey: "domainName",
         header: "Domain",
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Favicon domain={row.original.domainName} size={18} />
-            <ScreenshotTooltip domain={row.original.domainName}>
-              <Link
-                href={`/${row.original.domainName}`}
-                className="font-medium hover:underline"
-              >
+          <ScreenshotTooltip domain={row.original.domainName}>
+            <Link
+              href={`/${row.original.domainName}`}
+              className="group flex items-center gap-1.5"
+            >
+              <Favicon domain={row.original.domainName} size={16} />
+              <span className="font-medium text-[13px] group-hover:underline">
                 {row.original.domainName}
-              </Link>
-            </ScreenshotTooltip>
-          </div>
+              </span>
+            </Link>
+          </ScreenshotTooltip>
         ),
       },
       {
@@ -178,10 +178,10 @@ export function TrackedDomainsTable({
         cell: ({ row }) => {
           const date = row.original.expirationDate;
           if (!date) {
-            return <span className="text-muted-foreground">—</span>;
+            return <span className="text-muted-foreground text-xs">—</span>;
           }
           return (
-            <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <div className="flex items-center gap-1 whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-default">
@@ -192,7 +192,7 @@ export function TrackedDomainsTable({
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
               </Tooltip>
-              <span className="text-[11px] text-muted-foreground leading-none">
+              <span className="text-[10px] text-muted-foreground leading-none">
                 <RelativeExpiryString to={date} dangerDays={30} warnDays={45} />
               </span>
             </div>
@@ -234,7 +234,7 @@ export function TrackedDomainsTable({
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button variant="ghost" size="icon-sm" className="size-7">
                 <MoreVertical className="size-3.5" />
                 <span className="sr-only">Actions</span>
               </Button>
@@ -316,7 +316,7 @@ export function TrackedDomainsTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className="border-black/15 border-b bg-muted/50 dark:border-white/15"
+                className="border-black/10 border-b bg-muted/30 dark:border-white/10"
               >
                 {headerGroup.headers.map((header, index) => {
                   const canSort = header.column.getCanSort();
@@ -335,16 +335,16 @@ export function TrackedDomainsTable({
                     <th
                       key={header.id}
                       className={cn(
-                        "h-10 px-3 text-left align-middle font-medium text-muted-foreground uppercase tracking-wider",
-                        index === 0 && "w-10 pl-5", // Checkbox column
-                        index === headerGroup.headers.length - 1 && "pr-5",
+                        "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs",
+                        index === 0 && "w-9 pl-4", // Checkbox column
+                        index === headerGroup.headers.length - 1 && "pr-4",
                       )}
                     >
                       {header.isPlaceholder ? null : canSort ? (
                         <button
                           type="button"
                           className={cn(
-                            "-ml-2 inline-flex h-7 cursor-pointer select-none items-center gap-1 rounded-md px-2 text-[12px] transition-colors hover:bg-accent hover:text-foreground",
+                            "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs transition-colors hover:bg-accent hover:text-foreground",
                             isSorted && "text-foreground",
                           )}
                           onClick={header.column.getToggleSortingHandler()}
@@ -367,12 +367,12 @@ export function TrackedDomainsTable({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-black/10 dark:divide-white/10">
+          <tbody className="divide-y divide-black/5 dark:divide-white/5">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="h-20 text-center text-muted-foreground text-sm"
+                  className="h-16 text-center text-muted-foreground text-sm"
                 >
                   No domains tracked yet.
                 </td>
@@ -407,13 +407,13 @@ export function TrackedDomainsTable({
                     <tr
                       key={row.id}
                       className={cn(
-                        "transition-colors hover:bg-muted/35",
+                        "transition-colors hover:bg-muted/30",
                         isSelected && "bg-primary/10",
                       )}
                     >
                       {/* Checkbox column */}
                       {selectCell && (
-                        <td className="h-12 w-10 pr-3 pl-5 align-middle">
+                        <td className="h-12 w-9 pr-2.5 pl-4 align-middle">
                           {flexRender(
                             selectCell.column.columnDef.cell,
                             selectCell.getContext(),
@@ -422,7 +422,7 @@ export function TrackedDomainsTable({
                       )}
                       {/* Domain column */}
                       {domainCell && (
-                        <td className="h-12 px-3 align-middle">
+                        <td className="h-12 px-2.5 align-middle">
                           {flexRender(
                             domainCell.column.columnDef.cell,
                             domainCell.getContext(),
@@ -431,7 +431,7 @@ export function TrackedDomainsTable({
                       )}
                       {/* Status column */}
                       {statusCell && (
-                        <td className="h-12 px-3 align-middle">
+                        <td className="h-12 px-2.5 align-middle">
                           {flexRender(
                             statusCell.column.columnDef.cell,
                             statusCell.getContext(),
@@ -441,26 +441,26 @@ export function TrackedDomainsTable({
                       {/* Span remaining detail columns with verify message */}
                       <td
                         colSpan={collapseCount}
-                        className="h-12 px-3 align-middle"
+                        className="h-12 px-2.5 align-middle"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-muted-foreground text-sm">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-muted-foreground text-xs">
                             Verify ownership to see domain details
                           </span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => onVerify(row.original)}
-                            className="cursor-pointer"
+                            className="h-8 cursor-pointer px-2 text-xs"
                           >
-                            <RefreshCw className="size-3.5" />
+                            <RefreshCw className="size-3" />
                             Verify
                           </Button>
                         </div>
                       </td>
                       {/* Actions column */}
                       {actionsCell && (
-                        <td className="h-12 px-3 pr-5 align-middle">
+                        <td className="h-12 px-2.5 pr-4 align-middle">
                           {flexRender(
                             actionsCell.column.columnDef.cell,
                             actionsCell.getContext(),
@@ -476,7 +476,7 @@ export function TrackedDomainsTable({
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-colors hover:bg-muted/50",
+                      "transition-colors hover:bg-muted/30",
                       isSelected && "bg-primary/10",
                     )}
                   >
@@ -484,9 +484,9 @@ export function TrackedDomainsTable({
                       <td
                         key={cell.id}
                         className={cn(
-                          "h-12 px-3 align-middle",
-                          index === 0 && "w-10 pl-5",
-                          index === cells.length - 1 && "pr-5",
+                          "h-10 px-2.5 align-middle",
+                          index === 0 && "w-9 pl-4",
+                          index === cells.length - 1 && "pr-4",
                         )}
                       >
                         {flexRender(
@@ -509,7 +509,6 @@ export function TrackedDomainsTable({
           pageIndex={table.getState().pagination.pageIndex}
           pageSize={pageSize}
           pageCount={table.getPageCount()}
-          totalItems={domains.length}
           canPreviousPage={table.getCanPreviousPage()}
           canNextPage={table.getCanNextPage()}
           onPageChange={(index) => table.setPageIndex(index)}

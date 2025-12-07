@@ -364,9 +364,9 @@ export function AddDomainContent({
       >
         {isAddingDomain || isVerifying ? (
           <Spinner className="size-4" />
-        ) : (
+        ) : step === 2 ? (
           <Check className="size-4" />
-        )}
+        ) : null}
         {step === 2
           ? isVerifying
             ? "Checking..."
