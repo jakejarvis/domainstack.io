@@ -211,11 +211,12 @@ export function NotificationSettingsSection() {
 
   const domains = domainsQuery.data?.items ?? [];
   const verifiedDomains = domains.filter((d) => d.verified);
-  const globalPrefs = globalPrefsQuery.data ?? {
-    domainExpiry: true,
-    certificateExpiry: true,
-    verificationStatus: true,
-  };
+
+  const defaultGlobalPrefs: GlobalPrefs = Object.fromEntries(
+    NOTIFICATION_CATEGORIES.map((category) => [category, true]),
+  ) as GlobalPrefs;
+
+  const globalPrefs = globalPrefsQuery.data ?? defaultGlobalPrefs;
 
   const isPending =
     updateGlobalMutation.isPending ||
@@ -233,7 +234,7 @@ export function NotificationSettingsSection() {
           </span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5 px-0 pb-0">
+      <CardContent className="space-y-5 px-0 pt-1">
         {/* Global Notifications */}
         <div className="space-y-1">
           {NOTIFICATION_CATEGORIES.map((category) => (

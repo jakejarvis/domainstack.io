@@ -7,7 +7,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
-import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";
@@ -67,6 +66,16 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
         process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
     })
   : null;
+
+// Build list of enabled OAuth providers based on server-side credentials
+// This ensures trustedProviders always matches socialProviders configuration
+const enabledProviders: string[] = [];
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  enabledProviders.push("github");
+}
+if (process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET) {
+  enabledProviders.push("vercel");
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -180,7 +189,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: getEnabledProviders().map((p) => p.id),
+      trustedProviders: enabledProviders,
     },
   },
   experimental: {

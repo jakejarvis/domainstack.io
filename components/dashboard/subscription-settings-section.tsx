@@ -74,7 +74,7 @@ export function SubscriptionSettingsSection() {
             : "Upgrade to Pro for more tracked domains."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 px-0">
+      <CardContent className="space-y-4 px-0 pt-1">
         {/* Current plan info */}
         <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div>
@@ -131,15 +131,25 @@ export function SubscriptionSettingsSection() {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+          <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+            {/* Decorative elements - subtle warm glows */}
+            <div
+              aria-hidden
+              className="-right-8 -top-8 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+            />
+            <div
+              aria-hidden
+              className="-bottom-8 -left-8 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
+            />
+
+            <div className="relative">
               <div className="mb-2 font-medium">{proTierInfo.name}</div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
                 {proTierInfo.features.map((feature) => (
                   <li key={feature}>• {feature}</li>
                 ))}
               </ul>
-              <div className="flex items-baseline gap-2 text-sm">
+              <div className="mb-4 flex items-baseline gap-2 text-sm">
                 <span className="font-semibold text-accent-gold">
                   {proTierInfo.monthly.label}
                 </span>
@@ -151,15 +161,15 @@ export function SubscriptionSettingsSection() {
                   ({proTierInfo.yearly.savings})
                 </span>
               </div>
+              <Button
+                onClick={handleUpgrade}
+                disabled={isCheckoutLoading}
+                className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
+              >
+                {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
+                {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
+              </Button>
             </div>
-            <Button
-              onClick={handleUpgrade}
-              disabled={isCheckoutLoading}
-              className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
-            >
-              {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
-              {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
-            </Button>
           </div>
         )}
       </CardContent>

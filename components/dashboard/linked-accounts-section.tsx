@@ -74,7 +74,9 @@ export function LinkedAccountsSection() {
       await queryClient.cancelQueries({ queryKey: linkedAccountsQueryKey });
 
       // Snapshot the previous value
-      const previousAccounts = queryClient.getQueryData(linkedAccountsQueryKey);
+      const previousAccounts = queryClient.getQueryData<
+        typeof linkedAccountsQuery.data
+      >(linkedAccountsQueryKey);
 
       // Optimistically update to remove the account
       queryClient.setQueryData(
@@ -85,7 +87,7 @@ export function LinkedAccountsSection() {
 
       return { previousAccounts };
     },
-    onError: (err, _providerId, context) => {
+    onError: (err, providerId, context) => {
       // Rollback on error
       if (context?.previousAccounts) {
         queryClient.setQueryData(
@@ -93,7 +95,7 @@ export function LinkedAccountsSection() {
           context.previousAccounts,
         );
       }
-      logger.error("Failed to unlink account", err);
+      logger.error("Failed to unlink account", err, { providerId });
       toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, providerId) => {
@@ -119,7 +121,7 @@ export function LinkedAccountsSection() {
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Linked Accounts</CardTitle>
+          <CardTitle>Providers</CardTitle>
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
       </div>
@@ -130,9 +132,9 @@ export function LinkedAccountsSection() {
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Linked Accounts</CardTitle>
+          <CardTitle>Providers</CardTitle>
           <CardDescription className="text-destructive">
-            Failed to load linked accounts
+            Failed to load providers
           </CardDescription>
         </CardHeader>
       </div>
@@ -143,12 +145,12 @@ export function LinkedAccountsSection() {
     <>
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Linked Accounts</CardTitle>
+          <CardTitle>Providers</CardTitle>
           <CardDescription>
-            Manage the accounts you use to sign in
+            Connect your account with a third-party service.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 px-0">
+        <CardContent className="space-y-3 px-0 pt-1">
           {OAUTH_PROVIDERS.map((provider) => {
             const isLinked = linkedProviderIds.has(provider.id);
             const isLinking = linkingProvider === provider.id;
