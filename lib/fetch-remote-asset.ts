@@ -2,6 +2,7 @@ import { lookup as dnsLookup } from "node:dns/promises";
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
+import { addSpanAttributes, withChildSpan } from "@/lib/tracing";
 
 const logger = createLogger({ source: "remote-asset" });
 
@@ -69,86 +70,130 @@ export type RemoteAssetResult = {
 export async function fetchRemoteAsset(
   opts: FetchRemoteAssetOptions,
 ): Promise<RemoteAssetResult> {
-  let currentUrl = toUrl(opts.url, opts.currentUrl);
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
-  const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
-  const allowHttp = opts.allowHttp ?? false;
-  const allowedHosts =
-    opts.allowedHosts
-      ?.map((host) => host.trim().toLowerCase())
-      .filter(Boolean) ?? [];
+  const initialUrl = toUrl(opts.url, opts.currentUrl);
 
-  for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
-    // Treat every hop (including the initial request) as untrusted and re-run
-    // the hostname/IP vetting so redirects cannot smuggle us into a private net.
-    await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
+  return await withChildSpan(
+    {
+      name: "http.fetch_remote_asset",
+      attributes: {
+        "url.full": initialUrl.toString(),
+        "url.scheme": initialUrl.protocol,
+      },
+    },
+    async () => {
+      let currentUrl = initialUrl;
+      const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
+      const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
+      const allowHttp = opts.allowHttp ?? false;
+      const allowedHosts =
+        opts.allowedHosts
+          ?.map((host) => host.trim().toLowerCase())
+          .filter(Boolean) ?? [];
 
-    const response = await timedFetch(currentUrl.toString(), {
-      headers: opts.headers,
-      timeoutMs,
-    });
-
-    if (isRedirect(response)) {
-      if (redirectCount === maxRedirects) {
-        throw new RemoteAssetError(
-          "redirect_limit",
-          `Too many redirects fetching ${currentUrl.toString()}`,
-        );
-      }
-      // Follow the Location manually so we can validate the next host ourselves.
-      const location = response.headers.get("location");
-      if (!location) {
-        throw new RemoteAssetError(
-          "response_error",
-          "Redirect response missing Location header",
-        );
-      }
-      const nextUrl = new URL(location, currentUrl);
-      currentUrl = nextUrl;
-      continue;
-    }
-
-    if (!response.ok) {
-      const error = new RemoteAssetError(
-        "response_error",
-        `Remote asset request failed with ${response.status}`,
-        response.status,
-      );
-      logger.warn("response error", {
-        url: currentUrl.toString(),
-        reason: error.message,
+      addSpanAttributes({
+        "http.timeout_ms": timeoutMs,
+        "http.max_bytes": maxBytes,
+        "http.max_redirects": maxRedirects,
+        "http.allow_http": allowHttp,
       });
-      throw error;
-    }
 
-    const declaredLength = response.headers.get("content-length");
-    if (declaredLength) {
-      const declared = Number(declaredLength);
-      if (Number.isFinite(declared) && declared > maxBytes) {
-        const error = new RemoteAssetError(
-          "size_exceeded",
-          `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
-        );
-        logger.warn("size exceeded", {
-          url: currentUrl.toString(),
-          reason: error.message,
+      for (
+        let redirectCount = 0;
+        redirectCount <= maxRedirects;
+        redirectCount++
+      ) {
+        // Treat every hop (including the initial request) as untrusted and re-run
+        // the hostname/IP vetting so redirects cannot smuggle us into a private net.
+        await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
+
+        const response = await timedFetch(currentUrl.toString(), {
+          headers: opts.headers,
+          timeoutMs,
         });
-        throw error;
+
+        if (isRedirect(response)) {
+          if (redirectCount === maxRedirects) {
+            addSpanAttributes({ "http.redirects_exceeded": true });
+            throw new RemoteAssetError(
+              "redirect_limit",
+              `Too many redirects fetching ${currentUrl.toString()}`,
+            );
+          }
+          // Follow the Location manually so we can validate the next host ourselves.
+          const location = response.headers.get("location");
+          if (!location) {
+            throw new RemoteAssetError(
+              "response_error",
+              "Redirect response missing Location header",
+            );
+          }
+          const nextUrl = new URL(location, currentUrl);
+          currentUrl = nextUrl;
+          continue;
+        }
+
+        if (!response.ok) {
+          addSpanAttributes({
+            "http.response.status_code": response.status,
+            "http.error": true,
+          });
+          const error = new RemoteAssetError(
+            "response_error",
+            `Remote asset request failed with ${response.status}`,
+            response.status,
+          );
+          logger.warn("response error", {
+            url: currentUrl.toString(),
+            reason: error.message,
+          });
+          throw error;
+        }
+
+        const declaredLength = response.headers.get("content-length");
+        if (declaredLength) {
+          const declared = Number(declaredLength);
+          if (Number.isFinite(declared) && declared > maxBytes) {
+            addSpanAttributes({
+              "http.size_exceeded": true,
+              "http.declared_size": declared,
+            });
+            const error = new RemoteAssetError(
+              "size_exceeded",
+              `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
+            );
+            logger.warn("size exceeded", {
+              url: currentUrl.toString(),
+              reason: error.message,
+            });
+            throw error;
+          }
+        }
+
+        const buffer = await readBodyWithLimit(response, maxBytes);
+        const contentType = response.headers.get("content-type");
+
+        // Add success attributes
+        addSpanAttributes({
+          "http.response.status_code": response.status,
+          "http.content_type": contentType ?? "unknown",
+          "http.bytes_received": buffer.byteLength,
+          ...(currentUrl.toString() !== initialUrl.toString() && {
+            "http.final_url": currentUrl.toString(),
+          }),
+        });
+
+        return {
+          buffer,
+          contentType,
+          finalUrl: currentUrl.toString(),
+          status: response.status,
+        };
       }
-    }
 
-    const buffer = await readBodyWithLimit(response, maxBytes);
-    const contentType = response.headers.get("content-type");
-    return {
-      buffer,
-      contentType,
-      finalUrl: currentUrl.toString(),
-      status: response.status,
-    };
-  }
-
-  throw new RemoteAssetError("redirect_limit", "Exceeded redirect limit");
+      throw new RemoteAssetError("redirect_limit", "Exceeded redirect limit");
+    },
+  );
 }
 
 function toUrl(input: string | URL, base?: string | URL): URL {

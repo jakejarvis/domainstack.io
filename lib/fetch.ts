@@ -1,5 +1,6 @@
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
+import { addSpanAttributes, addSpanEvent, withChildSpan } from "@/lib/tracing";
 
 const logger = createLogger({ source: "fetch" });
 
@@ -12,46 +13,84 @@ export async function fetchWithTimeoutAndRetry(
   init: RequestInit = {},
   opts: { timeoutMs?: number; retries?: number; backoffMs?: number } = {},
 ): Promise<Response> {
-  const timeoutMs = opts.timeoutMs ?? 5000;
-  const retries = Math.max(0, opts.retries ?? 0);
-  const backoffMs = Math.max(0, opts.backoffMs ?? 150);
-  const externalSignal = init.signal ?? undefined;
+  const url = input.toString();
 
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const { signal, cleanup } = createAbortSignal(timeoutMs, externalSignal);
-    try {
-      const res = await fetch(input, {
-        ...init,
-        signal,
-        headers: {
-          "User-Agent": USER_AGENT,
-          ...init.headers,
-        },
+  return await withChildSpan(
+    {
+      name: "http.fetch",
+      attributes: {
+        "url.full": url,
+        "http.request.method": init.method ?? "GET",
+      },
+    },
+    async () => {
+      const timeoutMs = opts.timeoutMs ?? 5000;
+      const retries = Math.max(0, opts.retries ?? 0);
+      const backoffMs = Math.max(0, opts.backoffMs ?? 150);
+      const externalSignal = init.signal ?? undefined;
+
+      addSpanAttributes({
+        "http.timeout_ms": timeoutMs,
+        "http.max_retries": retries,
       });
-      cleanup();
-      return res;
-    } catch (err) {
-      lastError = err;
-      cleanup();
-      if (externalSignal?.aborted) {
-        throw err instanceof Error ? err : new Error("fetch aborted");
-      }
-      if (attempt < retries) {
-        logger.warn(
-          `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
-          {
-            url: input.toString(),
-            error: err,
-          },
-        );
 
-        // Simple linear backoff — good enough for trusted upstream retry logic.
-        await new Promise((r) => setTimeout(r, backoffMs));
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const { signal, cleanup } = createAbortSignal(
+          timeoutMs,
+          externalSignal,
+        );
+        try {
+          const res = await fetch(input, {
+            ...init,
+            signal,
+            headers: {
+              "User-Agent": USER_AGENT,
+              ...init.headers,
+            },
+          });
+          cleanup();
+
+          // Add response attributes to span
+          addSpanAttributes({
+            "http.response.status_code": res.status,
+            "http.attempt": attempt + 1,
+          });
+
+          return res;
+        } catch (err) {
+          lastError = err;
+          cleanup();
+          if (externalSignal?.aborted) {
+            addSpanAttributes({ "http.aborted": true });
+            throw err instanceof Error ? err : new Error("fetch aborted");
+          }
+          if (attempt < retries) {
+            addSpanAttributes({ "http.retries_attempted": attempt + 1 });
+            addSpanEvent("http.retry", {
+              attempt: attempt + 1,
+              max_retries: retries,
+              delay_ms: backoffMs,
+              reason: err instanceof Error ? err.message : String(err),
+            });
+            logger.warn(
+              `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
+              {
+                url: input.toString(),
+                error: err,
+              },
+            );
+
+            // Simple linear backoff — good enough for trusted upstream retry logic.
+            await new Promise((r) => setTimeout(r, backoffMs));
+          }
+        }
       }
-    }
-  }
-  throw lastError instanceof Error ? lastError : new Error("fetch failed");
+
+      addSpanAttributes({ "http.failed_after_retries": true });
+      throw lastError instanceof Error ? lastError : new Error("fetch failed");
+    },
+  );
 }
 
 /**
@@ -98,65 +137,99 @@ export async function fetchWithSelectiveRedirects(
   init: RequestInit = {},
   opts: { timeoutMs?: number; maxRedirects?: number } = {},
 ): Promise<Response> {
-  const timeoutMs = opts.timeoutMs ?? 5000;
-  const maxRedirects = opts.maxRedirects ?? 5;
-
-  let currentUrl =
+  const initialUrl =
     typeof input === "string" || input instanceof URL
       ? input.toString()
       : input.url;
-  let redirectCount = 0;
 
-  while (redirectCount <= maxRedirects) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return await withChildSpan(
+    {
+      name: "http.fetch_with_redirects",
+      attributes: {
+        "url.full": initialUrl,
+        "http.request.method": init.method ?? "GET",
+      },
+    },
+    async () => {
+      const timeoutMs = opts.timeoutMs ?? 5000;
+      const maxRedirects = opts.maxRedirects ?? 5;
 
-    try {
-      const response = await fetch(currentUrl, {
-        ...init,
-        headers: {
-          "User-Agent": USER_AGENT,
-          ...init.headers,
-        },
-        redirect: "manual",
-        signal: controller.signal,
+      addSpanAttributes({
+        "http.timeout_ms": timeoutMs,
+        "http.max_redirects": maxRedirects,
       });
-      clearTimeout(timer);
 
-      // Check if this is a redirect response
-      const isRedirect = response.status >= 300 && response.status < 400;
-      if (!isRedirect) {
-        return response;
+      let currentUrl = initialUrl;
+      let redirectCount = 0;
+
+      while (redirectCount <= maxRedirects) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          const response = await fetch(currentUrl, {
+            ...init,
+            headers: {
+              "User-Agent": USER_AGENT,
+              ...init.headers,
+            },
+            redirect: "manual",
+            signal: controller.signal,
+          });
+          clearTimeout(timer);
+
+          // Check if this is a redirect response
+          const isRedirect = response.status >= 300 && response.status < 400;
+          if (!isRedirect) {
+            // Final response
+            addSpanAttributes({
+              "http.response.status_code": response.status,
+              "http.redirects_followed": redirectCount,
+              ...(redirectCount > 0 && { "http.final_url": currentUrl }),
+            });
+            return response;
+          }
+
+          // Get the redirect location
+          const location = response.headers.get("location");
+          if (!location) {
+            // No location header, return the redirect response as-is
+            addSpanAttributes({
+              "http.response.status_code": response.status,
+              "http.redirect_missing_location": true,
+            });
+            return response;
+          }
+
+          // Resolve relative URLs
+          const nextUrl = new URL(location, currentUrl).toString();
+
+          // Check if we should follow this redirect
+          if (!isAllowedRedirect(currentUrl, nextUrl)) {
+            // Return the redirect response without following
+            addSpanAttributes({
+              "http.response.status_code": response.status,
+              "http.redirect_blocked": true,
+              "http.redirect_target": nextUrl,
+            });
+            return response;
+          }
+
+          // Follow the redirect
+          currentUrl = nextUrl;
+          redirectCount++;
+        } catch (err) {
+          clearTimeout(timer);
+          throw err;
+        }
       }
 
-      // Get the redirect location
-      const location = response.headers.get("location");
-      if (!location) {
-        // No location header, return the redirect response as-is
-        return response;
-      }
-
-      // Resolve relative URLs
-      const nextUrl = new URL(location, currentUrl).toString();
-
-      // Check if we should follow this redirect
-      if (!isAllowedRedirect(currentUrl, nextUrl)) {
-        // Return the redirect response without following
-        return response;
-      }
-
-      // Follow the redirect
-      currentUrl = nextUrl;
-      redirectCount++;
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
-    }
-  }
-
-  // Max redirects exceeded
-  throw new Error(
-    `Too many redirects (${maxRedirects}) when fetching ${currentUrl}`,
+      // Max redirects exceeded
+      addSpanAttributes({ "http.redirects_exceeded": true });
+      throw new Error(
+        `Too many redirects (${maxRedirects}) when fetching ${currentUrl}`,
+      );
+    },
   );
 }
 

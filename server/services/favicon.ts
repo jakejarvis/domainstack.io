@@ -7,6 +7,7 @@ import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import type { BlobUrlResponse } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
+import { addSpanAttributes, withSpan } from "@/lib/tracing";
 import { ttlForFavicon } from "@/lib/ttl";
 
 const logger = createLogger({ source: "favicon" });
@@ -76,130 +77,151 @@ async function fetchFaviconPromise(
 /**
  * Core favicon fetching logic (separated for cleaner promise management)
  */
-async function fetchFavicon(domain: string): Promise<{ url: string | null }> {
-  // Check Postgres for cached favicon (optimized single query)
-  try {
-    const faviconRecord = await getFaviconByDomain(domain);
-    if (faviconRecord) {
-      // Only treat as cache hit if we have a definitive result:
-      // - url is present (string), OR
-      // - url is null but marked as permanently not found
-      const isDefinitiveResult =
-        faviconRecord.url !== null || faviconRecord.notFound === true;
-
-      if (isDefinitiveResult) {
-        logger.debug("db cache hit", { domain, cached: true });
-        return { url: faviconRecord.url };
-      }
-    }
-  } catch (err) {
-    logger.error("db read failed", err, { domain });
-  }
-
-  // Generate favicon (cache missed)
-  const sources = buildSources(domain);
-  let allNotFound = true; // Track if all sources returned 404/not found
-
-  for (const src of sources) {
+const fetchFavicon = withSpan(
+  ([domain]: [string]) => ({
+    name: "favicon.fetch",
+    attributes: { "app.target_domain": domain },
+  }),
+  async function fetchFavicon(domain: string): Promise<{ url: string | null }> {
+    // Check Postgres for cached favicon (optimized single query)
     try {
-      const asset = await fetchRemoteAsset({
-        url: src,
-        headers: {
-          Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-          "User-Agent": USER_AGENT,
-        },
-        maxBytes: MAX_FAVICON_BYTES,
-        timeoutMs: REQUEST_TIMEOUT_MS,
-        maxRedirects: 2,
-        allowHttp: src.startsWith("http://"),
-      });
-      allNotFound = false;
-      const buf = asset.buffer;
-      // Normalize everything to a consistent WebP size so we don't leak arbitrary formats downstream.
-      const webp = await convertBufferToImageCover(
-        buf,
-        DEFAULT_SIZE,
-        DEFAULT_SIZE,
-        asset.contentType,
-      );
-      if (!webp) continue;
-      const { url, pathname } = await storeImage({
-        kind: "favicon",
-        domain,
-        buffer: webp,
-        width: DEFAULT_SIZE,
-        height: DEFAULT_SIZE,
-      });
-      const source = (() => {
-        if (src.includes("icons.duckduckgo.com")) return "duckduckgo";
-        if (src.includes("www.google.com/s2/favicons")) return "google";
-        if (src.startsWith("https://")) return "direct_https";
-        if (src.startsWith("http://")) return "direct_http";
-        return "unknown";
-      })();
+      const faviconRecord = await getFaviconByDomain(domain);
+      if (faviconRecord) {
+        // Only treat as cache hit if we have a definitive result:
+        // - url is present (string), OR
+        // - url is null but marked as permanently not found
+        const isDefinitiveResult =
+          faviconRecord.url !== null || faviconRecord.notFound === true;
 
-      // Persist to Postgres
-      try {
-        const domainRecord = await ensureDomainRecord(domain);
-        const now = new Date();
-        const expiresAt = ttlForFavicon(now);
-
-        await upsertFavicon({
-          domainId: domainRecord.id,
-          url,
-          pathname: pathname ?? null,
-          size: DEFAULT_SIZE,
-          source,
-          notFound: false,
-          upstreamStatus: asset.status,
-          upstreamContentType: asset.contentType ?? null,
-          fetchedAt: now,
-          expiresAt,
-        });
-      } catch (err) {
-        logger.error("db persist error", err, { domain });
+        if (isDefinitiveResult) {
+          logger.debug("db cache hit", { domain, cached: true });
+          addSpanAttributes({
+            "favicon.cache_hit": true,
+            "favicon.found": faviconRecord.url !== null,
+          });
+          return { url: faviconRecord.url };
+        }
       }
-
-      return { url };
     } catch (err) {
-      if (
-        err instanceof RemoteAssetError &&
-        err.code === "response_error" &&
-        err.status === 404
-      ) {
-        // still considered a true "not found"
-      } else {
-        allNotFound = false;
-      }
-      // Network error, timeout, etc. - not a true "not found"
-      // try next source
+      logger.error("db read failed", err, { domain });
     }
-  }
 
-  // All sources failed - persist null result with notFound flag if all were 404s
-  try {
-    const domainRecord = await ensureDomainRecord(domain);
-    const now = new Date();
-    const expiresAt = ttlForFavicon(now);
+    // Generate favicon (cache missed)
+    addSpanAttributes({ "favicon.cache_hit": false });
+    const sources = buildSources(domain);
+    let allNotFound = true; // Track if all sources returned 404/not found
 
-    await upsertFavicon({
-      domainId: domainRecord.id,
-      url: null,
-      pathname: null,
-      size: DEFAULT_SIZE,
-      source: null,
-      notFound: allNotFound,
-      upstreamStatus: null,
-      upstreamContentType: null,
-      fetchedAt: now,
-      expiresAt,
+    for (const src of sources) {
+      try {
+        const asset = await fetchRemoteAsset({
+          url: src,
+          headers: {
+            Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
+            "User-Agent": USER_AGENT,
+          },
+          maxBytes: MAX_FAVICON_BYTES,
+          timeoutMs: REQUEST_TIMEOUT_MS,
+          maxRedirects: 2,
+          allowHttp: src.startsWith("http://"),
+        });
+        allNotFound = false;
+        const buf = asset.buffer;
+        // Normalize everything to a consistent WebP size so we don't leak arbitrary formats downstream.
+        const webp = await convertBufferToImageCover(
+          buf,
+          DEFAULT_SIZE,
+          DEFAULT_SIZE,
+          asset.contentType,
+        );
+        if (!webp) continue;
+        const { url, pathname } = await storeImage({
+          kind: "favicon",
+          domain,
+          buffer: webp,
+          width: DEFAULT_SIZE,
+          height: DEFAULT_SIZE,
+        });
+        const source = (() => {
+          if (src.includes("icons.duckduckgo.com")) return "duckduckgo";
+          if (src.includes("www.google.com/s2/favicons")) return "google";
+          if (src.startsWith("https://")) return "direct_https";
+          if (src.startsWith("http://")) return "direct_http";
+          return "unknown";
+        })();
+
+        // Persist to Postgres
+        try {
+          const domainRecord = await ensureDomainRecord(domain);
+          const now = new Date();
+          const expiresAt = ttlForFavicon(now);
+
+          await upsertFavicon({
+            domainId: domainRecord.id,
+            url,
+            pathname: pathname ?? null,
+            size: DEFAULT_SIZE,
+            source,
+            notFound: false,
+            upstreamStatus: asset.status,
+            upstreamContentType: asset.contentType ?? null,
+            fetchedAt: now,
+            expiresAt,
+          });
+        } catch (err) {
+          logger.error("db persist error", err, { domain });
+        }
+
+        addSpanAttributes({
+          "favicon.found": true,
+          "favicon.source": source,
+        });
+
+        return { url };
+      } catch (err) {
+        if (
+          err instanceof RemoteAssetError &&
+          err.code === "response_error" &&
+          err.status === 404
+        ) {
+          // still considered a true "not found"
+        } else {
+          allNotFound = false;
+        }
+        // Network error, timeout, etc. - not a true "not found"
+        // try next source
+      }
+    }
+
+    // All sources failed - persist null result with notFound flag if all were 404s
+    try {
+      const domainRecord = await ensureDomainRecord(domain);
+      const now = new Date();
+      const expiresAt = ttlForFavicon(now);
+
+      await upsertFavicon({
+        domainId: domainRecord.id,
+        url: null,
+        pathname: null,
+        size: DEFAULT_SIZE,
+        source: null,
+        notFound: allNotFound,
+        upstreamStatus: null,
+        upstreamContentType: null,
+        fetchedAt: now,
+        expiresAt,
+      });
+    } catch (err) {
+      logger.error("db persist error (null)", err, { domain });
+    }
+
+    addSpanAttributes({
+      "favicon.found": false,
+      "favicon.all_not_found": allNotFound,
     });
-  } catch (err) {
-    logger.error("db persist error (null)", err, { domain });
-  }
 
-  return { url: null };
-}
+    return { url: null };
+  },
+);
 
 /**
  * Get or create a favicon for a domain.

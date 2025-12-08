@@ -5,7 +5,16 @@
  * reducing boilerplate while maintaining full observability.
  */
 
-import { type Attributes, context, type Span, trace } from "@opentelemetry/api";
+import {
+  type Attributes,
+  type Span,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
+
+// Re-export commonly used OpenTelemetry types for convenience
+export { SpanStatusCode, SpanKind, type Span, type Attributes };
 
 // ============================================================================
 // Types
@@ -67,29 +76,36 @@ export function withSpan<TArgs extends unknown[], TReturn>(
     const spanOptions = typeof options === "function" ? options(args) : options;
 
     const tracer = trace.getTracer("service-layer");
-    const span = tracer.startSpan(spanOptions.name, {
-      attributes: spanOptions.attributes,
-    });
 
-    try {
-      // Execute the wrapped function
-      const result = await fn(...args);
+    // Use startActiveSpan for automatic context propagation
+    return await tracer.startActiveSpan(
+      spanOptions.name,
+      { attributes: spanOptions.attributes },
+      async (span) => {
+        try {
+          // Execute the wrapped function
+          const result = await fn(...args);
 
-      // Add result metadata if available
-      addResultMetadata(span, result);
+          // Add result metadata if available
+          addResultMetadata(span, result);
 
-      return result;
-    } catch (error) {
-      // Record exception and set error status
-      span.recordException(error as Error);
-      span.setStatus({
-        code: 2, // ERROR (SpanStatusCode.ERROR)
-        message: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
-    } finally {
-      span.end();
-    }
+          // Set success status
+          span.setStatus({ code: SpanStatusCode.OK });
+
+          return result;
+        } catch (error) {
+          // Record exception and set error status
+          span.recordException(error as Error);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
+        } finally {
+          span.end();
+        }
+      },
+    );
   };
 }
 
@@ -117,24 +133,40 @@ export function withSpanSync<TArgs extends unknown[], TReturn>(
     const spanOptions = typeof options === "function" ? options(args) : options;
 
     const tracer = trace.getTracer("service-layer");
-    const span = tracer.startSpan(spanOptions.name, {
-      attributes: spanOptions.attributes,
-    });
 
-    try {
-      const result = fn(...args);
-      addResultMetadata(span, result);
-      return result;
-    } catch (error) {
-      span.recordException(error as Error);
-      span.setStatus({
-        code: 2, // ERROR
-        message: error instanceof Error ? error.message : String(error),
-      });
+    // Use startActiveSpan for automatic context propagation (synchronous version)
+    let result: TReturn | undefined;
+    let error: unknown;
+
+    tracer.startActiveSpan(
+      spanOptions.name,
+      { attributes: spanOptions.attributes },
+      (span) => {
+        try {
+          result = fn(...args);
+          addResultMetadata(span, result);
+          span.setStatus({ code: SpanStatusCode.OK });
+        } catch (err) {
+          error = err;
+          span.recordException(err as Error);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        } finally {
+          span.end();
+        }
+      },
+    );
+
+    if (error !== undefined) {
       throw error;
-    } finally {
-      span.end();
     }
+    if (result === undefined) {
+      throw new Error("Span completed without result or error");
+    }
+
+    return result;
   };
 }
 
@@ -166,24 +198,29 @@ export async function withChildSpan<T>(
   fn: () => Promise<T>,
 ): Promise<T> {
   const tracer = trace.getTracer("service-layer");
-  const span = tracer.startSpan(options.name, {
-    attributes: options.attributes,
-  });
 
-  try {
-    const result = await fn();
-    addResultMetadata(span, result);
-    return result;
-  } catch (error) {
-    span.recordException(error as Error);
-    span.setStatus({
-      code: 2,
-      message: error instanceof Error ? error.message : String(error),
-    });
-    throw error;
-  } finally {
-    span.end();
-  }
+  // Use startActiveSpan for automatic parent-child relationship
+  return await tracer.startActiveSpan(
+    options.name,
+    { attributes: options.attributes },
+    async (span) => {
+      try {
+        const result = await fn();
+        addResultMetadata(span, result);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return result;
+      } catch (error) {
+        span.recordException(error as Error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      } finally {
+        span.end();
+      }
+    },
+  );
 }
 
 /**
@@ -191,24 +228,39 @@ export async function withChildSpan<T>(
  */
 export function withChildSpanSync<T>(options: SpanOptions, fn: () => T): T {
   const tracer = trace.getTracer("service-layer");
-  const span = tracer.startSpan(options.name, {
-    attributes: options.attributes,
-  });
 
-  try {
-    const result = fn();
-    addResultMetadata(span, result);
-    return result;
-  } catch (error) {
-    span.recordException(error as Error);
-    span.setStatus({
-      code: 2,
-      message: error instanceof Error ? error.message : String(error),
-    });
+  let result: T | undefined;
+  let error: unknown;
+
+  tracer.startActiveSpan(
+    options.name,
+    { attributes: options.attributes },
+    (span) => {
+      try {
+        result = fn();
+        addResultMetadata(span, result);
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        error = err;
+        span.recordException(err as Error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      } finally {
+        span.end();
+      }
+    },
+  );
+
+  if (error !== undefined) {
     throw error;
-  } finally {
-    span.end();
   }
+  if (result === undefined) {
+    throw new Error("Span completed without result or error");
+  }
+
+  return result;
 }
 
 /**
@@ -224,27 +276,15 @@ export function withChildSpanSync<T>(options: SpanOptions, fn: () => T): T {
  * ```
  */
 export function getCurrentSpan(): Span | undefined {
-  return trace.getSpan(context.active());
+  return trace.getActiveSpan();
 }
 
 /**
- * Add a custom attribute to the current span (if any).
+ * Add multiple attributes to the current active span (if one exists).
+ * Convenience wrapper for quick annotations.
  *
  * @example
- * ```typescript
- * addSpanAttribute('cache.hit', true);
- * addSpanAttribute('db.query.duration_ms', 123);
- * ```
- */
-export function addSpanAttribute(key: string, value: unknown): void {
-  const span = getCurrentSpan();
-  if (span && isValidAttributeValue(value)) {
-    span.setAttribute(key, value);
-  }
-}
-
-/**
- * Add multiple attributes to the current span (if any).
+ * addSpanAttributes({ "dns.cache_hit": true, "dns.resolver": "cloudflare" });
  */
 export function addSpanAttributes(attributes: Record<string, unknown>): void {
   const span = getCurrentSpan();
@@ -255,6 +295,56 @@ export function addSpanAttributes(attributes: Record<string, unknown>): void {
       }
     }
   }
+}
+
+/**
+ * Add a time-stamped event to the current active span (if one exists).
+ * Events are useful for recording occurrences within a span's lifecycle.
+ *
+ * @example
+ * addSpanEvent("dns.provider_tried", { provider: "cloudflare", result: "timeout" });
+ * addSpanEvent("http.retry", { attempt: 2, delay_ms: 500 });
+ */
+export function addSpanEvent(
+  name: string,
+  attributes?: Record<string, unknown>,
+): void {
+  const span = getCurrentSpan();
+  if (span && attributes) {
+    // Filter out invalid attribute values and cast to SpanAttributes
+    const validAttributes: Record<string, string | number | boolean> = {};
+    for (const [key, value] of Object.entries(attributes)) {
+      if (isValidAttributeValue(value)) {
+        validAttributes[key] = value as string | number | boolean;
+      }
+    }
+    span.addEvent(name, validAttributes);
+  } else if (span) {
+    // No attributes provided
+    span.addEvent(name);
+  }
+}
+
+/**
+ * Add correlation ID to the current span.
+ * This creates a link between our custom correlation ID system and OpenTelemetry traces.
+ *
+ * Uses the `app.correlation_id` attribute name following OpenTelemetry best practices
+ * for custom application-specific attributes.
+ *
+ * @example
+ * ```typescript
+ * import { getCorrelationId } from "@/lib/logger/server";
+ * import { addCorrelationIdToSpan } from "@/lib/tracing";
+ *
+ * const correlationId = getCorrelationId();
+ * if (correlationId) {
+ *   addCorrelationIdToSpan(correlationId);
+ * }
+ * ```
+ */
+export function addCorrelationIdToSpan(correlationId: string): void {
+  addSpanAttributes({ "app.correlation_id": correlationId });
 }
 
 // ============================================================================

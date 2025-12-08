@@ -266,6 +266,58 @@ Key patterns:
   - Distinct ID sourced from PostHog cookie via `cache()`-wrapped `getDistinctId()` to comply with Next.js restrictions.
 - Analytics mocked in tests via `vitest.setup.ts`.
 
+## OpenTelemetry Tracing
+Distributed tracing implementation using `@vercel/otel` and custom instrumentation for deep observability.
+
+### Architecture
+- **Automatic instrumentation**: `@vercel/otel` traces Next.js requests and fetch calls
+- **tRPC middleware**: Creates spans for all tRPC procedures in `trpc/init.ts`
+- **Service layer**: All major services wrapped with `withSpan()` from `lib/tracing.ts`
+- **HTTP utilities**: Fetch operations instrumented in `lib/fetch.ts` and `lib/fetch-remote-asset.ts`
+
+### Tracing Utilities (`lib/tracing.ts`)
+Core helpers using `startActiveSpan()` for automatic context propagation:
+- `withSpan()` - Wrap async functions with automatic span creation
+- `withSpanSync()` - Synchronous version
+- `withChildSpan()` - Create child spans within traced functions
+- `getCurrentSpan()` - Get active span for custom attributes
+- `addSpanAttributes()` - Add attributes to current span
+- `addSpanEvent()` - Add time-stamped events to current span
+- Re-exports: `SpanStatusCode`, `SpanKind`, `Span`, `Attributes` for convenience
+
+### Service Layer Spans
+All services create spans with `app.target_domain` attribute for the domain being analyzed:
+- **DNS**: `dns.lookup` - Attributes: `app.target_domain`, `dns.cache_hit`, `dns.resolver`, `dns.record_count`, `dns.providers_tried`
+- **Certificates**: `cert.probe` - Attributes: `app.target_domain`, `cert.cache_hit`, `cert.chain_length`, `cert.ca_provider`
+- **Headers**: `headers.probe` - Attributes: `app.target_domain`, `headers.cache_hit`, `headers.status`, `headers.count`
+- **Hosting**: `hosting.detect` - Attributes: `app.target_domain`, `hosting.cache_hit`, `hosting.provider`
+- **Registration**: `registration.lookup` - Attributes: `app.target_domain`, `registration.cache_hit`, `registration.is_registered`
+- **SEO**: `seo.parse` - Attributes: `app.target_domain`, `seo.cache_hit`, `seo.status`, `seo.has_og_image`
+- **Favicon**: `favicon.fetch` - Attributes: `app.target_domain`, `favicon.cache_hit`, `favicon.found`, `favicon.source`
+- **Screenshot**: `screenshot.capture` - Attributes: `app.target_domain`, `screenshot.cache_hit`, `screenshot.found`, `screenshot.attempts`
+- **Verification**: `verification.verify` - Attributes: `verification.domain`, `verification.method`, `verification.verified`
+- **Verification (all methods)**: `verification.try_all` - Attributes: `verification.domain`, `verification.verified`, `verification.method`
+
+### HTTP Layer Spans
+Low-level HTTP operations use semantic conventions for standard attributes:
+- `http.fetch` - Retry logic with `url.full`, `http.request.method`, `http.response.status_code`, `http.attempt`, `http.retries_attempted`
+- `http.fetch_with_redirects` - Redirect handling with `http.redirects_followed`, `http.redirect_blocked`, `http.final_url`
+- `http.fetch_remote_asset` - SSRF-protected fetching with `http.bytes_received`, `http.content_type`, size limits
+
+### Span Hierarchy Example
+```
+trpc.domain.getHosting (tRPC middleware)
+  └─ hosting.detect (service layer)
+     ├─ dns.lookup → dns.resolve_type → http.fetch
+     └─ headers.probe → http.fetch_with_redirects
+```
+
+### Integration with Logging
+- Logger automatically extracts `traceId` and `spanId` via `trace.getActiveSpan()`
+- All spans include `app.correlation_id` attribute (from `x-request-id` header)
+- Correlation IDs link logs and spans bidirectionally
+- See **Structured Logging** section for correlation ID propagation
+
 ## Structured Logging
 - Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
 - **Server-side logging:**
@@ -280,7 +332,7 @@ Key patterns:
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
   - Errors automatically tracked in PostHog
   - Console output only in development (info/debug) and always for errors
-  - Correlation IDs propagated from server via header/cookie/localStorage
+  - Correlation IDs propagated from server via `x-request-id` header and `correlation-id` cookie
 - **Log format:** Structured JSON with consistent fields (level, message, timestamp, context, correlationId, traceId, spanId, environment).
 - **Usage examples:**
   ```typescript
@@ -297,7 +349,6 @@ Key patterns:
   logger.info("search initiated", { domain: query });
   logger.error("search failed", error, { domain: query });
   ```
-- **Correlation IDs:** Generated server-side, propagated to client via `x-correlation-id` header, stored in cookie/localStorage. Enables request tracing across services.
+- **Correlation IDs:** Generated server-side in edge middleware (`proxy.ts`), propagated via `x-request-id` header and `correlation-id` cookie. Enables end-to-end request tracing across client and server. Middleware checks incoming `x-request-id` header (for API clients) or generates new UUID, then sets both response header and cookie (30-day expiry, httpOnly=false for client logging).
 - **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with correlation IDs and OpenTelemetry context.
 - **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
-

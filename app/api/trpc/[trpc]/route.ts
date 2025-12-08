@@ -18,7 +18,7 @@ const handler = async (req: Request) => {
       logger.error("unhandled error", error, { source: "trpc", path });
     },
     responseMeta: () => {
-      // Add correlation ID to response headers for client tracking
+      // Echo correlation ID back in response header (standard practice)
       if (ctx.correlationId) {
         return {
           headers: {

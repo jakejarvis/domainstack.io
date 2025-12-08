@@ -18,6 +18,7 @@ import type {
   HtmlFileInstructions,
   MetaTagInstructions,
 } from "@/lib/schemas";
+import { addSpanAttributes, withSpan } from "@/lib/tracing";
 
 const logger = createLogger({ source: "verification" });
 
@@ -40,63 +41,95 @@ type VerificationResult = {
 /**
  * Verify domain ownership using the specified method.
  */
-export async function verifyDomainOwnership(
-  domain: string,
-  token: string,
-  method: VerificationMethod,
-): Promise<VerificationResult> {
-  logger.debug("verifying domain ownership", { domain, method });
+export const verifyDomainOwnership = withSpan(
+  ([domain, _token, method]: [string, string, VerificationMethod]) => ({
+    name: "verification.verify",
+    attributes: {
+      "verification.domain": domain,
+      "verification.method": method,
+    },
+  }),
+  async function verifyDomainOwnership(
+    domain: string,
+    token: string,
+    method: VerificationMethod,
+  ): Promise<VerificationResult> {
+    logger.debug("verifying domain ownership", { domain, method });
 
-  try {
-    switch (method) {
-      case "dns_txt":
-        return await verifyDnsTxt(domain, token);
-      case "html_file":
-        return await verifyHtmlFile(domain, token);
-      case "meta_tag":
-        return await verifyMetaTag(domain, token);
-      default:
-        return { verified: false, method: null, error: "Unknown method" };
+    try {
+      switch (method) {
+        case "dns_txt":
+          return await verifyDnsTxtImpl(domain, token);
+        case "html_file":
+          return await verifyHtmlFileImpl(domain, token);
+        case "meta_tag":
+          return await verifyMetaTagImpl(domain, token);
+        default:
+          return { verified: false, method: null, error: "Unknown method" };
+      }
+    } catch (err) {
+      logger.error("verification failed", err, { domain, method });
+      addSpanAttributes({
+        "verification.verified": false,
+        "verification.error": true,
+      });
+      return {
+        verified: false,
+        method: null,
+        error: err instanceof Error ? err.message : "Verification failed",
+      };
     }
-  } catch (err) {
-    logger.error("verification failed", err, { domain, method });
-    return {
-      verified: false,
-      method: null,
-      error: err instanceof Error ? err.message : "Verification failed",
-    };
-  }
-}
+  },
+);
 
 /**
  * Try all verification methods and return the first one that succeeds.
  */
-export async function tryAllVerificationMethods(
-  domain: string,
-  token: string,
-): Promise<VerificationResult> {
-  logger.debug("trying all verification methods", { domain });
+export const tryAllVerificationMethods = withSpan(
+  ([domain, _token]: [string, string]) => ({
+    name: "verification.try_all",
+    attributes: { "verification.domain": domain },
+  }),
+  async function tryAllVerificationMethods(
+    domain: string,
+    token: string,
+  ): Promise<VerificationResult> {
+    logger.debug("trying all verification methods", { domain });
 
-  // Try DNS TXT first (most common/reliable)
-  const dnsResult = await verifyDnsTxt(domain, token);
-  if (dnsResult.verified) {
-    return dnsResult;
-  }
+    // Try DNS TXT first (most common/reliable)
+    const dnsResult = await verifyDnsTxtImpl(domain, token);
+    if (dnsResult.verified) {
+      addSpanAttributes({
+        "verification.verified": true,
+        "verification.method": "dns_txt",
+      });
+      return dnsResult;
+    }
 
-  // Try HTML file next
-  const htmlResult = await verifyHtmlFile(domain, token);
-  if (htmlResult.verified) {
-    return htmlResult;
-  }
+    // Try HTML file next
+    const htmlResult = await verifyHtmlFileImpl(domain, token);
+    if (htmlResult.verified) {
+      addSpanAttributes({
+        "verification.verified": true,
+        "verification.method": "html_file",
+      });
+      return htmlResult;
+    }
 
-  // Try meta tag last
-  const metaResult = await verifyMetaTag(domain, token);
-  if (metaResult.verified) {
-    return metaResult;
-  }
+    // Try meta tag last
+    const metaResult = await verifyMetaTagImpl(domain, token);
+    if (metaResult.verified) {
+      addSpanAttributes({
+        "verification.verified": true,
+        "verification.method": "meta_tag",
+      });
+      return metaResult;
+    }
 
-  return { verified: false, method: null };
-}
+    addSpanAttributes({ "verification.verified": false });
+    return { verified: false, method: null };
+  },
+);
 
 /**
  * Verify ownership via DNS TXT record.
@@ -105,7 +138,7 @@ export async function tryAllVerificationMethods(
  * Uses multiple DoH providers for reliability and cache busting.
  * Leverages the same provider ordering and fallback logic as dns.ts.
  */
-async function verifyDnsTxt(
+async function verifyDnsTxtImpl(
   domain: string,
   token: string,
 ): Promise<VerificationResult> {
@@ -188,7 +221,7 @@ async function verifyDnsTxt(
  * Expected file: https://example.com/.well-known/domainstack-verify.txt
  * Contents should exactly match the token (after trimming whitespace).
  */
-async function verifyHtmlFile(
+async function verifyHtmlFileImpl(
   domain: string,
   token: string,
 ): Promise<VerificationResult> {
@@ -229,7 +262,7 @@ async function verifyHtmlFile(
  * Verify ownership via meta tag.
  * Expected tag: <meta name="domainstack-verify" content="<token>">
  */
-async function verifyMetaTag(
+async function verifyMetaTagImpl(
   domain: string,
   token: string,
 ): Promise<VerificationResult> {

@@ -1,8 +1,8 @@
 import { type Span, trace } from "@opentelemetry/api";
 import { describe, expect, it, vi } from "vitest";
 import {
-  addSpanAttribute,
   addSpanAttributes,
+  addSpanEvent,
   getCurrentSpan,
   withChildSpan,
   withChildSpanSync,
@@ -14,16 +14,20 @@ describe("tracing utilities", () => {
   describe("withSpan", () => {
     it("wraps async function with automatic span", async () => {
       const mockSpan = {
-        startSpan: vi.fn().mockReturnValue({
-          end: vi.fn(),
-          setStatus: vi.fn(),
-          recordException: vi.fn(),
-          setAttribute: vi.fn(),
+        end: vi.fn(),
+        setStatus: vi.fn(),
+        recordException: vi.fn(),
+        setAttribute: vi.fn(),
+      };
+
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          return callback(mockSpan);
         }),
       };
 
       vi.spyOn(trace, "getTracer").mockReturnValue(
-        mockSpan as unknown as ReturnType<typeof trace.getTracer>,
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
       );
 
       const testFn = withSpan(
@@ -36,9 +40,11 @@ describe("tracing utilities", () => {
       const result = await testFn("input");
 
       expect(result).toBe("result-input");
-      expect(mockSpan.startSpan).toHaveBeenCalledWith("test.operation", {
-        attributes: { test: "value" },
-      });
+      expect(mockTracer.startActiveSpan).toHaveBeenCalledWith(
+        "test.operation",
+        { attributes: { test: "value" } },
+        expect.any(Function),
+      );
     });
 
     it("supports dynamic attributes from function args", async () => {
@@ -49,9 +55,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          return callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const testFn = withSpan(
         ([domain]: [string]) => ({
@@ -66,7 +78,7 @@ describe("tracing utilities", () => {
       const result = await testFn("example.com");
 
       expect(result.domain).toBe("example.com");
-      expect(trace.getTracer).toHaveBeenCalled();
+      expect(mockTracer.startActiveSpan).toHaveBeenCalled();
     });
 
     it("records exceptions and sets error status", async () => {
@@ -77,9 +89,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn(async (_name, _options, callback) => {
+          return callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const testError = new Error("Test error");
       const testFn = withSpan({ name: "test.error" }, async () => {
@@ -103,9 +121,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          return callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const testFn = withSpan({ name: "test.array" }, async () => {
         return [1, 2, 3];
@@ -126,9 +150,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const testFn = withSpanSync({ name: "test.sync" }, (n: number) => {
         return n * 2;
@@ -148,9 +178,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const testError = new Error("Sync error");
       const testFn = withSpanSync({ name: "test.sync.error" }, () => {
@@ -172,9 +208,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          return callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const result = await withChildSpan(
         { name: "child.operation", attributes: { step: "1" } },
@@ -197,9 +239,15 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       };
 
-      vi.spyOn(trace, "getTracer").mockReturnValue({
-        startSpan: vi.fn().mockReturnValue(mockSpan),
-      } as unknown as ReturnType<typeof trace.getTracer>);
+      const mockTracer = {
+        startActiveSpan: vi.fn((_name, _options, callback) => {
+          callback(mockSpan);
+        }),
+      };
+
+      vi.spyOn(trace, "getTracer").mockReturnValue(
+        mockTracer as unknown as ReturnType<typeof trace.getTracer>,
+      );
 
       const result = withChildSpanSync({ name: "child.sync" }, () => {
         return 42;
@@ -212,7 +260,7 @@ describe("tracing utilities", () => {
 
   describe("getCurrentSpan", () => {
     it("returns undefined when no active span", () => {
-      vi.spyOn(trace, "getSpan").mockReturnValue(undefined);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(undefined);
       expect(getCurrentSpan()).toBeUndefined();
     });
 
@@ -222,52 +270,35 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       } as unknown as Span;
 
-      vi.spyOn(trace, "getSpan").mockReturnValue(mockSpan);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
       expect(getCurrentSpan()).toBe(mockSpan);
     });
   });
 
-  describe("addSpanAttribute", () => {
-    it("adds attribute to current span when available", () => {
+  describe("addSpanAttributes", () => {
+    it("adds single attribute to current span when available", () => {
       const mockSpan = {
         setAttribute: vi.fn(),
       } as unknown as Span;
 
-      vi.spyOn(trace, "getSpan").mockReturnValue(mockSpan);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
 
-      addSpanAttribute("custom.key", "value");
+      addSpanAttributes({ "custom.key": "value" });
       expect(mockSpan.setAttribute).toHaveBeenCalledWith("custom.key", "value");
     });
 
     it("does nothing when no active span", () => {
-      vi.spyOn(trace, "getSpan").mockReturnValue(undefined);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(undefined);
       // Should not throw
-      expect(() => addSpanAttribute("key", "value")).not.toThrow();
+      expect(() => addSpanAttributes({ key: "value" })).not.toThrow();
     });
 
-    it("filters out invalid attribute values", () => {
-      const mockSpan = {
-        setAttribute: vi.fn(),
-      } as unknown as Span;
-
-      vi.spyOn(trace, "getSpan").mockReturnValue(mockSpan);
-
-      addSpanAttribute("invalid", null);
-      addSpanAttribute("also.invalid", undefined);
-      addSpanAttribute("valid", "ok");
-
-      expect(mockSpan.setAttribute).toHaveBeenCalledTimes(1);
-      expect(mockSpan.setAttribute).toHaveBeenCalledWith("valid", "ok");
-    });
-  });
-
-  describe("addSpanAttributes", () => {
     it("adds multiple attributes to current span", () => {
       const mockSpan = {
         setAttribute: vi.fn(),
       } as unknown as Span;
 
-      vi.spyOn(trace, "getSpan").mockReturnValue(mockSpan);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
 
       addSpanAttributes({
         "dns.domain": "example.com",
@@ -291,7 +322,7 @@ describe("tracing utilities", () => {
         setAttribute: vi.fn(),
       } as unknown as Span;
 
-      vi.spyOn(trace, "getSpan").mockReturnValue(mockSpan);
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
 
       addSpanAttributes({
         valid: "ok",
@@ -303,6 +334,58 @@ describe("tracing utilities", () => {
       expect(mockSpan.setAttribute).toHaveBeenCalledTimes(2);
       expect(mockSpan.setAttribute).toHaveBeenCalledWith("valid", "ok");
       expect(mockSpan.setAttribute).toHaveBeenCalledWith("number", 123);
+    });
+  });
+
+  describe("addSpanEvent", () => {
+    it("adds event to current span when available", () => {
+      const mockSpan = {
+        addEvent: vi.fn(),
+      } as unknown as Span;
+
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
+
+      addSpanEvent("dns.provider_tried", { provider: "cloudflare" });
+      expect(mockSpan.addEvent).toHaveBeenCalledWith("dns.provider_tried", {
+        provider: "cloudflare",
+      });
+    });
+
+    it("adds event without attributes", () => {
+      const mockSpan = {
+        addEvent: vi.fn(),
+      } as unknown as Span;
+
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
+
+      addSpanEvent("http.retry");
+      expect(mockSpan.addEvent).toHaveBeenCalledWith("http.retry");
+    });
+
+    it("does nothing when no active span", () => {
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(undefined);
+      // Should not throw
+      expect(() => addSpanEvent("test.event", { key: "value" })).not.toThrow();
+    });
+
+    it("filters out invalid attribute values", () => {
+      const mockSpan = {
+        addEvent: vi.fn(),
+      } as unknown as Span;
+
+      vi.spyOn(trace, "getActiveSpan").mockReturnValue(mockSpan);
+
+      addSpanEvent("test.event", {
+        valid: "ok",
+        invalid: null,
+        alsoInvalid: undefined,
+        number: 123,
+      });
+
+      expect(mockSpan.addEvent).toHaveBeenCalledWith("test.event", {
+        valid: "ok",
+        number: 123,
+      });
     });
   });
 });
