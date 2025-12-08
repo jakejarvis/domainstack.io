@@ -96,13 +96,13 @@
 - Review `trpc/init.ts` when extending procedures to ensure auth/context remain intact.
 
 ## Authentication (better-auth)
-- **Server config:** `lib/auth.ts` - betterAuth with Drizzle adapter, GitHub and Vercel OAuth, Polar plugin for subscriptions.
+- **Server config:** `lib/auth.ts` - betterAuth with Drizzle adapter, GitHub, Google, and Vercel OAuth, Polar plugin for subscriptions.
 - **Client hooks:** `lib/auth-client.ts` - `useSession`, `signIn`, `signOut`, `getSession`, `checkout`, `customerPortal`.
 - **Protected routes:** Dashboard layout (`app/dashboard/layout.tsx`) checks session server-side and redirects to `/login`.
 - **tRPC integration:** `trpc/init.ts` exports `protectedProcedure` that requires valid session; throws `UNAUTHORIZED` otherwise.
 - **Schema tables:** `users`, `sessions`, `accounts`, `verifications` in `lib/db/schema.ts`.
 - **Login modal:** Uses simple React dialog triggered from header; fallback full page at `/login`.
-- **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`.
+- **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`.
 
 ## Domain Tracking System
 The domain tracking feature allows authenticated users to track domains they own, receive expiration notifications, and manage notification preferences.

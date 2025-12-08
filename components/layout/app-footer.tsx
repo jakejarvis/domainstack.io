@@ -1,4 +1,4 @@
-import { CircleHelp, Handshake, ShieldCheck } from "lucide-react";
+import { Handshake, HatGlasses, LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import { HeartAnimated } from "@/components/heart";
 
@@ -30,18 +30,18 @@ export function AppFooter() {
       </p>
       <p className="mt-2 flex flex-wrap items-center justify-center">
         <Link href="/help" prefetch={false}>
-          <CircleHelp className="text-muted-foreground" />
+          <LifeBuoy className="text-muted-foreground" />
           Help
-        </Link>
-        <span className="mx-1.5 text-muted-foreground">•</span>
-        <Link href="/privacy" prefetch={false}>
-          <ShieldCheck className="text-muted-foreground" />
-          Privacy Policy
         </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
         <Link href="/terms" prefetch={false}>
           <Handshake className="text-muted-foreground" />
           Terms of Service
+        </Link>
+        <span className="mx-1.5 text-muted-foreground">•</span>
+        <Link href="/privacy" prefetch={false}>
+          <HatGlasses className="text-muted-foreground" />
+          Privacy Policy
         </Link>
       </p>
     </footer>

@@ -41,6 +41,15 @@ if (
     "Both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required when using GitHub OAuth",
   );
 }
+// Google OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) ||
+  (!process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required when using Google OAuth",
+  );
+}
 // Vercel OAuth is optional, but both credentials are required if either is set
 if (
   (process.env.VERCEL_CLIENT_ID && !process.env.VERCEL_CLIENT_SECRET) ||
@@ -51,9 +60,13 @@ if (
   );
 }
 // Ensure at least one OAuth provider is configured
-if (!process.env.GITHUB_CLIENT_ID && !process.env.VERCEL_CLIENT_ID) {
+if (
+  !process.env.GITHUB_CLIENT_ID &&
+  !process.env.GOOGLE_CLIENT_ID &&
+  !process.env.VERCEL_CLIENT_ID
+) {
   throw new Error(
-    "At least one OAuth provider must be configured (GitHub or Vercel)",
+    "At least one OAuth provider must be configured (GitHub, Google, or Vercel)",
   );
 }
 
@@ -72,6 +85,9 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
 const enabledProviders: string[] = [];
 if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   enabledProviders.push("github");
+}
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  enabledProviders.push("google");
 }
 if (process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET) {
   enabledProviders.push("vercel");
@@ -151,7 +167,7 @@ export const auth = betterAuth({
           throw new Error("Email service not configured");
         }
         await resend.emails.send({
-          from: RESEND_FROM_EMAIL,
+          from: `Domainstack <${RESEND_FROM_EMAIL}>`,
           to: user.email,
           subject: "Confirm your account deletion",
           react: DeleteAccountVerifyEmail({
@@ -168,6 +184,13 @@ export const auth = betterAuth({
         github: {
           clientId: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
+      }),
+    ...(process.env.GOOGLE_CLIENT_ID &&
+      process.env.GOOGLE_CLIENT_SECRET && {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         },
       }),
     ...(process.env.VERCEL_CLIENT_ID &&

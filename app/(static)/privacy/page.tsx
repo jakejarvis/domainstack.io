@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -13,7 +12,7 @@ export default function PrivacyPage() {
       <header className="mb-8 border-border/50 border-b pb-8">
         <h1>Privacy Policy</h1>
         <p className="mt-2 text-muted-foreground text-sm">
-          Last updated: December 6, 2025
+          Last updated: December 8, 2025
         </p>
       </header>
 
@@ -31,20 +30,25 @@ export default function PrivacyPage() {
         <h2>Information We Collect</h2>
 
         <h3>Account Information</h3>
-        <p>When you create an account, we collect:</p>
+        <p>
+          When you create an account, we collect the following details from the
+          login provider you choose:
+        </p>
         <ul>
-          <li>Name and email address (via GitHub OAuth)</li>
-          <li>Profile picture (optional, from your GitHub account)</li>
+          <li>Name</li>
+          <li>Email address (with verification status)</li>
+          <li>Profile picture (optional)</li>
         </ul>
 
         <h3>Domain Data</h3>
-        <p>When you use our service, we collect and display:</p>
+        <p>
+          When you use our service, we collect and display the following
+          publicly available information:
+        </p>
         <ul>
-          <li>
-            Domain registration and WHOIS information (publicly available)
-          </li>
-          <li>DNS records (publicly queryable)</li>
-          <li>SSL/TLS certificate information (publicly available)</li>
+          <li>Domain registration and WHOIS information</li>
+          <li>DNS records</li>
+          <li>SSL/TLS certificate information</li>
           <li>HTTP headers and hosting information</li>
           <li>SEO metadata and screenshots of websites</li>
         </ul>
@@ -335,12 +339,6 @@ export default function PrivacyPage() {
           <a href="mailto:privacy@domainstack.io">privacy@domainstack.io</a>.
         </p>
       </section>
-
-      <footer className="mt-12 border-border/50 border-t pt-8 text-sm">
-        <p>
-          See also our <Link href="/terms">Terms of Service</Link>.
-        </p>
-      </footer>
     </>
   );
 }

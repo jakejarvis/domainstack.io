@@ -21,7 +21,7 @@ interface LoginDialogProps {
 export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm overflow-hidden rounded-3xl border-black/10 bg-background/80 p-0 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80 dark:border-white/10">
+      <DialogContent className="max-w-sm overflow-hidden rounded-3xl border-black/10 bg-background px-0 py-2 dark:border-white/10">
         <DialogHeader className="sr-only">
           <DialogTitle>Sign In</DialogTitle>
           <DialogDescription>

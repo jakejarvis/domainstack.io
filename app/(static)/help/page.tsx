@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
-import Link from "next/link";
 import { FaqAccordion } from "@/components/help/faq-accordion";
 import { getTierLimits } from "@/lib/edge-config";
 import { POLAR_PRODUCTS } from "@/lib/polar/products";
@@ -53,19 +52,10 @@ export default async function HelpPage() {
       <section>
         <h2>Still have questions?</h2>
         <p>
-          If you couldn&apos;t find what you&apos;re looking for, reach out to
-          us at{" "}
-          <a href="mailto:support@domainstack.io">support@domainstack.io</a> and
-          we&apos;ll be happy to help.
+          If you couldn&apos;t find what you&apos;re looking for, reach out to{" "}
+          <a href="mailto:support@domainstack.io">support@domainstack.io</a>.
         </p>
       </section>
-
-      <footer className="mt-12 border-border/50 border-t pt-8 text-sm">
-        <p>
-          See also our <Link href="/privacy">Privacy Policy</Link> and{" "}
-          <Link href="/terms">Terms of Service</Link>.
-        </p>
-      </footer>
     </>
   );
 }

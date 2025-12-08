@@ -1,9 +1,9 @@
 "use client";
 
+import { ScanFace } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
-import { Logo } from "@/components/logo";
 import { Card } from "@/components/ui/card";
 import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
@@ -25,12 +25,14 @@ export function LoginContent({
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   const content = (
-    <div className="flex flex-col items-center px-6 py-8">
-      <Logo className="mb-6 size-14" />
+    <div className="flex flex-col items-center p-6">
+      <div className="mb-5 flex size-14 items-center justify-center rounded-xl bg-primary/5 text-primary">
+        <ScanFace className="size-7" strokeWidth={2} />
+      </div>
       <h1 className="mb-2 font-semibold text-xl tracking-tight">
         Welcome to Domainstack
       </h1>
-      <p className="mb-8 text-center text-muted-foreground text-sm">
+      <p className="mb-6 text-center text-muted-foreground text-sm">
         Sign in to track your domains and receive health alerts.
       </p>
       <div className="flex w-full flex-col gap-3">

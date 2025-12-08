@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, FilterX, Globe, Plus, Timer } from "lucide-react";
+import { FilterX, Globe, Plus, Timer } from "lucide-react";
 import Link from "next/link";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";

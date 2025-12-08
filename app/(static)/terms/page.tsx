@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -13,7 +12,7 @@ export default function TermsPage() {
       <header className="mb-8 border-border/50 border-b pb-8">
         <h1>Terms of Service</h1>
         <p className="mt-2 text-muted-foreground text-sm">
-          Last updated: December 6, 2025
+          Last updated: December 8, 2025
         </p>
       </header>
 
@@ -44,8 +43,8 @@ export default function TermsPage() {
       <section id="account-registration">
         <h2>Account Registration</h2>
         <p>
-          To access certain features, you must create an account using GitHub
-          OAuth. You agree to:
+          To access certain features, you must create an account using one of
+          our supported external providers. You agree to:
         </p>
         <ul>
           <li>Provide accurate and complete information</li>
@@ -270,12 +269,6 @@ export default function TermsPage() {
           <a href="mailto:legal@domainstack.io">legal@domainstack.io</a>.
         </p>
       </section>
-
-      <footer className="mt-12 border-border/50 border-t pt-8 text-sm">
-        <p>
-          See also our <Link href="/privacy">Privacy Policy</Link>.
-        </p>
-      </footer>
     </>
   );
 }

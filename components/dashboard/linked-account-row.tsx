@@ -36,7 +36,7 @@ export function LinkedAccountRow({
   const isLoading = isLinking || isUnlinking;
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] p-4 dark:border-white/10 dark:bg-white/[0.02]">
+    <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]">
       <div className="flex items-center gap-2.5">
         <Icon className="size-4" />
         <span className="font-medium text-sm leading-none">
@@ -57,7 +57,10 @@ export function LinkedAccountRow({
                 size="sm"
                 onClick={onUnlink}
                 disabled={!canUnlink || isLoading}
-                className={cn("gap-2", canUnlink && "cursor-pointer")}
+                className={cn(
+                  "gap-2",
+                  canUnlink ? "cursor-pointer" : "cursor-not-allowed",
+                )}
               >
                 {isUnlinking && <Loader2 className="size-4 animate-spin" />}
                 Unlink
@@ -72,7 +75,7 @@ export function LinkedAccountRow({
         </Tooltip>
       ) : (
         <Button
-          variant="secondary"
+          variant="outline"
           size="sm"
           onClick={onLink}
           disabled={isLoading}

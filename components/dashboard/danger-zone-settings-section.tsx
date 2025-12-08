@@ -48,7 +48,7 @@ export function DangerZoneSettingsSection() {
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 overflow-hidden data-[state=closed]:animate-out data-[state=open]:animate-in">
-          <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/5 p-4">
+          <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-sm">Delete account</p>
