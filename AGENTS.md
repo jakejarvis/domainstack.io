@@ -123,7 +123,7 @@ The domain tracking feature allows authenticated users to track domains they own
 ### Domain Verification
 Users must verify domain ownership via one of three methods:
 1. **DNS TXT record:** Add `_domainstack-verify.domain.com TXT "token"`.
-2. **HTML file:** Upload `/.well-known/domainstack-verify.txt` containing the token.
+2. **HTML file:** Upload `/.well-known/domainstack-verify.html` containing the token.
 3. **Meta tag:** Add `<meta name="domainstack-verify" content="token">` to homepage.
 
 Verification service: `server/services/verification.ts` with `tryAllVerificationMethods()` and `verifyDomainOwnership()`. Uses shared DoH utilities from `lib/dns-utils.ts` for redundant DNS verification across multiple providers (Cloudflare, Google).

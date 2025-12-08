@@ -72,8 +72,8 @@ describe("getVerificationInstructions", () => {
     );
 
     expect(result.title).toContain("HTML");
-    expect(result.fullPath).toBe("/.well-known/domainstack-verify.txt");
-    expect(result.filename).toBe("domainstack-verify.txt");
+    expect(result.fullPath).toBe("/.well-known/domainstack-verify.html");
+    expect(result.filename).toBe("domainstack-verify.html");
     expect(result.fileContent).toBe(token);
   });
 

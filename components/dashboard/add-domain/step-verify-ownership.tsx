@@ -73,17 +73,17 @@ export function StepVerifyOwnership({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="dns_txt" className="mt-4 min-w-0 space-y-3">
+        <TabsContent value="dns_txt" className="mt-1 min-w-0 space-y-3">
           <DnsVerificationInstructions instructions={instructions.dns_txt} />
         </TabsContent>
 
-        <TabsContent value="html_file" className="mt-4 min-w-0 space-y-3">
+        <TabsContent value="html_file" className="mt-1 min-w-0 space-y-3">
           <HtmlFileVerificationInstructions
             instructions={instructions.html_file}
           />
         </TabsContent>
 
-        <TabsContent value="meta_tag" className="mt-4 min-w-0 space-y-3">
+        <TabsContent value="meta_tag" className="mt-1 min-w-0 space-y-3">
           <MetaTagVerificationInstructions
             instructions={instructions.meta_tag}
           />

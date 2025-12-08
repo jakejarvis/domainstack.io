@@ -27,7 +27,7 @@ const DNS_VERIFICATION_HOST = "_domainstack-verify";
 const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
 
 // HTML file verification constants
-const HTML_FILE_PATH = "/.well-known/domainstack-verify.txt";
+const HTML_FILE_PATH = "/.well-known/domainstack-verify.html";
 
 // Meta tag verification constants
 const META_TAG_NAME = "domainstack-verify";
@@ -220,7 +220,7 @@ async function verifyDnsTxtImpl(
 
 /**
  * Verify ownership via HTML file.
- * Expected file: https://example.com/.well-known/domainstack-verify.txt
+ * Expected file: https://example.com/.well-known/domainstack-verify.html
  * Contents should exactly match the token (after trimming whitespace).
  */
 async function verifyHtmlFileImpl(
@@ -371,7 +371,7 @@ export function getVerificationInstructions(
         title: "Upload an HTML File",
         description: `Upload a file to your website at the path shown below.`,
         fullPath: HTML_FILE_PATH,
-        filename: "domainstack-verify.txt",
+        filename: "domainstack-verify.html",
         fileContent: token,
       };
     case "meta_tag":

@@ -172,7 +172,7 @@ function createFaqSections(
                 <li>
                   <strong>HTML file</strong> — Upload a verification file to{" "}
                   <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
-                    /.well-known/domainstack-verify.txt
+                    /.well-known/domainstack-verify.html
                   </code>
                 </li>
                 <li>
