@@ -291,12 +291,12 @@ All services create spans with `app.target_domain` attribute for the domain bein
 - **Certificates**: `cert.probe` - Attributes: `app.target_domain`, `cert.cache_hit`, `cert.chain_length`, `cert.ca_provider`, `cert.probe_failed`, `cert.error` | Events: `cert.probe_failed`
 - **Headers**: `headers.probe` - Attributes: `app.target_domain`, `headers.cache_hit`, `headers.status`, `headers.count`, `headers.dns_error`, `headers.probe_failed`, `headers.error` | Events: `headers.probe_failed`
 - **Hosting**: `hosting.detect` - Attributes: `app.target_domain`, `hosting.cache_hit`, `hosting.provider`
-- **Registration**: `registration.lookup` - Attributes: `app.target_domain`, `registration.cache_hit`, `registration.is_registered`, `registration.unavailable`, `registration.reason`
-- **SEO**: `seo.parse` - Attributes: `app.target_domain`, `seo.cache_hit`, `seo.status`, `seo.has_og_image`
+- **Registration**: `registration.lookup` - Attributes: `app.target_domain`, `registration.cache_hit`, `registration.is_registered`, `registration.unavailable`, `registration.reason`, `registration.timeout` (distinguishes timeouts from truly unsupported TLDs)
+- **SEO**: `seo.parse` - Attributes: `app.target_domain`, `seo.cache_hit`, `seo.status`, `seo.has_og_image`, `seo.has_robots`, `seo.has_errors` | Events: `seo.html_fetch_failed`, `seo.robots_fetch_failed`, `seo.image_upload_failed`
 - **Favicon**: `favicon.fetch` - Attributes: `app.target_domain`, `favicon.cache_hit`, `favicon.found`, `favicon.source`
 - **Screenshot**: `screenshot.capture` - Attributes: `app.target_domain`, `screenshot.cache_hit`, `screenshot.found`, `screenshot.attempts_made`, `screenshot.attempts_max`, `screenshot.db_read_failed` | Events: `screenshot.attempt_start`, `screenshot.attempt_success`, `screenshot.attempt_failed`
-- **Verification**: `verification.verify` - Attributes: `verification.domain`, `verification.method`, `verification.verified`
-- **Verification (all methods)**: `verification.try_all` - Attributes: `verification.domain`, `verification.verified`, `verification.method`
+- **Verification**: `verification.verify` - Attributes: `verification.domain`, `verification.method`, `verification.verified`, `verification.error`, `verification.error_message`
+- **Verification (all methods)**: `verification.try_all` - Attributes: `verification.domain`, `verification.verified`, `verification.method`, `verification.methods_attempted` (when all methods fail)
 
 ### HTTP Layer Spans
 Low-level HTTP operations use semantic conventions for standard attributes:

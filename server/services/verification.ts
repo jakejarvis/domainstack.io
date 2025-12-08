@@ -68,15 +68,17 @@ export const verifyDomainOwnership = withSpan(
           return { verified: false, method: null, error: "Unknown method" };
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       logger.error("verification failed", err, { domain, method });
       addSpanAttributes({
         "verification.verified": false,
         "verification.error": true,
+        "verification.error_message": errorMessage,
       });
       return {
         verified: false,
         method: null,
-        error: err instanceof Error ? err.message : "Verification failed",
+        error: errorMessage,
       };
     }
   },

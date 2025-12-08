@@ -22,7 +22,7 @@ import type {
 } from "@/lib/schemas";
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "@/lib/seo";
 import { storeImage } from "@/lib/storage";
-import { addSpanAttributes, withSpan } from "@/lib/tracing";
+import { addSpanAttributes, addSpanEvent, withSpan } from "@/lib/tracing";
 import { ttlForSeo } from "@/lib/ttl";
 
 const logger = createLogger({ source: "seo" });
@@ -168,6 +168,7 @@ export const getSeo = withSpan(
       }
     } catch (err) {
       htmlError = String(err);
+      addSpanEvent("seo.html_fetch_failed", { error: htmlError });
     }
 
     // robots.txt fetch
@@ -195,6 +196,7 @@ export const getSeo = withSpan(
       }
     } catch (err) {
       robotsError = String(err);
+      addSpanEvent("seo.robots_fetch_failed", { error: robotsError });
     }
 
     const preview = meta ? selectPreview(meta, finalUrl) : null;
@@ -235,10 +237,14 @@ export const getSeo = withSpan(
         uploadedImageUrl = url;
         preview.imageUploaded = url;
       } catch (err) {
-        logger.debug("OG image processing failed", {
+        logger.info("OG image processing failed", {
           domain,
           image: preview.image,
           error: err,
+        });
+        addSpanEvent("seo.image_upload_failed", {
+          image: preview.image,
+          error: err instanceof Error ? err.message : String(err),
         });
         preview.imageUploaded = null;
       }
@@ -297,11 +303,13 @@ export const getSeo = withSpan(
       });
     }
 
-    // Add span attributes for successful SEO parse
+    // Add span attributes for SEO parse completion
     addSpanAttributes({
       "seo.cache_hit": false,
       "seo.status": status ?? 0,
       "seo.has_og_image": !!response.preview?.image,
+      "seo.has_robots": !!robots,
+      "seo.has_errors": !!(htmlError || robotsError),
     });
 
     logger.info("done", {
@@ -309,7 +317,7 @@ export const getSeo = withSpan(
       status: status ?? -1,
       has_meta: !!meta,
       has_robots: !!robots,
-      has_errors: Boolean(htmlError || robotsError),
+      has_errors: !!(htmlError || robotsError),
     });
 
     return response;

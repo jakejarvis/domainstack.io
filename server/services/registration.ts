@@ -160,11 +160,12 @@ export const getRegistration = withSpan(
     });
 
     if (!ok || !record) {
-      // Classify error: some TLDs don't offer public WHOIS/RDAP services
-      const isKnownLimitation = isExpectedRegistrationError(error);
+      // Classify error types to distinguish infrastructure issues from unsupported TLDs
+      const isUnsupported = isExpectedRegistrationError(error);
+      const isTimeout = isTimeoutError(error);
 
-      if (isKnownLimitation) {
-        logger.info("unavailable", {
+      if (isUnsupported || isTimeout) {
+        logger.info(isTimeout ? "timeout" : "unavailable", {
           domain,
           reason: error || "unknown",
         });
@@ -173,10 +174,13 @@ export const getRegistration = withSpan(
           "registration.cache_hit": false,
           "registration.unavailable": true,
           "registration.reason": String(error || "unknown"),
+          // Distinguish timeouts (may indicate connectivity issues) from unsupported TLDs
+          ...(isTimeout && { "registration.timeout": true }),
         });
 
-        // Return minimal unregistered response for TLDs without WHOIS/RDAP
-        // (We can't determine registration status without WHOIS/RDAP access)
+        // Return minimal response with source: null indicating unknown status
+        // Note: isRegistered: false doesn't mean "confirmed unregistered",
+        // it means "status unknown due to WHOIS/RDAP unavailability"
         return {
           domain,
           tld: getDomainTld(domain) ?? "",
@@ -349,6 +353,7 @@ export const getRegistration = withSpan(
 /**
  * Check if a registration error is an expected limitation.
  * These occur when TLDs don't offer public WHOIS/RDAP services.
+ * Excludes transient errors like timeouts.
  */
 function isExpectedRegistrationError(error: unknown): boolean {
   if (!error) return false;
@@ -361,8 +366,19 @@ function isExpectedRegistrationError(error: unknown): boolean {
     errorStr.includes("no rdap server found") ||
     errorStr.includes("registry may not publish public whois") ||
     errorStr.includes("tld is not supported") ||
-    errorStr.includes("no whois server configured") ||
-    // Timeouts often indicate WHOIS server is unreachable/unresponsive
+    errorStr.includes("no whois server configured")
+  );
+}
+
+/**
+ * Check if an error indicates a timeout (connectivity issue).
+ * Tracked separately from unsupported TLDs to distinguish infrastructure problems.
+ */
+function isTimeoutError(error: unknown): boolean {
+  if (!error) return false;
+
+  const errorStr = String(error).toLowerCase();
+  return (
     errorStr.includes("whois socket timeout") ||
     errorStr.includes("whois timeout") ||
     errorStr.includes("rdap timeout")
