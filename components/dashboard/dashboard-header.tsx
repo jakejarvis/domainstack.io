@@ -44,7 +44,7 @@ export function DashboardHeader({
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
-        {tier !== "pro" ? (
+        {tier === "pro" ? (
           subscriptionEndsAt ? (
             <Tooltip>
               <TooltipTrigger asChild>
