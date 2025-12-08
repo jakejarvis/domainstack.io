@@ -53,19 +53,22 @@ export function NotificationSettingsSection() {
     ...trpc.user.updateGlobalNotificationPreferences.mutationOptions(),
     onMutate: async (newPrefs) => {
       await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
-      const previousPrefs = queryClient.getQueryData(globalPrefsQueryKey);
+      const previousPrefs =
+        queryClient.getQueryData<GlobalPrefs>(globalPrefsQueryKey);
 
       // Optimistically update
-      queryClient.setQueryData(
-        globalPrefsQueryKey,
-        (old: GlobalPrefs | undefined) => (old ? { ...old, ...newPrefs } : old),
+      queryClient.setQueryData<GlobalPrefs>(globalPrefsQueryKey, (old) =>
+        old ? { ...old, ...newPrefs } : old,
       );
 
       return { previousPrefs };
     },
     onError: (err, _variables, context) => {
       if (context?.previousPrefs) {
-        queryClient.setQueryData(globalPrefsQueryKey, context.previousPrefs);
+        queryClient.setQueryData<GlobalPrefs>(
+          globalPrefsQueryKey,
+          context.previousPrefs,
+        );
       }
       logger.error("Failed to update global settings", err);
       toast.error("Failed to update settings");
@@ -82,12 +85,13 @@ export function NotificationSettingsSection() {
     ...trpc.user.updateDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId, overrides }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<typeof domainsQuery.data>(domainsQueryKey);
 
       // Optimistically update the domain's overrides
-      queryClient.setQueryData(
+      queryClient.setQueryData<typeof domainsQuery.data>(
         domainsQueryKey,
-        (old: typeof domainsQuery.data) =>
+        (old) =>
           old
             ? {
                 ...old,
@@ -110,7 +114,10 @@ export function NotificationSettingsSection() {
     },
     onError: (err, _variables, context) => {
       if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+        queryClient.setQueryData<typeof domainsQuery.data>(
+          domainsQueryKey,
+          context.previousDomains,
+        );
       }
       logger.error("Failed to update domain settings", err);
       toast.error("Failed to update settings");
@@ -127,12 +134,13 @@ export function NotificationSettingsSection() {
     ...trpc.user.resetDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      const previousDomains = queryClient.getQueryData(domainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<typeof domainsQuery.data>(domainsQueryKey);
 
       // Optimistically reset the domain's overrides
-      queryClient.setQueryData(
+      queryClient.setQueryData<typeof domainsQuery.data>(
         domainsQueryKey,
-        (old: typeof domainsQuery.data) =>
+        (old) =>
           old
             ? {
                 ...old,
@@ -149,7 +157,10 @@ export function NotificationSettingsSection() {
     },
     onError: (err, _variables, context) => {
       if (context?.previousDomains) {
-        queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+        queryClient.setQueryData<typeof domainsQuery.data>(
+          domainsQueryKey,
+          context.previousDomains,
+        );
       }
       logger.error("Failed to reset domain settings", err);
       toast.error("Failed to reset settings");
@@ -197,6 +208,20 @@ export function NotificationSettingsSection() {
   }
 
   if (domainsQuery.isError || globalPrefsQuery.isError) {
+    // Log query errors for observability
+    if (domainsQuery.isError) {
+      logger.error(
+        "Failed to load domains for notifications",
+        domainsQuery.error,
+      );
+    }
+    if (globalPrefsQuery.isError) {
+      logger.error(
+        "Failed to load notification preferences",
+        globalPrefsQuery.error,
+      );
+    }
+
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
