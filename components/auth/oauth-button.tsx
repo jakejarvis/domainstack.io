@@ -48,11 +48,13 @@ export function OAuthButton({
         provider: provider.id,
         callbackURL,
       });
+      // Don't reset loading state on success - the page will redirect
+      // and we want to keep the loading state until navigation completes
     } catch (err) {
       logger.error(`${provider.name} sign-in failed`, err, {
         provider: provider.id,
       });
-    } finally {
+      // Only reset loading state on error so user can retry
       setIsLoading(false);
     }
   };
