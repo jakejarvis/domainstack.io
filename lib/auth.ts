@@ -36,6 +36,15 @@ if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
     "POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set",
   );
 }
+// Vercel OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.VERCEL_CLIENT_ID && !process.env.VERCEL_CLIENT_SECRET) ||
+  (!process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both VERCEL_CLIENT_ID and VERCEL_CLIENT_SECRET are required when using Vercel OAuth",
+  );
+}
 
 // Use VERCEL_ENV to determine Polar environment (not NODE_ENV, which is "production" on preview deployments too)
 // This prevents preview deployments from hitting the production Polar API
@@ -137,6 +146,13 @@ export const auth = betterAuth({
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
     },
+    ...(process.env.VERCEL_CLIENT_ID &&
+      process.env.VERCEL_CLIENT_SECRET && {
+        vercel: {
+          clientId: process.env.VERCEL_CLIENT_ID,
+          clientSecret: process.env.VERCEL_CLIENT_SECRET,
+        },
+      }),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

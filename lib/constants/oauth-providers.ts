@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { GitHubIcon } from "@/components/brand-icons";
+import { GitHubIcon, VercelIcon } from "@/components/brand-icons";
 
 /**
  * OAuth provider configuration for better-auth social providers.
@@ -33,6 +33,15 @@ export const OAUTH_PROVIDERS: OAuthProviderConfig[] = [
     name: "GitHub",
     icon: GitHubIcon,
     enabled: true,
+  },
+  {
+    id: "vercel",
+    name: "Vercel",
+    icon: VercelIcon,
+    // Vercel OAuth is enabled when both env vars are set
+    enabled: Boolean(
+      process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET,
+    ),
   },
 ];
 

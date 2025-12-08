@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { DeleteAccountDialog } from "@/components/dashboard/delete-account-dialog";
+import { LinkedAccountsSection } from "@/components/dashboard/linked-accounts-section";
 import {
   CategoryLabel,
   DomainNotificationRow,
@@ -384,6 +385,12 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
           )}
         </CardContent>
       </div>
+
+      {/* Divider */}
+      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
+
+      {/* Linked Accounts Section */}
+      <LinkedAccountsSection showCard={showCard} />
 
       {/* Divider */}
       <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
