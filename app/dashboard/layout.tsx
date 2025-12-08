@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -26,5 +27,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return <div className="container mx-auto px-4 py-8">{children}</div>;
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <NuqsAdapter>{children}</NuqsAdapter>
+    </div>
+  );
 }

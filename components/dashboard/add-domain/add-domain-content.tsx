@@ -37,8 +37,8 @@ export type AddDomainContentProps = {
   showCard?: boolean;
   /** Additional classes for the wrapper */
   className?: string;
-  /** Handler when the flow should close (cancel, done, etc.) */
-  onClose: () => void;
+  /** Handler when the flow should close (cancel, done, etc.) - optional for page usage */
+  onClose?: () => void;
   /** Handler when domain is successfully added and verified */
   onSuccess: () => void;
   /** If provided, skips step 1 and goes directly to verification */
@@ -104,7 +104,7 @@ export function AddDomainContent({
     open: true,
     onOpenChange: (open) => {
       if (!open) {
-        onClose();
+        onClose?.();
       }
     },
     onSuccess,
@@ -222,17 +222,17 @@ export function AddDomainContent({
                   {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
                   {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
                 </Button>
-                {showCard ? (
-                  <Button variant="outline" asChild className="w-full">
-                    <Link href="/dashboard">Back to Dashboard</Link>
-                  </Button>
-                ) : (
+                {onClose ? (
                   <Button
                     variant="outline"
                     onClick={onClose}
                     className="w-full"
                   >
                     Close
+                  </Button>
+                ) : (
+                  <Button variant="outline" asChild className="w-full">
+                    <Link href="/dashboard">Back to Dashboard</Link>
                   </Button>
                 )}
               </div>
@@ -244,13 +244,13 @@ export function AddDomainContent({
                 You can archive unused domains to make room for new ones, or
                 remove domains you no longer need to track.
               </p>
-              {showCard ? (
-                <Button variant="outline" asChild className="w-full">
-                  <Link href="/dashboard">Back to Dashboard</Link>
-                </Button>
-              ) : (
+              {onClose ? (
                 <Button variant="outline" onClick={onClose} className="w-full">
                   Close
+                </Button>
+              ) : (
+                <Button variant="outline" asChild className="w-full">
+                  <Link href="/dashboard">Back to Dashboard</Link>
                 </Button>
               )}
             </>

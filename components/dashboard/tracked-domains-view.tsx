@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, FilterX, Globe, Plus } from "lucide-react";
+import { BadgeCheck, FilterX, Globe, Plus, Timer } from "lucide-react";
 import Link from "next/link";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";
@@ -129,7 +129,7 @@ export function TrackedDomainsView({
             </Link>
           </Button>
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
-            <BadgeCheck className="size-4" />
+            <Timer className="size-4" />
             <span>Verification takes less than 2 minutes</span>
           </div>
         </EmptyContent>
