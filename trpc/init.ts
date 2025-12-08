@@ -1,3 +1,4 @@
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -31,7 +32,8 @@ export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
   const ip = await resolveRequestIp();
 
-  // Generate or extract correlation ID for request tracing
+  // Extract correlation ID from header (set by middleware)
+  // Fallback to generation if missing (tests, scripts, non-middleware scenarios)
   let correlationId: string | undefined;
   try {
     const headerList = await headers();
@@ -79,6 +81,7 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.
+ * Creates OpenTelemetry spans for distributed tracing and performance monitoring.
  * All logs are structured JSON with OpenTelemetry tracing and correlation IDs.
  * Errors are tracked in PostHog for centralized monitoring.
  */
@@ -92,61 +95,94 @@ const withLogging = t.middleware(async ({ path, type, input, next, ctx }) => {
   // Get correlation ID from context (set in createContext), or generate if missing
   const correlationId = ctx.correlationId ?? generateCorrelationId();
 
-  // Wrap the entire procedure execution in correlation ID context
+  // Create OpenTelemetry span for distributed tracing using startActiveSpan
+  const tracer = trace.getTracer("trpc");
+
+  // Wrap the entire procedure execution in correlation ID context and span context
   return withCorrelationId(correlationId, async () => {
-    // Log procedure start
-    logger.info("procedure start", {
-      source: "trpc",
-      path,
-      type,
-      input: input && typeof input === "object" ? { ...input } : undefined,
-    });
-
-    try {
-      const result = await next();
-      const durationMs = Math.round(performance.now() - start);
-
-      // Log successful completion
-      logger.info("procedure ok", {
-        source: "trpc",
-        path,
-        type,
-        durationMs,
-        input: input && typeof input === "object" ? { ...input } : undefined,
-      });
-
-      // Track slow requests (>5s threshold) in PostHog
-      if (durationMs > 5000) {
-        logger.warn("slow request", {
+    return await tracer.startActiveSpan(
+      `trpc.${path}`,
+      {
+        attributes: {
+          "trpc.path": path,
+          "trpc.type": type,
+          "app.correlation_id": correlationId, // Link correlation ID to trace
+        },
+      },
+      async (span) => {
+        // Log procedure start
+        logger.info("procedure start", {
           source: "trpc",
           path,
           type,
-          durationMs,
+          input: input && typeof input === "object" ? { ...input } : undefined,
         });
 
-        const { analytics } = await import("@/lib/analytics/server");
-        analytics.track("trpc_slow_request", {
-          path,
-          type,
-          durationMs,
-        });
-      }
+        try {
+          const result = await next();
+          const durationMs = Math.round(performance.now() - start);
 
-      return result;
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
+          // Add span attributes for successful completion
+          span.setAttribute("trpc.duration_ms", durationMs);
+          span.setAttribute("trpc.status", "ok");
+          span.setStatus({ code: SpanStatusCode.OK });
 
-      // Log error with full details
-      logger.error("procedure error", err, {
-        source: "trpc",
-        path,
-        type,
-        durationMs,
-      });
+          // Log successful completion
+          logger.info("procedure ok", {
+            source: "trpc",
+            path,
+            type,
+            durationMs,
+            input:
+              input && typeof input === "object" ? { ...input } : undefined,
+          });
 
-      // Re-throw the error to be handled by the error boundary
-      throw err;
-    }
+          // Track slow requests (>5s threshold) in PostHog
+          if (durationMs > 5000) {
+            span.setAttribute("trpc.slow_request", true);
+            logger.warn("slow request", {
+              source: "trpc",
+              path,
+              type,
+              durationMs,
+            });
+
+            const { analytics } = await import("@/lib/analytics/server");
+            analytics.track("trpc_slow_request", {
+              path,
+              type,
+              durationMs,
+            });
+          }
+
+          return result;
+        } catch (err) {
+          const durationMs = Math.round(performance.now() - start);
+
+          // Record exception and set error status on span
+          span.recordException(err as Error);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: err instanceof Error ? err.message : String(err),
+          });
+          span.setAttribute("trpc.duration_ms", durationMs);
+          span.setAttribute("trpc.status", "error");
+
+          // Log error with full details
+          logger.error("procedure error", err, {
+            source: "trpc",
+            path,
+            type,
+            durationMs,
+          });
+
+          // Re-throw the error to be handled by the error boundary
+          throw err;
+        } finally {
+          span.end();
+        }
+      },
+    );
   });
 });
 

@@ -1,34 +1,4 @@
-import type { NextRequest, NextResponse } from "next/server";
-import {
-  CONSENT_REQUIRED_COOKIE,
-  GDPR_COUNTRY_CODES,
-} from "@/lib/constants/gdpr";
 import { toRegistrableDomain } from "@/lib/domain-server";
-
-/**
- * Set GDPR consent requirement cookie based on Vercel's geolocation header.
- * Only sets if the cookie doesn't already exist.
- * Returns the response for chaining.
- */
-export function setConsentCookieIfNeeded(
-  request: NextRequest,
-  response: NextResponse,
-): NextResponse {
-  if (request.cookies.has(CONSENT_REQUIRED_COOKIE)) return response;
-
-  const country = request.headers.get("x-vercel-ip-country");
-  // Default to requiring consent if geo-location is unknown (safer default)
-  const requiresConsent = country === null || GDPR_COUNTRY_CODES.has(country);
-
-  response.cookies.set(CONSENT_REQUIRED_COOKIE, requiresConsent ? "1" : "0", {
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-    httpOnly: false, // Needs to be readable by client JS
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
-
-  return response;
-}
 
 export type MiddlewareRedirectAction =
   | { type: "match" }

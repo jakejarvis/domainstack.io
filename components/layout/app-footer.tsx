@@ -44,17 +44,17 @@ export function AppFooter() {
         (CC BY 3.0).
       </p>
       <p className="mt-2 flex flex-wrap items-center justify-center">
-        <Link href="/help">
+        <Link href="/help" prefetch={false}>
           <CircleHelp className="text-muted-foreground" />
           Help
         </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
-        <Link href="/privacy">
+        <Link href="/privacy" prefetch={false}>
           <ShieldCheck className="text-muted-foreground" />
           Privacy Policy
         </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
-        <Link href="/terms">
+        <Link href="/terms" prefetch={false}>
           <Handshake className="text-muted-foreground" />
           Terms of Service
         </Link>

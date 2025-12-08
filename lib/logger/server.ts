@@ -1,6 +1,6 @@
 import "server-only";
 
-import { context, trace } from "@opentelemetry/api";
+import { trace } from "@opentelemetry/api";
 import {
   createLogEntry,
   formatLogEntry,
@@ -59,10 +59,11 @@ export function withCorrelationId<T>(id: string, fn: () => T): T {
 
 /**
  * Extract OpenTelemetry trace and span IDs from the current context.
+ * Uses the active span to automatically capture the current trace context.
  */
 function getTraceContext(): { traceId?: string; spanId?: string } {
   try {
-    const span = trace.getSpan(context.active());
+    const span = trace.getActiveSpan();
     if (span) {
       const spanContext = span.spanContext();
       return {

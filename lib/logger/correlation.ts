@@ -11,9 +11,8 @@ import { v4 as uuidv4 } from "uuid";
 // Constants
 // ============================================================================
 
-export const CORRELATION_ID_HEADER = "x-correlation-id";
-export const CORRELATION_ID_COOKIE = "x-correlation-id";
-export const CORRELATION_ID_STORAGE_KEY = "correlationId";
+export const CORRELATION_ID_HEADER = "x-request-id";
+export const CORRELATION_ID_COOKIE = "correlation-id";
 
 // ============================================================================
 // Generation
@@ -38,38 +37,6 @@ export function getOrGenerateCorrelationId(headers: Headers): string {
 // ============================================================================
 // Client-side Storage
 // ============================================================================
-
-/**
- * Get correlation ID from localStorage (client-side only).
- * Returns undefined if not available or if running server-side.
- */
-export function getCorrelationIdFromStorage(): string | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
-  try {
-    return localStorage.getItem(CORRELATION_ID_STORAGE_KEY) || undefined;
-  } catch {
-    // localStorage not available or blocked
-    return undefined;
-  }
-}
-
-/**
- * Store correlation ID in localStorage (client-side only).
- */
-export function setCorrelationIdInStorage(id: string): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem(CORRELATION_ID_STORAGE_KEY, id);
-  } catch {
-    // localStorage not available or blocked - gracefully ignore
-  }
-}
 
 /**
  * Get correlation ID from cookie (client-side).
@@ -107,25 +74,16 @@ export function getCorrelationIdFromCookie(): string | undefined {
 
 /**
  * Get or generate correlation ID for client-side logging.
- * Priority: cookie > localStorage > generate new
+ * Reads from cookie (set by server middleware) or generates new if missing.
  */
 export function getOrGenerateClientCorrelationId(): string {
-  // Try cookie first (set by server)
+  // Try cookie first (set by server middleware with 30-day expiry)
   const fromCookie = getCorrelationIdFromCookie();
   if (fromCookie) {
-    // Store in localStorage for persistence
-    setCorrelationIdInStorage(fromCookie);
     return fromCookie;
   }
 
-  // Try localStorage
-  const fromStorage = getCorrelationIdFromStorage();
-  if (fromStorage) {
-    return fromStorage;
-  }
-
-  // Generate new and store
-  const newId = generateCorrelationId();
-  setCorrelationIdInStorage(newId);
-  return newId;
+  // Fallback: Generate new ID if cookie is missing
+  // (shouldn't happen in normal flow, but handles edge cases)
+  return generateCorrelationId();
 }
