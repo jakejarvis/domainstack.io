@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
@@ -15,6 +15,12 @@ interface OAuthButtonProps {
   callbackURL?: string;
   /** Additional class names */
   className?: string;
+  /** Whether this button is loading */
+  isLoading?: boolean;
+  /** Whether any OAuth button is loading (disables all buttons) */
+  isAnyLoading?: boolean;
+  /** Callback when loading state changes */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -34,13 +40,15 @@ export function OAuthButton({
   provider,
   callbackURL = "/dashboard",
   className,
+  isLoading = false,
+  isAnyLoading = false,
+  onLoadingChange,
 }: OAuthButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const analytics = useAnalytics();
   const Icon = provider.icon;
 
   const handleSignIn = async () => {
-    setIsLoading(true);
+    onLoadingChange?.(true);
     analytics.track("sign_in_clicked", { provider: provider.id });
 
     try {
@@ -54,8 +62,9 @@ export function OAuthButton({
       logger.error(`${provider.name} sign-in failed`, err, {
         provider: provider.id,
       });
+      toast.error(`Failed to sign in with ${provider.name}. Please try again.`);
       // Only reset loading state on error so user can retry
-      setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -64,7 +73,7 @@ export function OAuthButton({
       size="lg"
       className={`w-full cursor-pointer gap-3 transition-transform active:scale-[0.98] ${className ?? ""}`}
       onClick={handleSignIn}
-      disabled={isLoading}
+      disabled={isAnyLoading}
     >
       {isLoading ? (
         <>
