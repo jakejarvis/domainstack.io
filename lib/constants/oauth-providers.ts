@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { GitHubIcon } from "@/components/brand-icons";
+import { GitHubIcon, VercelIcon } from "@/components/brand-icons";
 
 /**
  * OAuth provider configuration for better-auth social providers.
@@ -26,13 +26,23 @@ export interface OAuthProviderConfig {
 /**
  * All supported OAuth providers.
  * Only providers with enabled: true will be shown in the UI.
+ *
+ * Note: Use NEXT_PUBLIC_ env vars for the enabled flag since this file
+ * is imported in client components. The actual OAuth secrets are kept
+ * server-side in lib/auth.ts.
  */
 export const OAUTH_PROVIDERS: OAuthProviderConfig[] = [
   {
     id: "github",
     name: "GitHub",
     icon: GitHubIcon,
-    enabled: true,
+    enabled: process.env.NEXT_PUBLIC_GITHUB_OAUTH_ENABLED === "true",
+  },
+  {
+    id: "vercel",
+    name: "Vercel",
+    icon: VercelIcon,
+    enabled: process.env.NEXT_PUBLIC_VERCEL_OAUTH_ENABLED === "true",
   },
 ];
 

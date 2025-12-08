@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,8 @@ export function LoginContent({
   className,
   onNavigate,
 }: LoginContentProps) {
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+
   const content = (
     <div className="flex flex-col items-center px-6 py-8">
       <Logo className="mb-6 size-14" />
@@ -32,7 +35,15 @@ export function LoginContent({
       </p>
       <div className="flex w-full flex-col gap-3">
         {getEnabledProviders().map((provider) => (
-          <OAuthButton key={provider.id} provider={provider} />
+          <OAuthButton
+            key={provider.id}
+            provider={provider}
+            isLoading={loadingProvider === provider.id}
+            isAnyLoading={loadingProvider !== null}
+            onLoadingChange={(loading) =>
+              setLoadingProvider(loading ? provider.id : null)
+            }
+          />
         ))}
       </div>
       <p className="mt-6 text-center text-muted-foreground text-xs leading-relaxed">

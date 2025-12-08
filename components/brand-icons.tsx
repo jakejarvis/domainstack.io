@@ -123,3 +123,15 @@ export const DynadotIcon: React.FC<IconProps> = ({ className }) => (
     />
   </svg>
 );
+
+export const VercelIcon: React.FC<IconProps> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    role="img"
+    aria-label="Vercel"
+  >
+    <path d="M24 22.525H0l12-21.05 12 21.05z" />
+  </svg>
+);

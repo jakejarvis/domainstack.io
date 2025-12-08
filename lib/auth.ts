@@ -7,7 +7,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
-import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";
@@ -27,13 +26,34 @@ const logger = createLogger({ source: "auth" });
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is required");
 }
-if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
-  throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required");
-}
 // Polar is optional, but webhook secret is required if Polar is enabled
 if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
   throw new Error(
     "POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set",
+  );
+}
+// GitHub OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.GITHUB_CLIENT_ID && !process.env.GITHUB_CLIENT_SECRET) ||
+  (!process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required when using GitHub OAuth",
+  );
+}
+// Vercel OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.VERCEL_CLIENT_ID && !process.env.VERCEL_CLIENT_SECRET) ||
+  (!process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both VERCEL_CLIENT_ID and VERCEL_CLIENT_SECRET are required when using Vercel OAuth",
+  );
+}
+// Ensure at least one OAuth provider is configured
+if (!process.env.GITHUB_CLIENT_ID && !process.env.VERCEL_CLIENT_ID) {
+  throw new Error(
+    "At least one OAuth provider must be configured (GitHub or Vercel)",
   );
 }
 
@@ -46,6 +66,16 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
         process.env.VERCEL_ENV === "production" ? "production" : "sandbox",
     })
   : null;
+
+// Build list of enabled OAuth providers based on server-side credentials
+// This ensures trustedProviders always matches socialProviders configuration
+const enabledProviders: string[] = [];
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  enabledProviders.push("github");
+}
+if (process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET) {
+  enabledProviders.push("vercel");
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -133,10 +163,20 @@ export const auth = betterAuth({
     },
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    },
+    ...(process.env.GITHUB_CLIENT_ID &&
+      process.env.GITHUB_CLIENT_SECRET && {
+        github: {
+          clientId: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
+      }),
+    ...(process.env.VERCEL_CLIENT_ID &&
+      process.env.VERCEL_CLIENT_SECRET && {
+        vercel: {
+          clientId: process.env.VERCEL_CLIENT_ID,
+          clientSecret: process.env.VERCEL_CLIENT_SECRET,
+        },
+      }),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -149,7 +189,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: getEnabledProviders().map((p) => p.id),
+      trustedProviders: enabledProviders,
     },
   },
   experimental: {

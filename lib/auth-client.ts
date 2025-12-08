@@ -15,6 +15,8 @@ export const {
   getSession,
   checkout,
   deleteUser,
+  linkSocial,
+  unlinkAccount,
 } = authClient;
 
 /**
