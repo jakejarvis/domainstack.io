@@ -4,6 +4,7 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { after } from "next/server";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
@@ -166,15 +167,20 @@ export const auth = betterAuth({
         if (!resend) {
           throw new Error("Email service not configured");
         }
-        await resend.emails.send({
-          from: `Domainstack <${RESEND_FROM_EMAIL}>`,
-          to: user.email,
-          subject: "Confirm your account deletion",
-          react: DeleteAccountVerifyEmail({
-            userName: user.name,
-            confirmUrl: url,
+        // Capture resend in const to satisfy TypeScript null check
+        const resendClient = resend;
+        // Use after() to reduce risk of timing attacks
+        after(() =>
+          resendClient.emails.send({
+            from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+            to: user.email,
+            subject: "Confirm your account deletion",
+            react: DeleteAccountVerifyEmail({
+              userName: user.name,
+              confirmUrl: url,
+            }),
           }),
-        });
+        );
       },
     },
   },

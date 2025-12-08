@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WebhooksOptions } from "@polar-sh/better-auth";
+import { after } from "next/server";
 import { analytics } from "@/lib/analytics/server";
 import {
   clearSubscriptionEndsAt,
@@ -113,11 +114,7 @@ export async function handleSubscriptionActive(
     analytics.track("subscription_activated", { tier }, userId);
 
     // Send welcome email (best-effort, don't fail webhook on email error)
-    try {
-      await sendProUpgradeEmail(userId);
-    } catch (emailErr) {
-      logger.error("failed to send pro upgrade email", emailErr, { userId });
-    }
+    after(() => sendProUpgradeEmail(userId));
   } catch (err) {
     logger.error("failed to upgrade user tier", err, { userId, tier });
     throw err; // Re-throw to trigger webhook retry
@@ -166,13 +163,7 @@ export async function handleSubscriptionCanceled(
       );
 
       // Send immediate cancellation confirmation email (best-effort, don't fail webhook on email error)
-      try {
-        await sendSubscriptionCancelingEmail(userId, endsAt);
-      } catch (emailErr) {
-        logger.error("failed to send subscription canceling email", emailErr, {
-          userId,
-        });
-      }
+      after(() => sendSubscriptionCancelingEmail(userId, endsAt));
     } catch (err) {
       logger.error("failed to set subscription end date", err, { userId });
       throw err; // Re-throw to trigger webhook retry
@@ -218,13 +209,7 @@ export async function handleSubscriptionRevoked(
     analytics.track("subscription_revoked", { archivedCount }, userId);
 
     // Send expiration email (best-effort, don't fail webhook on email error)
-    try {
-      await sendSubscriptionExpiredEmail(userId, archivedCount);
-    } catch (emailErr) {
-      logger.error("failed to send subscription expired email", emailErr, {
-        userId,
-      });
-    }
+    after(() => sendSubscriptionExpiredEmail(userId, archivedCount));
   } catch (err) {
     logger.error("failed to downgrade user", err, { userId });
     throw err; // Re-throw to trigger webhook retry
