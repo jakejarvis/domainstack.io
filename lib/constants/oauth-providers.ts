@@ -26,22 +26,23 @@ export interface OAuthProviderConfig {
 /**
  * All supported OAuth providers.
  * Only providers with enabled: true will be shown in the UI.
+ *
+ * Note: Use NEXT_PUBLIC_ env vars for the enabled flag since this file
+ * is imported in client components. The actual OAuth secrets are kept
+ * server-side in lib/auth.ts.
  */
 export const OAUTH_PROVIDERS: OAuthProviderConfig[] = [
   {
     id: "github",
     name: "GitHub",
     icon: GitHubIcon,
-    enabled: true,
+    enabled: process.env.NEXT_PUBLIC_GITHUB_OAUTH_ENABLED === "true",
   },
   {
     id: "vercel",
     name: "Vercel",
     icon: VercelIcon,
-    // Vercel OAuth is enabled when both env vars are set
-    enabled: Boolean(
-      process.env.VERCEL_CLIENT_ID && process.env.VERCEL_CLIENT_SECRET,
-    ),
+    enabled: process.env.NEXT_PUBLIC_VERCEL_OAUTH_ENABLED === "true",
   },
 ];
 

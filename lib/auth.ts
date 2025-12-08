@@ -27,13 +27,19 @@ const logger = createLogger({ source: "auth" });
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is required");
 }
-if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
-  throw new Error("GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required");
-}
 // Polar is optional, but webhook secret is required if Polar is enabled
 if (process.env.POLAR_ACCESS_TOKEN && !process.env.POLAR_WEBHOOK_SECRET) {
   throw new Error(
     "POLAR_WEBHOOK_SECRET is required when POLAR_ACCESS_TOKEN is set",
+  );
+}
+// GitHub OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.GITHUB_CLIENT_ID && !process.env.GITHUB_CLIENT_SECRET) ||
+  (!process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required when using GitHub OAuth",
   );
 }
 // Vercel OAuth is optional, but both credentials are required if either is set
@@ -43,6 +49,12 @@ if (
 ) {
   throw new Error(
     "Both VERCEL_CLIENT_ID and VERCEL_CLIENT_SECRET are required when using Vercel OAuth",
+  );
+}
+// Ensure at least one OAuth provider is configured
+if (!process.env.GITHUB_CLIENT_ID && !process.env.VERCEL_CLIENT_ID) {
+  throw new Error(
+    "At least one OAuth provider must be configured (GitHub or Vercel)",
   );
 }
 
@@ -142,10 +154,13 @@ export const auth = betterAuth({
     },
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    },
+    ...(process.env.GITHUB_CLIENT_ID &&
+      process.env.GITHUB_CLIENT_SECRET && {
+        github: {
+          clientId: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
+      }),
     ...(process.env.VERCEL_CLIENT_ID &&
       process.env.VERCEL_CLIENT_SECRET && {
         vercel: {
