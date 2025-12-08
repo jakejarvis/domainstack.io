@@ -18,16 +18,8 @@ import {
 } from "@/lib/constants/oauth-providers";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
-interface LinkedAccountsSectionProps {
-  /** Whether to show the card wrapper styling (false for modal usage) */
-  showCard?: boolean;
-}
-
-export function LinkedAccountsSection({
-  showCard = true,
-}: LinkedAccountsSectionProps) {
+export function LinkedAccountsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
@@ -125,8 +117,8 @@ export function LinkedAccountsSection({
 
   if (linkedAccountsQuery.isLoading) {
     return (
-      <div className={cn(!showCard && "py-1")}>
-        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+      <div>
+        <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Linked Accounts</CardTitle>
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
@@ -136,8 +128,8 @@ export function LinkedAccountsSection({
 
   if (linkedAccountsQuery.isError) {
     return (
-      <div className={cn(!showCard && "py-1")}>
-        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+      <div>
+        <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Linked Accounts</CardTitle>
           <CardDescription className="text-destructive">
             Failed to load linked accounts
@@ -149,14 +141,14 @@ export function LinkedAccountsSection({
 
   return (
     <>
-      <div className={cn(!showCard && "py-1")}>
-        <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+      <div>
+        <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Linked Accounts</CardTitle>
           <CardDescription>
             Manage the accounts you use to sign in
           </CardDescription>
         </CardHeader>
-        <CardContent className={showCard ? "space-y-3" : "space-y-3 px-0"}>
+        <CardContent className="space-y-3 px-0">
           {OAUTH_PROVIDERS.map((provider) => {
             const isLinked = linkedProviderIds.has(provider.id);
             const isLinking = linkingProvider === provider.id;
