@@ -163,7 +163,8 @@ export const auth = betterAuth({
           use: [
             checkout({
               products: getProductsForCheckout(),
-              successUrl: "/dashboard?upgraded=true",
+              successUrl:
+                process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
               authenticatedUsersOnly: true,
             }),
             portal(),

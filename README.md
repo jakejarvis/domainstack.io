@@ -74,12 +74,18 @@ pnpm dev
 This single command boots:
 - **Postgres** on `localhost:5432`
 - **Inngest dev server** on `http://localhost:8288`
+- **ngrok tunnel** with public HTTPS URL (for webhooks) and web UI on `http://localhost:4040`
 - **Next.js dev server** on `http://localhost:3000`
 
 Open [http://localhost:3000](http://localhost:3000). Press `Ctrl+C` to stop all services at once.
 
 > [!NOTE]
-> On Linux, if `host.docker.internal` isn't available, add `extra_hosts` to the Inngest service in [`docker-compose.yml`](docker-compose.yml):
+> The ngrok URL can be used for testing public endpoints (like [sandboxed Polar webhooks](https://polar.sh/docs/integrate/webhooks/endpoints#get-started)) during local development.
+>
+> **For persistent ngrok URLs:** Set both `NGROK_AUTHTOKEN` and `NGROK_URL` in `.env.local`. Get your auth token and create a free static domain at https://dashboard.ngrok.com/domains. This ensures the same URL every time you restart services.
+
+> [!NOTE]
+> On Linux, if `host.docker.internal` isn't available, add `extra_hosts` to the services in [`docker-compose.yml`](docker-compose.yml):
 >
 > ```yaml
 > extra_hosts: ["host.docker.internal:host-gateway"]

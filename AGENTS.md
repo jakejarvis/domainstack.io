@@ -27,7 +27,7 @@
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` — start all local services (Postgres, Inngest, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
+- `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
 - `pnpm build` — compile production bundle.
 - `pnpm start` — serve compiled output for smoke tests.
 - `pnpm lint` — run Biome lint + type-aware checks (`--write` to fix).
@@ -43,6 +43,7 @@
 - `pnpm db:studio` — open Drizzle Studio.
 - `pnpm db:seed` — run seed script (scripts/db/seed.ts).
 - Requires Node.js >= 22 (see `package.json` engines).
+- Local development includes ngrok tunnel for webhook testing; public URL displayed in terminal output.
 
 ## Coding Style & Naming Conventions
 - TypeScript only, `strict` enabled; prefer small, pure modules (≈≤300 LOC).
