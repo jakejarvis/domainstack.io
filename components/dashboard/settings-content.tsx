@@ -67,8 +67,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
 
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const globalPrefsQueryKey =
-    trpc.tracking.getNotificationPreferences.queryKey();
+  const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
 
   // Type for global preferences - derived from notification constants
   type GlobalPrefs = Record<NotificationCategory, boolean>;
@@ -76,13 +75,13 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   // Queries
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
   const globalPrefsQuery = useQuery(
-    trpc.tracking.getNotificationPreferences.queryOptions(),
+    trpc.user.getNotificationPreferences.queryOptions(),
   );
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
 
   // Mutations with optimistic updates
   const updateGlobalMutation = useMutation({
-    ...trpc.tracking.updateGlobalNotificationPreferences.mutationOptions(),
+    ...trpc.user.updateGlobalNotificationPreferences.mutationOptions(),
     onMutate: async (newPrefs) => {
       await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
       const previousPrefs = queryClient.getQueryData(globalPrefsQueryKey);
@@ -111,7 +110,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   });
 
   const updateDomainMutation = useMutation({
-    ...trpc.tracking.updateDomainNotificationOverrides.mutationOptions(),
+    ...trpc.user.updateDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId, overrides }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       const previousDomains = queryClient.getQueryData(domainsQueryKey);
@@ -156,7 +155,7 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
   });
 
   const resetDomainMutation = useMutation({
-    ...trpc.tracking.resetDomainNotificationOverrides.mutationOptions(),
+    ...trpc.user.resetDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       const previousDomains = queryClient.getQueryData(domainsQueryKey);

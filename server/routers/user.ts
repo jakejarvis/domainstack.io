@@ -1,6 +1,19 @@
+import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
+import z from "zod";
+import { analytics } from "@/lib/analytics/server";
 import { db } from "@/lib/db/client";
+import {
+  findTrackedDomainById,
+  resetNotificationOverrides,
+  updateNotificationOverrides,
+} from "@/lib/db/repos/tracked-domains";
+import {
+  getOrCreateUserNotificationPreferences,
+  updateUserNotificationPreferences,
+} from "@/lib/db/repos/user-notification-preferences";
 import { accounts } from "@/lib/db/schema";
+import { NotificationOverridesSchema } from "@/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 export const userRouter = createTRPCRouter({
@@ -22,4 +35,130 @@ export const userRouter = createTRPCRouter({
       createdAt: account.createdAt,
     }));
   }),
+
+  /**
+   * Get global notification preferences for the current user.
+   */
+  getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const prefs = await getOrCreateUserNotificationPreferences(ctx.user.id);
+    return prefs;
+  }),
+
+  /**
+   * Update global notification preferences.
+   */
+  updateGlobalNotificationPreferences: protectedProcedure
+    .input(NotificationOverridesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const updated = await updateUserNotificationPreferences(
+        ctx.user.id,
+        input,
+      );
+
+      analytics.track(
+        "notification_preferences_updated",
+        { ...input },
+        ctx.user.id,
+      );
+
+      return updated;
+    }),
+
+  /**
+   * Update notification overrides for a specific tracked domain.
+   */
+  updateDomainNotificationOverrides: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+        overrides: NotificationOverridesSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId, overrides } = input;
+
+      // Get tracked domain
+      const tracked = await findTrackedDomainById(trackedDomainId);
+      if (!tracked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
+        });
+      }
+
+      const updated = await updateNotificationOverrides(
+        trackedDomainId,
+        overrides,
+      );
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to update overrides - domain may have been deleted",
+        });
+      }
+
+      analytics.track(
+        "domain_notification_overrides_updated",
+        { ...overrides },
+        ctx.user.id,
+      );
+
+      return {
+        id: updated.id,
+        notificationOverrides: updated.notificationOverrides,
+      };
+    }),
+
+  /**
+   * Reset all notification overrides for a domain (inherit from global).
+   */
+  resetDomainNotificationOverrides: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId } = input;
+
+      // Get tracked domain
+      const tracked = await findTrackedDomainById(trackedDomainId);
+      if (!tracked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Ensure user owns this tracked domain
+      if (tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have access to this domain",
+        });
+      }
+
+      const updated = await resetNotificationOverrides(trackedDomainId);
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to reset overrides - domain may have been deleted",
+        });
+      }
+
+      return {
+        id: updated.id,
+        notificationOverrides: updated.notificationOverrides,
+      };
+    }),
 });
