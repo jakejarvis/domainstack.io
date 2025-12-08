@@ -6,14 +6,16 @@ import { db } from "@/lib/db/client";
 import {
   findTrackedDomainById,
   resetNotificationOverrides,
-  updateNotificationOverrides,
 } from "@/lib/db/repos/tracked-domains";
 import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
-import { accounts } from "@/lib/db/schema";
-import { NotificationOverridesSchema } from "@/lib/schemas";
+import { accounts, userTrackedDomains } from "@/lib/db/schema";
+import {
+  NotificationOverridesSchema,
+  UpdateNotificationPreferencesSchema,
+} from "@/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 export const userRouter = createTRPCRouter({
@@ -46,9 +48,10 @@ export const userRouter = createTRPCRouter({
 
   /**
    * Update global notification preferences.
+   * Accepts partial updates - only provided fields will be changed.
    */
   updateGlobalNotificationPreferences: protectedProcedure
-    .input(NotificationOverridesSchema)
+    .input(UpdateNotificationPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
       const updated = await updateUserNotificationPreferences(
         ctx.user.id,
@@ -66,6 +69,7 @@ export const userRouter = createTRPCRouter({
 
   /**
    * Update notification overrides for a specific tracked domain.
+   * Optimized to avoid double lookup by passing existing overrides directly.
    */
   updateDomainNotificationOverrides: protectedProcedure
     .input(
@@ -77,7 +81,7 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId, overrides } = input;
 
-      // Get tracked domain
+      // Get tracked domain (single lookup)
       const tracked = await findTrackedDomainById(trackedDomainId);
       if (!tracked) {
         throw new TRPCError({
@@ -94,10 +98,27 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      const updated = await updateNotificationOverrides(
-        trackedDomainId,
-        overrides,
-      );
+      // Merge existing overrides with new ones (avoiding second lookup)
+      const mergedOverrides = {
+        ...tracked.notificationOverrides,
+      };
+
+      if (overrides.domainExpiry !== undefined) {
+        mergedOverrides.domainExpiry = overrides.domainExpiry;
+      }
+      if (overrides.certificateExpiry !== undefined) {
+        mergedOverrides.certificateExpiry = overrides.certificateExpiry;
+      }
+      if (overrides.verificationStatus !== undefined) {
+        mergedOverrides.verificationStatus = overrides.verificationStatus;
+      }
+
+      // Update with merged overrides
+      const [updated] = await db
+        .update(userTrackedDomains)
+        .set({ notificationOverrides: mergedOverrides })
+        .where(eq(userTrackedDomains.id, trackedDomainId))
+        .returning();
 
       if (!updated) {
         throw new TRPCError({
@@ -155,6 +176,8 @@ export const userRouter = createTRPCRouter({
           message: "Failed to reset overrides - domain may have been deleted",
         });
       }
+
+      analytics.track("domain_notification_overrides_reset", {}, ctx.user.id);
 
       return {
         id: updated.id,

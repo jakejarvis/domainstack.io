@@ -1,22 +1,16 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Link2, Loader2, Unlink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
-import { Button } from "@/components/ui/button";
+import { LinkedAccountRow } from "@/components/dashboard/linked-account-row";
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import {
   OAUTH_PROVIDERS,
@@ -166,91 +160,18 @@ export function LinkedAccountsSection({
           {OAUTH_PROVIDERS.map((provider) => {
             const isLinked = linkedProviderIds.has(provider.id);
             const isLinking = linkingProvider === provider.id;
-            const Icon = provider.icon;
 
             return (
-              <div
+              <LinkedAccountRow
                 key={provider.id}
-                className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-background">
-                    <Icon className="size-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{provider.name}</span>
-                      {isLinked && (
-                        <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 font-medium text-green-600 text-xs dark:text-green-400">
-                          <Check className="size-3" />
-                          Connected
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      {isLinked
-                        ? "You can sign in with this account"
-                        : provider.enabled
-                          ? "Link to enable sign in"
-                          : "Not available"}
-                    </p>
-                  </div>
-                </div>
-
-                {isLinked ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setUnlinkingProvider(provider.id)}
-                          disabled={!canUnlink || unlinkMutation.isPending}
-                          className="gap-2"
-                        >
-                          {unlinkMutation.isPending &&
-                          unlinkMutation.variables === provider.id ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            <Unlink className="size-4" />
-                          )}
-                          Unlink
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {!canUnlink && (
-                      <TooltipContent>
-                        You must have at least one linked account to sign in
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                ) : provider.enabled ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleLink(provider)}
-                    disabled={isLinking}
-                    className="gap-2"
-                  >
-                    {isLinking ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <Link2 className="size-4" />
-                    )}
-                    Link
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="gap-2"
-                  >
-                    <Link2 className="size-4" />
-                    Unavailable
-                  </Button>
-                )}
-              </div>
+                provider={provider}
+                isLinked={isLinked}
+                canUnlink={canUnlink}
+                isLinking={isLinking}
+                unlinkMutation={unlinkMutation}
+                onLink={() => handleLink(provider)}
+                onUnlink={() => setUnlinkingProvider(provider.id)}
+              />
             );
           })}
         </CardContent>
