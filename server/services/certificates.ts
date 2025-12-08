@@ -13,7 +13,7 @@ import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Certificate } from "@/lib/schemas";
-import { addSpanAttributes, withSpan } from "@/lib/tracing";
+import { addSpanAttributes, addSpanEvent, withSpan } from "@/lib/tracing";
 import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
@@ -213,6 +213,16 @@ export const getCertificates = withSpan(
       return out;
     } catch (err) {
       logger.error("probe failed", err, { domain });
+
+      // Record the failure in the span for observability
+      addSpanEvent("cert.probe_failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      addSpanAttributes({
+        "cert.probe_failed": true,
+        "cert.error": err instanceof Error ? err.message : String(err),
+      });
+
       // Do not treat as fatal; return empty and avoid long-lived negative cache
       return [];
     }

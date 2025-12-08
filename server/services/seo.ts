@@ -234,7 +234,12 @@ export const getSeo = withSpan(
         });
         uploadedImageUrl = url;
         preview.imageUploaded = url;
-      } catch {
+      } catch (err) {
+        logger.debug("OG image processing failed", {
+          domain,
+          image: preview.image,
+          error: err,
+        });
         preview.imageUploaded = null;
       }
     }

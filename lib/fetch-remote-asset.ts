@@ -123,6 +123,7 @@ export async function fetchRemoteAsset(
           // Follow the Location manually so we can validate the next host ourselves.
           const location = response.headers.get("location");
           if (!location) {
+            addSpanAttributes({ "http.redirect_missing_location": true });
             throw new RemoteAssetError(
               "response_error",
               "Redirect response missing Location header",
@@ -191,6 +192,7 @@ export async function fetchRemoteAsset(
         };
       }
 
+      // Safety fallback - should be unreachable given loop logic
       throw new RemoteAssetError("redirect_limit", "Exceeded redirect limit");
     },
   );

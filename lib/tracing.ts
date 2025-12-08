@@ -162,11 +162,8 @@ export function withSpanSync<TArgs extends unknown[], TReturn>(
     if (error !== undefined) {
       throw error;
     }
-    if (result === undefined) {
-      throw new Error("Span completed without result or error");
-    }
 
-    return result;
+    return result as TReturn;
   };
 }
 
@@ -256,11 +253,8 @@ export function withChildSpanSync<T>(options: SpanOptions, fn: () => T): T {
   if (error !== undefined) {
     throw error;
   }
-  if (result === undefined) {
-    throw new Error("Span completed without result or error");
-  }
 
-  return result;
+  return result as T;
 }
 
 /**

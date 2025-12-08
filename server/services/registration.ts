@@ -169,6 +169,12 @@ export const getRegistration = withSpan(
           reason: error || "unknown",
         });
 
+        addSpanAttributes({
+          "registration.cache_hit": false,
+          "registration.unavailable": true,
+          "registration.reason": String(error || "unknown"),
+        });
+
         // Return minimal unregistered response for TLDs without WHOIS/RDAP
         // (We can't determine registration status without WHOIS/RDAP access)
         return {
@@ -196,6 +202,13 @@ export const getRegistration = withSpan(
       logger.info("unregistered (not persisted)", { domain });
 
       const registrarProvider = normalizeRegistrar(record.registrar ?? {});
+
+      addSpanAttributes({
+        "registration.cache_hit": false,
+        "registration.is_registered": false,
+        "registration.tld": record.tld,
+        "registration.source": record.source,
+      });
 
       // Explicitly construct Registration object to avoid leaking rdapper internals
       return {

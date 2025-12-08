@@ -11,7 +11,7 @@ import { fetchWithSelectiveRedirects } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Header, HeadersResponse } from "@/lib/schemas";
-import { addSpanAttributes, withSpan } from "@/lib/tracing";
+import { addSpanAttributes, addSpanEvent, withSpan } from "@/lib/tracing";
 import { ttlForHeaders } from "@/lib/ttl";
 
 const logger = createLogger({ source: "headers" });
@@ -153,8 +153,24 @@ const getHeadersImpl = withSpan(
         logger.debug("no web hosting (no A/AAAA records)", {
           domain,
         });
+        addSpanAttributes({
+          "headers.cache_hit": false,
+          "headers.dns_error": true,
+        });
+        addSpanEvent("headers.probe_failed", {
+          reason: "dns_resolution",
+        });
       } else {
         logger.error("probe failed", err, { domain });
+        addSpanAttributes({
+          "headers.cache_hit": false,
+          "headers.probe_failed": true,
+          "headers.error": err instanceof Error ? err.message : String(err),
+        });
+        addSpanEvent("headers.probe_failed", {
+          reason: "http_error",
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
 
       // Return empty on failure without caching to avoid long-lived negatives

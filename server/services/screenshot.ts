@@ -157,11 +157,13 @@ const generateScreenshot = withSpan(
       }
     } catch (err) {
       logger.error("db read failed", err, { domain });
+      addSpanAttributes({ "screenshot.db_read_failed": true });
     }
 
     // Generate screenshot (cache missed)
     addSpanAttributes({ "screenshot.cache_hit": false });
     let resultUrl: string | null = null;
+    let actualAttempts = 0;
     let browser: Browser | null = null;
     try {
       browser = await getBrowser();
@@ -173,6 +175,7 @@ const generateScreenshot = withSpan(
 
         for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
           let page: import("puppeteer-core").Page | null = null;
+          actualAttempts++;
 
           addSpanEvent("screenshot.attempt_start", {
             attempt: attemptIndex + 1,
@@ -320,7 +323,8 @@ const generateScreenshot = withSpan(
 
     addSpanAttributes({
       "screenshot.found": resultUrl !== null,
-      "screenshot.attempts": attempts,
+      "screenshot.attempts_made": actualAttempts,
+      "screenshot.attempts_max": attempts,
     });
 
     return { url: resultUrl };

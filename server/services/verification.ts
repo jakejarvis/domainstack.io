@@ -251,7 +251,13 @@ async function verifyHtmlFileImpl(
         logger.info("HTML file verification successful", { domain });
         return { verified: true, method: "html_file" };
       }
-    } catch {}
+    } catch (err) {
+      logger.debug("HTML file fetch error", {
+        error: err,
+        domain,
+        url: urlStr,
+      });
+    }
   }
 
   logger.debug("HTML file verification failed", { domain });
@@ -304,7 +310,9 @@ async function verifyMetaTagImpl(
           return { verified: true, method: "meta_tag" };
         }
       }
-    } catch {}
+    } catch (err) {
+      logger.debug("Meta tag fetch error", { error: err, domain, url: urlStr });
+    }
   }
 
   logger.debug("Meta tag verification failed", { domain });
