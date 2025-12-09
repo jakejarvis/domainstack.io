@@ -2,6 +2,10 @@
 
 import posthog from "posthog-js";
 import { useMemo } from "react";
+import type {
+  IdentifyProperties,
+  IdentifySetOnceProperties,
+} from "@/lib/analytics/types";
 
 function track(event: string, properties?: Record<string, unknown>) {
   try {
@@ -21,22 +25,6 @@ function trackException(error: Error, properties?: Record<string, unknown>) {
     // no-op
   }
 }
-
-/**
- * User properties that can be updated on each identify call.
- */
-type IdentifyProperties = {
-  email?: string;
-  name?: string;
-  tier?: string;
-};
-
-/**
- * User properties that should only be set once (first time).
- */
-type IdentifySetOnceProperties = {
-  createdAt?: string;
-};
 
 /**
  * Identify a user with PostHog.

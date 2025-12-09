@@ -5,6 +5,10 @@ import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
+import type {
+  IdentifyProperties,
+  IdentifySetOnceProperties,
+} from "@/lib/analytics/types";
 import { logger } from "@/lib/logger/server";
 
 // PostHog clients maintain background flushers; keep a single shared instance
@@ -65,22 +69,6 @@ const getDistinctId = cache(async (): Promise<string> => {
 
   return distinctId;
 });
-
-/**
- * User properties that can be updated on each identify call.
- */
-type IdentifyProperties = {
-  email?: string;
-  name?: string;
-  tier?: string;
-};
-
-/**
- * User properties that should only be set once (first time).
- */
-type IdentifySetOnceProperties = {
-  createdAt?: string;
-};
 
 /**
  * Analytics tracking utility for server-side contexts.
