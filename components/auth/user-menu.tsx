@@ -58,6 +58,8 @@ export function UserMenu() {
       await signOut({
         fetchOptions: {
           onSuccess: () => {
+            // Reset PostHog identity to prevent event crossover between users
+            analytics.reset();
             router.push("/");
           },
         },

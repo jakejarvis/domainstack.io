@@ -5,6 +5,10 @@ import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { cache } from "react";
 import { v4 as uuidv4 } from "uuid";
+import type {
+  IdentifyProperties,
+  IdentifySetOnceProperties,
+} from "@/lib/analytics/types";
 import { logger } from "@/lib/logger/server";
 
 // PostHog clients maintain background flushers; keep a single shared instance
@@ -79,6 +83,46 @@ const getDistinctId = cache(async (): Promise<string> => {
  * during the request phase, and we just await the cached result inside after().
  */
 export const analytics = {
+  /**
+   * Identify a user with PostHog server-side.
+   * Use this to ensure user properties are set even when client-side identify
+   * might not have run yet (e.g., in API routes, server actions).
+   *
+   * @param userId - The user's unique ID (from better-auth)
+   * @param properties - Properties to set/update on the user ($set)
+   * @param setOnceProperties - Properties to set only once ($set_once)
+   */
+  identify: (
+    userId: string,
+    properties?: IdentifyProperties,
+    setOnceProperties?: IdentifySetOnceProperties,
+  ) => {
+    const doIdentify = async () => {
+      const client = getServerPosthog();
+      if (!client) {
+        return;
+      }
+
+      await client.identifyImmediate({
+        distinctId: userId,
+        properties: {
+          ...(properties && { $set: properties }),
+          ...(setOnceProperties && { $set_once: setOnceProperties }),
+        },
+      });
+    };
+
+    // Run in background when available, otherwise fire-and-forget
+    try {
+      after(() => doIdentify());
+    } catch {
+      // If after not available, still identify but don't block
+      doIdentify().catch(() => {
+        // no-op - graceful degradation
+      });
+    }
+  },
+
   track: (
     event: string,
     properties: Record<string, unknown>,
