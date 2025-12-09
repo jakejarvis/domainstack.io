@@ -120,9 +120,7 @@ function createFaqSections(
             <>
               Domain data is cached to ensure fast load times. Different data
               types have different refresh intervals — DNS records update more
-              frequently than registration data, for example. You can always
-              view the &quot;last updated&quot; timestamp on each section of a
-              report.
+              frequently than registration data, for example.
             </>
           ),
         },
@@ -342,10 +340,11 @@ function createFaqSections(
           question: "What data does Domainstack collect?",
           answer: (
             <>
-              We collect your account information (name and email via GitHub),
-              the domains you choose to track, and basic usage analytics. Domain
-              data shown in reports is all publicly available information — we
-              don&apos;t access anything private. See our{" "}
+              We collect your account information (name and email via your
+              chosen login provider), the domains you choose to track, and basic
+              usage analytics. Domain data shown in reports is all publicly
+              available information — we don&apos;t access anything private. See
+              our{" "}
               <Link href="/privacy" className="underline underline-offset-4">
                 Privacy Policy
               </Link>{" "}
@@ -376,10 +375,13 @@ function createFaqSections(
           question: "How do I sign up?",
           answer: (
             <>
-              Click &quot;Sign in&quot; in the header and authenticate with your
-              GitHub account. We use GitHub OAuth so you don&apos;t need to
-              create a separate password. Your account is created automatically
-              on first sign-in.
+              Click &quot;Sign in&quot; in the header (or{" "}
+              <Link href="/login" className="underline underline-offset-4">
+                click here
+              </Link>
+              ) and authenticate with one of the supported services. We use
+              OAuth so you don&apos;t need to worry about a password. You can
+              always change your linked account later in Settings.
             </>
           ),
         },

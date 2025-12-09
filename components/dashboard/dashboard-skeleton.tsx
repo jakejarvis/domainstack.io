@@ -24,10 +24,7 @@ export function DashboardSkeleton() {
           {/* View toggle and Add Domain - always right aligned */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* View toggle - two connected buttons */}
-            <div className="inline-flex rounded-md border border-input dark:border-white/20">
-              <Skeleton className="h-9 w-10 rounded-l-[5px] border-input border-r dark:border-white/20" />
-              <Skeleton className="h-9 w-10 rounded-r-[5px]" />
-            </div>
+            <Skeleton className="h-9 w-20 rounded-md" />
             {/* Add Domain button */}
             <Skeleton className="h-9 w-32 rounded-md" />
           </div>

@@ -36,12 +36,12 @@ export function AppFooter() {
         <span className="mx-1.5 text-muted-foreground">•</span>
         <Link href="/terms" prefetch={false}>
           <Handshake className="text-muted-foreground" />
-          Terms of Service
+          Terms
         </Link>
         <span className="mx-1.5 text-muted-foreground">•</span>
         <Link href="/privacy" prefetch={false}>
           <HatGlasses className="text-muted-foreground" />
-          Privacy Policy
+          Privacy
         </Link>
       </p>
     </footer>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -13,12 +15,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DashboardLayout({
+async function ProtectedDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Server-side auth check
+  // Server-side auth check - requires runtime data (headers)
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -27,9 +29,21 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  return <>{children}</>;
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="container mx-auto px-4 py-8">
-      <NuqsAdapter>{children}</NuqsAdapter>
+      <NuqsAdapter>
+        <Suspense fallback={<DashboardSkeleton />}>
+          <ProtectedDashboardLayout>{children}</ProtectedDashboardLayout>
+        </Suspense>
+      </NuqsAdapter>
     </div>
   );
 }
