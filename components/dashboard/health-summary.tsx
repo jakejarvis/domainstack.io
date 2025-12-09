@@ -42,7 +42,7 @@ export function HealthSummary({
               >
                 <AlertTriangle className="mr-1 size-3.5" />
                 <span className="tabular-nums">{expiringSoon}</span>
-                <span className="hidden sm:inline">expiring soon</span>
+                <span>expiring soon</span>
               </Badge>
             </button>
           </TooltipTrigger>
@@ -65,7 +65,7 @@ export function HealthSummary({
               >
                 <Clock className="mr-1 size-3.5" />
                 <span className="tabular-nums">{pendingVerification}</span>
-                <span className="hidden sm:inline">pending verification</span>
+                <span>pending verification</span>
               </Badge>
             </button>
           </TooltipTrigger>

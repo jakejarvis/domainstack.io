@@ -10,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ViewMode } from "@/hooks/use-view-preference";
+import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +69,8 @@ export function DashboardHeader({
           </span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        {/* Progress indicator */}
         <div className="flex items-center gap-3">
           <Progress value={percentage} className="w-24 md:w-32" />
           <span className="text-[13px] text-muted-foreground tabular-nums">
@@ -77,83 +78,86 @@ export function DashboardHeader({
           </span>
         </div>
 
-        {/* View toggle */}
-        <div className="inline-flex rounded-md border border-input dark:border-white/20">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => onViewModeChange("grid")}
-                aria-label="Grid view"
-                aria-pressed={viewMode === "grid"}
-                className={cn(
-                  "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
-                  viewMode === "grid"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
-                )}
-              >
-                <LayoutGrid className="size-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Grid view</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => onViewModeChange("table")}
-                aria-label="Table view"
-                aria-pressed={viewMode === "table"}
-                className={cn(
-                  "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
-                  viewMode === "table"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
-                )}
-              >
-                <TableIcon className="size-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Table view</TooltipContent>
-          </Tooltip>
-        </div>
+        {/* View toggle and Add Domain - always right aligned */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* View toggle */}
+          <div className="inline-flex rounded-md border border-input dark:border-white/20">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("grid")}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
+                  className={cn(
+                    "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                  )}
+                >
+                  <LayoutGrid className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Grid view</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("table")}
+                  aria-label="Table view"
+                  aria-pressed={viewMode === "table"}
+                  className={cn(
+                    "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
+                    viewMode === "table"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                  )}
+                >
+                  <TableIcon className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Table view</TooltipContent>
+            </Tooltip>
+          </div>
 
-        {trackedCount >= maxDomains ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button disabled className="pointer-events-none">
-                  <Plus className="size-4" />
-                  Add Domain
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {tier === "free"
-                ? "Upgrade to Pro for more domains"
-                : "Domain limit reached"}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button asChild>
-            <Link
-              href="/dashboard/add-domain"
-              data-disable-progress={true}
-              onClick={(e) => {
-                // Allow modifier clicks to open in new tab/window
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-                  return;
-                }
-                e.preventDefault();
-                onAddDomain();
-              }}
-            >
-              <Plus className="size-4" />
-              Add Domain
-            </Link>
-          </Button>
-        )}
+          {trackedCount >= maxDomains ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button disabled className="pointer-events-none">
+                    <Plus className="size-4" />
+                    Add Domain
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {tier === "free"
+                  ? "Upgrade to Pro for more domains"
+                  : "Domain limit reached"}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button asChild>
+              <Link
+                href="/dashboard/add-domain"
+                data-disable-progress={true}
+                onClick={(e) => {
+                  // Allow modifier clicks to open in new tab/window
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+                    return;
+                  }
+                  e.preventDefault();
+                  onAddDomain();
+                }}
+              >
+                <Plus className="size-4" />
+                Add Domain
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

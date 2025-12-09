@@ -51,6 +51,7 @@ export type TrackedDomainWithDetails = {
   userId: string;
   domainId: string;
   domainName: string;
+  tld: string;
   verified: boolean;
   verificationMethod: VerificationMethod | null;
   verificationToken: string;
@@ -243,6 +244,7 @@ type TrackedDomainRow = {
   userId: string;
   domainId: string;
   domainName: string;
+  tld: string;
   verified: boolean;
   verificationMethod: VerificationMethod | null;
   verificationToken: string;
@@ -275,6 +277,7 @@ function transformToTrackedDomainWithDetails(
     userId: row.userId,
     domainId: row.domainId,
     domainName: row.domainName,
+    tld: row.tld,
     verified: row.verified,
     verificationMethod: row.verificationMethod,
     verificationToken: row.verificationToken,
@@ -315,6 +318,7 @@ async function queryTrackedDomainsWithDetails(
       userId: userTrackedDomains.userId,
       domainId: userTrackedDomains.domainId,
       domainName: domains.name,
+      tld: domains.tld,
       verified: userTrackedDomains.verified,
       verificationMethod: userTrackedDomains.verificationMethod,
       verificationToken: userTrackedDomains.verificationToken,
@@ -440,6 +444,7 @@ export async function getTrackedDomainsForUserPaginated(
       userId: userTrackedDomains.userId,
       domainId: userTrackedDomains.domainId,
       domainName: domains.name,
+      tld: domains.tld,
       verified: userTrackedDomains.verified,
       verificationMethod: userTrackedDomains.verificationMethod,
       verificationToken: userTrackedDomains.verificationToken,

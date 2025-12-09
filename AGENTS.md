@@ -7,7 +7,7 @@
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
 - `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view, bulk actions toolbar, domain filters, health summary).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
-- `hooks/` shared stateful helpers (camelCase named exports): `useDomainFilters`, `useSelection`, `useSortPreference`, `useViewPreference`, `useDomainExport`, `useCustomerPortal`, `useUpgradeCheckout`, `useLogger`, etc.
+- `hooks/` shared stateful helpers (camelCase named exports): `useDashboardFilters`, `useDashboardSort`, `useDashboardPreferences`, `useTablePagination`, `useSelection`, `useDomainExport`, `useCustomerPortal`, `useUpgradeCheckout`, `useLogger`, etc.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
@@ -209,10 +209,24 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
 - Unarchiving checks capacity before allowing reactivation.
 
 ### Dashboard Features
-- **Filtering:** URL-persisted filters via `nuqs` (search, status, health, TLDs). Hook: `hooks/use-domain-filters.ts`.
+- **Filtering:** URL-persisted filters via `nuqs` (search, status, health, TLDs). Hook: `hooks/use-dashboard-filters.ts`.
+- **Sorting:** URL-persisted sorting via `nuqs` for both grid and table views. Hook: `hooks/use-dashboard-sort.ts`.
+  - Default: Alphabetical by name (domainName.asc)
+  - Grid view: Dropdown with preset sort options (domainName.asc, domainName.desc, expirationDate.asc, expirationDate.desc, createdAt.desc)
+  - Table view: Column-level sorting that syncs to URL (supports all sortable columns)
+  - Format: Uses table column format for all sorts: `?sort=columnId.asc` or `?sort=columnId.desc`
+  - View switching: Sort persists when switching between grid/table (falls back to default if table-only sort in grid view)
+  - Fully generic: Grid sort options use the same format as table columns (no mapping layer needed)
+- **Pagination:** Table view current page stored in URL via `nuqs`, page size stored in localStorage. Hook: `hooks/use-table-pagination.ts`.
+  - Format: `?page=2` (1-indexed for user-facing URLs)
+  - Page resets to 1 when filters or sort change
+  - Page size preference persists across sessions (localStorage)
+- **Preferences:** Dashboard UI preferences stored in localStorage. Hook: `hooks/use-dashboard-preferences.ts`.
+  - View mode (grid/table) - default: grid
+  - Page size (10/25/50/100) - default: 25
+  - Consolidated into single localStorage key for efficiency
 - **Bulk actions:** Multi-select with floating toolbar for archive/delete. Hook: `hooks/use-selection.ts`. Component: `components/dashboard/bulk-actions-toolbar.tsx`.
 - **Health summary:** Clickable badges showing expiring/pending counts. Component: `components/dashboard/health-summary.tsx`.
-- **View modes:** Grid (sortable) and table (column sorting via TanStack Table). Hooks: `hooks/use-view-preference.ts`, `hooks/use-sort-preference.ts`.
 - **Filter constants:** `lib/constants/domain-filters.ts` defines `STATUS_OPTIONS` and `HEALTH_OPTIONS`.
 
 ### Environment variables

@@ -16,14 +16,6 @@ export type {
 } from "@/lib/constants/domain-filters";
 
 /**
- * Extract TLD from domain name (e.g., "example.com" -> ".com")
- */
-function extractTld(domain: string): string {
-  const parts = domain.split(".");
-  return parts.length > 1 ? `.${parts[parts.length - 1]}` : "";
-}
-
-/**
  * Determine health status based on expiration date
  */
 function getHealthStatus(
@@ -43,9 +35,14 @@ function getHealthStatus(
 }
 
 /**
- * Hook for managing domain filter state with URL persistence using nuqs.
+ * Hook for managing dashboard filter state with URL persistence using nuqs.
+ *
+ * @param onFilterChange - Optional callback to run when any filter changes (e.g., reset pagination)
  */
-export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
+export function useDashboardFilters(
+  domains: TrackedDomainWithDetails[],
+  options?: { onFilterChange?: () => void },
+) {
   // URL state with nuqs
   const [filters, setFilters] = useQueryStates(
     {
@@ -61,11 +58,12 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
   );
 
   // Extract unique TLDs from domains for the dropdown
+  // Note: TLDs are stored in database and URL state without leading dot (e.g., "com")
+  // but displayed with a leading dot in the UI (e.g., ".com")
   const availableTlds = useMemo(() => {
     const tldSet = new Set<string>();
     for (const domain of domains) {
-      const tld = extractTld(domain.domainName);
-      if (tld) tldSet.add(tld);
+      if (domain.tld) tldSet.add(domain.tld);
     }
     return Array.from(tldSet).sort();
   }, [domains]);
@@ -110,8 +108,7 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
 
       // TLD filter
       if (filters.tlds.length > 0) {
-        const tld = extractTld(domain.domainName);
-        if (!filters.tlds.includes(tld)) {
+        if (!filters.tlds.includes(domain.tld)) {
           return false;
         }
       }
@@ -144,19 +141,30 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
   }, [domains]);
 
   // Filter setters
-  const setSearch = (value: string) => setFilters({ search: value || null });
+  const setSearch = (value: string) => {
+    setFilters({ search: value || null });
+    options?.onFilterChange?.();
+  };
 
-  const setStatus = (values: StatusFilter[]) =>
+  const setStatus = (values: StatusFilter[]) => {
     setFilters({ status: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const setHealth = (values: HealthFilter[]) =>
+  const setHealth = (values: HealthFilter[]) => {
     setFilters({ health: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const setTlds = (values: string[]) =>
+  const setTlds = (values: string[]) => {
     setFilters({ tlds: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const clearFilters = () =>
+  const clearFilters = () => {
     setFilters({ search: null, status: null, health: null, tlds: null });
+    options?.onFilterChange?.();
+  };
 
   // Quick filter for health summary clicks
   const applyHealthFilter = (filter: HealthFilter | "pending") => {
@@ -165,6 +173,7 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
     } else {
       setFilters({ status: null, health: [filter] });
     }
+    options?.onFilterChange?.();
   };
 
   return {

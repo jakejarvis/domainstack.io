@@ -12,7 +12,7 @@ import {
 import {
   PAGE_SIZE_OPTIONS,
   type PageSize,
-} from "@/hooks/use-page-size-preference";
+} from "@/hooks/use-dashboard-preferences";
 
 type TablePaginationProps = {
   pageIndex: number;

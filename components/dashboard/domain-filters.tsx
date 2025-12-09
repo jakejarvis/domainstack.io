@@ -1,5 +1,6 @@
 "use client";
 
+import type { Table } from "@tanstack/react-table";
 import {
   Activity,
   Check,
@@ -11,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +33,8 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { SORT_OPTIONS, type SortOption } from "@/hooks/use-sort-preference";
-import type { ViewMode } from "@/hooks/use-view-preference";
+import type { ViewMode } from "@/hooks/use-dashboard-preferences";
+import { SORT_OPTIONS, type SortOption } from "@/hooks/use-dashboard-sort";
 import { HEALTH_OPTIONS, STATUS_OPTIONS } from "@/lib/constants";
 import type {
   HealthFilter,
@@ -56,6 +58,9 @@ type DomainFiltersProps = {
   viewMode: ViewMode;
   sortOption?: SortOption;
   onSortChange?: (sort: SortOption) => void;
+  // Table instance (for column visibility in table view)
+  // biome-ignore lint/suspicious/noExplicitAny: Table generic type varies
+  table?: Table<any> | null;
 };
 
 /** Discriminated union for type-safe filter chip handling */
@@ -80,12 +85,20 @@ export function DomainFilters({
   viewMode,
   sortOption,
   onSortChange,
+  table,
 }: DomainFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Memoize TLD options to avoid re-allocating on every render
+  // TLDs are stored without leading dot but displayed with dot
+  // Include the dotted version as a keyword so search works with or without the dot
   const tldOptions = useMemo(
-    () => availableTlds.map((t) => ({ value: t, label: t })),
+    () =>
+      availableTlds.map((t) => ({
+        value: t,
+        label: `.${t}`,
+        keywords: [`.${t}`], // Allow searching with the dot
+      })),
     [availableTlds],
   );
 
@@ -114,7 +127,7 @@ export function DomainFilters({
     ...tlds.map((t) => ({
       type: "tld" as const,
       value: t,
-      label: t,
+      label: `.${t}`, // Display with leading dot
     })),
   ];
 
@@ -147,57 +160,76 @@ export function DomainFilters({
   );
 
   const filterContent = (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center">
-      {/* Search input */}
-      <div className="flex-1 md:max-w-xs">
-        <InputGroup>
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          <InputGroupInput
-            placeholder="Search domains..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-          {search && (
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton
-                size="icon-xs"
-                onClick={() => onSearchChange("")}
-                aria-label="Clear search"
-              >
-                <X />
-              </InputGroupButton>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      {/* Left side: Search and filter dropdowns */}
+      <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+        {/* Search input */}
+        <div className="flex-1 md:max-w-xs">
+          <InputGroup>
+            <InputGroupAddon>
+              <Search />
             </InputGroupAddon>
+            <InputGroupInput
+              placeholder="Search domains..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
+            {search && (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  onClick={() => onSearchChange("")}
+                  aria-label="Clear search"
+                >
+                  <X />
+                </InputGroupButton>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
+        </div>
+
+        {/* Filter dropdowns */}
+        <div className="flex flex-wrap gap-2">
+          <MultiSelect
+            label="Status"
+            icon={ShieldCheck}
+            options={STATUS_OPTIONS}
+            selected={status}
+            onSelectionChange={onStatusChange}
+          />
+          <MultiSelect
+            label="Health"
+            icon={Activity}
+            options={HEALTH_OPTIONS}
+            selected={health}
+            onSelectionChange={onHealthChange}
+          />
+          {availableTlds.length > 0 && (
+            <MultiSelect
+              label="TLD"
+              icon={Globe}
+              options={tldOptions}
+              selected={tlds}
+              onSelectionChange={onTldsChange}
+              searchable
+            />
           )}
-        </InputGroup>
+        </div>
       </div>
 
-      {/* Filter dropdowns */}
-      <div className="flex flex-wrap gap-2">
-        <MultiSelect
-          label="Status"
-          icon={ShieldCheck}
-          options={STATUS_OPTIONS}
-          selected={status}
-          onSelectionChange={onStatusChange}
-        />
-        <MultiSelect
-          label="Health"
-          icon={Activity}
-          options={HEALTH_OPTIONS}
-          selected={health}
-          onSelectionChange={onHealthChange}
-        />
-        {availableTlds.length > 0 && (
-          <MultiSelect
-            label="TLD"
-            icon={Globe}
-            options={tldOptions}
-            selected={tlds}
-            onSelectionChange={onTldsChange}
-            searchable
-          />
+      {/* Right side: View-specific controls and clear button */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Clear all button */}
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearFilters}
+            className="text-muted-foreground"
+          >
+            <X className="size-4" />
+            Clear all
+          </Button>
         )}
 
         {/* Sort dropdown - only for grid view */}
@@ -214,10 +246,9 @@ export function DomainFilters({
                     </span>
                   )}
                 </span>
-                <ChevronDown className="size-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="end">
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.value}
@@ -237,17 +268,11 @@ export function DomainFilters({
           </DropdownMenu>
         )}
 
-        {/* Clear all button */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearFilters}
-            className="text-muted-foreground"
-          >
-            <X className="size-4" />
-            Clear all
-          </Button>
+        {/* Column visibility - only for table view, hidden on mobile (shown outside collapsible) */}
+        {viewMode === "table" && table && (
+          <div className="hidden md:block">
+            <ColumnVisibilityMenu table={table} />
+          </div>
         )}
       </div>
     </div>
@@ -261,25 +286,33 @@ export function DomainFilters({
       {/* Mobile/tablet: collapsible */}
       <div className="md:hidden">
         <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              <span className="flex items-center gap-2">
-                <Filter className="size-4" />
-                Filters
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-1">
-                    {activeFilterChips.length}
-                  </Badge>
-                )}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "size-4 transition-transform",
-                  mobileOpen && "rotate-180",
-                )}
-              />
-            </Button>
-          </CollapsibleTrigger>
+          <div className="flex items-center gap-2">
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-between">
+                <span className="flex items-center gap-2">
+                  <Filter className="size-4" />
+                  Filters
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1">
+                      {activeFilterChips.length}
+                    </Badge>
+                  )}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "size-4 transition-transform",
+                    mobileOpen && "rotate-180",
+                  )}
+                />
+              </Button>
+            </CollapsibleTrigger>
+
+            {/* Column visibility - always visible on mobile for table view */}
+            {viewMode === "table" && table && (
+              <ColumnVisibilityMenu table={table} />
+            )}
+          </div>
+
           <CollapsibleContent className="pt-3">
             {filterContent}
           </CollapsibleContent>

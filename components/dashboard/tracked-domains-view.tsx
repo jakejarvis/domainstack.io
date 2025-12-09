@@ -1,5 +1,6 @@
 "use client";
 
+import type { Table } from "@tanstack/react-table";
 import { FilterX, Globe, Plus, Timer } from "lucide-react";
 import Link from "next/link";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
@@ -14,8 +15,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { SelectionState } from "@/hooks/use-selection";
-import type { ViewMode } from "@/hooks/use-view-preference";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import type { UserTier } from "@/lib/schemas";
 
@@ -40,6 +41,8 @@ type TrackedDomainsViewProps = {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  // Table instance callback (table view only)
+  onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
 };
 
 export function TrackedDomainsView({
@@ -62,6 +65,7 @@ export function TrackedDomainsView({
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
+  onTableReady,
 }: TrackedDomainsViewProps) {
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
@@ -149,6 +153,7 @@ export function TrackedDomainsView({
           onArchive={onArchive}
           tier={tier}
           proMaxDomains={proMaxDomains}
+          onTableReady={onTableReady}
         />
       ) : (
         <TrackedDomainsGrid

@@ -1,9 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -22,6 +23,8 @@ import { cn } from "@/lib/utils";
 export type MultiSelectOption<T extends string> = {
   value: T;
   label: string;
+  /** Optional search keywords to match against (in addition to value and label) */
+  keywords?: string[];
 };
 
 export type MultiSelectProps<T extends string> = {
@@ -75,7 +78,7 @@ export function MultiSelect<T extends string>({
           className={cn(
             "h-9 gap-2 px-3",
             selected.length > 0 &&
-              "border-foreground/30 bg-foreground/5 dark:border-foreground/40 dark:bg-foreground/10",
+              "border-foreground/20 bg-primary/3 dark:border-foreground/15 dark:bg-primary/10",
             className,
           )}
         >
@@ -101,18 +104,13 @@ export function MultiSelect<T extends string>({
                   <CommandItem
                     key={option.value}
                     value={option.value}
+                    keywords={option.keywords}
                     onSelect={() => toggleOption(option.value)}
                   >
-                    <div
-                      className={cn(
-                        "mr-2 flex size-4 items-center justify-center rounded border",
-                        isSelected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground/50",
-                      )}
-                    >
-                      {isSelected && <Check className="size-3" />}
-                    </div>
+                    <Checkbox
+                      checked={isSelected}
+                      className="pointer-events-none"
+                    />
                     {option.label}
                   </CommandItem>
                 );

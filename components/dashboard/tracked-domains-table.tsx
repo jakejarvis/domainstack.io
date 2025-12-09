@@ -6,8 +6,6 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  type PaginationState,
-  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -22,7 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
@@ -44,10 +42,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  type PageSize,
-  usePageSizePreference,
-} from "@/hooks/use-page-size-preference";
+import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
+import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
+import { useTablePagination } from "@/hooks/use-table-pagination";
 import type {
   ProviderInfo,
   TrackedDomainWithDetails,
@@ -65,6 +62,9 @@ type TrackedDomainsTableProps = {
   onArchive?: (id: string, domainName: string) => void;
   tier: UserTier;
   proMaxDomains: number;
+  onTableReady?: (
+    table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
+  ) => void;
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
@@ -103,13 +103,18 @@ export function TrackedDomainsTable({
   onArchive,
   tier,
   proMaxDomains,
+  onTableReady,
 }: TrackedDomainsTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pageSize, setPageSize] = usePageSizePreference();
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
+  "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
+  // See: https://github.com/TanStack/table/issues/5567
+
+  const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
+    useTablePagination();
+  const { sorting, setSorting } = useTableSortPreference({
+    onSortChange: resetPage,
   });
+  const [columnVisibility, setColumnVisibility] =
+    useColumnVisibilityPreference();
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
@@ -125,6 +130,7 @@ export function TrackedDomainsTable({
           />
         ),
         size: 40,
+        enableHiding: false, // Always show selection column
       },
       {
         accessorKey: "domainName",
@@ -142,6 +148,7 @@ export function TrackedDomainsTable({
             </Link>
           </ScreenshotTooltip>
         ),
+        enableHiding: false, // Always show domain name
       },
       {
         accessorKey: "verified",
@@ -229,6 +236,33 @@ export function TrackedDomainsTable({
         cell: ({ row }) => <ProviderCell provider={row.original.email} />,
       },
       {
+        accessorKey: "createdAt",
+        header: "Added",
+        cell: ({ row }) => {
+          const date = row.original.createdAt;
+          return (
+            <div className="whitespace-nowrap text-[13px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-default">
+                    {format(date, "MMM d, yyyy")}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {formatDateTimeUtc(date.toISOString())}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          );
+        },
+        sortingFn: (rowA, rowB) => {
+          return (
+            rowA.original.createdAt.getTime() -
+            rowB.original.createdAt.getTime()
+          );
+        },
+      },
+      {
         id: "actions",
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
@@ -282,31 +316,32 @@ export function TrackedDomainsTable({
             </DropdownMenuContent>
           </DropdownMenu>
         ),
+        enableHiding: false, // Always show actions menu
       },
     ],
     [selectedIds, onToggleSelect, onVerify, onRemove, onArchive],
   );
 
-  // Sync page size changes to pagination state
-  const handlePageSizeChange = (newSize: PageSize) => {
-    setPageSize(newSize);
-    setPagination((prev) => ({
-      ...prev,
-      pageSize: newSize,
-      pageIndex: 0, // Reset to first page when changing page size
-    }));
-  };
-
   const table = useReactTable({
     data: domains,
     columns,
-    state: { sorting, pagination },
+    state: { sorting, pagination, columnVisibility },
     onSortingChange: setSorting,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const newPagination =
+        typeof updater === "function" ? updater(pagination) : updater;
+      setPageIndex(newPagination.pageIndex);
+    },
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  // Expose table instance to parent for column visibility menu in filters bar
+  useEffect(() => {
+    onTableReady?.(table);
+  }, [table, onTableReady]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
@@ -337,6 +372,7 @@ export function TrackedDomainsTable({
                       className={cn(
                         "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs",
                         index === 0 && "w-9 pl-4", // Checkbox column
+                        header.column.id === "actions" && "w-12", // Actions column fixed width
                         index === headerGroup.headers.length - 1 && "pr-4",
                       )}
                     >
@@ -460,7 +496,7 @@ export function TrackedDomainsTable({
                       </td>
                       {/* Actions column */}
                       {actionsCell && (
-                        <td className="h-12 px-2.5 pr-4 align-middle">
+                        <td className="h-12 w-12 px-2.5 pr-4 align-middle">
                           {flexRender(
                             actionsCell.column.columnDef.cell,
                             actionsCell.getContext(),
@@ -486,6 +522,7 @@ export function TrackedDomainsTable({
                         className={cn(
                           "h-10 px-2.5 align-middle",
                           index === 0 && "w-9 pl-4",
+                          cell.column.id === "actions" && "w-12", // Actions column fixed width
                           index === cells.length - 1 && "pr-4",
                         )}
                       >
@@ -511,8 +548,8 @@ export function TrackedDomainsTable({
           pageCount={table.getPageCount()}
           canPreviousPage={table.getCanPreviousPage()}
           canNextPage={table.getCanNextPage()}
-          onPageChange={(index) => table.setPageIndex(index)}
-          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(index) => setPageIndex(index)}
+          onPageSizeChange={setPageSize}
         />
       )}
 
