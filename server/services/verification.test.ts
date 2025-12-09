@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Use vi.hoisted to make mock hoisting explicit for ESM modules
 const mockFetch = vi.hoisted(() => vi.fn());
+const mockFetchRemoteAsset = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/fetch", () => ({
   fetchWithTimeoutAndRetry: vi.fn(
@@ -10,14 +11,25 @@ vi.mock("@/lib/fetch", () => ({
       return mockFetch(url.toString(), options);
     },
   ),
-  fetchWithSelectiveRedirects: vi.fn(
-    async (url: string | URL, options?: RequestInit) => {
-      return mockFetch(url.toString(), options);
-    },
-  ),
 }));
 
-// Mock fetch globally
+// Mock fetchRemoteAsset for HTML file and meta tag verification (SSRF-protected)
+vi.mock("@/lib/fetch-remote-asset", () => ({
+  fetchRemoteAsset: vi.fn(async (opts: { url: string | URL }) => {
+    return mockFetchRemoteAsset(opts.url.toString());
+  }),
+  RemoteAssetError: class RemoteAssetError extends Error {
+    constructor(
+      public readonly code: string,
+      message: string,
+    ) {
+      super(message);
+      this.name = "RemoteAssetError";
+    }
+  },
+}));
+
+// Mock fetch globally for DNS queries
 vi.stubGlobal("fetch", mockFetch);
 
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
@@ -30,6 +42,7 @@ import {
 
 afterEach(() => {
   mockFetch.mockReset();
+  mockFetchRemoteAsset.mockReset();
 });
 
 describe("generateVerificationToken", () => {
@@ -207,9 +220,11 @@ describe("verifyDomainOwnership", () => {
 
   describe("html_file method", () => {
     it("returns verified when file contains token", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => token,
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(token),
+        contentType: "text/plain",
+        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -223,9 +238,11 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns verified when token is in file with whitespace", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => `  ${token}  \n`,
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(`  ${token}  \n`),
+        contentType: "text/plain",
+        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -238,15 +255,16 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("falls back to HTTP when HTTPS fails", async () => {
-      // HTTPS fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-      });
+      // HTTPS fails with response error
+      mockFetchRemoteAsset.mockRejectedValueOnce(
+        new Error("Response error: 404"),
+      );
       // HTTP succeeds
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => token,
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(token),
+        contentType: "text/plain",
+        finalUrl: "http://example.com/.well-known/domainstack-verify.html",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -256,14 +274,12 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(true);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(2);
     });
 
     it("returns not verified when file not found", async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-      });
+      // Both HTTPS and HTTP fail
+      mockFetchRemoteAsset.mockRejectedValue(new Error("Response error: 404"));
 
       const result = await verifyDomainOwnership(
         "example.com",
@@ -275,9 +291,11 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns not verified when file has wrong content", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () => "wrongtoken",
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from("wrongtoken"),
+        contentType: "text/plain",
+        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -292,10 +310,13 @@ describe("verifyDomainOwnership", () => {
 
   describe("meta_tag method", () => {
     it("returns verified when meta tag with correct content exists", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () =>
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
           `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -309,10 +330,13 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("handles meta tag with reversed attribute order", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () =>
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
           `<html><head><meta content="${token}" name="domainstack-verify"></head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -325,10 +349,13 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("handles single quotes in meta tag", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () =>
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
           `<html><head><meta name='domainstack-verify' content='${token}'></head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -341,10 +368,13 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns not verified when meta tag is missing", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () =>
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
           "<html><head><title>Test</title></head><body></body></html>",
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -357,10 +387,13 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns not verified when meta tag has wrong content", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        text: async () =>
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
           '<html><head><meta name="domainstack-verify" content="wrongtoken"></head></html>',
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
       });
 
       const result = await verifyDomainOwnership(
@@ -425,10 +458,12 @@ describe("tryAllVerificationMethods", () => {
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
-    // HTML succeeds
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      text: async () => token,
+    // HTML succeeds via fetchRemoteAsset
+    mockFetchRemoteAsset.mockResolvedValueOnce({
+      buffer: Buffer.from(token),
+      contentType: "text/plain",
+      finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+      status: 200,
     });
 
     const result = await tryAllVerificationMethods("example.com", token);
@@ -447,15 +482,22 @@ describe("tryAllVerificationMethods", () => {
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
-    // HTML HTTPS fails
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
-    // HTML HTTP fails
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
-    // Meta tag succeeds
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      text: async () =>
+    // HTML HTTPS fails via fetchRemoteAsset
+    mockFetchRemoteAsset.mockRejectedValueOnce(
+      new Error("Response error: 404"),
+    );
+    // HTML HTTP fails via fetchRemoteAsset
+    mockFetchRemoteAsset.mockRejectedValueOnce(
+      new Error("Response error: 404"),
+    );
+    // Meta tag succeeds via fetchRemoteAsset
+    mockFetchRemoteAsset.mockResolvedValueOnce({
+      buffer: Buffer.from(
         `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+      ),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
+      status: 200,
     });
 
     const result = await tryAllVerificationMethods("example.com", token);
@@ -474,8 +516,8 @@ describe("tryAllVerificationMethods", () => {
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
-    // HTML fails (both protocols)
-    mockFetch.mockResolvedValue({ ok: false, status: 404 });
+    // HTML fails (both protocols) via fetchRemoteAsset
+    mockFetchRemoteAsset.mockRejectedValue(new Error("Response error: 404"));
 
     const result = await tryAllVerificationMethods("example.com", token);
 

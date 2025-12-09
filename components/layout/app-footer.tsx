@@ -33,12 +33,12 @@ export function AppFooter() {
           <LifeBuoy className="text-muted-foreground" />
           Help
         </Link>
-        <span className="mx-1.5 text-muted-foreground">•</span>
+        <span className="mx-1.5 select-none text-muted-foreground">•</span>
         <Link href="/terms" prefetch={false}>
           <Handshake className="text-muted-foreground" />
           Terms
         </Link>
-        <span className="mx-1.5 text-muted-foreground">•</span>
+        <span className="mx-1.5 select-none text-muted-foreground">•</span>
         <Link href="/privacy" prefetch={false}>
           <HatGlasses className="text-muted-foreground" />
           Privacy

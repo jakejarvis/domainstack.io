@@ -260,18 +260,13 @@ export const trackingRouter = createTRPCRouter({
 
       // Get tracked domain with domain name in a single query
       const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
-      if (!tracked) {
+
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 
@@ -332,18 +327,12 @@ export const trackingRouter = createTRPCRouter({
       // Get tracked domain with domain name in a single targeted query
       const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
 
-      if (!tracked) {
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 
@@ -367,18 +356,13 @@ export const trackingRouter = createTRPCRouter({
 
       // Get tracked domain
       const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked) {
+
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 
@@ -411,18 +395,13 @@ export const trackingRouter = createTRPCRouter({
 
       // Get tracked domain
       const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked) {
+
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 
@@ -473,15 +452,13 @@ export const trackingRouter = createTRPCRouter({
 
       if (!result.success) {
         switch (result.reason) {
+          // Return identical error for both "not found" and "wrong user"
+          // to prevent enumeration attacks via error differentiation
           case "not_found":
+          case "wrong_user":
             throw new TRPCError({
               code: "NOT_FOUND",
               message: "Tracked domain not found",
-            });
-          case "wrong_user":
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: "You do not have access to this domain",
             });
           case "not_archived":
             throw new TRPCError({

@@ -8,10 +8,8 @@ import {
   DOH_HEADERS,
   providerOrderForLookup,
 } from "@/lib/dns-utils";
-import {
-  fetchWithSelectiveRedirects,
-  fetchWithTimeoutAndRetry,
-} from "@/lib/fetch";
+import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
+import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
 import type {
   DnsInstructions,
@@ -222,6 +220,8 @@ async function verifyDnsTxtImpl(
  * Verify ownership via HTML file.
  * Expected file: https://example.com/.well-known/domainstack-verify.html
  * Contents should exactly match the token (after trimming whitespace).
+ *
+ * Uses SSRF-protected fetch to prevent DNS rebinding and internal network attacks.
  */
 async function verifyHtmlFileImpl(
   domain: string,
@@ -235,30 +235,44 @@ async function verifyHtmlFileImpl(
 
   for (const urlStr of urls) {
     try {
-      const res = await fetchWithSelectiveRedirects(
-        urlStr,
-        {
-          redirect: "manual", // Controlled by fetchWithSelectiveRedirects
-        },
-        { timeoutMs: 5000, maxRedirects: 3 },
-      );
+      // Use SSRF-protected fetch that validates DNS resolution
+      // and blocks requests to private/internal IP ranges
+      const result = await fetchRemoteAsset({
+        url: urlStr,
+        allowHttp: true,
+        timeoutMs: 5000,
+        maxBytes: 1024, // Verification file should be tiny
+        maxRedirects: 3,
+      });
 
-      if (!res.ok) {
-        continue;
-      }
-
-      const text = await res.text();
       // Check if the trimmed file content exactly matches the token
-      if (text.trim() === token) {
+      if (result.buffer.toString("utf-8").trim() === token) {
         logger.info("HTML file verification successful", { domain });
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
-      logger.debug("HTML file fetch error", {
-        error: err,
-        domain,
-        url: urlStr,
-      });
+      // Log SSRF blocks as warnings (potential attack attempts)
+      if (err instanceof RemoteAssetError) {
+        if (err.code === "private_ip" || err.code === "host_blocked") {
+          logger.warn("HTML file verification blocked (SSRF protection)", {
+            domain,
+            url: urlStr,
+            reason: err.code,
+          });
+        } else {
+          logger.debug("HTML file fetch error", {
+            domain,
+            url: urlStr,
+            code: err.code,
+          });
+        }
+      } else {
+        logger.debug("HTML file fetch error", {
+          error: err,
+          domain,
+          url: urlStr,
+        });
+      }
     }
   }
 
@@ -269,6 +283,8 @@ async function verifyHtmlFileImpl(
 /**
  * Verify ownership via meta tag.
  * Expected tag: <meta name="domainstack-verify" content="<token>">
+ *
+ * Uses SSRF-protected fetch to prevent DNS rebinding and internal network attacks.
  */
 async function verifyMetaTagImpl(
   domain: string,
@@ -277,24 +293,22 @@ async function verifyMetaTagImpl(
   // Try both HTTPS and HTTP
   const urls = [`https://${domain}/`, `http://${domain}/`];
 
+  // HTML pages can be larger, but we still limit to prevent abuse
+  const MAX_HTML_BYTES = 512 * 1024; // 512KB should be enough for any homepage head
+
   for (const urlStr of urls) {
     try {
-      const res = await fetchWithTimeoutAndRetry(
-        urlStr,
-        {
-          headers: {
-            accept: "text/html",
-          },
-          redirect: "follow",
-        },
-        { timeoutMs: 10000, retries: 1, backoffMs: 500 },
-      );
+      // Use SSRF-protected fetch that validates DNS resolution
+      // and blocks requests to private/internal IP ranges
+      const result = await fetchRemoteAsset({
+        url: urlStr,
+        allowHttp: true,
+        timeoutMs: 10000,
+        maxBytes: MAX_HTML_BYTES,
+        maxRedirects: 5, // Homepages often have multiple redirects
+      });
 
-      if (!res.ok) {
-        continue;
-      }
-
-      const html = await res.text();
+      const html = result.buffer.toString("utf-8");
 
       // Look for the meta tag with a simple regex
       // Matches: <meta name="domainstack-verify" content="TOKEN">
@@ -313,7 +327,28 @@ async function verifyMetaTagImpl(
         }
       }
     } catch (err) {
-      logger.debug("Meta tag fetch error", { error: err, domain, url: urlStr });
+      // Log SSRF blocks as warnings (potential attack attempts)
+      if (err instanceof RemoteAssetError) {
+        if (err.code === "private_ip" || err.code === "host_blocked") {
+          logger.warn("Meta tag verification blocked (SSRF protection)", {
+            domain,
+            url: urlStr,
+            reason: err.code,
+          });
+        } else {
+          logger.debug("Meta tag fetch error", {
+            domain,
+            url: urlStr,
+            code: err.code,
+          });
+        }
+      } else {
+        logger.debug("Meta tag fetch error", {
+          error: err,
+          domain,
+          url: urlStr,
+        });
+      }
     }
   }
 
