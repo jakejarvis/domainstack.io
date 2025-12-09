@@ -5,19 +5,9 @@ import {
   CONSENT_REQUIRED_COOKIE,
   GDPR_COUNTRY_CODES,
 } from "@/lib/constants/gdpr";
-import {
-  CORRELATION_ID_COOKIE,
-  CORRELATION_ID_HEADER,
-  generateCorrelationId,
-} from "@/lib/logger/correlation";
 import { getMiddlewareRedirectAction } from "@/lib/middleware";
 
 export function proxy(request: NextRequest) {
-  // Standard approach: Extract correlation ID from request header or generate new one
-  // Use x-request-id (industry standard: AWS, nginx, Heroku)
-  const correlationId =
-    request.headers.get(CORRELATION_ID_HEADER) || generateCorrelationId();
-
   // Determine response type
   let response: NextResponse | undefined;
 
@@ -49,23 +39,10 @@ export function proxy(request: NextRequest) {
       response = NextResponse.next();
     }
 
-    response.headers.set("x-middleware-decision", action?.type ?? "skip");
+    if (action?.type) {
+      response.headers.set("x-middleware-decision", action.type);
+    }
   }
-
-  // ============================================================================
-  // Set correlation ID header and cookie
-  // ============================================================================
-
-  // Set header (for server-side reading and client fetch requests)
-  response.headers.set(CORRELATION_ID_HEADER, correlationId);
-
-  // Set cookie (for client-side logger to maintain correlation across page loads)
-  response.cookies.set(CORRELATION_ID_COOKIE, correlationId, {
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    httpOnly: false, // Client needs to read it for logging
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
 
   // ============================================================================
   // Set GDPR consent cookie

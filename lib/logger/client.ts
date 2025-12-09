@@ -8,7 +8,7 @@ import {
   type LogLevel,
   shouldLog,
 } from "@/lib/logger";
-import { getOrGenerateClientCorrelationId } from "@/lib/logger/correlation";
+import { generateCorrelationId } from "@/lib/logger/correlation";
 
 /**
  * Client-side logger with PostHog integration.
@@ -34,10 +34,10 @@ class ClientLogger implements Logger {
     this.minLevel =
       minLevel || (process.env.NODE_ENV === "development" ? "debug" : "info");
 
-    // Initialize correlation ID (lazy loaded on first use)
+    // Generate correlation ID for this logger instance
     if (typeof window !== "undefined") {
       try {
-        this.correlationId = getOrGenerateClientCorrelationId();
+        this.correlationId = generateCorrelationId();
       } catch {
         // Gracefully handle any errors
       }

@@ -329,7 +329,7 @@ trpc.domain.getHosting (tRPC middleware)
 
 ### Integration with Logging
 - Logger automatically extracts `traceId` and `spanId` via `trace.getActiveSpan()`
-- All spans include `app.correlation_id` attribute (from `x-request-id` header)
+- All spans include `app.correlation_id` attribute (from Vercel's `x-vercel-id` request ID)
 - Correlation IDs link logs and spans bidirectionally
 - See **Structured Logging** section for correlation ID propagation
 
@@ -347,7 +347,7 @@ trpc.domain.getHosting (tRPC middleware)
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
   - Errors automatically tracked in PostHog
   - Console output only in development (info/debug) and always for errors
-  - Correlation IDs propagated from server via `x-request-id` header and `correlation-id` cookie
+  - Correlation IDs extracted from Vercel's `x-vercel-id` header (request ID portion)
 - **Log format:** Structured JSON with consistent fields (level, message, timestamp, context, correlationId, traceId, spanId, environment).
 - **Usage examples:**
   ```typescript
@@ -364,6 +364,6 @@ trpc.domain.getHosting (tRPC middleware)
   logger.info("search initiated", { domain: query });
   logger.error("search failed", error, { domain: query });
   ```
-- **Correlation IDs:** Generated server-side in edge middleware (`proxy.ts`), propagated via `x-request-id` header and `correlation-id` cookie. Enables end-to-end request tracing across client and server. Middleware checks incoming `x-request-id` header (for API clients) or generates new UUID, then sets both response header and cookie (30-day expiry, httpOnly=false for client logging).
+- **Correlation IDs:** Extracted from Vercel's `x-vercel-id` header (format: `region::deployment::requestId` - we use the request ID portion). Client-side loggers generate their own correlation IDs independently. Enables request tracing on the server side using Vercel's built-in request tracking.
 - **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with correlation IDs and OpenTelemetry context.
 - **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
