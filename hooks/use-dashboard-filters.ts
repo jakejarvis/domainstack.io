@@ -16,14 +16,6 @@ export type {
 } from "@/lib/constants/domain-filters";
 
 /**
- * Extract TLD from domain name (e.g., "example.com" -> ".com")
- */
-function extractTld(domain: string): string {
-  const parts = domain.split(".");
-  return parts.length > 1 ? `.${parts[parts.length - 1]}` : "";
-}
-
-/**
  * Determine health status based on expiration date
  */
 function getHealthStatus(
@@ -66,11 +58,12 @@ export function useDashboardFilters(
   );
 
   // Extract unique TLDs from domains for the dropdown
+  // Note: TLDs are stored in database and URL state without leading dot (e.g., "com")
+  // but displayed with a leading dot in the UI (e.g., ".com")
   const availableTlds = useMemo(() => {
     const tldSet = new Set<string>();
     for (const domain of domains) {
-      const tld = extractTld(domain.domainName);
-      if (tld) tldSet.add(tld);
+      if (domain.tld) tldSet.add(domain.tld);
     }
     return Array.from(tldSet).sort();
   }, [domains]);
@@ -115,8 +108,7 @@ export function useDashboardFilters(
 
       // TLD filter
       if (filters.tlds.length > 0) {
-        const tld = extractTld(domain.domainName);
-        if (!filters.tlds.includes(tld)) {
+        if (!filters.tlds.includes(domain.tld)) {
           return false;
         }
       }

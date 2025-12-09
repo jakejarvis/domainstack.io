@@ -90,8 +90,15 @@ export function DomainFilters({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Memoize TLD options to avoid re-allocating on every render
+  // TLDs are stored without leading dot but displayed with dot
+  // Include the dotted version as a keyword so search works with or without the dot
   const tldOptions = useMemo(
-    () => availableTlds.map((t) => ({ value: t, label: t })),
+    () =>
+      availableTlds.map((t) => ({
+        value: t,
+        label: `.${t}`,
+        keywords: [`.${t}`], // Allow searching with the dot
+      })),
     [availableTlds],
   );
 
@@ -120,7 +127,7 @@ export function DomainFilters({
     ...tlds.map((t) => ({
       type: "tld" as const,
       value: t,
-      label: t,
+      label: `.${t}`, // Display with leading dot
     })),
   ];
 
@@ -239,10 +246,9 @@ export function DomainFilters({
                     </span>
                   )}
                 </span>
-                <ChevronDown className="size-4 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
+            <DropdownMenuContent align="end">
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.value}

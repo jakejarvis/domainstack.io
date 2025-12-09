@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 export type MultiSelectOption<T extends string> = {
   value: T;
   label: string;
+  /** Optional search keywords to match against (in addition to value and label) */
+  keywords?: string[];
 };
 
 export type MultiSelectProps<T extends string> = {
@@ -102,6 +104,7 @@ export function MultiSelect<T extends string>({
                   <CommandItem
                     key={option.value}
                     value={option.value}
+                    keywords={option.keywords}
                     onSelect={() => toggleOption(option.value)}
                   >
                     <Checkbox
