@@ -11,16 +11,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type ProUpgradeSuccessEmailProps = {
   userName: string;
-  dashboardUrl: string;
   proMaxDomains: number;
 };
 
 export function ProUpgradeSuccessEmail({
   userName,
-  dashboardUrl,
   proMaxDomains,
 }: ProUpgradeSuccessEmailProps) {
   const previewText = "Welcome to Domainstack Pro!";
@@ -59,7 +58,7 @@ export function ProUpgradeSuccessEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               Go to Dashboard
             </Button>
           </Section>
@@ -72,7 +71,7 @@ export function ProUpgradeSuccessEmail({
               Domainstack
             </Link>
             . Manage your subscription in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               account settings
             </Link>
             .
@@ -86,7 +85,6 @@ export function ProUpgradeSuccessEmail({
 // Preview props for email development
 ProUpgradeSuccessEmail.PreviewProps = {
   userName: "Jake",
-  dashboardUrl: "https://domainstack.io/dashboard",
   proMaxDomains: 50,
 } as ProUpgradeSuccessEmailProps;
 

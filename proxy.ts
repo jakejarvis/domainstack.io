@@ -7,15 +7,22 @@ import {
 } from "@/lib/constants/gdpr";
 import { getMiddlewareRedirectAction } from "@/lib/middleware";
 
+// Routes that require authentication (pre-check for faster redirects)
+const PROTECTED_ROUTES = ["/dashboard", "/settings"];
+
 export function proxy(request: NextRequest) {
   // Determine response type
   let response: NextResponse | undefined;
 
-  // Quick redirect for unauthenticated users trying to access dashboard
+  // Quick redirect for unauthenticated users trying to access protected routes
   // This is NOT for security - just a faster redirect path before hitting the page
-  // The actual security check happens in the dashboard layout
+  // The actual security check happens in the page/layout server components
   const { pathname } = request.nextUrl;
-  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+  const isProtectedRoute = PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+
+  if (isProtectedRoute) {
     const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       response = NextResponse.redirect(new URL("/login", request.url));

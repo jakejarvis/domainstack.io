@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Globe, ShieldCheck } from "lucide-react";
+import { Bell, Globe, Info, ShieldCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -42,12 +42,31 @@ export function GlobalNotificationRow({
   const info = NOTIFICATION_CATEGORY_INFO[category];
   const Icon = CATEGORY_ICONS[category];
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Don't toggle if clicking the info button or switch
+    if ((e.target as HTMLElement).closest("button, [role=switch]")) {
+      return;
+    }
+    if (!disabled) {
+      onToggle(!enabled);
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      onClick={handleRowClick}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !disabled) {
+          e.preventDefault();
+          onToggle(!enabled);
+        }
+      }}
       className={cn(
         "group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
         "hover:bg-muted/50",
-        disabled && "pointer-events-none opacity-60",
+        disabled && "pointer-events-none",
       )}
     >
       {/* Icon indicator */}
@@ -62,16 +81,20 @@ export function GlobalNotificationRow({
         <Icon className="size-4" />
       </div>
 
-      {/* Label and description */}
-      <div className="min-w-0 flex-1">
-        <div className="font-medium text-sm">{info.label}</div>
+      {/* Label with info tooltip */}
+      <div className="flex min-w-0 flex-1 cursor-default items-center gap-1.5">
+        <span className="font-medium text-sm">{info.label}</span>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="truncate text-muted-foreground text-xs">
-              {info.description}
-            </div>
+            <button
+              type="button"
+              className="inline-flex text-foreground/70"
+              tabIndex={-1}
+            >
+              <Info className="size-3.5" />
+            </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom" align="start" className="max-w-xs">
+          <TooltipContent className="max-w-xs">
             {info.description}
           </TooltipContent>
         </Tooltip>
@@ -82,7 +105,7 @@ export function GlobalNotificationRow({
         checked={enabled}
         onCheckedChange={onToggle}
         disabled={disabled}
-        className="shrink-0"
+        className="shrink-0 cursor-pointer"
       />
     </div>
   );

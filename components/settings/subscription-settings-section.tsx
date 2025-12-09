@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ExternalLink, Gem } from "lucide-react";
+import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   CardContent,
@@ -31,14 +32,7 @@ export function SubscriptionSettingsSection() {
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
 
   if (limitsQuery.isLoading) {
-    return (
-      <div>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Subscription</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-      </div>
-    );
+    return <SubscriptionSkeleton showCard={false} />;
   }
 
   if (limitsQuery.isError) {

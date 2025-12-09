@@ -11,6 +11,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type CertificateExpiryEmailProps = {
   userName: string;
@@ -18,7 +19,6 @@ type CertificateExpiryEmailProps = {
   expirationDate: string;
   daysRemaining: number;
   issuer: string;
-  dashboardUrl: string;
 };
 
 export function CertificateExpiryEmail({
@@ -27,7 +27,6 @@ export function CertificateExpiryEmail({
   expirationDate,
   daysRemaining,
   issuer,
-  dashboardUrl,
 }: CertificateExpiryEmailProps) {
   const isUrgent = daysRemaining <= 3;
   const previewText = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
@@ -96,7 +95,7 @@ export function CertificateExpiryEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               View Dashboard
             </Button>
           </Section>
@@ -109,7 +108,7 @@ export function CertificateExpiryEmail({
               Domainstack
             </Link>
             . You can manage your notification settings in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               dashboard
             </Link>
             .
@@ -127,7 +126,6 @@ CertificateExpiryEmail.PreviewProps = {
   expirationDate: "January 15, 2025",
   daysRemaining: 7,
   issuer: "Let's Encrypt",
-  dashboardUrl: "https://domainstack.io/dashboard",
 } as CertificateExpiryEmailProps;
 
 export default CertificateExpiryEmail;

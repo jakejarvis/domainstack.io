@@ -1,4 +1,4 @@
-import { useMediaQuery } from "./use-media-query";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 export type PointerCapability = {
   supportsHover: boolean;

@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { DeleteAccountDialog } from "@/components/dashboard/delete-account-dialog";
+import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -60,7 +60,7 @@ export function DangerZoneSettingsSection() {
                 variant="destructive"
                 size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="shrink-0"
+                className="shrink-0 cursor-pointer"
               >
                 Delete Account
               </Button>

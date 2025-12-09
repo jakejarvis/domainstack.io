@@ -4,7 +4,6 @@ import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
 import type React from "react";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
-import { BASE_URL } from "@/lib/constants";
 import {
   getUsersWithEndingSubscriptions,
   setLastExpiryNotification,
@@ -219,7 +218,6 @@ async function sendSubscriptionExpiryNotification({
   );
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(userName);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
@@ -227,7 +225,6 @@ async function sendSubscriptionExpiryNotification({
       SubscriptionCancelingEmail({
         userName: firstName,
         endDate,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 

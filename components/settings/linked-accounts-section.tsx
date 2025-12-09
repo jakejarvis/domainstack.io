@@ -3,8 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
-import { LinkedAccountRow } from "@/components/dashboard/linked-account-row";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { LinkedAccountRow } from "@/components/settings/linked-account-row";
+import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   CardContent,
   CardDescription,
@@ -48,7 +49,7 @@ export function LinkedAccountsSection() {
     try {
       await linkSocial({
         provider: provider.id,
-        callbackURL: "/dashboard/settings",
+        callbackURL: "/settings",
       });
       // The page will redirect to the OAuth provider, so no need to handle success here
     } catch (err) {
@@ -118,14 +119,7 @@ export function LinkedAccountsSection() {
     : null;
 
   if (linkedAccountsQuery.isLoading) {
-    return (
-      <div>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Providers</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-      </div>
-    );
+    return <LinkedAccountsSkeleton showCard={false} />;
   }
 
   if (linkedAccountsQuery.isError) {

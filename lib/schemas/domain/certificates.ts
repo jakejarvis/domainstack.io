@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderRefSchema } from "../internal/provider";
+import { ProviderRefSchema } from "@/lib/schemas/internal/provider";
 
 export const CertificateSchema = z.object({
   issuer: z.string(),

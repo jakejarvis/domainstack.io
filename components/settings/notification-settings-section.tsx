@@ -4,11 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Info } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  CategoryLabel,
-  DomainNotificationRow,
-  GlobalNotificationRow,
-} from "@/components/dashboard/settings";
+import { CategoryLabel } from "@/components/settings/category-label";
+import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
+import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
+import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   CardContent,
   CardDescription,
@@ -197,14 +196,7 @@ export function NotificationSettingsSection() {
   };
 
   if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
-    return (
-      <div>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Email Notifications</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-      </div>
-    );
+    return <NotificationsSkeleton showCard={false} />;
   }
 
   if (domainsQuery.isError || globalPrefsQuery.isError) {

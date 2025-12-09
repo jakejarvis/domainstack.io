@@ -11,11 +11,11 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type SubscriptionExpiredEmailProps = {
   userName: string;
   archivedCount: number;
-  dashboardUrl: string;
   freeMaxDomains: number;
   proMaxDomains: number;
 };
@@ -23,7 +23,6 @@ type SubscriptionExpiredEmailProps = {
 export function SubscriptionExpiredEmail({
   userName,
   archivedCount,
-  dashboardUrl,
   freeMaxDomains,
   proMaxDomains,
 }: SubscriptionExpiredEmailProps) {
@@ -71,13 +70,13 @@ export function SubscriptionExpiredEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={`${dashboardUrl}/settings`}>
+            <Button style={button} href={`${BASE_URL}/settings`}>
               Resubscribe to Pro
             </Button>
           </Section>
 
           <Section style={secondaryButtonContainer}>
-            <Button style={secondaryButton} href={dashboardUrl}>
+            <Button style={secondaryButton} href={`${BASE_URL}/dashboard`}>
               View Dashboard
             </Button>
           </Section>
@@ -101,7 +100,6 @@ export function SubscriptionExpiredEmail({
 SubscriptionExpiredEmail.PreviewProps = {
   userName: "Jake",
   archivedCount: 12,
-  dashboardUrl: "https://domainstack.io/dashboard",
   freeMaxDomains: 5,
   proMaxDomains: 50,
 } as SubscriptionExpiredEmailProps;

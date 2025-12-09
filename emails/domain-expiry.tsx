@@ -11,6 +11,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type DomainExpiryEmailProps = {
   userName: string;
@@ -18,7 +19,6 @@ type DomainExpiryEmailProps = {
   expirationDate: string;
   daysRemaining: number;
   registrar?: string;
-  dashboardUrl: string;
 };
 
 export function DomainExpiryEmail({
@@ -27,7 +27,6 @@ export function DomainExpiryEmail({
   expirationDate,
   daysRemaining,
   registrar,
-  dashboardUrl,
 }: DomainExpiryEmailProps) {
   const isUrgent = daysRemaining <= 7;
   const previewText = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
@@ -86,7 +85,7 @@ export function DomainExpiryEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               View Dashboard
             </Button>
           </Section>
@@ -99,7 +98,7 @@ export function DomainExpiryEmail({
               Domainstack
             </Link>
             . You can manage your notification settings in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               dashboard
             </Link>
             .
@@ -117,7 +116,6 @@ DomainExpiryEmail.PreviewProps = {
   expirationDate: "January 15, 2025",
   daysRemaining: 7,
   registrar: "Cloudflare",
-  dashboardUrl: "https://domainstack.io/dashboard",
 } as DomainExpiryEmailProps;
 
 export default DomainExpiryEmail;

@@ -7,7 +7,6 @@ import ProUpgradeSuccessEmail from "@/emails/pro-upgrade-success";
 import ProWelcomeEmail from "@/emails/pro-welcome";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import SubscriptionExpiredEmail from "@/emails/subscription-expired";
-import { BASE_URL } from "@/lib/constants";
 import { getUserById } from "@/lib/db/repos/users";
 import { getTierLimits } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
@@ -73,14 +72,12 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
   const idempotencyKey = generateUpgradeIdempotencyKey(userId);
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
     const emailHtml = await render(
       ProUpgradeSuccessEmail({
         userName: firstName,
-        dashboardUrl,
         proMaxDomains: tierLimits.pro,
       }) as React.ReactElement,
     );
@@ -149,13 +146,11 @@ async function sendProWelcomeEmail(
   const idempotencyKey = generateWelcomeIdempotencyKey(userId);
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(userName);
 
     const emailHtml = await render(
       ProWelcomeEmail({
         userName: firstName,
-        dashboardUrl,
         proMaxDomains,
       }) as React.ReactElement,
     );
@@ -235,7 +230,6 @@ export async function sendSubscriptionCancelingEmail(
   const idempotencyKey = generateCancellationIdempotencyKey(userId, endsAt);
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
@@ -243,7 +237,6 @@ export async function sendSubscriptionCancelingEmail(
       SubscriptionCancelingEmail({
         userName: firstName,
         endDate,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 
@@ -320,7 +313,6 @@ export async function sendSubscriptionExpiredEmail(
   const idempotencyKey = generateExpiredIdempotencyKey(userId);
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
@@ -328,7 +320,6 @@ export async function sendSubscriptionExpiredEmail(
       SubscriptionExpiredEmail({
         userName: firstName,
         archivedCount,
-        dashboardUrl,
         freeMaxDomains: tierLimits.free,
         proMaxDomains: tierLimits.pro,
       }) as React.ReactElement,

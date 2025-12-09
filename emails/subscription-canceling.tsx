@@ -11,17 +11,16 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type SubscriptionCancelingEmailProps = {
   userName: string;
   endDate: string;
-  dashboardUrl: string;
 };
 
 export function SubscriptionCancelingEmail({
   userName,
   endDate,
-  dashboardUrl,
 }: SubscriptionCancelingEmailProps) {
   const previewText = `Your Pro subscription ends on ${endDate}`;
 
@@ -64,7 +63,7 @@ export function SubscriptionCancelingEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={`${dashboardUrl}/settings`}>
+            <Button style={button} href={`${BASE_URL}/settings`}>
               Manage Subscription
             </Button>
           </Section>
@@ -89,7 +88,6 @@ export function SubscriptionCancelingEmail({
 SubscriptionCancelingEmail.PreviewProps = {
   userName: "Jake",
   endDate: "January 15, 2025",
-  dashboardUrl: "https://domainstack.io/dashboard",
 } as SubscriptionCancelingEmailProps;
 
 export default SubscriptionCancelingEmail;

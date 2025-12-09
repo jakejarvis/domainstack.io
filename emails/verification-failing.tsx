@@ -11,6 +11,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 
 type VerificationFailingEmailProps = {
@@ -18,7 +19,6 @@ type VerificationFailingEmailProps = {
   domainName: string;
   verificationMethod: VerificationMethod;
   gracePeriodDays: number;
-  dashboardUrl: string;
 };
 
 const METHOD_DESCRIPTIONS: Record<VerificationMethod, string> = {
@@ -32,7 +32,6 @@ export function VerificationFailingEmail({
   domainName,
   verificationMethod,
   gracePeriodDays,
-  dashboardUrl,
 }: VerificationFailingEmailProps) {
   const methodDescription = METHOD_DESCRIPTIONS[verificationMethod];
   const previewText = `We couldn't verify your ownership of ${domainName}`;
@@ -71,7 +70,7 @@ export function VerificationFailingEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               View Dashboard
             </Button>
           </Section>
@@ -84,7 +83,7 @@ export function VerificationFailingEmail({
               Domainstack
             </Link>
             . You can manage your notification settings in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               dashboard
             </Link>
             .
@@ -101,7 +100,6 @@ VerificationFailingEmail.PreviewProps = {
   domainName: "example.com",
   verificationMethod: "dns_txt",
   gracePeriodDays: 7,
-  dashboardUrl: "https://domainstack.io/dashboard",
 } as VerificationFailingEmailProps;
 
 export default VerificationFailingEmail;

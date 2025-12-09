@@ -1,8 +1,8 @@
 "use client";
 
 import { Info } from "lucide-react";
+import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
 import type { MetaTagInstructions } from "@/lib/schemas";
-import { CopyableField } from "./copyable-field";
 
 type MetaTagVerificationInstructionsProps = {
   instructions: MetaTagInstructions;

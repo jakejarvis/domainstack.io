@@ -11,17 +11,16 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type VerificationRevokedEmailProps = {
   userName: string;
   domainName: string;
-  dashboardUrl: string;
 };
 
 export function VerificationRevokedEmail({
   userName,
   domainName,
-  dashboardUrl,
 }: VerificationRevokedEmailProps) {
   const previewText = `Verification for ${domainName} has been revoked`;
 
@@ -57,7 +56,7 @@ export function VerificationRevokedEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               Re-add Domain
             </Button>
           </Section>
@@ -70,7 +69,7 @@ export function VerificationRevokedEmail({
               Domainstack
             </Link>
             . You can manage your notification settings in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               dashboard
             </Link>
             .
@@ -85,7 +84,6 @@ export function VerificationRevokedEmail({
 VerificationRevokedEmail.PreviewProps = {
   userName: "Jake",
   domainName: "example.com",
-  dashboardUrl: "https://domainstack.io/dashboard",
 } as VerificationRevokedEmailProps;
 
 export default VerificationRevokedEmail;

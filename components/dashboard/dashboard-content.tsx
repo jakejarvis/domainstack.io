@@ -6,12 +6,12 @@ import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import {
   AddDomainDialog,
   type ResumeDomainData,
 } from "@/components/dashboard/add-domain/add-domain-dialog";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
-import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";

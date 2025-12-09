@@ -1,9 +1,9 @@
 "use client";
 
-import { DangerZoneSettingsSection } from "@/components/dashboard/danger-zone-settings-section";
-import { LinkedAccountsSection } from "@/components/dashboard/linked-accounts-section";
-import { NotificationSettingsSection } from "@/components/dashboard/notification-settings-section";
-import { SubscriptionSettingsSection } from "@/components/dashboard/subscription-settings-section";
+import { DangerZoneSettingsSection } from "@/components/settings/danger-zone-settings-section";
+import { LinkedAccountsSection } from "@/components/settings/linked-accounts-section";
+import { NotificationSettingsSection } from "@/components/settings/notification-settings-section";
+import { SubscriptionSettingsSection } from "@/components/settings/subscription-settings-section";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 

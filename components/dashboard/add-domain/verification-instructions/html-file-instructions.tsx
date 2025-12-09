@@ -2,10 +2,10 @@
 
 import { Download, Info } from "lucide-react";
 import { toast } from "sonner";
+import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
-import { CopyableField } from "./copyable-field";
 
 function downloadVerificationFile(
   filename: string,

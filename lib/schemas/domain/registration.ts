@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ProviderRefSchema } from "../internal/provider";
+import { ProviderRefSchema } from "@/lib/schemas/internal/provider";
 
 // Reusable sub-schemas to avoid duplication elsewhere
 export const RegistrationStatusSchema = z.object({

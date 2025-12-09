@@ -1,8 +1,8 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { ThreeStateCheckbox } from "@/components/dashboard/settings/three-state-checkbox";
 import { Favicon } from "@/components/domain/favicon";
+import { ThreeStateCheckbox } from "@/components/settings/three-state-checkbox";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,

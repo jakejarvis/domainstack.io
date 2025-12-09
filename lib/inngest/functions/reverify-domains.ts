@@ -5,7 +5,6 @@ import { differenceInDays } from "date-fns";
 import type React from "react";
 import { VerificationFailingEmail } from "@/emails/verification-failing";
 import { VerificationRevokedEmail } from "@/emails/verification-revoked";
-import { BASE_URL } from "@/lib/constants";
 import {
   createNotification,
   hasNotificationBeenSent,
@@ -244,15 +243,12 @@ async function sendVerificationFailingEmail(
   }
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
-
     const emailHtml = await render(
       VerificationFailingEmail({
         userName: domain.userName.split(" ")[0] || "there",
         domainName: domain.domainName,
         verificationMethod: domain.verificationMethod,
         gracePeriodDays: GRACE_PERIOD_DAYS,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 
@@ -324,13 +320,10 @@ async function sendVerificationRevokedEmail(
   }
 
   try {
-    const dashboardUrl = `${BASE_URL}/dashboard`;
-
     const emailHtml = await render(
       VerificationRevokedEmail({
         userName: domain.userName.split(" ")[0] || "there",
         domainName: domain.domainName,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 

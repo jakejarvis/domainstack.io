@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { CertificateSchema } from "../domain/certificates";
-import { DnsRecordSchema } from "../domain/dns";
-import { HeadersResponseSchema } from "../domain/headers";
-import { HostingResponseSchema } from "../domain/hosting";
-import { RegistrationResponseSchema } from "../domain/registration";
-import { SeoResponseSchema } from "../domain/seo";
+import { CertificateSchema } from "@/lib/schemas/domain/certificates";
+import { DnsRecordSchema } from "@/lib/schemas/domain/dns";
+import { HeadersResponseSchema } from "@/lib/schemas/domain/headers";
+import { HostingResponseSchema } from "@/lib/schemas/domain/hosting";
+import { RegistrationResponseSchema } from "@/lib/schemas/domain/registration";
+import { SeoResponseSchema } from "@/lib/schemas/domain/seo";
 
 export const DomainExportSchema = z.object({
   domain: z.string(),

@@ -11,16 +11,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import { BASE_URL } from "@/lib/constants/app";
 
 type ProWelcomeEmailProps = {
   userName: string;
-  dashboardUrl: string;
   proMaxDomains: number;
 };
 
 export function ProWelcomeEmail({
   userName,
-  dashboardUrl,
   proMaxDomains,
 }: ProWelcomeEmailProps) {
   const previewText = "Get the most out of Domainstack Pro";
@@ -77,7 +76,7 @@ export function ProWelcomeEmail({
           </Text>
 
           <Section style={buttonContainer}>
-            <Button style={button} href={dashboardUrl}>
+            <Button style={button} href={`${BASE_URL}/dashboard`}>
               Open Dashboard
             </Button>
           </Section>
@@ -90,7 +89,7 @@ export function ProWelcomeEmail({
               Domainstack
             </Link>
             . Manage your subscription in your{" "}
-            <Link href={`${dashboardUrl}/settings`} style={link}>
+            <Link href={`${BASE_URL}/settings`} style={link}>
               account settings
             </Link>
             .
@@ -104,7 +103,6 @@ export function ProWelcomeEmail({
 // Preview props for email development
 ProWelcomeEmail.PreviewProps = {
   userName: "Jake",
-  dashboardUrl: "https://domainstack.io/dashboard",
   proMaxDomains: 50,
 } as ProWelcomeEmailProps;
 

@@ -1,17 +1,15 @@
 "use client";
 
+import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
+import { DnsVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/dns-instructions";
+import { HtmlFileVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/html-file-instructions";
+import { MetaTagVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/meta-tag-instructions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { VerificationState } from "@/hooks/use-domain-verification";
 import type {
   VerificationInstructions,
   VerificationMethod,
 } from "@/lib/schemas";
-import { VerificationFailed } from "./verification-failed";
-import {
-  DnsVerificationInstructions,
-  HtmlFileVerificationInstructions,
-  MetaTagVerificationInstructions,
-} from "./verification-instructions";
 
 type StepVerifyOwnershipProps = {
   method: VerificationMethod;

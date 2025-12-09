@@ -4,7 +4,6 @@ import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
 import type React from "react";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
-import { BASE_URL } from "@/lib/constants";
 import {
   clearDomainExpiryNotifications,
   createNotification,
@@ -212,8 +211,6 @@ async function sendExpiryNotification({
       // Resend's idempotency key will handle deduplication if we proceed
     }
 
-    const dashboardUrl = `${BASE_URL}/dashboard`;
-
     // Step 2: Render the email
     const emailHtml = await render(
       DomainExpiryEmail({
@@ -222,7 +219,6 @@ async function sendExpiryNotification({
         expirationDate: format(expirationDate, "MMMM d, yyyy"),
         daysRemaining,
         registrar,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 

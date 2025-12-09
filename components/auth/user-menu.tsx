@@ -3,16 +3,9 @@
 import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { SettingsContent } from "@/components/dashboard/settings-content";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollAreaWithIndicators } from "@/components/ui/scroll-area-with-indicators";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme-toggle";
@@ -121,6 +113,24 @@ export function UserMenu() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard" className="cursor-pointer">
+              <Table2 className="size-4" />
+              Dashboard
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/settings"
+              className="cursor-pointer"
+              onClick={handleSettingsClick}
+              data-disable-progress={true}
+            >
+              <Settings className="size-4" />
+              Settings
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           {/* Mobile-only items: bookmarklet and theme toggle */}
           {isMobile && (
             <>
@@ -145,24 +155,6 @@ export function UserMenu() {
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="cursor-pointer">
-              <Table2 className="size-4" />
-              Dashboard
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/dashboard/settings"
-              className="cursor-pointer"
-              onClick={handleSettingsClick}
-              data-disable-progress={true}
-            >
-              <Settings className="size-4" />
-              Settings
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
             <LogOut className="size-4 text-danger-foreground" />
             Sign out
@@ -170,19 +162,8 @@ export function UserMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 p-0 dark:border-white/10">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Settings</DialogTitle>
-            <DialogDescription>
-              Manage your subscription and notification preferences.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollAreaWithIndicators className="max-h-full px-6 py-6">
-            <SettingsContent showCard={false} />
-          </ScrollAreaWithIndicators>
-        </DialogContent>
-      </Dialog>
+      {/* Settings Dialog - controlled externally */}
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       {/* Bookmarklet Dialog - controlled externally */}
       <BookmarkletDialog

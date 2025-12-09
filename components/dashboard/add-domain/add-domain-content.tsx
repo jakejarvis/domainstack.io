@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
+import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
+import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
+import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,10 +29,6 @@ import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { StepConfirmation } from "./step-confirmation";
-import { StepEnterDomain } from "./step-enter-domain";
-import { StepInstructionsError } from "./step-instructions-error";
-import { StepVerifyOwnership } from "./step-verify-ownership";
 
 export type { ResumeDomainData };
 

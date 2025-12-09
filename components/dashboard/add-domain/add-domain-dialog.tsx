@@ -1,5 +1,6 @@
 "use client";
 
+import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { ResumeDomainData } from "@/hooks/use-domain-verification";
-import { AddDomainContent } from "./add-domain-content";
 
 export type { ResumeDomainData };
 

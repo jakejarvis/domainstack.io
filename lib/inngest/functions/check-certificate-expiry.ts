@@ -4,7 +4,6 @@ import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
 import type React from "react";
 import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
-import { BASE_URL } from "@/lib/constants";
 import { getVerifiedTrackedDomainsCertificates } from "@/lib/db/repos/certificates";
 import {
   clearCertificateExpiryNotifications,
@@ -204,8 +203,6 @@ async function sendCertificateExpiryNotification({
       });
     }
 
-    const dashboardUrl = `${BASE_URL}/dashboard`;
-
     const emailHtml = await render(
       CertificateExpiryEmail({
         userName: userName.split(" ")[0] || "there",
@@ -213,7 +210,6 @@ async function sendCertificateExpiryNotification({
         expirationDate: format(validTo, "MMMM d, yyyy"),
         daysRemaining,
         issuer,
-        dashboardUrl,
       }) as React.ReactElement,
     );
 
