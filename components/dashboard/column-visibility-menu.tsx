@@ -51,11 +51,8 @@ export function ColumnVisibilityMenu<TData>({
   };
 
   const showAllColumns = () => {
-    const newVisibility: Record<string, boolean> = {};
-    allColumns.forEach((col) => {
-      newVisibility[col.id] = true;
-    });
-    setColumnVisibility(newVisibility);
+    // Reset to empty object (all columns default to visible)
+    setColumnVisibility({});
   };
 
   return (

@@ -30,7 +30,7 @@ export function useTablePagination(): {
   const [pageSize, setPageSizePreference] = usePageSizePreference();
 
   // Convert 1-indexed URL param to 0-indexed internal state
-  const pageIndex = Math.max(0, (pageParam ?? 1) - 1);
+  const pageIndex = Math.max(0, pageParam - 1);
 
   const pagination: PaginationState = {
     pageIndex,
