@@ -15,13 +15,13 @@ import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialo
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DomainFilters } from "@/components/dashboard/domain-filters";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useViewPreference } from "@/hooks/use-dashboard-preferences";
 import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
@@ -522,91 +522,6 @@ export function DashboardContent() {
         onConfirm={handleConfirmAction}
         variant={confirmDialogContent.variant}
       />
-    </div>
-  );
-}
-
-export function DashboardSkeleton() {
-  return (
-    <div className="space-y-6 pb-24">
-      {/* Header skeleton - matches DashboardHeader */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-5 w-12 rounded-md" />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Progress bar + count */}
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-2 w-24 rounded-full md:w-32" />
-            <Skeleton className="h-4 w-8" />
-          </div>
-          {/* View toggle buttons */}
-          <Skeleton className="h-9 w-[84px] rounded-md" />
-          {/* Add Domain button */}
-          <Skeleton className="h-9 w-32 rounded-md" />
-        </div>
-      </div>
-
-      {/* Health summary skeleton - optional badges */}
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-8 w-40 rounded-full" />
-        <Skeleton className="h-8 w-44 rounded-full" />
-      </div>
-
-      {/* Filters skeleton */}
-      <div className="space-y-3">
-        {/* Mobile: collapsible button */}
-        <Skeleton className="h-10 w-full rounded-md md:hidden" />
-        {/* Desktop: full filter row */}
-        <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
-          {/* Search input */}
-          <Skeleton className="h-10 w-48 rounded-md lg:w-64" />
-          {/* Filter dropdowns */}
-          <Skeleton className="h-9 w-24 rounded-md" />
-          <Skeleton className="h-9 w-24 rounded-md" />
-          <Skeleton className="h-9 w-20 rounded-md" />
-          {/* Sort dropdown */}
-          <Skeleton className="h-9 w-32 rounded-md" />
-        </div>
-      </div>
-
-      {/* Domain cards grid skeleton */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <DomainCardSkeleton key={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Skeleton for a single domain card matching TrackedDomainCard layout.
- */
-function DomainCardSkeleton() {
-  return (
-    <div className="rounded-xl border border-black/15 bg-background/60 p-6 dark:border-white/15">
-      {/* Header: favicon + domain name + dropdown */}
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-8 rounded" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-16 rounded-full" />
-            <Skeleton className="h-5 w-14 rounded-full" />
-          </div>
-        </div>
-        <Skeleton className="size-8 rounded" />
-      </div>
-      {/* Info rows */}
-      <div className="mt-4 space-y-2">
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-xl" />
-      </div>
     </div>
   );
 }
