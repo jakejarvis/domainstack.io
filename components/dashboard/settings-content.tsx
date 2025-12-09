@@ -21,14 +21,14 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
       {/* Divider */}
       <div className={cn("h-px bg-border/50", showCard && "-mx-6")} />
 
-      {/* Linked Accounts Section */}
-      <LinkedAccountsSection />
+      {/* Email Notifications Section */}
+      <NotificationSettingsSection />
 
       {/* Divider */}
       <div className={cn("h-px bg-border/50", showCard && "-mx-6")} />
 
-      {/* Email Notifications Section */}
-      <NotificationSettingsSection />
+      {/* Linked Accounts Section */}
+      <LinkedAccountsSection />
 
       {/* Divider */}
       <div className={cn("h-px bg-border/50", showCard && "-mx-6")} />

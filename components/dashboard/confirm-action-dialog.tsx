@@ -46,12 +46,15 @@ export function ConfirmActionDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel className="cursor-pointer">
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className={cn(
               variant === "destructive" &&
                 "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+              "cursor-pointer disabled:cursor-not-allowed",
             )}
           >
             {confirmLabel}

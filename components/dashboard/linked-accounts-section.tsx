@@ -145,9 +145,9 @@ export function LinkedAccountsSection() {
     <>
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Providers</CardTitle>
+          <CardTitle>Login Providers</CardTitle>
           <CardDescription>
-            Connect your account with a third-party service.
+            Protect your account with additional third-party services.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 px-0 pt-1">

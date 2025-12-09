@@ -42,6 +42,15 @@ if (
     "Both GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required when using GitHub OAuth",
   );
 }
+// GitLab OAuth is optional, but both credentials are required if either is set
+if (
+  (process.env.GITLAB_CLIENT_ID && !process.env.GITLAB_CLIENT_SECRET) ||
+  (!process.env.GITLAB_CLIENT_ID && process.env.GITLAB_CLIENT_SECRET)
+) {
+  throw new Error(
+    "Both GITLAB_CLIENT_ID and GITLAB_CLIENT_SECRET are required when using GitLab OAuth",
+  );
+}
 // Google OAuth is optional, but both credentials are required if either is set
 if (
   (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) ||
@@ -63,11 +72,12 @@ if (
 // Ensure at least one OAuth provider is configured
 if (
   !process.env.GITHUB_CLIENT_ID &&
+  !process.env.GITLAB_CLIENT_ID &&
   !process.env.GOOGLE_CLIENT_ID &&
   !process.env.VERCEL_CLIENT_ID
 ) {
   throw new Error(
-    "At least one OAuth provider must be configured (GitHub, Google, or Vercel)",
+    "At least one OAuth provider must be configured (GitHub, GitLab, Google, or Vercel)",
   );
 }
 
@@ -86,6 +96,9 @@ const polarClient = process.env.POLAR_ACCESS_TOKEN
 const enabledProviders: string[] = [];
 if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   enabledProviders.push("github");
+}
+if (process.env.GITLAB_CLIENT_ID && process.env.GITLAB_CLIENT_SECRET) {
+  enabledProviders.push("gitlab");
 }
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   enabledProviders.push("google");
@@ -190,6 +203,13 @@ export const auth = betterAuth({
         github: {
           clientId: process.env.GITHUB_CLIENT_ID,
           clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        },
+      }),
+    ...(process.env.GITLAB_CLIENT_ID &&
+      process.env.GITLAB_CLIENT_SECRET && {
+        gitlab: {
+          clientId: process.env.GITLAB_CLIENT_ID,
+          clientSecret: process.env.GITLAB_CLIENT_SECRET,
         },
       }),
     ...(process.env.GOOGLE_CLIENT_ID &&

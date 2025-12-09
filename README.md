@@ -10,8 +10,8 @@
 - **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
 - **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
 - **Fast, private, no sign-up required for reports**: Live fetches with intelligent multi-layer caching.
-- **Domain tracking dashboard**: Sign in with GitHub or Vercel to track domains you own, verify ownership, and receive expiration alerts.
-- **Pro tier subscriptions**: Upgrade via [Polar](https://polar.sh) for expanded domain tracking limits (50 vs 5 domains).
+- **Domain tracking dashboard**: Sign in to track domains you own, verify ownership, and receive expiration alerts.
+- **Pro tier subscriptions**: Upgrade via [Polar](https://polar.sh) for expanded domain tracking limits (100 vs 5 domains).
 - **Email notifications**: Configurable alerts for domain expiration, SSL certificate expiration, subscription lifecycle, and verification status changes.
 - **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
 - **Advanced dashboard**: Domain filtering by status/health/TLD, URL-persisted filters, bulk archive/delete actions, and sortable table/grid views.
@@ -24,7 +24,7 @@
 - **tRPC** API with **TanStack Query** for data fetching and optimistic updates
 - **TanStack Table** for sortable dashboard table view
 - **Vercel Postgres** + **Drizzle ORM** with connection pooling
-- **Better Auth** for authentication via GitHub, Google, and Vercel
+- **Better Auth** for authentication via OAuth
 - **Polar** for subscription payments and customer portal (Pro tier)
 - **Inngest** for event-driven background jobs (revalidation, expiry checks, domain re-verification)
 - **Resend** + **React Email** for transactional email notifications
