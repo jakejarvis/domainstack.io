@@ -43,9 +43,14 @@ function getHealthStatus(
 }
 
 /**
- * Hook for managing domain filter state with URL persistence using nuqs.
+ * Hook for managing dashboard filter state with URL persistence using nuqs.
+ *
+ * @param onFilterChange - Optional callback to run when any filter changes (e.g., reset pagination)
  */
-export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
+export function useDashboardFilters(
+  domains: TrackedDomainWithDetails[],
+  options?: { onFilterChange?: () => void },
+) {
   // URL state with nuqs
   const [filters, setFilters] = useQueryStates(
     {
@@ -144,19 +149,30 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
   }, [domains]);
 
   // Filter setters
-  const setSearch = (value: string) => setFilters({ search: value || null });
+  const setSearch = (value: string) => {
+    setFilters({ search: value || null });
+    options?.onFilterChange?.();
+  };
 
-  const setStatus = (values: StatusFilter[]) =>
+  const setStatus = (values: StatusFilter[]) => {
     setFilters({ status: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const setHealth = (values: HealthFilter[]) =>
+  const setHealth = (values: HealthFilter[]) => {
     setFilters({ health: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const setTlds = (values: string[]) =>
+  const setTlds = (values: string[]) => {
     setFilters({ tlds: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
 
-  const clearFilters = () =>
+  const clearFilters = () => {
     setFilters({ search: null, status: null, health: null, tlds: null });
+    options?.onFilterChange?.();
+  };
 
   // Quick filter for health summary clicks
   const applyHealthFilter = (filter: HealthFilter | "pending") => {
@@ -165,6 +181,7 @@ export function useDomainFilters(domains: TrackedDomainWithDetails[]) {
     } else {
       setFilters({ status: null, health: [filter] });
     }
+    options?.onFilterChange?.();
   };
 
   return {

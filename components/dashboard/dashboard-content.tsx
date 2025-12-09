@@ -1,6 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import type { Table } from "@tanstack/react-table";
 import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,12 +22,12 @@ import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view"
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDomainFilters } from "@/hooks/use-domain-filters";
+import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
+import { useViewPreference } from "@/hooks/use-dashboard-preferences";
+import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
 import { useDomainMutations } from "@/hooks/use-domain-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useSelection } from "@/hooks/use-selection";
-import { sortDomains, useSortPreference } from "@/hooks/use-sort-preference";
-import { useViewPreference } from "@/hooks/use-view-preference";
 import { useSession } from "@/lib/auth-client";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -51,7 +52,9 @@ export function DashboardContent() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [viewMode, setViewMode] = useViewPreference();
-  const [sortOption, setSortOption] = useSortPreference();
+  const [sortOption, setSortOption] = useGridSortPreference();
+  const [tableInstance, setTableInstance] =
+    useState<Table<TrackedDomainWithDetails> | null>(null);
   const { data: session } = useSession();
   const trpc = useTRPC();
   const router = useRouter();
@@ -108,7 +111,7 @@ export function DashboardContent() {
     clearFilters,
     applyHealthFilter,
     stats,
-  } = useDomainFilters(domains);
+  } = useDashboardFilters(domains);
 
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
@@ -433,6 +436,7 @@ export function DashboardContent() {
               viewMode={viewMode}
               sortOption={sortOption}
               onSortChange={setSortOption}
+              table={viewMode === "table" ? tableInstance : null}
             />
           )}
 
@@ -457,6 +461,7 @@ export function DashboardContent() {
             hasNextPage={domainsInfiniteQuery.hasNextPage}
             isFetchingNextPage={domainsInfiniteQuery.isFetchingNextPage}
             onLoadMore={() => domainsInfiniteQuery.fetchNextPage()}
+            onTableReady={setTableInstance}
           />
 
           {/* Link to archived domains - only show when there are archived domains */}

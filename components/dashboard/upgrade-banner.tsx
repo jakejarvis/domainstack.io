@@ -25,10 +25,10 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         className="-bottom-16 -left-16 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
       />
 
-      <div className="relative flex flex-col items-center justify-between gap-4 sm:flex-row">
+      <div className="relative flex items-center justify-between gap-4">
         {/* Left side - Icon and text */}
         <div className="flex items-center gap-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5">
+          <div className="hidden size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 sm:flex dark:bg-white/5">
             <CircleFadingArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
@@ -50,7 +50,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="w-full cursor-pointer sm:w-auto"
+          className="shrink-0 cursor-pointer"
         >
           {isLoading ? <Spinner /> : <Gem className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
