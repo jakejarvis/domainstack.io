@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellPlus, Check, Shield } from "lucide-react";
+import { BadgeCheck, BellPlus, Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
@@ -75,9 +75,12 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
           <Button
             variant="outline"
             size="icon"
-            className="border-success-border bg-success/30 text-success-foreground hover:bg-success/40"
+            asChild
+            className="text-success-foreground"
           >
-            <Shield className="size-4" />
+            <Link href="/dashboard">
+              <BadgeCheck className="size-4" />
+            </Link>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -105,9 +108,9 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
             <Button
               variant="outline"
               onClick={handleResume}
-              className="cursor-pointer gap-2 border-info-border bg-info/30 text-info-foreground hover:bg-info/40"
+              className="cursor-pointer"
             >
-              <Check className="size-4" />
+              <Check className="size-4 text-accent-green" />
               <span className="hidden sm:inline">Verify</span>
             </Button>
           </TooltipTrigger>
@@ -152,9 +155,6 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     </>
   );
 
-  const buttonClassName =
-    "cursor-pointer gap-2 border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-foreground hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]";
-
   return (
     <>
       <Tooltip>
@@ -163,12 +163,12 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
             <Button
               variant="outline"
               onClick={handleClick}
-              className={buttonClassName}
+              className="cursor-pointer"
             >
               {buttonContent}
             </Button>
           ) : (
-            <Button asChild variant="outline" className={buttonClassName}>
+            <Button asChild variant="outline" className="cursor-pointer">
               <Link
                 href="/login"
                 onClick={handleClick}

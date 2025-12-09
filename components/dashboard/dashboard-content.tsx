@@ -367,6 +367,7 @@ export function DashboardContent() {
   const canAddMore = limitsQuery.data?.canAddMore ?? true;
   const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
   const archivedDomains = archivedDomainsQuery.data ?? [];
+  const hasAnyDomains = activeCount > 0 || archivedCount > 0;
 
   return (
     <div className="space-y-6 pb-24">
@@ -379,6 +380,7 @@ export function DashboardContent() {
         subscriptionEndsAt={subscriptionEndsAt}
         onViewModeChange={setViewMode}
         onAddDomain={handleAddDomain}
+        hasAnyDomains={hasAnyDomains}
       />
 
       {/* Pro upgrade success banner */}

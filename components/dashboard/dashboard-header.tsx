@@ -24,6 +24,8 @@ type DashboardHeaderProps = {
   subscriptionEndsAt?: Date | null;
   onViewModeChange: (mode: ViewMode) => void;
   onAddDomain: () => void;
+  /** Whether the dashboard has any domains (active or archived) */
+  hasAnyDomains?: boolean;
 };
 
 export function DashboardHeader({
@@ -35,6 +37,7 @@ export function DashboardHeader({
   subscriptionEndsAt,
   onViewModeChange,
   onAddDomain,
+  hasAnyDomains = false,
 }: DashboardHeaderProps) {
   const percentage = maxDomains > 0 ? (trackedCount / maxDomains) * 100 : 0;
 
@@ -80,47 +83,49 @@ export function DashboardHeader({
 
         {/* View toggle and Add Domain - always right aligned */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* View toggle */}
-          <div className="inline-flex rounded-md border border-input dark:border-white/20">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("grid")}
-                  aria-label="Grid view"
-                  aria-pressed={viewMode === "grid"}
-                  className={cn(
-                    "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
-                    viewMode === "grid"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
-                  )}
-                >
-                  <LayoutGrid className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Grid view</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onViewModeChange("table")}
-                  aria-label="Table view"
-                  aria-pressed={viewMode === "table"}
-                  className={cn(
-                    "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
-                    viewMode === "table"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
-                  )}
-                >
-                  <TableIcon className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Table view</TooltipContent>
-            </Tooltip>
-          </div>
+          {/* View toggle - only show when there are domains */}
+          {hasAnyDomains && (
+            <div className="inline-flex rounded-md border border-input dark:border-white/20">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onViewModeChange("grid")}
+                    aria-label="Grid view"
+                    aria-pressed={viewMode === "grid"}
+                    className={cn(
+                      "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
+                      viewMode === "grid"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                    )}
+                  >
+                    <LayoutGrid className="size-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Grid view</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onViewModeChange("table")}
+                    aria-label="Table view"
+                    aria-pressed={viewMode === "table"}
+                    className={cn(
+                      "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
+                      viewMode === "table"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                    )}
+                  >
+                    <TableIcon className="size-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Table view</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
 
           {trackedCount >= maxDomains ? (
             <Tooltip>

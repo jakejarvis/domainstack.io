@@ -1,5 +1,6 @@
 import "server-only";
 
+import * as cheerio from "cheerio";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 import {
   buildDohUrl,
@@ -25,7 +26,12 @@ const DNS_VERIFICATION_HOST = "_domainstack-verify";
 const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
 
 // HTML file verification constants
-const HTML_FILE_PATH = "/.well-known/domainstack-verify.html";
+// New: per-token file in a directory (supports multiple users)
+const HTML_FILE_DIR = "/.well-known/domainstack-verify";
+// Legacy: single file (backward compatibility)
+const HTML_FILE_PATH_LEGACY = "/.well-known/domainstack-verify.html";
+// Content format: "domainstack-verify: TOKEN"
+const HTML_FILE_CONTENT_PREFIX = "domainstack-verify: ";
 
 // Meta tag verification constants
 const META_TAG_NAME = "domainstack-verify";
@@ -218,8 +224,13 @@ async function verifyDnsTxtImpl(
 
 /**
  * Verify ownership via HTML file.
- * Expected file: https://example.com/.well-known/domainstack-verify.html
- * Contents should exactly match the token (after trimming whitespace).
+ *
+ * Supports two methods (checked in order):
+ * 1. Per-token file (multi-user): /.well-known/domainstack-verify/{token}.html
+ *    - Each user has their own file, no conflicts
+ *    - File contents must exactly match the token
+ * 2. Legacy single file: /.well-known/domainstack-verify.html
+ *    - Contents should exactly match the token (backward compatibility)
  *
  * Uses SSRF-protected fetch to prevent DNS rebinding and internal network attacks.
  */
@@ -227,31 +238,40 @@ async function verifyHtmlFileImpl(
   domain: string,
   token: string,
 ): Promise<VerificationResult> {
-  // Try both HTTPS and HTTP
-  const urls = [
-    `https://${domain}${HTML_FILE_PATH}`,
-    `http://${domain}${HTML_FILE_PATH}`,
+  // Build URL lists for both methods, trying HTTPS first then HTTP
+  const perTokenUrls = [
+    `https://${domain}${HTML_FILE_DIR}/${token}.html`,
+    `http://${domain}${HTML_FILE_DIR}/${token}.html`,
+  ];
+  const legacyUrls = [
+    `https://${domain}${HTML_FILE_PATH_LEGACY}`,
+    `http://${domain}${HTML_FILE_PATH_LEGACY}`,
   ];
 
-  for (const urlStr of urls) {
+  // Expected file content format
+  const expectedContent = `${HTML_FILE_CONTENT_PREFIX}${token}`;
+
+  // Try per-token file first (new multi-user method)
+  for (const urlStr of perTokenUrls) {
     try {
-      // Use SSRF-protected fetch that validates DNS resolution
-      // and blocks requests to private/internal IP ranges
       const result = await fetchRemoteAsset({
         url: urlStr,
         allowHttp: true,
         timeoutMs: 5000,
-        maxBytes: 1024, // Verification file should be tiny
+        maxBytes: 1024,
         maxRedirects: 3,
       });
 
-      // Check if the trimmed file content exactly matches the token
-      if (result.buffer.toString("utf-8").trim() === token) {
-        logger.info("HTML file verification successful", { domain });
+      // File must contain "domainstack-verify: TOKEN" (trimmed)
+      const content = result.buffer.toString("utf-8").trim();
+      if (content === expectedContent) {
+        logger.info("HTML file verification successful (per-token file)", {
+          domain,
+        });
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
-      // Log SSRF blocks as warnings (potential attack attempts)
+      // Log SSRF blocks as warnings, other errors as debug
       if (err instanceof RemoteAssetError) {
         if (err.code === "private_ip" || err.code === "host_blocked") {
           logger.warn("HTML file verification blocked (SSRF protection)", {
@@ -259,19 +279,39 @@ async function verifyHtmlFileImpl(
             url: urlStr,
             reason: err.code,
           });
-        } else {
-          logger.debug("HTML file fetch error", {
+        }
+        // Other errors (404, etc.) are expected - try next URL
+      }
+    }
+  }
+
+  // Fall back to legacy single file method
+  for (const urlStr of legacyUrls) {
+    try {
+      const result = await fetchRemoteAsset({
+        url: urlStr,
+        allowHttp: true,
+        timeoutMs: 5000,
+        maxBytes: 1024,
+        maxRedirects: 3,
+      });
+
+      // Legacy method: same content format "domainstack-verify: TOKEN"
+      if (result.buffer.toString("utf-8").trim() === expectedContent) {
+        logger.info("HTML file verification successful (legacy file)", {
+          domain,
+        });
+        return { verified: true, method: "html_file" };
+      }
+    } catch (err) {
+      if (err instanceof RemoteAssetError) {
+        if (err.code === "private_ip" || err.code === "host_blocked") {
+          logger.warn("HTML file verification blocked (SSRF protection)", {
             domain,
             url: urlStr,
-            code: err.code,
+            reason: err.code,
           });
         }
-      } else {
-        logger.debug("HTML file fetch error", {
-          error: err,
-          domain,
-          url: urlStr,
-        });
       }
     }
   }
@@ -283,6 +323,10 @@ async function verifyHtmlFileImpl(
 /**
  * Verify ownership via meta tag.
  * Expected tag: <meta name="domainstack-verify" content="<token>">
+ *
+ * Uses cheerio for robust HTML parsing instead of regex.
+ * Multiple users can track the same domain, so we check ALL verification meta tags
+ * and return true if any of them match the provided token.
  *
  * Uses SSRF-protected fetch to prevent DNS rebinding and internal network attacks.
  */
@@ -310,21 +354,38 @@ async function verifyMetaTagImpl(
 
       const html = result.buffer.toString("utf-8");
 
-      // Look for the meta tag with a simple regex
-      // Matches: <meta name="domainstack-verify" content="TOKEN">
-      // Also matches with single quotes and different attribute orders
-      const metaRegex = new RegExp(
-        `<meta[^>]*name=["']${META_TAG_NAME}["'][^>]*content=["']([^"']+)["'][^>]*/?>|<meta[^>]*content=["']([^"']+)["'][^>]*name=["']${META_TAG_NAME}["'][^>]*/?>`,
-        "i",
-      );
+      // Use cheerio for robust HTML parsing
+      // This handles edge cases that regex would miss (malformed HTML, comments, etc.)
+      const $ = cheerio.load(html);
 
-      const match = html.match(metaRegex);
-      if (match) {
-        const content = (match[1] || match[2] || "").trim();
+      // Find ALL meta tags with name="domainstack-verify"
+      // Multiple users can track the same domain, so there may be multiple verification tags
+      const metaTags = $(`meta[name="${META_TAG_NAME}"]`);
+
+      // Check if any meta tag's content matches our token
+      let foundMatch = false;
+      metaTags.each((_, element) => {
+        const content = $(element).attr("content")?.trim();
         if (content === token) {
-          logger.info("Meta tag verification successful", { domain });
-          return { verified: true, method: "meta_tag" };
+          foundMatch = true;
+          return false; // Break out of .each() loop
         }
+      });
+
+      if (foundMatch) {
+        logger.info("Meta tag verification successful", {
+          domain,
+          totalMetaTags: metaTags.length,
+        });
+        return { verified: true, method: "meta_tag" };
+      }
+
+      // Log if we found meta tags but none matched (helps debugging)
+      if (metaTags.length > 0) {
+        logger.debug("Meta tags found but no match", {
+          domain,
+          metaTagCount: metaTags.length,
+        });
       }
     } catch (err) {
       // Log SSRF blocks as warnings (potential attack attempts)
@@ -404,10 +465,11 @@ export function getVerificationInstructions(
     case "html_file":
       return {
         title: "Upload an HTML File",
-        description: `Upload a file to your website at the path shown below.`,
-        fullPath: HTML_FILE_PATH,
-        filename: "domainstack-verify.html",
-        fileContent: token,
+        description:
+          "Create a file at the path shown below with the content shown.",
+        fullPath: `${HTML_FILE_DIR}/${token}.html`,
+        filename: `${token}.html`,
+        fileContent: `${HTML_FILE_CONTENT_PREFIX}${token}`,
       };
     case "meta_tag":
       return {

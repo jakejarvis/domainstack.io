@@ -108,14 +108,14 @@ export function CookieBanner() {
             variant="ghost"
             size="sm"
             onClick={decline}
-            className="h-7 px-2.5 text-muted-foreground text-xs"
+            className="h-7 cursor-pointer px-2.5 text-muted-foreground text-xs"
           >
             Decline
           </Button>
           <Button
             size="sm"
             onClick={accept}
-            className="h-7 bg-foreground px-2.5 text-background text-xs hover:bg-foreground/90"
+            className="h-7 cursor-pointer bg-foreground px-2.5 text-background text-xs hover:bg-foreground/90"
           >
             Accept
           </Button>

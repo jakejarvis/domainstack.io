@@ -85,9 +85,11 @@ describe("getVerificationInstructions", () => {
     );
 
     expect(result.title).toContain("HTML");
-    expect(result.fullPath).toBe("/.well-known/domainstack-verify.html");
-    expect(result.filename).toBe("domainstack-verify.html");
-    expect(result.fileContent).toBe(token);
+    expect(result.fullPath).toBe(
+      `/.well-known/domainstack-verify/${token}.html`,
+    );
+    expect(result.filename).toBe(`${token}.html`);
+    expect(result.fileContent).toBe(`domainstack-verify: ${token}`);
   });
 
   it("returns meta tag instructions with structured fields", () => {
@@ -219,11 +221,14 @@ describe("verifyDomainOwnership", () => {
   });
 
   describe("html_file method", () => {
-    it("returns verified when file contains token", async () => {
+    const expectedContent = `domainstack-verify: ${token}`;
+
+    it("returns verified when per-token file contains correct content", async () => {
+      // Per-token file found with correct content format
       mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(token),
-        contentType: "text/plain",
-        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        buffer: Buffer.from(expectedContent),
+        contentType: "text/html",
+        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
         status: 200,
       });
 
@@ -237,11 +242,11 @@ describe("verifyDomainOwnership", () => {
       expect(result.method).toBe("html_file");
     });
 
-    it("returns verified when token is in file with whitespace", async () => {
+    it("returns verified when per-token file has content with whitespace", async () => {
       mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(`  ${token}  \n`),
-        contentType: "text/plain",
-        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        buffer: Buffer.from(`  ${expectedContent}  \n`),
+        contentType: "text/html",
+        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
         status: 200,
       });
 
@@ -254,16 +259,75 @@ describe("verifyDomainOwnership", () => {
       expect(result.verified).toBe(true);
     });
 
-    it("falls back to HTTP when HTTPS fails", async () => {
-      // HTTPS fails with response error
+    it("returns not verified when per-token file is empty", async () => {
+      // Empty file is not valid - must contain the token
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(""),
+        contentType: "text/html",
+        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
+        status: 200,
+      });
+      // Per-token HTTP also empty
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(""),
+        contentType: "text/html",
+        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
+        status: 200,
+      });
+      // Legacy files also empty
+      mockFetchRemoteAsset.mockResolvedValue({
+        buffer: Buffer.from(""),
+        contentType: "text/html",
+        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        status: 200,
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "html_file",
+      );
+
+      expect(result.verified).toBe(false);
+    });
+
+    it("falls back to legacy file when per-token files not found", async () => {
+      // Per-token HTTPS fails
       mockFetchRemoteAsset.mockRejectedValueOnce(
         new Error("Response error: 404"),
       );
-      // HTTP succeeds
+      // Per-token HTTP fails
+      mockFetchRemoteAsset.mockRejectedValueOnce(
+        new Error("Response error: 404"),
+      );
+      // Legacy HTTPS succeeds
       mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(token),
-        contentType: "text/plain",
-        finalUrl: "http://example.com/.well-known/domainstack-verify.html",
+        buffer: Buffer.from(expectedContent),
+        contentType: "text/html",
+        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+        status: 200,
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "html_file",
+      );
+
+      expect(result.verified).toBe(true);
+      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(3);
+    });
+
+    it("falls back to HTTP when HTTPS fails for per-token file", async () => {
+      // Per-token HTTPS fails
+      mockFetchRemoteAsset.mockRejectedValueOnce(
+        new Error("Response error: 404"),
+      );
+      // Per-token HTTP succeeds
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(expectedContent),
+        contentType: "text/html",
+        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
         status: 200,
       });
 
@@ -277,8 +341,8 @@ describe("verifyDomainOwnership", () => {
       expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(2);
     });
 
-    it("returns not verified when file not found", async () => {
-      // Both HTTPS and HTTP fail
+    it("returns not verified when all files not found", async () => {
+      // All URLs fail (per-token HTTPS, per-token HTTP, legacy HTTPS, legacy HTTP)
       mockFetchRemoteAsset.mockRejectedValue(new Error("Response error: 404"));
 
       const result = await verifyDomainOwnership(
@@ -288,12 +352,29 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(false);
+      // Should try 4 URLs: per-token HTTPS, per-token HTTP, legacy HTTPS, legacy HTTP
+      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(4);
     });
 
-    it("returns not verified when file has wrong content", async () => {
+    it("returns not verified when per-token file has wrong content", async () => {
+      // Per-token file exists but has different content (not empty, not matching token)
       mockFetchRemoteAsset.mockResolvedValueOnce({
         buffer: Buffer.from("wrongtoken"),
-        contentType: "text/plain",
+        contentType: "text/html",
+        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
+        status: 200,
+      });
+      // Per-token HTTP also has wrong content
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from("wrongtoken"),
+        contentType: "text/html",
+        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
+        status: 200,
+      });
+      // Legacy files also have wrong content
+      mockFetchRemoteAsset.mockResolvedValue({
+        buffer: Buffer.from("wrongtoken"),
+        contentType: "text/html",
         finalUrl: "https://example.com/.well-known/domainstack-verify.html",
         status: 200,
       });
@@ -364,6 +445,78 @@ describe("verifyDomainOwnership", () => {
         "meta_tag",
       );
 
+      expect(result.verified).toBe(true);
+    });
+
+    it("finds correct token among multiple verification meta tags", async () => {
+      // Multiple users can track the same domain, so there may be multiple meta tags
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
+          `<html><head>
+            <meta name="domainstack-verify" content="otheruser1token">
+            <meta name="domainstack-verify" content="${token}">
+            <meta name="domainstack-verify" content="otheruser2token">
+          </head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "meta_tag",
+      );
+
+      expect(result.verified).toBe(true);
+      expect(result.method).toBe("meta_tag");
+    });
+
+    it("returns not verified when token not in any of multiple meta tags", async () => {
+      // Multiple verification tags exist, but none match our token
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
+          `<html><head>
+            <meta name="domainstack-verify" content="otheruser1token">
+            <meta name="domainstack-verify" content="otheruser2token">
+          </head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "meta_tag",
+      );
+
+      expect(result.verified).toBe(false);
+    });
+
+    it("handles malformed HTML gracefully", async () => {
+      // Cheerio is more tolerant of malformed HTML than regex
+      mockFetchRemoteAsset.mockResolvedValueOnce({
+        buffer: Buffer.from(
+          `<html><head>
+            <meta name="domainstack-verify" content="${token}"
+            <meta name="description" content="test">
+          </head></html>`,
+        ),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "meta_tag",
+      );
+
+      // Cheerio should still parse this
       expect(result.verified).toBe(true);
     });
 
@@ -458,11 +611,11 @@ describe("tryAllVerificationMethods", () => {
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
-    // HTML succeeds via fetchRemoteAsset
+    // HTML per-token file succeeds via fetchRemoteAsset
     mockFetchRemoteAsset.mockResolvedValueOnce({
-      buffer: Buffer.from(token),
-      contentType: "text/plain",
-      finalUrl: "https://example.com/.well-known/domainstack-verify.html",
+      buffer: Buffer.from(`domainstack-verify: ${token}`),
+      contentType: "text/html",
+      finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
       status: 200,
     });
 
@@ -482,11 +635,19 @@ describe("tryAllVerificationMethods", () => {
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
-    // HTML HTTPS fails via fetchRemoteAsset
+    // HTML per-token HTTPS fails
     mockFetchRemoteAsset.mockRejectedValueOnce(
       new Error("Response error: 404"),
     );
-    // HTML HTTP fails via fetchRemoteAsset
+    // HTML per-token HTTP fails
+    mockFetchRemoteAsset.mockRejectedValueOnce(
+      new Error("Response error: 404"),
+    );
+    // HTML legacy HTTPS fails
+    mockFetchRemoteAsset.mockRejectedValueOnce(
+      new Error("Response error: 404"),
+    );
+    // HTML legacy HTTP fails
     mockFetchRemoteAsset.mockRejectedValueOnce(
       new Error("Response error: 404"),
     );

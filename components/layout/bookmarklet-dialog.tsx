@@ -72,7 +72,12 @@ export function BookmarkletDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isControlled && (
         <DialogTrigger className={className} asChild>
-          <Button aria-label="Open bookmarklet info" variant="ghost" size="sm">
+          <Button
+            aria-label="Open bookmarklet info"
+            variant="ghost"
+            size="sm"
+            className="cursor-pointer"
+          >
             <Bookmark />
             <span className="sr-only">Open bookmarklet info</span>
           </Button>
@@ -148,7 +153,7 @@ export function BookmarkletDialog({
                 <Button
                   variant="outline"
                   size="lg"
-                  className="!px-3"
+                  className="!px-3 cursor-pointer"
                   aria-label="Watch demo"
                 >
                   <Play />

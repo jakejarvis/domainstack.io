@@ -76,7 +76,7 @@ export function UserMenu() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+            className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
             aria-label="User menu"
           >
             <Avatar className="size-8">

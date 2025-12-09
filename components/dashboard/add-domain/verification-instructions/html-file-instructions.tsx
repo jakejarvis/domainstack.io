@@ -4,6 +4,11 @@ import { Download, Info } from "lucide-react";
 import { toast } from "sonner";
 import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
@@ -47,7 +52,7 @@ export function HtmlFileVerificationInstructions({
     );
     if (result.success) {
       toast.success("File downloaded!", {
-        description: `Upload ${instructions.filename} to your website.`,
+        description: "Upload the file to your website at the path shown.",
       });
     } else {
       logger.error("Failed to download verification file", result.error, {
@@ -75,15 +80,20 @@ export function HtmlFileVerificationInstructions({
         <CopyableField label="Upload Path" value={instructions.fullPath} />
         <CopyableField label="File Contents" value={instructions.fileContent} />
 
-        <Button
-          variant="outline"
-          className="w-full cursor-pointer"
-          onClick={handleDownload}
-          type="button"
-        >
-          <Download className="size-4" />
-          Download {instructions.filename}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full cursor-pointer"
+              onClick={handleDownload}
+              type="button"
+            >
+              <Download className="size-4" />
+              Download file
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{instructions.filename}</TooltipContent>
+        </Tooltip>
       </div>
     </>
   );
