@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Card } from "@/components/ui/card";
+import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ export function LoginContent({
   onNavigate,
 }: LoginContentProps) {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+
+  // Handle auth callback errors (e.g., OAuth failures redirect here with ?error=...)
+  useAuthCallback({ context: "auth" });
 
   const content = (
     <div className="flex flex-col items-center p-6">

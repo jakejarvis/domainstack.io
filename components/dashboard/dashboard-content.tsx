@@ -22,7 +22,6 @@ import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-en
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
-import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useViewPreference } from "@/hooks/use-dashboard-preferences";
 import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
@@ -59,9 +58,6 @@ export function DashboardContent() {
   const { data: session } = useSession();
   const trpc = useTRPC();
   const router = useRouter();
-
-  // Handle auth callback errors (e.g., sign-in failures redirect here with ?error=...)
-  useAuthCallback({ context: "auth" });
 
   const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
 

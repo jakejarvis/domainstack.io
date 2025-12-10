@@ -55,6 +55,8 @@ export function OAuthButton({
       await signIn.social({
         provider: provider.id,
         callbackURL,
+        // On OAuth errors, redirect to login page where errors are displayed
+        errorCallbackURL: "/login",
       });
       // Don't reset loading state on success - the page will redirect
       // and we want to keep the loading state until navigation completes
