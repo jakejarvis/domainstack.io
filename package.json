@@ -60,7 +60,7 @@
     "country-flag-icons": "^1.6.4",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
-    "drizzle-orm": "^0.45.0",
+    "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "file-type": "^21.1.1",
     "geist": "^1.5.1",
