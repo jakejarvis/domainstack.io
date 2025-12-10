@@ -194,11 +194,18 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
           if (!old) return old;
           return {
             ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((d) => d.id !== trackedDomainId),
-              totalCount: page.totalCount - 1,
-            })),
+            pages: old.pages.map((page) => {
+              const originalLength = page.items.length;
+              const filteredItems = page.items.filter(
+                (d) => d.id !== trackedDomainId,
+              );
+              const removedCount = originalLength - filteredItems.length;
+              return {
+                ...page,
+                items: filteredItems,
+                totalCount: page.totalCount - removedCount,
+              };
+            }),
           };
         },
       );
@@ -261,11 +268,18 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
           if (!old) return old;
           return {
             ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((d) => d.id !== trackedDomainId),
-              totalCount: page.totalCount - 1,
-            })),
+            pages: old.pages.map((page) => {
+              const originalLength = page.items.length;
+              const filteredItems = page.items.filter(
+                (d) => d.id !== trackedDomainId,
+              );
+              const removedCount = originalLength - filteredItems.length;
+              return {
+                ...page,
+                items: filteredItems,
+                totalCount: page.totalCount - removedCount,
+              };
+            }),
           };
         },
       );
@@ -423,11 +437,16 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
           if (!old) return old;
           return {
             ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((d) => !idsSet.has(d.id)),
-              totalCount: page.totalCount - archiveDelta,
-            })),
+            pages: old.pages.map((page) => {
+              const originalLength = page.items.length;
+              const filteredItems = page.items.filter((d) => !idsSet.has(d.id));
+              const removedCount = originalLength - filteredItems.length;
+              return {
+                ...page,
+                items: filteredItems,
+                totalCount: page.totalCount - removedCount,
+              };
+            }),
           };
         },
       );
@@ -496,11 +515,16 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
           if (!old) return old;
           return {
             ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((d) => !idsSet.has(d.id)),
-              totalCount: page.totalCount - deleteDelta,
-            })),
+            pages: old.pages.map((page) => {
+              const originalLength = page.items.length;
+              const filteredItems = page.items.filter((d) => !idsSet.has(d.id));
+              const removedCount = originalLength - filteredItems.length;
+              return {
+                ...page,
+                items: filteredItems,
+                totalCount: page.totalCount - removedCount,
+              };
+            }),
           };
         },
       );
