@@ -293,6 +293,7 @@ export function useDomainVerification({
 
   // Derived state
   const isResuming = !!resumeDomain;
+  const isPrefilled = !!prefillDomain && !isResuming;
   const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
   const isInstructionsQueryError = isResuming && instructionsQuery.isError;
   const isMissingInstructions =
@@ -329,6 +330,7 @@ export function useDomainVerification({
 
     // Derived state
     isResuming,
+    isPrefilled,
     isLoadingInstructions,
     isInstructionsQueryError,
     isMissingInstructions,

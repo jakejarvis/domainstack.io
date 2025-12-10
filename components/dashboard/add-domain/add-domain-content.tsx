@@ -94,6 +94,7 @@ export function AddDomainContent({
 
     // Derived state
     isResuming,
+    isPrefilled,
     isLoadingInstructions,
     isInstructionsQueryError,
     isMissingInstructions,
@@ -314,6 +315,7 @@ export function AddDomainContent({
               isLoading={isAddingDomain}
               onSubmit={handleNext}
               hasAttemptedSubmit={hasAttemptedDomainSubmit}
+              readOnly={isPrefilled}
             />
           )}
           {step === 2 && isLoadingInstructions && (
