@@ -274,7 +274,7 @@ Key patterns:
 ## Analytics & Observability
 - Uses **PostHog** for analytics and error tracking with reverse proxy via `/_proxy/ingest/*`.
 - PostHog sourcemap uploads configured in `next.config.ts` with `@posthog/nextjs-config`.
-- OpenTelemetry integration via `@vercel/otel` in `instrumentation.ts` for distributed tracing.
+- OpenTelemetry integration via manual SDK setup in `instrumentation.node.ts` for distributed tracing and structured logging.
 - Client-side analytics captured via `posthog-js` and initialized in `instrumentation-client.ts`.
 - Server-side analytics captured via `posthog-node` in `lib/analytics/server.ts`:
   - Uses `analytics.track()` and `analytics.trackException()` for unified tracking.
@@ -283,10 +283,13 @@ Key patterns:
 - Analytics mocked in tests via `vitest.setup.ts`.
 
 ## OpenTelemetry Tracing
-Distributed tracing implementation using `@vercel/otel` and custom instrumentation for deep observability.
+Distributed tracing implementation using manual OpenTelemetry SDK setup for full control over configuration.
 
 ### Architecture
-- **Automatic instrumentation**: `@vercel/otel` traces Next.js requests and fetch calls
+- **Manual SDK setup**: `instrumentation.node.ts` initializes `NodeSDK` with explicit configuration (replaces `@vercel/otel`)
+- **Auto-instrumentation**: Uses `@opentelemetry/auto-instrumentations-node` for automatic HTTP/fetch/database tracing
+- **SimpleSpanProcessor**: Uses immediate export (not batched) for serverless compatibility
+- **Console + OTLP exporters**: Console enabled in development; OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
 - **tRPC middleware**: Creates spans for all tRPC procedures in `trpc/init.ts`
 - **Service layer**: All major services wrapped with `withSpan()` from `lib/tracing.ts`
 - **HTTP utilities**: Fetch operations instrumented in `lib/fetch.ts` and `lib/fetch-remote-asset.ts`
@@ -339,8 +342,9 @@ trpc.domain.getHosting (tRPC middleware)
 - **Architecture:**
   - Server-side uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) for automatic trace correlation
   - Client-side uses structured console output with matching format (OpenTelemetry SDK is Node.js-only)
-  - LoggerProvider configured in `instrumentation.ts` with `ConsoleLogRecordExporter` (compatible with Vercel logs)
-  - Can be switched to OTLP exporter for external backends (Grafana, Datadog, etc.) via environment variables
+  - Manual SDK setup in `instrumentation.node.ts` with `SimpleLogRecordProcessor` for serverless compatibility
+  - Console exporter always enabled (Vercel captures stdout); OTLP exporter added when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+  - **IMPORTANT**: Always provide at least one log processor to ensure a `LoggerProvider` is created - without it, `logs.getLogger()` returns a no-op logger that silently discards all logs
 - **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create service logger: `const logger = createLogger({ source: "dns" })`

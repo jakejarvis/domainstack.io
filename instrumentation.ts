@@ -1,20 +1,27 @@
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
-import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
-export const register = () => {
-  // Default: @vercel/otel outputs logs to console (Vercel captures automatically)
-  // OTLP: Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT and OTEL_EXPORTER_OTLP_LOGS_HEADERS
-  //       to send to any OTLP-compatible backend (PostHog, Grafana, Datadog, etc.)
-  registerOTel({
-    serviceName: "domainstack",
-    ...(process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT && {
-      logRecordProcessors: [new BatchLogRecordProcessor(new OTLPLogExporter())],
-    }),
-  });
-};
+/**
+ * Next.js instrumentation entry point.
+ *
+ * This file is loaded once when the Next.js server starts.
+ * We use it to initialize OpenTelemetry for tracing and structured logging.
+ *
+ * @see https://nextjs.org/docs/app/guides/open-telemetry
+ * @see instrumentation.node.ts for the OpenTelemetry SDK configuration
+ */
+export async function register() {
+  // Only initialize OpenTelemetry in Node.js runtime (not Edge)
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Dynamic import to avoid loading Node.js-specific code in Edge runtime
+    // The SDK starts automatically on import
+    await import("./instrumentation.node");
+  }
+}
 
+/**
+ * Handle uncaught errors in Next.js requests.
+ * Logs errors with full context for debugging.
+ */
 export const onRequestError: Instrumentation.onRequestError = async (
   error,
   request,
