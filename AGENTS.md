@@ -339,8 +339,9 @@ trpc.domain.getHosting (tRPC middleware)
 - **Architecture:**
   - Server-side uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) for automatic trace correlation
   - Client-side uses structured console output with matching format (OpenTelemetry SDK is Node.js-only)
-  - LoggerProvider configured in `instrumentation.ts` with `ConsoleLogRecordExporter` (compatible with Vercel logs)
-  - Can be switched to OTLP exporter for external backends (Grafana, Datadog, etc.) via environment variables
+  - LoggerProvider configured in `instrumentation.ts` with `SimpleLogRecordProcessor` + `ConsoleLogRecordExporter` (Vercel captures console output)
+  - When `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` is set, additionally exports to OTLP-compatible backends (PostHog, Grafana, Datadog, etc.)
+  - **IMPORTANT**: Always provide at least one log processor to `registerOTel()` - without it, `logs.getLogger()` returns a no-op logger that silently discards all logs
 - **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create service logger: `const logger = createLogger({ source: "dns" })`

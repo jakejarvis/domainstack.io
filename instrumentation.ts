@@ -1,17 +1,37 @@
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
+import type { LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import {
+  BatchLogRecordProcessor,
+  ConsoleLogRecordExporter,
+  SimpleLogRecordProcessor,
+} from "@opentelemetry/sdk-logs";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
 export const register = () => {
-  // Default: @vercel/otel outputs logs to console (Vercel captures automatically)
-  // OTLP: Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT and OTEL_EXPORTER_OTLP_LOGS_HEADERS
-  //       to send to any OTLP-compatible backend (PostHog, Grafana, Datadog, etc.)
+  // Build log processors array
+  // IMPORTANT: We must always provide at least one processor to ensure
+  // @vercel/otel creates a LoggerProvider. Without this, logs.getLogger()
+  // returns a no-op logger that silently discards all logs.
+  const logRecordProcessors: LogRecordProcessor[] = [];
+
+  // Console exporter for local development and Vercel dashboard visibility
+  // Vercel captures console output automatically
+  logRecordProcessors.push(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+  );
+
+  // OTLP exporter for external backends (PostHog, Grafana, Datadog, etc.)
+  // Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT and OTEL_EXPORTER_OTLP_LOGS_HEADERS
+  if (process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT) {
+    logRecordProcessors.push(
+      new BatchLogRecordProcessor(new OTLPLogExporter()),
+    );
+  }
+
   registerOTel({
     serviceName: "domainstack",
-    ...(process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT && {
-      logRecordProcessors: [new BatchLogRecordProcessor(new OTLPLogExporter())],
-    }),
+    logRecordProcessors,
   });
 };
 
