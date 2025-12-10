@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import {
   OAUTH_PROVIDERS,
@@ -27,6 +28,9 @@ export function LinkedAccountsSection() {
     null,
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+
+  // Handle auth callback errors from URL params (account linking)
+  useAuthCallback();
 
   // Query for linked accounts
   const linkedAccountsQuery = useQuery(
@@ -49,6 +53,7 @@ export function LinkedAccountsSection() {
     try {
       await linkSocial({
         provider: provider.id,
+        // On error, better-auth appends ?error=... to the callback URL
         callbackURL: "/settings",
       });
       // The page will redirect to the OAuth provider, so no need to handle success here

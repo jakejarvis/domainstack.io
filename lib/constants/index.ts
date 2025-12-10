@@ -1,5 +1,6 @@
 // Re-export all constants from submodules
 export * from "./app";
+export * from "./auth-errors";
 export * from "./decay";
 export * from "./domain-filters";
 export * from "./domain-validation";
