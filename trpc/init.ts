@@ -82,7 +82,7 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
 
   // Create OpenTelemetry span for distributed tracing using startActiveSpan
   // This automatically propagates trace context to all logs within the span
-  const tracer = trace.getTracer("trpc");
+  const tracer = trace.getTracer("domainstack");
 
   return await tracer.startActiveSpan(
     `trpc.${path}`,
@@ -98,7 +98,6 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
         source: "trpc",
         path,
         type,
-        input: input && typeof input === "object" ? { ...input } : undefined,
       });
 
       try {

@@ -121,3 +121,57 @@ export function serializeError(error: unknown): SerializedError {
     message: String(error),
   };
 }
+
+/**
+ * OpenTelemetry-compatible attribute value types.
+ * Matches AnyValueMap from @opentelemetry/api-logs.
+ */
+export type LogAttributes = Record<
+  string,
+  string | number | boolean | string[] | number[] | boolean[]
+>;
+
+/**
+ * Sanitize context attributes for structured logging.
+ * OpenTelemetry only accepts primitive types and arrays of primitives.
+ * Complex types are JSON-stringified for compatibility.
+ */
+export function sanitizeAttributes(
+  context?: LogContext,
+): LogAttributes | undefined {
+  if (!context || Object.keys(context).length === 0) {
+    return undefined;
+  }
+
+  const result: LogAttributes = {};
+  for (const [key, value] of Object.entries(context)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    const type = typeof value;
+    if (type === "string" || type === "number" || type === "boolean") {
+      result[key] = value as string | number | boolean;
+    } else if (Array.isArray(value)) {
+      // Only include if all elements are primitives
+      if (
+        value.every(
+          (v) =>
+            typeof v === "string" ||
+            typeof v === "number" ||
+            typeof v === "boolean",
+        )
+      ) {
+        result[key] = value as string[] | number[] | boolean[];
+      } else {
+        // Stringify complex arrays
+        result[key] = JSON.stringify(value);
+      }
+    } else {
+      // Stringify objects
+      result[key] = JSON.stringify(value);
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}

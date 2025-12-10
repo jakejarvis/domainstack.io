@@ -4,6 +4,7 @@ import {
   type LogContext,
   type Logger,
   type LogLevel,
+  sanitizeAttributes,
   serializeError,
   shouldLog,
 } from "@/lib/logger";
@@ -78,7 +79,7 @@ class ClientLogger implements Logger {
       const formatted = this.formatLogRecord(
         level,
         message,
-        this.sanitizeAttributes(context),
+        sanitizeAttributes(context),
       );
 
       // Output to appropriate console method
@@ -129,7 +130,7 @@ class ClientLogger implements Logger {
     try {
       // Build attributes including serialized error if present
       const attributes: Record<string, unknown> = {
-        ...this.sanitizeAttributes(finalContext),
+        ...sanitizeAttributes(finalContext),
       };
 
       // Add serialized error to attributes
@@ -158,50 +159,6 @@ class ClientLogger implements Logger {
       // Logging should never crash the application
       console.error("[logger] failed to log:", err);
     }
-  }
-
-  /**
-   * Sanitize context attributes.
-   * Converts complex types to strings for consistent logging.
-   */
-  private sanitizeAttributes(
-    context?: LogContext,
-  ): Record<string, unknown> | undefined {
-    if (!context || Object.keys(context).length === 0) {
-      return undefined;
-    }
-
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(context)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-
-      const type = typeof value;
-      if (type === "string" || type === "number" || type === "boolean") {
-        result[key] = value;
-      } else if (Array.isArray(value)) {
-        // Only include if all elements are primitives
-        if (
-          value.every(
-            (v) =>
-              typeof v === "string" ||
-              typeof v === "number" ||
-              typeof v === "boolean",
-          )
-        ) {
-          result[key] = value;
-        } else {
-          // Stringify complex arrays
-          result[key] = JSON.stringify(value);
-        }
-      } else {
-        // Stringify objects
-        result[key] = JSON.stringify(value);
-      }
-    }
-
-    return Object.keys(result).length > 0 ? result : undefined;
   }
 
   private trackErrorInPostHog(error: Error, context?: LogContext): void {

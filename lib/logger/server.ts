@@ -6,10 +6,12 @@ import {
   SeverityNumber,
 } from "@opentelemetry/api-logs";
 import {
+  type LogAttributes,
   type LogContext,
   type Logger,
   type LogLevel,
   parseLogLevel,
+  sanitizeAttributes,
   serializeError,
   shouldLog,
 } from "@/lib/logger";
@@ -41,15 +43,6 @@ const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
   error: SeverityNumber.ERROR,
   fatal: SeverityNumber.FATAL,
 };
-
-/**
- * OpenTelemetry-compatible attribute value types.
- * Matches AnyValueMap from @opentelemetry/api-logs.
- */
-type LogAttributes = Record<
-  string,
-  string | number | boolean | string[] | number[] | boolean[]
->;
 
 // ============================================================================
 // Logger Implementation
@@ -91,7 +84,7 @@ class ServerLogger implements Logger {
         severityNumber: SEVERITY_MAP[level],
         severityText: level.toUpperCase(),
         body: message,
-        attributes: this.sanitizeAttributes(context),
+        attributes: sanitizeAttributes(context),
       });
     } catch (err) {
       // Logging should never crash the application
@@ -121,7 +114,7 @@ class ServerLogger implements Logger {
     try {
       // Build attributes including serialized error if present
       const attributes: LogAttributes = {
-        ...this.sanitizeAttributes(finalContext),
+        ...sanitizeAttributes(finalContext),
       };
 
       // Add serialized error to attributes
@@ -153,49 +146,6 @@ class ServerLogger implements Logger {
       // Logging should never crash the application
       console.error("[logger] failed to log:", err);
     }
-  }
-
-  /**
-   * Sanitize context attributes for OpenTelemetry.
-   * OpenTelemetry only accepts primitive types and arrays of primitives.
-   * Returns AnyValueMap-compatible object.
-   */
-  private sanitizeAttributes(context?: LogContext): LogAttributes | undefined {
-    if (!context || Object.keys(context).length === 0) {
-      return undefined;
-    }
-
-    const result: LogAttributes = {};
-    for (const [key, value] of Object.entries(context)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-
-      const type = typeof value;
-      if (type === "string" || type === "number" || type === "boolean") {
-        result[key] = value as string | number | boolean;
-      } else if (Array.isArray(value)) {
-        // Only include if all elements are primitives
-        if (
-          value.every(
-            (v) =>
-              typeof v === "string" ||
-              typeof v === "number" ||
-              typeof v === "boolean",
-          )
-        ) {
-          result[key] = value as string[] | number[] | boolean[];
-        } else {
-          // Stringify complex arrays
-          result[key] = JSON.stringify(value);
-        }
-      } else {
-        // Stringify objects
-        result[key] = JSON.stringify(value);
-      }
-    }
-
-    return Object.keys(result).length > 0 ? result : undefined;
   }
 
   private trackErrorInPostHog(error: Error, context?: LogContext): void {

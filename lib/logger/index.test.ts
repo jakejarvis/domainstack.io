@@ -108,12 +108,17 @@ describe("Logger Core", () => {
   });
 
   describe("Logger interface", () => {
-    it("includes log method for dynamic level dispatch", () => {
-      // Create a mock logger that satisfies the Logger interface
-      // This verifies the interface shape at compile-time and runtime
+    /**
+     * Factory to create a mock logger that satisfies the Logger interface.
+     * Returns both the logger and its call log for assertions.
+     */
+    function createMockLogger(): {
+      logger: Logger;
+      calls: Array<{ method: string; args: unknown[] }>;
+    } {
       const calls: Array<{ method: string; args: unknown[] }> = [];
 
-      const mockLogger: Logger = {
+      const logger: Logger = {
         log: (level: LogLevel, message: string, context?) => {
           calls.push({ method: "log", args: [level, message, context] });
         },
@@ -141,8 +146,14 @@ describe("Logger Core", () => {
             args: [message, errorOrContext, context],
           });
         },
-        child: () => mockLogger,
+        child: () => logger,
       };
+
+      return { logger, calls };
+    }
+
+    it("includes log method for dynamic level dispatch", () => {
+      const { logger, calls } = createMockLogger();
 
       // Verify log method can be called with all levels
       const levels: LogLevel[] = [
@@ -154,7 +165,7 @@ describe("Logger Core", () => {
         "fatal",
       ];
       for (const level of levels) {
-        mockLogger.log(level, `${level} message`, { source: "test" });
+        logger.log(level, `${level} message`, { source: "test" });
       }
 
       expect(calls).toHaveLength(6);
@@ -169,40 +180,9 @@ describe("Logger Core", () => {
     });
 
     it("supports child logger creation", () => {
-      const calls: Array<{ method: string; args: unknown[] }> = [];
+      const { logger } = createMockLogger();
 
-      const mockLogger: Logger = {
-        log: (level: LogLevel, message: string, context?) => {
-          calls.push({ method: "log", args: [level, message, context] });
-        },
-        trace: (message, context?) => {
-          calls.push({ method: "trace", args: [message, context] });
-        },
-        debug: (message, context?) => {
-          calls.push({ method: "debug", args: [message, context] });
-        },
-        info: (message, context?) => {
-          calls.push({ method: "info", args: [message, context] });
-        },
-        warn: (message, context?) => {
-          calls.push({ method: "warn", args: [message, context] });
-        },
-        error: (message, errorOrContext?, context?) => {
-          calls.push({
-            method: "error",
-            args: [message, errorOrContext, context],
-          });
-        },
-        fatal: (message, errorOrContext?, context?) => {
-          calls.push({
-            method: "fatal",
-            args: [message, errorOrContext, context],
-          });
-        },
-        child: () => mockLogger,
-      };
-
-      const childLogger = mockLogger.child({ component: "test" });
+      const childLogger = logger.child({ component: "test" });
       expect(childLogger).toBeDefined();
       expect(typeof childLogger.info).toBe("function");
     });
