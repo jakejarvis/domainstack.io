@@ -75,7 +75,7 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
       logger.warn("Auth callback error", { error, isLinkError });
     }
 
-    if (success === "true" && successMessage) {
+    if (!error && success === "true" && successMessage) {
       toast.success(successMessage);
     }
 
