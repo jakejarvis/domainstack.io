@@ -7,27 +7,12 @@ import { useRouter } from "@/hooks/use-router";
 import { getAuthErrorMessage, isAccountLinkingError } from "@/lib/constants";
 import { logger } from "@/lib/logger/client";
 
-interface UseAuthCallbackOptions {
-  /**
-   * Custom success message to show when a success param is detected.
-   * If not provided, no success toast is shown.
-   */
-  successMessage?: string;
-
-  /**
-   * The query param name that indicates success.
-   * @default "linked"
-   */
-  successParam?: string;
-}
-
 /**
- * Hook to handle auth callback query parameters (error/success).
+ * Hook to handle auth callback error query parameters.
  *
  * Automatically:
  * - Shows toast notifications for errors with user-friendly messages
- * - Shows success toast when successParam is present (if configured)
- * - Cleans up auth-related query params from the URL
+ * - Cleans up the error query param from the URL
  *
  * @example
  * // In login page (sign-in callbacks)
@@ -35,14 +20,9 @@ interface UseAuthCallbackOptions {
  *
  * @example
  * // In settings (account linking callbacks)
- * useAuthCallback({
- *   successParam: "linked",
- *   successMessage: "Account linked successfully",
- * });
+ * useAuthCallback();
  */
-export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
-  const { successMessage, successParam = "linked" } = options;
-
+export function useAuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Track if we've already processed params to prevent double-firing
@@ -50,42 +30,34 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
 
   useEffect(() => {
     const error = searchParams.get("error");
-    const success = searchParams.get(successParam);
 
-    // Skip if no auth params to process or already processed
-    if ((!error && !success) || processedRef.current) {
+    // Skip if no error param or already processed
+    if (!error || processedRef.current) {
       return;
     }
 
     // Mark as processed to prevent re-running
     processedRef.current = true;
 
-    if (error) {
-      // Show error toast with user-friendly message
-      const errorMessage = getAuthErrorMessage(error);
-      const isLinkError = isAccountLinkingError(error);
+    // Show error toast with user-friendly message
+    const errorMessage = getAuthErrorMessage(error);
+    const isLinkError = isAccountLinkingError(error);
 
-      // Title based on error type
-      const title = isLinkError ? "Failed to link account" : "Sign in failed";
+    // Title based on error type
+    const title = isLinkError ? "Failed to link account" : "Sign in failed";
 
-      toast.error(title, {
-        description: errorMessage,
-      });
+    toast.error(title, {
+      description: errorMessage,
+    });
 
-      logger.warn("Auth callback error", { error, isLinkError });
-    }
+    logger.warn("Auth callback error", { error, isLinkError });
 
-    if (!error && success === "true" && successMessage) {
-      toast.success(successMessage);
-    }
-
-    // Clear auth-related params from URL while preserving others
+    // Clear error param from URL while preserving others
     const params = new URLSearchParams(searchParams.toString());
     params.delete("error");
-    params.delete(successParam);
     const newSearch = params.toString();
     const newUrl =
       window.location.pathname + (newSearch ? `?${newSearch}` : "");
     router.replace(newUrl, { scroll: false });
-  }, [router, searchParams, successParam, successMessage]);
+  }, [router, searchParams]);
 }

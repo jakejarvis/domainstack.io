@@ -29,10 +29,8 @@ export function LinkedAccountsSection() {
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
 
-  // Handle auth callback errors/success from URL params (account linking)
-  useAuthCallback({
-    successMessage: "Account linked successfully",
-  });
+  // Handle auth callback errors from URL params (account linking)
+  useAuthCallback();
 
   // Query for linked accounts
   const linkedAccountsQuery = useQuery(
@@ -55,9 +53,8 @@ export function LinkedAccountsSection() {
     try {
       await linkSocial({
         provider: provider.id,
-        // On success, redirect to settings with linked=true param
-        // On error, better-auth appends error param automatically
-        callbackURL: "/settings?linked=true",
+        // On error, better-auth appends ?error=... to the callback URL
+        callbackURL: "/settings",
       });
       // The page will redirect to the OAuth provider, so no need to handle success here
     } catch (err) {
