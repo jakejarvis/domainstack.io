@@ -70,9 +70,9 @@ export function useDomainVerification({
 
   const addDomainMutation = useMutation({
     ...trpc.tracking.addDomain.mutationOptions(),
-    onSuccess: () => {
-      // Invalidate queries immediately so the domain appears in the list
-      // (even if user closes dialog before completing verification)
+    onSettled: () => {
+      // Invalidate queries so the domain appears in the list
+      // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
       // Use exact: false to match all listDomains queries including infinite queries with different inputs
       void queryClient.invalidateQueries({
         queryKey: domainsQueryKey,
