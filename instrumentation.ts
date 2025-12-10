@@ -1,7 +1,6 @@
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import type { LogRecordProcessor } from "@opentelemetry/sdk-logs";
 import {
-  BatchLogRecordProcessor,
   ConsoleLogRecordExporter,
   SimpleLogRecordProcessor,
 } from "@opentelemetry/sdk-logs";
@@ -22,10 +21,16 @@ export const register = () => {
   );
 
   // OTLP exporter for external backends (PostHog, Grafana, Datadog, etc.)
-  // Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT and OTEL_EXPORTER_OTLP_LOGS_HEADERS
+  // Uses SimpleLogRecordProcessor for immediate export (critical for serverless)
+  // BatchLogRecordProcessor buffers logs for 5s by default, which can cause
+  // logs to be lost when serverless functions complete before the buffer flushes.
+  //
+  // Required env vars:
+  //   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT - Full URL including path (e.g., https://us.i.posthog.com/v1/logs)
+  //   OTEL_EXPORTER_OTLP_LOGS_HEADERS  - Auth headers (e.g., authorization=Bearer <token>)
   if (process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT) {
     logRecordProcessors.push(
-      new BatchLogRecordProcessor(new OTLPLogExporter()),
+      new SimpleLogRecordProcessor(new OTLPLogExporter()),
     );
   }
 
