@@ -41,11 +41,18 @@ export function useDomainVerification({
   resumeDomain,
   prefillDomain,
 }: UseDomainVerificationOptions) {
-  const [step, setStep] = useState(1);
-  const [domain, setDomain] = useState(prefillDomain ?? "");
+  // Determine initial state based on resumeDomain (takes priority) or prefillDomain
+  const initialDomain = resumeDomain?.domainName ?? prefillDomain ?? "";
+  const initialStep = resumeDomain ? 2 : 1;
+  const initialTrackedDomainId = resumeDomain?.id ?? null;
+
+  const [step, setStep] = useState(initialStep);
+  const [domain, setDomain] = useState(initialDomain);
   const [domainError, setDomainError] = useState("");
   const [method, setMethod] = useState<VerificationMethod>("dns_txt");
-  const [trackedDomainId, setTrackedDomainId] = useState<string | null>(null);
+  const [trackedDomainId, setTrackedDomainId] = useState<string | null>(
+    initialTrackedDomainId,
+  );
   const [instructions, setInstructions] =
     useState<VerificationInstructions | null>(null);
   const [verificationState, setVerificationState] = useState<VerificationState>(
@@ -57,16 +64,20 @@ export function useDomainVerification({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query keys for invalidation
+  // Query keys for invalidation - use partial matching to catch infinite queries
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const limitsQueryKey = trpc.tracking.getLimits.queryKey();
 
   const addDomainMutation = useMutation({
     ...trpc.tracking.addDomain.mutationOptions(),
-    onSuccess: () => {
-      // Invalidate queries immediately so the domain appears in the list
-      // (even if user closes dialog before completing verification)
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+    onSettled: () => {
+      // Invalidate queries so the domain appears in the list
+      // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
+      // Use exact: false to match all listDomains queries including infinite queries with different inputs
+      void queryClient.invalidateQueries({
+        queryKey: domainsQueryKey,
+        exact: false,
+      });
       void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     },
   });
@@ -83,8 +94,8 @@ export function useDomainVerification({
     enabled: !!trackedDomainId && open,
   });
 
-  // When resumeDomain changes and dialog opens, set up resume state
-  // Reset all state to avoid showing stale data from a previous domain
+  // When resumeDomain changes, update the state accordingly
+  // This handles the case when TrackDomainButton switches from prefill to resume mode
   useEffect(() => {
     if (resumeDomain && open) {
       setDomain(resumeDomain.domainName);
@@ -105,19 +116,21 @@ export function useDomainVerification({
     }
   }, [instructionsQuery.data]);
 
-  // Sync domain state when prefillDomain changes (only when dialog is closed)
+  // Sync domain state when prefillDomain changes and no resumeDomain is active
+  // This ensures the domain field is updated when props change
   useEffect(() => {
-    if (!open && prefillDomain !== undefined) {
+    if (!resumeDomain && prefillDomain !== undefined && !trackedDomainId) {
       setDomain(prefillDomain);
     }
-  }, [prefillDomain, open]);
+  }, [prefillDomain, resumeDomain, trackedDomainId]);
 
   // Clear domain error when user edits the domain input
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally run when domain changes to clear stale errors
   useEffect(() => {
     if (domainError) {
       setDomainError("");
     }
-  }, [domainError]); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally omit domainError to avoid infinite loop
+  }, [domain]);
 
   const resetDialog = useCallback(() => {
     setStep(1);
@@ -192,6 +205,13 @@ export function useDomainVerification({
           domain,
           method: result.method,
         });
+        // Invalidate queries so the dashboard shows the updated verified status
+        // Use exact: false to match all listDomains queries including infinite queries
+        void queryClient.invalidateQueries({
+          queryKey: domainsQueryKey,
+          exact: false,
+        });
+        void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
       } else {
         setVerificationState({
           status: "failed",
@@ -216,7 +236,15 @@ export function useDomainVerification({
         error: "exception",
       });
     }
-  }, [trackedDomainId, domain, method, verifyDomainMutation]);
+  }, [
+    trackedDomainId,
+    domain,
+    method,
+    verifyDomainMutation,
+    queryClient,
+    domainsQueryKey,
+    limitsQueryKey,
+  ]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {
@@ -265,6 +293,7 @@ export function useDomainVerification({
 
   // Derived state
   const isResuming = !!resumeDomain;
+  const isPrefilled = !!prefillDomain && !isResuming;
   const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
   const isInstructionsQueryError = isResuming && instructionsQuery.isError;
   const isMissingInstructions =
@@ -301,6 +330,7 @@ export function useDomainVerification({
 
     // Derived state
     isResuming,
+    isPrefilled,
     isLoadingInstructions,
     isInstructionsQueryError,
     isMissingInstructions,

@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, BellPlus, Check } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import {
   AddDomainDialog,
@@ -27,9 +27,6 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const [loginOpen, setLoginOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [resumeDomain, setResumeDomain] = useState<ResumeDomainData | null>(
-    null,
-  );
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -48,15 +45,51 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const isVerified = trackedDomain?.verified ?? false;
   const isPendingVerification = isTracked && !isVerified;
 
+  // Compute resumeDomain from the tracked domain when pending verification
+  // This is derived state, not stored in useState, to avoid stale state issues
+  const resumeDomain: ResumeDomainData | null = useMemo(() => {
+    if (isPendingVerification && trackedDomain) {
+      return {
+        id: trackedDomain.id,
+        domainName: trackedDomain.domainName,
+        verificationToken: trackedDomain.verificationToken,
+      };
+    }
+    return null;
+  }, [isPendingVerification, trackedDomain]);
+
   // Handle success from add dialog - invalidate the tracked domains query
-  const handleAddSuccess = () => {
+  const handleAddSuccess = useCallback(() => {
+    // Use partial matching to invalidate all listDomains queries (including infinite queries with different inputs)
     void queryClient.invalidateQueries({
       queryKey: trpc.tracking.listDomains.queryKey(),
+      exact: false,
     });
     void queryClient.invalidateQueries({
       queryKey: trpc.tracking.getLimits.queryKey(),
     });
-  };
+  }, [queryClient, trpc]);
+
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setAddDialogOpen(open);
+  }, []);
+
+  const handleButtonClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (session?.user) {
+        // Logged in - open add domain dialog
+        setAddDialogOpen(true);
+        return;
+      }
+      // Logged out - open login modal (unless modifier key pressed)
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+        return; // Let link work normally
+      }
+      e.preventDefault();
+      setLoginOpen(true);
+    },
+    [session?.user],
+  );
 
   // Show loading state while session or domains are loading
   if (isSessionPending || (session?.user && isLoadingDomains)) {
@@ -90,70 +123,22 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     );
   }
 
-  // Tracked but pending verification - show info state with option to resume
-  if (isPendingVerification && trackedDomain) {
-    const handleResume = () => {
-      setResumeDomain({
-        id: trackedDomain.id,
-        domainName: trackedDomain.domainName,
-        verificationToken: trackedDomain.verificationToken,
-      });
-      setAddDialogOpen(true);
-    };
-
-    return (
-      <>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              onClick={handleResume}
-              className="cursor-pointer"
-            >
-              <Check className="size-4 text-accent-green" />
-              <span className="hidden sm:inline">Verify</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Complete verification for this domain</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <AddDomainDialog
-          open={addDialogOpen}
-          onOpenChange={(open) => {
-            setAddDialogOpen(open);
-            if (!open) setResumeDomain(null);
-          }}
-          onSuccess={handleAddSuccess}
-          resumeDomain={resumeDomain}
-        />
-      </>
-    );
-  }
-
-  // Not tracked - show track button
-  // For logged-out users, use hybrid Link/modal pattern (ctrl+click goes to /login)
-  const handleClick = (e: React.MouseEvent) => {
-    if (session?.user) {
-      // Logged in - open add domain dialog
-      setAddDialogOpen(true);
-      return;
-    }
-    // Logged out - open login modal (unless modifier key pressed)
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-      return; // Let link work normally
-    }
-    e.preventDefault();
-    setLoginOpen(true);
-  };
-
-  const buttonContent = (
+  // Determine button content based on tracking status
+  const buttonContent = isPendingVerification ? (
+    <>
+      <Check className="size-4 text-accent-green" />
+      <span className="hidden sm:inline">Verify</span>
+    </>
+  ) : (
     <>
       <BellPlus className="size-4 text-accent-gold" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
+
+  const tooltipText = isPendingVerification
+    ? "Complete verification for this domain"
+    : "Get alerts for this domain";
 
   return (
     <>
@@ -162,7 +147,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
           {session?.user ? (
             <Button
               variant="outline"
-              onClick={handleClick}
+              onClick={handleButtonClick}
               className="cursor-pointer"
             >
               {buttonContent}
@@ -171,7 +156,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
             <Button asChild variant="outline" className="cursor-pointer">
               <Link
                 href="/login"
-                onClick={handleClick}
+                onClick={handleButtonClick}
                 data-disable-progress={true}
               >
                 {buttonContent}
@@ -180,16 +165,18 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
           )}
         </TooltipTrigger>
         <TooltipContent>
-          <p>Get alerts for this domain</p>
+          <p>{tooltipText}</p>
         </TooltipContent>
       </Tooltip>
 
       <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
 
+      {/* Single dialog instance - uses resumeDomain when pending, prefillDomain otherwise */}
       <AddDomainDialog
         open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         onSuccess={handleAddSuccess}
+        resumeDomain={resumeDomain}
         prefillDomain={domain}
       />
     </>

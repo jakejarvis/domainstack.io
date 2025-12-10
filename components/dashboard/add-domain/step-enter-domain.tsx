@@ -13,6 +13,8 @@ type StepEnterDomainProps = {
   onSubmit: () => void;
   /** Whether the user has attempted to submit (controlled by parent) */
   hasAttemptedSubmit: boolean;
+  /** Whether the domain input is read-only (e.g., when prefilled from domain report) */
+  readOnly?: boolean;
 };
 
 export function StepEnterDomain({
@@ -22,6 +24,7 @@ export function StepEnterDomain({
   isLoading,
   onSubmit,
   hasAttemptedSubmit,
+  readOnly = false,
 }: StepEnterDomainProps) {
   // Client-side validation
   const clientError = useMemo(() => {
@@ -48,6 +51,7 @@ export function StepEnterDomain({
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
           disabled={isLoading}
+          readOnly={readOnly}
           inputMode="url"
           autoComplete="off"
           autoCorrect="off"
@@ -55,6 +59,7 @@ export function StepEnterDomain({
           spellCheck={false}
           aria-invalid={!!displayError}
           aria-describedby={displayError ? "add-domain-error" : undefined}
+          className={readOnly ? "cursor-default bg-muted" : undefined}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -71,8 +76,9 @@ export function StepEnterDomain({
         )}
       </div>
       <p className="text-muted-foreground text-sm">
-        Enter the domain you want to track. You&apos;ll need to verify ownership
-        in the next step.
+        {readOnly
+          ? "This domain will be added to your tracking list. Continue to verify ownership."
+          : "Enter the domain you want to track. You'll need to verify ownership in the next step."}
       </p>
     </div>
   );
