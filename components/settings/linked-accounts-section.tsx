@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { LinkedAccountRow } from "@/components/settings/linked-account-row";
@@ -12,7 +13,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useRouter } from "@/hooks/use-router";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
+import { getAuthErrorMessage, isAccountLinkingError } from "@/lib/constants";
 import {
   OAUTH_PROVIDERS,
   type OAuthProviderConfig,
@@ -23,10 +26,49 @@ import { useTRPC } from "@/lib/trpc/client";
 export function LinkedAccountsSection() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null,
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+
+  // Handle auth callback errors/success from URL params
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const linked = searchParams.get("linked");
+
+    if (error) {
+      // Show error toast with user-friendly message
+      const errorMessage = getAuthErrorMessage(error);
+      const isLinkError = isAccountLinkingError(error);
+
+      toast.error(
+        isLinkError ? "Failed to link account" : "Authentication error",
+        {
+          description: errorMessage,
+        },
+      );
+
+      logger.warn("Auth callback error", { error, isLinkError });
+    }
+
+    if (linked === "true") {
+      // Show success toast when account was successfully linked
+      toast.success("Account linked successfully");
+    }
+
+    // Clear auth-related params from URL while preserving others
+    if (error || linked) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("error");
+      params.delete("linked");
+      const newSearch = params.toString();
+      const newUrl =
+        window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [router, searchParams]);
 
   // Query for linked accounts
   const linkedAccountsQuery = useQuery(
@@ -49,7 +91,9 @@ export function LinkedAccountsSection() {
     try {
       await linkSocial({
         provider: provider.id,
-        callbackURL: "/settings",
+        // On success, redirect to settings with linked=true param
+        // On error, better-auth appends error param automatically
+        callbackURL: "/settings?linked=true",
       });
       // The page will redirect to the OAuth provider, so no need to handle success here
     } catch (err) {
