@@ -5,9 +5,10 @@
  * replacing the opinionated @vercel/otel wrapper.
  *
  * Features:
- * - Console output always enabled (Vercel captures stdout)
+ * - Console output always enabled for logs (Vercel captures stdout)
  * - OTLP export to external backends when configured (PostHog, Grafana, etc.)
  * - SimpleSpanProcessor/SimpleLogRecordProcessor for serverless (immediate export)
+ * - Auto-instrumentation for HTTP, fetch, and other Node.js modules
  * - Proper resource attributes for service identification
  *
  * Configuration (env vars):
@@ -22,6 +23,7 @@
  */
 
 import { DiagConsoleLogger, DiagLogLevel, diag } from "@opentelemetry/api";
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -90,8 +92,7 @@ const resource = resourceFromAttributes({
 // BatchSpanProcessor buffers spans which can be lost when functions complete
 const spanProcessors: SimpleSpanProcessor[] = [];
 
-// Console exporter (always enabled for Vercel dashboard visibility)
-// Only in development to avoid noise in production logs
+// Console exporter for development (avoid noise in production logs)
 if (process.env.NODE_ENV === "development") {
   spanProcessors.push(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 }
@@ -140,43 +141,46 @@ if (OTLP_ENDPOINT) {
 // SDK Initialization
 // ============================================================================
 
-export const sdk = new NodeSDK({
+const sdk = new NodeSDK({
   resource,
   // Span processors for traces
   spanProcessors,
   // Log record processors for structured logging
   logRecordProcessors,
-  // Disable auto-instrumentation (we instrument manually via lib/tracing.ts)
-  // This avoids duplicate spans and gives us more control
-  instrumentations: [],
+  // Auto-instrumentation for HTTP, fetch, and other Node.js modules
+  // This automatically creates spans for outgoing HTTP requests, database calls, etc.
+  instrumentations: [
+    getNodeAutoInstrumentations({
+      // Disable fs instrumentation to reduce noise
+      "@opentelemetry/instrumentation-fs": { enabled: false },
+      // Configure fetch instrumentation
+      "@opentelemetry/instrumentation-undici": { enabled: true },
+      "@opentelemetry/instrumentation-http": { enabled: true },
+    }),
+  ],
 });
 
-/**
- * Start the OpenTelemetry SDK.
- * Called from instrumentation.ts register() function.
- */
-export function startOpenTelemetry(): void {
-  sdk.start();
+// Start the SDK immediately on import
+sdk.start();
 
-  // Log startup info (only visible if OTEL_LOG_LEVEL is set)
-  diag.info("OpenTelemetry SDK started", {
-    service: SERVICE_NAME,
-    otlpEndpoint: OTLP_ENDPOINT || "(console only)",
-    runtime: process.env.NEXT_RUNTIME || "nodejs",
-    spanProcessors: spanProcessors.length,
-    logProcessors: logRecordProcessors.length,
-  });
+// Log startup info (only visible if OTEL_LOG_LEVEL is set)
+diag.info("OpenTelemetry SDK started", {
+  service: SERVICE_NAME,
+  otlpEndpoint: OTLP_ENDPOINT || "(console only)",
+  runtime: process.env.NEXT_RUNTIME || "nodejs",
+  spanProcessors: spanProcessors.length,
+  logProcessors: logRecordProcessors.length,
+});
 
-  // Graceful shutdown on process exit
-  const shutdown = async () => {
-    try {
-      await sdk.shutdown();
-      diag.info("OpenTelemetry SDK shut down successfully");
-    } catch (error) {
-      diag.error("Error shutting down OpenTelemetry SDK", error);
-    }
-  };
+// Graceful shutdown on process exit
+const shutdown = async () => {
+  try {
+    await sdk.shutdown();
+    diag.info("OpenTelemetry SDK shut down successfully");
+  } catch (error) {
+    diag.error("Error shutting down OpenTelemetry SDK", error);
+  }
+};
 
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
-}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

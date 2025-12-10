@@ -9,14 +9,14 @@ import type { Instrumentation } from "next";
  * @see https://nextjs.org/docs/app/guides/open-telemetry
  * @see instrumentation.node.ts for the OpenTelemetry SDK configuration
  */
-export const register = async () => {
+export async function register() {
   // Only initialize OpenTelemetry in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
     // Dynamic import to avoid loading Node.js-specific code in Edge runtime
-    const { startOpenTelemetry } = await import("./instrumentation.node");
-    startOpenTelemetry();
+    // The SDK starts automatically on import
+    await import("./instrumentation.node");
   }
-};
+}
 
 /**
  * Handle uncaught errors in Next.js requests.

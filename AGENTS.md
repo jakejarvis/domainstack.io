@@ -287,8 +287,9 @@ Distributed tracing implementation using manual OpenTelemetry SDK setup for full
 
 ### Architecture
 - **Manual SDK setup**: `instrumentation.node.ts` initializes `NodeSDK` with explicit configuration (replaces `@vercel/otel`)
+- **Auto-instrumentation**: Uses `@opentelemetry/auto-instrumentations-node` for automatic HTTP/fetch/database tracing
 - **SimpleSpanProcessor**: Uses immediate export (not batched) for serverless compatibility
-- **Console + OTLP exporters**: Console always enabled for Vercel dashboard; OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+- **Console + OTLP exporters**: Console enabled in development; OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
 - **tRPC middleware**: Creates spans for all tRPC procedures in `trpc/init.ts`
 - **Service layer**: All major services wrapped with `withSpan()` from `lib/tracing.ts`
 - **HTTP utilities**: Fetch operations instrumented in `lib/fetch.ts` and `lib/fetch-remote-asset.ts`
