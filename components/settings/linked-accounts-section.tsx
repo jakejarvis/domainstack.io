@@ -31,8 +31,6 @@ export function LinkedAccountsSection() {
 
   // Handle auth callback errors/success from URL params (account linking)
   useAuthCallback({
-    context: "link",
-    successParam: "linked",
     successMessage: "Account linked successfully",
   });
 

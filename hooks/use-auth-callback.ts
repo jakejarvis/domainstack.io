@@ -16,15 +16,9 @@ interface UseAuthCallbackOptions {
 
   /**
    * The query param name that indicates success.
-   * @default "linked" for account linking, but can be customized
+   * @default "linked"
    */
   successParam?: string;
-
-  /**
-   * Context for the auth callback (used for better error messages).
-   * @default "auth"
-   */
-  context?: "auth" | "link";
 }
 
 /**
@@ -36,19 +30,18 @@ interface UseAuthCallbackOptions {
  * - Cleans up auth-related query params from the URL
  *
  * @example
- * // In dashboard (sign-in callbacks)
- * useAuthCallback({ context: "auth" });
+ * // In login page (sign-in callbacks)
+ * useAuthCallback();
  *
  * @example
  * // In settings (account linking callbacks)
  * useAuthCallback({
- *   context: "link",
  *   successParam: "linked",
  *   successMessage: "Account linked successfully",
  * });
  */
 export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
-  const { successMessage, successParam = "linked", context = "auth" } = options;
+  const { successMessage, successParam = "linked" } = options;
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,21 +65,14 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
       const errorMessage = getAuthErrorMessage(error);
       const isLinkError = isAccountLinkingError(error);
 
-      // Choose title based on error type and context
-      let title: string;
-      if (isLinkError) {
-        title = "Failed to link account";
-      } else if (context === "link") {
-        title = "Failed to link account";
-      } else {
-        title = "Sign in failed";
-      }
+      // Title based on error type
+      const title = isLinkError ? "Failed to link account" : "Sign in failed";
 
       toast.error(title, {
         description: errorMessage,
       });
 
-      logger.warn("Auth callback error", { error, context, isLinkError });
+      logger.warn("Auth callback error", { error, isLinkError });
     }
 
     if (success === "true" && successMessage) {
@@ -101,5 +87,5 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}) {
     const newUrl =
       window.location.pathname + (newSearch ? `?${newSearch}` : "");
     router.replace(newUrl, { scroll: false });
-  }, [router, searchParams, successParam, successMessage, context]);
+  }, [router, searchParams, successParam, successMessage]);
 }

@@ -26,7 +26,7 @@ export function LoginContent({
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   // Handle auth callback errors (e.g., OAuth failures redirect here with ?error=...)
-  useAuthCallback({ context: "auth" });
+  useAuthCallback();
 
   const content = (
     <div className="flex flex-col items-center p-6">
