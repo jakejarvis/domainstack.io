@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
-import { getOrGenerateCorrelationId } from "@/lib/logger/correlation";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -32,16 +31,6 @@ export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
   const ip = await resolveRequestIp();
 
-  // Extract correlation ID from header (set by middleware)
-  // Fallback to generation if missing (tests, scripts, non-middleware scenarios)
-  let correlationId: string | undefined;
-  try {
-    const headerList = await headers();
-    correlationId = getOrGenerateCorrelationId(headerList);
-  } catch {
-    // headers() not available (tests/scripts)
-  }
-
   // Get session if available (lazy-loaded to avoid circular deps)
   let session: { user: { id: string; name: string; email: string } } | null =
     null;
@@ -64,7 +53,7 @@ export const createContext = async (opts?: { req?: Request }) => {
     // Auth not available or error - session remains null
   }
 
-  return { req, ip, correlationId, session } as const;
+  return { req, ip, session } as const;
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
@@ -82,108 +71,100 @@ export const createCallerFactory = t.createCallerFactory;
 /**
  * Middleware to log the start, end, and duration of a procedure.
  * Creates OpenTelemetry spans for distributed tracing and performance monitoring.
- * All logs are structured JSON with OpenTelemetry tracing and correlation IDs.
+ * Logs are automatically correlated with traces via OpenTelemetry context.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, input, next, ctx }) => {
+const withLogging = t.middleware(async ({ path, type, input, next }) => {
   const start = performance.now();
 
-  // Import logger and correlation utilities (dynamic to avoid circular deps)
-  const { logger, withCorrelationId } = await import("@/lib/logger/server");
-  const { generateCorrelationId } = await import("@/lib/logger/correlation");
-
-  // Get correlation ID from context (set in createContext), or generate if missing
-  const correlationId = ctx.correlationId ?? generateCorrelationId();
+  // Import logger (dynamic to avoid circular deps)
+  const { logger } = await import("@/lib/logger/server");
 
   // Create OpenTelemetry span for distributed tracing using startActiveSpan
+  // This automatically propagates trace context to all logs within the span
   const tracer = trace.getTracer("trpc");
 
-  // Wrap the entire procedure execution in correlation ID context and span context
-  return withCorrelationId(correlationId, async () => {
-    return await tracer.startActiveSpan(
-      `trpc.${path}`,
-      {
-        attributes: {
-          "trpc.path": path,
-          "trpc.type": type,
-          "app.correlation_id": correlationId, // Link correlation ID to trace
-        },
+  return await tracer.startActiveSpan(
+    `trpc.${path}`,
+    {
+      attributes: {
+        "trpc.path": path,
+        "trpc.type": type,
       },
-      async (span) => {
-        // Log procedure start
-        logger.info("procedure start", {
+    },
+    async (span) => {
+      // Log procedure start (traceId/spanId automatically included via OpenTelemetry)
+      logger.info("procedure start", {
+        source: "trpc",
+        path,
+        type,
+        input: input && typeof input === "object" ? { ...input } : undefined,
+      });
+
+      try {
+        const result = await next();
+        const durationMs = Math.round(performance.now() - start);
+
+        // Add span attributes for successful completion
+        span.setAttribute("trpc.duration_ms", durationMs);
+        span.setAttribute("trpc.status", "ok");
+        span.setStatus({ code: SpanStatusCode.OK });
+
+        // Log successful completion
+        logger.info("procedure ok", {
           source: "trpc",
           path,
           type,
+          durationMs,
           input: input && typeof input === "object" ? { ...input } : undefined,
         });
 
-        try {
-          const result = await next();
-          const durationMs = Math.round(performance.now() - start);
-
-          // Add span attributes for successful completion
-          span.setAttribute("trpc.duration_ms", durationMs);
-          span.setAttribute("trpc.status", "ok");
-          span.setStatus({ code: SpanStatusCode.OK });
-
-          // Log successful completion
-          logger.info("procedure ok", {
-            source: "trpc",
-            path,
-            type,
-            durationMs,
-            input:
-              input && typeof input === "object" ? { ...input } : undefined,
-          });
-
-          // Track slow requests (>5s threshold) in PostHog
-          if (durationMs > 5000) {
-            span.setAttribute("trpc.slow_request", true);
-            logger.warn("slow request", {
-              source: "trpc",
-              path,
-              type,
-              durationMs,
-            });
-
-            const { analytics } = await import("@/lib/analytics/server");
-            analytics.track("trpc_slow_request", {
-              path,
-              type,
-              durationMs,
-            });
-          }
-
-          return result;
-        } catch (err) {
-          const durationMs = Math.round(performance.now() - start);
-
-          // Record exception and set error status on span
-          span.recordException(err as Error);
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: err instanceof Error ? err.message : String(err),
-          });
-          span.setAttribute("trpc.duration_ms", durationMs);
-          span.setAttribute("trpc.status", "error");
-
-          // Log error with full details
-          logger.error("procedure error", err, {
+        // Track slow requests (>5s threshold) in PostHog
+        if (durationMs > 5000) {
+          span.setAttribute("trpc.slow_request", true);
+          logger.warn("slow request", {
             source: "trpc",
             path,
             type,
             durationMs,
           });
 
-          // Re-throw the error to be handled by the error boundary
-          throw err;
-        } finally {
-          span.end();
+          const { analytics } = await import("@/lib/analytics/server");
+          analytics.track("trpc_slow_request", {
+            path,
+            type,
+            durationMs,
+          });
         }
-      },
-    );
-  });
+
+        return result;
+      } catch (err) {
+        const durationMs = Math.round(performance.now() - start);
+
+        // Record exception and set error status on span
+        span.recordException(err as Error);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err instanceof Error ? err.message : String(err),
+        });
+        span.setAttribute("trpc.duration_ms", durationMs);
+        span.setAttribute("trpc.status", "error");
+
+        // Log error with full details
+        logger.error("procedure error", err, {
+          source: "trpc",
+          path,
+          type,
+          durationMs,
+        });
+
+        // Re-throw the error to be handled by the error boundary
+        throw err;
+      } finally {
+        span.end();
+      }
+    },
+  );
 });
 
 /**

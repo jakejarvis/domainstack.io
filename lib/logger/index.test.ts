@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  createLogEntry,
-  formatLogEntry,
   getMinLogLevel,
   type Logger,
   type LogLevel,
@@ -89,80 +87,23 @@ describe("Logger Core", () => {
       expect(serialized.name).toBe("UnknownError");
       expect(serialized.message).toBe("string error");
     });
-  });
 
-  describe("createLogEntry", () => {
-    it("creates a basic log entry", () => {
-      const entry = createLogEntry("info", "Test message");
-
-      expect(entry.level).toBe("info");
-      expect(entry.message).toBe("Test message");
-      expect(entry.timestamp).toBeDefined();
-      expect(entry.environment).toBe("test");
+    it("handles null error", () => {
+      const serialized = serializeError(null);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("null");
     });
 
-    it("creates entries for all log levels", () => {
-      // Verifies createLogEntry works for all levels that logger.log() might use
-      const levels = [
-        "trace",
-        "debug",
-        "info",
-        "warn",
-        "error",
-        "fatal",
-      ] as const;
-
-      for (const level of levels) {
-        const entry = createLogEntry(level, `${level} message`);
-        expect(entry.level).toBe(level);
-        expect(entry.message).toBe(`${level} message`);
-        expect(entry.timestamp).toBeDefined();
-      }
+    it("handles undefined error", () => {
+      const serialized = serializeError(undefined);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("undefined");
     });
 
-    it("includes context", () => {
-      const entry = createLogEntry("info", "Test", {
-        context: { domain: "example.com" },
-      });
-
-      expect(entry.context).toEqual({
-        domain: "example.com",
-      });
-    });
-
-    it("includes serialized error", () => {
-      const error = new Error("Test error");
-      const entry = createLogEntry("error", "Error occurred", { error });
-
-      expect(entry.error?.name).toBe("Error");
-      expect(entry.error?.message).toBe("Test error");
-    });
-
-    it("includes correlation and trace IDs", () => {
-      const entry = createLogEntry("info", "Test", {
-        correlationId: "corr-123",
-        traceId: "trace-456",
-        spanId: "span-789",
-      });
-
-      expect(entry.correlationId).toBe("corr-123");
-      expect(entry.traceId).toBe("trace-456");
-      expect(entry.spanId).toBe("span-789");
-    });
-  });
-
-  describe("formatLogEntry", () => {
-    it("formats log entry as JSON string", () => {
-      const entry = createLogEntry("info", "Test message", {
-        context: { domain: "example.com" },
-      });
-
-      const formatted = formatLogEntry(entry);
-      const parsed = JSON.parse(formatted);
-
-      expect(parsed.level).toBe("info");
-      expect(parsed.message).toBe("Test message");
-      expect(parsed.context).toEqual({ domain: "example.com" });
+    it("handles number error", () => {
+      const serialized = serializeError(42);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("42");
     });
   });
 
@@ -225,6 +166,45 @@ describe("Logger Core", () => {
         method: "log",
         args: ["fatal", "fatal message", { source: "test" }],
       });
+    });
+
+    it("supports child logger creation", () => {
+      const calls: Array<{ method: string; args: unknown[] }> = [];
+
+      const mockLogger: Logger = {
+        log: (level: LogLevel, message: string, context?) => {
+          calls.push({ method: "log", args: [level, message, context] });
+        },
+        trace: (message, context?) => {
+          calls.push({ method: "trace", args: [message, context] });
+        },
+        debug: (message, context?) => {
+          calls.push({ method: "debug", args: [message, context] });
+        },
+        info: (message, context?) => {
+          calls.push({ method: "info", args: [message, context] });
+        },
+        warn: (message, context?) => {
+          calls.push({ method: "warn", args: [message, context] });
+        },
+        error: (message, errorOrContext?, context?) => {
+          calls.push({
+            method: "error",
+            args: [message, errorOrContext, context],
+          });
+        },
+        fatal: (message, errorOrContext?, context?) => {
+          calls.push({
+            method: "fatal",
+            args: [message, errorOrContext, context],
+          });
+        },
+        child: () => mockLogger,
+      };
+
+      const childLogger = mockLogger.child({ component: "test" });
+      expect(childLogger).toBeDefined();
+      expect(typeof childLogger.info).toBe("function");
     });
   });
 });

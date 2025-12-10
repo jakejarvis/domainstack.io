@@ -1,8 +1,25 @@
+import { logs } from "@opentelemetry/api-logs";
+import {
+  ConsoleLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from "@opentelemetry/sdk-logs";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
 export const register = () => {
+  // Traces/spans (existing)
   registerOTel({ serviceName: "domainstack" });
+
+  // Logs - Setup OpenTelemetry LoggerProvider with console exporter
+  // Vercel captures console output, so this provides automatic trace correlation
+  // while maintaining compatibility with Vercel's log aggregation.
+  // Can be swapped for OTLPLogExporter to send to external backends.
+  const loggerProvider = new LoggerProvider({
+    processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
+  });
+
+  logs.setGlobalLoggerProvider(loggerProvider);
 };
 
 export const onRequestError: Instrumentation.onRequestError = async (

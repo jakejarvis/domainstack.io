@@ -319,28 +319,6 @@ export function addSpanEvent(
   }
 }
 
-/**
- * Add correlation ID to the current span.
- * This creates a link between our custom correlation ID system and OpenTelemetry traces.
- *
- * Uses the `app.correlation_id` attribute name following OpenTelemetry best practices
- * for custom application-specific attributes.
- *
- * @example
- * ```typescript
- * import { getCorrelationId } from "@/lib/logger/server";
- * import { addCorrelationIdToSpan } from "@/lib/tracing";
- *
- * const correlationId = getCorrelationId();
- * if (correlationId) {
- *   addCorrelationIdToSpan(correlationId);
- * }
- * ```
- */
-export function addCorrelationIdToSpan(correlationId: string): void {
-  addSpanAttributes({ "app.correlation_id": correlationId });
-}
-
 // ============================================================================
 // Internal Helpers
 // ============================================================================

@@ -1,8 +1,9 @@
 /**
  * Core Logger - Unified structured logging interface
  *
- * Provides a consistent logging API across server and client environments
- * with support for OpenTelemetry tracing and correlation IDs.
+ * Provides a consistent logging API across server and client environments.
+ * Server-side uses OpenTelemetry Logs API for automatic trace correlation.
+ * Client-side uses structured console output with matching format.
  */
 
 // ============================================================================
@@ -12,18 +13,6 @@
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 
 export type LogContext = Record<string, unknown>;
-
-export interface LogEntry {
-  level: LogLevel;
-  message: string;
-  timestamp: string;
-  context?: LogContext;
-  error?: SerializedError;
-  correlationId?: string;
-  traceId?: string;
-  spanId?: string;
-  environment?: string;
-}
 
 export interface SerializedError {
   name: string;
@@ -114,6 +103,7 @@ export function shouldLog(
 
 /**
  * Serialize an error object for logging.
+ * Converts Error objects to a structured format suitable for log attributes.
  */
 export function serializeError(error: unknown): SerializedError {
   if (error instanceof Error) {
@@ -130,60 +120,4 @@ export function serializeError(error: unknown): SerializedError {
     name: "UnknownError",
     message: String(error),
   };
-}
-
-/**
- * Format a log entry as JSON string for output.
- */
-export function formatLogEntry(entry: LogEntry): string {
-  return JSON.stringify(entry);
-}
-
-/**
- * Create a structured log entry with all metadata.
- */
-export function createLogEntry(
-  level: LogLevel,
-  message: string,
-  options?: {
-    context?: LogContext;
-    error?: Error | unknown;
-    correlationId?: string;
-    traceId?: string;
-    spanId?: string;
-  },
-): LogEntry {
-  const entry: LogEntry = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-  };
-
-  // Add context if present
-  if (options?.context && Object.keys(options.context).length > 0) {
-    entry.context = options.context;
-  }
-
-  // Add error if present
-  if (options?.error) {
-    entry.error = serializeError(options.error);
-  }
-
-  // Add correlation/trace IDs if present
-  if (options?.correlationId) {
-    entry.correlationId = options.correlationId;
-  }
-  if (options?.traceId) {
-    entry.traceId = options.traceId;
-  }
-  if (options?.spanId) {
-    entry.spanId = options.spanId;
-  }
-
-  // Add environment
-  if (process.env.NODE_ENV) {
-    entry.environment = process.env.NODE_ENV;
-  }
-
-  return entry;
 }

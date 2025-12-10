@@ -16,7 +16,7 @@
 - `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, registrations, screenshots, seo, tracked-domains, user-notification-preferences, user-subscription, users).
-- `lib/logger/` unified structured logging system with OpenTelemetry integration, correlation IDs, and PII-safe field filtering.
+- `lib/logger/` unified structured logging system using OpenTelemetry Logs API for automatic trace correlation and vendor-independent log export.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/schemas/` Zod schemas organized by domain.
@@ -62,6 +62,7 @@
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
+  - Mocks OpenTelemetry Logs API (`@opentelemetry/api-logs`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
@@ -328,27 +329,30 @@ trpc.domain.getHosting (tRPC middleware)
 ```
 
 ### Integration with Logging
-- Logger automatically extracts `traceId` and `spanId` via `trace.getActiveSpan()`
-- All spans include `app.correlation_id` attribute (from Vercel's `x-vercel-id` request ID)
-- Correlation IDs link logs and spans bidirectionally
-- See **Structured Logging** section for correlation ID propagation
+- Logger uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) which automatically includes trace context
+- `traceId` and `spanId` are automatically injected into log records from the active span
+- Logs and traces are correlated via OpenTelemetry's context propagation (no manual extraction needed)
+- See **Structured Logging** section for implementation details
 
 ## Structured Logging
 - Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
+- **Architecture:**
+  - Server-side uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) for automatic trace correlation
+  - Client-side uses structured console output with matching format (OpenTelemetry SDK is Node.js-only)
+  - LoggerProvider configured in `instrumentation.ts` with `ConsoleLogRecordExporter` (compatible with Vercel logs)
+  - Can be switched to OTLP exporter for external backends (Grafana, Datadog, etc.) via environment variables
 - **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create service logger: `const logger = createLogger({ source: "dns" })`
-  - Automatic OpenTelemetry trace/span ID injection from `@vercel/otel`
-  - Correlation ID tracking via AsyncLocalStorage for request tracing
-  - Critical errors automatically tracked in PostHog via `after()`
+  - Automatic trace/span ID injection via OpenTelemetry context (no manual extraction)
+  - Critical errors automatically tracked in PostHog
   - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
 - **Client-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/client"`
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
   - Errors automatically tracked in PostHog
   - Console output only in development (info/debug) and always for errors
-  - Correlation IDs extracted from Vercel's `x-vercel-id` header (request ID portion)
-- **Log format:** Structured JSON with consistent fields (level, message, timestamp, context, correlationId, traceId, spanId, environment).
+- **Log format:** OpenTelemetry LogRecord format with fields: `severityNumber`, `severityText`, `body`, `attributes`, `traceId`, `spanId`, `timestamp`.
 - **Usage examples:**
   ```typescript
   // Server (service layer)
@@ -364,6 +368,7 @@ trpc.domain.getHosting (tRPC middleware)
   logger.info("search initiated", { domain: query });
   logger.error("search failed", error, { domain: query });
   ```
-- **Correlation IDs:** Extracted from Vercel's `x-vercel-id` header (format: `region::deployment::requestId` - we use the request ID portion). Client-side loggers generate their own correlation IDs independently. Enables request tracing on the server side using Vercel's built-in request tracking.
-- **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with correlation IDs and OpenTelemetry context.
-- **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
+- **Trace correlation:** Logs are automatically correlated with traces via OpenTelemetry's context propagation. The `traceId` from the active span is included in every log record, enabling end-to-end request tracing.
+- **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with OpenTelemetry context.
+- **Vendor independence:** Logs can be exported to any OpenTelemetry-compatible backend by configuring `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`.
+- **Testing:** Logger and OpenTelemetry Logs API mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
