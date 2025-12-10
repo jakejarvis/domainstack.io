@@ -76,7 +76,7 @@ const getHeadersImpl = withSpan(
     }
 
     const REQUEST_TIMEOUT_MS = 5000;
-    const MAX_BYTES = 256 * 1024; // headers only; keep body small
+    const MAX_BYTES = 512 * 1024; // headers only; keep body small
     const allowedHosts = [domain, `www.${domain}`];
     try {
       const final = await fetchRemoteAsset({
