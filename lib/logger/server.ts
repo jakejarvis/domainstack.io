@@ -1,13 +1,18 @@
 import "server-only";
 
-import { trace } from "@opentelemetry/api";
 import {
-  createLogEntry,
-  formatLogEntry,
+  logs,
+  type Logger as OtelLogger,
+  SeverityNumber,
+} from "@opentelemetry/api-logs";
+import {
+  type LogAttributes,
   type LogContext,
   type Logger,
   type LogLevel,
   parseLogLevel,
+  sanitizeAttributes,
+  serializeError,
   shouldLog,
 } from "@/lib/logger";
 
@@ -15,67 +20,29 @@ import {
  * Server-side logger with OpenTelemetry integration.
  *
  * Features:
- * - OpenTelemetry trace/span ID extraction
- * - Correlation ID support
- * - PostHog integration for critical events
+ * - OpenTelemetry Logs API for automatic trace/span correlation
+ * - Vendor-independent (can export to any OTLP-compatible backend)
  * - Environment-based log level filtering
- * - Compatible with Vercel logs
+ * - PostHog integration for critical events
+ * - Compatible with Vercel logs (via ConsoleLogRecordExporter)
  */
 
 // ============================================================================
-// Context Management
-// ============================================================================
-
-// AsyncLocalStorage for correlation ID propagation
-import { AsyncLocalStorage } from "node:async_hooks";
-
-const correlationIdStorage = new AsyncLocalStorage<string>();
-
-/**
- * Set correlation ID for the current async context.
- * This allows propagating the ID through async operations.
- */
-export function setCorrelationId(id: string): void {
-  correlationIdStorage.enterWith(id);
-}
-
-/**
- * Get correlation ID from the current async context.
- */
-export function getCorrelationId(): string | undefined {
-  return correlationIdStorage.getStore();
-}
-
-/**
- * Run a function with a specific correlation ID context.
- */
-export function withCorrelationId<T>(id: string, fn: () => T): T {
-  return correlationIdStorage.run(id, fn);
-}
-
-// ============================================================================
-// OpenTelemetry Integration
+// OpenTelemetry Severity Mapping
 // ============================================================================
 
 /**
- * Extract OpenTelemetry trace and span IDs from the current context.
- * Uses the active span to automatically capture the current trace context.
+ * Map LogLevel to OpenTelemetry SeverityNumber.
+ * See: https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
  */
-function getTraceContext(): { traceId?: string; spanId?: string } {
-  try {
-    const span = trace.getActiveSpan();
-    if (span) {
-      const spanContext = span.spanContext();
-      return {
-        traceId: spanContext.traceId,
-        spanId: spanContext.spanId,
-      };
-    }
-  } catch {
-    // OpenTelemetry not available or not configured
-  }
-  return {};
-}
+const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
+  trace: SeverityNumber.TRACE,
+  debug: SeverityNumber.DEBUG,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+  fatal: SeverityNumber.FATAL,
+};
 
 // ============================================================================
 // Logger Implementation
@@ -83,6 +50,7 @@ function getTraceContext(): { traceId?: string; spanId?: string } {
 
 class ServerLogger implements Logger {
   private minLevel: LogLevel;
+  private otelLogger: OtelLogger;
 
   constructor(minLevel?: LogLevel) {
     // Default to environment-based level, but allow override
@@ -94,6 +62,10 @@ class ServerLogger implements Logger {
         : process.env.NODE_ENV === "development"
           ? "debug"
           : "info");
+
+    // Get OpenTelemetry logger instance
+    // The LoggerProvider is configured in instrumentation.ts
+    this.otelLogger = logs.getLogger("domainstack");
   }
 
   private logInternal(
@@ -106,35 +78,14 @@ class ServerLogger implements Logger {
     }
 
     try {
-      const { traceId, spanId } = getTraceContext();
-      const correlationId = getCorrelationId();
-
-      const entry = createLogEntry(level, message, {
-        context,
-        correlationId,
-        traceId,
-        spanId,
+      // Emit log record via OpenTelemetry
+      // TraceId/SpanId are automatically added by the SDK from the active span context
+      this.otelLogger.emit({
+        severityNumber: SEVERITY_MAP[level],
+        severityText: level.toUpperCase(),
+        body: message,
+        attributes: sanitizeAttributes(context),
       });
-
-      const formatted = formatLogEntry(entry);
-
-      // Output to appropriate console method
-      switch (level) {
-        case "trace":
-        case "debug":
-          console.debug(formatted);
-          break;
-        case "info":
-          console.info(formatted);
-          break;
-        case "warn":
-          console.warn(formatted);
-          break;
-        case "error":
-        case "fatal":
-          console.error(formatted);
-          break;
-      }
     } catch (err) {
       // Logging should never crash the application
       console.error("[logger] failed to log:", err);
@@ -161,33 +112,35 @@ class ServerLogger implements Logger {
         : (errorOrContext as LogContext | undefined);
 
     try {
-      const { traceId, spanId } = getTraceContext();
-      const correlationId = getCorrelationId();
+      // Build attributes including serialized error if present
+      const attributes: LogAttributes = {
+        ...sanitizeAttributes(finalContext),
+      };
 
-      const entry = createLogEntry(level, message, {
-        context: finalContext,
-        error,
-        correlationId,
-        traceId,
-        spanId,
-      });
-
-      const formatted = formatLogEntry(entry);
-
-      // Output to console
-      switch (level) {
-        case "error":
-        case "fatal":
-          console.error(formatted);
-          break;
-        default:
-          console.log(formatted);
-          break;
+      // Add serialized error to attributes
+      if (error) {
+        const serialized = serializeError(error);
+        attributes["error.name"] = serialized.name;
+        attributes["error.message"] = serialized.message;
+        if (serialized.stack) {
+          attributes["error.stack"] = serialized.stack;
+        }
+        if (serialized.cause !== undefined) {
+          attributes["error.cause"] = String(serialized.cause);
+        }
       }
+
+      // Emit log record via OpenTelemetry
+      this.otelLogger.emit({
+        severityNumber: SEVERITY_MAP[level],
+        severityText: level.toUpperCase(),
+        body: message,
+        attributes,
+      });
 
       // Track critical errors in PostHog (async, non-blocking)
       if ((level === "error" || level === "fatal") && error instanceof Error) {
-        this.trackErrorInPostHog(error, finalContext, correlationId);
+        this.trackErrorInPostHog(error, finalContext);
       }
     } catch (err) {
       // Logging should never crash the application
@@ -195,11 +148,7 @@ class ServerLogger implements Logger {
     }
   }
 
-  private trackErrorInPostHog(
-    error: Error,
-    context?: LogContext,
-    correlationId?: string,
-  ): void {
+  private trackErrorInPostHog(error: Error, context?: LogContext): void {
     try {
       // Import analytics directly - the trackException method already handles
       // wrapping itself in after() where appropriate, so we don't double-wrap here
@@ -207,7 +156,6 @@ class ServerLogger implements Logger {
         .then(({ analytics }) => {
           analytics.trackException(error, {
             ...context,
-            correlationId,
             source: "logger",
           });
         })

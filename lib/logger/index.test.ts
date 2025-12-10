@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  createLogEntry,
-  formatLogEntry,
   getMinLogLevel,
   type Logger,
   type LogLevel,
@@ -89,90 +87,38 @@ describe("Logger Core", () => {
       expect(serialized.name).toBe("UnknownError");
       expect(serialized.message).toBe("string error");
     });
-  });
 
-  describe("createLogEntry", () => {
-    it("creates a basic log entry", () => {
-      const entry = createLogEntry("info", "Test message");
-
-      expect(entry.level).toBe("info");
-      expect(entry.message).toBe("Test message");
-      expect(entry.timestamp).toBeDefined();
-      expect(entry.environment).toBe("test");
+    it("handles null error", () => {
+      const serialized = serializeError(null);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("null");
     });
 
-    it("creates entries for all log levels", () => {
-      // Verifies createLogEntry works for all levels that logger.log() might use
-      const levels = [
-        "trace",
-        "debug",
-        "info",
-        "warn",
-        "error",
-        "fatal",
-      ] as const;
-
-      for (const level of levels) {
-        const entry = createLogEntry(level, `${level} message`);
-        expect(entry.level).toBe(level);
-        expect(entry.message).toBe(`${level} message`);
-        expect(entry.timestamp).toBeDefined();
-      }
+    it("handles undefined error", () => {
+      const serialized = serializeError(undefined);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("undefined");
     });
 
-    it("includes context", () => {
-      const entry = createLogEntry("info", "Test", {
-        context: { domain: "example.com" },
-      });
-
-      expect(entry.context).toEqual({
-        domain: "example.com",
-      });
-    });
-
-    it("includes serialized error", () => {
-      const error = new Error("Test error");
-      const entry = createLogEntry("error", "Error occurred", { error });
-
-      expect(entry.error?.name).toBe("Error");
-      expect(entry.error?.message).toBe("Test error");
-    });
-
-    it("includes correlation and trace IDs", () => {
-      const entry = createLogEntry("info", "Test", {
-        correlationId: "corr-123",
-        traceId: "trace-456",
-        spanId: "span-789",
-      });
-
-      expect(entry.correlationId).toBe("corr-123");
-      expect(entry.traceId).toBe("trace-456");
-      expect(entry.spanId).toBe("span-789");
-    });
-  });
-
-  describe("formatLogEntry", () => {
-    it("formats log entry as JSON string", () => {
-      const entry = createLogEntry("info", "Test message", {
-        context: { domain: "example.com" },
-      });
-
-      const formatted = formatLogEntry(entry);
-      const parsed = JSON.parse(formatted);
-
-      expect(parsed.level).toBe("info");
-      expect(parsed.message).toBe("Test message");
-      expect(parsed.context).toEqual({ domain: "example.com" });
+    it("handles number error", () => {
+      const serialized = serializeError(42);
+      expect(serialized.name).toBe("UnknownError");
+      expect(serialized.message).toBe("42");
     });
   });
 
   describe("Logger interface", () => {
-    it("includes log method for dynamic level dispatch", () => {
-      // Create a mock logger that satisfies the Logger interface
-      // This verifies the interface shape at compile-time and runtime
+    /**
+     * Factory to create a mock logger that satisfies the Logger interface.
+     * Returns both the logger and its call log for assertions.
+     */
+    function createMockLogger(): {
+      logger: Logger;
+      calls: Array<{ method: string; args: unknown[] }>;
+    } {
       const calls: Array<{ method: string; args: unknown[] }> = [];
 
-      const mockLogger: Logger = {
+      const logger: Logger = {
         log: (level: LogLevel, message: string, context?) => {
           calls.push({ method: "log", args: [level, message, context] });
         },
@@ -200,8 +146,14 @@ describe("Logger Core", () => {
             args: [message, errorOrContext, context],
           });
         },
-        child: () => mockLogger,
+        child: () => logger,
       };
+
+      return { logger, calls };
+    }
+
+    it("includes log method for dynamic level dispatch", () => {
+      const { logger, calls } = createMockLogger();
 
       // Verify log method can be called with all levels
       const levels: LogLevel[] = [
@@ -213,7 +165,7 @@ describe("Logger Core", () => {
         "fatal",
       ];
       for (const level of levels) {
-        mockLogger.log(level, `${level} message`, { source: "test" });
+        logger.log(level, `${level} message`, { source: "test" });
       }
 
       expect(calls).toHaveLength(6);
@@ -225,6 +177,14 @@ describe("Logger Core", () => {
         method: "log",
         args: ["fatal", "fatal message", { source: "test" }],
       });
+    });
+
+    it("supports child logger creation", () => {
+      const { logger } = createMockLogger();
+
+      const childLogger = logger.child({ component: "test" });
+      expect(childLogger).toBeDefined();
+      expect(typeof childLogger.info).toBe("function");
     });
   });
 });

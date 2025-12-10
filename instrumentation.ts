@@ -1,8 +1,18 @@
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
 export const register = () => {
-  registerOTel({ serviceName: "domainstack" });
+  // Default: @vercel/otel outputs logs to console (Vercel captures automatically)
+  // OTLP: Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT and OTEL_EXPORTER_OTLP_LOGS_HEADERS
+  //       to send to any OTLP-compatible backend (PostHog, Grafana, Datadog, etc.)
+  registerOTel({
+    serviceName: "domainstack",
+    ...(process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT && {
+      logRecordProcessors: [new BatchLogRecordProcessor(new OTLPLogExporter())],
+    }),
+  });
 };
 
 export const onRequestError: Instrumentation.onRequestError = async (

@@ -22,46 +22,43 @@ vi.mock("@/lib/analytics/client", () => ({
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));
 
-// Mock logger to avoid noise in tests
-vi.mock("@/lib/logger/server", () => ({
-  logger: {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
+// Mock OpenTelemetry Logs API to avoid actual logging in tests
+vi.mock("@opentelemetry/api-logs", () => ({
+  logs: {
+    getLogger: vi.fn(() => ({
+      emit: vi.fn(),
+    })),
   },
-  createLogger: vi.fn(() => ({
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-  })),
-  setCorrelationId: vi.fn(),
-  getCorrelationId: vi.fn(() => undefined),
-  withCorrelationId: vi.fn((_id: string, fn: () => unknown) => fn()),
+  SeverityNumber: {
+    TRACE: 1,
+    DEBUG: 5,
+    INFO: 9,
+    WARN: 13,
+    ERROR: 17,
+    FATAL: 21,
+  },
+}));
+
+// Mock logger to avoid noise in tests
+const createMockLogger = () => ({
+  log: vi.fn(),
+  trace: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  child: vi.fn(() => createMockLogger()),
+});
+
+vi.mock("@/lib/logger/server", () => ({
+  logger: createMockLogger(),
+  createLogger: vi.fn(() => createMockLogger()),
 }));
 
 vi.mock("@/lib/logger/client", () => ({
-  logger: {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-  },
-  createLogger: vi.fn(() => ({
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-  })),
+  logger: createMockLogger(),
+  createLogger: vi.fn(() => createMockLogger()),
 }));
 
 // Mock Next.js after() to execute callbacks immediately in tests

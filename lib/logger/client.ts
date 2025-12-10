@@ -1,25 +1,40 @@
 "use client";
 
 import {
-  createLogEntry,
-  formatLogEntry,
   type LogContext,
   type Logger,
   type LogLevel,
+  sanitizeAttributes,
+  serializeError,
   shouldLog,
 } from "@/lib/logger";
-import { generateCorrelationId } from "@/lib/logger/correlation";
 
 /**
- * Client-side logger with PostHog integration.
+ * Client-side logger with structured output.
  *
  * Features:
- * - Console output for debug/info in development
+ * - Structured JSON logging format (consistent with server)
+ * - Environment-based log level filtering
  * - PostHog error tracking for exceptions
- * - Correlation ID support
- * - Browser context (user agent, viewport)
  * - Graceful degradation (never crashes)
+ *
+ * Note: Unlike server-side, client-side doesn't use OpenTelemetry SDK
+ * (which is Node.js-only). Logs are output directly to console in a
+ * structured format that matches the server-side OpenTelemetry output.
  */
+
+// ============================================================================
+// Severity Mapping (matches OpenTelemetry SeverityNumber for consistency)
+// ============================================================================
+
+const SEVERITY_MAP: Record<LogLevel, number> = {
+  trace: 1, // SeverityNumber.TRACE
+  debug: 5, // SeverityNumber.DEBUG
+  info: 9, // SeverityNumber.INFO
+  warn: 13, // SeverityNumber.WARN
+  error: 17, // SeverityNumber.ERROR
+  fatal: 21, // SeverityNumber.FATAL
+};
 
 // ============================================================================
 // Logger Implementation
@@ -27,21 +42,28 @@ import { generateCorrelationId } from "@/lib/logger/correlation";
 
 class ClientLogger implements Logger {
   private minLevel: LogLevel;
-  private correlationId: string | undefined;
 
   constructor(minLevel?: LogLevel) {
     // Default to environment-based level
     this.minLevel =
       minLevel || (process.env.NODE_ENV === "development" ? "debug" : "info");
+  }
 
-    // Generate correlation ID for this logger instance
-    if (typeof window !== "undefined") {
-      try {
-        this.correlationId = generateCorrelationId();
-      } catch {
-        // Gracefully handle any errors
-      }
-    }
+  private formatLogRecord(
+    level: LogLevel,
+    message: string,
+    attributes?: Record<string, unknown>,
+  ): string {
+    const record = {
+      timestamp: new Date().toISOString(),
+      severityNumber: SEVERITY_MAP[level],
+      severityText: level.toUpperCase(),
+      body: message,
+      ...(attributes && Object.keys(attributes).length > 0
+        ? { attributes }
+        : {}),
+    };
+    return JSON.stringify(record);
   }
 
   private logInternal(
@@ -54,12 +76,11 @@ class ClientLogger implements Logger {
     }
 
     try {
-      const entry = createLogEntry(level, message, {
-        context,
-        correlationId: this.correlationId,
-      });
-
-      const formatted = formatLogEntry(entry);
+      const formatted = this.formatLogRecord(
+        level,
+        message,
+        sanitizeAttributes(context),
+      );
 
       // Output to appropriate console method
       // Only log to console in development to avoid noise in production
@@ -107,13 +128,25 @@ class ClientLogger implements Logger {
         : (errorOrContext as LogContext | undefined);
 
     try {
-      const entry = createLogEntry(level, message, {
-        context: finalContext,
-        error,
-        correlationId: this.correlationId,
-      });
+      // Build attributes including serialized error if present
+      const attributes: Record<string, unknown> = {
+        ...sanitizeAttributes(finalContext),
+      };
 
-      const formatted = formatLogEntry(entry);
+      // Add serialized error to attributes
+      if (error) {
+        const serialized = serializeError(error);
+        attributes["error.name"] = serialized.name;
+        attributes["error.message"] = serialized.message;
+        if (serialized.stack) {
+          attributes["error.stack"] = serialized.stack;
+        }
+        if (serialized.cause !== undefined) {
+          attributes["error.cause"] = String(serialized.cause);
+        }
+      }
+
+      const formatted = this.formatLogRecord(level, message, attributes);
 
       // Always output errors to console (even in production for debugging)
       console.error(formatted);
@@ -135,7 +168,6 @@ class ClientLogger implements Logger {
         .then(({ analytics }) => {
           analytics.trackException(error, {
             ...context,
-            correlationId: this.correlationId,
             source: "logger",
           });
         })

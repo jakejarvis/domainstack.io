@@ -75,7 +75,7 @@ export function withSpan<TArgs extends unknown[], TReturn>(
     // Determine span options (static or dynamic based on args)
     const spanOptions = typeof options === "function" ? options(args) : options;
 
-    const tracer = trace.getTracer("service-layer");
+    const tracer = trace.getTracer("domainstack");
 
     // Use startActiveSpan for automatic context propagation
     return await tracer.startActiveSpan(
@@ -132,7 +132,7 @@ export function withSpanSync<TArgs extends unknown[], TReturn>(
   return (...args: TArgs): TReturn => {
     const spanOptions = typeof options === "function" ? options(args) : options;
 
-    const tracer = trace.getTracer("service-layer");
+    const tracer = trace.getTracer("domainstack");
 
     // Use startActiveSpan for automatic context propagation (synchronous version)
     let result: TReturn | undefined;
@@ -194,7 +194,7 @@ export async function withChildSpan<T>(
   options: SpanOptions,
   fn: () => Promise<T>,
 ): Promise<T> {
-  const tracer = trace.getTracer("service-layer");
+  const tracer = trace.getTracer("domainstack");
 
   // Use startActiveSpan for automatic parent-child relationship
   return await tracer.startActiveSpan(
@@ -224,7 +224,7 @@ export async function withChildSpan<T>(
  * Synchronous version of withChildSpan.
  */
 export function withChildSpanSync<T>(options: SpanOptions, fn: () => T): T {
-  const tracer = trace.getTracer("service-layer");
+  const tracer = trace.getTracer("domainstack");
 
   let result: T | undefined;
   let error: unknown;
@@ -317,28 +317,6 @@ export function addSpanEvent(
     // No attributes provided
     span.addEvent(name);
   }
-}
-
-/**
- * Add correlation ID to the current span.
- * This creates a link between our custom correlation ID system and OpenTelemetry traces.
- *
- * Uses the `app.correlation_id` attribute name following OpenTelemetry best practices
- * for custom application-specific attributes.
- *
- * @example
- * ```typescript
- * import { getCorrelationId } from "@/lib/logger/server";
- * import { addCorrelationIdToSpan } from "@/lib/tracing";
- *
- * const correlationId = getCorrelationId();
- * if (correlationId) {
- *   addCorrelationIdToSpan(correlationId);
- * }
- * ```
- */
-export function addCorrelationIdToSpan(correlationId: string): void {
-  addSpanAttributes({ "app.correlation_id": correlationId });
 }
 
 // ============================================================================

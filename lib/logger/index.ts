@@ -1,8 +1,9 @@
 /**
  * Core Logger - Unified structured logging interface
  *
- * Provides a consistent logging API across server and client environments
- * with support for OpenTelemetry tracing and correlation IDs.
+ * Provides a consistent logging API across server and client environments.
+ * Server-side uses OpenTelemetry Logs API for automatic trace correlation.
+ * Client-side uses structured console output with matching format.
  */
 
 // ============================================================================
@@ -12,18 +13,6 @@
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 
 export type LogContext = Record<string, unknown>;
-
-export interface LogEntry {
-  level: LogLevel;
-  message: string;
-  timestamp: string;
-  context?: LogContext;
-  error?: SerializedError;
-  correlationId?: string;
-  traceId?: string;
-  spanId?: string;
-  environment?: string;
-}
 
 export interface SerializedError {
   name: string;
@@ -114,6 +103,7 @@ export function shouldLog(
 
 /**
  * Serialize an error object for logging.
+ * Converts Error objects to a structured format suitable for log attributes.
  */
 export function serializeError(error: unknown): SerializedError {
   if (error instanceof Error) {
@@ -133,57 +123,55 @@ export function serializeError(error: unknown): SerializedError {
 }
 
 /**
- * Format a log entry as JSON string for output.
+ * OpenTelemetry-compatible attribute value types.
+ * Matches AnyValueMap from @opentelemetry/api-logs.
  */
-export function formatLogEntry(entry: LogEntry): string {
-  return JSON.stringify(entry);
-}
+export type LogAttributes = Record<
+  string,
+  string | number | boolean | string[] | number[] | boolean[]
+>;
 
 /**
- * Create a structured log entry with all metadata.
+ * Sanitize context attributes for structured logging.
+ * OpenTelemetry only accepts primitive types and arrays of primitives.
+ * Complex types are JSON-stringified for compatibility.
  */
-export function createLogEntry(
-  level: LogLevel,
-  message: string,
-  options?: {
-    context?: LogContext;
-    error?: Error | unknown;
-    correlationId?: string;
-    traceId?: string;
-    spanId?: string;
-  },
-): LogEntry {
-  const entry: LogEntry = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-  };
-
-  // Add context if present
-  if (options?.context && Object.keys(options.context).length > 0) {
-    entry.context = options.context;
+export function sanitizeAttributes(
+  context?: LogContext,
+): LogAttributes | undefined {
+  if (!context || Object.keys(context).length === 0) {
+    return undefined;
   }
 
-  // Add error if present
-  if (options?.error) {
-    entry.error = serializeError(options.error);
+  const result: LogAttributes = {};
+  for (const [key, value] of Object.entries(context)) {
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    const type = typeof value;
+    if (type === "string" || type === "number" || type === "boolean") {
+      result[key] = value as string | number | boolean;
+    } else if (Array.isArray(value)) {
+      // Only include if all elements are primitives
+      if (
+        value.every(
+          (v) =>
+            typeof v === "string" ||
+            typeof v === "number" ||
+            typeof v === "boolean",
+        )
+      ) {
+        result[key] = value as string[] | number[] | boolean[];
+      } else {
+        // Stringify complex arrays
+        result[key] = JSON.stringify(value);
+      }
+    } else {
+      // Stringify objects
+      result[key] = JSON.stringify(value);
+    }
   }
 
-  // Add correlation/trace IDs if present
-  if (options?.correlationId) {
-    entry.correlationId = options.correlationId;
-  }
-  if (options?.traceId) {
-    entry.traceId = options.traceId;
-  }
-  if (options?.spanId) {
-    entry.spanId = options.spanId;
-  }
-
-  // Add environment
-  if (process.env.NODE_ENV) {
-    entry.environment = process.env.NODE_ENV;
-  }
-
-  return entry;
+  return Object.keys(result).length > 0 ? result : undefined;
 }
