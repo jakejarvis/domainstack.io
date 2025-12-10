@@ -38,6 +38,11 @@ export function LinkedAccountsSection() {
     const error = searchParams.get("error");
     const linked = searchParams.get("linked");
 
+    // Skip if no auth params to process
+    if (!error && !linked) {
+      return;
+    }
+
     if (error) {
       // Show error toast with user-friendly message
       const errorMessage = getAuthErrorMessage(error);
@@ -59,15 +64,13 @@ export function LinkedAccountsSection() {
     }
 
     // Clear auth-related params from URL while preserving others
-    if (error || linked) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("error");
-      params.delete("linked");
-      const newSearch = params.toString();
-      const newUrl =
-        window.location.pathname + (newSearch ? `?${newSearch}` : "");
-      router.replace(newUrl, { scroll: false });
-    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("error");
+    params.delete("linked");
+    const newSearch = params.toString();
+    const newUrl =
+      window.location.pathname + (newSearch ? `?${newSearch}` : "");
+    router.replace(newUrl, { scroll: false });
   }, [router, searchParams]);
 
   // Query for linked accounts
