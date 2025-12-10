@@ -400,18 +400,20 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Find all domains to archive from any page
-      const domainsToArchive: TrackedDomainWithDetails[] = [];
+      // Find all domains to archive from any page, deduplicated by id
+      // (multiple cached queries may have overlapping data)
+      const domainsToArchiveMap = new Map<string, TrackedDomainWithDetails>();
       for (const [, data] of previousDomainsQueries) {
         if (!data) continue;
         for (const page of data.pages) {
           for (const d of page.items) {
-            if (idsSet.has(d.id)) {
-              domainsToArchive.push(d);
+            if (idsSet.has(d.id) && !domainsToArchiveMap.has(d.id)) {
+              domainsToArchiveMap.set(d.id, d);
             }
           }
         }
       }
+      const domainsToArchive = Array.from(domainsToArchiveMap.values());
       const archiveDelta = domainsToArchive.length;
 
       // Move from active to archived - update all infinite query caches
@@ -472,18 +474,20 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count domains to delete from cache for consistent optimistic updates
-      let deleteDelta = 0;
+      // Count domains to delete from cache, deduplicated by id
+      // (multiple cached queries may have overlapping data)
+      const seenIds = new Set<string>();
       for (const [, data] of previousDomainsQueries) {
         if (!data) continue;
         for (const page of data.pages) {
           for (const d of page.items) {
             if (idsSet.has(d.id)) {
-              deleteDelta++;
+              seenIds.add(d.id);
             }
           }
         }
       }
+      const deleteDelta = seenIds.size;
 
       // Update all infinite query caches
       queryClient.setQueriesData<InfiniteDomainsData>(
