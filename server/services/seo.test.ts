@@ -11,6 +11,7 @@ const fetchRemoteAssetMock = vi.hoisted(() =>
     contentType: "image/png",
     finalUrl: "https://example.com/og.png",
     status: 200,
+    headers: { "content-type": "image/png" },
   })),
 );
 
@@ -90,7 +91,7 @@ beforeEach(async () => {
   ({ getSeo } = await import("./seo"));
 });
 
-function htmlResponse(html: string, url: string) {
+function _htmlResponse(html: string, url: string) {
   return {
     ok: true,
     status: 200,
@@ -100,7 +101,7 @@ function htmlResponse(html: string, url: string) {
   } as unknown as Response;
 }
 
-function textResponse(text: string, contentType = "text/plain") {
+function _textResponse(text: string, contentType = "text/plain") {
   return {
     ok: true,
     status: 200,
@@ -147,157 +148,191 @@ describe("getSeo", () => {
   });
 
   it("sets html error when non-HTML content-type returned", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
+    fetchRemoteAssetMock
       .mockResolvedValueOnce({
-        ok: true,
+        buffer: Buffer.from("{}"),
+        contentType: "application/json",
+        finalUrl: "https://example.com/",
         status: 200,
-        headers: new Headers({ "content-type": "application/json" }),
-        text: async () => "{}",
-        url: "https://example.com/",
-      } as unknown as Response)
-      .mockResolvedValueOnce(textResponse("", "text/plain"));
+        headers: { "content-type": "application/json" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(""),
+        contentType: "text/plain",
+        finalUrl: "https://nonhtml.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      });
 
     const out = await getSeo("nonhtml.invalid");
     expect(out.errors?.html).toMatch(/Non-HTML content-type/i);
-    fetchMock.mockRestore();
   });
 
   it("sets robots error when robots.txt non-text content-type", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(htmlResponse("<html></html>", "https://x/"))
-      .mockResolvedValueOnce(textResponse("{}", "application/json"));
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("<html></html>"),
+        contentType: "text/html",
+        finalUrl: "https://x/",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("{}"),
+        contentType: "application/json",
+        finalUrl: "https://robots-content.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
 
     const out = await getSeo("robots-content.invalid");
     expect(out.errors?.robots ?? "").toMatch(/Unexpected robots content-type/i);
-    fetchMock.mockRestore();
   });
 
   it("sets preview.imageUploaded to null when image fetch fails and preserves original", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        htmlResponse(
-          `<!doctype html><html><head>
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(`<!doctype html><html><head>
             <title>Site</title>
             <meta property="og:image" content="/og.png" />
-          </head></html>`,
-          "https://example.com/",
-        ),
-      )
-      .mockResolvedValueOnce(
-        textResponse("User-agent: *\nAllow: /", "text/plain"),
-      );
-    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("upload failed"));
+          </head></html>`),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("User-agent: *\nAllow: /"),
+        contentType: "text/plain",
+        finalUrl: "https://img-fail.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      })
+      .mockRejectedValueOnce(new Error("upload failed"));
 
     const out = await getSeo("img-fail.invalid");
     expect(out.preview?.image ?? "").toContain("/og.png");
     expect(out.preview?.imageUploaded ?? null).toBeNull();
-    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
-    fetchMock.mockRestore();
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(3);
   });
 
   it("filters out non-http(s) schemes during parsing (SSRF protection)", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        htmlResponse(
-          `<!doctype html><html><head>
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(`<!doctype html><html><head>
             <title>Site</title>
             <meta property="og:image" content="file:///etc/passwd" />
-          </head></html>`,
-          "https://example.com/",
-        ),
-      )
-      .mockResolvedValueOnce(
-        textResponse("User-agent: *\nAllow: /", "text/plain"),
-      );
+          </head></html>`),
+        contentType: "text/html",
+        finalUrl: "https://example.com/",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("User-agent: *\nAllow: /"),
+        contentType: "text/plain",
+        finalUrl: "https://ssrf-test.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      });
 
     const out = await getSeo("ssrf-test.invalid");
     // non-http(s) URLs are filtered during parsing via resolveUrlMaybe
     expect(out.preview?.image).toBeNull();
     expect(out.preview?.imageUploaded).toBeNull();
-    // Verify fetch was only called twice (HTML + robots.txt), never for the image
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    fetchMock.mockRestore();
+    // Verify fetchRemoteAsset was only called twice (HTML + robots.txt), never for the image
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(2);
   });
 
   it("resolves relative OG image URLs against base URL", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        htmlResponse(
-          `<!doctype html><html><head>
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(`<!doctype html><html><head>
             <title>Site</title>
             <meta property="og:image" content="/images/og.png" />
-          </head></html>`,
-          "https://example.com/page",
-        ),
-      )
-      .mockResolvedValueOnce(
-        textResponse("User-agent: *\nAllow: /", "text/plain"),
-      );
+          </head></html>`),
+        contentType: "text/html",
+        finalUrl: "https://example.com/page",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("User-agent: *\nAllow: /"),
+        contentType: "text/plain",
+        finalUrl: "https://relative-url.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from([1, 2, 3]),
+        contentType: "image/png",
+        finalUrl: "https://example.com/images/og.png",
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
 
     const out = await getSeo("relative-url.invalid");
     expect(out.preview?.image).toBe("https://example.com/images/og.png");
-    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
-    expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(3);
+    expect(fetchRemoteAssetMock).toHaveBeenNthCalledWith(
+      3,
       expect.objectContaining({
         url: "https://example.com/images/og.png",
       }),
     );
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    fetchMock.mockRestore();
   });
 
   it("skips OG image fetches that point directly to loopback IPs", async () => {
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        htmlResponse(
-          `<!doctype html><html><head>
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(`<!doctype html><html><head>
             <title>Site</title>
             <meta property="og:image" content="https://127.0.0.1/og.png" />
-          </head></html>`,
-          "https://limit.invalid/",
-        ),
-      )
-      .mockResolvedValueOnce(
-        textResponse("User-agent: *\nAllow: /", "text/plain"),
-      );
-    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("blocked"));
+          </head></html>`),
+        contentType: "text/html",
+        finalUrl: "https://limit.invalid/",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("User-agent: *\nAllow: /"),
+        contentType: "text/plain",
+        finalUrl: "https://loopback.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      })
+      .mockRejectedValueOnce(new Error("blocked"));
 
     const out = await getSeo("loopback.invalid");
     expect(out.preview?.imageUploaded).toBeNull();
-    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    fetchMock.mockRestore();
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(3);
   });
 
   it("skips OG image fetches when hostname resolves to a private IP", async () => {
     dnsLookupMock.mockResolvedValueOnce([{ address: "10.0.0.12", family: 4 }]);
 
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockResolvedValueOnce(
-        htmlResponse(
-          `<!doctype html><html><head>
+    fetchRemoteAssetMock
+      .mockResolvedValueOnce({
+        buffer: Buffer.from(`<!doctype html><html><head>
             <title>Site</title>
             <meta property="og:image" content="https://assets.example.com/og.png" />
-          </head></html>`,
-          "https://limit.invalid/",
-        ),
-      )
-      .mockResolvedValueOnce(
-        textResponse("User-agent: *\nAllow: /", "text/plain"),
-      );
-    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("blocked"));
+          </head></html>`),
+        contentType: "text/html",
+        finalUrl: "https://limit.invalid/",
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+      .mockResolvedValueOnce({
+        buffer: Buffer.from("User-agent: *\nAllow: /"),
+        contentType: "text/plain",
+        finalUrl: "https://private-resolve.invalid/robots.txt",
+        status: 200,
+        headers: { "content-type": "text/plain" },
+      })
+      .mockRejectedValueOnce(new Error("blocked"));
 
     const out = await getSeo("private-resolve.invalid");
     expect(out.preview?.imageUploaded).toBeNull();
-    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    fetchMock.mockRestore();
+    expect(fetchRemoteAssetMock).toHaveBeenCalledTimes(3);
   });
 });

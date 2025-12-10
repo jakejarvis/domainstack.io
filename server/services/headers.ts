@@ -7,7 +7,7 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
-import { fetchWithSelectiveRedirects } from "@/lib/fetch";
+import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Header, HeadersResponse } from "@/lib/schemas";
@@ -76,19 +76,22 @@ const getHeadersImpl = withSpan(
     }
 
     const REQUEST_TIMEOUT_MS = 5000;
+    const MAX_BYTES = 256 * 1024; // headers only; keep body small
+    const allowedHosts = [domain, `www.${domain}`];
     try {
-      // Use GET to ensure provider-identifying headers are present on first load.
-      // Only follow redirects between apex/www or http/https versions
-      const final = await fetchWithSelectiveRedirects(
+      const final = await fetchRemoteAsset({
         url,
-        { method: "GET" },
-        { timeoutMs: REQUEST_TIMEOUT_MS },
-      );
-
-      const headers: Header[] = [];
-      final.headers.forEach((value, name) => {
-        headers.push({ name, value });
+        allowHttp: true, // allow http fallback but still enforce IP allow list
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        maxBytes: MAX_BYTES,
+        maxRedirects: 5,
+        allowedHosts,
+        method: "GET",
       });
+
+      const headers: Header[] = Object.entries(final.headers).map(
+        ([name, value]) => ({ name, value }),
+      );
       const normalized = normalize(headers);
 
       // Persist to Postgres only if domain exists (i.e., is registered)

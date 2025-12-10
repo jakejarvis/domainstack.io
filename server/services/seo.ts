@@ -5,10 +5,6 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
-import {
-  fetchWithSelectiveRedirects,
-  fetchWithTimeoutAndRetry,
-} from "@/lib/fetch";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
@@ -138,32 +134,31 @@ export const getSeo = withSpan(
 
     let meta: ReturnType<typeof parseHtmlMeta> | null = null;
     let robots: ReturnType<typeof parseRobotsTxt> | null = null;
+    const allowedHosts = [domain, `www.${domain}`];
 
     // HTML fetch
     try {
-      const res = await fetchWithTimeoutAndRetry(
-        finalUrl,
-        {
-          method: "GET",
-          redirect: "follow",
-          headers: {
-            Accept:
-              "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en",
-            "User-Agent": USER_AGENT,
-          },
+      const htmlResult = await fetchRemoteAsset({
+        url: finalUrl,
+        allowHttp: true,
+        timeoutMs: 10000,
+        maxBytes: 512 * 1024,
+        maxRedirects: 5,
+        allowedHosts,
+        headers: {
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en",
+          "User-Agent": USER_AGENT,
         },
-        { timeoutMs: 10000, retries: 1, backoffMs: 200 },
-      );
-      status = res.status;
-      finalUrl = res.url;
-      const contentType = res.headers.get("content-type") ?? "";
+      });
+      status = htmlResult.status;
+      finalUrl = htmlResult.finalUrl;
+      const contentType = htmlResult.contentType ?? "";
       if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(contentType)) {
         htmlError = `Non-HTML content-type: ${contentType}`;
       } else {
-        const text = await res.text();
-        const max = 512 * 1024;
-        const html = text.length > max ? text.slice(0, max) : text;
+        const html = htmlResult.buffer.toString("utf-8");
         meta = parseHtmlMeta(html, finalUrl);
       }
     } catch (err) {
@@ -175,24 +170,25 @@ export const getSeo = withSpan(
     // Only follow redirects between apex/www or http/https versions
     try {
       const robotsUrl = `https://${domain}/robots.txt`;
-      const res = await fetchWithSelectiveRedirects(
-        robotsUrl,
-        {
-          method: "GET",
-          headers: { Accept: "text/plain", "User-Agent": USER_AGENT },
-        },
-        { timeoutMs: 8000 },
-      );
-      if (res.ok) {
-        const ct = res.headers.get("content-type") ?? "";
+      const robotsResult = await fetchRemoteAsset({
+        url: robotsUrl,
+        allowHttp: true,
+        timeoutMs: 8000,
+        maxBytes: 256 * 1024,
+        maxRedirects: 5,
+        allowedHosts,
+        headers: { Accept: "text/plain", "User-Agent": USER_AGENT },
+      });
+      if (robotsResult.status >= 200 && robotsResult.status < 300) {
+        const ct = robotsResult.contentType ?? "";
         if (/^text\/(plain|html|xml)?($|;|,)/i.test(ct)) {
-          const txt = await res.text();
+          const txt = robotsResult.buffer.toString("utf-8");
           robots = parseRobotsTxt(txt, { baseUrl: robotsUrl });
         } else {
           robotsError = `Unexpected robots content-type: ${ct}`;
         }
       } else {
-        robotsError = `HTTP ${res.status}`;
+        robotsError = `HTTP ${robotsResult.status}`;
       }
     } catch (err) {
       robotsError = String(err);

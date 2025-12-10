@@ -40,6 +40,9 @@ describe("fetchRemoteAsset", () => {
     expect(Buffer.isBuffer(result.buffer)).toBe(true);
     expect(result.contentType).toBe("image/png");
     expect(result.finalUrl).toBe("https://example.com/image.png");
+    expect(result.headers).toEqual({
+      "content-type": "image/png",
+    });
   });
 
   it("rejects http URLs when allowHttp not set", async () => {
@@ -113,5 +116,80 @@ describe("fetchRemoteAsset", () => {
     ).rejects.toMatchObject({
       code: "size_exceeded",
     } satisfies Partial<RemoteAssetError>);
+  });
+
+  it("supports HEAD method", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 200,
+        headers: {
+          "content-type": "image/png",
+          "content-length": "1234",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/image.png",
+      method: "HEAD",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com/image.png",
+      expect.objectContaining({
+        method: "HEAD",
+      }),
+    );
+    expect(result.headers).toEqual({
+      "content-type": "image/png",
+      "content-length": "1234",
+    });
+  });
+
+  it("defaults to GET method when not specified", async () => {
+    const body = new Uint8Array([1, 2, 3]);
+    fetchMock.mockResolvedValueOnce(
+      new Response(body, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      }),
+    );
+
+    await fetchRemoteAsset({
+      url: "https://example.com/image.png",
+      maxBytes: 1024,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://example.com/image.png",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+  });
+
+  it("returns all response headers", async () => {
+    const body = new Uint8Array([1, 2, 3]);
+    fetchMock.mockResolvedValueOnce(
+      new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": "image/png",
+          "cache-control": "max-age=3600",
+          "x-custom-header": "test-value",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/image.png",
+      maxBytes: 1024,
+    });
+
+    expect(result.headers).toEqual({
+      "content-type": "image/png",
+      "cache-control": "max-age=3600",
+      "x-custom-header": "test-value",
+    });
   });
 });

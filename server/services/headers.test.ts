@@ -5,6 +5,29 @@ vi.mock("@/lib/schedule", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(true),
 }));
 
+const fetchRemoteAssetMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    buffer: Buffer.from(""),
+    contentType: "text/html",
+    finalUrl: "https://example.com/",
+    status: 200,
+    headers: {
+      server: "vercel",
+      "x-vercel-id": "abc",
+    },
+  })),
+);
+
+vi.mock("@/lib/fetch-remote-asset", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/fetch-remote-asset")
+  >("@/lib/fetch-remote-asset");
+  return {
+    ...actual,
+    fetchRemoteAsset: fetchRemoteAssetMock,
+  };
+});
+
 import {
   afterAll,
   afterEach,
@@ -28,7 +51,8 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
+  fetchRemoteAssetMock.mockReset();
 });
 
 afterAll(async () => {
@@ -47,50 +71,43 @@ describe("getHeaders", () => {
       unicodeName: "example.com",
     });
 
-    const get = new Response(null, {
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
       status: 200,
       headers: {
         server: "vercel",
         "x-vercel-id": "abc",
       },
     });
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockImplementation(async (_url, init?: RequestInit) => {
-        if ((init?.method || "GET") === "GET") return get;
-        return new Response(null, { status: 500 });
-      });
 
     const { getHeaders } = await import("./headers");
     const out1 = await getHeaders("example.com");
     expect(out1.headers.length).toBeGreaterThan(0);
     expect(out1.status).toBe(200);
     expect(out1.statusMessage).toBe("OK");
-    // In Vitest v4, vi.spyOn on a mock returns the same mock, so clear its history
-    fetchMock.mockClear();
+    // Clear mock history before second call
+    fetchRemoteAssetMock.mockClear();
     const out2 = await getHeaders("example.com");
     expect(out2.headers.length).toBe(out1.headers.length);
     expect(out2.status).toBe(200);
     // Cached responses now include statusMessage since we store status in DB
     expect(out2.statusMessage).toBe("OK");
-    expect(fetchMock).not.toHaveBeenCalled();
-    fetchMock.mockRestore();
+    expect(fetchRemoteAssetMock).not.toHaveBeenCalled();
   });
 
   it("handles concurrent callers and returns consistent results", async () => {
-    const get = new Response(null, {
+    fetchRemoteAssetMock.mockResolvedValue({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
       status: 200,
       headers: {
         server: "vercel",
         "x-vercel-id": "abc",
       },
     });
-    const fetchMock = vi
-      .spyOn(global, "fetch")
-      .mockImplementation(async (_url, init?: RequestInit) => {
-        if ((init?.method || "GET") === "GET") return get;
-        return new Response(null, { status: 500 });
-      });
 
     const { getHeaders } = await import("./headers");
     const [a, b, c] = await Promise.all([
@@ -105,18 +122,14 @@ describe("getHeaders", () => {
     expect(b.status).toBe(200);
     expect(c.status).toBe(200);
     // Only assert that all calls returned equivalent results; caching is validated elsewhere
-    fetchMock.mockRestore();
   });
 
   it("returns empty array and does not cache on error", async () => {
-    const fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
-      throw new Error("network");
-    });
+    fetchRemoteAssetMock.mockRejectedValueOnce(new Error("network"));
     const { getHeaders } = await import("./headers");
     const out = await getHeaders("fail.invalid");
     expect(out.headers.length).toBe(0);
     expect(out.status).toBe(0);
-    fetchMock.mockRestore();
   });
 
   it("handles DNS resolution errors gracefully (ENOTFOUND)", async () => {
@@ -136,9 +149,7 @@ describe("getHeaders", () => {
     cause.hostname = "no-web-hosting.invalid";
     (enotfoundError as Error & { cause?: Error }).cause = cause;
 
-    const fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
-      throw enotfoundError;
-    });
+    fetchRemoteAssetMock.mockRejectedValueOnce(enotfoundError);
 
     const { getHeaders } = await import("./headers");
     const out = await getHeaders("no-web-hosting.invalid");
@@ -149,17 +160,13 @@ describe("getHeaders", () => {
 
     // Note: Logger calls are tested by integration - the service calls logger.debug()
     // which is mocked in vitest.setup.ts to not actually log anything
-
-    fetchMock.mockRestore();
   });
 
   it("logs actual errors (non-DNS) as errors", async () => {
     // Simulate a real error (not DNS-related)
     const realError = new Error("Connection timeout");
 
-    const fetchMock = vi.spyOn(global, "fetch").mockImplementation(async () => {
-      throw realError;
-    });
+    fetchRemoteAssetMock.mockRejectedValueOnce(realError);
 
     const { getHeaders } = await import("./headers");
     const out = await getHeaders("timeout.invalid");
@@ -170,7 +177,5 @@ describe("getHeaders", () => {
 
     // Note: Logger calls are tested by integration - the service calls logger.error()
     // which is mocked in vitest.setup.ts to not actually log anything
-
-    fetchMock.mockRestore();
   });
 });

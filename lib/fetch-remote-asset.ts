@@ -42,6 +42,8 @@ export type FetchRemoteAssetOptions = {
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
   currentUrl?: string | URL;
+  /** HTTP method to use (defaults to GET). */
+  method?: "GET" | "HEAD";
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
   /** Abort timeout per request/redirect hop (ms). */
@@ -61,6 +63,7 @@ export type RemoteAssetResult = {
   contentType: string | null;
   finalUrl: string;
   status: number;
+  headers: Record<string, string>;
 };
 
 /**
@@ -71,6 +74,7 @@ export async function fetchRemoteAsset(
   opts: FetchRemoteAssetOptions,
 ): Promise<RemoteAssetResult> {
   const initialUrl = toUrl(opts.url, opts.currentUrl);
+  const method = opts.method ?? "GET";
 
   return await withChildSpan(
     {
@@ -108,6 +112,7 @@ export async function fetchRemoteAsset(
         await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
 
         const response = await timedFetch(currentUrl.toString(), {
+          method,
           headers: opts.headers,
           timeoutMs,
         });
@@ -173,6 +178,10 @@ export async function fetchRemoteAsset(
 
         const buffer = await readBodyWithLimit(response, maxBytes);
         const contentType = response.headers.get("content-type");
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, name) => {
+          headers[name] = value;
+        });
 
         // Add success attributes
         addSpanAttributes({
@@ -189,6 +198,7 @@ export async function fetchRemoteAsset(
           contentType,
           finalUrl: currentUrl.toString(),
           status: response.status,
+          headers,
         };
       }
 
@@ -301,13 +311,13 @@ async function ensureUrlAllowed(
  */
 async function timedFetch(
   url: string,
-  opts: { headers?: HeadersInit; timeoutMs: number },
+  opts: { headers?: HeadersInit; timeoutMs: number; method: "GET" | "HEAD" },
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
   try {
     return await fetch(url, {
-      method: "GET",
+      method: opts.method,
       headers: {
         "User-Agent": USER_AGENT,
         ...opts.headers,
