@@ -66,7 +66,7 @@ Add this meta tag to your homepage's <head> section:
 
 ${"─".repeat(50)}
 
-Once completed, return to DomainStack to verify ownership.
+Once completed, return to Domainstack to verify ownership.
 `;
 }
 
@@ -165,7 +165,7 @@ export function StepVerifyOwnership({
         </TabsContent>
       </Tabs>
 
-      {/* Share with IT - for non-technical users to forward to their IT team */}
+      {/* Share with domain admin - for non-technical users to forward to someone who manages their domain */}
       <div className="flex justify-center border-border/50 border-t pt-3">
         <Button
           variant="ghost"
@@ -174,7 +174,7 @@ export function StepVerifyOwnership({
           className="h-auto cursor-pointer gap-1.5 px-2 py-1 text-muted-foreground text-xs hover:text-foreground"
         >
           <Share2 className="size-3" />
-          Copy all instructions to share with IT
+          Copy all instructions to share with domain admin
         </Button>
       </div>
     </div>
