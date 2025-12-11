@@ -140,9 +140,9 @@
   --warning: oklch(22.7% 0.05 113.29);
   --warning-foreground: oklch(86.4% 0.141 92.19);
   --warning-border: oklch(29.1% 0.063 109.77);
-  --info: oklch(15.6% 0.045 250.71);
-  --info-foreground: oklch(67.5% 0.152 258.33);
-  --info-border: oklch(26.2% 0.052 266.51);
+  --info: oklch(22% 0.065 250.71);
+  --info-foreground: oklch(85% 0.12 258.33);
+  --info-border: oklch(32% 0.075 266.51);
   --success: oklch(20.9% 0.0487 158.25);
   --success-foreground: oklch(86.2% 0.169 157.764);
   --success-border: oklch(31.6% 0.082 152.3);

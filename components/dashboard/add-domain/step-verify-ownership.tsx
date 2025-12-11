@@ -49,31 +49,29 @@ export function StepVerifyOwnership({
         value={method}
         onValueChange={(v) => setMethod(v as VerificationMethod)}
       >
-        <div className="flex items-center justify-between gap-2">
-          <TabsList className="grid h-10 w-full grid-cols-3 border border-border bg-muted/50 p-1 dark:border-white/15 dark:bg-white/5">
-            <TabsTrigger
-              value="dns_txt"
-              disabled={isVerifying}
-              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
-            >
-              DNS Record
-            </TabsTrigger>
-            <TabsTrigger
-              value="html_file"
-              disabled={isVerifying}
-              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
-            >
-              HTML File
-            </TabsTrigger>
-            <TabsTrigger
-              value="meta_tag"
-              disabled={isVerifying}
-              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
-            >
-              Meta Tag
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="grid h-10 w-full grid-cols-3 border border-border bg-muted/50 p-1 dark:border-white/15 dark:bg-white/5">
+          <TabsTrigger
+            value="dns_txt"
+            disabled={isVerifying}
+            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+          >
+            DNS Record
+          </TabsTrigger>
+          <TabsTrigger
+            value="html_file"
+            disabled={isVerifying}
+            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+          >
+            HTML File
+          </TabsTrigger>
+          <TabsTrigger
+            value="meta_tag"
+            disabled={isVerifying}
+            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+          >
+            Meta Tag
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="dns_txt" className="mt-1 min-w-0 space-y-3">
           <DnsVerificationInstructions instructions={instructions.dns_txt} />

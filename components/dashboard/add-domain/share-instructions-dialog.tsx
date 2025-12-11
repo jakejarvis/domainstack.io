@@ -11,7 +11,7 @@ import {
   Mail,
   Share2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,7 +115,7 @@ function downloadInstructionsFile(
     setTimeout(() => {
       URL.revokeObjectURL(url);
       a.remove();
-    }, 1000);
+    }, 100);
 
     return { success: true };
   } catch (error) {
@@ -132,8 +132,18 @@ export function ShareInstructionsDialog({
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const trpc = useTRPC();
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const sendEmailMutation = useMutation({
     ...trpc.tracking.sendVerificationInstructions.mutationOptions(),
@@ -143,7 +153,10 @@ export function ShareInstructionsDialog({
         description: `Email sent to ${email}`,
       });
       // Reset after a delay
-      setTimeout(() => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
         setEmailSent(false);
         setEmail("");
       }, 3000);
@@ -165,7 +178,10 @@ export function ShareInstructionsDialog({
         description: "Instructions copied to clipboard.",
         icon: <ClipboardCheck className="h-4 w-4" />,
       });
-      setTimeout(() => setCopied(false), 2000);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       logger.error("Failed to copy instructions to clipboard", error);
       toast.error("Failed to copy", {
@@ -196,8 +212,21 @@ export function ShareInstructionsDialog({
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      // Reset state when dialog closes
+      setEmail("");
+      setEmailSent(false);
+      setCopied(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" className="cursor-pointer gap-1.5">
           <Share2 className="size-4" />
@@ -227,7 +256,6 @@ export function ShareInstructionsDialog({
             </div>
             <Button
               variant="outline"
-              size="sm"
               onClick={handleCopy}
               className="shrink-0 cursor-pointer"
             >
@@ -236,7 +264,9 @@ export function ShareInstructionsDialog({
               ) : (
                 <Copy className="size-4" />
               )}
-              {copied ? "Copied" : "Copy"}
+              <span className="hidden sm:inline">
+                {copied ? "Copied" : "Copy"}
+              </span>
             </Button>
           </div>
 
@@ -253,12 +283,11 @@ export function ShareInstructionsDialog({
             </div>
             <Button
               variant="outline"
-              size="sm"
               onClick={handleDownload}
               className="shrink-0 cursor-pointer"
             >
               <Download className="size-4" />
-              Download
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
 
@@ -296,6 +325,7 @@ export function ShareInstructionsDialog({
               </div>
               <Button
                 onClick={handleSendEmail}
+                variant="outline"
                 disabled={
                   !isValidEmail || sendEmailMutation.isPending || emailSent
                 }
@@ -308,11 +338,13 @@ export function ShareInstructionsDialog({
                 ) : (
                   <Mail className="size-4" />
                 )}
-                {sendEmailMutation.isPending
-                  ? "Sending..."
-                  : emailSent
-                    ? "Sent!"
-                    : "Send"}
+                <span className="hidden sm:inline">
+                  {sendEmailMutation.isPending
+                    ? "Sending..."
+                    : emailSent
+                      ? "Sent!"
+                      : "Send"}
+                </span>
               </Button>
             </div>
           </div>

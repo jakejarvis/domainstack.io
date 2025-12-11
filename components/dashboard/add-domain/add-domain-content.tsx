@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Check, Gauge, Gem } from "lucide-react";
+import { AlertCircle, Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
@@ -335,6 +335,32 @@ export function AddDomainContent({
               isRetrying={isRefetchingInstructions}
             />
           )}
+          {step === 2 &&
+            instructions &&
+            !isLoadingInstructions &&
+            !trackedDomainId && (
+              <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                  <AlertCircle className="size-6 text-destructive" />
+                </div>
+                <div className="text-center" aria-live="polite">
+                  <h3 className="font-semibold">Something went wrong</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Domain tracking ID is missing. Please try adding the domain
+                    again.
+                  </p>
+                </div>
+                {onClose && (
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="cursor-pointer"
+                  >
+                    Close
+                  </Button>
+                )}
+              </div>
+            )}
           {step === 2 &&
             instructions &&
             !isLoadingInstructions &&
