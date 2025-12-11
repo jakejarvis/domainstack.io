@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
+import { VerificationInstructionsEmail } from "@/emails/verification-instructions";
 import { analytics } from "@/lib/analytics/server";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
@@ -21,6 +22,8 @@ import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { inngest } from "@/lib/inngest/client";
+import { logger } from "@/lib/logger/server";
+import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
 import { VerificationMethodSchema } from "@/lib/schemas";
 import {
   generateVerificationToken,
@@ -584,5 +587,106 @@ export const trackingRouter = createTRPCRouter({
       }
 
       return { successCount, failedCount };
+    }),
+
+  /**
+   * Send verification instructions to an email address (e.g., domain admin).
+   * Allows users to share verification instructions with someone who manages their domain.
+   */
+  sendVerificationInstructions: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+        recipientEmail: z.string().email(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { trackedDomainId, recipientEmail } = input;
+
+      // Get the tracked domain with domain name
+      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
+
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!tracked || tracked.userId !== ctx.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      // Check if resend is configured
+      if (!resend) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Email service is not configured",
+        });
+      }
+
+      // Build verification instructions for all methods
+      const instructions = buildVerificationInstructions(
+        tracked.domainName,
+        tracked.verificationToken,
+      );
+
+      // Get sender info
+      const senderName = ctx.user.name || "A Domainstack user";
+      const senderEmail = ctx.user.email;
+
+      try {
+        const { error } = await resend.emails.send({
+          from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+          to: recipientEmail,
+          subject: `Domain verification instructions for ${tracked.domainName}`,
+          react: VerificationInstructionsEmail({
+            domain: tracked.domainName,
+            senderName,
+            senderEmail,
+            dnsHostname: instructions.dns_txt.hostname,
+            dnsRecordType: instructions.dns_txt.recordType,
+            dnsValue: instructions.dns_txt.value,
+            dnsTTL: instructions.dns_txt.suggestedTTL,
+            dnsTTLLabel: instructions.dns_txt.suggestedTTLLabel,
+            htmlFilePath: instructions.html_file.fullPath,
+            htmlFileName: instructions.html_file.filename,
+            htmlFileContent: instructions.html_file.fileContent,
+            metaTag: instructions.meta_tag.metaTag,
+          }),
+        });
+
+        if (error) {
+          logger.error(
+            "Failed to send verification instructions email",
+            error,
+            {
+              trackedDomainId,
+              recipientEmail,
+            },
+          );
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to send email",
+          });
+        }
+
+        analytics.track(
+          "verification_instructions_sent",
+          { domain: tracked.domainName },
+          ctx.user.id,
+        );
+
+        return { success: true };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
+        logger.error("Failed to send verification instructions email", error, {
+          trackedDomainId,
+          recipientEmail,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send email",
+        });
+      }
     }),
 });

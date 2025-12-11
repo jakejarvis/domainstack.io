@@ -76,7 +76,7 @@ export function HtmlFileVerificationInstructions({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4 dark:border-white/15 dark:bg-white/3">
+      <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4 dark:border-white/15 dark:bg-white/2">
         <CopyableField label="Upload Path" value={instructions.fullPath} />
         <CopyableField label="File Contents" value={instructions.fileContent} />
 

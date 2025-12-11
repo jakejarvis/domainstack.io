@@ -1,9 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Check, Gauge, Gem } from "lucide-react";
+import { AlertCircle, Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
@@ -78,12 +79,12 @@ export function AddDomainContent({
     instructions,
     verificationState,
     hasAttemptedDomainSubmit,
+    trackedDomainId,
 
     // Handlers
     handleNext,
     handleVerify,
     handleReturnLater,
-    goBack,
     canProceed,
     refetchInstructions,
 
@@ -334,16 +335,47 @@ export function AddDomainContent({
               isRetrying={isRefetchingInstructions}
             />
           )}
-          {step === 2 && instructions && !isLoadingInstructions && (
-            <StepVerifyOwnership
-              method={method}
-              setMethod={setMethod}
-              instructions={instructions}
-              verificationState={verificationState}
-              onVerify={handleVerify}
-              onReturnLater={handleReturnLater}
-            />
-          )}
+          {step === 2 &&
+            instructions &&
+            !isLoadingInstructions &&
+            !trackedDomainId && (
+              <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                  <AlertCircle className="size-6 text-destructive" />
+                </div>
+                <div className="text-center" aria-live="polite">
+                  <h3 className="font-semibold">Something went wrong</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Domain tracking ID is missing. Please try adding the domain
+                    again.
+                  </p>
+                </div>
+                {onClose && (
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="cursor-pointer"
+                  >
+                    Close
+                  </Button>
+                )}
+              </div>
+            )}
+          {step === 2 &&
+            instructions &&
+            !isLoadingInstructions &&
+            trackedDomainId && (
+              <StepVerifyOwnership
+                method={method}
+                setMethod={setMethod}
+                instructions={instructions}
+                verificationState={verificationState}
+                domain={domain}
+                trackedDomainId={trackedDomainId}
+                onVerify={handleVerify}
+                onReturnLater={handleReturnLater}
+              />
+            )}
           {step === 3 && <StepConfirmation domain={domain} />}
         </motion.div>
       </AnimatePresence>
@@ -351,12 +383,19 @@ export function AddDomainContent({
   );
 
   const footerContent = showFooterButtons && (
-    <div className="mt-6 flex items-center justify-end gap-2">
-      {step === 2 && !isResuming && !hasFailed && (
-        <Button variant="outline" onClick={goBack} className="cursor-pointer">
-          Back
-        </Button>
-      )}
+    <div className="mt-6 flex items-center justify-between gap-2">
+      {/* Left side: Share instructions button (only on step 2) */}
+      <div className="flex-1">
+        {step === 2 && instructions && trackedDomainId && (
+          <ShareInstructionsDialog
+            domain={domain}
+            instructions={instructions}
+            trackedDomainId={trackedDomainId}
+          />
+        )}
+      </div>
+
+      {/* Right side: Confirmation/Next button */}
       <Button
         onClick={handleNext}
         disabled={
