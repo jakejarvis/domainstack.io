@@ -343,6 +343,7 @@ export function AddDomainContent({
                 setMethod={setMethod}
                 instructions={instructions}
                 verificationState={verificationState}
+                domain={domain}
                 trackedDomainId={trackedDomainId}
                 onVerify={handleVerify}
                 onReturnLater={handleReturnLater}

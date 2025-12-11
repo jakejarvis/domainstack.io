@@ -30,6 +30,7 @@ import type { VerificationInstructions } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 
 type ShareInstructionsDialogProps = {
+  domain: string;
   instructions: VerificationInstructions;
   trackedDomainId: string;
 };
@@ -39,13 +40,15 @@ type ShareInstructionsDialogProps = {
  * suitable for sharing with IT or via email.
  */
 function formatInstructionsForSharing(
+  domain: string,
   instructions: VerificationInstructions,
 ): string {
   const { dns_txt, html_file, meta_tag } = instructions;
 
-  // Extract domain from DNS hostname (e.g., "_domainstack-verify.example.com" -> "example.com")
+  // Extract the DNS hostname prefix (e.g., "_domainstack-verify")
   const dotIndex = dns_txt.hostname.indexOf(".");
-  const domain = dotIndex > 0 ? dns_txt.hostname.slice(dotIndex + 1) : "";
+  const dnsHostnamePrefix =
+    dotIndex > 0 ? dns_txt.hostname.slice(0, dotIndex) : dns_txt.hostname;
 
   return `Domain Verification Instructions for ${domain}
 ${"=".repeat(50)}
@@ -57,7 +60,7 @@ OPTION 1: DNS TXT Record (Recommended)
 ${"─".repeat(50)}
 Add a TXT record to your domain's DNS settings:
 
-  Host/Name:  ${dns_txt.hostname.slice(0, dotIndex)}
+  Host/Name:  ${dnsHostnamePrefix}
   Type:       ${dns_txt.recordType}
   Value:      ${dns_txt.value}
   TTL:        ${dns_txt.suggestedTTL} (${dns_txt.suggestedTTLLabel})
@@ -92,15 +95,11 @@ Once completed, return to Domainstack to verify ownership.
  * Downloads the instructions as a text file.
  */
 function downloadInstructionsFile(
+  domain: string,
   instructions: VerificationInstructions,
 ): { success: true } | { success: false; error: unknown } {
   try {
-    const content = formatInstructionsForSharing(instructions);
-
-    // Extract domain from DNS hostname
-    const dotIndex = instructions.dns_txt.hostname.indexOf(".");
-    const domain =
-      dotIndex > 0 ? instructions.dns_txt.hostname.slice(dotIndex + 1) : "";
+    const content = formatInstructionsForSharing(domain, instructions);
     const filename = `${domain}-verification-instructions.txt`;
 
     const blob = new Blob([content], { type: "text/plain" });
@@ -125,6 +124,7 @@ function downloadInstructionsFile(
 }
 
 export function ShareInstructionsDialog({
+  domain,
   instructions,
   trackedDomainId,
 }: ShareInstructionsDialogProps) {
@@ -158,7 +158,7 @@ export function ShareInstructionsDialog({
 
   const handleCopy = async () => {
     try {
-      const formattedText = formatInstructionsForSharing(instructions);
+      const formattedText = formatInstructionsForSharing(domain, instructions);
       await clipboardCopy(formattedText);
       setCopied(true);
       toast.success("Copied!", {
@@ -175,7 +175,7 @@ export function ShareInstructionsDialog({
   };
 
   const handleDownload = () => {
-    const result = downloadInstructionsFile(instructions);
+    const result = downloadInstructionsFile(domain, instructions);
     if (result.success) {
       toast.success("File downloaded!", {
         description: "Send the file to your domain admin.",

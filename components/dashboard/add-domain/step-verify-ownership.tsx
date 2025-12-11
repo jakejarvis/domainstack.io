@@ -17,6 +17,7 @@ type StepVerifyOwnershipProps = {
   setMethod: (m: VerificationMethod) => void;
   instructions: VerificationInstructions;
   verificationState: VerificationState;
+  domain: string;
   trackedDomainId: string;
   onVerify: () => void;
   onReturnLater: () => void;
@@ -27,6 +28,7 @@ export function StepVerifyOwnership({
   setMethod,
   instructions,
   verificationState,
+  domain,
   trackedDomainId,
   onVerify,
   onReturnLater,
@@ -96,6 +98,7 @@ export function StepVerifyOwnership({
       {/* Share with domain admin - for non-technical users to forward to someone who manages their domain */}
       <div className="flex justify-center border-border/50 border-t pt-3">
         <ShareInstructionsDialog
+          domain={domain}
           instructions={instructions}
           trackedDomainId={trackedDomainId}
         />
