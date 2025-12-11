@@ -76,17 +76,15 @@ const getHeadersImpl = withSpan(
     }
 
     const REQUEST_TIMEOUT_MS = 5000;
-    const MAX_BYTES = 256 * 1024; // headers only; keep body small
     const allowedHosts = [domain, `www.${domain}`];
     try {
       const final = await fetchRemoteAsset({
         url,
         allowHttp: true, // allow http fallback but still enforce IP allow list
         timeoutMs: REQUEST_TIMEOUT_MS,
-        maxBytes: MAX_BYTES,
         maxRedirects: 5,
         allowedHosts,
-        method: "GET",
+        method: "HEAD", // only need headers, not body
       });
 
       const headers: Header[] = Object.entries(final.headers).map(
