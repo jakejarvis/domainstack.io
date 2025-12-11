@@ -83,7 +83,6 @@ export function AddDomainContent({
     handleNext,
     handleVerify,
     handleReturnLater,
-    goBack,
     canProceed,
     refetchInstructions,
 
@@ -352,11 +351,6 @@ export function AddDomainContent({
 
   const footerContent = showFooterButtons && (
     <div className="mt-6 flex items-center justify-end gap-2">
-      {step === 2 && !isResuming && !hasFailed && (
-        <Button variant="outline" onClick={goBack} className="cursor-pointer">
-          Back
-        </Button>
-      )}
       <Button
         onClick={handleNext}
         disabled={
