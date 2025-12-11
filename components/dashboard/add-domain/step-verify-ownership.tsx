@@ -1,6 +1,5 @@
 "use client";
 
-import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { DnsVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/dns-instructions";
 import { HtmlFileVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/html-file-instructions";
@@ -28,8 +27,6 @@ export function StepVerifyOwnership({
   setMethod,
   instructions,
   verificationState,
-  domain,
-  trackedDomainId,
   onVerify,
   onReturnLater,
 }: StepVerifyOwnershipProps) {
@@ -57,21 +54,21 @@ export function StepVerifyOwnership({
             <TabsTrigger
               value="dns_txt"
               disabled={isVerifying}
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
             >
               DNS Record
             </TabsTrigger>
             <TabsTrigger
               value="html_file"
               disabled={isVerifying}
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
             >
               HTML File
             </TabsTrigger>
             <TabsTrigger
               value="meta_tag"
               disabled={isVerifying}
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+              className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
             >
               Meta Tag
             </TabsTrigger>
@@ -94,15 +91,6 @@ export function StepVerifyOwnership({
           />
         </TabsContent>
       </Tabs>
-
-      {/* Share with domain admin - for non-technical users to forward to someone who manages their domain */}
-      <div className="flex justify-center border-border/50 border-t pt-3">
-        <ShareInstructionsDialog
-          domain={domain}
-          instructions={instructions}
-          trackedDomainId={trackedDomainId}
-        />
-      </div>
     </div>
   );
 }

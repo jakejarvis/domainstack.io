@@ -177,8 +177,8 @@ export function ShareInstructionsDialog({
   const handleDownload = () => {
     const result = downloadInstructionsFile(domain, instructions);
     if (result.success) {
-      toast.success("File downloaded!", {
-        description: "Send the file to your domain admin.",
+      toast.success("Instructions downloaded!", {
+        description: "Send this file to your domain admin.",
       });
     } else {
       logger.error("Failed to download instructions file", result.error);
@@ -199,13 +199,9 @@ export function ShareInstructionsDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-auto cursor-pointer gap-1.5 px-2 py-1 text-muted-foreground text-xs hover:text-foreground"
-        >
-          <Share2 className="size-3" />
-          Share instructions
+        <Button variant="outline" className="cursor-pointer gap-1.5">
+          <Share2 className="size-4" />
+          Share
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -219,7 +215,7 @@ export function ShareInstructionsDialog({
 
         <div className="space-y-4 pt-2">
           {/* Option 1: Copy to clipboard */}
-          <div className="flex items-center gap-3 rounded-lg border p-3">
+          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
               <Copy className="size-4 text-muted-foreground" />
             </div>
@@ -245,7 +241,7 @@ export function ShareInstructionsDialog({
           </div>
 
           {/* Option 2: Download as file */}
-          <div className="flex items-center gap-3 rounded-lg border p-3">
+          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
               <Download className="size-4 text-muted-foreground" />
             </div>
@@ -267,7 +263,7 @@ export function ShareInstructionsDialog({
           </div>
 
           {/* Option 3: Send via email */}
-          <div className="rounded-lg border p-3">
+          <div className="rounded-lg border border-border/50 p-3">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
                 <Mail className="size-4 text-muted-foreground" />

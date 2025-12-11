@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
@@ -356,7 +357,19 @@ export function AddDomainContent({
   );
 
   const footerContent = showFooterButtons && (
-    <div className="mt-6 flex items-center justify-end gap-2">
+    <div className="mt-6 flex items-center justify-between gap-2">
+      {/* Left side: Share instructions button (only on step 2) */}
+      <div className="flex-1">
+        {step === 2 && instructions && trackedDomainId && (
+          <ShareInstructionsDialog
+            domain={domain}
+            instructions={instructions}
+            trackedDomainId={trackedDomainId}
+          />
+        )}
+      </div>
+
+      {/* Right side: Confirmation/Next button */}
       <Button
         onClick={handleNext}
         disabled={

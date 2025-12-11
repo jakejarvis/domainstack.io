@@ -105,12 +105,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            asChild
-            className="text-success-foreground"
-          >
+          <Button variant="outline" asChild className="text-success-foreground">
             <Link href="/dashboard">
               <BadgeCheck className="size-4" />
             </Link>
