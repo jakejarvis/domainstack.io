@@ -313,6 +313,7 @@ export function useDomainVerification({
     instructions,
     verificationState,
     hasAttemptedDomainSubmit,
+    trackedDomainId,
 
     // Handlers
     handleOpenChange,

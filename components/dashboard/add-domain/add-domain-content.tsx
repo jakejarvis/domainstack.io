@@ -78,6 +78,7 @@ export function AddDomainContent({
     instructions,
     verificationState,
     hasAttemptedDomainSubmit,
+    trackedDomainId,
 
     // Handlers
     handleNext,
@@ -333,16 +334,20 @@ export function AddDomainContent({
               isRetrying={isRefetchingInstructions}
             />
           )}
-          {step === 2 && instructions && !isLoadingInstructions && (
-            <StepVerifyOwnership
-              method={method}
-              setMethod={setMethod}
-              instructions={instructions}
-              verificationState={verificationState}
-              onVerify={handleVerify}
-              onReturnLater={handleReturnLater}
-            />
-          )}
+          {step === 2 &&
+            instructions &&
+            !isLoadingInstructions &&
+            trackedDomainId && (
+              <StepVerifyOwnership
+                method={method}
+                setMethod={setMethod}
+                instructions={instructions}
+                verificationState={verificationState}
+                trackedDomainId={trackedDomainId}
+                onVerify={handleVerify}
+                onReturnLater={handleReturnLater}
+              />
+            )}
           {step === 3 && <StepConfirmation domain={domain} />}
         </motion.div>
       </AnimatePresence>
