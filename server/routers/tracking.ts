@@ -635,7 +635,7 @@ export const trackingRouter = createTRPCRouter({
 
       try {
         const { error } = await resend.emails.send({
-          from: RESEND_FROM_EMAIL,
+          from: `Domainstack <${RESEND_FROM_EMAIL}>`,
           to: recipientEmail,
           subject: `Domain verification instructions for ${tracked.domainName}`,
           react: VerificationInstructionsEmail({
