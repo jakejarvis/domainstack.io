@@ -16,6 +16,7 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
+  dnsRecords,
   domains,
   hosting,
   providers,
@@ -26,7 +27,7 @@ import {
   type verificationStatus,
 } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import type { NotificationOverrides } from "@/lib/schemas";
+import type { DnsRecord, NotificationOverrides } from "@/lib/schemas";
 
 const logger = createLogger({ source: "tracked-domains" });
 
@@ -41,9 +42,12 @@ export type CreateTrackedDomainParams = {
   verificationMethod?: VerificationMethod;
 };
 
+export type DnsRecordForTooltip = Pick<DnsRecord, "value" | "priority">;
+
 export type ProviderInfo = {
   name: string | null;
   domain: string | null;
+  records?: DnsRecordForTooltip[];
 };
 
 export type TrackedDomainWithDetails = {
@@ -297,6 +301,107 @@ function transformToTrackedDomainWithDetails(
 }
 
 /**
+ * Fetch DNS records for multiple domains and group them by domain ID and type.
+ * Returns a map of domainId → type → records for efficient lookup.
+ */
+async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
+  Map<
+    string,
+    {
+      hosting: DnsRecordForTooltip[];
+      email: DnsRecordForTooltip[];
+      dns: DnsRecordForTooltip[];
+    }
+  >
+> {
+  if (domainIds.length === 0) {
+    return new Map();
+  }
+
+  // Fetch all relevant DNS records in a single query
+  const records = await db
+    .select({
+      domainId: dnsRecords.domainId,
+      type: dnsRecords.type,
+      value: dnsRecords.value,
+      priority: dnsRecords.priority,
+    })
+    .from(dnsRecords)
+    .where(
+      and(
+        inArray(dnsRecords.domainId, domainIds),
+        inArray(dnsRecords.type, ["A", "AAAA", "MX", "NS"]),
+      ),
+    );
+
+  // Group records by domain ID and type
+  const recordsByDomain = new Map<
+    string,
+    {
+      hosting: DnsRecordForTooltip[];
+      email: DnsRecordForTooltip[];
+      dns: DnsRecordForTooltip[];
+    }
+  >();
+
+  for (const record of records) {
+    // Get or create the groups for this domain
+    let groups = recordsByDomain.get(record.domainId);
+    if (!groups) {
+      groups = {
+        hosting: [],
+        email: [],
+        dns: [],
+      };
+      recordsByDomain.set(record.domainId, groups);
+    }
+
+    const dnsRecord: DnsRecordForTooltip = {
+      value: record.value,
+      ...(record.priority != null && { priority: record.priority }),
+    };
+
+    if (record.type === "A" || record.type === "AAAA") {
+      groups.hosting.push(dnsRecord);
+    } else if (record.type === "MX") {
+      groups.email.push(dnsRecord);
+    } else if (record.type === "NS") {
+      groups.dns.push(dnsRecord);
+    }
+  }
+
+  return recordsByDomain;
+}
+
+/**
+ * Attach DNS records to tracked domain results.
+ */
+async function attachDnsRecords(
+  domains: TrackedDomainWithDetails[],
+): Promise<TrackedDomainWithDetails[]> {
+  if (domains.length === 0) {
+    return domains;
+  }
+
+  const domainIds = domains.map((d) => d.domainId);
+  const recordsByDomain = await fetchDnsRecordsForDomains(domainIds);
+
+  return domains.map((domain) => {
+    const records = recordsByDomain.get(domain.domainId);
+    if (!records) {
+      return domain;
+    }
+
+    return {
+      ...domain,
+      hosting: { ...domain.hosting, records: records.hosting },
+      email: { ...domain.email, records: records.email },
+      dns: { ...domain.dns, records: records.dns },
+    };
+  });
+}
+
+/**
  * Internal helper to query tracked domains with full details.
  * Centralizes the complex select/join logic used by multiple public functions.
  */
@@ -356,7 +461,8 @@ async function queryTrackedDomainsWithDetails(
     .where(whereCondition)
     .orderBy(orderByColumn);
 
-  return rows.map(transformToTrackedDomainWithDetails);
+  const domainsWithoutRecords = rows.map(transformToTrackedDomainWithDetails);
+  return attachDnsRecords(domainsWithoutRecords);
 }
 
 /**
@@ -503,7 +609,9 @@ export async function getTrackedDomainsForUserPaginated(
   }
 
   return {
-    items: items.map(transformToTrackedDomainWithDetails),
+    items: await attachDnsRecords(
+      items.map(transformToTrackedDomainWithDetails),
+    ),
     nextCursor,
     totalCount,
   };

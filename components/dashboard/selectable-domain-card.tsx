@@ -54,7 +54,7 @@ export function SelectableDomainCard({
           aria-label={`Select ${domain.domainName}`}
           aria-pressed={isSelected}
           className={cn(
-            "flex size-5 items-center justify-center rounded transition-all",
+            "flex size-5 cursor-pointer items-center justify-center rounded transition-all",
             isSelected
               ? "bg-primary text-primary-foreground"
               : "border-2 border-foreground/40 bg-transparent hover:border-foreground/60",
@@ -83,6 +83,7 @@ export function SelectableDomainCard({
         domainName={domain.domainName}
         verified={domain.verified}
         verificationStatus={domain.verificationStatus}
+        verificationMethod={domain.verificationMethod}
         expirationDate={domain.expirationDate}
         registrar={domain.registrar}
         dns={domain.dns}

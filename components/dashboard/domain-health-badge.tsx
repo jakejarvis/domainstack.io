@@ -30,7 +30,7 @@ export function DomainHealthBadge({
   return (
     <Badge
       variant={variant}
-      className={cn("select-none gap-1", colorClass, className)}
+      className={cn("select-none gap-1 py-1", colorClass, className)}
     >
       {icon}
       {label}

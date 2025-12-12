@@ -96,7 +96,8 @@ export function Favicon({
     return (
       <div
         className={cn(
-          "pointer-events-none inline-flex select-none items-center justify-center rounded font-bold text-white",
+          // Use flex (block-level) instead of inline-flex for consistent alignment with <img>
+          "pointer-events-none flex select-none items-center justify-center rounded font-bold text-white",
           className,
         )}
         style={{

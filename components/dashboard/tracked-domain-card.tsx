@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import {
   Archive,
-  ExternalLink,
+  FileSymlink,
   MoreVertical,
   RefreshCw,
   Trash2,
@@ -13,6 +13,7 @@ import {
   DomainHealthBadge,
   getHealthAccent,
 } from "@/components/dashboard/domain-health-badge";
+import { ProviderWithTooltip } from "@/components/dashboard/provider-with-tooltip";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import type {
   ProviderInfo,
+  VerificationMethod,
   VerificationStatusType,
 } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
@@ -42,6 +44,7 @@ type TrackedDomainCardProps = {
   domainName: string;
   verified: boolean;
   verificationStatus: VerificationStatusType;
+  verificationMethod: VerificationMethod | null;
   expirationDate: Date | null;
   registrar: ProviderInfo;
   dns: ProviderInfo;
@@ -57,6 +60,7 @@ export function TrackedDomainCard({
   domainName,
   verified,
   verificationStatus,
+  verificationMethod,
   expirationDate,
   registrar,
   dns,
@@ -110,12 +114,13 @@ export function TrackedDomainCard({
               <VerificationBadge
                 verified={verified}
                 verificationStatus={verificationStatus}
+                verificationMethod={verificationMethod}
               />
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm">
+              <Button variant="ghost" size="icon-sm" className="cursor-pointer">
                 <MoreVertical className="size-4" />
                 <span className="sr-only">Actions</span>
               </Button>
@@ -123,16 +128,10 @@ export function TrackedDomainCard({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link href={`/${domainName}`} className="cursor-pointer">
-                  <ExternalLink className="size-4" />
-                  View Report
+                  <FileSymlink className="size-4" />
+                  Open Report
                 </Link>
               </DropdownMenuItem>
-              {!verified && (
-                <DropdownMenuItem onClick={onVerify} className="cursor-pointer">
-                  <RefreshCw className="size-4" />
-                  Verify Now
-                </DropdownMenuItem>
-              )}
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
@@ -143,11 +142,8 @@ export function TrackedDomainCard({
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onRemove}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash2 className="size-4" />
+              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+                <Trash2 className="size-3.5 text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -224,30 +220,13 @@ function InfoRow({
   provider?: ProviderInfo;
   children?: React.ReactNode;
 }) {
-  const hasProvider = provider?.name;
-
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">
       <span className="shrink-0 text-[10px] text-foreground/75 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
         {label}
       </span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] text-foreground/95">
-        {children ? (
-          children
-        ) : hasProvider ? (
-          <>
-            {provider.domain && (
-              <Favicon
-                domain={provider.domain}
-                size={14}
-                className="shrink-0 rounded"
-              />
-            )}
-            <span className="truncate">{provider.name}</span>
-          </>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
+        {children || (provider && <ProviderWithTooltip provider={provider} />)}
       </span>
     </div>
   );

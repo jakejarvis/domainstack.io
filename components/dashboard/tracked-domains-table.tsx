@@ -14,7 +14,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ExternalLink,
+  FileSymlink,
   MoreVertical,
   RefreshCw,
   Trash2,
@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { ProviderWithTooltip } from "@/components/dashboard/provider-with-tooltip";
 import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
@@ -70,24 +71,13 @@ type TrackedDomainsTableProps = {
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
   const { valueRef, isTruncated } = useTruncation();
 
-  if (!provider.name) {
-    return <span className="text-muted-foreground text-xs">—</span>;
-  }
-
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex min-w-0 items-center gap-1.5">
-          {provider.domain && (
-            <Favicon domain={provider.domain} size={13} className="shrink-0" />
-          )}
-          <span ref={valueRef} className="truncate text-[13px]">
-            {provider.name}
-          </span>
-        </div>
-      </TooltipTrigger>
-      {isTruncated && <TooltipContent>{provider.name}</TooltipContent>}
-    </Tooltip>
+    <ProviderWithTooltip
+      provider={provider}
+      truncationRef={valueRef}
+      isTruncated={isTruncated}
+      faviconSize={13}
+    />
   );
 }
 
@@ -134,13 +124,13 @@ export function TrackedDomainsTable({
         cell: ({ row }) => {
           const isSelected = selectedIds.has(row.original.id);
           return (
-            <div className="relative flex size-4 items-center justify-center">
+            <div className="relative size-4">
               {/* Favicon - hidden on hover or when selected */}
               <Favicon
                 domain={row.original.domainName}
                 size={16}
                 className={cn(
-                  "absolute",
+                  "absolute inset-0",
                   isSelected ? "hidden" : "group-hover:hidden",
                 )}
               />
@@ -150,7 +140,7 @@ export function TrackedDomainsTable({
                 onCheckedChange={() => onToggleSelect?.(row.original.id)}
                 aria-label={`Select ${row.original.domainName}`}
                 className={cn(
-                  "absolute",
+                  "absolute inset-0 cursor-pointer",
                   isSelected ? "flex" : "hidden group-hover:flex",
                 )}
               />
@@ -185,6 +175,7 @@ export function TrackedDomainsTable({
           <VerificationBadge
             verified={row.original.verified}
             verificationStatus={row.original.verificationStatus}
+            verificationMethod={row.original.verificationMethod}
           />
         ),
         size: 100,
@@ -221,9 +212,7 @@ export function TrackedDomainsTable({
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-default">
-                    {format(date, "MMM d, yyyy")}
-                  </span>
+                  {format(date, "MMM d, yyyy")}
                 </TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
@@ -276,9 +265,7 @@ export function TrackedDomainsTable({
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-default">
-                    {format(date, "MMM d, yyyy")}
-                  </span>
+                  {format(date, "MMM d, yyyy")}
                 </TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
@@ -301,7 +288,11 @@ export function TrackedDomainsTable({
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="size-7">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 cursor-pointer bg-background/85 backdrop-blur-xl hover:bg-accent"
+              >
                 <MoreVertical className="size-3.5" />
                 <span className="sr-only">Actions</span>
               </Button>
@@ -312,19 +303,10 @@ export function TrackedDomainsTable({
                   href={`/${row.original.domainName}`}
                   className="cursor-pointer"
                 >
-                  <ExternalLink className="size-3.5" />
-                  View Report
+                  <FileSymlink className="size-3.5" />
+                  Open Report
                 </Link>
               </DropdownMenuItem>
-              {!row.original.verified && (
-                <DropdownMenuItem
-                  onClick={() => onVerify(row.original)}
-                  className="cursor-pointer"
-                >
-                  <RefreshCw className="size-3.5" />
-                  Verify Now
-                </DropdownMenuItem>
-              )}
               {onArchive && (
                 <DropdownMenuItem
                   onClick={() =>
@@ -353,7 +335,7 @@ export function TrackedDomainsTable({
         enableHiding: false, // Always show actions menu
       },
     ],
-    [selectedIds, onToggleSelect, onVerify, onRemove, onArchive],
+    [selectedIds, onToggleSelect, onRemove, onArchive],
   );
 
   const table = useReactTable({
@@ -548,7 +530,7 @@ export function TrackedDomainsTable({
                         className="h-12 px-2.5 align-middle"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="text-muted-foreground text-xs">
+                          <span className="mr-2 text-muted-foreground text-xs">
                             Verify ownership to see domain details
                           </span>
                           <Button
@@ -622,7 +604,7 @@ export function TrackedDomainsTable({
                           }}
                           className={cn(
                             "h-10 px-2.5 align-middle",
-                            index === 0 && "pl-4 text-center",
+                            index === 0 && "pl-5 text-center",
                             index === cells.length - 1 && "pr-4",
                           )}
                         >
