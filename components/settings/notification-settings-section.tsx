@@ -297,7 +297,6 @@ export function NotificationSettingsSection() {
                       <CategoryLabel category={category} compact />
                     </div>
                   ))}
-                  <div />
                 </div>
 
                 {/* Domain Rows */}

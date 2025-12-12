@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Globe, Info, ShieldCheck } from "lucide-react";
+import { BadgeAlert, Info, ShieldAlert, TimerReset } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -24,9 +24,9 @@ const CATEGORY_ICONS: Record<
   NotificationCategory,
   React.ComponentType<{ className?: string }>
 > = {
-  domainExpiry: Globe,
-  certificateExpiry: ShieldCheck,
-  verificationStatus: Bell,
+  domainExpiry: TimerReset,
+  certificateExpiry: ShieldAlert,
+  verificationStatus: BadgeAlert,
 };
 
 /**
@@ -82,17 +82,13 @@ export function GlobalNotificationRow({
       </div>
 
       {/* Label with info tooltip */}
-      <div className="flex min-w-0 flex-1 cursor-default items-center gap-1.5">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span className="font-medium text-sm">{info.label}</span>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex text-foreground/70"
-              tabIndex={-1}
-            >
+            <span className="inline-flex text-foreground/70">
               <Info className="size-3.5" />
-            </button>
+            </span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             {info.description}

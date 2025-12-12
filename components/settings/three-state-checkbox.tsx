@@ -59,7 +59,10 @@ export function ThreeStateCheckbox({
             checked={isInherited ? "indeterminate" : effectiveValue}
             onCheckedChange={handleClick}
             disabled={disabled}
-            className={cn("h-5 w-5", isInherited && "opacity-50")}
+            className={cn(
+              "h-5 w-5 cursor-pointer",
+              isInherited && "opacity-50",
+            )}
           />
         </div>
       </TooltipTrigger>
@@ -67,8 +70,8 @@ export function ThreeStateCheckbox({
         {isInherited
           ? `Inheriting from global (${globalValue ? "enabled" : "disabled"})`
           : value
-            ? "Explicitly enabled"
-            : "Explicitly disabled"}
+            ? "Enabled"
+            : "Disabled"}
       </TooltipContent>
     </Tooltip>
   );

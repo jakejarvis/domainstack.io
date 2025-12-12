@@ -64,7 +64,7 @@ export function DomainNotificationRow({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
+            className="h-7 cursor-pointer px-2 text-muted-foreground text-xs hover:text-foreground"
             onClick={onReset}
             disabled={disabled}
           >
@@ -91,11 +91,6 @@ export function DomainNotificationRow({
                 )}
               >
                 {NOTIFICATION_CATEGORY_INFO[category].label}
-                {isInherited && (
-                  <span className="ml-1 text-muted-foreground/60">
-                    (default)
-                  </span>
-                )}
               </span>
               <ThreeStateCheckbox
                 value={override}
@@ -123,29 +118,29 @@ export function DomainNotificationRow({
         <Favicon domain={domainName} size={18} />
         <span className="truncate text-sm">{domainName}</span>
       </div>
-      {NOTIFICATION_CATEGORIES.map((category) => {
-        const override = overrides[category];
-        const globalValue = globalPrefs[category];
-
-        return (
-          <div key={category} className="flex justify-center">
-            <ThreeStateCheckbox
-              value={override}
-              globalValue={globalValue}
-              onChange={(value) => onToggle(category, value)}
-              disabled={disabled}
-            />
-          </div>
-        );
-      })}
       <div className="flex justify-center">
+        {NOTIFICATION_CATEGORIES.map((category) => {
+          const override = overrides[category];
+          const globalValue = globalPrefs[category];
+
+          return (
+            <div key={category} className="flex justify-center">
+              <ThreeStateCheckbox
+                value={override}
+                globalValue={globalValue}
+                onChange={(value) => onToggle(category, value)}
+                disabled={disabled}
+              />
+            </div>
+          );
+        })}
         {hasOverrides ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 text-muted-foreground hover:text-foreground"
+                className="size-7 cursor-pointer text-muted-foreground hover:text-foreground"
                 onClick={onReset}
                 disabled={disabled}
               >

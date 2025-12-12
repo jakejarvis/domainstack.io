@@ -65,12 +65,13 @@ export function BulkActionsToolbar({
                   aria-label={
                     isAllSelected ? "Deselect all" : `Select all ${totalCount}`
                   }
+                  className="cursor-pointer"
                 />
                 <button
                   type="button"
                   onClick={onToggleAll}
                   disabled={isLoading}
-                  className="text-sm hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cursor-pointer text-sm hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Select all ({totalCount})
                 </button>
@@ -93,10 +94,10 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onArchive}
                 disabled={isLoading}
-                className="gap-1.5"
+                className="cursor-pointer"
               >
                 <Archive className="size-3.5" />
-                <span className="hidden sm:inline">Archive</span>
+                Archive
               </Button>
 
               <Button
@@ -104,10 +105,10 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onDelete}
                 disabled={isLoading}
-                className="gap-1.5"
+                className="cursor-pointer"
               >
                 <Trash2 className="size-3.5" />
-                <span className="hidden sm:inline">Delete</span>
+                Delete
               </Button>
 
               <Button
@@ -115,7 +116,7 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onCancel}
                 disabled={isLoading}
-                className="gap-1.5"
+                className="cursor-pointer"
               >
                 <X className="size-3.5" />
                 <span className="hidden sm:inline">Cancel</span>
