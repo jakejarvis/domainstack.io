@@ -2,10 +2,10 @@
 
 import { differenceInDays } from "date-fns";
 import {
+  Activity,
   AlertTriangle,
   CircleHelp,
   ClockFading,
-  HeartPulse,
   Siren,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +74,7 @@ function getStatusConfig(status: HealthStatus): {
         variant: "default",
         colorClass:
           "border-success-border bg-success/10 font-semibold text-success-foreground",
-        icon: <HeartPulse className="size-3" />,
+        icon: <Activity className="size-3" />,
       };
     case "warning":
       return {

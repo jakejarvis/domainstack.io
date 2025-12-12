@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, BellPlus, Check } from "lucide-react";
+import { BadgeCheck, BellPlus, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
@@ -121,7 +121,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <Check className="size-4 text-accent-green" />
+      <CircleAlert className="size-4 text-accent-orange" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (

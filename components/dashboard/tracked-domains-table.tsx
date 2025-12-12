@@ -44,6 +44,7 @@ import {
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useTablePagination } from "@/hooks/use-table-pagination";
+import { useTruncation } from "@/hooks/use-truncation";
 import type {
   ProviderInfo,
   TrackedDomainWithDetails,
@@ -67,17 +68,26 @@ type TrackedDomainsTableProps = {
 };
 
 function ProviderCell({ provider }: { provider: ProviderInfo }) {
+  const { valueRef, isTruncated } = useTruncation();
+
   if (!provider.name) {
     return <span className="text-muted-foreground text-xs">—</span>;
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      {provider.domain && (
-        <Favicon domain={provider.domain} size={13} className="shrink-0" />
-      )}
-      <span className="truncate text-[13px]">{provider.name}</span>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {provider.domain && (
+            <Favicon domain={provider.domain} size={13} className="shrink-0" />
+          )}
+          <span ref={valueRef} className="truncate text-[13px]">
+            {provider.name}
+          </span>
+        </div>
+      </TooltipTrigger>
+      {isTruncated && <TooltipContent>{provider.name}</TooltipContent>}
+    </Tooltip>
   );
 }
 
@@ -121,14 +131,33 @@ export function TrackedDomainsTable({
       {
         id: "select",
         header: () => null, // No header checkbox here - it's in the bulk toolbar
-        cell: ({ row }) => (
-          <Checkbox
-            checked={selectedIds.has(row.original.id)}
-            onCheckedChange={() => onToggleSelect?.(row.original.id)}
-            aria-label={`Select ${row.original.domainName}`}
-          />
-        ),
-        size: 40,
+        cell: ({ row }) => {
+          const isSelected = selectedIds.has(row.original.id);
+          return (
+            <div className="relative flex size-4 items-center justify-center">
+              {/* Favicon - hidden on hover or when selected */}
+              <Favicon
+                domain={row.original.domainName}
+                size={16}
+                className={cn(
+                  "absolute",
+                  isSelected ? "hidden" : "group-hover:hidden",
+                )}
+              />
+              {/* Checkbox - shown on hover or when selected */}
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggleSelect?.(row.original.id)}
+                aria-label={`Select ${row.original.domainName}`}
+                className={cn(
+                  "absolute",
+                  isSelected ? "flex" : "hidden group-hover:flex",
+                )}
+              />
+            </div>
+          );
+        },
+        size: 48,
         enableHiding: false, // Always show selection column
       },
       {
@@ -138,16 +167,16 @@ export function TrackedDomainsTable({
           <ScreenshotTooltip domain={row.original.domainName}>
             <Link
               href={`/${row.original.domainName}`}
-              className="group flex items-center gap-1.5"
+              className="group/link flex items-center"
             >
-              <Favicon domain={row.original.domainName} size={16} />
-              <span className="font-medium text-[13px] group-hover:underline">
+              <span className="font-medium text-[13px] group-hover/link:underline">
                 {row.original.domainName}
               </span>
             </Link>
           </ScreenshotTooltip>
         ),
         enableHiding: false, // Always show domain name
+        // No size - let it auto-size to content
       },
       {
         accessorKey: "verified",
@@ -158,6 +187,7 @@ export function TrackedDomainsTable({
             verificationStatus={row.original.verificationStatus}
           />
         ),
+        size: 100,
         // Sort verified domains first (verified = -1, unverified = 1)
         sortingFn: (rowA, rowB) => {
           return rowA.original.verified === rowB.original.verified
@@ -177,6 +207,7 @@ export function TrackedDomainsTable({
             verified={row.original.verified}
           />
         ),
+        size: 100,
       },
       {
         accessorKey: "expirationDate",
@@ -201,6 +232,7 @@ export function TrackedDomainsTable({
             </div>
           );
         },
+        size: 110,
         sortingFn: (rowA, rowB) => {
           const a = rowA.original.expirationDate?.getTime() ?? 0;
           const b = rowB.original.expirationDate?.getTime() ?? 0;
@@ -212,24 +244,28 @@ export function TrackedDomainsTable({
         accessorFn: (row) => row.registrar.name ?? "",
         header: "Registrar",
         cell: ({ row }) => <ProviderCell provider={row.original.registrar} />,
+        size: 128,
       },
       {
         id: "dns",
         accessorFn: (row) => row.dns.name ?? "",
         header: "DNS",
         cell: ({ row }) => <ProviderCell provider={row.original.dns} />,
+        size: 128,
       },
       {
         id: "hosting",
         accessorFn: (row) => row.hosting.name ?? "",
         header: "Hosting",
         cell: ({ row }) => <ProviderCell provider={row.original.hosting} />,
+        size: 128,
       },
       {
         id: "email",
         accessorFn: (row) => row.email.name ?? "",
         header: "Email",
         cell: ({ row }) => <ProviderCell provider={row.original.email} />,
+        size: 128,
       },
       {
         accessorKey: "createdAt",
@@ -251,6 +287,7 @@ export function TrackedDomainsTable({
             </div>
           );
         },
+        size: 110,
         sortingFn: (rowA, rowB) => {
           return (
             rowA.original.createdAt.getTime() -
@@ -304,14 +341,15 @@ export function TrackedDomainsTable({
                 onClick={() =>
                   onRemove(row.original.id, row.original.domainName)
                 }
-                className="cursor-pointer text-destructive focus:text-destructive"
+                className="cursor-pointer"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5 text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
+        size: 48,
         enableHiding: false, // Always show actions menu
       },
     ],
@@ -342,7 +380,19 @@ export function TrackedDomainsTable({
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            {table.getVisibleLeafColumns().map((column) => (
+              <col
+                key={column.id}
+                style={
+                  column.columnDef.size
+                    ? { width: `${column.columnDef.size}px` }
+                    : { width: "auto" }
+                }
+              />
+            ))}
+          </colgroup>
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
@@ -365,10 +415,14 @@ export function TrackedDomainsTable({
                   return (
                     <th
                       key={header.id}
+                      style={
+                        header.column.columnDef.size
+                          ? { width: `${header.column.columnDef.size}px` }
+                          : undefined
+                      }
                       className={cn(
                         "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs",
-                        index === 0 && "w-9 pl-4", // Checkbox column
-                        header.column.id === "actions" && "w-12", // Actions column fixed width
+                        index === 0 && "pl-4",
                         index === headerGroup.headers.length - 1 && "pr-4",
                       )}
                     >
@@ -439,13 +493,22 @@ export function TrackedDomainsTable({
                     <tr
                       key={row.id}
                       className={cn(
-                        "transition-colors hover:bg-muted/30",
+                        "group transition-colors hover:bg-muted/30",
                         isSelected && "bg-primary/10",
                       )}
                     >
                       {/* Checkbox column */}
                       {selectCell && (
-                        <td className="h-12 w-9 pr-2.5 pl-4 align-middle">
+                        <td
+                          style={
+                            selectCell.column.columnDef.size
+                              ? {
+                                  width: `${selectCell.column.columnDef.size}px`,
+                                }
+                              : undefined
+                          }
+                          className="h-12 pr-2.5 pl-5 align-middle"
+                        >
                           {flexRender(
                             selectCell.column.columnDef.cell,
                             selectCell.getContext(),
@@ -463,7 +526,16 @@ export function TrackedDomainsTable({
                       )}
                       {/* Status column */}
                       {statusCell && (
-                        <td className="h-12 px-2.5 align-middle">
+                        <td
+                          style={
+                            statusCell.column.columnDef.size
+                              ? {
+                                  width: `${statusCell.column.columnDef.size}px`,
+                                }
+                              : undefined
+                          }
+                          className="h-12 px-2.5 align-middle"
+                        >
                           {flexRender(
                             statusCell.column.columnDef.cell,
                             statusCell.getContext(),
@@ -483,16 +555,38 @@ export function TrackedDomainsTable({
                             size="sm"
                             variant="outline"
                             onClick={() => onVerify(row.original)}
-                            className="h-8 cursor-pointer px-2 text-xs"
+                            className="h-8 cursor-pointer px-2 text-[13px]"
                           >
-                            <RefreshCw className="size-3" />
+                            <RefreshCw className="size-3.5 text-accent-green" />
                             Verify
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              onRemove(row.original.id, row.original.domainName)
+                            }
+                            className="h-8 cursor-pointer px-2 text-[13px]"
+                          >
+                            <Trash2 className="size-3.5 text-danger-foreground" />
+                            Remove
                           </Button>
                         </div>
                       </td>
                       {/* Actions column */}
                       {actionsCell && (
-                        <td className="h-12 w-12 px-2.5 pr-4 align-middle">
+                        <td
+                          style={{
+                            ...(actionsCell.column.columnDef.size
+                              ? {
+                                  width: `${actionsCell.column.columnDef.size}px`,
+                                }
+                              : {}),
+                            position: "sticky",
+                            right: 0,
+                          }}
+                          className="h-12 px-2.5 pr-4 align-middle"
+                        >
                           {flexRender(
                             actionsCell.column.columnDef.cell,
                             actionsCell.getContext(),
@@ -508,26 +602,37 @@ export function TrackedDomainsTable({
                   <tr
                     key={row.id}
                     className={cn(
-                      "transition-colors hover:bg-muted/30",
+                      "group transition-colors hover:bg-muted/30",
                       isSelected && "bg-primary/10",
                     )}
                   >
-                    {cells.map((cell, index) => (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          "h-10 px-2.5 align-middle",
-                          index === 0 && "w-9 pl-4",
-                          cell.column.id === "actions" && "w-12", // Actions column fixed width
-                          index === cells.length - 1 && "pr-4",
-                        )}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
+                    {cells.map((cell, index) => {
+                      const isActionsColumn = cell.column.id === "actions";
+
+                      return (
+                        <td
+                          key={cell.id}
+                          style={{
+                            ...(cell.column.columnDef.size
+                              ? { width: `${cell.column.columnDef.size}px` }
+                              : {}),
+                            ...(isActionsColumn
+                              ? { position: "sticky", right: 0 }
+                              : {}),
+                          }}
+                          className={cn(
+                            "h-10 px-2.5 align-middle",
+                            index === 0 && "pl-4 text-center",
+                            index === cells.length - 1 && "pr-4",
+                          )}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })

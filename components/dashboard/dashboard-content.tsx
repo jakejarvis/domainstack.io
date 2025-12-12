@@ -303,28 +303,28 @@ export function DashboardContent() {
       case "remove":
         return {
           title: "Remove domain?",
-          description: `Are you sure you want to remove "${confirmAction.domainName}"? This action cannot be undone and you will stop receiving notifications for this domain.`,
+          description: `Are you sure you want to stop tracking ${confirmAction.domainName}?`,
           confirmLabel: "Remove",
           variant: "destructive" as const,
         };
       case "archive":
         return {
           title: "Archive domain?",
-          description: `Are you sure you want to archive "${confirmAction.domainName}"? You can reactivate it later from the Archived tab.`,
+          description: `Are you sure you want to archive ${confirmAction.domainName}? You can reactivate it later from the Archived section.`,
           confirmLabel: "Archive",
           variant: "default" as const,
         };
       case "bulk-archive":
         return {
           title: `Archive ${confirmAction.count} domains?`,
-          description: `Are you sure you want to archive ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}? You can reactivate them later from the Archived tab.`,
+          description: `Are you sure you want to archive ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}? You can reactivate them later from the Archived section.`,
           confirmLabel: "Archive All",
           variant: "default" as const,
         };
       case "bulk-delete":
         return {
           title: `Delete ${confirmAction.count} domains?`,
-          description: `Are you sure you want to permanently delete ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}? This action cannot be undone and you will stop receiving notifications for these domains.`,
+          description: `Are you sure you want to stop tracking ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}?`,
           confirmLabel: "Delete All",
           variant: "destructive" as const,
         };
