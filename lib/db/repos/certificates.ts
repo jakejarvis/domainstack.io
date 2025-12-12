@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { InferInsertModel } from "drizzle-orm";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   certificates,
@@ -64,12 +64,17 @@ export type TrackedDomainCertificate = {
  * Get all certificates for verified, non-archived tracked domains.
  * Archived domains are excluded since archiving pauses monitoring.
  * Returns the earliest expiring certificate for each tracked domain.
+ *
+ * Uses PostgreSQL DISTINCT ON to efficiently get one certificate per tracked domain,
+ * ordered by validTo ASC (earliest expiring first), avoiding in-memory grouping.
  */
 export async function getVerifiedTrackedDomainsCertificates(): Promise<
   TrackedDomainCertificate[]
 > {
+  // Use DISTINCT ON to get the earliest expiring certificate per tracked domain
+  // This is more efficient than fetching all certificates and grouping in JS
   const rows = await db
-    .select({
+    .selectDistinctOn([userTrackedDomains.id], {
       trackedDomainId: userTrackedDomains.id,
       userId: userTrackedDomains.userId,
       domainId: userTrackedDomains.domainId,
@@ -89,17 +94,10 @@ export async function getVerifiedTrackedDomainsCertificates(): Promise<
         eq(userTrackedDomains.verified, true),
         isNull(userTrackedDomains.archivedAt),
       ),
-    );
+    )
+    // For DISTINCT ON, the first ORDER BY column(s) must match the DISTINCT ON columns
+    // Then order by validTo ASC to get the earliest expiring certificate
+    .orderBy(userTrackedDomains.id, asc(certificates.validTo));
 
-  // Group by tracked domain and take the earliest expiring certificate
-  const byTrackedDomain = new Map<string, TrackedDomainCertificate>();
-
-  for (const row of rows) {
-    const existing = byTrackedDomain.get(row.trackedDomainId);
-    if (!existing || row.validTo < existing.validTo) {
-      byTrackedDomain.set(row.trackedDomainId, row);
-    }
-  }
-
-  return Array.from(byTrackedDomain.values());
+  return rows;
 }

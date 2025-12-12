@@ -5,8 +5,9 @@ import { analytics } from "@/lib/analytics/server";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
   archiveTrackedDomain,
-  countActiveTrackedDomainsForUser,
-  countArchivedTrackedDomainsForUser,
+  bulkArchiveTrackedDomains,
+  bulkRemoveTrackedDomains,
+  countTrackedDomainsByStatus,
   createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
   findTrackedDomain,
@@ -61,21 +62,23 @@ function buildVerificationInstructions(domain: string, token: string) {
 export const trackingRouter = createTRPCRouter({
   /**
    * Get user's limits and current usage.
+   * Optimized to run all queries in parallel.
    */
   getLimits: protectedProcedure.query(async ({ ctx }) => {
-    const sub = await getUserSubscription(ctx.user.id);
-    const activeCount = await countActiveTrackedDomainsForUser(ctx.user.id);
-    const archivedCount = await countArchivedTrackedDomainsForUser(ctx.user.id);
-    // Get pro tier max domains for upgrade prompts (from Edge Config)
-    const proMaxDomains = await getMaxDomainsForTier("pro");
+    // Run all independent queries in parallel for better performance
+    const [sub, counts, proMaxDomains] = await Promise.all([
+      getUserSubscription(ctx.user.id),
+      countTrackedDomainsByStatus(ctx.user.id),
+      getMaxDomainsForTier("pro"),
+    ]);
 
     return {
       tier: sub.tier,
       maxDomains: sub.maxDomains,
-      activeCount,
-      archivedCount,
+      activeCount: counts.active,
+      archivedCount: counts.archived,
       // Only active domains count against limit
-      canAddMore: activeCount < sub.maxDomains,
+      canAddMore: counts.active < sub.maxDomains,
       // When a canceled subscription expires (null = no pending cancellation)
       subscriptionEndsAt: sub.endsAt,
       // Pro tier limit for upgrade prompts
@@ -484,7 +487,7 @@ export const trackingRouter = createTRPCRouter({
 
   /**
    * Bulk archive multiple tracked domains.
-   * Performs all operations in parallel for efficiency.
+   * Uses batch operations for efficiency (2 queries instead of N+1).
    */
   bulkArchiveDomains: protectedProcedure
     .input(
@@ -495,37 +498,13 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainIds } = input;
 
-      const results = await Promise.allSettled(
-        trackedDomainIds.map(async (trackedDomainId) => {
-          // Get tracked domain
-          const tracked = await findTrackedDomainById(trackedDomainId);
-          if (!tracked) {
-            throw new Error("Tracked domain not found");
-          }
-
-          // Ensure user owns this tracked domain
-          if (tracked.userId !== ctx.user.id) {
-            throw new Error("You do not have access to this domain");
-          }
-
-          // Skip if already archived
-          if (tracked.archivedAt) {
-            return { id: trackedDomainId, alreadyArchived: true };
-          }
-
-          const updated = await archiveTrackedDomain(trackedDomainId);
-          if (!updated) {
-            throw new Error("Failed to archive domain");
-          }
-
-          return { id: trackedDomainId, archivedAt: updated.archivedAt };
-        }),
+      const result = await bulkArchiveTrackedDomains(
+        ctx.user.id,
+        trackedDomainIds,
       );
 
-      const successCount = results.filter(
-        (r) => r.status === "fulfilled",
-      ).length;
-      const failedCount = results.filter((r) => r.status === "rejected").length;
+      const successCount = result.succeeded.length;
+      const failedCount = result.notFound.length + result.notOwned.length;
 
       if (successCount > 0) {
         analytics.track(
@@ -540,7 +519,7 @@ export const trackingRouter = createTRPCRouter({
 
   /**
    * Bulk remove multiple tracked domains.
-   * Performs all operations in parallel for efficiency.
+   * Uses batch operations for efficiency (2 queries instead of N+1).
    */
   bulkRemoveDomains: protectedProcedure
     .input(
@@ -551,32 +530,13 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainIds } = input;
 
-      const results = await Promise.allSettled(
-        trackedDomainIds.map(async (trackedDomainId) => {
-          // Get tracked domain
-          const tracked = await findTrackedDomainById(trackedDomainId);
-          if (!tracked) {
-            throw new Error("Tracked domain not found");
-          }
-
-          // Ensure user owns this tracked domain
-          if (tracked.userId !== ctx.user.id) {
-            throw new Error("You do not have access to this domain");
-          }
-
-          const deleted = await deleteTrackedDomain(trackedDomainId);
-          if (!deleted) {
-            throw new Error("Failed to remove domain");
-          }
-
-          return { id: trackedDomainId };
-        }),
+      const result = await bulkRemoveTrackedDomains(
+        ctx.user.id,
+        trackedDomainIds,
       );
 
-      const successCount = results.filter(
-        (r) => r.status === "fulfilled",
-      ).length;
-      const failedCount = results.filter((r) => r.status === "rejected").length;
+      const successCount = result.succeeded.length;
+      const failedCount = result.notFound.length + result.notOwned.length;
 
       if (successCount > 0) {
         analytics.track(

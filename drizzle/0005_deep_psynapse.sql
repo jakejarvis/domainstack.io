@@ -1,0 +1,1 @@
+CREATE INDEX "i_tracked_domains_user_active_ordered" ON "user_tracked_domains" USING btree ("user_id","archived_at","created_at","id");

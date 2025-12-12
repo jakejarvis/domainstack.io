@@ -226,6 +226,14 @@ export const userTrackedDomains = pgTable(
     index("i_tracked_domains_verified").on(t.verified),
     index("i_tracked_domains_status").on(t.verificationStatus),
     index("i_tracked_domains_archived").on(t.archivedAt),
+    // Composite index for paginated dashboard query:
+    // WHERE userId = ? AND archivedAt IS NULL ORDER BY createdAt DESC, id DESC
+    index("i_tracked_domains_user_active_ordered").on(
+      t.userId,
+      t.archivedAt,
+      t.createdAt,
+      t.id,
+    ),
   ],
 );
 

@@ -429,6 +429,11 @@ async function attachDnsRecords(
   });
 }
 
+type QueryTrackedDomainsOptions = {
+  /** Whether to include DNS records (requires additional query). Default true. */
+  includeDnsRecords?: boolean;
+};
+
 /**
  * Internal helper to query tracked domains with full details.
  * Centralizes the complex select/join logic used by multiple public functions.
@@ -438,7 +443,10 @@ async function queryTrackedDomainsWithDetails(
   orderByColumn:
     | typeof userTrackedDomains.createdAt
     | typeof userTrackedDomains.archivedAt,
+  options: QueryTrackedDomainsOptions = {},
 ): Promise<TrackedDomainWithDetails[]> {
+  const { includeDnsRecords = true } = options;
+
   // Create aliases for the providers table (joined multiple times)
   const registrarProvider = alias(providers, "registrar_provider");
   const dnsProvider = alias(providers, "dns_provider");
@@ -490,17 +498,33 @@ async function queryTrackedDomainsWithDetails(
     .orderBy(orderByColumn);
 
   const domainsWithoutRecords = rows.map(transformToTrackedDomainWithDetails);
-  return attachDnsRecords(domainsWithoutRecords);
+
+  return includeDnsRecords
+    ? attachDnsRecords(domainsWithoutRecords)
+    : domainsWithoutRecords;
 }
+
+export type GetTrackedDomainsOptions = {
+  /** If true, returns all domains including archived. Default false. */
+  includeArchived?: boolean;
+  /** If true, includes DNS records (requires additional query). Default true. */
+  includeDnsRecords?: boolean;
+};
 
 /**
  * Get all tracked domains for a user with domain details.
- * @param includeArchived - If true, returns all domains including archived. Default false.
+ * @param options.includeArchived - If true, returns all domains including archived. Default false.
+ * @param options.includeDnsRecords - If true, includes DNS records. Default true.
  */
 export async function getTrackedDomainsForUser(
   userId: string,
-  includeArchived = false,
+  options: GetTrackedDomainsOptions | boolean = {},
 ): Promise<TrackedDomainWithDetails[]> {
+  // Handle legacy boolean parameter for backward compatibility
+  const opts =
+    typeof options === "boolean" ? { includeArchived: options } : options;
+  const { includeArchived = false, includeDnsRecords = true } = opts;
+
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
     : and(
@@ -512,13 +536,15 @@ export async function getTrackedDomainsForUser(
   return queryTrackedDomainsWithDetails(
     whereCondition as SQL,
     userTrackedDomains.createdAt,
+    { includeDnsRecords },
   );
 }
 
 export type PaginatedTrackedDomainsResult = {
   items: TrackedDomainWithDetails[];
   nextCursor: string | null;
-  totalCount: number;
+  /** Total count of domains. Only provided on first page (when cursor is undefined). */
+  totalCount: number | null;
 };
 
 /**
@@ -617,13 +643,16 @@ export async function getTrackedDomainsForUserPaginated(
     .orderBy(desc(userTrackedDomains.createdAt), desc(userTrackedDomains.id))
     .limit(limit + 1);
 
-  // Get total count for the user (separate query for accurate count)
-  const [countResult] = await db
-    .select({ count: count() })
-    .from(userTrackedDomains)
-    .where(baseCondition);
-
-  const totalCount = countResult?.count ?? 0;
+  // Only fetch count on first page (when cursor is undefined)
+  // Subsequent pages can use the cached count from the first page
+  let totalCount: number | null = null;
+  if (!cursor) {
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(userTrackedDomains)
+      .where(baseCondition);
+    totalCount = countResult?.count ?? 0;
+  }
 
   // Check if there's a next page
   const hasNextPage = rows.length > limit;
@@ -697,6 +726,40 @@ export async function countArchivedTrackedDomainsForUser(
     .where(whereCondition);
 
   return result?.count ?? 0;
+}
+
+export type TrackedDomainCounts = {
+  active: number;
+  archived: number;
+};
+
+/**
+ * Count active and archived tracked domains for a user.
+ * Runs both count queries in parallel for efficiency.
+ * More efficient than calling countActiveTrackedDomainsForUser and
+ * countArchivedTrackedDomainsForUser sequentially.
+ */
+export async function countTrackedDomainsByStatus(
+  userId: string,
+): Promise<TrackedDomainCounts> {
+  const userCondition = eq(userTrackedDomains.userId, userId);
+
+  // Run both count queries in parallel using type-safe Drizzle functions
+  const [activeResult, archivedResult] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(userTrackedDomains)
+      .where(and(userCondition, isNull(userTrackedDomains.archivedAt))),
+    db
+      .select({ count: count() })
+      .from(userTrackedDomains)
+      .where(and(userCondition, isNotNull(userTrackedDomains.archivedAt))),
+  ]);
+
+  return {
+    active: activeResult[0]?.count ?? 0,
+    archived: archivedResult[0]?.count ?? 0,
+  };
 }
 
 /**
@@ -1200,6 +1263,145 @@ export async function archiveOldestActiveDomains(
   });
 
   return archivedCount;
+}
+
+export type BulkOperationResult = {
+  succeeded: string[];
+  alreadyProcessed: string[];
+  notFound: string[];
+  notOwned: string[];
+};
+
+/**
+ * Bulk archive domains for a user with ownership verification.
+ * Uses batch operations to avoid N+1 queries.
+ *
+ * @param userId - The user ID performing the action
+ * @param trackedDomainIds - Array of tracked domain IDs to archive
+ * @returns Object with arrays of succeeded, alreadyProcessed, notFound, and notOwned IDs
+ */
+export async function bulkArchiveTrackedDomains(
+  userId: string,
+  trackedDomainIds: string[],
+): Promise<BulkOperationResult> {
+  if (trackedDomainIds.length === 0) {
+    return { succeeded: [], alreadyProcessed: [], notFound: [], notOwned: [] };
+  }
+
+  // 1. Fetch all requested domains in one query
+  const foundDomains = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      archivedAt: userTrackedDomains.archivedAt,
+    })
+    .from(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, trackedDomainIds));
+
+  const foundIds = new Set(foundDomains.map((d) => d.id));
+  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
+
+  // 2. Categorize domains
+  const notOwned: string[] = [];
+  const alreadyProcessed: string[] = [];
+  const toArchive: string[] = [];
+
+  for (const domain of foundDomains) {
+    if (domain.userId !== userId) {
+      notOwned.push(domain.id);
+    } else if (domain.archivedAt !== null) {
+      alreadyProcessed.push(domain.id);
+    } else {
+      toArchive.push(domain.id);
+    }
+  }
+
+  if (toArchive.length === 0) {
+    return { succeeded: [], alreadyProcessed, notFound, notOwned };
+  }
+
+  // 3. Batch update in one query
+  const archived = await db
+    .update(userTrackedDomains)
+    .set({ archivedAt: new Date() })
+    .where(inArray(userTrackedDomains.id, toArchive))
+    .returning({ id: userTrackedDomains.id });
+
+  const succeeded = archived.map((d) => d.id);
+
+  logger.info("bulk archived tracked domains", {
+    userId,
+    requested: trackedDomainIds.length,
+    succeeded: succeeded.length,
+    alreadyArchived: alreadyProcessed.length,
+    notFound: notFound.length,
+    notOwned: notOwned.length,
+  });
+
+  return { succeeded, alreadyProcessed, notFound, notOwned };
+}
+
+/**
+ * Bulk remove (delete) domains for a user with ownership verification.
+ * Uses batch operations to avoid N+1 queries.
+ *
+ * @param userId - The user ID performing the action
+ * @param trackedDomainIds - Array of tracked domain IDs to remove
+ * @returns Object with arrays of succeeded, notFound, and notOwned IDs
+ */
+export async function bulkRemoveTrackedDomains(
+  userId: string,
+  trackedDomainIds: string[],
+): Promise<Omit<BulkOperationResult, "alreadyProcessed">> {
+  if (trackedDomainIds.length === 0) {
+    return { succeeded: [], notFound: [], notOwned: [] };
+  }
+
+  // 1. Fetch all requested domains in one query
+  const foundDomains = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+    })
+    .from(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, trackedDomainIds));
+
+  const foundIds = new Set(foundDomains.map((d) => d.id));
+  const notFound = trackedDomainIds.filter((id) => !foundIds.has(id));
+
+  // 2. Filter for ownership
+  const notOwned: string[] = [];
+  const toRemove: string[] = [];
+
+  for (const domain of foundDomains) {
+    if (domain.userId !== userId) {
+      notOwned.push(domain.id);
+    } else {
+      toRemove.push(domain.id);
+    }
+  }
+
+  if (toRemove.length === 0) {
+    return { succeeded: [], notFound, notOwned };
+  }
+
+  // 3. Batch delete in one query
+  const deleted = await db
+    .delete(userTrackedDomains)
+    .where(inArray(userTrackedDomains.id, toRemove))
+    .returning({ id: userTrackedDomains.id });
+
+  const succeeded = deleted.map((d) => d.id);
+
+  logger.info("bulk removed tracked domains", {
+    userId,
+    requested: trackedDomainIds.length,
+    succeeded: succeeded.length,
+    notFound: notFound.length,
+    notOwned: notOwned.length,
+  });
+
+  return { succeeded, notFound, notOwned };
 }
 
 /**

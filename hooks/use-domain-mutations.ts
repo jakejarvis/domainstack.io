@@ -203,7 +203,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
               return {
                 ...page,
                 items: filteredItems,
-                totalCount: page.totalCount - removedCount,
+                // Only decrement totalCount if it was provided (first page)
+                totalCount:
+                  page.totalCount !== null
+                    ? page.totalCount - removedCount
+                    : null,
               };
             }),
           };
@@ -277,7 +281,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
               return {
                 ...page,
                 items: filteredItems,
-                totalCount: page.totalCount - removedCount,
+                // Only decrement totalCount if it was provided (first page)
+                totalCount:
+                  page.totalCount !== null
+                    ? page.totalCount - removedCount
+                    : null,
               };
             }),
           };
@@ -359,12 +367,16 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
                       ...page.items,
                       { ...domainToUnarchive, archivedAt: null },
                     ],
-                    totalCount: page.totalCount + 1,
+                    // Only increment totalCount if it was provided (first page)
+                    totalCount:
+                      page.totalCount !== null ? page.totalCount + 1 : null,
                   };
                 }
                 return {
                   ...page,
-                  totalCount: page.totalCount + 1,
+                  // Only increment totalCount if it was provided (first page)
+                  totalCount:
+                    page.totalCount !== null ? page.totalCount + 1 : null,
                 };
               }),
             };
@@ -444,7 +456,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
               return {
                 ...page,
                 items: filteredItems,
-                totalCount: page.totalCount - removedCount,
+                // Only decrement totalCount if it was provided (first page)
+                totalCount:
+                  page.totalCount !== null
+                    ? page.totalCount - removedCount
+                    : null,
               };
             }),
           };
@@ -522,7 +538,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
               return {
                 ...page,
                 items: filteredItems,
-                totalCount: page.totalCount - removedCount,
+                // Only decrement totalCount if it was provided (first page)
+                totalCount:
+                  page.totalCount !== null
+                    ? page.totalCount - removedCount
+                    : null,
               };
             }),
           };
