@@ -14,6 +14,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  ExternalLink,
   FileSymlink,
   MoreVertical,
   RefreshCw,
@@ -301,18 +302,29 @@ export function TrackedDomainsTable({
               <DropdownMenuItem asChild>
                 <Link
                   href={`/${row.original.domainName}`}
-                  className="cursor-pointer"
+                  className="cursor-pointer pr-4"
                 >
                   <FileSymlink className="size-3.5" />
                   Open Report
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a
+                  href={`https://${row.original.domainName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer pr-4"
+                >
+                  <ExternalLink className="size-3.5" />
+                  Open Domain
+                </a>
               </DropdownMenuItem>
               {onArchive && (
                 <DropdownMenuItem
                   onClick={() =>
                     onArchive(row.original.id, row.original.domainName)
                   }
-                  className="cursor-pointer"
+                  className="cursor-pointer pr-4"
                 >
                   <Archive className="size-3.5" />
                   Archive
@@ -323,7 +335,7 @@ export function TrackedDomainsTable({
                 onClick={() =>
                   onRemove(row.original.id, row.original.domainName)
                 }
-                className="cursor-pointer"
+                className="cursor-pointer pr-4"
               >
                 <Trash2 className="size-3.5 text-danger-foreground" />
                 Remove

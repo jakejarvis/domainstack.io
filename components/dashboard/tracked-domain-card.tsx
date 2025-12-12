@@ -3,6 +3,7 @@
 import { format } from "date-fns";
 import {
   Archive,
+  ExternalLink,
   FileSymlink,
   MoreVertical,
   RefreshCw,
@@ -127,22 +128,36 @@ export function TrackedDomainCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/${domainName}`} className="cursor-pointer">
+                <Link href={`/${domainName}`} className="cursor-pointer pr-4">
                   <FileSymlink className="size-4" />
                   Open Report
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a
+                  href={`https://${domainName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer pr-4"
+                >
+                  <ExternalLink className="size-4" />
+                  Open Domain
+                </a>
+              </DropdownMenuItem>
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
-                  className="cursor-pointer"
+                  className="cursor-pointer pr-4"
                 >
                   <Archive className="size-4" />
                   Archive
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+              <DropdownMenuItem
+                onClick={onRemove}
+                className="cursor-pointer pr-4"
+              >
                 <Trash2 className="size-3.5 text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
