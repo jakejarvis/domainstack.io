@@ -73,10 +73,8 @@ export function useDomainVerification({
     onSettled: () => {
       // Invalidate queries so the domain appears in the list
       // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
-      // Use exact: false to match all listDomains queries including infinite queries with different inputs
       void queryClient.invalidateQueries({
         queryKey: domainsQueryKey,
-        exact: false,
       });
       void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     },
@@ -206,10 +204,8 @@ export function useDomainVerification({
           method: result.method,
         });
         // Invalidate queries so the dashboard shows the updated verified status
-        // Use exact: false to match all listDomains queries including infinite queries
         void queryClient.invalidateQueries({
           queryKey: domainsQueryKey,
-          exact: false,
         });
         void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
         // Call onSuccess immediately so the dashboard refetches and shows updated status

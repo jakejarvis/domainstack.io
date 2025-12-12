@@ -63,7 +63,6 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     // Use partial matching to invalidate all listDomains queries (including infinite queries with different inputs)
     void queryClient.invalidateQueries({
       queryKey: trpc.tracking.listDomains.queryKey(),
-      exact: false,
     });
     void queryClient.invalidateQueries({
       queryKey: trpc.tracking.getLimits.queryKey(),

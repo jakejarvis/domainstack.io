@@ -124,12 +124,12 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   /**
    * Cancel all domain-related queries to prevent race conditions.
-   * Uses partial matching to catch infinite queries with different inputs.
+   * Uses predicate function to ensure we match infinite queries correctly.
    */
   const cancelQueries = async (includeArchived = false) => {
     await queryClient.cancelQueries({
-      queryKey: domainsQueryKey,
-      exact: false,
+      predicate: (query) =>
+        JSON.stringify(query.queryKey).includes("listDomains"),
     });
     await queryClient.cancelQueries({ queryKey: limitsQueryKey });
     if (includeArchived) {
@@ -139,12 +139,12 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   /**
    * Invalidate all domain-related queries after mutation.
-   * Uses exact: false for domains to match infinite queries with different inputs.
+   * Uses predicate function to ensure we match infinite queries correctly.
    */
   const invalidateQueries = (includeArchived = false) => {
     void queryClient.invalidateQueries({
-      queryKey: domainsQueryKey,
-      exact: false,
+      predicate: (query) =>
+        JSON.stringify(query.queryKey).includes("listDomains"),
     });
     void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     if (includeArchived) {

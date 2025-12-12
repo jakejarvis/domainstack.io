@@ -96,6 +96,7 @@ export function ArchivedDomainsView({
                       size="sm"
                       onClick={() => onUnarchive(domain.id)}
                       disabled={!canUnarchive}
+                      className="cursor-pointer"
                     >
                       <RotateCcw className="size-4" />
                       <span className="sr-only sm:not-sr-only sm:ml-2">
@@ -109,20 +110,15 @@ export function ArchivedDomainsView({
                       : "Upgrade or remove active domains first"}
                   </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRemove(domain.id, domain.domainName)}
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Permanently delete</TooltipContent>
-                </Tooltip>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onRemove(domain.id, domain.domainName)}
+                  className="cursor-pointer"
+                >
+                  <Trash2 className="size-4 text-danger-foreground" />
+                  <span className="sr-only">Delete</span>
+                </Button>
               </div>
             </CardContent>
           </Card>

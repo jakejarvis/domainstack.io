@@ -97,7 +97,7 @@ export function DashboardHeader({
                       "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
                       viewMode === "grid"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                        : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
                     )}
                   >
                     <LayoutGrid className="size-4" />
@@ -116,7 +116,7 @@ export function DashboardHeader({
                       "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
                       viewMode === "table"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                        : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
                     )}
                   >
                     <TableIcon className="size-4" />
