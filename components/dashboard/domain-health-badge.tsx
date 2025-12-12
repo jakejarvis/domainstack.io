@@ -3,10 +3,10 @@
 import { differenceInDays } from "date-fns";
 import {
   AlertTriangle,
-  CheckCircle,
   CircleHelp,
-  Clock,
-  ShieldAlert,
+  ClockFading,
+  HeartPulse,
+  Siren,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -74,7 +74,7 @@ function getStatusConfig(status: HealthStatus): {
         variant: "default",
         colorClass:
           "border-success-border bg-success/10 font-semibold text-success-foreground",
-        icon: <CheckCircle className="size-3" />,
+        icon: <HeartPulse className="size-3" />,
       };
     case "warning":
       return {
@@ -89,7 +89,7 @@ function getStatusConfig(status: HealthStatus): {
         label: "Critical",
         variant: "destructive",
         colorClass: "gap-1 font-semibold",
-        icon: <ShieldAlert className="size-3" />,
+        icon: <Siren className="size-3" />,
       };
     case "pending":
       return {
@@ -97,7 +97,7 @@ function getStatusConfig(status: HealthStatus): {
         variant: "outline",
         colorClass:
           "border-amber-300 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
-        icon: <Clock className="size-3" />,
+        icon: <ClockFading className="size-3" />,
       };
     case "unknown":
       return {

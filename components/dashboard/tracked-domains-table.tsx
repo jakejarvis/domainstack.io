@@ -26,7 +26,6 @@ import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
-import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -188,7 +187,7 @@ export function TrackedDomainsTable({
             return <span className="text-muted-foreground text-xs">—</span>;
           }
           return (
-            <div className="flex items-center gap-1 whitespace-nowrap text-[13px]">
+            <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-default">
@@ -199,9 +198,6 @@ export function TrackedDomainsTable({
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
               </Tooltip>
-              <span className="text-[10px] text-muted-foreground leading-none">
-                <RelativeExpiryString to={date} dangerDays={30} warnDays={45} />
-              </span>
             </div>
           );
         },

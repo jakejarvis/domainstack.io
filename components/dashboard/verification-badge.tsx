@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { VerificationStatusType } from "@/lib/db/repos/tracked-domains";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,7 @@ export function VerificationBadge({
           className,
         )}
       >
-        <CheckCircle className="size-3" />
+        <BadgeCheck className="size-3" />
         Verified
       </Badge>
     );
@@ -53,7 +53,7 @@ export function VerificationBadge({
         className,
       )}
     >
-      <Clock className="size-3" />
+      <ClockFading className="size-3" />
       Pending
     </Badge>
   );
