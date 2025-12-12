@@ -16,7 +16,7 @@
 - `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, registrations, screenshots, seo, tracked-domains, user-notification-preferences, user-subscription, users).
-- `lib/logger/` unified structured logging system using OpenTelemetry Logs API for automatic trace correlation and vendor-independent log export.
+- `lib/logger/` unified structured logging system powered by Pino for high-performance JSON logging with pretty-printed development output.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/schemas/` Zod schemas organized by domain.
@@ -62,7 +62,6 @@
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
-  - Mocks OpenTelemetry Logs API (`@opentelemetry/api-logs`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
@@ -274,7 +273,6 @@ Key patterns:
 ## Analytics & Observability
 - Uses **PostHog** for analytics and error tracking with reverse proxy via `/_proxy/ingest/*`.
 - PostHog sourcemap uploads configured in `next.config.ts` with `@posthog/nextjs-config`.
-- OpenTelemetry integration via manual SDK setup in `instrumentation.node.ts` for distributed tracing and structured logging.
 - Client-side analytics captured via `posthog-js` and initialized in `instrumentation-client.ts`.
 - Server-side analytics captured via `posthog-node` in `lib/analytics/server.ts`:
   - Uses `analytics.track()` and `analytics.trackException()` for unified tracking.
@@ -282,88 +280,37 @@ Key patterns:
   - Distinct ID sourced from PostHog cookie via `cache()`-wrapped `getDistinctId()` to comply with Next.js restrictions.
 - Analytics mocked in tests via `vitest.setup.ts`.
 
-## OpenTelemetry Tracing
-Distributed tracing implementation using manual OpenTelemetry SDK setup for full control over configuration.
-
-### Architecture
-- **Manual SDK setup**: `instrumentation.node.ts` initializes `NodeSDK` with explicit configuration (replaces `@vercel/otel`)
-- **Auto-instrumentation**: Uses `@opentelemetry/auto-instrumentations-node` for automatic HTTP/fetch/database tracing
-- **SimpleSpanProcessor**: Uses immediate export (not batched) for serverless compatibility
-- **Console + OTLP exporters**: Console enabled in development; OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
-- **tRPC middleware**: Creates spans for all tRPC procedures in `trpc/init.ts`
-- **Service layer**: All major services wrapped with `withSpan()` from `lib/tracing.ts`
-- **HTTP utilities**: Fetch operations instrumented in `lib/fetch.ts` and `lib/fetch-remote-asset.ts`
-
-### Tracing Utilities (`lib/tracing.ts`)
-Core helpers using `startActiveSpan()` for automatic context propagation:
-- `withSpan()` - Wrap async functions with automatic span creation
-- `withSpanSync()` - Synchronous version
-- `withChildSpan()` - Create child spans within traced functions
-- `getCurrentSpan()` - Get active span for custom attributes
-- `addSpanAttributes()` - Add attributes to current span
-- `addSpanEvent()` - Add time-stamped events to current span
-- Re-exports: `SpanStatusCode`, `SpanKind`, `Span`, `Attributes` for convenience
-
-### Service Layer Spans
-All services create spans with `app.target_domain` attribute for the domain being analyzed:
-- **DNS**: `dns.lookup` - Attributes: `app.target_domain`, `dns.cache_hit`, `dns.resolver`, `dns.record_count`, `dns.providers_tried` | Events: `dns.provider_attempt`, `dns.provider_success`, `dns.provider_failed`
-- **Certificates**: `cert.probe` - Attributes: `app.target_domain`, `cert.cache_hit`, `cert.chain_length`, `cert.ca_provider`, `cert.probe_failed`, `cert.error` | Events: `cert.probe_failed`
-- **Headers**: `headers.probe` - Attributes: `app.target_domain`, `headers.cache_hit`, `headers.status`, `headers.count`, `headers.dns_error`, `headers.probe_failed`, `headers.error` | Events: `headers.probe_failed`
-- **Hosting**: `hosting.detect` - Attributes: `app.target_domain`, `hosting.cache_hit`, `hosting.provider`
-- **Registration**: `registration.lookup` - Attributes: `app.target_domain`, `registration.cache_hit`, `registration.is_registered`, `registration.unavailable`, `registration.reason`, `registration.timeout` (distinguishes timeouts from truly unsupported TLDs)
-- **SEO**: `seo.parse` - Attributes: `app.target_domain`, `seo.cache_hit`, `seo.status`, `seo.has_og_image`, `seo.has_robots`, `seo.has_errors` | Events: `seo.html_fetch_failed`, `seo.robots_fetch_failed`, `seo.image_upload_failed`
-- **Favicon**: `favicon.fetch` - Attributes: `app.target_domain`, `favicon.cache_hit`, `favicon.found`, `favicon.source`
-- **Screenshot**: `screenshot.capture` - Attributes: `app.target_domain`, `screenshot.cache_hit`, `screenshot.found`, `screenshot.attempts_made`, `screenshot.attempts_max`, `screenshot.db_read_failed` | Events: `screenshot.attempt_start`, `screenshot.attempt_success`, `screenshot.attempt_failed`
-- **Verification**: `verification.verify` - Attributes: `verification.domain`, `verification.method`, `verification.verified`, `verification.error`, `verification.error_message`
-- **Verification (all methods)**: `verification.try_all` - Attributes: `verification.domain`, `verification.verified`, `verification.method`, `verification.methods_attempted` (when all methods fail)
-
-### HTTP Layer Spans
-Low-level HTTP operations use semantic conventions for standard attributes:
-- `http.fetch` - Retry logic with `url.full`, `http.request.method`, `http.response.status_code`, `http.attempt`, `http.retries_attempted` | Events: `http.retry`
-- `http.fetch_with_redirects` - Redirect handling with `http.redirects_followed`, `http.redirect_blocked`, `http.final_url`
-- `http.fetch_remote_asset` - SSRF-protected fetching with `http.bytes_received`, `http.content_type`, size limits
-
-### Span Hierarchy Example
-```
-trpc.domain.getHosting (tRPC middleware)
-  └─ hosting.detect (service layer)
-     ├─ dns.lookup → dns.resolve_type → http.fetch
-     └─ headers.probe → http.fetch_with_redirects
-```
-
-### Integration with Logging
-- Logger uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) which automatically includes trace context
-- `traceId` and `spanId` are automatically injected into log records from the active span
-- Logs and traces are correlated via OpenTelemetry's context propagation (no manual extraction needed)
-- See **Structured Logging** section for implementation details
-
 ## Structured Logging
 - Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
 - **Architecture:**
-  - Server-side uses OpenTelemetry Logs API (`@opentelemetry/api-logs`) for automatic trace correlation
-  - Client-side uses structured console output with matching format (OpenTelemetry SDK is Node.js-only)
-  - Manual SDK setup in `instrumentation.node.ts` with `SimpleLogRecordProcessor` for serverless compatibility
-  - Console exporter always enabled (Vercel captures stdout); OTLP exporter added when `OTEL_EXPORTER_OTLP_ENDPOINT` is set
-  - **IMPORTANT**: Always provide at least one log processor to ensure a `LoggerProvider` is created - without it, `logs.getLogger()` returns a no-op logger that silently discards all logs
-- **Server-side logging:**
+  - **Server:** Powered by **Pino** for high-performance structured JSON logging
+  - **Client:** Console-based logging for browser environments
+  - Server logs always output to stdout (captured by Vercel for runtime logs)
+  - Client logs output to console in development; errors always logged for debugging
+  - **Important:** OpenTelemetry (OTEL) logging and trace correlation are **intentionally NOT used**. Do not introduce OTEL Logs API, trace/span context, or OTEL instrumentation in future changes.
+- **Server-side logging (Pino):**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
-  - Or create service logger: `const logger = createLogger({ source: "dns" })`
-  - Automatic trace/span ID injection via OpenTelemetry context (no manual extraction)
+  - Or create child logger: `const logger = createLogger({ source: "dns" })`
+  - **Development:** Pretty-printed colorized output via `pino-pretty` transport
+  - **Production:** Raw JSON to stdout for log aggregation
+  - **Configuration:** `lib/logger/pino-config.ts` with singleton instance caching to prevent hot reload issues
   - Critical errors automatically tracked in PostHog
   - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
+  - Environment-based log level: configurable via `LOG_LEVEL` env var or defaults (test: warn, dev: debug, prod: info)
+  - **PostHog integration:** Critical errors sent to PostHog via `analytics.trackException()` for exception monitoring
 - **Client-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/client"`
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
   - Errors automatically tracked in PostHog
   - Console output only in development (info/debug) and always for errors
-- **Log format:** OpenTelemetry LogRecord format with fields: `severityNumber`, `severityText`, `body`, `attributes`, `traceId`, `spanId`, `timestamp`.
+- **Log format:** Structured JSON with fields: `timestamp` (ISO 8601), `level` (string label), `msg`, and context fields merged at root.
 - **Usage examples:**
   ```typescript
   // Server (service layer)
   import { createLogger } from "@/lib/logger/server";
   const logger = createLogger({ source: "dns" });
-  logger.debug("start example.com", { domain: "example.com" });
-  logger.info("ok example.com", { domain: "example.com", count: 5 });
+  logger.debug("resolving domain", { domain: "example.com" });
+  logger.info("resolution complete", { domain: "example.com", recordCount: 5 });
   logger.error("failed to resolve", error, { domain: "example.com" });
 
   // Client (components)
@@ -372,7 +319,6 @@ trpc.domain.getHosting (tRPC middleware)
   logger.info("search initiated", { domain: query });
   logger.error("search failed", error, { domain: query });
   ```
-- **Trace correlation:** Logs are automatically correlated with traces via OpenTelemetry's context propagation. The `traceId` from the active span is included in every log record, enabling end-to-end request tracing.
-- **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with OpenTelemetry context.
-- **Vendor independence:** Logs can be exported to any OpenTelemetry-compatible backend by configuring `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`.
-- **Testing:** Logger and OpenTelemetry Logs API mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
+- **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with structured context.
+- **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
+- **Edge Runtime:** Pino requires Node.js runtime (uses worker threads). All API routes use Node.js runtime. Client logger can be used for edge routes if needed.

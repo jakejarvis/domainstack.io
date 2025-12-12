@@ -8,226 +8,248 @@ import {
   batchResolveOrCreateProviderIds,
   makeProviderKey,
 } from "@/lib/db/repos/providers";
-import { certificates as certTable } from "@/lib/db/schema";
+import {
+  certificates as certTable,
+  providers as providersTable,
+} from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { Certificate } from "@/lib/schemas";
-import { addSpanAttributes, addSpanEvent, withSpan } from "@/lib/tracing";
 import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
 
-export const getCertificates = withSpan(
-  ([domain]: [string]) => ({
-    name: "cert.probe",
-    attributes: { "app.target_domain": domain },
-  }),
-  async function getCertificates(domain: string): Promise<Certificate[]> {
-    // Input domain is already normalized to registrable domain by router schema
-    logger.debug("start", { domain });
+/**
+ * Safely coerce altNames from DB to string array.
+ * Guards against non-array values that could slip through serialization.
+ */
+function safeAltNamesArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return [];
+}
 
-    // Generate single timestamp for access tracking and scheduling
-    const now = new Date();
-    const nowMs = now.getTime();
+export async function getCertificates(domain: string): Promise<Certificate[]> {
+  // Input domain is already normalized to registrable domain by router schema
+  logger.debug("start", { domain });
 
-    // Fast path: Check Postgres for cached certificate data
-    const existingDomain = await findDomainByName(domain);
-    const existing = existingDomain
-      ? await db
-          .select({
-            issuer: certTable.issuer,
-            subject: certTable.subject,
-            altNames: certTable.altNames,
-            validFrom: certTable.validFrom,
-            validTo: certTable.validTo,
-            expiresAt: certTable.expiresAt,
-          })
-          .from(certTable)
-          .where(eq(certTable.domainId, existingDomain.id))
-          // Order by validTo DESC: leaf certificates typically expire first (shorter validity period)
-          // This preserves the chain order: leaf -> intermediate -> root
-          .orderBy(certTable.validTo)
-      : ([] as Array<{
-          issuer: string;
-          subject: string;
-          altNames: unknown;
-          validFrom: Date;
-          validTo: Date;
-          expiresAt: Date | null;
-        }>);
-    if (existing.length > 0) {
-      const fresh = existing.every(
-        (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
-      );
-      if (fresh) {
-        const out: Certificate[] = existing.map((c) => ({
-          issuer: c.issuer,
-          subject: c.subject,
-          altNames: (c.altNames as unknown as string[]) ?? [],
-          validFrom: new Date(c.validFrom).toISOString(),
-          validTo: new Date(c.validTo).toISOString(),
-          caProvider: detectCertificateAuthority(c.issuer),
-        }));
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
 
-        // Add span attributes for cache hit
-        addSpanAttributes({
-          "cert.cache_hit": true,
-          "cert.chain_length": out.length,
-          ...(out[0] && { "cert.ca_provider": out[0].caProvider.name }),
-        });
+  // Fast path: Check Postgres for cached certificate data (join with providers)
+  const existingDomain = await findDomainByName(domain);
+  const existing = existingDomain
+    ? await db
+        .select({
+          issuer: certTable.issuer,
+          subject: certTable.subject,
+          altNames: certTable.altNames,
+          validFrom: certTable.validFrom,
+          validTo: certTable.validTo,
+          caProviderDomain: providersTable.domain,
+          caProviderName: providersTable.name,
+          expiresAt: certTable.expiresAt,
+        })
+        .from(certTable)
+        .leftJoin(providersTable, eq(certTable.caProviderId, providersTable.id))
+        .where(eq(certTable.domainId, existingDomain.id))
+        // Order by validTo ASC: leaf certificates typically expire first (shorter validity period)
+        // This preserves the chain order: leaf -> intermediate -> root
+        .orderBy(certTable.validTo)
+    : ([] as Array<{
+        issuer: string;
+        subject: string;
+        altNames: unknown;
+        validFrom: Date;
+        validTo: Date;
+        caProviderDomain: string | null;
+        caProviderName: string | null;
+        expiresAt: Date | null;
+      }>);
+  if (existing.length > 0) {
+    const fresh = existing.every(
+      (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
+    );
+    if (fresh) {
+      const out: Certificate[] = existing.map((c) => ({
+        issuer: c.issuer,
+        subject: c.subject,
+        altNames: safeAltNamesArray(c.altNames),
+        validFrom: new Date(c.validFrom).toISOString(),
+        validTo: new Date(c.validTo).toISOString(),
+        // Use cached provider data if available, otherwise detect
+        caProvider:
+          c.caProviderDomain && c.caProviderName
+            ? { domain: c.caProviderDomain, name: c.caProviderName }
+            : detectCertificateAuthority(c.issuer),
+      }));
 
-        logger.info("cache hit", {
-          domain,
-          count: out.length,
-          cached: true,
-        });
-        return out;
-      }
-    }
-
-    // Client gating avoids calling this without A/AAAA; server does not pre-check DNS here.
-    // Probe TLS connection to get certificate chain
-
-    try {
-      const chain = await new Promise<tls.DetailedPeerCertificate[]>(
-        (resolve, reject) => {
-          const socket = tls.connect(
-            {
-              host: domain,
-              port: 443,
-              servername: domain,
-              rejectUnauthorized: false,
-            },
-            () => {
-              // Clear timeout on successful connection
-              socket.setTimeout(0);
-              const peer = socket.getPeerCertificate(
-                true,
-              ) as tls.DetailedPeerCertificate;
-              const chain: tls.DetailedPeerCertificate[] = [];
-              let current: tls.DetailedPeerCertificate | null = peer;
-              while (current) {
-                chain.push(current);
-                const next = (
-                  current as unknown as { issuerCertificate?: unknown }
-                ).issuerCertificate as tls.DetailedPeerCertificate | undefined;
-                current = next && next !== current ? next : null;
-              }
-              socket.end();
-              resolve(chain);
-            },
-          );
-          socket.setTimeout(6000, () => {
-            socket.destroy(new Error("TLS timeout"));
-          });
-          socket.on("error", (err) => {
-            reject(err);
-          });
-        },
-      );
-
-      const out: Certificate[] = chain.map((c) => {
-        const issuerName = toName(c.issuer);
-        return {
-          issuer: issuerName,
-          subject: toName(c.subject),
-          altNames: parseAltNames(
-            (c as Partial<{ subjectaltname: string }>).subjectaltname,
-          ),
-          validFrom: new Date(c.valid_from).toISOString(),
-          validTo: new Date(c.valid_to).toISOString(),
-          caProvider: detectCertificateAuthority(issuerName),
-        };
+      logger.info("cache hit", {
+        domain,
+        count: out.length,
+        cached: true,
       });
+      return out;
+    }
+  }
 
-      const earliestValidTo =
-        out.length > 0
-          ? new Date(Math.min(...out.map((c) => new Date(c.validTo).getTime())))
-          : new Date(Date.now() + 3600_000);
+  // Client gating avoids calling this without A/AAAA; server does not pre-check DNS here.
+  // Probe TLS connection to get certificate chain
+  // Note: Certificates are returned in chain order (leaf -> intermediate -> root)
+  // because leaf certificates expire first (shorter validity period)
+  try {
+    const chain = await new Promise<tls.DetailedPeerCertificate[]>(
+      (resolve, reject) => {
+        let isDestroyed = false;
+        const socket = tls.connect(
+          {
+            host: domain,
+            port: 443,
+            servername: domain,
+            rejectUnauthorized: false,
+          },
+          () => {
+            // Clear timeout on successful connection
+            socket.setTimeout(0);
+            const peer = socket.getPeerCertificate(
+              true,
+            ) as tls.DetailedPeerCertificate;
+            const chain: tls.DetailedPeerCertificate[] = [];
+            let current: tls.DetailedPeerCertificate | null = peer;
+            while (current) {
+              chain.push(current);
+              const next = (
+                current as unknown as { issuerCertificate?: unknown }
+              ).issuerCertificate as tls.DetailedPeerCertificate | undefined;
+              current = next && next !== current ? next : null;
+            }
+            socket.end();
+            resolve(chain);
+          },
+        );
+        socket.setTimeout(6000, () => {
+          if (!isDestroyed) {
+            isDestroyed = true;
+            socket.destroy(new Error("TLS timeout"));
+          }
+        });
+        socket.on("error", (err) => {
+          // Destroy socket before rejecting to ensure cleanup
+          // Guard against double-destroy (socket.destroy can trigger error event)
+          if (!isDestroyed) {
+            isDestroyed = true;
+            socket.destroy();
+          }
+          reject(err);
+        });
+      },
+    );
 
-      // Persist to Postgres only if domain exists (i.e., is registered)
-      if (existingDomain) {
-        // Batch resolve all CA providers in one query
-        const caProviderInputs = out.map((c) => ({
+    const out: Certificate[] = chain.map((c) => {
+      const issuerName = toName(c.issuer);
+      return {
+        issuer: issuerName,
+        subject: toName(c.subject),
+        altNames: parseAltNames(
+          (c as Partial<{ subjectaltname: string }>).subjectaltname,
+        ),
+        validFrom: new Date(c.valid_from).toISOString(),
+        validTo: new Date(c.valid_to).toISOString(),
+        caProvider: detectCertificateAuthority(issuerName),
+      };
+    });
+
+    const earliestValidTo =
+      out.length > 0
+        ? new Date(Math.min(...out.map((c) => new Date(c.validTo).getTime())))
+        : new Date(Date.now() + 3600_000);
+
+    // Persist to Postgres only if domain exists (i.e., is registered)
+    if (existingDomain) {
+      // Batch resolve all CA providers in one query
+      // Filter out entries with null/empty domain or name to avoid creating bogus providers
+      const caProviderInputs = out
+        .filter(
+          (c) =>
+            c.caProvider.domain &&
+            c.caProvider.name &&
+            c.caProvider.domain.trim() !== "" &&
+            c.caProvider.name.trim() !== "",
+        )
+        .map((c) => ({
           category: "ca" as const,
           domain: c.caProvider.domain,
           name: c.caProvider.name,
         }));
 
-        const caProviderMap =
-          await batchResolveOrCreateProviderIds(caProviderInputs);
+      const caProviderMap =
+        await batchResolveOrCreateProviderIds(caProviderInputs);
 
-        const chainWithIds = out.map((c) => {
-          const key = makeProviderKey(
-            "ca",
-            c.caProvider.domain,
-            c.caProvider.name,
-          );
-          const caProviderId = caProviderMap.get(key);
+      const chainWithIds = out.map((c) => {
+        // Only lookup provider ID if both domain and name are valid
+        const hasValidProvider =
+          c.caProvider.domain &&
+          c.caProvider.name &&
+          c.caProvider.domain.trim() !== "" &&
+          c.caProvider.name.trim() !== "";
 
-          return {
-            issuer: c.issuer,
-            subject: c.subject,
-            altNames: c.altNames as unknown as string[],
-            validFrom: new Date(c.validFrom),
-            validTo: new Date(c.validTo),
-            caProviderId,
-          };
-        });
+        const caProviderId = hasValidProvider
+          ? (caProviderMap.get(
+              makeProviderKey("ca", c.caProvider.domain, c.caProvider.name),
+            ) ?? null)
+          : null;
 
-        const nextDue = ttlForCertificates(now, earliestValidTo);
-        await replaceCertificates({
-          domainId: existingDomain.id,
-          chain: chainWithIds,
-          fetchedAt: now,
-          expiresAt: nextDue,
-        });
+        return {
+          issuer: c.issuer,
+          subject: c.subject,
+          altNames: c.altNames,
+          validFrom: new Date(c.validFrom),
+          validTo: new Date(c.validTo),
+          caProviderId,
+        };
+      });
 
-        after(() => {
-          const dueAtMs = nextDue.getTime();
-          scheduleRevalidation(
+      const nextDue = ttlForCertificates(now, earliestValidTo);
+      await replaceCertificates({
+        domainId: existingDomain.id,
+        chain: chainWithIds,
+        fetchedAt: now,
+        expiresAt: nextDue,
+      });
+
+      after(() => {
+        const dueAtMs = nextDue.getTime();
+        scheduleRevalidation(
+          domain,
+          "certificates",
+          dueAtMs,
+          existingDomain.lastAccessedAt ?? null,
+        ).catch((err) => {
+          logger.error("schedule failed", err, {
             domain,
-            "certificates",
-            dueAtMs,
-            existingDomain.lastAccessedAt ?? null,
-          ).catch((err) => {
-            logger.error("schedule failed", err, {
-              domain,
-            });
           });
         });
-      }
-
-      // Add span attributes for successful TLS probe
-      addSpanAttributes({
-        "cert.cache_hit": false,
-        "cert.chain_length": out.length,
-        ...(out[0] && { "cert.ca_provider": out[0].caProvider.name }),
       });
-
-      logger.info("done", {
-        domain,
-        chainLength: out.length,
-      });
-      return out;
-    } catch (err) {
-      logger.error("probe failed", err, { domain });
-
-      // Record the failure in the span for observability
-      addSpanEvent("cert.probe_failed", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      addSpanAttributes({
-        "cert.probe_failed": true,
-        "cert.error": err instanceof Error ? err.message : String(err),
-      });
-
-      // Do not treat as fatal; return empty and avoid long-lived negative cache
-      return [];
     }
-  },
-);
+
+    logger.info("done", {
+      domain,
+      chainLength: out.length,
+    });
+    return out;
+  } catch (err) {
+    logger.error("probe failed", err, { domain });
+
+    // Rethrow to let callers distinguish between:
+    // - Empty array: domain has no certificates (legitimately empty)
+    // - Error thrown: TLS probe failed (network, timeout, invalid cert, etc.)
+    // Callers should handle this appropriately (e.g., retry, show error state)
+    throw err;
+  }
+}
 
 export function toName(subject: tls.PeerCertificate["subject"] | undefined) {
   if (!subject) return "";

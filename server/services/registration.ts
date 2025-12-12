@@ -11,7 +11,6 @@ import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { RegistrationContacts, RegistrationResponse } from "@/lib/schemas";
-import { addSpanAttributes, withSpan } from "@/lib/tracing";
 import { ttlForRegistration } from "@/lib/ttl";
 
 const logger = createLogger({ source: "registration" });
@@ -54,21 +53,18 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
 /**
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
  */
-export const getRegistration = withSpan(
-  ([domain]: [string]) => ({
-    name: "registration.lookup",
-    attributes: { "app.target_domain": domain },
-  }),
-  async function getRegistration(
-    domain: string,
-  ): Promise<RegistrationResponse> {
-    // Input domain is already normalized to registrable domain by router schema
-    logger.debug("start", { domain });
+export async function getRegistration(
+  domain: string,
+): Promise<RegistrationResponse> {
+  // Input domain is already normalized to registrable domain by router schema
+  logger.debug("start", { domain });
 
-    // Generate single timestamp for access tracking and scheduling
-    const now = new Date();
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
 
-    // ===== Fast path: Postgres cache for full registration data =====
+  // ===== Fast path: Postgres cache for full registration data =====
+  // Wrapped in try/catch to gracefully handle Postgres unavailability
+  try {
     // Single query to fetch domain + registration + provider
     const existing = await db
       .select({
@@ -102,6 +98,8 @@ export const getRegistration = withSpan(
         domain,
         tld: row.domainTld,
         isRegistered: row.registration.isRegistered,
+        status: row.registration.isRegistered ? "registered" : "unregistered",
+        unavailableReason: undefined,
         privacyEnabled: row.registration.privacyEnabled ?? false,
         unicodeName: row.domainUnicodeName,
         punycodeName: row.domainName,
@@ -121,16 +119,6 @@ export const getRegistration = withSpan(
         registrarProvider,
       };
 
-      // Add span attributes for cache hit
-      addSpanAttributes({
-        "registration.cache_hit": true,
-        "registration.tld": row.domainTld,
-        "registration.is_registered": row.registration.isRegistered,
-        ...(registrarProvider.name && {
-          "registration.registrar": registrarProvider.name,
-        }),
-      });
-
       // Schedule background revalidation using actual last access time
       after(() => {
         scheduleRevalidation(
@@ -149,107 +137,74 @@ export const getRegistration = withSpan(
 
       return response;
     }
-
-    // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
-    // Fetch bootstrap data with Next.js caching to avoid redundant IANA requests
-    const bootstrapData = await getRdapBootstrapData();
-
-    const { ok, record, error } = await lookup(domain, {
-      timeoutMs: 5000,
-      customBootstrapData: bootstrapData,
+  } catch (err) {
+    // Postgres unavailable - log and fall through to slow path
+    logger.warn("db cache unavailable, falling back to rdapper", err, {
+      domain,
     });
+  }
 
-    if (!ok || !record) {
-      // Classify error types to distinguish infrastructure issues from unsupported TLDs
-      const isUnsupported = isExpectedRegistrationError(error);
-      const isTimeout = isTimeoutError(error);
+  // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
+  // Fetch bootstrap data with Next.js caching to avoid redundant IANA requests
+  const bootstrapData = await getRdapBootstrapData();
 
-      if (isUnsupported || isTimeout) {
-        logger.info(isTimeout ? "timeout" : "unavailable", {
-          domain,
-          reason: error || "unknown",
-        });
+  const { ok, record, error } = await lookup(domain, {
+    timeoutMs: 5000,
+    customBootstrapData: bootstrapData,
+  });
 
-        addSpanAttributes({
-          "registration.cache_hit": false,
-          "registration.unavailable": true,
-          "registration.reason": String(error || "unknown"),
-          // Distinguish timeouts (may indicate connectivity issues) from unsupported TLDs
-          ...(isTimeout && { "registration.timeout": true }),
-        });
+  if (!ok || !record) {
+    // Classify error types to distinguish infrastructure issues from unsupported TLDs
+    const isUnsupported = isExpectedRegistrationError(error);
+    const isTimeout = isTimeoutError(error);
 
-        // Return minimal response with source: null indicating unknown status
-        // Note: isRegistered: false doesn't mean "confirmed unregistered",
-        // it means "status unknown due to WHOIS/RDAP unavailability"
-        return {
-          domain,
-          tld: getDomainTld(domain) ?? "",
-          isRegistered: false,
-          source: null,
-          registrarProvider: {
-            name: null,
-            domain: null,
-          },
-        };
-      }
+    if (isUnsupported || isTimeout) {
+      const unavailableReason = isTimeout
+        ? ("timeout" as const)
+        : ("unsupported_tld" as const);
 
-      // Actual errors (timeouts, network failures, etc.) are still logged as errors
-      const err = new Error(
-        `Registration lookup failed for ${domain}: ${error || "unknown error"}`,
-      );
-      logger.error("lookup failed", err, { domain });
-      throw err;
-    }
-
-    // If unregistered, return response without persisting to Postgres
-    if (!record.isRegistered) {
-      logger.info("unregistered (not persisted)", { domain });
-
-      const registrarProvider = normalizeRegistrar(record.registrar ?? {});
-
-      addSpanAttributes({
-        "registration.cache_hit": false,
-        "registration.is_registered": false,
-        "registration.tld": record.tld,
-        "registration.source": record.source,
+      logger.info(isTimeout ? "timeout" : "unavailable", {
+        domain,
+        reason: error || "unknown",
+        unavailableReason,
       });
 
-      // Explicitly construct Registration object to avoid leaking rdapper internals
+      // Return response with status: "unknown" and explicit unavailableReason
+      // isRegistered: false kept for backward compatibility but status is preferred
       return {
-        domain: record.domain,
-        tld: record.tld,
-        isRegistered: record.isRegistered,
-        unicodeName: record.unicodeName,
-        punycodeName: record.punycodeName,
-        registry: record.registry,
-        registrar: record.registrar,
-        reseller: record.reseller,
-        statuses: record.statuses,
-        creationDate: record.creationDate,
-        updatedDate: record.updatedDate,
-        expirationDate: record.expirationDate,
-        deletionDate: record.deletionDate,
-        transferLock: record.transferLock,
-        dnssec: record.dnssec,
-        nameservers: record.nameservers,
-        contacts: record.contacts,
-        privacyEnabled: record.privacyEnabled,
-        whoisServer: record.whoisServer,
-        rdapServers: record.rdapServers,
-        source: record.source,
-        warnings: record.warnings,
-        registrarProvider,
+        domain,
+        tld: getDomainTld(domain) ?? "",
+        isRegistered: false,
+        status: "unknown",
+        unavailableReason,
+        source: null,
+        registrarProvider: {
+          name: null,
+          domain: null,
+        },
       };
     }
 
-    // ===== Persist registered domain to Postgres =====
-    const registrarProvider = normalizeRegistrar(record.registrar ?? {});
+    // Actual errors (timeouts, network failures, etc.) are still logged as errors
+    const err = new Error(
+      `Registration lookup failed for ${domain}: ${error || "unknown error"}`,
+    );
+    logger.error("lookup failed", err, { domain });
+    throw err;
+  }
 
+  // If unregistered, return response without persisting to Postgres
+  if (!record.isRegistered) {
+    logger.info("unregistered (not persisted)", { domain });
+
+    const registrarProvider = normalizeRegistrar(record.registrar ?? {});
     // Explicitly construct Registration object to avoid leaking rdapper internals
-    const withProvider: RegistrationResponse = {
+    return {
       domain: record.domain,
       tld: record.tld,
       isRegistered: record.isRegistered,
+      status: "unregistered",
+      unavailableReason: undefined,
       unicodeName: record.unicodeName,
       punycodeName: record.punycodeName,
       registry: record.registry,
@@ -271,7 +226,44 @@ export const getRegistration = withSpan(
       warnings: record.warnings,
       registrarProvider,
     };
+  }
 
+  // ===== Persist registered domain to Postgres =====
+  const registrarProvider = normalizeRegistrar(record.registrar ?? {});
+
+  // Explicitly construct Registration object to avoid leaking rdapper internals
+  const withProvider: RegistrationResponse = {
+    domain: record.domain,
+    tld: record.tld,
+    isRegistered: record.isRegistered,
+    status: "registered",
+    unavailableReason: undefined,
+    unicodeName: record.unicodeName,
+    punycodeName: record.punycodeName,
+    registry: record.registry,
+    registrar: record.registrar,
+    reseller: record.reseller,
+    statuses: record.statuses,
+    creationDate: record.creationDate,
+    updatedDate: record.updatedDate,
+    expirationDate: record.expirationDate,
+    deletionDate: record.deletionDate,
+    transferLock: record.transferLock,
+    dnssec: record.dnssec,
+    nameservers: record.nameservers,
+    contacts: record.contacts,
+    privacyEnabled: record.privacyEnabled,
+    whoisServer: record.whoisServer,
+    rdapServers: record.rdapServers,
+    source: record.source,
+    warnings: record.warnings,
+    registrarProvider,
+  };
+
+  // Attempt to persist to Postgres and schedule revalidation
+  // Wrap in try/catch to ensure we always return the rdapper response
+  // even if persistence/scheduling fails
+  try {
     // Upsert domain record and resolve registrar provider in parallel (independent operations)
     const [domainRecord, registrarProviderId] = await Promise.all([
       upsertDomain({
@@ -319,17 +311,6 @@ export const getRegistration = withSpan(
       })),
     });
 
-    // Add span attributes for successful RDAP/WHOIS lookup
-    addSpanAttributes({
-      "registration.cache_hit": false,
-      "registration.tld": record.tld,
-      "registration.is_registered": record.isRegistered,
-      ...(registrarProvider.name && {
-        "registration.registrar": registrarProvider.name,
-      }),
-      "registration.source": record.source,
-    });
-
     // Schedule background revalidation
     after(() => {
       scheduleRevalidation(
@@ -345,10 +326,21 @@ export const getRegistration = withSpan(
     });
 
     logger.info("done", { domain });
+  } catch (err) {
+    // Persistence or scheduling failed, but we still have valid rdapper data
+    // Log the error and return the response anyway
+    logger.error(
+      "persistence failed, returning rdapper data without cache",
+      err,
+      {
+        domain,
+        registrarName: registrarProvider.name,
+      },
+    );
+  }
 
-    return withProvider;
-  },
-);
+  return withProvider;
+}
 
 /**
  * Check if a registration error is an expected limitation.

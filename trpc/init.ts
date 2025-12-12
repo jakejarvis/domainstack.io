@@ -1,9 +1,9 @@
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
+import { logger } from "@/lib/logger/server";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -70,100 +70,83 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.
- * Creates OpenTelemetry spans for distributed tracing and performance monitoring.
- * Logs are automatically correlated with traces via OpenTelemetry context.
+ * Logs are automatically structured in JSON format.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, input, next }) => {
+const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
-  // Import logger (dynamic to avoid circular deps)
-  const { logger } = await import("@/lib/logger/server");
+  // Log procedure start
+  logger.info("procedure start", {
+    source: "trpc",
+    path,
+    type,
+  });
 
-  // Create OpenTelemetry span for distributed tracing using startActiveSpan
-  // This automatically propagates trace context to all logs within the span
-  const tracer = trace.getTracer("domainstack");
+  try {
+    const result = await next();
+    const durationMs = Math.round(performance.now() - start);
 
-  return await tracer.startActiveSpan(
-    `trpc.${path}`,
-    {
-      attributes: {
-        "trpc.path": path,
-        "trpc.type": type,
-      },
-    },
-    async (span) => {
-      // Log procedure start (traceId/spanId automatically included via OpenTelemetry)
-      logger.info("procedure start", {
+    // Log successful completion
+    logger.info("procedure ok", {
+      source: "trpc",
+      path,
+      type,
+      durationMs,
+    });
+
+    // Track slow requests (>5s threshold) in PostHog
+    if (durationMs > 5000) {
+      logger.warn("slow request", {
         source: "trpc",
         path,
         type,
+        durationMs,
       });
 
-      try {
-        const result = await next();
-        const durationMs = Math.round(performance.now() - start);
+      const { analytics } = await import("@/lib/analytics/server");
+      // Explicitly void the promise to avoid unhandled rejection warnings
+      void analytics.track("trpc_slow_request", {
+        path,
+        type,
+        durationMs,
+      });
+    }
 
-        // Add span attributes for successful completion
-        span.setAttribute("trpc.duration_ms", durationMs);
-        span.setAttribute("trpc.status", "ok");
-        span.setStatus({ code: SpanStatusCode.OK });
+    return result;
+  } catch (err) {
+    const durationMs = Math.round(performance.now() - start);
 
-        // Log successful completion
-        logger.info("procedure ok", {
-          source: "trpc",
-          path,
-          type,
-          durationMs,
-          input: input && typeof input === "object" ? { ...input } : undefined,
-        });
+    // Normalize error for consistent logging
+    // If a non-Error is thrown (string, object, etc.), wrap it in an Error
+    const normalizedError = err instanceof Error ? err : new Error(String(err));
 
-        // Track slow requests (>5s threshold) in PostHog
-        if (durationMs > 5000) {
-          span.setAttribute("trpc.slow_request", true);
-          logger.warn("slow request", {
-            source: "trpc",
-            path,
-            type,
-            durationMs,
-          });
+    // Build sanitized context for non-Error throws
+    const errorContext: Record<string, unknown> = {
+      source: "trpc",
+      path,
+      type,
+      durationMs,
+    };
 
-          const { analytics } = await import("@/lib/analytics/server");
-          analytics.track("trpc_slow_request", {
-            path,
-            type,
-            durationMs,
-          });
-        }
+    // If original value was not an Error, include sanitized preview
+    if (err !== normalizedError) {
+      errorContext.wrappedError = true;
+      errorContext.originalType = typeof err;
+      // Truncate to prevent logging huge objects
+      const stringValue = String(err);
+      errorContext.originalPreview =
+        stringValue.length > 200
+          ? `${stringValue.slice(0, 200)}...`
+          : stringValue;
+    }
 
-        return result;
-      } catch (err) {
-        const durationMs = Math.round(performance.now() - start);
+    // Log error with sanitized details
+    logger.error("procedure error", normalizedError, errorContext);
 
-        // Record exception and set error status on span
-        span.recordException(err as Error);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err instanceof Error ? err.message : String(err),
-        });
-        span.setAttribute("trpc.duration_ms", durationMs);
-        span.setAttribute("trpc.status", "error");
-
-        // Log error with full details
-        logger.error("procedure error", err, {
-          source: "trpc",
-          path,
-          type,
-          durationMs,
-        });
-
-        // Re-throw the error to be handled by the error boundary
-        throw err;
-      } finally {
-        span.end();
-      }
-    },
-  );
+    // Always rethrow normalized Error for proper stack traces
+    throw normalizedError;
+  }
 });
 
 /**
@@ -179,7 +162,6 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    const { logger } = await import("@/lib/logger/server");
     logger.info("recording access for domain", {
       source: "trpc",
       domain: input.domain,

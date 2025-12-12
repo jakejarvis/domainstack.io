@@ -25,12 +25,6 @@ import {
   type DnsType,
   DnsTypeSchema,
 } from "@/lib/schemas";
-import {
-  addSpanAttributes,
-  addSpanEvent,
-  withChildSpan,
-  withSpan,
-} from "@/lib/tracing";
 import { ttlForDnsRecord } from "@/lib/ttl";
 
 const logger = createLogger({ source: "dns" });
@@ -40,303 +34,206 @@ const logger = createLogger({ source: "dns" });
 // ============================================================================
 
 /**
- * Internal implementation of DNS records lookup with OpenTelemetry tracing.
+ * Resolve all DNS record types for a domain with Postgres caching.
+ *
+ * Wrapped in React's cache() for per-request deduplication during SSR,
+ * ensuring multiple services can query DNS without triggering duplicate
+ * lookups to DoH providers.
  */
-const getDnsRecordsImpl = withSpan(
-  ([domain]: [string]) => ({
-    name: "dns.lookup",
-    attributes: { "app.target_domain": domain },
-  }),
-  async function getDnsRecordsImpl(
-    domain: string,
-  ): Promise<DnsRecordsResponse> {
-    // Input domain is already normalized to registrable domain by router schema
-    logger.debug("start", { domain });
+export const getDnsRecords = cache(async function getDnsRecords(
+  domain: string,
+): Promise<DnsRecordsResponse> {
+  // Input domain is already normalized to registrable domain by router schema
+  logger.debug("start", { domain });
 
-    const providers = providerOrderForLookup(domain);
-    const durationByProvider: Record<string, number> = {};
-    let lastError: unknown = null;
-    const types = DnsTypeSchema.options;
+  const providers = providerOrderForLookup(domain);
+  const durationByProvider: Record<string, number> = {};
+  let lastError: unknown = null;
+  const types = DnsTypeSchema.options;
 
-    // Generate single timestamp for access tracking and scheduling
-    const now = new Date();
-    const nowMs = now.getTime();
+  // Generate single timestamp for access tracking and scheduling
+  const now = new Date();
+  const nowMs = now.getTime();
 
-    // Fast path: Check Postgres for cached DNS records
-    const existingDomain = await findDomainByName(domain);
-    const rows = (
-      existingDomain
-        ? await db
-            .select({
-              type: dnsRecords.type,
-              name: dnsRecords.name,
-              value: dnsRecords.value,
-              ttl: dnsRecords.ttl,
-              priority: dnsRecords.priority,
-              isCloudflare: dnsRecords.isCloudflare,
-              resolver: dnsRecords.resolver,
-              expiresAt: dnsRecords.expiresAt,
-            })
-            .from(dnsRecords)
-            .where(eq(dnsRecords.domainId, existingDomain.id))
-        : []
-    ) as Array<{
-      type: DnsType;
-      name: string;
-      value: string;
-      ttl: number | null;
-      priority: number | null;
-      isCloudflare: boolean | null;
-      resolver: string | null;
-      expiresAt: Date | null;
-    }>;
-    if (rows.length > 0) {
-      // Group cached rows by type
-      const rowsByType = (rows as typeof rows).reduce(
-        (acc, r) => {
-          const t = r.type as DnsType;
-          if (!acc[t]) {
-            acc[t] = [] as typeof rows;
-          }
-          (acc[t] as typeof rows).push(r);
-          return acc;
-        },
-        {
-          // intentionally start empty; only present types will be keys
-        } as Record<DnsType, typeof rows>,
-      );
-      const presentTypes = Object.keys(rowsByType) as DnsType[];
-      const typeIsFresh = (t: DnsType) => {
-        const arr = rowsByType[t] ?? [];
-        return (
-          arr.length > 0 &&
-          arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
-        );
-      };
-      const freshTypes = presentTypes.filter((t) => typeIsFresh(t));
-      const allFreshAcrossTypes = (types as DnsType[]).every((t) =>
-        typeIsFresh(t),
-      );
+  // Fast path: Check Postgres for cached DNS records
+  // Wrapped in try/catch to allow DoH lookup even if Postgres is down
+  let existingDomain: Awaited<ReturnType<typeof findDomainByName>> | null =
+    null;
+  let rows: Array<{
+    type: DnsType;
+    name: string;
+    value: string;
+    ttl: number | null;
+    priority: number | null;
+    isCloudflare: boolean | null;
+    resolver: string | null;
+    expiresAt: Date | null;
+  }> = [];
 
-      const assembled: DnsRecord[] = rows.map((r) => ({
-        type: r.type as DnsType,
-        name: r.name,
-        value: r.value,
-        ttl: r.ttl ?? undefined,
-        priority: r.priority ?? undefined,
-        isCloudflare: r.isCloudflare ?? undefined,
-      }));
-      const resolverHint = rows[0]?.resolver;
-      // Deduplicate records from DB to prevent returning duplicates from cache
-      const deduplicated = deduplicateDnsRecords(assembled);
-      const sorted = sortDnsRecordsByType(deduplicated, types);
-      if (allFreshAcrossTypes) {
-        // Add span attributes for cache hit
-        addSpanAttributes({
-          "dns.cache_hit": true,
-          "dns.resolver": resolverHint ?? "unknown",
-          "dns.record_count": sorted.length,
-        });
+  try {
+    existingDomain = await findDomainByName(domain);
+    rows = existingDomain
+      ? await db
+          .select({
+            type: dnsRecords.type,
+            name: dnsRecords.name,
+            value: dnsRecords.value,
+            ttl: dnsRecords.ttl,
+            priority: dnsRecords.priority,
+            isCloudflare: dnsRecords.isCloudflare,
+            resolver: dnsRecords.resolver,
+            expiresAt: dnsRecords.expiresAt,
+          })
+          .from(dnsRecords)
+          .where(eq(dnsRecords.domainId, existingDomain.id))
+      : [];
+  } catch (err) {
+    // Postgres unavailable - log and fall through to DoH lookup
+    logger.warn("db cache unavailable, falling back to doh", err, {
+      domain,
+    });
+  }
 
-        logger.info("cache hit", {
-          domain,
-          types: freshTypes.join(","),
-          cached: true,
-        });
-        return { records: sorted, resolver: resolverHint };
-      }
-
-      // Partial revalidation for stale OR missing types using pinned provider
-      const typesToFetch = (types as DnsType[]).filter((t) => !typeIsFresh(t));
-      if (typesToFetch.length > 0) {
-        const pinnedProvider =
-          DOH_PROVIDERS.find((p) => p.key === resolverHint) ??
-          providerOrderForLookup(domain)[0];
-        const attemptStart = Date.now();
-        try {
-          const fetchedStale = (
-            await Promise.all(
-              typesToFetch.map(async (t) => {
-                const recs = await resolveTypeWithProvider(
-                  domain,
-                  t,
-                  pinnedProvider,
-                );
-                return recs;
-              }),
-            )
-          ).flat();
-          durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
-
-          // Persist only stale types
-          const recordsByTypeToPersist = Object.fromEntries(
-            typesToFetch.map((t) => [
-              t,
-              fetchedStale
-                .filter((r) => r.type === t)
-                .map((r) => ({
-                  name: r.name,
-                  value: r.value,
-                  ttl: r.ttl ?? null,
-                  priority: r.priority ?? null,
-                  isCloudflare: r.isCloudflare ?? null,
-                  expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
-                })),
-            ]),
-          ) as Record<
-            DnsType,
-            Array<{
-              name: string;
-              value: string;
-              ttl: number | null;
-              priority: number | null;
-              isCloudflare: boolean | null;
-              expiresAt: Date;
-            }>
-          >;
-          // Persist to Postgres only if domain exists (i.e., is registered)
-          if (existingDomain) {
-            await replaceDns({
-              domainId: existingDomain.id,
-              resolver: pinnedProvider.key,
-              fetchedAt: now,
-              recordsByType: recordsByTypeToPersist,
-            });
-            after(() => {
-              const times = Object.values(recordsByTypeToPersist)
-                .flat()
-                .map((r) => r.expiresAt?.getTime?.())
-                .filter(
-                  (t): t is number =>
-                    typeof t === "number" && Number.isFinite(t),
-                );
-              // Always schedule: use the soonest expiry if available, otherwise schedule immediately
-              const soonest =
-                times.length > 0 ? Math.min(...times) : Date.now();
-              scheduleRevalidation(
-                domain,
-                "dns",
-                soonest,
-                existingDomain.lastAccessedAt ?? null,
-              ).catch((err) => {
-                logger.error("schedule failed partial", err, {
-                  domain,
-                  type: "partial",
-                });
-              });
-            });
-          }
-
-          // Merge cached fresh + newly fetched stale
-          const cachedFresh = freshTypes.flatMap((t) =>
-            (rowsByType[t] ?? []).map((r) => ({
-              type: r.type as DnsType,
-              name: r.name,
-              value: r.value,
-              ttl: r.ttl ?? undefined,
-              priority: r.priority ?? undefined,
-              isCloudflare: r.isCloudflare ?? undefined,
-            })),
-          );
-          // Deduplicate cachedFresh separately to ensure DB consistency
-          const deduplicatedCachedFresh = deduplicateDnsRecords(cachedFresh);
-          // Deduplicate merged results to prevent duplicates
-          const deduplicated = deduplicateDnsRecords([
-            ...deduplicatedCachedFresh,
-            ...fetchedStale,
-          ]);
-          const merged = sortDnsRecordsByType(deduplicated, types);
-          const counts = (types as DnsType[]).reduce(
-            (acc, t) => {
-              acc[t] = merged.filter((r) => r.type === t).length;
-              return acc;
-            },
-            { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
-          );
-
-          logger.info("partial refresh done", {
-            domain,
-            counts,
-            resolver: pinnedProvider.key,
-            durationMs: durationByProvider[pinnedProvider.key],
-          });
-          return {
-            records: merged,
-            resolver: pinnedProvider.key,
-          } as DnsRecordsResponse;
-        } catch (err) {
-          // Fall through to full provider loop below
-          logger.error("partial refresh failed", err, {
-            domain,
-            provider: pinnedProvider.key,
-          });
+  if (rows.length > 0) {
+    // Group cached rows by type
+    const rowsByType = (rows as typeof rows).reduce(
+      (acc, r) => {
+        const t = r.type as DnsType;
+        if (!acc[t]) {
+          acc[t] = [] as typeof rows;
         }
-      }
+        (acc[t] as typeof rows).push(r);
+        return acc;
+      },
+      {
+        // intentionally start empty; only present types will be keys
+      } as Record<DnsType, typeof rows>,
+    );
+    const presentTypes = Object.keys(rowsByType) as DnsType[];
+    const typeIsFresh = (t: DnsType) => {
+      const arr = rowsByType[t] ?? [];
+      return (
+        arr.length > 0 &&
+        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
+      );
+    };
+    const freshTypes = presentTypes.filter((t) => typeIsFresh(t));
+    const allFreshAcrossTypes = (types as DnsType[]).every((t) =>
+      typeIsFresh(t),
+    );
+
+    const assembled: DnsRecord[] = rows.map((r) => ({
+      type: r.type as DnsType,
+      name: r.name,
+      value: r.value,
+      ttl: r.ttl ?? undefined,
+      priority: r.priority ?? undefined,
+      isCloudflare: r.isCloudflare ?? undefined,
+    }));
+    const resolverHint = rows[0]?.resolver;
+    // Deduplicate records from DB to prevent returning duplicates from cache
+    const deduplicated = deduplicateDnsRecords(assembled);
+    const sorted = sortDnsRecordsByType(deduplicated, types);
+    if (allFreshAcrossTypes) {
+      logger.info("cache hit", {
+        domain,
+        types: freshTypes.join(","),
+        cached: true,
+      });
+      return { records: sorted, resolver: resolverHint };
     }
 
-    for (
-      let attemptIndex = 0;
-      attemptIndex < providers.length;
-      attemptIndex++
-    ) {
-      const provider = providers[attemptIndex] as DohProvider;
+    // Partial revalidation for stale OR missing types using pinned provider
+    const typesToFetch = (types as DnsType[]).filter((t) => !typeIsFresh(t));
+    if (typesToFetch.length > 0) {
+      const pinnedProvider =
+        DOH_PROVIDERS.find((p) => p.key === resolverHint) ?? providers[0];
       const attemptStart = Date.now();
-
-      addSpanEvent("dns.provider_attempt", {
-        provider: provider.key,
-        attempt: attemptIndex + 1,
-      });
-
       try {
-        const results = await Promise.all(
-          types.map(async (type) => {
-            return await resolveTypeWithProvider(domain, type, provider);
+        // Use allSettled to handle individual type failures gracefully
+        const results = await Promise.allSettled(
+          typesToFetch.map(async (t) => {
+            const recs = await resolveTypeWithProvider(
+              domain,
+              t,
+              pinnedProvider,
+            );
+            return { type: t, records: recs };
           }),
         );
-        const flat = results.flat();
-        durationByProvider[provider.key] = Date.now() - attemptStart;
 
-        const counts = types.reduce(
-          (acc, t) => {
-            acc[t] = flat.filter((r) => r.type === t).length;
-            return acc;
-          },
-          { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
+        // Collect successful fetches
+        const fetchedStale = results
+          .filter(
+            (
+              r,
+            ): r is PromiseFulfilledResult<{
+              type: DnsType;
+              records: DnsRecord[];
+            }> => r.status === "fulfilled",
+          )
+          .flatMap((r) => r.value.records);
+
+        // Track which types actually succeeded
+        const succeededTypes = new Set(
+          results
+            .filter(
+              (
+                r,
+              ): r is PromiseFulfilledResult<{
+                type: DnsType;
+                records: DnsRecord[];
+              }> => r.status === "fulfilled",
+            )
+            .map((r) => r.value.type),
         );
-        const resolverUsed = provider.key;
 
-        addSpanEvent("dns.provider_success", {
-          provider: provider.key,
-          attempt: attemptIndex + 1,
-          records_found: flat.length,
-          duration_ms: durationByProvider[provider.key],
-        });
+        // If all types failed, throw to fall back to full provider rotation
+        if (succeededTypes.size === 0) {
+          const failures = results
+            .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+            .map((r) => r.reason);
+          throw new Error(
+            `All types failed for pinned provider: ${failures.map((e) => String(e)).join("; ")}`,
+          );
+        }
 
-        // Persist to Postgres
-        const now = new Date();
-        const recordsByType: Record<DnsType, DnsRecord[]> = {
-          A: [],
-          AAAA: [],
-          MX: [],
-          TXT: [],
-          NS: [],
-        };
-        for (const r of flat) recordsByType[r.type].push(r);
+        durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
-        // Persist to Postgres only if domain exists (i.e., is registered)
-        // Compute expiresAt for each record once before persistence
+        // Build complete recordsByType for persistence (both fresh and newly fetched)
+        // IMPORTANT: replaceDns deletes records not in the batch, so we must include
+        // fresh types from cache to prevent deletion
         const recordsByTypeToPersist = Object.fromEntries(
-          (Object.keys(recordsByType) as DnsType[]).map((t) => [
-            t,
-            (recordsByType[t] as DnsRecord[]).map((r) => ({
-              name: r.name,
-              value: r.value,
-              ttl: r.ttl ?? null,
-              priority: r.priority ?? null,
-              isCloudflare: r.isCloudflare ?? null,
-              expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
-            })),
-          ]),
+          (types as DnsType[]).map((t) => {
+            if (typesToFetch.includes(t) && succeededTypes.has(t)) {
+              // Stale/missing type that succeeded - use newly fetched data
+              return [
+                t,
+                fetchedStale
+                  .filter((r) => r.type === t)
+                  .map((r) => ({
+                    name: r.name,
+                    value: r.value,
+                    ttl: r.ttl ?? null,
+                    priority: r.priority ?? null,
+                    isCloudflare: r.isCloudflare ?? null,
+                    expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
+                  })),
+              ];
+            }
+            // Fresh type or failed fetch - preserve existing records from cache
+            return [
+              t,
+              (rowsByType[t] ?? []).map((r) => ({
+                name: r.name,
+                value: r.value,
+                ttl: r.ttl,
+                priority: r.priority,
+                isCloudflare: r.isCloudflare,
+                expiresAt: r.expiresAt as Date, // Already a Date from DB
+              })),
+            ];
+          }),
         ) as Record<
           DnsType,
           Array<{
@@ -348,15 +245,14 @@ const getDnsRecordsImpl = withSpan(
             expiresAt: Date;
           }>
         >;
-
+        // Persist to Postgres only if domain exists (i.e., is registered)
         if (existingDomain) {
           await replaceDns({
             domainId: existingDomain.id,
-            resolver: resolverUsed,
+            resolver: pinnedProvider.key,
             fetchedAt: now,
             recordsByType: recordsByTypeToPersist,
           });
-
           after(() => {
             const times = Object.values(recordsByTypeToPersist)
               .flat()
@@ -364,117 +260,227 @@ const getDnsRecordsImpl = withSpan(
               .filter(
                 (t): t is number => typeof t === "number" && Number.isFinite(t),
               );
-            const soonest =
-              times.length > 0 ? Math.min(...times) : now.getTime();
+            // Always schedule: use the soonest expiry if available, otherwise schedule immediately
+            const soonest = times.length > 0 ? Math.min(...times) : Date.now();
             scheduleRevalidation(
               domain,
               "dns",
               soonest,
               existingDomain.lastAccessedAt ?? null,
             ).catch((err) => {
-              logger.error("schedule failed full", err, {
+              logger.error("schedule failed partial", err, {
                 domain,
-                type: "full",
+                type: "partial",
               });
             });
           });
         }
-        logger.info("done", {
+
+        // Merge cached fresh + newly fetched stale
+        const cachedFresh = freshTypes.flatMap((t) =>
+          (rowsByType[t] ?? []).map((r) => ({
+            type: r.type as DnsType,
+            name: r.name,
+            value: r.value,
+            ttl: r.ttl ?? undefined,
+            priority: r.priority ?? undefined,
+            isCloudflare: r.isCloudflare ?? undefined,
+          })),
+        );
+        // Deduplicate merged results (handles duplicates within and across arrays)
+        const deduplicated = deduplicateDnsRecords([
+          ...cachedFresh,
+          ...fetchedStale,
+        ]);
+        const merged = sortDnsRecordsByType(deduplicated, types);
+        const counts = (types as DnsType[]).reduce(
+          (acc, t) => {
+            acc[t] = merged.filter((r) => r.type === t).length;
+            return acc;
+          },
+          { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
+        );
+
+        logger.info("partial refresh done", {
           domain,
           counts,
-          resolver: resolverUsed,
-          durationByProvider,
+          resolver: pinnedProvider.key,
+          durationMs: durationByProvider[pinnedProvider.key],
         });
-        // Add span attributes for successful DNS lookup
-        addSpanAttributes({
-          "dns.cache_hit": false,
-          "dns.resolver": resolverUsed,
-          "dns.record_count": flat.length,
-          "dns.providers_tried": Object.keys(durationByProvider).length,
-        });
-
-        // Deduplicate records before returning (same logic as replaceDns uses for DB persistence)
-        const deduplicated = deduplicateDnsRecords(flat);
-        // Sort records deterministically to match cache-path ordering
-        const sorted = sortDnsRecordsByType(deduplicated, types);
         return {
-          records: sorted,
-          resolver: resolverUsed,
+          records: merged,
+          resolver: pinnedProvider.key,
         } as DnsRecordsResponse;
       } catch (err) {
-        logger.warn("provider attempt failed", {
+        // Fall through to full provider loop below
+        logger.error("partial refresh failed", err, {
           domain,
-          provider: provider.key,
+          provider: pinnedProvider.key,
         });
-        durationByProvider[provider.key] = Date.now() - attemptStart;
-        lastError = err;
-
-        addSpanEvent("dns.provider_failed", {
-          provider: provider.key,
-          attempt: attemptIndex + 1,
-          error: err instanceof Error ? err.message : String(err),
-          duration_ms: durationByProvider[provider.key],
-        });
-
-        // Try next provider in rotation
       }
     }
+  }
 
-    // All providers failed
-    const error = new Error(
-      `All DoH providers failed for ${domain}: ${String(lastError)}`,
-    );
-    logger.error("all providers failed", error, {
-      domain,
-      providers: providers.map((p) => p.key).join(","),
-    });
-    throw error;
-  },
-);
+  for (let attemptIndex = 0; attemptIndex < providers.length; attemptIndex++) {
+    const provider = providers[attemptIndex] as DohProvider;
+    const attemptStart = Date.now();
 
-/**
- * Resolve all DNS record types for a domain with Postgres caching.
- *
- * Wrapped in React's cache() for per-request deduplication during SSR,
- * ensuring multiple services can query DNS without triggering duplicate
- * lookups to DoH providers.
- */
-export const getDnsRecords = cache(getDnsRecordsImpl);
+    try {
+      const results = await Promise.all(
+        types.map(async (type) => {
+          return await resolveTypeWithProvider(domain, type, provider);
+        }),
+      );
+      const flat = results.flat();
+      durationByProvider[provider.key] = Date.now() - attemptStart;
+
+      const counts = types.reduce(
+        (acc, t) => {
+          acc[t] = flat.filter((r) => r.type === t).length;
+          return acc;
+        },
+        { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
+      );
+      const resolverUsed = provider.key;
+
+      // Persist to Postgres
+      const now = new Date();
+      const recordsByType: Record<DnsType, DnsRecord[]> = {
+        A: [],
+        AAAA: [],
+        MX: [],
+        TXT: [],
+        NS: [],
+      };
+      for (const r of flat) recordsByType[r.type].push(r);
+
+      // Persist to Postgres only if domain exists (i.e., is registered)
+      // Compute expiresAt for each record once before persistence
+      const recordsByTypeToPersist = Object.fromEntries(
+        (Object.keys(recordsByType) as DnsType[]).map((t) => [
+          t,
+          (recordsByType[t] as DnsRecord[]).map((r) => ({
+            name: r.name,
+            value: r.value,
+            ttl: r.ttl ?? null,
+            priority: r.priority ?? null,
+            isCloudflare: r.isCloudflare ?? null,
+            expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
+          })),
+        ]),
+      ) as Record<
+        DnsType,
+        Array<{
+          name: string;
+          value: string;
+          ttl: number | null;
+          priority: number | null;
+          isCloudflare: boolean | null;
+          expiresAt: Date;
+        }>
+      >;
+
+      if (existingDomain) {
+        await replaceDns({
+          domainId: existingDomain.id,
+          resolver: resolverUsed,
+          fetchedAt: now,
+          recordsByType: recordsByTypeToPersist,
+        });
+
+        after(() => {
+          const times = Object.values(recordsByTypeToPersist)
+            .flat()
+            .map((r) => r.expiresAt?.getTime?.())
+            .filter(
+              (t): t is number => typeof t === "number" && Number.isFinite(t),
+            );
+          const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
+          scheduleRevalidation(
+            domain,
+            "dns",
+            soonest,
+            existingDomain.lastAccessedAt ?? null,
+          ).catch((err) => {
+            logger.error("schedule failed full", err, {
+              domain,
+              type: "full",
+            });
+          });
+        });
+      }
+      logger.info("done", {
+        domain,
+        counts,
+        resolver: resolverUsed,
+        durationByProvider,
+      });
+
+      // Deduplicate records before returning (same logic as replaceDns uses for DB persistence)
+      const deduplicated = deduplicateDnsRecords(flat);
+      // Sort records deterministically to match cache-path ordering
+      const sorted = sortDnsRecordsByType(deduplicated, types);
+      return {
+        records: sorted,
+        resolver: resolverUsed,
+      } as DnsRecordsResponse;
+    } catch (err) {
+      logger.warn("provider attempt failed", err, {
+        domain,
+        provider: provider.key,
+      });
+      durationByProvider[provider.key] = Date.now() - attemptStart;
+      lastError = err;
+
+      // Try next provider in rotation
+    }
+  }
+
+  // All providers failed
+  const error = new Error(`All DoH providers failed for ${domain}`, {
+    cause: lastError,
+  });
+  logger.error("all providers failed", error, {
+    domain,
+    providers: providers.map((p) => p.key).join(","),
+  });
+  throw error;
+});
 
 async function resolveTypeWithProvider(
   domain: string,
   type: DnsType,
   provider: DohProvider,
 ): Promise<DnsRecord[]> {
-  return await withChildSpan(
+  const url = buildDohUrl(provider, domain, type);
+  // Each DoH call is potentially flaky; short timeout + single retry keeps latency bounded.
+  const res = await fetchWithTimeoutAndRetry(
+    url,
     {
-      name: "dns.resolve_type",
-      attributes: {
-        "dns.domain": domain,
-        "dns.type": type,
-        "dns.provider": provider.key,
-      },
+      headers: { ...DOH_HEADERS, ...provider.headers },
     },
-    async () => {
-      const url = buildDohUrl(provider, domain, type);
-      // Each DoH call is potentially flaky; short timeout + single retry keeps latency bounded.
-      const res = await fetchWithTimeoutAndRetry(
-        url,
-        {
-          headers: { ...DOH_HEADERS, ...provider.headers },
-        },
-        { timeoutMs: 2000, retries: 1, backoffMs: 150 },
-      );
-      if (!res.ok) throw new Error(`DoH failed: ${provider.key} ${res.status}`);
-      const json = (await res.json()) as DnsJson;
-      const ans = json.Answer ?? [];
-      const normalizedRecords = await Promise.all(
-        ans.map((a) => normalizeAnswer(domain, type, a)),
-      );
-      const records = normalizedRecords.filter(Boolean) as DnsRecord[];
-      return sortDnsRecordsForType(records, type);
-    },
+    { timeoutMs: 2000, retries: 1, backoffMs: 150 },
   );
+  if (!res.ok) throw new Error(`DoH failed: ${provider.key} ${res.status}`);
+  const json = (await res.json()) as DnsJson;
+
+  // Validate JSON shape to prevent crashes on unexpected provider responses
+  if (!json || typeof json !== "object") {
+    throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
+  }
+
+  const ans = json.Answer ?? [];
+  if (!Array.isArray(ans)) {
+    throw new Error(
+      `DoH invalid response: ${provider.key} (Answer is not an array)`,
+    );
+  }
+
+  const normalizedRecords = await Promise.all(
+    ans.map((a) => normalizeAnswer(domain, type, a)),
+  );
+  const records = normalizedRecords.filter(Boolean) as DnsRecord[];
+  return sortDnsRecordsForType(records, type);
 }
 
 async function normalizeAnswer(

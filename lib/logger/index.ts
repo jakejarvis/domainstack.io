@@ -1,9 +1,13 @@
 /**
  * Core Logger - Unified structured logging interface
  *
- * Provides a consistent logging API across server and client environments.
- * Server-side uses OpenTelemetry Logs API for automatic trace correlation.
- * Client-side uses structured console output with matching format.
+ * Provides a consistent logging API across server and client environments:
+ * - Server: Pino-based structured JSON logging (high-performance, stdout-only)
+ * - Client: Console-based structured logging for browser environments
+ *
+ * Design notes:
+ * - Critical errors are tracked in PostHog via analytics.trackException()
+ * - Log output goes to stdout (Vercel runtime logs)
  */
 
 // ============================================================================
@@ -27,12 +31,18 @@ export interface Logger {
   trace(message: string, context?: LogContext): void;
   debug(message: string, context?: LogContext): void;
   info(message: string, context?: LogContext): void;
+
+  // Overloaded signatures for warn/error/fatal to support optional error objects
+  // Usage:
+  //   logger.warn("message", { context })              - context only
+  //   logger.warn("message", error)                    - error only (auto-detected)
+  //   logger.warn("message", error, { context })       - both error and context
+  warn(message: string, error: unknown, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
-  // Overloaded signatures for flexible error/fatal logging
-  // Pattern 1: error(message, error, context) - traditional with error object
+
   error(message: string, error: unknown, context?: LogContext): void;
-  // Pattern 2: error(message, context) - compatible with various logging interfaces
   error(message: string, context?: LogContext): void;
+
   fatal(message: string, error: unknown, context?: LogContext): void;
   fatal(message: string, context?: LogContext): void;
   child(context: LogContext): Logger;
@@ -102,8 +112,22 @@ export function shouldLog(
 }
 
 /**
+ * Check if a value looks like an Error object.
+ * Used to disambiguate error vs context in overloaded log methods.
+ */
+export function isErrorLike(value: unknown): boolean {
+  return (
+    value instanceof Error ||
+    (typeof value === "object" &&
+      value !== null &&
+      "message" in value &&
+      "stack" in value)
+  );
+}
+
+/**
  * Serialize an error object for logging.
- * Converts Error objects to a structured format suitable for log attributes.
+ * Converts Error objects to a structured format suitable for log records.
  */
 export function serializeError(error: unknown): SerializedError {
   if (error instanceof Error) {
@@ -115,63 +139,36 @@ export function serializeError(error: unknown): SerializedError {
     };
   }
 
-  // Handle non-Error objects
+  // Handle non-Error objects: try safe JSON serialization first
+  if (error && typeof error === "object") {
+    try {
+      // Attempt safe JSON stringify with cycle protection
+      const cache = new Set();
+      const json = JSON.stringify(error, (_key, value) => {
+        if (typeof value === "object" && value !== null) {
+          if (cache.has(value)) {
+            return "[Circular]";
+          }
+          cache.add(value);
+        }
+        return value;
+      });
+      return {
+        name: "UnknownError",
+        message: json,
+      };
+    } catch {
+      // JSON.stringify failed - fall back to String()
+      return {
+        name: "UnknownError",
+        message: String(error),
+      };
+    }
+  }
+
+  // Primitive values
   return {
     name: "UnknownError",
     message: String(error),
   };
-}
-
-/**
- * OpenTelemetry-compatible attribute value types.
- * Matches AnyValueMap from @opentelemetry/api-logs.
- */
-export type LogAttributes = Record<
-  string,
-  string | number | boolean | string[] | number[] | boolean[]
->;
-
-/**
- * Sanitize context attributes for structured logging.
- * OpenTelemetry only accepts primitive types and arrays of primitives.
- * Complex types are JSON-stringified for compatibility.
- */
-export function sanitizeAttributes(
-  context?: LogContext,
-): LogAttributes | undefined {
-  if (!context || Object.keys(context).length === 0) {
-    return undefined;
-  }
-
-  const result: LogAttributes = {};
-  for (const [key, value] of Object.entries(context)) {
-    if (value === null || value === undefined) {
-      continue;
-    }
-
-    const type = typeof value;
-    if (type === "string" || type === "number" || type === "boolean") {
-      result[key] = value as string | number | boolean;
-    } else if (Array.isArray(value)) {
-      // Only include if all elements are primitives
-      if (
-        value.every(
-          (v) =>
-            typeof v === "string" ||
-            typeof v === "number" ||
-            typeof v === "boolean",
-        )
-      ) {
-        result[key] = value as string[] | number[] | boolean[];
-      } else {
-        // Stringify complex arrays
-        result[key] = JSON.stringify(value);
-      }
-    } else {
-      // Stringify objects
-      result[key] = JSON.stringify(value);
-    }
-  }
-
-  return Object.keys(result).length > 0 ? result : undefined;
 }

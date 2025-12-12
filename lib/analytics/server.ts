@@ -54,9 +54,8 @@ const getDistinctId = cache(async (): Promise<string> => {
     const isExpectedError =
       err instanceof Error && err.message.includes("outside a request scope");
     if (!isExpectedError) {
-      logger.warn("unexpected error accessing cookies", {
+      logger.warn("unexpected error accessing cookies", err, {
         source: "analytics",
-        error: err,
       });
     }
     // Fall through to generate a UUID

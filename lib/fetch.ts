@@ -1,6 +1,5 @@
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
-import { addSpanAttributes, addSpanEvent, withChildSpan } from "@/lib/tracing";
 
 const logger = createLogger({ source: "fetch" });
 
@@ -13,84 +12,46 @@ export async function fetchWithTimeoutAndRetry(
   init: RequestInit = {},
   opts: { timeoutMs?: number; retries?: number; backoffMs?: number } = {},
 ): Promise<Response> {
-  const url = input.toString();
+  const timeoutMs = opts.timeoutMs ?? 5000;
+  const retries = Math.max(0, opts.retries ?? 0);
+  const backoffMs = Math.max(0, opts.backoffMs ?? 150);
+  const externalSignal = init.signal ?? undefined;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const { signal, cleanup } = createAbortSignal(timeoutMs, externalSignal);
+    try {
+      // Robust header merging that handles Headers instances, objects, and undefined
+      const headers = new Headers(init.headers ?? undefined);
+      headers.set("User-Agent", USER_AGENT);
 
-  return await withChildSpan(
-    {
-      name: "http.fetch",
-      attributes: {
-        "url.full": url,
-        "http.request.method": init.method ?? "GET",
-      },
-    },
-    async () => {
-      const timeoutMs = opts.timeoutMs ?? 5000;
-      const retries = Math.max(0, opts.retries ?? 0);
-      const backoffMs = Math.max(0, opts.backoffMs ?? 150);
-      const externalSignal = init.signal ?? undefined;
-
-      addSpanAttributes({
-        "http.timeout_ms": timeoutMs,
-        "http.max_retries": retries,
+      const res = await fetch(input, {
+        ...init,
+        signal,
+        headers,
       });
+      cleanup();
 
-      let lastError: unknown = null;
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        const { signal, cleanup } = createAbortSignal(
-          timeoutMs,
-          externalSignal,
-        );
-        try {
-          const res = await fetch(input, {
-            ...init,
-            signal,
-            headers: {
-              "User-Agent": USER_AGENT,
-              ...init.headers,
-            },
-          });
-          cleanup();
-
-          // Add response attributes to span
-          addSpanAttributes({
-            "http.response.status_code": res.status,
-            "http.attempt": attempt + 1,
-          });
-
-          return res;
-        } catch (err) {
-          lastError = err;
-          cleanup();
-          if (externalSignal?.aborted) {
-            addSpanAttributes({ "http.aborted": true });
-            throw err instanceof Error ? err : new Error("fetch aborted");
-          }
-          if (attempt < retries) {
-            addSpanAttributes({ "http.retries_attempted": attempt + 1 });
-            addSpanEvent("http.retry", {
-              attempt: attempt + 1,
-              max_retries: retries,
-              delay_ms: backoffMs,
-              reason: err instanceof Error ? err.message : String(err),
-            });
-            logger.warn(
-              `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
-              {
-                url: input.toString(),
-                error: err,
-              },
-            );
-
-            // Simple linear backoff — good enough for trusted upstream retry logic.
-            await new Promise((r) => setTimeout(r, backoffMs));
-          }
-        }
+      return res;
+    } catch (err) {
+      lastError = err;
+      cleanup();
+      if (externalSignal?.aborted) {
+        throw err instanceof Error ? err : new Error("fetch aborted");
       }
-
-      addSpanAttributes({ "http.failed_after_retries": true });
-      throw lastError instanceof Error ? lastError : new Error("fetch failed");
-    },
-  );
+      if (attempt < retries) {
+        logger.warn(
+          `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,
+          err,
+          {
+            url: input instanceof Request ? input.url : String(input),
+          },
+        );
+        // Simple linear backoff — good enough for trusted upstream retry logic.
+        await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("fetch failed");
 }
 
 function createAbortSignal(

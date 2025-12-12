@@ -36,6 +36,8 @@ describe("exportDomainData", () => {
     exportDomainData("example.com", {
       registration: {
         isRegistered: true,
+        status: "registered",
+        unavailableReason: undefined,
         domain: "example.com",
         tld: "com",
         source: "rdap",

@@ -1,144 +1,111 @@
 import "server-only";
 
 import {
-  logs,
-  type Logger as OtelLogger,
-  SeverityNumber,
-} from "@opentelemetry/api-logs";
-import {
-  type LogAttributes,
+  isErrorLike,
   type LogContext,
   type Logger,
   type LogLevel,
-  parseLogLevel,
-  sanitizeAttributes,
   serializeError,
-  shouldLog,
 } from "@/lib/logger";
+import { createPinoInstance, type PinoLogger } from "@/lib/logger/pino-config";
 
 /**
- * Server-side logger with OpenTelemetry integration.
+ * Server-side logger powered by Pino.
  *
  * Features:
- * - OpenTelemetry Logs API for automatic trace/span correlation
- * - Vendor-independent (can export to any OTLP-compatible backend)
- * - Environment-based log level filtering
- * - PostHog integration for critical events
- * - Compatible with Vercel logs (via ConsoleLogRecordExporter)
+ * - High-performance structured logging
+ * - Pretty-printed colorized output in development (via pino-pretty)
+ * - Raw JSON output in production for Vercel log aggregation
+ * - Environment-based log level filtering (LOG_LEVEL env var or defaults)
+ * - PostHog integration for critical errors (via analytics.trackException)
+ * - Graceful degradation (never crashes)
  */
-
-// ============================================================================
-// OpenTelemetry Severity Mapping
-// ============================================================================
-
-/**
- * Map LogLevel to OpenTelemetry SeverityNumber.
- * See: https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
- */
-const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
-  trace: SeverityNumber.TRACE,
-  debug: SeverityNumber.DEBUG,
-  info: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-  fatal: SeverityNumber.FATAL,
-};
 
 // ============================================================================
 // Logger Implementation
 // ============================================================================
 
 class ServerLogger implements Logger {
-  private minLevel: LogLevel;
-  private otelLogger: OtelLogger;
+  private pinoInstance: PinoLogger;
 
-  constructor(minLevel?: LogLevel) {
-    // Default to environment-based level, but allow override
-    this.minLevel =
-      minLevel ||
-      parseLogLevel(process.env.LOG_LEVEL) ||
-      (process.env.NODE_ENV === "test"
-        ? "warn"
-        : process.env.NODE_ENV === "development"
-          ? "debug"
-          : "info");
-
-    // Get OpenTelemetry logger instance
-    // The LoggerProvider is configured in instrumentation.ts
-    this.otelLogger = logs.getLogger("domainstack");
+  constructor(pinoLogger?: PinoLogger) {
+    this.pinoInstance = pinoLogger || createPinoInstance();
   }
 
-  private logInternal(
-    level: LogLevel,
+  /**
+   * Pino uses (mergeObject, message) signature, but our interface uses (message, context).
+   * This helper flips the arguments and calls the appropriate Pino method.
+   */
+  private logImpl(
+    level: "trace" | "debug" | "info" | "warn" | "error" | "fatal",
     message: string,
     context?: LogContext,
   ): void {
-    if (!shouldLog(level, this.minLevel)) {
-      return;
-    }
-
     try {
-      // Emit log record via OpenTelemetry
-      // TraceId/SpanId are automatically added by the SDK from the active span context
-      this.otelLogger.emit({
-        severityNumber: SEVERITY_MAP[level],
-        severityText: level.toUpperCase(),
-        body: message,
-        attributes: sanitizeAttributes(context),
-      });
+      // Pino signature: logger[level](mergeObject, message)
+      // Our signature: logger[level](message, context)
+      // Flip them: context becomes the merge object
+      this.pinoInstance[level](context || {}, message);
     } catch (err) {
       // Logging should never crash the application
       console.error("[logger] failed to log:", err);
     }
   }
 
-  private logWithError(
-    level: LogLevel,
+  /**
+   * Log with error handling - supports both error object and context-only calls.
+   */
+  private logImplWithError(
+    level: "warn" | "error" | "fatal",
     message: string,
     errorOrContext?: unknown,
     context?: LogContext,
   ): void {
-    if (!shouldLog(level, this.minLevel)) {
-      return;
+    // Determine error and context based on arguments:
+    // - 3 args (context !== undefined): error(message, error, context)
+    // - 2 args with Error-like object: error(message, error)
+    // - 2 args with plain object: error(message, context)
+    let error: unknown;
+    let finalContext: LogContext | undefined;
+
+    if (context !== undefined) {
+      // Three args: error(message, error, context)
+      error = errorOrContext;
+      finalContext = context;
+    } else if (isErrorLike(errorOrContext)) {
+      // Two args with error-like object: error(message, error)
+      error = errorOrContext;
+      finalContext = undefined;
+    } else {
+      // Two args with plain object: error(message, context)
+      error = undefined;
+      finalContext = errorOrContext as LogContext | undefined;
     }
 
-    // Determine error and context based on number of arguments:
-    // - 3 args: error(message, error, context) - traditional call
-    // - 2 args: error(message, context) - flexible call for compatibility
-    const error = context !== undefined ? errorOrContext : undefined;
-    const finalContext =
-      context !== undefined
-        ? context
-        : (errorOrContext as LogContext | undefined);
-
     try {
-      // Build attributes including serialized error if present
-      const attributes: LogAttributes = {
-        ...sanitizeAttributes(finalContext),
-      };
+      // Build merge object with error at root level
+      const mergeObject: Record<string, unknown> = {};
 
-      // Add serialized error to attributes
+      // Add serialized error at root level
       if (error) {
-        const serialized = serializeError(error);
-        attributes["error.name"] = serialized.name;
-        attributes["error.message"] = serialized.message;
-        if (serialized.stack) {
-          attributes["error.stack"] = serialized.stack;
-        }
-        if (serialized.cause !== undefined) {
-          attributes["error.cause"] = String(serialized.cause);
-        }
+        mergeObject.error = serializeError(error);
       }
 
-      // Emit log record via OpenTelemetry
-      this.otelLogger.emit({
-        severityNumber: SEVERITY_MAP[level],
-        severityText: level.toUpperCase(),
-        body: message,
-        attributes,
-      });
+      // Add context fields - spread after error to prevent clobbering
+      if (finalContext && Object.keys(finalContext).length > 0) {
+        // Filter out 'error' key from context to prevent overwriting serialized error
+        const { error: _ignored, ...safeContext } = finalContext as Record<
+          string,
+          unknown
+        >;
+        Object.assign(mergeObject, safeContext);
+      }
+
+      // Log using Pino
+      this.pinoInstance[level](mergeObject, message);
 
       // Track critical errors in PostHog (async, non-blocking)
+      // Only track error and fatal levels, not warnings
       if ((level === "error" || level === "fatal") && error instanceof Error) {
         this.trackErrorInPostHog(error, finalContext);
       }
@@ -171,56 +138,61 @@ class ServerLogger implements Logger {
   log(level: LogLevel, message: string, context?: LogContext): void {
     switch (level) {
       case "trace":
-        this.logInternal("trace", message, context);
+        this.logImpl("trace", message, context);
         break;
       case "debug":
-        this.logInternal("debug", message, context);
+        this.logImpl("debug", message, context);
         break;
       case "info":
-        this.logInternal("info", message, context);
+        this.logImpl("info", message, context);
         break;
       case "warn":
-        this.logInternal("warn", message, context);
+        this.logImplWithError("warn", message, undefined, context);
         break;
       case "error":
-        this.logWithError("error", message, undefined, context);
+        this.logImplWithError("error", message, undefined, context);
         break;
       case "fatal":
-        this.logWithError("fatal", message, undefined, context);
+        this.logImplWithError("fatal", message, undefined, context);
         break;
     }
   }
 
   trace(message: string, context?: LogContext): void {
-    this.logInternal("trace", message, context);
+    this.logImpl("trace", message, context);
   }
 
   debug(message: string, context?: LogContext): void {
-    this.logInternal("debug", message, context);
+    this.logImpl("debug", message, context);
   }
 
   info(message: string, context?: LogContext): void {
-    this.logInternal("info", message, context);
+    this.logImpl("info", message, context);
   }
 
-  warn(message: string, context?: LogContext): void {
-    this.logInternal("warn", message, context);
+  warn(message: string, error: unknown, context?: LogContext): void;
+  warn(message: string, context?: LogContext): void;
+  warn(message: string, errorOrContext?: unknown, context?: LogContext): void {
+    this.logImplWithError("warn", message, errorOrContext, context);
   }
 
   error(message: string, error: unknown, context?: LogContext): void;
   error(message: string, context?: LogContext): void;
   error(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("error", message, errorOrContext, context);
+    this.logImplWithError("error", message, errorOrContext, context);
   }
 
   fatal(message: string, error: unknown, context?: LogContext): void;
   fatal(message: string, context?: LogContext): void;
   fatal(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("fatal", message, errorOrContext, context);
+    this.logImplWithError("fatal", message, errorOrContext, context);
   }
 
   child(context: LogContext): Logger {
-    return createLogger(context);
+    // Create a child Pino logger with the context as bindings
+    const childPino = this.pinoInstance.child(context);
+    // Wrap it in a new ServerLogger instance
+    return new ServerLogger(childPino);
   }
 }
 
@@ -244,7 +216,10 @@ export const logger = new ServerLogger();
 
 /**
  * Create a child logger with a specific context prefix.
- * Useful for service-specific logging.
+ * Useful for service-specific logging (e.g., per-service context).
+ *
+ * Note: Uses Pino's child logger feature for efficient context binding.
+ * Does NOT use OTEL trace/span context injection.
  *
  * @example
  * ```typescript
@@ -253,46 +228,5 @@ export const logger = new ServerLogger();
  * ```
  */
 export function createLogger(baseContext: LogContext): Logger {
-  const childLogger = {
-    log: (level: LogLevel, message: string, context?: LogContext) =>
-      logger.log(level, message, { ...baseContext, ...context }),
-    trace: (message: string, context?: LogContext) =>
-      logger.trace(message, { ...baseContext, ...context }),
-    debug: (message: string, context?: LogContext) =>
-      logger.debug(message, { ...baseContext, ...context }),
-    info: (message: string, context?: LogContext) =>
-      logger.info(message, { ...baseContext, ...context }),
-    warn: (message: string, context?: LogContext) =>
-      logger.warn(message, { ...baseContext, ...context }),
-    error: (
-      message: string,
-      errorOrContext?: unknown,
-      context?: LogContext,
-    ) => {
-      if (context !== undefined) {
-        // Three args: error(message, error, context)
-        logger.error(message, errorOrContext, { ...baseContext, ...context });
-      } else {
-        // Two args: could be error(message, error) or error(message, context)
-        logger.error(message, errorOrContext, baseContext);
-      }
-    },
-    fatal: (
-      message: string,
-      errorOrContext?: unknown,
-      context?: LogContext,
-    ) => {
-      if (context !== undefined) {
-        // Three args: fatal(message, error, context)
-        logger.fatal(message, errorOrContext, { ...baseContext, ...context });
-      } else {
-        // Two args: could be fatal(message, error) or fatal(message, context)
-        logger.fatal(message, errorOrContext, baseContext);
-      }
-    },
-    child: (context: LogContext) =>
-      createLogger({ ...baseContext, ...context }),
-  };
-
-  return childLogger as Logger;
+  return logger.child(baseContext);
 }

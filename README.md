@@ -34,7 +34,6 @@
 - **Puppeteer** (with `@sparticuz/chromium` on Vercel) for server-side screenshots
 - **Mapbox** for IP geolocation maps
 - **PostHog** for analytics and error tracking with sourcemap uploads and reverse proxy
-- **OpenTelemetry** via `@vercel/otel` for distributed tracing
 - **Vitest** with React Testing Library and **Biome** for lint/format
 
 ## 🌱 Getting Started
