@@ -41,7 +41,7 @@
     "@opentelemetry/sdk-node": "^0.208.0",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
-    "@polar-sh/better-auth": "^1.6.1",
+    "@polar-sh/better-auth": "^1.5.0",
     "@polar-sh/sdk": "^0.41.5",
     "@posthog/nextjs-config": "^1.6.4",
     "@react-email/components": "^1.0.1",
@@ -153,7 +153,7 @@
     ],
     "overrides": {
       "esbuild": "^0.27.1",
-      "next": "16.0.8",
+      "next": "16.0.10",
       "react": "19.2.3",
       "react-dom": "19.2.3",
       "@types/react": "19.2.7",
