@@ -212,6 +212,8 @@ export function useDomainVerification({
           exact: false,
         });
         void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+        // Call onSuccess immediately so the dashboard refetches and shows updated status
+        onSuccess();
       } else {
         setVerificationState({
           status: "failed",
@@ -244,6 +246,7 @@ export function useDomainVerification({
     queryClient,
     domainsQueryKey,
     limitsQueryKey,
+    onSuccess,
   ]);
 
   const handleReturnLater = useCallback(() => {
@@ -255,9 +258,10 @@ export function useDomainVerification({
   }, [handleOpenChange]);
 
   const handleDone = useCallback(() => {
-    onSuccess();
+    // onSuccess already called in handleVerify when verification succeeded
+    // Just close the dialog
     handleOpenChange(false);
-  }, [onSuccess, handleOpenChange]);
+  }, [handleOpenChange]);
 
   const canProceed = useCallback(() => {
     switch (step) {
