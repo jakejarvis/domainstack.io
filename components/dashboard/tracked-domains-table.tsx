@@ -212,9 +212,7 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger asChild>
-                  {format(date, "MMM d, yyyy")}
-                </TooltipTrigger>
+                <TooltipTrigger>{format(date, "MMM d, yyyy")}</TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
@@ -265,9 +263,7 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger asChild>
-                  {format(date, "MMM d, yyyy")}
-                </TooltipTrigger>
+                <TooltipTrigger>{format(date, "MMM d, yyyy")}</TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
