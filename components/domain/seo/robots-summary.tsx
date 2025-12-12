@@ -351,7 +351,7 @@ function RobotsGroupHeader({
           </span>
         ))}
       </div>
-      <div className="mr-1 text-muted-foreground text-xs">
+      <div className="mr-1 shrink-0 text-muted-foreground text-xs">
         {showAllow ? `${allowN} allow` : null}
         {showAllow && showDisallow ? " · " : null}
         {showDisallow ? `${disallowN} disallow` : null}

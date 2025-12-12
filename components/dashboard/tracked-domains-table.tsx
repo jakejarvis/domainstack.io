@@ -369,7 +369,7 @@ export function TrackedDomainsTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-none">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
             {table.getVisibleLeafColumns().map((column) => (
