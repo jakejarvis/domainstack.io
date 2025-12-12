@@ -148,6 +148,7 @@ async function generateScreenshot(
     browser = await getBrowser();
 
     const tryUrls = buildHomepageUrls(domain);
+    const permanentFailureUrls = new Set<string>();
 
     urlLoop: for (const url of tryUrls) {
       let lastError: unknown = null;
@@ -173,13 +174,13 @@ async function generateScreenshot(
           if (response) {
             const status = response.status();
             if (status === 404 || status === 410) {
-              isPermanentFailure = true;
-              logger.debug("permanent failure detected", {
+              permanentFailureUrls.add(url);
+              logger.debug("permanent failure detected for url", {
                 domain,
                 url,
                 status,
               });
-              break; // No point retrying this URL
+              break; // No point retrying this specific URL
             }
           }
 
@@ -270,14 +271,19 @@ async function generateScreenshot(
           }
         }
       }
-      if (isPermanentFailure) {
-        // Definitive failure (404/410) - stop trying other URLs
-        logger.info("screenshot permanently unavailable", { domain });
-        break;
-      }
+      // Continue to next URL - don't break early on single URL failure
       if (lastError) {
         // Transient failure - try next candidate URL
       }
+    }
+
+    // Only mark as permanently failed if ALL candidate URLs returned permanent signals
+    if (permanentFailureUrls.size === tryUrls.length && tryUrls.length > 0) {
+      isPermanentFailure = true;
+      logger.info("screenshot permanently unavailable (all urls failed)", {
+        domain,
+        failedUrls: Array.from(permanentFailureUrls),
+      });
     }
 
     // All attempts failed - persist result based on failure type

@@ -59,7 +59,7 @@ export const getHeaders = cache(async function getHeaders(
       statusMessage = undefined;
     }
 
-    logger.info("cache hit", {
+    logger.debug("cache hit", {
       domain,
       status: row.status,
       count: normalized.length,

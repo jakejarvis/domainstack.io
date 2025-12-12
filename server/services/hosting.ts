@@ -99,7 +99,7 @@ export const getHosting = cache(async function getHosting(
         },
       };
 
-      logger.info("cache hit", {
+      logger.debug("cache hit", {
         domain,
         hosting: info.hostingProvider.name,
         email: info.emailProvider.name,

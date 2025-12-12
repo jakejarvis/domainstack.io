@@ -108,7 +108,10 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           },
         );
         socket.setTimeout(6000, () => {
-          socket.destroy(new Error("TLS timeout"));
+          if (!isDestroyed) {
+            isDestroyed = true;
+            socket.destroy(new Error("TLS timeout"));
+          }
         });
         socket.on("error", (err) => {
           // Destroy socket before rejecting to ensure cleanup

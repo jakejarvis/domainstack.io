@@ -61,10 +61,9 @@ export function proxy(request: NextRequest) {
     // 3. Validate and extract the registrable domain
     const registrable = toRegistrableDomain(decodedInput);
     if (!registrable) {
+      // Not a valid domain - pass through to Next.js routing
       response = NextResponse.next();
-    }
-
-    if (decodedInput !== registrable) {
+    } else if (decodedInput !== registrable) {
       // 4. Redirect if necessary
       // We compare the originally decoded input against the final canonical domain.
       // Any difference (path, query, scheme, case, whitespace, userinfo, port, subdomain) triggers a redirect.

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  isErrorLike,
   type LogContext,
   type Logger,
   type LogLevel,
@@ -36,12 +37,24 @@ class ClientLogger implements Logger {
     message: string,
     context?: LogContext,
   ): string {
-    const record = {
+    // Build flat JSON schema with context fields at root level
+    const record: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       level: level,
       message: message,
-      ...(context && Object.keys(context).length > 0 ? { context } : {}),
     };
+
+    // Flatten context to root level, protecting reserved keys
+    if (context && Object.keys(context).length > 0) {
+      const {
+        timestamp: _timestamp,
+        level: _level,
+        message: _message,
+        ...safeContext
+      } = context as Record<string, unknown>;
+      Object.assign(record, safeContext);
+    }
+
     return JSON.stringify(record);
   }
 
@@ -104,13 +117,7 @@ class ClientLogger implements Logger {
       // Three args: error(message, error, context)
       error = errorOrContext;
       finalContext = context;
-    } else if (
-      errorOrContext &&
-      (errorOrContext instanceof Error ||
-        (typeof errorOrContext === "object" &&
-          "message" in errorOrContext &&
-          "stack" in errorOrContext))
-    ) {
+    } else if (isErrorLike(errorOrContext)) {
       // Two args with error-like object: error(message, error)
       error = errorOrContext;
       finalContext = undefined;
@@ -133,12 +140,15 @@ class ClientLogger implements Logger {
         record.error = serializeError(error);
       }
 
-      // Add context fields - filter out 'error' key to prevent clobbering
+      // Flatten context to root level, protecting reserved keys
       if (finalContext && Object.keys(finalContext).length > 0) {
-        const { error: _ignored, ...safeContext } = finalContext as Record<
-          string,
-          unknown
-        >;
+        const {
+          timestamp: _timestamp,
+          level: _level,
+          message: _message,
+          error: _error,
+          ...safeContext
+        } = finalContext as Record<string, unknown>;
         Object.assign(record, safeContext);
       }
 
@@ -296,13 +306,7 @@ export function createLogger(baseContext: LogContext): Logger {
       if (context !== undefined) {
         // Three args: warn(message, error, context)
         logger.warn(message, errorOrContext, { ...baseContext, ...context });
-      } else if (
-        errorOrContext &&
-        (errorOrContext instanceof Error ||
-          (typeof errorOrContext === "object" &&
-            "message" in errorOrContext &&
-            "stack" in errorOrContext))
-      ) {
+      } else if (isErrorLike(errorOrContext)) {
         // Two args with error: warn(message, error) - pass baseContext as 3rd arg
         logger.warn(message, errorOrContext, baseContext);
       } else {
@@ -321,13 +325,7 @@ export function createLogger(baseContext: LogContext): Logger {
       if (context !== undefined) {
         // Three args: error(message, error, context)
         logger.error(message, errorOrContext, { ...baseContext, ...context });
-      } else if (
-        errorOrContext &&
-        (errorOrContext instanceof Error ||
-          (typeof errorOrContext === "object" &&
-            "message" in errorOrContext &&
-            "stack" in errorOrContext))
-      ) {
+      } else if (isErrorLike(errorOrContext)) {
         // Two args with error: error(message, error) - pass baseContext as 3rd arg
         logger.error(message, errorOrContext, baseContext);
       } else {
@@ -346,13 +344,7 @@ export function createLogger(baseContext: LogContext): Logger {
       if (context !== undefined) {
         // Three args: fatal(message, error, context)
         logger.fatal(message, errorOrContext, { ...baseContext, ...context });
-      } else if (
-        errorOrContext &&
-        (errorOrContext instanceof Error ||
-          (typeof errorOrContext === "object" &&
-            "message" in errorOrContext &&
-            "stack" in errorOrContext))
-      ) {
+      } else if (isErrorLike(errorOrContext)) {
         // Two args with error: fatal(message, error) - pass baseContext as 3rd arg
         logger.fatal(message, errorOrContext, baseContext);
       } else {

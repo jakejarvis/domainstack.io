@@ -44,67 +44,100 @@ export const RegistrationStatusEnumSchema = z.enum([
 ]);
 
 // https://github.com/jakejarvis/rdapper/blob/main/src/types.ts
-export const RegistrationResponseSchema = z.object({
-  domain: z.string(),
-  tld: z.string(),
-  isRegistered: z.boolean(), // Kept for backward compatibility
-  status: RegistrationStatusEnumSchema, // Explicit status (preferred over isRegistered)
-  unavailableReason: z
-    .enum(["unsupported_tld", "timeout", "error"])
-    .optional()
-    .nullable(), // Present when status is "unknown"
-  unicodeName: z.string().optional(),
-  punycodeName: z.string().optional(),
-  registry: z.string().optional(),
-  registrar: z
-    .object({
-      name: z.string().optional(),
-      ianaId: z.string().optional(),
-      url: z.string().optional(),
-      email: z.string().optional(),
-      phone: z.string().optional(),
-    })
-    .optional(),
-  reseller: z.string().optional(),
-  statuses: RegistrationStatusesSchema.optional(),
-  creationDate: z.string().optional(),
-  updatedDate: z.string().optional(),
-  expirationDate: z.string().optional(),
-  deletionDate: z.string().optional(),
-  transferLock: z.boolean().optional(),
-  dnssec: z
-    .object({
-      enabled: z.boolean(),
-      dsRecords: z
-        .array(
-          z.object({
-            keyTag: z.number().optional(),
-            algorithm: z.number().optional(),
-            digestType: z.number().optional(),
-            digest: z.string().optional(),
-          }),
-        )
-        .optional(),
-    })
-    .optional(),
-  nameservers: z
-    .array(
-      z.object({
-        host: z.string(),
-        ipv4: z.array(z.string()).optional(),
-        ipv6: z.array(z.string()).optional(),
-      }),
-    )
-    .optional(),
-  contacts: RegistrationContactsSchema.optional(),
-  privacyEnabled: z.boolean().optional(),
-  whoisServer: z.string().optional(),
-  rdapServers: z.array(z.string()).optional(),
-  source: z.enum(["rdap", "whois"]).nullable(),
-  warnings: z.array(z.string()).optional(),
+export const RegistrationResponseSchema = z
+  .object({
+    domain: z.string(),
+    tld: z.string(),
+    isRegistered: z.boolean(), // Kept for backward compatibility
+    status: RegistrationStatusEnumSchema, // Explicit status (preferred over isRegistered)
+    unavailableReason: z
+      .enum(["unsupported_tld", "timeout", "error"])
+      .optional()
+      .nullable(), // Present when status is "unknown"
+    unicodeName: z.string().optional(),
+    punycodeName: z.string().optional(),
+    registry: z.string().optional(),
+    registrar: z
+      .object({
+        name: z.string().optional(),
+        ianaId: z.string().optional(),
+        url: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+      })
+      .optional(),
+    reseller: z.string().optional(),
+    statuses: RegistrationStatusesSchema.optional(),
+    creationDate: z.string().optional(),
+    updatedDate: z.string().optional(),
+    expirationDate: z.string().optional(),
+    deletionDate: z.string().optional(),
+    transferLock: z.boolean().optional(),
+    dnssec: z
+      .object({
+        enabled: z.boolean(),
+        dsRecords: z
+          .array(
+            z.object({
+              keyTag: z.number().optional(),
+              algorithm: z.number().optional(),
+              digestType: z.number().optional(),
+              digest: z.string().optional(),
+            }),
+          )
+          .optional(),
+      })
+      .optional(),
+    nameservers: z
+      .array(
+        z.object({
+          host: z.string(),
+          ipv4: z.array(z.string()).optional(),
+          ipv6: z.array(z.string()).optional(),
+        }),
+      )
+      .optional(),
+    contacts: RegistrationContactsSchema.optional(),
+    privacyEnabled: z.boolean().optional(),
+    whoisServer: z.string().optional(),
+    rdapServers: z.array(z.string()).optional(),
+    source: z.enum(["rdap", "whois"]).nullable(),
+    warnings: z.array(z.string()).optional(),
 
-  registrarProvider: ProviderRefSchema,
-});
+    registrarProvider: ProviderRefSchema,
+  })
+  .refine(
+    (data) => {
+      // Enforce consistency between status and isRegistered
+      if (data.status === "registered" && !data.isRegistered) {
+        return false;
+      }
+      if (data.status === "unregistered" && data.isRegistered) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'status and isRegistered must be consistent: status="registered" requires isRegistered=true',
+    },
+  )
+  .refine(
+    (data) => {
+      // Enforce unavailableReason is only present when status is "unknown"
+      if (data.status === "unknown" && !data.unavailableReason) {
+        return false;
+      }
+      if (data.status !== "unknown" && data.unavailableReason != null) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'unavailableReason must be present when status="unknown" and absent otherwise',
+    },
+  );
 
 // Extract nameservers schema for reuse
 export const RegistrationNameserverSchema = z.object({

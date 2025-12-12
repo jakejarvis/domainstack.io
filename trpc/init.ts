@@ -72,7 +72,7 @@ export const createCallerFactory = t.createCallerFactory;
  * Logs are automatically structured in JSON format.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, input, next }) => {
+const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
   // Import logger (dynamic to avoid circular deps)
@@ -95,10 +95,6 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
       path,
       type,
       durationMs,
-      input:
-        input && typeof input === "object" && input !== null
-          ? { ...input }
-          : undefined,
     });
 
     // Track slow requests (>5s threshold) in PostHog
@@ -122,15 +118,21 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
 
+    // Normalize error for consistent logging
+    // If a non-Error is thrown (string, object, etc.), wrap it in an Error
+    const normalizedError = err instanceof Error ? err : new Error(String(err));
+
     // Log error with full details
-    logger.error("procedure error", err, {
+    logger.error("procedure error", normalizedError, {
       source: "trpc",
       path,
       type,
       durationMs,
+      // Include original error if it was wrapped
+      ...(err !== normalizedError ? { originalError: err } : {}),
     });
 
-    // Re-throw the error to be handled by the error boundary
+    // Re-throw the original error to preserve tRPC error handling
     throw err;
   }
 });

@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  isErrorLike,
   type LogContext,
   type Logger,
   type LogLevel,
@@ -71,13 +72,7 @@ class ServerLogger implements Logger {
       // Three args: error(message, error, context)
       error = errorOrContext;
       finalContext = context;
-    } else if (
-      errorOrContext &&
-      (errorOrContext instanceof Error ||
-        (typeof errorOrContext === "object" &&
-          "message" in errorOrContext &&
-          "stack" in errorOrContext))
-    ) {
+    } else if (isErrorLike(errorOrContext)) {
       // Two args with error-like object: error(message, error)
       error = errorOrContext;
       finalContext = undefined;
@@ -178,23 +173,7 @@ class ServerLogger implements Logger {
   warn(message: string, error: unknown, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
   warn(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    // Check if called with error object (3 args) or just context (2 args)
-    if (context !== undefined) {
-      // Three args: warn(message, error, context)
-      this.logImplWithError("warn", message, errorOrContext, context);
-    } else if (
-      errorOrContext &&
-      (errorOrContext instanceof Error ||
-        (typeof errorOrContext === "object" &&
-          "message" in errorOrContext &&
-          "stack" in errorOrContext))
-    ) {
-      // Two args with error-like object: warn(message, error)
-      this.logImplWithError("warn", message, errorOrContext, undefined);
-    } else {
-      // Two args with context: warn(message, context)
-      this.logImpl("warn", message, errorOrContext as LogContext | undefined);
-    }
+    this.logImplWithError("warn", message, errorOrContext, context);
   }
 
   error(message: string, error: unknown, context?: LogContext): void;

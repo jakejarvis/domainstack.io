@@ -20,13 +20,14 @@ export async function fetchWithTimeoutAndRetry(
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { signal, cleanup } = createAbortSignal(timeoutMs, externalSignal);
     try {
+      // Robust header merging that handles Headers instances, objects, and undefined
+      const headers = new Headers(init.headers ?? undefined);
+      headers.set("User-Agent", USER_AGENT);
+
       const res = await fetch(input, {
         ...init,
         signal,
-        headers: {
-          "User-Agent": USER_AGENT,
-          ...init.headers,
-        },
+        headers,
       });
       cleanup();
 

@@ -260,68 +260,84 @@ export async function getRegistration(
     registrarProvider,
   };
 
-  // Upsert domain record and resolve registrar provider in parallel (independent operations)
-  const [domainRecord, registrarProviderId] = await Promise.all([
-    upsertDomain({
-      name: domain,
-      tld: getDomainTld(domain) ?? "",
-      unicodeName: record.unicodeName ?? domain,
-    }),
-    resolveOrCreateProviderId({
-      category: "registrar",
-      domain: registrarProvider.domain,
-      name: registrarProvider.name,
-    }),
-  ]);
+  // Attempt to persist to Postgres and schedule revalidation
+  // Wrap in try/catch to ensure we always return the rdapper response
+  // even if persistence/scheduling fails
+  try {
+    // Upsert domain record and resolve registrar provider in parallel (independent operations)
+    const [domainRecord, registrarProviderId] = await Promise.all([
+      upsertDomain({
+        name: domain,
+        tld: getDomainTld(domain) ?? "",
+        unicodeName: record.unicodeName ?? domain,
+      }),
+      resolveOrCreateProviderId({
+        category: "registrar",
+        domain: registrarProvider.domain,
+        name: registrarProvider.name,
+      }),
+    ]);
 
-  const expiresAt = ttlForRegistration(
-    now,
-    record.expirationDate ? new Date(record.expirationDate) : null,
-  );
+    const expiresAt = ttlForRegistration(
+      now,
+      record.expirationDate ? new Date(record.expirationDate) : null,
+    );
 
-  await upsertRegistration({
-    domainId: domainRecord.id,
-    isRegistered: record.isRegistered,
-    privacyEnabled: record.privacyEnabled ?? false,
-    registry: record.registry ?? null,
-    creationDate: record.creationDate ? new Date(record.creationDate) : null,
-    updatedDate: record.updatedDate ? new Date(record.updatedDate) : null,
-    expirationDate: record.expirationDate
-      ? new Date(record.expirationDate)
-      : null,
-    deletionDate: record.deletionDate ? new Date(record.deletionDate) : null,
-    transferLock: record.transferLock ?? null,
-    statuses: record.statuses ?? [],
-    contacts: record.contacts ?? [],
-    whoisServer: record.whoisServer ?? null,
-    rdapServers: record.rdapServers ?? [],
-    source: record.source,
-    registrarProviderId,
-    resellerProviderId: null,
-    fetchedAt: now,
-    expiresAt,
-    nameservers: (record.nameservers ?? []).map((n) => ({
-      host: n.host,
-      ipv4: n.ipv4 ?? [],
-      ipv6: n.ipv6 ?? [],
-    })),
-  });
+    await upsertRegistration({
+      domainId: domainRecord.id,
+      isRegistered: record.isRegistered,
+      privacyEnabled: record.privacyEnabled ?? false,
+      registry: record.registry ?? null,
+      creationDate: record.creationDate ? new Date(record.creationDate) : null,
+      updatedDate: record.updatedDate ? new Date(record.updatedDate) : null,
+      expirationDate: record.expirationDate
+        ? new Date(record.expirationDate)
+        : null,
+      deletionDate: record.deletionDate ? new Date(record.deletionDate) : null,
+      transferLock: record.transferLock ?? null,
+      statuses: record.statuses ?? [],
+      contacts: record.contacts ?? [],
+      whoisServer: record.whoisServer ?? null,
+      rdapServers: record.rdapServers ?? [],
+      source: record.source,
+      registrarProviderId,
+      resellerProviderId: null,
+      fetchedAt: now,
+      expiresAt,
+      nameservers: (record.nameservers ?? []).map((n) => ({
+        host: n.host,
+        ipv4: n.ipv4 ?? [],
+        ipv6: n.ipv6 ?? [],
+      })),
+    });
 
-  // Schedule background revalidation
-  after(() => {
-    scheduleRevalidation(
-      domain,
-      "registration",
-      expiresAt.getTime(),
-      domainRecord.lastAccessedAt ?? null,
-    ).catch((err) => {
-      logger.error("schedule failed", err, {
+    // Schedule background revalidation
+    after(() => {
+      scheduleRevalidation(
         domain,
+        "registration",
+        expiresAt.getTime(),
+        domainRecord.lastAccessedAt ?? null,
+      ).catch((err) => {
+        logger.error("schedule failed", err, {
+          domain,
+        });
       });
     });
-  });
 
-  logger.info("done", { domain });
+    logger.info("done", { domain });
+  } catch (err) {
+    // Persistence or scheduling failed, but we still have valid rdapper data
+    // Log the error and return the response anyway
+    logger.error(
+      "persistence failed, returning rdapper data without cache",
+      err,
+      {
+        domain,
+        registrarName: registrarProvider.name,
+      },
+    );
+  }
 
   return withProvider;
 }

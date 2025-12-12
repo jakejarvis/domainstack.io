@@ -76,15 +76,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
           title: existing[0].previewTitle ?? null,
           description: existing[0].previewDescription ?? null,
           image: existing[0].previewImageUrl ?? null,
-          imageUploaded: null as string | null, // Will be fetched from database row below
+          imageUploaded: existing[0].previewImageUploadedUrl ?? null,
           canonicalUrl: existing[0].canonicalUrl,
         }
       : null;
-
-    // Use uploaded URL from Postgres if available
-    if (preview) {
-      preview.imageUploaded = existing[0].previewImageUploadedUrl ?? null;
-    }
 
     // Normalize robots: convert empty object to valid RobotsTxt structure
     const robotsData = existing[0].robots as RobotsTxt;

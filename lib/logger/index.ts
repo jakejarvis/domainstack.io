@@ -112,6 +112,20 @@ export function shouldLog(
 }
 
 /**
+ * Check if a value looks like an Error object.
+ * Used to disambiguate error vs context in overloaded log methods.
+ */
+export function isErrorLike(value: unknown): boolean {
+  return (
+    value instanceof Error ||
+    (typeof value === "object" &&
+      value !== null &&
+      "message" in value &&
+      "stack" in value)
+  );
+}
+
+/**
  * Serialize an error object for logging.
  * Converts Error objects to a structured format suitable for log records.
  */
@@ -125,7 +139,34 @@ export function serializeError(error: unknown): SerializedError {
     };
   }
 
-  // Handle non-Error objects
+  // Handle non-Error objects: try safe JSON serialization first
+  if (error && typeof error === "object") {
+    try {
+      // Attempt safe JSON stringify with cycle protection
+      const cache = new Set();
+      const json = JSON.stringify(error, (_key, value) => {
+        if (typeof value === "object" && value !== null) {
+          if (cache.has(value)) {
+            return "[Circular]";
+          }
+          cache.add(value);
+        }
+        return value;
+      });
+      return {
+        name: "UnknownError",
+        message: json,
+      };
+    } catch {
+      // JSON.stringify failed - fall back to String()
+      return {
+        name: "UnknownError",
+        message: String(error),
+      };
+    }
+  }
+
+  // Primitive values
   return {
     name: "UnknownError",
     message: String(error),

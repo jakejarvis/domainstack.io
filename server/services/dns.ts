@@ -147,8 +147,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
     const typesToFetch = (types as DnsType[]).filter((t) => !typeIsFresh(t));
     if (typesToFetch.length > 0) {
       const pinnedProvider =
-        DOH_PROVIDERS.find((p) => p.key === resolverHint) ??
-        providerOrderForLookup(domain)[0];
+        DOH_PROVIDERS.find((p) => p.key === resolverHint) ?? providers[0];
       const attemptStart = Date.now();
       try {
         const fetchedStale = (
@@ -430,7 +429,19 @@ async function resolveTypeWithProvider(
   );
   if (!res.ok) throw new Error(`DoH failed: ${provider.key} ${res.status}`);
   const json = (await res.json()) as DnsJson;
+
+  // Validate JSON shape to prevent crashes on unexpected provider responses
+  if (!json || typeof json !== "object") {
+    throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
+  }
+
   const ans = json.Answer ?? [];
+  if (!Array.isArray(ans)) {
+    throw new Error(
+      `DoH invalid response: ${provider.key} (Answer is not an array)`,
+    );
+  }
+
   const normalizedRecords = await Promise.all(
     ans.map((a) => normalizeAnswer(domain, type, a)),
   );
