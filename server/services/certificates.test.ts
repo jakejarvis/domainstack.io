@@ -161,7 +161,7 @@ describe("getCertificates", () => {
     expect(nextCalls).toBe(prevCalls);
   });
 
-  it("returns empty on timeout", async () => {
+  it("throws on timeout", async () => {
     tlsMock.callListener = false;
     // Ensure cache is clear and use a distinct domain key
     let timeoutCb: (() => void) | null = null;
@@ -190,9 +190,9 @@ describe("getCertificates", () => {
     await Promise.resolve();
     // Now trigger the timeout callback
     setTimeout(() => timeoutCb?.(), 0);
-    const out = await pending;
-    expect(out).toEqual([]);
-    // no-op
+
+    // After refactor: errors are rethrown instead of returning []
+    await expect(pending).rejects.toThrow("TLS timeout");
   });
 });
 

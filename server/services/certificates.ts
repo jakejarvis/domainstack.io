@@ -8,7 +8,10 @@ import {
   batchResolveOrCreateProviderIds,
   makeProviderKey,
 } from "@/lib/db/repos/providers";
-import { certificates as certTable } from "@/lib/db/schema";
+import {
+  certificates as certTable,
+  providers as providersTable,
+} from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -25,7 +28,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
   const now = new Date();
   const nowMs = now.getTime();
 
-  // Fast path: Check Postgres for cached certificate data
+  // Fast path: Check Postgres for cached certificate data (join with providers)
   const existingDomain = await findDomainByName(domain);
   const existing = existingDomain
     ? await db
@@ -35,9 +38,12 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           altNames: certTable.altNames,
           validFrom: certTable.validFrom,
           validTo: certTable.validTo,
+          caProviderDomain: providersTable.domain,
+          caProviderName: providersTable.name,
           expiresAt: certTable.expiresAt,
         })
         .from(certTable)
+        .leftJoin(providersTable, eq(certTable.caProviderId, providersTable.id))
         .where(eq(certTable.domainId, existingDomain.id))
         // Order by validTo ASC: leaf certificates typically expire first (shorter validity period)
         // This preserves the chain order: leaf -> intermediate -> root
@@ -48,6 +54,8 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         altNames: unknown;
         validFrom: Date;
         validTo: Date;
+        caProviderDomain: string | null;
+        caProviderName: string | null;
         expiresAt: Date | null;
       }>);
   if (existing.length > 0) {
@@ -61,7 +69,11 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         altNames: (c.altNames as unknown as string[]) ?? [],
         validFrom: new Date(c.validFrom).toISOString(),
         validTo: new Date(c.validTo).toISOString(),
-        caProvider: detectCertificateAuthority(c.issuer),
+        // Use cached provider data if available, otherwise detect
+        caProvider:
+          c.caProviderDomain && c.caProviderName
+            ? { domain: c.caProviderDomain, name: c.caProviderName }
+            : detectCertificateAuthority(c.issuer),
       }));
 
       logger.info("cache hit", {
@@ -205,8 +217,11 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
   } catch (err) {
     logger.error("probe failed", err, { domain });
 
-    // Do not treat as fatal; return empty and avoid long-lived negative cache
-    return [];
+    // Rethrow to let callers distinguish between:
+    // - Empty array: domain has no certificates (legitimately empty)
+    // - Error thrown: TLS probe failed (network, timeout, invalid cert, etc.)
+    // Callers should handle this appropriately (e.g., retry, show error state)
+    throw err;
   }
 }
 

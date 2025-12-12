@@ -251,11 +251,9 @@ export const getDnsRecords = cache(async function getDnsRecords(
             isCloudflare: r.isCloudflare ?? undefined,
           })),
         );
-        // Deduplicate cachedFresh separately to ensure DB consistency
-        const deduplicatedCachedFresh = deduplicateDnsRecords(cachedFresh);
-        // Deduplicate merged results to prevent duplicates
+        // Deduplicate merged results (handles duplicates within and across arrays)
         const deduplicated = deduplicateDnsRecords([
-          ...deduplicatedCachedFresh,
+          ...cachedFresh,
           ...fetchedStale,
         ]);
         const merged = sortDnsRecordsByType(deduplicated, types);

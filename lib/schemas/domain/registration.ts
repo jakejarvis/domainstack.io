@@ -51,7 +51,7 @@ export const RegistrationResponseSchema = z
     isRegistered: z.boolean(), // Kept for backward compatibility
     status: RegistrationStatusEnumSchema, // Explicit status (preferred over isRegistered)
     unavailableReason: z
-      .enum(["unsupported_tld", "timeout", "error"])
+      .enum(["unsupported_tld", "timeout"])
       .optional()
       .nullable(), // Present when status is "unknown"
     unicodeName: z.string().optional(),

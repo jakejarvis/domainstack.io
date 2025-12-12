@@ -40,7 +40,7 @@ export async function fetchWithTimeoutAndRetry(
       }
       if (attempt < retries) {
         logger.warn(
-          `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
+          `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,
           err,
           {
             url: input.toString(),

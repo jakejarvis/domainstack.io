@@ -224,17 +224,10 @@ class ClientLogger implements Logger {
   warn(message: string, error: unknown, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
   warn(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    // Check if called with error object (3 args) or just context (2 args)
     if (context !== undefined) {
       // Three args: warn(message, error, context)
       this.logWithError("warn", message, errorOrContext, context);
-    } else if (
-      errorOrContext &&
-      (errorOrContext instanceof Error ||
-        (typeof errorOrContext === "object" &&
-          "message" in errorOrContext &&
-          "stack" in errorOrContext))
-    ) {
+    } else if (isErrorLike(errorOrContext)) {
       // Two args with error-like object: warn(message, error)
       this.logWithError("warn", message, errorOrContext, undefined);
     } else {

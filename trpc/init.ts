@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
+import { logger } from "@/lib/logger/server";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -75,9 +76,6 @@ export const createCallerFactory = t.createCallerFactory;
 const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
-  // Import logger (dynamic to avoid circular deps)
-  const { logger } = await import("@/lib/logger/server");
-
   // Log procedure start
   logger.info("procedure start", {
     source: "trpc",
@@ -107,7 +105,8 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
       });
 
       const { analytics } = await import("@/lib/analytics/server");
-      analytics.track("trpc_slow_request", {
+      // Explicitly void the promise to avoid unhandled rejection warnings
+      void analytics.track("trpc_slow_request", {
         path,
         type,
         durationMs,
@@ -122,18 +121,31 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
     // If a non-Error is thrown (string, object, etc.), wrap it in an Error
     const normalizedError = err instanceof Error ? err : new Error(String(err));
 
-    // Log error with full details
-    logger.error("procedure error", normalizedError, {
+    // Build sanitized context for non-Error throws
+    const errorContext: Record<string, unknown> = {
       source: "trpc",
       path,
       type,
       durationMs,
-      // Include original error if it was wrapped
-      ...(err !== normalizedError ? { originalError: err } : {}),
-    });
+    };
 
-    // Re-throw the original error to preserve tRPC error handling
-    throw err;
+    // If original value was not an Error, include sanitized preview
+    if (err !== normalizedError) {
+      errorContext.wrappedError = true;
+      errorContext.originalType = typeof err;
+      // Truncate to prevent logging huge objects
+      const stringValue = String(err);
+      errorContext.originalPreview =
+        stringValue.length > 200
+          ? `${stringValue.slice(0, 200)}...`
+          : stringValue;
+    }
+
+    // Log error with sanitized details
+    logger.error("procedure error", normalizedError, errorContext);
+
+    // Always rethrow normalized Error for proper stack traces
+    throw normalizedError;
   }
 });
 
