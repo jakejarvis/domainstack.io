@@ -301,6 +301,27 @@ function transformToTrackedDomainWithDetails(
 }
 
 /**
+ * Deduplicate tooltip records by value and priority.
+ * Case-insensitive comparison for consistent deduplication.
+ */
+function deduplicateTooltipRecords(
+  records: DnsRecordForTooltip[],
+): DnsRecordForTooltip[] {
+  const seen = new Set<string>();
+  const deduplicated: DnsRecordForTooltip[] = [];
+
+  for (const r of records) {
+    const key = `${r.value.trim().toLowerCase()}|${r.priority ?? ""}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated;
+}
+
+/**
  * Fetch DNS records for multiple domains and group them by domain ID and type.
  * Returns a map of domainId → type → records for efficient lookup.
  */
@@ -368,6 +389,13 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
     } else if (record.type === "NS") {
       groups.dns.push(dnsRecord);
     }
+  }
+
+  // Deduplicate records within each group to prevent duplicate IPs in tooltips
+  for (const groups of recordsByDomain.values()) {
+    groups.hosting = deduplicateTooltipRecords(groups.hosting);
+    groups.email = deduplicateTooltipRecords(groups.email);
+    groups.dns = deduplicateTooltipRecords(groups.dns);
   }
 
   return recordsByDomain;

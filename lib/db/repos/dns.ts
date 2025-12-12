@@ -23,6 +23,26 @@ export type UpsertDnsParams = {
   >;
 };
 
+/**
+ * Generate a unique key for a DNS record.
+ * TXT records preserve case for values (e.g., verification tokens).
+ * All other record types normalize values to lowercase.
+ * Names (hostnames) are always normalized to lowercase per RFC 1035.
+ */
+function makeDnsRecordKey(
+  type: string,
+  name: string,
+  value: string,
+  priority: number | null,
+): string {
+  const priorityPart = priority != null ? `|${priority}` : "";
+  const normalizedName = name.trim().toLowerCase();
+  // TXT values preserve case; all others normalize to lowercase
+  const normalizedValue =
+    type === "TXT" ? value.trim() : value.trim().toLowerCase();
+  return `${type}|${normalizedName}|${normalizedValue}${priorityPart}`;
+}
+
 export async function replaceDns(params: UpsertDnsParams) {
   const { domainId, recordsByType } = params;
 
@@ -41,8 +61,12 @@ export async function replaceDns(params: UpsertDnsParams) {
   // Build a map of existing records for quick lookup
   const existingMap = new Map<string, string>();
   for (const record of allExisting) {
-    const priorityPart = record.priority != null ? `|${record.priority}` : "";
-    const key = `${record.type}|${record.name.trim().toLowerCase()}|${record.value.trim().toLowerCase()}${priorityPart}`;
+    const key = makeDnsRecordKey(
+      record.type,
+      record.name,
+      record.value,
+      record.priority,
+    );
     existingMap.set(key, record.id);
   }
 
@@ -55,20 +79,26 @@ export async function replaceDns(params: UpsertDnsParams) {
   for (const type of Object.keys(recordsByType) as Array<
     (typeof dnsRecordType.enumValues)[number]
   >) {
+    // TXT records preserve case (e.g., verification tokens like google-site-verification)
+    // All other record types normalize to lowercase for consistent storage.
+    // Hostnames are case-insensitive per RFC 1035; IP addresses have no case.
+    const preserveValueCase = type === "TXT";
+
     const next = (recordsByType[type] ?? []).map((r) => ({
       ...r,
       type,
-      // Trim but preserve original case for DNS records
-      name: (r.name as string).trim(),
-      value: (r.value as string).trim(),
+      // Always normalize name (hostname) to lowercase
+      name: (r.name as string).trim().toLowerCase(),
+      // Normalize value to lowercase except for TXT records
+      value: preserveValueCase
+        ? (r.value as string).trim()
+        : (r.value as string).trim().toLowerCase(),
     }));
 
     for (const r of next) {
-      // Include priority in the uniqueness key for MX/SRV records
-      // (same host with different priorities = different records)
-      // Use lowercase for case-insensitive deduplication, but store original case
-      const priorityPart = r.priority != null ? `|${r.priority}` : "";
-      const key = `${type}|${r.name.toLowerCase()}|${r.value.toLowerCase()}${priorityPart}`;
+      // Values are already normalized above, so we can pass them directly.
+      // makeDnsRecordKey handles the TXT case-sensitivity logic.
+      const key = makeDnsRecordKey(type, r.name, r.value, r.priority ?? null);
 
       // Skip duplicates within the same batch
       if (allNextKeys.has(key)) {
@@ -97,8 +127,7 @@ export async function replaceDns(params: UpsertDnsParams) {
   // Identify records to delete (exist in DB but not in the new set)
   const idsToDelete = allExisting
     .filter((e) => {
-      const priorityPart = e.priority != null ? `|${e.priority}` : "";
-      const key = `${e.type}|${e.name.trim().toLowerCase()}|${e.value.trim().toLowerCase()}${priorityPart}`;
+      const key = makeDnsRecordKey(e.type, e.name, e.value, e.priority);
       return !allNextKeys.has(key);
     })
     .map((e) => e.id);
