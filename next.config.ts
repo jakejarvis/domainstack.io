@@ -10,7 +10,12 @@ let nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  serverExternalPackages: [
+    "@sparticuz/chromium",
+    "puppeteer-core",
+    "pino",
+    "pino-pretty",
+  ],
   outputFileTracingIncludes: {
     "/api/**": ["node_modules/@sparticuz/chromium/bin/**"],
   },
