@@ -1,48 +1,23 @@
 import "server-only";
 
 import {
-  logs,
-  type Logger as OtelLogger,
-  SeverityNumber,
-} from "@opentelemetry/api-logs";
-import {
-  type LogAttributes,
   type LogContext,
   type Logger,
   type LogLevel,
   parseLogLevel,
-  sanitizeAttributes,
   serializeError,
   shouldLog,
 } from "@/lib/logger";
 
 /**
- * Server-side logger with OpenTelemetry integration.
+ * Server-side logger with structured console output.
  *
  * Features:
- * - OpenTelemetry Logs API for automatic trace/span correlation
- * - Vendor-independent (can export to any OTLP-compatible backend)
+ * - Structured JSON logging format
  * - Environment-based log level filtering
- * - PostHog integration for critical events
- * - Compatible with Vercel logs (via ConsoleLogRecordExporter)
+ * - PostHog integration for critical errors
+ * - Graceful degradation (never crashes)
  */
-
-// ============================================================================
-// OpenTelemetry Severity Mapping
-// ============================================================================
-
-/**
- * Map LogLevel to OpenTelemetry SeverityNumber.
- * See: https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
- */
-const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
-  trace: SeverityNumber.TRACE,
-  debug: SeverityNumber.DEBUG,
-  info: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-  fatal: SeverityNumber.FATAL,
-};
 
 // ============================================================================
 // Logger Implementation
@@ -50,7 +25,6 @@ const SEVERITY_MAP: Record<LogLevel, SeverityNumber> = {
 
 class ServerLogger implements Logger {
   private minLevel: LogLevel;
-  private otelLogger: OtelLogger;
 
   constructor(minLevel?: LogLevel) {
     // Default to environment-based level, but allow override
@@ -62,10 +36,20 @@ class ServerLogger implements Logger {
         : process.env.NODE_ENV === "development"
           ? "debug"
           : "info");
+  }
 
-    // Get OpenTelemetry logger instance
-    // The LoggerProvider is configured in instrumentation.ts
-    this.otelLogger = logs.getLogger("domainstack");
+  private formatLogRecord(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+  ): string {
+    const record = {
+      timestamp: new Date().toISOString(),
+      level: level,
+      message: message,
+      ...(context && Object.keys(context).length > 0 ? { context } : {}),
+    };
+    return JSON.stringify(record);
   }
 
   private logInternal(
@@ -78,14 +62,25 @@ class ServerLogger implements Logger {
     }
 
     try {
-      // Emit log record via OpenTelemetry
-      // TraceId/SpanId are automatically added by the SDK from the active span context
-      this.otelLogger.emit({
-        severityNumber: SEVERITY_MAP[level],
-        severityText: level.toUpperCase(),
-        body: message,
-        attributes: sanitizeAttributes(context),
-      });
+      const formatted = this.formatLogRecord(level, message, context);
+
+      // Output to appropriate console method
+      switch (level) {
+        case "trace":
+        case "debug":
+          console.debug(formatted);
+          break;
+        case "info":
+          console.info(formatted);
+          break;
+        case "warn":
+          console.warn(formatted);
+          break;
+        case "error":
+        case "fatal":
+          console.error(formatted);
+          break;
+      }
     } catch (err) {
       // Logging should never crash the application
       console.error("[logger] failed to log:", err);
@@ -112,31 +107,25 @@ class ServerLogger implements Logger {
         : (errorOrContext as LogContext | undefined);
 
     try {
-      // Build attributes including serialized error if present
-      const attributes: LogAttributes = {
-        ...sanitizeAttributes(finalContext),
+      // Build log record with error at root level
+      const record: Record<string, unknown> = {
+        timestamp: new Date().toISOString(),
+        level: level,
+        message: message,
       };
 
-      // Add serialized error to attributes
+      // Add serialized error at root level
       if (error) {
-        const serialized = serializeError(error);
-        attributes["error.name"] = serialized.name;
-        attributes["error.message"] = serialized.message;
-        if (serialized.stack) {
-          attributes["error.stack"] = serialized.stack;
-        }
-        if (serialized.cause !== undefined) {
-          attributes["error.cause"] = String(serialized.cause);
-        }
+        record.error = serializeError(error);
       }
 
-      // Emit log record via OpenTelemetry
-      this.otelLogger.emit({
-        severityNumber: SEVERITY_MAP[level],
-        severityText: level.toUpperCase(),
-        body: message,
-        attributes,
-      });
+      // Add context if present
+      if (finalContext && Object.keys(finalContext).length > 0) {
+        record.context = finalContext;
+      }
+
+      const formatted = JSON.stringify(record);
+      console.error(formatted);
 
       // Track critical errors in PostHog (async, non-blocking)
       if ((level === "error" || level === "fatal") && error instanceof Error) {

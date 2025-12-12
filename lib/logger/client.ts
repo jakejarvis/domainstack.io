@@ -4,7 +4,6 @@ import {
   type LogContext,
   type Logger,
   type LogLevel,
-  sanitizeAttributes,
   serializeError,
   shouldLog,
 } from "@/lib/logger";
@@ -17,24 +16,7 @@ import {
  * - Environment-based log level filtering
  * - PostHog error tracking for exceptions
  * - Graceful degradation (never crashes)
- *
- * Note: Unlike server-side, client-side doesn't use OpenTelemetry SDK
- * (which is Node.js-only). Logs are output directly to console in a
- * structured format that matches the server-side OpenTelemetry output.
  */
-
-// ============================================================================
-// Severity Mapping (matches OpenTelemetry SeverityNumber for consistency)
-// ============================================================================
-
-const SEVERITY_MAP: Record<LogLevel, number> = {
-  trace: 1, // SeverityNumber.TRACE
-  debug: 5, // SeverityNumber.DEBUG
-  info: 9, // SeverityNumber.INFO
-  warn: 13, // SeverityNumber.WARN
-  error: 17, // SeverityNumber.ERROR
-  fatal: 21, // SeverityNumber.FATAL
-};
 
 // ============================================================================
 // Logger Implementation
@@ -52,16 +34,13 @@ class ClientLogger implements Logger {
   private formatLogRecord(
     level: LogLevel,
     message: string,
-    attributes?: Record<string, unknown>,
+    context?: LogContext,
   ): string {
     const record = {
       timestamp: new Date().toISOString(),
-      severityNumber: SEVERITY_MAP[level],
-      severityText: level.toUpperCase(),
-      body: message,
-      ...(attributes && Object.keys(attributes).length > 0
-        ? { attributes }
-        : {}),
+      level: level,
+      message: message,
+      ...(context && Object.keys(context).length > 0 ? { context } : {}),
     };
     return JSON.stringify(record);
   }
@@ -76,11 +55,7 @@ class ClientLogger implements Logger {
     }
 
     try {
-      const formatted = this.formatLogRecord(
-        level,
-        message,
-        sanitizeAttributes(context),
-      );
+      const formatted = this.formatLogRecord(level, message, context);
 
       // Output to appropriate console method
       // Only log to console in development to avoid noise in production
@@ -128,25 +103,24 @@ class ClientLogger implements Logger {
         : (errorOrContext as LogContext | undefined);
 
     try {
-      // Build attributes including serialized error if present
-      const attributes: Record<string, unknown> = {
-        ...sanitizeAttributes(finalContext),
+      // Build log record with error at root level
+      const record: Record<string, unknown> = {
+        timestamp: new Date().toISOString(),
+        level: level,
+        message: message,
       };
 
-      // Add serialized error to attributes
+      // Add serialized error at root level
       if (error) {
-        const serialized = serializeError(error);
-        attributes["error.name"] = serialized.name;
-        attributes["error.message"] = serialized.message;
-        if (serialized.stack) {
-          attributes["error.stack"] = serialized.stack;
-        }
-        if (serialized.cause !== undefined) {
-          attributes["error.cause"] = String(serialized.cause);
-        }
+        record.error = serializeError(error);
       }
 
-      const formatted = this.formatLogRecord(level, message, attributes);
+      // Add context if present
+      if (finalContext && Object.keys(finalContext).length > 0) {
+        record.context = finalContext;
+      }
+
+      const formatted = JSON.stringify(record);
 
       // Always output errors to console (even in production for debugging)
       console.error(formatted);

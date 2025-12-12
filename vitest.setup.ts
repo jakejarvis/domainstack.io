@@ -22,23 +22,6 @@ vi.mock("@/lib/analytics/client", () => ({
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));
 
-// Mock OpenTelemetry Logs API to avoid actual logging in tests
-vi.mock("@opentelemetry/api-logs", () => ({
-  logs: {
-    getLogger: vi.fn(() => ({
-      emit: vi.fn(),
-    })),
-  },
-  SeverityNumber: {
-    TRACE: 1,
-    DEBUG: 5,
-    INFO: 9,
-    WARN: 13,
-    ERROR: 17,
-    FATAL: 21,
-  },
-}));
-
 // Mock logger to avoid noise in tests
 const createMockLogger = () => ({
   log: vi.fn(),

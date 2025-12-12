@@ -1,4 +1,3 @@
-import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -70,8 +69,7 @@ export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.
- * Creates OpenTelemetry spans for distributed tracing and performance monitoring.
- * Logs are automatically correlated with traces via OpenTelemetry context.
+ * Logs are automatically structured in JSON format.
  * Errors are tracked in PostHog for centralized monitoring.
  */
 const withLogging = t.middleware(async ({ path, type, input, next }) => {
@@ -80,90 +78,58 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
   // Import logger (dynamic to avoid circular deps)
   const { logger } = await import("@/lib/logger/server");
 
-  // Create OpenTelemetry span for distributed tracing using startActiveSpan
-  // This automatically propagates trace context to all logs within the span
-  const tracer = trace.getTracer("domainstack");
+  // Log procedure start
+  logger.info("procedure start", {
+    source: "trpc",
+    path,
+    type,
+  });
 
-  return await tracer.startActiveSpan(
-    `trpc.${path}`,
-    {
-      attributes: {
-        "trpc.path": path,
-        "trpc.type": type,
-      },
-    },
-    async (span) => {
-      // Log procedure start (traceId/spanId automatically included via OpenTelemetry)
-      logger.info("procedure start", {
+  try {
+    const result = await next();
+    const durationMs = Math.round(performance.now() - start);
+
+    // Log successful completion
+    logger.info("procedure ok", {
+      source: "trpc",
+      path,
+      type,
+      durationMs,
+      input: input && typeof input === "object" ? { ...input } : undefined,
+    });
+
+    // Track slow requests (>5s threshold) in PostHog
+    if (durationMs > 5000) {
+      logger.warn("slow request", {
         source: "trpc",
         path,
         type,
+        durationMs,
       });
 
-      try {
-        const result = await next();
-        const durationMs = Math.round(performance.now() - start);
+      const { analytics } = await import("@/lib/analytics/server");
+      analytics.track("trpc_slow_request", {
+        path,
+        type,
+        durationMs,
+      });
+    }
 
-        // Add span attributes for successful completion
-        span.setAttribute("trpc.duration_ms", durationMs);
-        span.setAttribute("trpc.status", "ok");
-        span.setStatus({ code: SpanStatusCode.OK });
+    return result;
+  } catch (err) {
+    const durationMs = Math.round(performance.now() - start);
 
-        // Log successful completion
-        logger.info("procedure ok", {
-          source: "trpc",
-          path,
-          type,
-          durationMs,
-          input: input && typeof input === "object" ? { ...input } : undefined,
-        });
+    // Log error with full details
+    logger.error("procedure error", err, {
+      source: "trpc",
+      path,
+      type,
+      durationMs,
+    });
 
-        // Track slow requests (>5s threshold) in PostHog
-        if (durationMs > 5000) {
-          span.setAttribute("trpc.slow_request", true);
-          logger.warn("slow request", {
-            source: "trpc",
-            path,
-            type,
-            durationMs,
-          });
-
-          const { analytics } = await import("@/lib/analytics/server");
-          analytics.track("trpc_slow_request", {
-            path,
-            type,
-            durationMs,
-          });
-        }
-
-        return result;
-      } catch (err) {
-        const durationMs = Math.round(performance.now() - start);
-
-        // Record exception and set error status on span
-        span.recordException(err as Error);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err instanceof Error ? err.message : String(err),
-        });
-        span.setAttribute("trpc.duration_ms", durationMs);
-        span.setAttribute("trpc.status", "error");
-
-        // Log error with full details
-        logger.error("procedure error", err, {
-          source: "trpc",
-          path,
-          type,
-          durationMs,
-        });
-
-        // Re-throw the error to be handled by the error boundary
-        throw err;
-      } finally {
-        span.end();
-      }
-    },
-  );
+    // Re-throw the error to be handled by the error boundary
+    throw err;
+  }
 });
 
 /**

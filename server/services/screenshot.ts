@@ -10,7 +10,6 @@ import { createLogger } from "@/lib/logger/server";
 import { getBrowser } from "@/lib/puppeteer";
 import type { BlobUrlResponse } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
-import { addSpanAttributes, addSpanEvent, withSpan } from "@/lib/tracing";
 import { ttlForScreenshot } from "@/lib/ttl";
 
 const logger = createLogger({ source: "screenshot" });
@@ -103,230 +102,179 @@ export async function getScreenshot(
   return promise;
 }
 
-const generateScreenshot = withSpan(
-  ([domain, _options]: [
-    string,
-    (
-      | { attempts?: number; backoffBaseMs?: number; backoffMaxMs?: number }
-      | undefined
-    ),
-  ]) => ({
-    name: "screenshot.capture",
-    attributes: { "app.target_domain": domain },
-  }),
-  async function generateScreenshot(
-    domain: string,
-    options?: {
-      attempts?: number;
-      backoffBaseMs?: number;
-      backoffMaxMs?: number;
-    },
-  ): Promise<{ url: string | null }> {
-    const attempts = Math.max(
-      1,
-      options?.attempts ?? CAPTURE_MAX_ATTEMPTS_DEFAULT,
-    );
-    const backoffBaseMs =
-      options?.backoffBaseMs ?? CAPTURE_BACKOFF_BASE_MS_DEFAULT;
-    const backoffMaxMs =
-      options?.backoffMaxMs ?? CAPTURE_BACKOFF_MAX_MS_DEFAULT;
+async function generateScreenshot(
+  domain: string,
+  options?: {
+    attempts?: number;
+    backoffBaseMs?: number;
+    backoffMaxMs?: number;
+  },
+): Promise<{ url: string | null }> {
+  const attempts = Math.max(
+    1,
+    options?.attempts ?? CAPTURE_MAX_ATTEMPTS_DEFAULT,
+  );
+  const backoffBaseMs =
+    options?.backoffBaseMs ?? CAPTURE_BACKOFF_BASE_MS_DEFAULT;
+  const backoffMaxMs = options?.backoffMaxMs ?? CAPTURE_BACKOFF_MAX_MS_DEFAULT;
 
-    // Check Postgres for cached screenshot
-    try {
-      const existingDomain = await findDomainByName(domain);
-      if (existingDomain) {
-        const screenshotRecord = await getScreenshotByDomainId(
-          existingDomain.id,
-        );
-        if (screenshotRecord) {
-          // Only treat as cache hit if we have a definitive result:
-          // - url is present (string), OR
-          // - url is null but marked as permanently not found
-          const isDefinitiveResult =
-            screenshotRecord.url !== null || screenshotRecord.notFound === true;
+  // Check Postgres for cached screenshot
+  try {
+    const existingDomain = await findDomainByName(domain);
+    if (existingDomain) {
+      const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
+      if (screenshotRecord) {
+        // Only treat as cache hit if we have a definitive result:
+        // - url is present (string), OR
+        // - url is null but marked as permanently not found
+        const isDefinitiveResult =
+          screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
-          if (isDefinitiveResult) {
-            logger.debug("db cache hit", { domain, cached: true });
-            addSpanAttributes({
-              "screenshot.cache_hit": true,
-              "screenshot.found": screenshotRecord.url !== null,
-            });
-            return { url: screenshotRecord.url };
-          }
+        if (isDefinitiveResult) {
+          logger.debug("db cache hit", { domain, cached: true });
+          return { url: screenshotRecord.url };
         }
       }
-    } catch (err) {
-      logger.error("db read failed", err, { domain });
-      addSpanAttributes({ "screenshot.db_read_failed": true });
     }
+  } catch (err) {
+    logger.error("db read failed", err, { domain });
+  }
 
-    // Generate screenshot (cache missed)
-    addSpanAttributes({ "screenshot.cache_hit": false });
-    let resultUrl: string | null = null;
-    let actualAttempts = 0;
-    let browser: Browser | null = null;
-    try {
-      browser = await getBrowser();
+  // Generate screenshot (cache missed)
+  let resultUrl: string | null = null;
+  let browser: Browser | null = null;
+  try {
+    browser = await getBrowser();
 
-      const tryUrls = buildHomepageUrls(domain);
+    const tryUrls = buildHomepageUrls(domain);
 
-      urlLoop: for (const url of tryUrls) {
-        let lastError: unknown = null;
+    urlLoop: for (const url of tryUrls) {
+      let lastError: unknown = null;
 
-        for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
-          let page: import("puppeteer-core").Page | null = null;
-          actualAttempts++;
+      for (let attemptIndex = 0; attemptIndex < attempts; attemptIndex++) {
+        let page: import("puppeteer-core").Page | null = null;
+        try {
+          page = await browser.newPage();
 
-          addSpanEvent("screenshot.attempt_start", {
-            attempt: attemptIndex + 1,
-            url: url,
-            max_attempts: attempts,
+          await page.setViewport({
+            width: VIEWPORT_WIDTH,
+            height: VIEWPORT_HEIGHT,
+            deviceScaleFactor: 1,
+          });
+          await page.setUserAgent(USER_AGENT);
+
+          await page.goto(url, {
+            waitUntil: "domcontentloaded",
+            timeout: NAV_TIMEOUT_MS,
           });
 
           try {
-            page = await browser.newPage();
+            await page.waitForNetworkIdle({
+              idleTime: IDLE_TIME_MS,
+              timeout: IDLE_TIMEOUT_MS,
+            });
+          } catch {}
 
-            await page.setViewport({
+          const rawPng = (await page.screenshot({
+            type: "png",
+            fullPage: false,
+          })) as Buffer;
+          const png = await optimizeImageCover(
+            rawPng,
+            VIEWPORT_WIDTH,
+            VIEWPORT_HEIGHT,
+          );
+          if (!png || png.length === 0) continue;
+          const withWatermark = await addWatermarkToScreenshot(
+            png,
+            VIEWPORT_WIDTH,
+            VIEWPORT_HEIGHT,
+          );
+          const { url: storedUrl, pathname } = await storeImage({
+            kind: "screenshot",
+            domain,
+            buffer: withWatermark,
+            width: VIEWPORT_WIDTH,
+            height: VIEWPORT_HEIGHT,
+          });
+
+          const source = url.startsWith("https://")
+            ? "direct_https"
+            : "direct_http";
+
+          // Persist to Postgres
+          try {
+            const domainRecord = await ensureDomainRecord(domain);
+            const now = new Date();
+            const expiresAt = ttlForScreenshot(now);
+
+            await upsertScreenshot({
+              domainId: domainRecord.id,
+              url: storedUrl,
+              pathname: pathname ?? null,
               width: VIEWPORT_WIDTH,
               height: VIEWPORT_HEIGHT,
-              deviceScaleFactor: 1,
+              source,
+              notFound: false,
+              fetchedAt: now,
+              expiresAt,
             });
-            await page.setUserAgent(USER_AGENT);
-
-            await page.goto(url, {
-              waitUntil: "domcontentloaded",
-              timeout: NAV_TIMEOUT_MS,
-            });
-
-            try {
-              await page.waitForNetworkIdle({
-                idleTime: IDLE_TIME_MS,
-                timeout: IDLE_TIMEOUT_MS,
-              });
-            } catch {}
-
-            const rawPng = (await page.screenshot({
-              type: "png",
-              fullPage: false,
-            })) as Buffer;
-            const png = await optimizeImageCover(
-              rawPng,
-              VIEWPORT_WIDTH,
-              VIEWPORT_HEIGHT,
-            );
-            if (!png || png.length === 0) continue;
-            const withWatermark = await addWatermarkToScreenshot(
-              png,
-              VIEWPORT_WIDTH,
-              VIEWPORT_HEIGHT,
-            );
-            const { url: storedUrl, pathname } = await storeImage({
-              kind: "screenshot",
-              domain,
-              buffer: withWatermark,
-              width: VIEWPORT_WIDTH,
-              height: VIEWPORT_HEIGHT,
-            });
-
-            const source = url.startsWith("https://")
-              ? "direct_https"
-              : "direct_http";
-
-            // Persist to Postgres
-            try {
-              const domainRecord = await ensureDomainRecord(domain);
-              const now = new Date();
-              const expiresAt = ttlForScreenshot(now);
-
-              await upsertScreenshot({
-                domainId: domainRecord.id,
-                url: storedUrl,
-                pathname: pathname ?? null,
-                width: VIEWPORT_WIDTH,
-                height: VIEWPORT_HEIGHT,
-                source,
-                notFound: false,
-                fetchedAt: now,
-                expiresAt,
-              });
-            } catch (err) {
-              logger.error("db persist error", err, { domain });
-            }
-
-            addSpanEvent("screenshot.attempt_success", {
-              attempt: attemptIndex + 1,
-              url: url,
-              bytes: withWatermark.length,
-            });
-
-            resultUrl = storedUrl;
-            break urlLoop;
           } catch (err) {
-            lastError = err;
-
-            addSpanEvent("screenshot.attempt_failed", {
-              attempt: attemptIndex + 1,
-              url: url,
-              error: err instanceof Error ? err.message : String(err),
-            });
-
-            const delay = backoffDelayMs(
-              attemptIndex,
-              backoffBaseMs,
-              backoffMaxMs,
-            );
-            if (attemptIndex < attempts - 1) {
-              await sleep(delay);
-            }
-          } finally {
-            if (page) {
-              try {
-                await page.close();
-              } catch (err) {
-                logger.error("failed to close page", err, {
-                  domain,
-                });
-              }
+            logger.error("db persist error", err, { domain });
+          }
+          resultUrl = storedUrl;
+          break urlLoop;
+        } catch (err) {
+          lastError = err;
+          const delay = backoffDelayMs(
+            attemptIndex,
+            backoffBaseMs,
+            backoffMaxMs,
+          );
+          if (attemptIndex < attempts - 1) {
+            await sleep(delay);
+          }
+        } finally {
+          if (page) {
+            try {
+              await page.close();
+            } catch (err) {
+              logger.error("failed to close page", err, {
+                domain,
+              });
             }
           }
         }
-        if (lastError) {
-          // try next candidate url
-        }
       }
-
-      // All attempts failed - persist null result
-      if (!resultUrl) {
-        try {
-          const domainRecord = await ensureDomainRecord(domain);
-          const now = new Date();
-          const expiresAt = ttlForScreenshot(now);
-
-          await upsertScreenshot({
-            domainId: domainRecord.id,
-            url: null,
-            pathname: null,
-            width: VIEWPORT_WIDTH,
-            height: VIEWPORT_HEIGHT,
-            source: null,
-            notFound: true,
-            fetchedAt: now,
-            expiresAt,
-          });
-        } catch (err) {
-          logger.error("db persist error (null)", err, { domain });
-        }
+      if (lastError) {
+        // try next candidate url
       }
-    } finally {
-      // Browser is now managed as a singleton; don't close it here
     }
 
-    addSpanAttributes({
-      "screenshot.found": resultUrl !== null,
-      "screenshot.attempts_made": actualAttempts,
-      "screenshot.attempts_max": attempts,
-    });
+    // All attempts failed - persist null result
+    if (!resultUrl) {
+      try {
+        const domainRecord = await ensureDomainRecord(domain);
+        const now = new Date();
+        const expiresAt = ttlForScreenshot(now);
 
-    return { url: resultUrl };
-  },
-);
+        await upsertScreenshot({
+          domainId: domainRecord.id,
+          url: null,
+          pathname: null,
+          width: VIEWPORT_WIDTH,
+          height: VIEWPORT_HEIGHT,
+          source: null,
+          notFound: true,
+          fetchedAt: now,
+          expiresAt,
+        });
+      } catch (err) {
+        logger.error("db persist error (null)", err, { domain });
+      }
+    }
+  } finally {
+    // Browser is now managed as a singleton; don't close it here
+  }
+  return { url: resultUrl };
+}
