@@ -1,0 +1,1 @@
+DROP INDEX "i_tracked_domains_user";

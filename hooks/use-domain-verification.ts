@@ -64,8 +64,7 @@ export function useDomainVerification({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query keys for invalidation - use partial matching to catch infinite queries
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  // Query key for limits invalidation (domains use predicate matching for infinite queries)
   const limitsQueryKey = trpc.tracking.getLimits.queryKey();
 
   const addDomainMutation = useMutation({
@@ -73,8 +72,11 @@ export function useDomainVerification({
     onSettled: () => {
       // Invalidate queries so the domain appears in the list
       // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
+      // Use predicate matching to ensure we catch both regular queries and infinite queries
+      // (infinite queries have different key structure than base queryKey())
       void queryClient.invalidateQueries({
-        queryKey: domainsQueryKey,
+        predicate: (query) =>
+          JSON.stringify(query.queryKey).includes("listDomains"),
       });
       void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     },
@@ -204,8 +206,10 @@ export function useDomainVerification({
           method: result.method,
         });
         // Invalidate queries so the dashboard shows the updated verified status
+        // Use predicate matching to ensure we catch both regular queries and infinite queries
         void queryClient.invalidateQueries({
-          queryKey: domainsQueryKey,
+          predicate: (query) =>
+            JSON.stringify(query.queryKey).includes("listDomains"),
         });
         void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
         // Call onSuccess immediately so the dashboard refetches and shows updated status
@@ -240,7 +244,6 @@ export function useDomainVerification({
     method,
     verifyDomainMutation,
     queryClient,
-    domainsQueryKey,
     limitsQueryKey,
     onSuccess,
   ]);

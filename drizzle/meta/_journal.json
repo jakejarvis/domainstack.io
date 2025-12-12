@@ -43,6 +43,13 @@
       "when": 1765579953615,
       "tag": "0005_deep_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1765581345157,
+      "tag": "0006_amusing_ravenous",
+      "breakpoints": true
     }
   ]
 }

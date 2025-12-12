@@ -221,13 +221,13 @@ export const userTrackedDomains = pgTable(
   },
   (t) => [
     unique("u_tracked_domain_user").on(t.userId, t.domainId),
-    index("i_tracked_domains_user").on(t.userId),
     index("i_tracked_domains_domain").on(t.domainId),
     index("i_tracked_domains_verified").on(t.verified),
     index("i_tracked_domains_status").on(t.verificationStatus),
     index("i_tracked_domains_archived").on(t.archivedAt),
-    // Composite index for paginated dashboard query:
-    // WHERE userId = ? AND archivedAt IS NULL ORDER BY createdAt DESC, id DESC
+    // Composite index for all userId queries (replaces single-column index):
+    // Supports: WHERE userId = ? [AND archivedAt IS NULL] [ORDER BY createdAt DESC, id DESC]
+    // Left-prefix property makes single-column i_tracked_domains_user redundant
     index("i_tracked_domains_user_active_ordered").on(
       t.userId,
       t.archivedAt,
