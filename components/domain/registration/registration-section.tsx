@@ -96,7 +96,8 @@ export function RegistrationSection({
   if (!data) return null;
 
   const registrant = extractRegistrantView(data);
-  const isWhoisUnavailable = data.source === null;
+  // Prefer explicit status over source check for better semantics
+  const isWhoisUnavailable = data.status === "unknown";
 
   return (
     <Section {...sections.registration}>
@@ -108,12 +109,11 @@ export function RegistrationSection({
               Registration Data Unavailable
             </p>
             <p className="text-yellow-800/90 dark:text-yellow-200/80">
-              The{" "}
-              <code className="rounded bg-amber-900/10 px-1 py-0.5 font-mono text-xs dark:bg-amber-100/10">
-                .{data.tld}
-              </code>{" "}
-              registry does not publish public WHOIS/RDAP data. Registration
-              details cannot be verified for this domain.
+              {data.unavailableReason === "timeout"
+                ? "WHOIS/RDAP lookup timed out. This may be a temporary issue with the registry's servers."
+                : data.unavailableReason === "unsupported_tld"
+                  ? `The .${data.tld} registry does not publish public WHOIS/RDAP data. Registration details cannot be verified for this domain.`
+                  : "Registration information could not be retrieved at this time."}
             </p>
           </div>
         </div>

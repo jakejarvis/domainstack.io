@@ -95,7 +95,10 @@ const withLogging = t.middleware(async ({ path, type, input, next }) => {
       path,
       type,
       durationMs,
-      input: input && typeof input === "object" ? { ...input } : undefined,
+      input:
+        input && typeof input === "object" && input !== null
+          ? { ...input }
+          : undefined,
     });
 
     // Track slow requests (>5s threshold) in PostHog

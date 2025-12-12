@@ -36,11 +36,23 @@ export const RegistrationContactsSchema = z.array(RegistrationContactSchema);
 
 export const RegistrationSourceSchema = z.enum(["rdap", "whois"]);
 
+// Registration availability status
+export const RegistrationStatusEnumSchema = z.enum([
+  "registered", // Domain is confirmed registered with valid WHOIS/RDAP data
+  "unregistered", // Domain is confirmed unregistered (available for registration)
+  "unknown", // WHOIS/RDAP lookup failed - status cannot be determined
+]);
+
 // https://github.com/jakejarvis/rdapper/blob/main/src/types.ts
 export const RegistrationResponseSchema = z.object({
   domain: z.string(),
   tld: z.string(),
-  isRegistered: z.boolean(),
+  isRegistered: z.boolean(), // Kept for backward compatibility
+  status: RegistrationStatusEnumSchema, // Explicit status (preferred over isRegistered)
+  unavailableReason: z
+    .enum(["unsupported_tld", "timeout", "error"])
+    .optional()
+    .nullable(), // Present when status is "unknown"
   unicodeName: z.string().optional(),
   punycodeName: z.string().optional(),
   registry: z.string().optional(),
@@ -105,6 +117,9 @@ export const RegistrationNameserversSchema = z.array(
 );
 
 export type RegistrationResponse = z.infer<typeof RegistrationResponseSchema>;
+export type RegistrationStatusEnum = z.infer<
+  typeof RegistrationStatusEnumSchema
+>;
 export type RegistrationStatus = z.infer<typeof RegistrationStatusSchema>;
 export type RegistrationStatuses = z.infer<typeof RegistrationStatusesSchema>;
 export type RegistrationNameserver = z.infer<

@@ -1,8 +1,13 @@
 /**
  * Core Logger - Unified structured logging interface
  *
- * Provides a consistent logging API across server and client environments.
- * Both use structured console output with JSON formatting.
+ * Provides a consistent logging API across server and client environments:
+ * - Server: Pino-based structured JSON logging (high-performance, stdout-only)
+ * - Client: Console-based structured logging for browser environments
+ *
+ * Design notes:
+ * - Critical errors are tracked in PostHog via analytics.trackException()
+ * - Log output goes to stdout (Vercel runtime logs)
  */
 
 // ============================================================================
@@ -26,12 +31,18 @@ export interface Logger {
   trace(message: string, context?: LogContext): void;
   debug(message: string, context?: LogContext): void;
   info(message: string, context?: LogContext): void;
+
+  // Overloaded signatures for warn/error/fatal to support optional error objects
+  // Usage:
+  //   logger.warn("message", { context })              - context only
+  //   logger.warn("message", error)                    - error only (auto-detected)
+  //   logger.warn("message", error, { context })       - both error and context
+  warn(message: string, error: unknown, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
-  // Overloaded signatures for flexible error/fatal logging
-  // Pattern 1: error(message, error, context) - traditional with error object
+
   error(message: string, error: unknown, context?: LogContext): void;
-  // Pattern 2: error(message, context) - compatible with various logging interfaces
   error(message: string, context?: LogContext): void;
+
   fatal(message: string, error: unknown, context?: LogContext): void;
   fatal(message: string, context?: LogContext): void;
   child(context: LogContext): Logger;

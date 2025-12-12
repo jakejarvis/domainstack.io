@@ -98,7 +98,7 @@ export const getHosting = cache(async function getHosting(
           lon: row.geoLon ?? null,
         },
       };
-      // Add span attributes for cache hit
+
       logger.info("cache hit", {
         domain,
         hosting: info.hostingProvider.name,
@@ -106,6 +106,7 @@ export const getHosting = cache(async function getHosting(
         dns: info.dnsProvider.name,
         cached: true,
       });
+
       return info;
     }
   }
@@ -281,7 +282,6 @@ export const getHosting = cache(async function getHosting(
     });
   }
 
-  // Add span attributes for successful hosting detection
   logger.info("done", {
     domain,
     hosting: hostingName,

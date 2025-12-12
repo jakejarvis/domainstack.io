@@ -75,6 +75,8 @@ export async function verifyDomainOwnership(
 
 /**
  * Try all verification methods and return the first one that succeeds.
+ * Each method is wrapped in try-catch to ensure unexpected errors don't
+ * prevent trying remaining methods.
  */
 export async function tryAllVerificationMethods(
   domain: string,
@@ -83,21 +85,36 @@ export async function tryAllVerificationMethods(
   logger.debug("trying all verification methods", { domain });
 
   // Try DNS TXT first (most common/reliable)
-  const dnsResult = await verifyDnsTxtImpl(domain, token);
-  if (dnsResult.verified) {
-    return dnsResult;
+  try {
+    const dnsResult = await verifyDnsTxtImpl(domain, token);
+    if (dnsResult.verified) {
+      return dnsResult;
+    }
+  } catch (err) {
+    logger.warn("dns verification threw unexpectedly", err, { domain });
+    // Continue to next method
   }
 
   // Try HTML file next
-  const htmlResult = await verifyHtmlFileImpl(domain, token);
-  if (htmlResult.verified) {
-    return htmlResult;
+  try {
+    const htmlResult = await verifyHtmlFileImpl(domain, token);
+    if (htmlResult.verified) {
+      return htmlResult;
+    }
+  } catch (err) {
+    logger.warn("html verification threw unexpectedly", err, { domain });
+    // Continue to next method
   }
 
   // Try meta tag last
-  const metaResult = await verifyMetaTagImpl(domain, token);
-  if (metaResult.verified) {
-    return metaResult;
+  try {
+    const metaResult = await verifyMetaTagImpl(domain, token);
+    if (metaResult.verified) {
+      return metaResult;
+    }
+  } catch (err) {
+    logger.warn("meta verification threw unexpectedly", err, { domain });
+    // Fall through to return unverified
   }
 
   return { verified: false, method: null };
@@ -164,10 +181,9 @@ async function verifyDnsTxtImpl(
         }
       }
     } catch (err) {
-      logger.warn("DNS provider error", {
+      logger.warn("DNS provider error", err, {
         domain,
         provider: provider.key,
-        error: err,
       });
       lastError = err;
     }

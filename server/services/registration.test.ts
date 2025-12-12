@@ -98,6 +98,8 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("example.com");
     expect(rec.isRegistered).toBe(true);
+    expect(rec.status).toBe("registered");
+    expect(rec.unavailableReason).toBeNull();
     expect(spy).not.toHaveBeenCalled();
   });
 
@@ -105,6 +107,7 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("example.com");
     expect(rec.isRegistered).toBe(true);
+    expect(rec.status).toBe("registered");
     expect(rec.registrarProvider?.name).toBe("GoDaddy");
 
     // Verify provider row exists and is linked
@@ -147,6 +150,7 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("unregistered.test");
     expect(rec.isRegistered).toBe(false);
+    expect(rec.status).toBe("unregistered");
 
     // Verify NOT stored in Postgres
     const { db } = await import("@/lib/db/client");
@@ -175,6 +179,7 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("registered.test");
     expect(rec.isRegistered).toBe(true);
+    expect(rec.status).toBe("registered");
 
     // Verify stored in Postgres
     const { db } = await import("@/lib/db/client");
@@ -210,10 +215,12 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("whois.ls");
 
-    // Should return minimal unregistered response
+    // Should return response with status: "unknown" and unavailableReason
     expect(rec.domain).toBe("whois.ls");
     expect(rec.tld).toBe("ls");
-    expect(rec.isRegistered).toBe(false);
+    expect(rec.isRegistered).toBe(false); // Backward compatibility
+    expect(rec.status).toBe("unknown"); // Explicit status
+    expect(rec.unavailableReason).toBe("unsupported_tld");
     expect(rec.source).toBeNull();
     expect(rec.registrarProvider.name).toBeNull();
     expect(rec.registrarProvider.domain).toBeNull();
@@ -235,10 +242,12 @@ describe("getRegistration", () => {
     const { getRegistration } = await import("./registration");
     const rec = await getRegistration("timeout.ls");
 
-    // Should return minimal unregistered response
+    // Should return response with status: "unknown" and unavailableReason: "timeout"
     expect(rec.domain).toBe("timeout.ls");
     expect(rec.tld).toBe("ls");
-    expect(rec.isRegistered).toBe(false);
+    expect(rec.isRegistered).toBe(false); // Backward compatibility
+    expect(rec.status).toBe("unknown"); // Explicit status
+    expect(rec.unavailableReason).toBe("timeout");
     expect(rec.source).toBeNull();
 
     // Note: Logger calls are tested by integration - the service calls logger.info()

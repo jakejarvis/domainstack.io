@@ -56,9 +56,23 @@ export const getDnsRecords = cache(async function getDnsRecords(
   const nowMs = now.getTime();
 
   // Fast path: Check Postgres for cached DNS records
-  const existingDomain = await findDomainByName(domain);
-  const rows = (
-    existingDomain
+  // Wrapped in try/catch to allow DoH lookup even if Postgres is down
+  let existingDomain: Awaited<ReturnType<typeof findDomainByName>> | null =
+    null;
+  let rows: Array<{
+    type: DnsType;
+    name: string;
+    value: string;
+    ttl: number | null;
+    priority: number | null;
+    isCloudflare: boolean | null;
+    resolver: string | null;
+    expiresAt: Date | null;
+  }> = [];
+
+  try {
+    existingDomain = await findDomainByName(domain);
+    rows = existingDomain
       ? await db
           .select({
             type: dnsRecords.type,
@@ -72,17 +86,14 @@ export const getDnsRecords = cache(async function getDnsRecords(
           })
           .from(dnsRecords)
           .where(eq(dnsRecords.domainId, existingDomain.id))
-      : []
-  ) as Array<{
-    type: DnsType;
-    name: string;
-    value: string;
-    ttl: number | null;
-    priority: number | null;
-    isCloudflare: boolean | null;
-    resolver: string | null;
-    expiresAt: Date | null;
-  }>;
+      : [];
+  } catch (err) {
+    // Postgres unavailable - log and fall through to DoH lookup
+    logger.warn("db cache unavailable, falling back to doh", err, {
+      domain,
+    });
+  }
+
   if (rows.length > 0) {
     // Group cached rows by type
     const rowsByType = (rows as typeof rows).reduce(
@@ -154,21 +165,40 @@ export const getDnsRecords = cache(async function getDnsRecords(
         ).flat();
         durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
-        // Persist only stale types
+        // Build complete recordsByType for persistence (both fresh and newly fetched)
+        // IMPORTANT: replaceDns deletes records not in the batch, so we must include
+        // fresh types from cache to prevent deletion
         const recordsByTypeToPersist = Object.fromEntries(
-          typesToFetch.map((t) => [
-            t,
-            fetchedStale
-              .filter((r) => r.type === t)
-              .map((r) => ({
+          (types as DnsType[]).map((t) => {
+            if (typesToFetch.includes(t)) {
+              // Stale/missing type - use newly fetched data
+              return [
+                t,
+                fetchedStale
+                  .filter((r) => r.type === t)
+                  .map((r) => ({
+                    name: r.name,
+                    value: r.value,
+                    ttl: r.ttl ?? null,
+                    priority: r.priority ?? null,
+                    isCloudflare: r.isCloudflare ?? null,
+                    expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
+                  })),
+              ];
+            }
+            // Fresh type - preserve existing records from cache
+            return [
+              t,
+              (rowsByType[t] ?? []).map((r) => ({
                 name: r.name,
                 value: r.value,
-                ttl: r.ttl ?? null,
-                priority: r.priority ?? null,
-                isCloudflare: r.isCloudflare ?? null,
-                expiresAt: ttlForDnsRecord(now, r.ttl ?? null),
+                ttl: r.ttl,
+                priority: r.priority,
+                isCloudflare: r.isCloudflare,
+                expiresAt: r.expiresAt as Date, // Already a Date from DB
               })),
-          ]),
+            ];
+          }),
         ) as Record<
           DnsType,
           Array<{
@@ -362,7 +392,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
         resolver: resolverUsed,
       } as DnsRecordsResponse;
     } catch (err) {
-      logger.warn("provider attempt failed", {
+      logger.warn("provider attempt failed", err, {
         domain,
         provider: provider.key,
       });

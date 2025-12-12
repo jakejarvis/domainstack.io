@@ -39,7 +39,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         })
         .from(certTable)
         .where(eq(certTable.domainId, existingDomain.id))
-        // Order by validTo DESC: leaf certificates typically expire first (shorter validity period)
+        // Order by validTo ASC: leaf certificates typically expire first (shorter validity period)
         // This preserves the chain order: leaf -> intermediate -> root
         .orderBy(certTable.validTo)
     : ([] as Array<{
@@ -75,10 +75,12 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
 
   // Client gating avoids calling this without A/AAAA; server does not pre-check DNS here.
   // Probe TLS connection to get certificate chain
-
+  // Note: Certificates are returned in chain order (leaf -> intermediate -> root)
+  // because leaf certificates expire first (shorter validity period)
   try {
     const chain = await new Promise<tls.DetailedPeerCertificate[]>(
       (resolve, reject) => {
+        let isDestroyed = false;
         const socket = tls.connect(
           {
             host: domain,
@@ -109,6 +111,12 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           socket.destroy(new Error("TLS timeout"));
         });
         socket.on("error", (err) => {
+          // Destroy socket before rejecting to ensure cleanup
+          // Guard against double-destroy (socket.destroy can trigger error event)
+          if (!isDestroyed) {
+            isDestroyed = true;
+            socket.destroy();
+          }
           reject(err);
         });
       },
@@ -151,7 +159,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           c.caProvider.domain,
           c.caProvider.name,
         );
-        const caProviderId = caProviderMap.get(key);
+        const caProviderId = caProviderMap.get(key) ?? null;
 
         return {
           issuer: c.issuer,

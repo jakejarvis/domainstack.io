@@ -111,7 +111,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       },
     };
 
-    // Add span attributes for cache hit
     return response;
   }
 
@@ -219,10 +218,9 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       uploadedImageUrl = url;
       preview.imageUploaded = url;
     } catch (err) {
-      logger.info("OG image processing failed", {
+      logger.warn("OG image processing failed", err, {
         domain,
         image: preview.image,
-        error: err,
       });
       preview.imageUploaded = null;
     }
@@ -281,7 +279,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     });
   }
 
-  // Add span attributes for SEO parse completion
   logger.info("done", {
     domain,
     status: status ?? -1,

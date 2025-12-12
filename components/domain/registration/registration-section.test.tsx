@@ -32,6 +32,8 @@ describe("RegistrationSection", () => {
             domain: "example.com",
             tld: "com",
             isRegistered: true,
+            status: "registered",
+            unavailableReason: null,
             source: "rdap",
             registrarProvider: { name: "Namecheap", domain: "namecheap.com" },
             creationDate: "2020-01-01T00:00:00Z",
@@ -44,14 +46,16 @@ describe("RegistrationSection", () => {
     expect(namecheapElements.length).toBeGreaterThan(0);
   });
 
-  it("shows unavailable notice when source is null", () => {
+  it("shows unavailable notice when status is unknown", () => {
     render(
       <RegistrationSection
         data={
           {
             domain: "example.test",
             tld: "test",
-            isRegistered: true,
+            isRegistered: false,
+            status: "unknown",
+            unavailableReason: "unsupported_tld",
             source: null,
             registrarProvider: { name: null, domain: null },
           } as unknown as import("@/lib/schemas").RegistrationResponse

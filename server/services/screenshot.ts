@@ -142,6 +142,7 @@ async function generateScreenshot(
 
   // Generate screenshot (cache missed)
   let resultUrl: string | null = null;
+  let isPermanentFailure = false;
   let browser: Browser | null = null;
   try {
     browser = await getBrowser();
@@ -163,10 +164,24 @@ async function generateScreenshot(
           });
           await page.setUserAgent(USER_AGENT);
 
-          await page.goto(url, {
+          const response = await page.goto(url, {
             waitUntil: "domcontentloaded",
             timeout: NAV_TIMEOUT_MS,
           });
+
+          // Check for permanent failure signals (404, 410 Gone, etc.)
+          if (response) {
+            const status = response.status();
+            if (status === 404 || status === 410) {
+              isPermanentFailure = true;
+              logger.debug("permanent failure detected", {
+                domain,
+                url,
+                status,
+              });
+              break; // No point retrying this URL
+            }
+          }
 
           try {
             await page.waitForNetworkIdle({
@@ -226,6 +241,15 @@ async function generateScreenshot(
           break urlLoop;
         } catch (err) {
           lastError = err;
+          // Log when final attempt for this URL fails
+          if (attemptIndex === attempts - 1) {
+            logger.warn("screenshot attempts exhausted", err, {
+              domain,
+              url,
+              attemptIndex: attemptIndex + 1,
+              totalAttempts: attempts,
+            });
+          }
           const delay = backoffDelayMs(
             attemptIndex,
             backoffBaseMs,
@@ -246,18 +270,26 @@ async function generateScreenshot(
           }
         }
       }
+      if (isPermanentFailure) {
+        // Definitive failure (404/410) - stop trying other URLs
+        logger.info("screenshot permanently unavailable", { domain });
+        break;
+      }
       if (lastError) {
-        // try next candidate url
+        // Transient failure - try next candidate URL
       }
     }
 
-    // All attempts failed - persist null result
+    // All attempts failed - persist result based on failure type
     if (!resultUrl) {
       try {
         const domainRecord = await ensureDomainRecord(domain);
         const now = new Date();
         const expiresAt = ttlForScreenshot(now);
 
+        // Only set notFound: true for definitive failures (404/410)
+        // For transient failures (timeouts, network errors), set notFound: false
+        // so cache check doesn't treat it as definitive and allows retry after TTL
         await upsertScreenshot({
           domainId: domainRecord.id,
           url: null,
@@ -265,10 +297,16 @@ async function generateScreenshot(
           width: VIEWPORT_WIDTH,
           height: VIEWPORT_HEIGHT,
           source: null,
-          notFound: true,
+          notFound: isPermanentFailure,
           fetchedAt: now,
           expiresAt,
         });
+
+        if (isPermanentFailure) {
+          logger.info("cached permanent failure", { domain });
+        } else {
+          logger.warn("cached transient failure", { domain });
+        }
       } catch (err) {
         logger.error("db persist error (null)", err, { domain });
       }

@@ -62,7 +62,6 @@
 - Global setup in `vitest.setup.ts`:
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
-  - Mocks OpenTelemetry Logs API (`@opentelemetry/api-logs`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
@@ -288,6 +287,7 @@ Key patterns:
   - **Client:** Console-based logging for browser environments
   - Server logs always output to stdout (captured by Vercel for runtime logs)
   - Client logs output to console in development; errors always logged for debugging
+  - **Important:** OpenTelemetry (OTEL) logging and trace correlation are **intentionally NOT used**. Do not introduce OTEL Logs API, trace/span context, or OTEL instrumentation in future changes.
 - **Server-side logging (Pino):**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create child logger: `const logger = createLogger({ source: "dns" })`
@@ -297,6 +297,7 @@ Key patterns:
   - Critical errors automatically tracked in PostHog
   - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
   - Environment-based log level: configurable via `LOG_LEVEL` env var or defaults (test: warn, dev: debug, prod: info)
+  - **PostHog integration:** Critical errors sent to PostHog via `analytics.trackException()` for exception monitoring
 - **Client-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/client"`
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
@@ -308,8 +309,8 @@ Key patterns:
   // Server (service layer)
   import { createLogger } from "@/lib/logger/server";
   const logger = createLogger({ source: "dns" });
-  logger.debug("start", { domain: "example.com" });
-  logger.info("ok", { domain: "example.com", count: 5 });
+  logger.debug("resolving domain", { domain: "example.com" });
+  logger.info("resolution complete", { domain: "example.com", recordCount: 5 });
   logger.error("failed to resolve", error, { domain: "example.com" });
 
   // Client (components)

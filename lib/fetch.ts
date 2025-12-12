@@ -40,9 +40,9 @@ export async function fetchWithTimeoutAndRetry(
       if (attempt < retries) {
         logger.warn(
           `fetch failed, retrying (attempt ${attempt + 1}/${retries})`,
+          err,
           {
             url: input.toString(),
-            error: err,
           },
         );
         // Simple linear backoff — good enough for trusted upstream retry logic.

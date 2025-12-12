@@ -112,8 +112,6 @@ export const getHeaders = cache(async function getHeaders(
       });
     }
 
-    // Add span attributes for successful headers probe
-
     logger.info("done", {
       domain,
       status: final.status,

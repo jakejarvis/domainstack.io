@@ -15,8 +15,8 @@ import { createPinoInstance, type PinoLogger } from "@/lib/logger/pino-config";
  * - High-performance structured logging
  * - Pretty-printed colorized output in development (via pino-pretty)
  * - Raw JSON output in production for Vercel log aggregation
- * - Environment-based log level filtering
- * - PostHog integration for critical errors
+ * - Environment-based log level filtering (LOG_LEVEL env var or defaults)
+ * - PostHog integration for critical errors (via analytics.trackException)
  * - Graceful degradation (never crashes)
  */
 
@@ -35,7 +35,7 @@ class ServerLogger implements Logger {
    * Pino uses (mergeObject, message) signature, but our interface uses (message, context).
    * This helper flips the arguments and calls the appropriate Pino method.
    */
-  private logToPino(
+  private logImpl(
     level: "trace" | "debug" | "info" | "warn" | "error" | "fatal",
     message: string,
     context?: LogContext,
@@ -54,20 +54,38 @@ class ServerLogger implements Logger {
   /**
    * Log with error handling - supports both error object and context-only calls.
    */
-  private logWithError(
-    level: "error" | "fatal",
+  private logImplWithError(
+    level: "warn" | "error" | "fatal",
     message: string,
     errorOrContext?: unknown,
     context?: LogContext,
   ): void {
-    // Determine error and context based on number of arguments:
-    // - 3 args: error(message, error, context) - traditional call
-    // - 2 args: error(message, context) - flexible call for compatibility
-    const error = context !== undefined ? errorOrContext : undefined;
-    const finalContext =
-      context !== undefined
-        ? context
-        : (errorOrContext as LogContext | undefined);
+    // Determine error and context based on arguments:
+    // - 3 args (context !== undefined): error(message, error, context)
+    // - 2 args with Error-like object: error(message, error)
+    // - 2 args with plain object: error(message, context)
+    let error: unknown;
+    let finalContext: LogContext | undefined;
+
+    if (context !== undefined) {
+      // Three args: error(message, error, context)
+      error = errorOrContext;
+      finalContext = context;
+    } else if (
+      errorOrContext &&
+      (errorOrContext instanceof Error ||
+        (typeof errorOrContext === "object" &&
+          "message" in errorOrContext &&
+          "stack" in errorOrContext))
+    ) {
+      // Two args with error-like object: error(message, error)
+      error = errorOrContext;
+      finalContext = undefined;
+    } else {
+      // Two args with plain object: error(message, context)
+      error = undefined;
+      finalContext = errorOrContext as LogContext | undefined;
+    }
 
     try {
       // Build merge object with error at root level
@@ -78,16 +96,22 @@ class ServerLogger implements Logger {
         mergeObject.error = serializeError(error);
       }
 
-      // Add context if present
+      // Add context fields - spread after error to prevent clobbering
       if (finalContext && Object.keys(finalContext).length > 0) {
-        Object.assign(mergeObject, finalContext);
+        // Filter out 'error' key from context to prevent overwriting serialized error
+        const { error: _ignored, ...safeContext } = finalContext as Record<
+          string,
+          unknown
+        >;
+        Object.assign(mergeObject, safeContext);
       }
 
       // Log using Pino
       this.pinoInstance[level](mergeObject, message);
 
       // Track critical errors in PostHog (async, non-blocking)
-      if (error instanceof Error) {
+      // Only track error and fatal levels, not warnings
+      if ((level === "error" || level === "fatal") && error instanceof Error) {
         this.trackErrorInPostHog(error, finalContext);
       }
     } catch (err) {
@@ -119,52 +143,70 @@ class ServerLogger implements Logger {
   log(level: LogLevel, message: string, context?: LogContext): void {
     switch (level) {
       case "trace":
-        this.logToPino("trace", message, context);
+        this.logImpl("trace", message, context);
         break;
       case "debug":
-        this.logToPino("debug", message, context);
+        this.logImpl("debug", message, context);
         break;
       case "info":
-        this.logToPino("info", message, context);
+        this.logImpl("info", message, context);
         break;
       case "warn":
-        this.logToPino("warn", message, context);
+        this.logImplWithError("warn", message, undefined, context);
         break;
       case "error":
-        this.logWithError("error", message, undefined, context);
+        this.logImplWithError("error", message, undefined, context);
         break;
       case "fatal":
-        this.logWithError("fatal", message, undefined, context);
+        this.logImplWithError("fatal", message, undefined, context);
         break;
     }
   }
 
   trace(message: string, context?: LogContext): void {
-    this.logToPino("trace", message, context);
+    this.logImpl("trace", message, context);
   }
 
   debug(message: string, context?: LogContext): void {
-    this.logToPino("debug", message, context);
+    this.logImpl("debug", message, context);
   }
 
   info(message: string, context?: LogContext): void {
-    this.logToPino("info", message, context);
+    this.logImpl("info", message, context);
   }
 
-  warn(message: string, context?: LogContext): void {
-    this.logToPino("warn", message, context);
+  warn(message: string, error: unknown, context?: LogContext): void;
+  warn(message: string, context?: LogContext): void;
+  warn(message: string, errorOrContext?: unknown, context?: LogContext): void {
+    // Check if called with error object (3 args) or just context (2 args)
+    if (context !== undefined) {
+      // Three args: warn(message, error, context)
+      this.logImplWithError("warn", message, errorOrContext, context);
+    } else if (
+      errorOrContext &&
+      (errorOrContext instanceof Error ||
+        (typeof errorOrContext === "object" &&
+          "message" in errorOrContext &&
+          "stack" in errorOrContext))
+    ) {
+      // Two args with error-like object: warn(message, error)
+      this.logImplWithError("warn", message, errorOrContext, undefined);
+    } else {
+      // Two args with context: warn(message, context)
+      this.logImpl("warn", message, errorOrContext as LogContext | undefined);
+    }
   }
 
   error(message: string, error: unknown, context?: LogContext): void;
   error(message: string, context?: LogContext): void;
   error(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("error", message, errorOrContext, context);
+    this.logImplWithError("error", message, errorOrContext, context);
   }
 
   fatal(message: string, error: unknown, context?: LogContext): void;
   fatal(message: string, context?: LogContext): void;
   fatal(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("fatal", message, errorOrContext, context);
+    this.logImplWithError("fatal", message, errorOrContext, context);
   }
 
   child(context: LogContext): Logger {
@@ -195,7 +237,10 @@ export const logger = new ServerLogger();
 
 /**
  * Create a child logger with a specific context prefix.
- * Useful for service-specific logging.
+ * Useful for service-specific logging (e.g., per-service context).
+ *
+ * Note: Uses Pino's child logger feature for efficient context binding.
+ * Does NOT use OTEL trace/span context injection.
  *
  * @example
  * ```typescript

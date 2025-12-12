@@ -63,75 +63,85 @@ export async function getRegistration(
   const now = new Date();
 
   // ===== Fast path: Postgres cache for full registration data =====
-  // Single query to fetch domain + registration + provider
-  const existing = await db
-    .select({
-      domainId: domains.id,
-      domainName: domains.name,
-      domainTld: domains.tld,
-      domainUnicodeName: domains.unicodeName,
-      domainLastAccessedAt: domains.lastAccessedAt,
-      registration: registrations,
-      providerName: providers.name,
-      providerDomain: providers.domain,
-    })
-    .from(domains)
-    .innerJoin(registrations, eq(registrations.domainId, domains.id))
-    .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
-    .where(eq(domains.name, domain))
-    .limit(1);
+  // Wrapped in try/catch to gracefully handle Postgres unavailability
+  try {
+    // Single query to fetch domain + registration + provider
+    const existing = await db
+      .select({
+        domainId: domains.id,
+        domainName: domains.name,
+        domainTld: domains.tld,
+        domainUnicodeName: domains.unicodeName,
+        domainLastAccessedAt: domains.lastAccessedAt,
+        registration: registrations,
+        providerName: providers.name,
+        providerDomain: providers.domain,
+      })
+      .from(domains)
+      .innerJoin(registrations, eq(registrations.domainId, domains.id))
+      .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
+      .where(eq(domains.name, domain))
+      .limit(1);
 
-  if (existing[0] && existing[0].registration.expiresAt > now) {
-    const row = existing[0];
+    if (existing[0] && existing[0].registration.expiresAt > now) {
+      const row = existing[0];
 
-    const registrarProvider = row.providerName
-      ? { name: row.providerName, domain: row.providerDomain ?? null }
-      : { name: null as string | null, domain: null as string | null };
+      const registrarProvider = row.providerName
+        ? { name: row.providerName, domain: row.providerDomain ?? null }
+        : { name: null as string | null, domain: null as string | null };
 
-    const contactsArray: RegistrationContacts = row.registration.contacts ?? [];
-    const nameserversArray = row.registration.nameservers ?? [];
+      const contactsArray: RegistrationContacts =
+        row.registration.contacts ?? [];
+      const nameserversArray = row.registration.nameservers ?? [];
 
-    const response: RegistrationResponse = {
-      domain,
-      tld: row.domainTld,
-      isRegistered: row.registration.isRegistered,
-      privacyEnabled: row.registration.privacyEnabled ?? false,
-      unicodeName: row.domainUnicodeName,
-      punycodeName: row.domainName,
-      registry: row.registration.registry ?? undefined,
-      // registrar object is optional; we don't persist its full details, so omit
-      statuses: row.registration.statuses ?? undefined,
-      creationDate: row.registration.creationDate?.toISOString(),
-      updatedDate: row.registration.updatedDate?.toISOString(),
-      expirationDate: row.registration.expirationDate?.toISOString(),
-      deletionDate: row.registration.deletionDate?.toISOString(),
-      transferLock: row.registration.transferLock ?? undefined,
-      nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
-      contacts: contactsArray,
-      whoisServer: row.registration.whoisServer ?? undefined,
-      rdapServers: row.registration.rdapServers ?? undefined,
-      source: row.registration.source ?? null,
-      registrarProvider,
-    };
-
-    // Add span attributes for cache hit
-    // Schedule background revalidation using actual last access time
-    after(() => {
-      scheduleRevalidation(
+      const response: RegistrationResponse = {
         domain,
-        "registration",
-        row.registration.expiresAt.getTime(),
-        row.domainLastAccessedAt ?? null,
-      ).catch((err) => {
-        logger.error("schedule failed", err, {
+        tld: row.domainTld,
+        isRegistered: row.registration.isRegistered,
+        status: row.registration.isRegistered ? "registered" : "unregistered",
+        unavailableReason: null,
+        privacyEnabled: row.registration.privacyEnabled ?? false,
+        unicodeName: row.domainUnicodeName,
+        punycodeName: row.domainName,
+        registry: row.registration.registry ?? undefined,
+        // registrar object is optional; we don't persist its full details, so omit
+        statuses: row.registration.statuses ?? undefined,
+        creationDate: row.registration.creationDate?.toISOString(),
+        updatedDate: row.registration.updatedDate?.toISOString(),
+        expirationDate: row.registration.expirationDate?.toISOString(),
+        deletionDate: row.registration.deletionDate?.toISOString(),
+        transferLock: row.registration.transferLock ?? undefined,
+        nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
+        contacts: contactsArray,
+        whoisServer: row.registration.whoisServer ?? undefined,
+        rdapServers: row.registration.rdapServers ?? undefined,
+        source: row.registration.source ?? null,
+        registrarProvider,
+      };
+
+      // Schedule background revalidation using actual last access time
+      after(() => {
+        scheduleRevalidation(
           domain,
+          "registration",
+          row.registration.expiresAt.getTime(),
+          row.domainLastAccessedAt ?? null,
+        ).catch((err) => {
+          logger.error("schedule failed", err, {
+            domain,
+          });
         });
       });
+
+      logger.info("cache hit", { domain });
+
+      return response;
+    }
+  } catch (err) {
+    // Postgres unavailable - log and fall through to slow path
+    logger.warn("db cache unavailable, falling back to rdapper", err, {
+      domain,
     });
-
-    logger.info("cache hit", { domain });
-
-    return response;
   }
 
   // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
@@ -149,18 +159,24 @@ export async function getRegistration(
     const isTimeout = isTimeoutError(error);
 
     if (isUnsupported || isTimeout) {
+      const unavailableReason = isTimeout
+        ? ("timeout" as const)
+        : ("unsupported_tld" as const);
+
       logger.info(isTimeout ? "timeout" : "unavailable", {
         domain,
         reason: error || "unknown",
+        unavailableReason,
       });
 
-      // Return minimal response with source: null indicating unknown status
-      // Note: isRegistered: false doesn't mean "confirmed unregistered",
-      // it means "status unknown due to WHOIS/RDAP unavailability"
+      // Return response with status: "unknown" and explicit unavailableReason
+      // isRegistered: false kept for backward compatibility but status is preferred
       return {
         domain,
         tld: getDomainTld(domain) ?? "",
         isRegistered: false,
+        status: "unknown",
+        unavailableReason,
         source: null,
         registrarProvider: {
           name: null,
@@ -187,6 +203,8 @@ export async function getRegistration(
       domain: record.domain,
       tld: record.tld,
       isRegistered: record.isRegistered,
+      status: "unregistered",
+      unavailableReason: null,
       unicodeName: record.unicodeName,
       punycodeName: record.punycodeName,
       registry: record.registry,
@@ -218,6 +236,8 @@ export async function getRegistration(
     domain: record.domain,
     tld: record.tld,
     isRegistered: record.isRegistered,
+    status: "registered",
+    unavailableReason: null,
     unicodeName: record.unicodeName,
     punycodeName: record.punycodeName,
     registry: record.registry,
