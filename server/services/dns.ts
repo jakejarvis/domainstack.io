@@ -150,18 +150,54 @@ export const getDnsRecords = cache(async function getDnsRecords(
         DOH_PROVIDERS.find((p) => p.key === resolverHint) ?? providers[0];
       const attemptStart = Date.now();
       try {
-        const fetchedStale = (
-          await Promise.all(
-            typesToFetch.map(async (t) => {
-              const recs = await resolveTypeWithProvider(
-                domain,
-                t,
-                pinnedProvider,
-              );
-              return recs;
-            }),
+        // Use allSettled to handle individual type failures gracefully
+        const results = await Promise.allSettled(
+          typesToFetch.map(async (t) => {
+            const recs = await resolveTypeWithProvider(
+              domain,
+              t,
+              pinnedProvider,
+            );
+            return { type: t, records: recs };
+          }),
+        );
+
+        // Collect successful fetches
+        const fetchedStale = results
+          .filter(
+            (
+              r,
+            ): r is PromiseFulfilledResult<{
+              type: DnsType;
+              records: DnsRecord[];
+            }> => r.status === "fulfilled",
           )
-        ).flat();
+          .flatMap((r) => r.value.records);
+
+        // Track which types actually succeeded
+        const succeededTypes = new Set(
+          results
+            .filter(
+              (
+                r,
+              ): r is PromiseFulfilledResult<{
+                type: DnsType;
+                records: DnsRecord[];
+              }> => r.status === "fulfilled",
+            )
+            .map((r) => r.value.type),
+        );
+
+        // If all types failed, throw to fall back to full provider rotation
+        if (succeededTypes.size === 0) {
+          const failures = results
+            .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+            .map((r) => r.reason);
+          throw new Error(
+            `All types failed for pinned provider: ${failures.map((e) => String(e)).join("; ")}`,
+          );
+        }
+
         durationByProvider[pinnedProvider.key] = Date.now() - attemptStart;
 
         // Build complete recordsByType for persistence (both fresh and newly fetched)
@@ -169,8 +205,8 @@ export const getDnsRecords = cache(async function getDnsRecords(
         // fresh types from cache to prevent deletion
         const recordsByTypeToPersist = Object.fromEntries(
           (types as DnsType[]).map((t) => {
-            if (typesToFetch.includes(t)) {
-              // Stale/missing type - use newly fetched data
+            if (typesToFetch.includes(t) && succeededTypes.has(t)) {
+              // Stale/missing type that succeeded - use newly fetched data
               return [
                 t,
                 fetchedStale
@@ -185,7 +221,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
                   })),
               ];
             }
-            // Fresh type - preserve existing records from cache
+            // Fresh type or failed fetch - preserve existing records from cache
             return [
               t,
               (rowsByType[t] ?? []).map((r) => ({
@@ -401,9 +437,9 @@ export const getDnsRecords = cache(async function getDnsRecords(
   }
 
   // All providers failed
-  const error = new Error(
-    `All DoH providers failed for ${domain}: ${String(lastError)}`,
-  );
+  const error = new Error(`All DoH providers failed for ${domain}`, {
+    cause: lastError,
+  });
   logger.error("all providers failed", error, {
     domain,
     providers: providers.map((p) => p.key).join(","),

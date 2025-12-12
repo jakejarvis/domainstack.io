@@ -20,6 +20,17 @@ import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
 
+/**
+ * Safely coerce altNames from DB to string array.
+ * Guards against non-array values that could slip through serialization.
+ */
+function safeAltNamesArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return [];
+}
+
 export async function getCertificates(domain: string): Promise<Certificate[]> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
@@ -66,7 +77,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       const out: Certificate[] = existing.map((c) => ({
         issuer: c.issuer,
         subject: c.subject,
-        altNames: (c.altNames as unknown as string[]) ?? [],
+        altNames: safeAltNamesArray(c.altNames),
         validFrom: new Date(c.validFrom).toISOString(),
         validTo: new Date(c.validTo).toISOString(),
         // Use cached provider data if available, otherwise detect
@@ -159,27 +170,42 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
     // Persist to Postgres only if domain exists (i.e., is registered)
     if (existingDomain) {
       // Batch resolve all CA providers in one query
-      const caProviderInputs = out.map((c) => ({
-        category: "ca" as const,
-        domain: c.caProvider.domain,
-        name: c.caProvider.name,
-      }));
+      // Filter out entries with null/empty domain or name to avoid creating bogus providers
+      const caProviderInputs = out
+        .filter(
+          (c) =>
+            c.caProvider.domain &&
+            c.caProvider.name &&
+            c.caProvider.domain.trim() !== "" &&
+            c.caProvider.name.trim() !== "",
+        )
+        .map((c) => ({
+          category: "ca" as const,
+          domain: c.caProvider.domain,
+          name: c.caProvider.name,
+        }));
 
       const caProviderMap =
         await batchResolveOrCreateProviderIds(caProviderInputs);
 
       const chainWithIds = out.map((c) => {
-        const key = makeProviderKey(
-          "ca",
-          c.caProvider.domain,
-          c.caProvider.name,
-        );
-        const caProviderId = caProviderMap.get(key) ?? null;
+        // Only lookup provider ID if both domain and name are valid
+        const hasValidProvider =
+          c.caProvider.domain &&
+          c.caProvider.name &&
+          c.caProvider.domain.trim() !== "" &&
+          c.caProvider.name.trim() !== "";
+
+        const caProviderId = hasValidProvider
+          ? (caProviderMap.get(
+              makeProviderKey("ca", c.caProvider.domain, c.caProvider.name),
+            ) ?? null)
+          : null;
 
         return {
           issuer: c.issuer,
           subject: c.subject,
-          altNames: c.altNames as unknown as string[],
+          altNames: c.altNames,
           validFrom: new Date(c.validFrom),
           validTo: new Date(c.validTo),
           caProviderId,

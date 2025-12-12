@@ -221,6 +221,28 @@ class ClientLogger implements Logger {
     this.logInternal("info", message, context);
   }
 
+  /**
+   * Log a warning message with optional error object and context.
+   *
+   * **Important routing behavior**:
+   * - `warn(message, error)` → Routes through logWithError → console.error (always, even in prod)
+   * - `warn(message, context)` → Routes through logInternal → console.warn (dev only)
+   *
+   * This distinction ensures warnings with Error objects remain visible in production
+   * for debugging, while context-only warnings are treated as debug/info-level noise.
+   *
+   * **PostHog tracking**: Warnings are NOT tracked in PostHog (only error/fatal levels).
+   * If you need PostHog tracking for a warning with an error, consider using error() instead.
+   *
+   * @example
+   * ```typescript
+   * // Visible in production console (console.error)
+   * logger.warn("API timeout", new Error("timeout"), { endpoint: "/api/data" });
+   *
+   * // Silent in production (console.warn in dev only)
+   * logger.warn("Cache miss", { key: "user:123" });
+   * ```
+   */
   warn(message: string, error: unknown, context?: LogContext): void;
   warn(message: string, context?: LogContext): void;
   warn(message: string, errorOrContext?: unknown, context?: LogContext): void {

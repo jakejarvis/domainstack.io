@@ -50,10 +50,7 @@ export const RegistrationResponseSchema = z
     tld: z.string(),
     isRegistered: z.boolean(), // Kept for backward compatibility
     status: RegistrationStatusEnumSchema, // Explicit status (preferred over isRegistered)
-    unavailableReason: z
-      .enum(["unsupported_tld", "timeout"])
-      .optional()
-      .nullable(), // Present when status is "unknown"
+    unavailableReason: z.enum(["unsupported_tld", "timeout"]).optional(), // Present when status is "unknown"
     unicodeName: z.string().optional(),
     punycodeName: z.string().optional(),
     registry: z.string().optional(),
@@ -115,20 +112,23 @@ export const RegistrationResponseSchema = z
       if (data.status === "unregistered" && data.isRegistered) {
         return false;
       }
+      if (data.status === "unknown" && data.isRegistered) {
+        return false;
+      }
       return true;
     },
     {
       message:
-        'status and isRegistered must be consistent: status="registered" requires isRegistered=true',
+        'status and isRegistered must be consistent: status="registered" requires isRegistered=true, status="unknown" requires isRegistered=false',
     },
   )
   .refine(
     (data) => {
       // Enforce unavailableReason is only present when status is "unknown"
-      if (data.status === "unknown" && !data.unavailableReason) {
+      if (data.status === "unknown" && data.unavailableReason === undefined) {
         return false;
       }
-      if (data.status !== "unknown" && data.unavailableReason != null) {
+      if (data.status !== "unknown" && data.unavailableReason !== undefined) {
         return false;
       }
       return true;

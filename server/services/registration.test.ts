@@ -99,7 +99,7 @@ describe("getRegistration", () => {
     const rec = await getRegistration("example.com");
     expect(rec.isRegistered).toBe(true);
     expect(rec.status).toBe("registered");
-    expect(rec.unavailableReason).toBeNull();
+    expect(rec.unavailableReason).toBeUndefined();
     expect(spy).not.toHaveBeenCalled();
   });
 

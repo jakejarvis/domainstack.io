@@ -43,11 +43,11 @@ export async function fetchWithTimeoutAndRetry(
           `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,
           err,
           {
-            url: input.toString(),
+            url: input instanceof Request ? input.url : String(input),
           },
         );
         // Simple linear backoff — good enough for trusted upstream retry logic.
-        await new Promise((r) => setTimeout(r, backoffMs));
+        await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
       }
     }
   }

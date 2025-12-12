@@ -162,7 +162,6 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    const { logger } = await import("@/lib/logger/server");
     logger.info("recording access for domain", {
       source: "trpc",
       domain: input.domain,
