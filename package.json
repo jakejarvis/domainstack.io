@@ -90,8 +90,8 @@
     "puppeteer-core": "24.32.0",
     "radix-ui": "^1.4.3",
     "rdapper": "^0.11.0",
-    "react": "19.2.1",
-    "react-dom": "19.2.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-hotkeys-hook": "^5.2.1",
     "react-map-gl": "^8.1.0",
     "resend": "^6.6.0",
@@ -154,8 +154,8 @@
     "overrides": {
       "esbuild": "^0.27.1",
       "next": "16.0.8",
-      "react": "19.2.1",
-      "react-dom": "19.2.1",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
       "@types/react": "19.2.7",
       "@types/react-dom": "19.2.3"
     }
