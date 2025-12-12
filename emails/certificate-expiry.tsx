@@ -1,16 +1,13 @@
+import { EmailBox, EmailBoxText } from "@/components/email/email-box";
+import { EmailButton } from "@/components/email/email-button";
+import { EmailLayout } from "@/components/email/email-layout";
 import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
+  EmailFooter,
+  EmailHeading,
+  EmailHr,
+  EmailLink,
+  EmailText,
+} from "@/components/email/email-shared";
 import { BASE_URL } from "@/lib/constants/app";
 
 type CertificateExpiryEmailProps = {
@@ -32,90 +29,70 @@ export function CertificateExpiryEmail({
   const previewText = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
 
   return (
-    <Html>
-      <Head />
-      <Preview>{previewText}</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>
-            {isUrgent ? "🔒⚠️ " : "🔒 "}Certificate Expiration Alert
-          </Heading>
+    <EmailLayout previewText={previewText}>
+      <EmailHeading>
+        {isUrgent ? "🔒⚠️ " : "🔒 "}Certificate Expiration Alert
+      </EmailHeading>
 
-          <Text style={text}>Hi {userName},</Text>
+      <EmailText>Hi {userName},</EmailText>
 
-          <Text style={text}>
-            The SSL certificate for <strong>{domainName}</strong> is set to
-            expire{" "}
-            {daysRemaining === 1 ? (
-              <span style={urgent}>tomorrow</span>
-            ) : (
-              <>
-                in{" "}
-                <span style={isUrgent ? urgent : highlight}>
-                  {daysRemaining} days
-                </span>
-              </>
-            )}{" "}
-            on <strong>{expirationDate}</strong>.
-          </Text>
+      <EmailText>
+        The SSL certificate for <strong>{domainName}</strong> is set to expire{" "}
+        {daysRemaining === 1 ? (
+          <span style={urgent}>tomorrow</span>
+        ) : (
+          <>
+            in{" "}
+            <span style={isUrgent ? urgent : highlight}>
+              {daysRemaining} days
+            </span>
+          </>
+        )}{" "}
+        on <strong>{expirationDate}</strong>.
+      </EmailText>
 
-          <Section style={boxWrapper}>
-            <Section style={infoBox}>
-              <Text style={infoText}>
-                <strong>Certificate Issuer:</strong> {issuer}
-              </Text>
-            </Section>
-          </Section>
+      <EmailBox variant="info">
+        <EmailBoxText variant="info">
+          <strong>Certificate Issuer:</strong> {issuer}
+        </EmailBoxText>
+      </EmailBox>
 
-          {isUrgent && (
-            <Section style={boxWrapper}>
-              <Section style={warningBox}>
-                <Text style={warningText}>
-                  <strong>Action Required:</strong> Renew your SSL certificate
-                  immediately to avoid browser security warnings and potential
-                  service interruption.
-                </Text>
-              </Section>
-            </Section>
-          )}
+      {isUrgent && (
+        <EmailBox variant="danger">
+          <EmailBoxText variant="danger">
+            <strong>Action Required:</strong> Renew your SSL certificate
+            immediately to avoid browser security warnings and potential service
+            interruption.
+          </EmailBoxText>
+        </EmailBox>
+      )}
 
-          <Text style={text}>
-            {issuer.toLowerCase().includes("let's encrypt") ? (
-              <>
-                Let&apos;s Encrypt certificates typically auto-renew. If this
-                one hasn&apos;t, check your server&apos;s renewal configuration
-                or contact your hosting provider.
-              </>
-            ) : (
-              <>
-                Contact your certificate authority or hosting provider to renew
-                the certificate before it expires.
-              </>
-            )}
-          </Text>
+      <EmailText>
+        {issuer.toLowerCase().includes("let's encrypt") ? (
+          <>
+            Let&apos;s Encrypt certificates typically auto-renew. If this one
+            hasn&apos;t, check your server&apos;s renewal configuration or
+            contact your hosting provider.
+          </>
+        ) : (
+          <>
+            Contact your certificate authority or hosting provider to renew the
+            certificate before it expires.
+          </>
+        )}
+      </EmailText>
 
-          <Section style={buttonContainer}>
-            <Button style={button} href={`${BASE_URL}/dashboard`}>
-              View Dashboard
-            </Button>
-          </Section>
+      <EmailButton href={`${BASE_URL}/dashboard`}>View Dashboard</EmailButton>
 
-          <Hr style={hr} />
+      <EmailHr />
 
-          <Text style={footer}>
-            You received this email because you&apos;re tracking {domainName} on{" "}
-            <Link href="https://domainstack.io" style={link}>
-              Domainstack
-            </Link>
-            . You can manage your notification settings in your{" "}
-            <Link href={`${BASE_URL}/settings`} style={link}>
-              dashboard
-            </Link>
-            .
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <EmailFooter>
+        You received this email because you&apos;re tracking {domainName} on{" "}
+        <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
+        can manage your notification settings in your{" "}
+        <EmailLink href={`${BASE_URL}/settings`}>dashboard</EmailLink>.
+      </EmailFooter>
+    </EmailLayout>
   );
 }
 
@@ -130,40 +107,7 @@ CertificateExpiryEmail.PreviewProps = {
 
 export default CertificateExpiryEmail;
 
-// Styles
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif',
-  padding: "40px 0",
-};
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "32px 0 40px",
-  borderRadius: "12px",
-  maxWidth: "560px",
-  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-};
-
-const h1 = {
-  color: "#1f2937",
-  fontSize: "22px",
-  fontWeight: "600",
-  lineHeight: "1.4",
-  margin: "0 0 24px",
-  padding: "0 40px",
-};
-
-const text = {
-  color: "#374151",
-  fontSize: "15px",
-  lineHeight: "1.65",
-  margin: "0 0 16px",
-  padding: "0 40px",
-};
-
+// Template-specific styles
 const highlight = {
   color: "#ea580c",
   fontWeight: "600",
@@ -172,74 +116,4 @@ const highlight = {
 const urgent = {
   color: "#dc2626",
   fontWeight: "700",
-};
-
-const boxWrapper = {
-  padding: "8px 40px 20px",
-};
-
-const infoBox = {
-  backgroundColor: "#f0f9ff",
-  borderRadius: "8px",
-  padding: "14px 16px",
-  borderLeft: "4px solid #0ea5e9",
-};
-
-const infoText = {
-  color: "#0369a1",
-  fontSize: "14px",
-  lineHeight: "1.5",
-  margin: "0",
-  padding: "0",
-};
-
-const warningBox = {
-  backgroundColor: "#fef2f2",
-  borderRadius: "8px",
-  padding: "14px 16px",
-  borderLeft: "4px solid #dc2626",
-};
-
-const warningText = {
-  color: "#991b1b",
-  fontSize: "14px",
-  lineHeight: "1.5",
-  margin: "0",
-  padding: "0",
-};
-
-const buttonContainer = {
-  padding: "0 40px",
-  marginTop: "28px",
-  textAlign: "center" as const,
-};
-
-const button = {
-  backgroundColor: "#0f172a",
-  borderRadius: "8px",
-  color: "#fff",
-  fontSize: "14px",
-  fontWeight: "600",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "14px 32px",
-};
-
-const hr = {
-  borderColor: "#e5e7eb",
-  margin: "32px 40px",
-};
-
-const footer = {
-  color: "#6b7280",
-  fontSize: "12px",
-  lineHeight: "1.6",
-  margin: "0",
-  padding: "0 40px",
-};
-
-const link = {
-  color: "#2563eb",
-  textDecoration: "underline",
 };
