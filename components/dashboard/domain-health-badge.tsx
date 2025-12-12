@@ -1,6 +1,13 @@
 "use client";
 
 import { differenceInDays } from "date-fns";
+import {
+  AlertTriangle,
+  CheckCircle,
+  CircleHelp,
+  Clock,
+  ShieldAlert,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -18,13 +25,14 @@ export function DomainHealthBadge({
   className,
 }: DomainHealthBadgeProps) {
   const status = getHealthStatus(expirationDate, verified);
-  const { label, variant, colorClass } = getStatusConfig(status);
+  const { label, variant, colorClass, icon } = getStatusConfig(status);
 
   return (
     <Badge
       variant={variant}
-      className={cn("select-none", colorClass, className)}
+      className={cn("select-none gap-1", colorClass, className)}
     >
+      {icon}
       {label}
     </Badge>
   );
@@ -57,37 +65,46 @@ function getStatusConfig(status: HealthStatus): {
   label: string;
   variant: "default" | "secondary" | "destructive" | "outline";
   colorClass: string;
+  icon: React.ReactNode;
 } {
   switch (status) {
     case "healthy":
       return {
         label: "Healthy",
         variant: "default",
-        colorClass: "bg-success text-success-foreground border-success-border",
+        colorClass:
+          "border-success-border bg-success/10 font-semibold text-success-foreground",
+        icon: <CheckCircle className="size-3" />,
       };
     case "warning":
       return {
         label: "Expiring Soon",
         variant: "default",
-        colorClass: "bg-warning text-warning-foreground border-warning-border",
+        colorClass:
+          "border-amber-300 bg-amber-500/10 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+        icon: <AlertTriangle className="size-3" />,
       };
     case "critical":
       return {
         label: "Critical",
         variant: "destructive",
-        colorClass: "",
+        colorClass: "gap-1 font-semibold",
+        icon: <ShieldAlert className="size-3" />,
       };
     case "pending":
       return {
         label: "Pending",
         variant: "outline",
-        colorClass: "text-amber-600 border-amber-300 dark:text-amber-400",
+        colorClass:
+          "border-amber-300 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+        icon: <Clock className="size-3" />,
       };
     case "unknown":
       return {
         label: "Unknown",
         variant: "secondary",
-        colorClass: "",
+        colorClass: "font-semibold",
+        icon: <CircleHelp className="size-3" />,
       };
   }
 }

@@ -57,7 +57,6 @@ export function ScreenshotTooltip({
         alignOffset={-12}
         className="bg-transparent"
         hideArrow
-        align="start"
       >
         <div className="w-[300px] sm:w-[360px] md:w-[420px]">
           <BrowserWindow url={domain} className="h-auto w-full shadow-xl">

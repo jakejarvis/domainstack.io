@@ -94,7 +94,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   // Show loading state while session or domains are loading
   if (isSessionPending || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" size="icon" disabled>
+      <Button variant="outline" disabled>
         <Spinner className="size-4" />
       </Button>
     );
