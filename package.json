@@ -153,7 +153,7 @@
     ],
     "overrides": {
       "esbuild": "^0.27.1",
-      "next": "16.0.8",
+      "next": "16.0.9",
       "react": "19.2.3",
       "react-dom": "19.2.3",
       "@types/react": "19.2.7",
