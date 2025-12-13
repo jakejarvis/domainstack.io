@@ -23,7 +23,7 @@
 - **Tailwind CSS v4** + **shadcn/ui** components
 - **tRPC** API with **TanStack Query** for data fetching and optimistic updates
 - **TanStack Table** for sortable dashboard table view
-- **Vercel Postgres** + **Drizzle ORM** with connection pooling
+- **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
 - **Better Auth** for authentication via OAuth
 - **Polar** for subscription payments and customer portal (Pro tier)
 - **Inngest** for event-driven background jobs (revalidation, expiry checks, domain re-verification)

@@ -47,7 +47,7 @@ export type FetchRemoteAssetOptions = {
   headers?: HeadersInit;
   /** Abort timeout per request/redirect hop (ms). */
   timeoutMs?: number;
-  /** Maximum bytes to buffer before aborting. */
+  /** Maximum bytes to buffer before aborting (or truncating if truncateOnLimit is true). */
   maxBytes?: number;
   /** Maximum redirects we will follow while re-checking the host. */
   maxRedirects?: number;
@@ -55,6 +55,8 @@ export type FetchRemoteAssetOptions = {
   allowedHosts?: string[];
   /** Allow HTTP (useful for favicons); defaults to HTTPS only. */
   allowHttp?: boolean;
+  /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
+  truncateOnLimit?: boolean;
 };
 
 export type RemoteAssetResult = {
@@ -80,6 +82,7 @@ export async function fetchRemoteAsset(
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowHttp = opts.allowHttp ?? false;
+  const truncateOnLimit = opts.truncateOnLimit ?? false;
   const allowedHosts =
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
@@ -128,8 +131,9 @@ export async function fetchRemoteAsset(
       throw error;
     }
 
+    // Check Content-Length header (skip pre-check if we'll truncate anyway)
     const declaredLength = response.headers.get("content-length");
-    if (declaredLength) {
+    if (declaredLength && !truncateOnLimit) {
       const declared = Number(declaredLength);
       if (Number.isFinite(declared) && declared > maxBytes) {
         const error = new RemoteAssetError(
@@ -144,7 +148,7 @@ export async function fetchRemoteAsset(
       }
     }
 
-    const buffer = await readBodyWithLimit(response, maxBytes);
+    const buffer = await readBodyWithLimit(response, maxBytes, truncateOnLimit);
     const contentType = response.headers.get("content-type");
     const headers: Record<string, string> = {};
     response.headers.forEach((value, name) => {
@@ -291,16 +295,21 @@ function isRedirect(response: Response): boolean {
 }
 
 /**
- * Incrementally read the response body, aborting if it exceeds the byte limit.
+ * Incrementally read the response body, aborting or truncating if it exceeds the byte limit.
+ * @param truncateOnLimit If true, return partial content instead of throwing when limit is exceeded.
  */
 async function readBodyWithLimit(
   response: Response,
   maxBytes: number,
+  truncateOnLimit = false,
 ): Promise<Buffer> {
   if (!response.body) {
     // No stream available (tiny body or mocked response); a simple check suffices.
     const buf = Buffer.from(await response.arrayBuffer());
     if (buf.byteLength > maxBytes) {
+      if (truncateOnLimit) {
+        return buf.subarray(0, maxBytes);
+      }
       throw new RemoteAssetError(
         "size_exceeded",
         `Remote asset exceeded ${maxBytes} bytes`,
@@ -318,11 +327,27 @@ async function readBodyWithLimit(
     if (value) {
       received += value.byteLength;
       if (received > maxBytes) {
+        // Add the partial chunk up to the limit
+        const overage = received - maxBytes;
+        const partialChunk = Buffer.from(value).subarray(
+          0,
+          value.byteLength - overage,
+        );
+        if (partialChunk.length > 0) {
+          chunks.push(partialChunk);
+        }
+
         try {
           reader.cancel();
         } catch {
           // ignore
         }
+
+        if (truncateOnLimit) {
+          // Return what we have so far (truncated at maxBytes)
+          return Buffer.concat(chunks, maxBytes);
+        }
+
         // Abort as soon as the limit is crossed to avoid buffering unbounded data.
         throw new RemoteAssetError(
           "size_exceeded",

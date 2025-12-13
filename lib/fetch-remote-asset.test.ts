@@ -118,6 +118,67 @@ describe("fetchRemoteAsset", () => {
     } satisfies Partial<RemoteAssetError>);
   });
 
+  it("truncates content when truncateOnLimit is true and size exceeded", async () => {
+    const largeBody = new Uint8Array(1024).fill(65); // 1024 bytes of 'A'
+    fetchMock.mockResolvedValueOnce(
+      new Response(largeBody, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/large.html",
+      maxBytes: 100,
+      truncateOnLimit: true,
+    });
+
+    expect(result.buffer.length).toBe(100);
+    expect(result.buffer.every((b) => b === 65)).toBe(true);
+    expect(result.contentType).toBe("text/html");
+  });
+
+  it("returns full content when under limit with truncateOnLimit enabled", async () => {
+    const smallBody = new Uint8Array(50).fill(66); // 50 bytes of 'B'
+    fetchMock.mockResolvedValueOnce(
+      new Response(smallBody, {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/small.html",
+      maxBytes: 100,
+      truncateOnLimit: true,
+    });
+
+    expect(result.buffer.length).toBe(50);
+    expect(result.buffer.every((b) => b === 66)).toBe(true);
+  });
+
+  it("skips content-length pre-check when truncateOnLimit is true", async () => {
+    const body = new Uint8Array(50).fill(67);
+    fetchMock.mockResolvedValueOnce(
+      new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": "text/html",
+          "content-length": "999999", // Declared size exceeds limit
+        },
+      }),
+    );
+
+    // With truncateOnLimit, should not throw based on content-length header
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/page.html",
+      maxBytes: 100,
+      truncateOnLimit: true,
+    });
+
+    expect(result.buffer.length).toBe(50);
+  });
+
   it("supports HEAD method", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(null, {

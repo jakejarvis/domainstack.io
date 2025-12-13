@@ -106,6 +106,15 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       },
     };
 
+    // Log if cached data has errors (helps debug issues)
+    if (response.errors?.html || response.errors?.robots) {
+      logger.warn("returning cached seo with errors", {
+        domain,
+        htmlError: response.errors.html,
+        robotsError: response.errors.robots,
+      });
+    }
+
     return response;
   }
 
@@ -116,9 +125,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
 
   let meta: ReturnType<typeof parseHtmlMeta> | null = null;
   let robots: ReturnType<typeof parseRobotsTxt> | null = null;
-  const allowedHosts = [domain, `www.${domain}`];
 
-  // HTML fetch
+  // HTML fetch - allow redirects to any host (except private IPs)
+  // since sites commonly redirect to CDNs, subdomains, etc.
+  // Truncate at 512KB since we only need <head> for meta tags; Cheerio handles partial HTML fine.
   try {
     const htmlResult = await fetchRemoteAsset({
       url: finalUrl,
@@ -126,7 +136,7 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       timeoutMs: 10000,
       maxBytes: 512 * 1024,
       maxRedirects: 5,
-      allowedHosts,
+      truncateOnLimit: true,
       headers: {
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -134,8 +144,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
         "User-Agent": USER_AGENT,
       },
     });
+
     status = htmlResult.status;
     finalUrl = htmlResult.finalUrl;
+
     const contentType = htmlResult.contentType ?? "";
     if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(contentType)) {
       htmlError = `Non-HTML content-type: ${contentType}`;
@@ -145,10 +157,10 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
     }
   } catch (err) {
     htmlError = String(err);
+    logger.error("html fetch failed", err, { domain, url: finalUrl });
   }
 
-  // robots.txt fetch
-  // Only follow redirects between apex/www or http/https versions
+  // robots.txt fetch - also allow any host redirects
   try {
     const robotsUrl = `https://${domain}/robots.txt`;
     const robotsResult = await fetchRemoteAsset({
@@ -157,7 +169,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       timeoutMs: 8000,
       maxBytes: 256 * 1024,
       maxRedirects: 5,
-      allowedHosts,
       headers: { Accept: "text/plain", "User-Agent": USER_AGENT },
     });
     if (robotsResult.status >= 200 && robotsResult.status < 300) {
