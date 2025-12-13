@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { AuthButton } from "@/components/auth/auth-button";
-import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
+import { AppHeaderButtons } from "@/components/layout/app-header-buttons";
 import { GithubStars } from "@/components/layout/github-stars";
 import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
 import { HeaderButtons } from "@/components/layout/header-buttons";
@@ -9,7 +9,6 @@ import { HeaderGrid } from "@/components/layout/header-grid";
 import { HeaderSearch } from "@/components/layout/header-search";
 import { HeaderSearchProvider } from "@/components/layout/header-search-context";
 import { HeaderSearchSkeleton } from "@/components/layout/header-search-skeleton";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Logo } from "@/components/logo";
 import { Separator } from "@/components/ui/separator";
 
@@ -31,11 +30,7 @@ export function AppHeader() {
           <Suspense fallback={<GithubStarsSkeleton />}>
             <GithubStars />
           </Suspense>
-          {/* Desktop-only: bookmarklet and theme toggle (on mobile, these are in MobileMenu/UserMenu) */}
-          <Separator orientation="vertical" className="!h-4 hidden md:block" />
-          <BookmarkletDialog className="hidden md:flex" />
-          <Separator orientation="vertical" className="!h-4 hidden md:block" />
-          <ThemeToggle className="hidden md:flex" />
+          <AppHeaderButtons />
           <Separator orientation="vertical" className="!h-4" />
           <AuthButton />
         </HeaderButtons>

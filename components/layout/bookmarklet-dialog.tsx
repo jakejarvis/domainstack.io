@@ -19,6 +19,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VideoPlayer, VideoPlayerContent } from "@/components/ui/video-player";
 import { cn } from "@/lib/utils";
 
@@ -71,17 +76,22 @@ export function BookmarkletDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isControlled && (
-        <DialogTrigger className={className} asChild>
-          <Button
-            aria-label="Open bookmarklet info"
-            variant="ghost"
-            size="sm"
-            className="cursor-pointer"
-          >
-            <Bookmark />
-            <span className="sr-only">Open bookmarklet info</span>
-          </Button>
-        </DialogTrigger>
+        <Tooltip>
+          <TooltipTrigger className={className} asChild>
+            <DialogTrigger asChild>
+              <Button
+                aria-label="Open bookmarklet info"
+                variant="ghost"
+                size="sm"
+                className="cursor-pointer"
+              >
+                <Bookmark />
+                <span className="sr-only">Open bookmarklet info</span>
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Bookmarklet</TooltipContent>
+        </Tooltip>
       )}
 
       <DialogContent className="border-border/80 dark:border-border/50">

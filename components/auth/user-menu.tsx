@@ -14,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme-toggle";
 import { useAnalytics } from "@/lib/analytics/client";
@@ -24,7 +23,6 @@ import { logger } from "@/lib/logger/client";
 export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
-  const isMobile = useIsMobile();
   const { theme, toggleTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
@@ -131,30 +129,23 @@ export function UserMenu() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {/* Mobile-only items: bookmarklet and theme toggle */}
-          {isMobile && (
-            <>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onSelect={toggleTheme}
-              >
-                {theme === "dark" ? (
-                  <Sun className="size-4" />
-                ) : (
-                  <Moon className="size-4" />
-                )}
-                {theme === "dark" ? "Light mode" : "Dark mode"}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onSelect={() => setBookmarkletOpen(true)}
-              >
-                <Bookmark className="size-4" />
-                Bookmarklet
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
+          {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
+          <DropdownMenuItem className="cursor-pointer" onSelect={toggleTheme}>
+            {theme === "dark" ? (
+              <Sun className="size-4" />
+            ) : (
+              <Moon className="size-4" />
+            )}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => setBookmarkletOpen(true)}
+          >
+            <Bookmark className="size-4" />
+            Bookmarklet
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
             <LogOut className="size-4 text-danger-foreground" />
             Sign out

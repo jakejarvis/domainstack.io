@@ -37,7 +37,12 @@ export function MobileMenu() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" aria-label="Menu">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Menu"
+            className="cursor-pointer"
+          >
             <Menu className="size-5" />
           </Button>
         </DropdownMenuTrigger>
