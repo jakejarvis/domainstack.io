@@ -191,7 +191,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       queryClient.setQueriesData<InfiniteDomainsData>(
         { queryKey: domainsQueryKey },
         (old) => {
-          if (!old) return old;
+          if (!old || !old.pages) return old;
           return {
             ...old,
             pages: old.pages.map((page) => {
@@ -269,7 +269,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       queryClient.setQueriesData<InfiniteDomainsData>(
         { queryKey: domainsQueryKey },
         (old) => {
-          if (!old) return old;
+          if (!old || !old.pages) return old;
           return {
             ...old,
             pages: old.pages.map((page) => {
@@ -355,7 +355,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         queryClient.setQueriesData<InfiniteDomainsData>(
           { queryKey: domainsQueryKey },
           (old) => {
-            if (!old || old.pages.length === 0) return old;
+            if (!old || !old.pages || old.pages.length === 0) return old;
             return {
               ...old,
               pages: old.pages.map((page, index) => {
@@ -446,7 +446,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       queryClient.setQueriesData<InfiniteDomainsData>(
         { queryKey: domainsQueryKey },
         (old) => {
-          if (!old) return old;
+          if (!old || !old.pages) return old;
           return {
             ...old,
             pages: old.pages.map((page) => {
@@ -528,7 +528,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       queryClient.setQueriesData<InfiniteDomainsData>(
         { queryKey: domainsQueryKey },
         (old) => {
-          if (!old) return old;
+          if (!old || !old.pages) return old;
           return {
             ...old,
             pages: old.pages.map((page) => {
