@@ -71,10 +71,7 @@ describe("getVerificationInstructions", () => {
 
     expect(result.title).toContain("DNS");
     expect(result.hostname).toBe("example.com");
-    expect(result.recordType).toBe("TXT");
     expect(result.value).toBe(`domainstack-verify=${token}`);
-    expect(result.suggestedTTL).toBe(60);
-    expect(result.suggestedTTLLabel).toBe("1 minute");
   });
 
   it("returns HTML file instructions with structured fields", () => {

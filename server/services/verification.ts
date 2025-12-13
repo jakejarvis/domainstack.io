@@ -437,8 +437,8 @@ export function getVerificationInstructions(
         hostname: domain,
         recordType: "TXT",
         value: `${DNS_VERIFICATION_PREFIX}${token}`,
-        suggestedTTL: 60,
-        suggestedTTLLabel: "1 minute",
+        suggestedTTL: 3600,
+        suggestedTTLLabel: "1 hour",
       };
     case "html_file":
       return {

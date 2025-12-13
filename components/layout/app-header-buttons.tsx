@@ -19,7 +19,7 @@ export function AppHeaderButtons() {
       <>
         {/* Bookmarklet button skeleton on desktop */}
         <Separator orientation="vertical" className="!h-4 hidden md:block" />
-        <div className="hidden h-8 w-[88px] animate-pulse rounded-md bg-muted md:flex" />
+        <div className="hidden size-8 animate-pulse rounded-md bg-muted md:flex" />
         {/* Theme toggle button skeleton on desktop */}
         <Separator orientation="vertical" className="!h-4 hidden md:block" />
         <div className="hidden size-8 animate-pulse rounded-md bg-muted md:flex" />
