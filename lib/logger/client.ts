@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  isErrorLike,
+  BaseLogger,
   type LogContext,
   type Logger,
   type LogLevel,
-  serializeError,
-  shouldLog,
+  outputToConsole,
 } from "@/lib/logger";
 
 /**
@@ -15,6 +14,7 @@ import {
  * Features:
  * - Structured JSON logging format (consistent with server)
  * - Environment-based log level filtering
+ * - Dev-only logging for info/debug (production silences these)
  * - PostHog error tracking for exceptions
  * - Graceful degradation (never crashes)
  */
@@ -23,143 +23,35 @@ import {
 // Logger Implementation
 // ============================================================================
 
-class ClientLogger implements Logger {
-  private minLevel: LogLevel;
-
-  constructor(minLevel?: LogLevel) {
-    // Default to environment-based level
-    this.minLevel =
-      minLevel || (process.env.NODE_ENV === "development" ? "debug" : "info");
-  }
-
-  private formatLogRecord(
+class ClientLogger extends BaseLogger {
+  /**
+   * Output logs using appropriate console methods.
+   * In production, only errors are logged to reduce noise.
+   */
+  protected output(
     level: LogLevel,
     message: string,
     context?: LogContext,
-  ): string {
-    // Build flat JSON schema with context fields at root level
-    const record: Record<string, unknown> = {
-      timestamp: new Date().toISOString(),
-      level: level,
-      message: message,
-    };
-
-    // Flatten context to root level, protecting reserved keys
-    if (context && Object.keys(context).length > 0) {
-      const {
-        timestamp: _timestamp,
-        level: _level,
-        message: _message,
-        ...safeContext
-      } = context as Record<string, unknown>;
-      Object.assign(record, safeContext);
-    }
-
-    return JSON.stringify(record);
-  }
-
-  private logInternal(
-    level: LogLevel,
-    message: string,
-    context?: LogContext,
+    error?: unknown,
   ): void {
-    if (!shouldLog(level, this.minLevel)) {
-      return;
-    }
-
     try {
-      const formatted = this.formatLogRecord(level, message, context);
+      const formatted = this.formatLogRecord(level, message, context, error);
 
-      // Output to appropriate console method
-      // Only log to console in development to avoid noise in production
-      if (process.env.NODE_ENV === "development") {
-        switch (level) {
-          case "trace":
-          case "debug":
-            console.debug(formatted);
-            break;
-          case "info":
-            console.info(formatted);
-            break;
-          case "warn":
-            console.warn(formatted);
-            break;
-          case "error":
-          case "fatal":
-            console.error(formatted);
-            break;
-        }
-      }
-    } catch (err) {
-      // Logging should never crash the application
-      console.error("[logger] failed to log:", err);
-    }
-  }
+      // In production, silence everything except errors
+      const isDevelopment = process.env.NODE_ENV === "development";
+      const isError = level === "error" || level === "fatal";
 
-  private logWithError(
-    level: "warn" | "error" | "fatal",
-    message: string,
-    errorOrContext?: unknown,
-    context?: LogContext,
-  ): void {
-    if (!shouldLog(level, this.minLevel)) {
-      return;
-    }
-
-    // Determine error and context based on arguments:
-    // - 3 args (context !== undefined): error(message, error, context)
-    // - 2 args with Error-like object: error(message, error)
-    // - 2 args with plain object: error(message, context)
-    let error: unknown;
-    let finalContext: LogContext | undefined;
-
-    if (context !== undefined) {
-      // Three args: error(message, error, context)
-      error = errorOrContext;
-      finalContext = context;
-    } else if (isErrorLike(errorOrContext)) {
-      // Two args with error-like object: error(message, error)
-      error = errorOrContext;
-      finalContext = undefined;
-    } else {
-      // Two args with plain object: error(message, context)
-      error = undefined;
-      finalContext = errorOrContext as LogContext | undefined;
-    }
-
-    try {
-      // Build log record with error at root level
-      const record: Record<string, unknown> = {
-        timestamp: new Date().toISOString(),
-        level: level,
-        message: message,
-      };
-
-      // Add serialized error at root level
-      if (error) {
-        record.error = serializeError(error);
+      if (!isDevelopment && !isError) {
+        // Production: skip non-error logs
+        return;
       }
 
-      // Flatten context to root level, protecting reserved keys
-      if (finalContext && Object.keys(finalContext).length > 0) {
-        const {
-          timestamp: _timestamp,
-          level: _level,
-          message: _message,
-          error: _error,
-          ...safeContext
-        } = finalContext as Record<string, unknown>;
-        Object.assign(record, safeContext);
-      }
-
-      const formatted = JSON.stringify(record);
-
-      // Always output errors to console (even in production for debugging)
-      console.error(formatted);
+      // Route to correct console method
+      outputToConsole(level, formatted);
 
       // Track errors in PostHog (only error and fatal, not warnings)
-      if ((level === "error" || level === "fatal") && error instanceof Error) {
-        this.trackErrorInPostHog(error, finalContext);
+      if (isError && error instanceof Error) {
+        this.trackErrorInPostHog(error, context);
       }
     } catch (err) {
       // Logging should never crash the application
@@ -185,97 +77,11 @@ class ClientLogger implements Logger {
     }
   }
 
-  /** Generic log method for dynamic log levels or library adapters */
-  log(level: LogLevel, message: string, context?: LogContext): void {
-    switch (level) {
-      case "trace":
-        this.logInternal("trace", message, context);
-        break;
-      case "debug":
-        this.logInternal("debug", message, context);
-        break;
-      case "info":
-        this.logInternal("info", message, context);
-        break;
-      case "warn":
-        this.logWithError("warn", message, undefined, context);
-        break;
-      case "error":
-        this.logWithError("error", message, undefined, context);
-        break;
-      case "fatal":
-        this.logWithError("fatal", message, undefined, context);
-        break;
-    }
-  }
-
-  trace(message: string, context?: LogContext): void {
-    this.logInternal("trace", message, context);
-  }
-
-  debug(message: string, context?: LogContext): void {
-    this.logInternal("debug", message, context);
-  }
-
-  info(message: string, context?: LogContext): void {
-    this.logInternal("info", message, context);
-  }
-
-  /**
-   * Log a warning message with optional error object and context.
-   *
-   * **Important routing behavior**:
-   * - `warn(message, error)` → Routes through logWithError → console.error (always, even in prod)
-   * - `warn(message, context)` → Routes through logInternal → console.warn (dev only)
-   *
-   * This distinction ensures warnings with Error objects remain visible in production
-   * for debugging, while context-only warnings are treated as debug/info-level noise.
-   *
-   * **PostHog tracking**: Warnings are NOT tracked in PostHog (only error/fatal levels).
-   * If you need PostHog tracking for a warning with an error, consider using error() instead.
-   *
-   * @example
-   * ```typescript
-   * // Visible in production console (console.error)
-   * logger.warn("API timeout", new Error("timeout"), { endpoint: "/api/data" });
-   *
-   * // Silent in production (console.warn in dev only)
-   * logger.warn("Cache miss", { key: "user:123" });
-   * ```
-   */
-  warn(message: string, error: unknown, context?: LogContext): void;
-  warn(message: string, context?: LogContext): void;
-  warn(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    if (context !== undefined) {
-      // Three args: warn(message, error, context)
-      this.logWithError("warn", message, errorOrContext, context);
-    } else if (isErrorLike(errorOrContext)) {
-      // Two args with error-like object: warn(message, error)
-      this.logWithError("warn", message, errorOrContext, undefined);
-    } else {
-      // Two args with context: warn(message, context)
-      this.logInternal(
-        "warn",
-        message,
-        errorOrContext as LogContext | undefined,
-      );
-    }
-  }
-
-  error(message: string, error: unknown, context?: LogContext): void;
-  error(message: string, context?: LogContext): void;
-  error(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("error", message, errorOrContext, context);
-  }
-
-  fatal(message: string, error: unknown, context?: LogContext): void;
-  fatal(message: string, context?: LogContext): void;
-  fatal(message: string, errorOrContext?: unknown, context?: LogContext): void {
-    this.logWithError("fatal", message, errorOrContext, context);
-  }
-
   child(context: LogContext): Logger {
-    return createLogger(context);
+    return new ClientLogger(this.minLevel, {
+      ...this.baseContext,
+      ...context,
+    });
   }
 }
 
@@ -308,71 +114,5 @@ export const logger = new ClientLogger();
  * ```
  */
 export function createLogger(baseContext: LogContext): Logger {
-  const childLogger = {
-    log: (level: LogLevel, message: string, context?: LogContext) =>
-      logger.log(level, message, { ...baseContext, ...context }),
-    trace: (message: string, context?: LogContext) =>
-      logger.trace(message, { ...baseContext, ...context }),
-    debug: (message: string, context?: LogContext) =>
-      logger.debug(message, { ...baseContext, ...context }),
-    info: (message: string, context?: LogContext) =>
-      logger.info(message, { ...baseContext, ...context }),
-    warn: (message: string, errorOrContext?: unknown, context?: LogContext) => {
-      if (context !== undefined) {
-        // Three args: warn(message, error, context)
-        logger.warn(message, errorOrContext, { ...baseContext, ...context });
-      } else if (isErrorLike(errorOrContext)) {
-        // Two args with error: warn(message, error) - pass baseContext as 3rd arg
-        logger.warn(message, errorOrContext, baseContext);
-      } else {
-        // Two args with context: warn(message, context) - merge contexts
-        logger.warn(message, {
-          ...baseContext,
-          ...(errorOrContext as LogContext | undefined),
-        });
-      }
-    },
-    error: (
-      message: string,
-      errorOrContext?: unknown,
-      context?: LogContext,
-    ) => {
-      if (context !== undefined) {
-        // Three args: error(message, error, context)
-        logger.error(message, errorOrContext, { ...baseContext, ...context });
-      } else if (isErrorLike(errorOrContext)) {
-        // Two args with error: error(message, error) - pass baseContext as 3rd arg
-        logger.error(message, errorOrContext, baseContext);
-      } else {
-        // Two args with context: error(message, context) - merge contexts
-        logger.error(message, {
-          ...baseContext,
-          ...(errorOrContext as LogContext | undefined),
-        });
-      }
-    },
-    fatal: (
-      message: string,
-      errorOrContext?: unknown,
-      context?: LogContext,
-    ) => {
-      if (context !== undefined) {
-        // Three args: fatal(message, error, context)
-        logger.fatal(message, errorOrContext, { ...baseContext, ...context });
-      } else if (isErrorLike(errorOrContext)) {
-        // Two args with error: fatal(message, error) - pass baseContext as 3rd arg
-        logger.fatal(message, errorOrContext, baseContext);
-      } else {
-        // Two args with context: fatal(message, context) - merge contexts
-        logger.fatal(message, {
-          ...baseContext,
-          ...(errorOrContext as LogContext | undefined),
-        });
-      }
-    },
-    child: (context: LogContext) =>
-      createLogger({ ...baseContext, ...context }),
-  };
-
-  return childLogger as Logger;
+  return logger.child(baseContext);
 }

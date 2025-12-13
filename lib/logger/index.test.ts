@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  BaseLogger,
   getMinLogLevel,
+  type LogContext,
   type Logger,
   type LogLevel,
   parseLogLevel,
+  resolveErrorAndContext,
   serializeError,
   shouldLog,
 } from "./index";
@@ -104,6 +107,178 @@ describe("Logger Core", () => {
       const serialized = serializeError(42);
       expect(serialized.name).toBe("UnknownError");
       expect(serialized.message).toBe("42");
+    });
+  });
+
+  describe("resolveErrorAndContext", () => {
+    it("handles 3 args: error and context both provided", () => {
+      const error = new Error("test");
+      const context = { userId: "123" };
+
+      const result = resolveErrorAndContext(error, context);
+
+      expect(result.error).toBe(error);
+      expect(result.context).toBe(context);
+    });
+
+    it("handles 2 args with Error-like object", () => {
+      const error = new Error("test");
+
+      const result = resolveErrorAndContext(error, undefined);
+
+      expect(result.error).toBe(error);
+      expect(result.context).toBeUndefined();
+    });
+
+    it("handles 2 args with context object", () => {
+      const context = { userId: "123" };
+
+      const result = resolveErrorAndContext(context, undefined);
+
+      expect(result.error).toBeUndefined();
+      expect(result.context).toBe(context);
+    });
+
+    it("detects error-like objects with message and stack", () => {
+      const errorLike = { message: "error", stack: "stack trace" };
+
+      const result = resolveErrorAndContext(errorLike, undefined);
+
+      expect(result.error).toBe(errorLike);
+      expect(result.context).toBeUndefined();
+    });
+
+    it("handles undefined arguments", () => {
+      const result = resolveErrorAndContext(undefined, undefined);
+
+      expect(result.error).toBeUndefined();
+      expect(result.context).toBeUndefined();
+    });
+  });
+
+  describe("BaseLogger", () => {
+    // Create a concrete implementation for testing
+    class TestLogger extends BaseLogger {
+      public outputCalls: Array<{
+        level: LogLevel;
+        message: string;
+        context?: LogContext;
+        error?: unknown;
+      }> = [];
+
+      protected output(
+        level: LogLevel,
+        message: string,
+        context?: LogContext,
+        error?: unknown,
+      ): void {
+        this.outputCalls.push({ level, message, context, error });
+      }
+
+      child(context: LogContext): Logger {
+        return new TestLogger(this.minLevel, {
+          ...this.baseContext,
+          ...context,
+        });
+      }
+    }
+
+    it("respects log level filtering", () => {
+      const logger = new TestLogger("warn");
+
+      logger.trace("trace msg");
+      logger.debug("debug msg");
+      logger.info("info msg");
+      logger.warn("warn msg");
+      logger.error("error msg");
+      logger.fatal("fatal msg");
+
+      expect(logger.outputCalls).toHaveLength(3);
+      expect(logger.outputCalls[0].level).toBe("warn");
+      expect(logger.outputCalls[1].level).toBe("error");
+      expect(logger.outputCalls[2].level).toBe("fatal");
+    });
+
+    it("merges base context with log context", () => {
+      const logger = new TestLogger("trace", { service: "api" });
+
+      logger.info("test", { userId: "123" });
+
+      expect(logger.outputCalls).toHaveLength(1);
+      expect(logger.outputCalls[0].context).toEqual({
+        service: "api",
+        userId: "123",
+      });
+    });
+
+    it("resolves error overloads correctly - error only", () => {
+      const logger = new TestLogger("trace");
+      const error = new Error("test");
+
+      logger.error("failed", error);
+
+      expect(logger.outputCalls).toHaveLength(1);
+      expect(logger.outputCalls[0].error).toBe(error);
+      expect(logger.outputCalls[0].context).toEqual({});
+    });
+
+    it("resolves error overloads correctly - context only", () => {
+      const logger = new TestLogger("trace");
+
+      logger.error("failed", { userId: "123" });
+
+      expect(logger.outputCalls).toHaveLength(1);
+      expect(logger.outputCalls[0].error).toBeUndefined();
+      expect(logger.outputCalls[0].context).toEqual({ userId: "123" });
+    });
+
+    it("resolves error overloads correctly - both error and context", () => {
+      const logger = new TestLogger("trace");
+      const error = new Error("test");
+
+      logger.error("failed", error, { userId: "123" });
+
+      expect(logger.outputCalls).toHaveLength(1);
+      expect(logger.outputCalls[0].error).toBe(error);
+      expect(logger.outputCalls[0].context).toEqual({ userId: "123" });
+    });
+
+    it("child logger inherits base context", () => {
+      const parent = new TestLogger("trace", { service: "api" });
+      const child = parent.child({ component: "auth" }) as TestLogger;
+
+      child.info("test", { userId: "123" });
+
+      expect(child.outputCalls).toHaveLength(1);
+      expect(child.outputCalls[0].context).toEqual({
+        service: "api",
+        component: "auth",
+        userId: "123",
+      });
+    });
+
+    it("formats log records with all fields", () => {
+      const logger = new TestLogger("trace", { service: "test" });
+      const error = new Error("test error");
+
+      logger.error("operation failed", error, { operation: "fetch" });
+
+      const formatted = logger.formatLogRecord(
+        "error",
+        "operation failed",
+        { service: "test", operation: "fetch" },
+        error,
+      );
+      const parsed = JSON.parse(formatted);
+
+      expect(parsed.level).toBe("error");
+      expect(parsed.message).toBe("operation failed");
+      expect(parsed.service).toBe("test");
+      expect(parsed.operation).toBe("fetch");
+      expect(parsed.error).toBeDefined();
+      expect(parsed.error.name).toBe("Error");
+      expect(parsed.error.message).toBe("test error");
+      expect(parsed.timestamp).toBeDefined();
     });
   });
 

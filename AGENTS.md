@@ -16,7 +16,7 @@
 - `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, registrations, screenshots, seo, tracked-domains, user-notification-preferences, user-subscription, users).
-- `lib/logger/` unified structured logging system powered by Pino for high-performance JSON logging with pretty-printed development output.
+- `lib/logger/` unified structured logging system with console-based JSON logging for both server and client.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/schemas/` Zod schemas organized by domain.
@@ -287,27 +287,23 @@ Key patterns:
 ## Structured Logging
 - Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
 - **Architecture:**
-  - **Server:** Powered by **Pino** for high-performance structured JSON logging
-  - **Client:** Console-based logging for browser environments
-  - Server logs always output to stdout (captured by Vercel for runtime logs)
-  - Client logs output to console in development; errors always logged for debugging
+  - **Shared base:** `BaseLogger` class in `lib/logger/index.ts` provides common overload resolution and formatting logic
+  - **Server & Client:** Both extend `BaseLogger` and use native console methods for output
+  - Structured JSON output with consistent format across server and client
   - **Important:** OpenTelemetry (OTEL) logging and trace correlation are **intentionally NOT used**. Do not introduce OTEL Logs API, trace/span context, or OTEL instrumentation in future changes.
-- **Server-side logging (Pino):**
+- **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create child logger: `const logger = createLogger({ source: "dns" })`
-  - **Development:** Pretty-printed colorized output via `pino-pretty` transport
-  - **Production:** Raw JSON to stdout for log aggregation
-  - **Configuration:** `lib/logger/pino-config.ts` with singleton instance caching to prevent hot reload issues
+  - Logs output via `console.debug()`, `console.info()`, `console.warn()`, `console.error()` for proper colorization in runtime logs
   - Critical errors automatically tracked in PostHog
   - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
   - Environment-based log level: configurable via `LOG_LEVEL` env var or defaults (test: warn, dev: debug, prod: info)
-  - **PostHog integration:** Critical errors sent to PostHog via `analytics.trackException()` for exception monitoring
 - **Client-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/client"`
   - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
   - Errors automatically tracked in PostHog
-  - Console output only in development (info/debug) and always for errors
-- **Log format:** Structured JSON with fields: `timestamp` (ISO 8601), `level` (string label), `msg`, and context fields merged at root.
+  - Development: all levels logged; Production: only errors logged
+- **Log format:** Structured JSON with fields: `timestamp` (ISO 8601), `level` (string label), `message`, and context fields merged at root.
 - **Usage examples:**
   ```typescript
   // Server (service layer)
@@ -325,4 +321,3 @@ Key patterns:
   ```
 - **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with structured context.
 - **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
-- **Edge Runtime:** Pino requires Node.js runtime (uses worker threads). All API routes use Node.js runtime. Client logger can be used for edge routes if needed.
