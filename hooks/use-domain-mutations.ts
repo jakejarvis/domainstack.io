@@ -124,13 +124,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   /**
    * Cancel all domain-related queries to prevent race conditions.
-   * Uses predicate function to ensure we match infinite queries correctly.
+   * Uses partial matching to ensure we match infinite queries correctly.
    */
   const cancelQueries = async (includeArchived = false) => {
-    await queryClient.cancelQueries({
-      predicate: (query) =>
-        JSON.stringify(query.queryKey).includes("listDomains"),
-    });
+    // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+    await queryClient.cancelQueries({ queryKey: domainsQueryKey });
     await queryClient.cancelQueries({ queryKey: limitsQueryKey });
     if (includeArchived) {
       await queryClient.cancelQueries({ queryKey: archivedDomainsQueryKey });
@@ -139,13 +137,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   /**
    * Invalidate all domain-related queries after mutation.
-   * Uses predicate function to ensure we match infinite queries correctly.
+   * Uses partial matching to ensure we match infinite queries correctly.
    */
   const invalidateQueries = (includeArchived = false) => {
-    void queryClient.invalidateQueries({
-      predicate: (query) =>
-        JSON.stringify(query.queryKey).includes("listDomains"),
-    });
+    // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+    void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
     void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     if (includeArchived) {
       void queryClient.invalidateQueries({ queryKey: archivedDomainsQueryKey });
@@ -177,13 +173,17 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const removeMutation = useMutation({
     ...trpc.tracking.removeDomain.mutationOptions(),
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
-      await cancelQueries();
+      // Cancel both active and archived queries since we don't know where the domain is
+      await cancelQueries(true);
 
       // Snapshot all matching infinite query caches for rollback
       const previousDomainsQueries =
         queryClient.getQueriesData<InfiniteDomainsData>({
           queryKey: domainsQueryKey,
         });
+      const previousArchived = queryClient.getQueryData<
+        TrackedDomainWithDetails[]
+      >(archivedDomainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
@@ -214,12 +214,20 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         },
       );
 
+      // Optimistically remove from archived list if present
+      if (previousArchived) {
+        queryClient.setQueryData<TrackedDomainWithDetails[]>(
+          archivedDomainsQueryKey,
+          (old) => old?.filter((d) => d.id !== trackedDomainId) ?? [],
+        );
+      }
+
       // Optimistically update limits
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
         updateLimitsForRemoval(old, 1),
       );
 
-      return { previousDomainsQueries, previousLimits };
+      return { previousDomainsQueries, previousArchived, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -230,7 +238,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       toast.success("Domain removed");
     },
     onSettled: () => {
-      invalidateQueries();
+      // Invalidate both lists since the domain could have been in either
+      invalidateQueries(true);
     },
   });
 
@@ -497,13 +506,16 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const bulkDeleteMutation = useMutation({
     mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainIds }): Promise<MutationContext> => {
-      await cancelQueries();
+      await cancelQueries(true);
 
       // Snapshot all matching infinite query caches for rollback
       const previousDomainsQueries =
         queryClient.getQueriesData<InfiniteDomainsData>({
           queryKey: domainsQueryKey,
         });
+      const previousArchived = queryClient.getQueryData<
+        TrackedDomainWithDetails[]
+      >(archivedDomainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
@@ -549,11 +561,19 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         },
       );
 
+      // Optimistically remove from archived list
+      if (previousArchived) {
+        queryClient.setQueryData<TrackedDomainWithDetails[]>(
+          archivedDomainsQueryKey,
+          (old) => old?.filter((d) => !idsSet.has(d.id)) ?? [],
+        );
+      }
+
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
         updateLimitsForRemoval(old, deleteDelta),
       );
 
-      return { previousDomainsQueries, previousLimits };
+      return { previousDomainsQueries, previousArchived, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -561,7 +581,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       toast.error("Failed to delete domains");
     },
     onSettled: () => {
-      invalidateQueries();
+      invalidateQueries(true);
     },
   });
 

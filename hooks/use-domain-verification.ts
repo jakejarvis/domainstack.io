@@ -64,20 +64,17 @@ export function useDomainVerification({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query key for limits invalidation (domains use predicate matching for infinite queries)
+  // Query key for limits invalidation
   const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
 
   const addDomainMutation = useMutation({
     ...trpc.tracking.addDomain.mutationOptions(),
     onSettled: () => {
       // Invalidate queries so the domain appears in the list
       // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
-      // Use predicate matching to ensure we catch both regular queries and infinite queries
-      // (infinite queries have different key structure than base queryKey())
-      void queryClient.invalidateQueries({
-        predicate: (query) =>
-          JSON.stringify(query.queryKey).includes("listDomains"),
-      });
+      // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
       void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
     },
   });
@@ -206,11 +203,8 @@ export function useDomainVerification({
           method: result.method,
         });
         // Invalidate queries so the dashboard shows the updated verified status
-        // Use predicate matching to ensure we catch both regular queries and infinite queries
-        void queryClient.invalidateQueries({
-          predicate: (query) =>
-            JSON.stringify(query.queryKey).includes("listDomains"),
-        });
+        // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+        void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
         void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
         // Call onSuccess immediately so the dashboard refetches and shows updated status
         onSuccess();
@@ -245,6 +239,7 @@ export function useDomainVerification({
     verifyDomainMutation,
     queryClient,
     limitsQueryKey,
+    domainsQueryKey,
     onSuccess,
   ]);
 

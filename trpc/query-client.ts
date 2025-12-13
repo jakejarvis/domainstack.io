@@ -7,11 +7,8 @@ export const makeQueryClient = () => {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // Avoid immediate client refetch after hydration
-        staleTime: 5 * 60_000, // 5 minutes
-        refetchOnMount: false,
-        refetchOnReconnect: false,
-        refetchOnWindowFocus: false,
+        // Use a reasonable stale time (1 minute) to balance freshness with performance
+        staleTime: 60 * 1000,
         // Disable retries by default - most tRPC endpoints should fail fast
         // (can be overridden per-query if needed)
         retry: false,
