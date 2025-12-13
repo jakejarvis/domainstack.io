@@ -102,6 +102,10 @@
 - **tRPC integration:** `trpc/init.ts` exports `protectedProcedure` that requires valid session; throws `UNAUTHORIZED` otherwise.
 - **Schema tables:** `users`, `sessions`, `accounts`, `verifications` in `lib/db/schema.ts`.
 - **Login modal:** Uses simple React dialog triggered from header; fallback full page at `/login`.
+- **Resend contacts integration:** User creation/deletion automatically syncs with Resend contacts.
+  - User creation: Parses name into firstName/lastName and creates Resend contact.
+  - User deletion: Removes contact from Resend.
+  - All operations are graceful (won't block auth flows if Resend fails).
 - **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITLAB_CLIENT_ID`, `GITLAB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`.
 
 ## Domain Tracking System

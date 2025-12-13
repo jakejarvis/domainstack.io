@@ -6,7 +6,6 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { after } from "next/server";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
-import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
@@ -125,19 +124,26 @@ export const auth = betterAuth({
         after: async (user) => {
           // Create free tier subscription for new users
           await createSubscription(user.id);
-        },
-      },
-    },
-    account: {
-      create: {
-        after: async (account) => {
-          // Track signup with the actual OAuth provider used
-          // This fires after user.create, so we have accurate provider info
-          analytics.track(
-            "user_signed_up",
-            { provider: account.providerId },
-            account.userId,
-          );
+
+          // Create Resend contact for marketing communications
+          try {
+            // Parse name into first/last (best-effort)
+            const nameParts = user.name?.trim().split(/\s+/) || [];
+            const firstName = nameParts[0];
+            const lastName =
+              nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
+
+            await resend?.contacts.create({
+              email: user.email,
+              firstName,
+              lastName,
+              unsubscribed: false,
+            });
+          } catch (err) {
+            logger.error("failed to create Resend contact", err, {
+              userId: user.id,
+            });
+          }
         },
       },
     },
@@ -146,9 +152,6 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
-        // Track account deletion (best-effort, user is being deleted)
-        analytics.track("delete_account_completed", {}, user.id);
-
         // Cancel Polar subscription if user has one
         // This deletes the Polar customer, which automatically cancels any active
         // subscriptions and revokes benefits
@@ -175,16 +178,22 @@ export const auth = betterAuth({
             }
           }
         }
+
+        // Delete Resend contact
+        try {
+          await resend?.contacts.remove({
+            email: user.email,
+          });
+        } catch (err) {
+          logger.error("failed to delete Resend contact", err, {
+            userId: user.id,
+          });
+        }
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
-        if (!resend) {
-          throw new Error("Email service not configured");
-        }
-        // Capture resend in const to satisfy TypeScript null check
-        const resendClient = resend;
         // Use after() to reduce risk of timing attacks
         after(() =>
-          resendClient.emails.send({
+          resend?.emails.send({
             from: `Domainstack <${RESEND_FROM_EMAIL}>`,
             to: user.email,
             subject: "Confirm your account deletion",
