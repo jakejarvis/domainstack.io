@@ -11,15 +11,6 @@ type DnsVerificationInstructionsProps = {
 export function DnsVerificationInstructions({
   instructions,
 }: DnsVerificationInstructionsProps) {
-  // Split hostname into prefix (_domainstack-verify) and domain (.example.com)
-  const dotIndex = instructions.hostname.indexOf(".");
-  const hostnamePrefix =
-    dotIndex > 0
-      ? instructions.hostname.slice(0, dotIndex)
-      : instructions.hostname;
-  const hostnameDomain =
-    dotIndex > 0 ? instructions.hostname.slice(dotIndex) : "";
-
   return (
     <>
       <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
@@ -35,11 +26,12 @@ export function DnsVerificationInstructions({
       </div>
 
       <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4 dark:border-white/15 dark:bg-white/2">
-        <CopyableField label="Host / Name" value={hostnamePrefix}>
+        <CopyableField label="Host / Name" value="@">
           <span>
-            {hostnamePrefix}
+            @
             <span className="select-none text-muted-foreground">
-              {hostnameDomain}
+              {" "}
+              ({instructions.hostname})
             </span>
           </span>
         </CopyableField>

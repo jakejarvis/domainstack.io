@@ -21,7 +21,6 @@ import type {
 const logger = createLogger({ source: "verification" });
 
 // DNS verification constants
-const DNS_VERIFICATION_HOST = "_domainstack-verify";
 const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
 
 // HTML file verification constants
@@ -122,7 +121,7 @@ export async function tryAllVerificationMethods(
 
 /**
  * Verify ownership via DNS TXT record.
- * Expected record: _domainstack-verify.example.com TXT "domainstack-verify=<token>"
+ * Expected record: example.com TXT "domainstack-verify=<token>"
  *
  * Uses multiple DoH providers for reliability and cache busting.
  * Leverages the same provider ordering and fallback logic as dns.ts.
@@ -132,7 +131,6 @@ async function verifyDnsTxtImpl(
   token: string,
 ): Promise<VerificationResult> {
   const expectedValue = `${DNS_VERIFICATION_PREFIX}${token}`;
-  const verifyHost = `${DNS_VERIFICATION_HOST}.${domain}`;
 
   // Use the same provider ordering logic as dns.ts for consistency
   const providers = providerOrderForLookup(domain);
@@ -142,7 +140,7 @@ async function verifyDnsTxtImpl(
   // Try providers in sequence
   for (const provider of providers) {
     try {
-      const url = buildDohUrl(provider, verifyHost, "TXT");
+      const url = buildDohUrl(provider, domain, "TXT");
       // Add random parameter to bypass HTTP caches
       url.searchParams.set("t", Date.now().toString());
 
@@ -436,7 +434,7 @@ export function getVerificationInstructions(
         title: "Add a DNS TXT Record",
         description:
           "Add the following TXT record to your domain's DNS settings. Changes may take a few minutes to propagate.",
-        hostname: `${DNS_VERIFICATION_HOST}.${domain}`,
+        hostname: domain,
         recordType: "TXT",
         value: `${DNS_VERIFICATION_PREFIX}${token}`,
         suggestedTTL: 60,

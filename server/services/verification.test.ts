@@ -70,7 +70,7 @@ describe("getVerificationInstructions", () => {
     const result = getVerificationInstructions("example.com", token, "dns_txt");
 
     expect(result.title).toContain("DNS");
-    expect(result.hostname).toBe("_domainstack-verify.example.com");
+    expect(result.hostname).toBe("example.com");
     expect(result.recordType).toBe("TXT");
     expect(result.value).toBe(`domainstack-verify=${token}`);
     expect(result.suggestedTTL).toBe(60);
@@ -117,7 +117,7 @@ describe("verifyDomainOwnership", () => {
           Status: 0,
           Answer: [
             {
-              name: "_domainstack-verify.example.com.",
+              name: "example.com.",
               type: 16,
               TTL: 300,
               data: `"domainstack-verify=${token}"`,
@@ -166,7 +166,7 @@ describe("verifyDomainOwnership", () => {
           Status: 0,
           Answer: [
             {
-              name: "_domainstack-verify.example.com.",
+              name: "example.com.",
               type: 16,
               TTL: 300,
               data: '"domainstack-verify=wrongtoken"',
@@ -584,7 +584,7 @@ describe("tryAllVerificationMethods", () => {
         Status: 0,
         Answer: [
           {
-            name: "_domainstack-verify.example.com.",
+            name: "example.com.",
             type: 16,
             TTL: 300,
             data: `"domainstack-verify=${token}"`,

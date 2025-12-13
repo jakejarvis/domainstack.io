@@ -162,10 +162,8 @@ function createFaqSections(
               you:
               <ul className="mt-2 list-disc space-y-1 pl-6">
                 <li>
-                  <strong>DNS TXT record</strong> — Add a TXT record to{" "}
-                  <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
-                    _domainstack-verify.yourdomain.com
-                  </code>
+                  <strong>DNS TXT record</strong> — Add a TXT record to your
+                  apex domain
                 </li>
                 <li>
                   <strong>HTML file</strong> — Upload a verification file to{" "}

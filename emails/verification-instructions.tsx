@@ -44,11 +44,6 @@ export function VerificationInstructionsEmail({
 }: VerificationInstructionsEmailProps) {
   const previewText = `Domain verification instructions for ${domain}`;
 
-  // Extract the prefix from hostname (e.g., "_domainstack-verify" from "_domainstack-verify.example.com")
-  const dotIndex = dnsHostname.indexOf(".");
-  const dnsHostnamePrefix =
-    dotIndex > 0 ? dnsHostname.slice(0, dotIndex) : dnsHostname;
-
   return (
     <EmailLayout previewText={previewText}>
       <EmailHeading>Domain Verification Instructions</EmailHeading>
@@ -75,7 +70,7 @@ export function VerificationInstructionsEmail({
         </EmailText>
         <EmailSection variant="code">
           <EmailFieldLabel>Host / Name</EmailFieldLabel>
-          <EmailCodeText>{dnsHostnamePrefix}</EmailCodeText>
+          <EmailCodeText>@ ({dnsHostname})</EmailCodeText>
           <EmailFieldLabel>Type</EmailFieldLabel>
           <EmailCodeText>{dnsRecordType}</EmailCodeText>
           <EmailFieldLabel>Value / Content</EmailFieldLabel>
@@ -147,7 +142,7 @@ VerificationInstructionsEmail.PreviewProps = {
   domain: "example.com",
   senderName: "Jake",
   senderEmail: "jake@example.com",
-  dnsHostname: "_domainstack-verify.example.com",
+  dnsHostname: "@",
   dnsRecordType: "TXT",
   dnsValue: "domainstack-verify=abc123xyz",
   dnsTTL: 300,

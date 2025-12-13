@@ -126,7 +126,7 @@ The domain tracking feature allows authenticated users to track domains they own
 
 ### Domain Verification
 Users must verify domain ownership via one of three methods:
-1. **DNS TXT record:** Add `_domainstack-verify.domain.com TXT "token"`.
+1. **DNS TXT record:** Add `domain.com TXT "domainstack-verify=token"` (displayed as `@` for the hostname).
 2. **HTML file:** Upload `/.well-known/domainstack-verify.html` containing the token.
 3. **Meta tag:** Add `<meta name="domainstack-verify" content="token">` to homepage.
 

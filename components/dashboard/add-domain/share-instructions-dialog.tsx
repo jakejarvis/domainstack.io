@@ -45,11 +45,6 @@ function formatInstructionsForSharing(
 ): string {
   const { dns_txt, html_file, meta_tag } = instructions;
 
-  // Extract the DNS hostname prefix (e.g., "_domainstack-verify")
-  const dotIndex = dns_txt.hostname.indexOf(".");
-  const dnsHostnamePrefix =
-    dotIndex > 0 ? dns_txt.hostname.slice(0, dotIndex) : dns_txt.hostname;
-
   return `Domain Verification Instructions for ${domain}
 ${"=".repeat(50)}
 
@@ -60,7 +55,7 @@ OPTION 1: DNS TXT Record (Recommended)
 ${"─".repeat(50)}
 Add a TXT record to your domain's DNS settings:
 
-  Host/Name:  ${dnsHostnamePrefix}
+  Host/Name:  @ (${dns_txt.hostname})
   Type:       ${dns_txt.recordType}
   Value:      ${dns_txt.value}
   TTL:        ${dns_txt.suggestedTTL} (${dns_txt.suggestedTTLLabel})
