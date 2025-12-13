@@ -106,6 +106,7 @@ export function MultiSelect<T extends string>({
                     value={option.value}
                     keywords={option.keywords}
                     onSelect={() => toggleOption(option.value)}
+                    className="cursor-pointer"
                   >
                     <Checkbox
                       checked={isSelected}

@@ -38,23 +38,38 @@ export function SocialPreviewTabs({
         onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}
       >
         <TabsList className="h-11 w-full gap-1 border border-muted-foreground/15 bg-muted/30 md:justify-start dark:bg-muted/50 dark:*:data-[state=active]:bg-accent">
-          <TabsTrigger value="twitter">
+          <TabsTrigger
+            value="twitter"
+            className="cursor-pointer data-[state=active]:cursor-default"
+          >
             <TwitterIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Twitter</span>
           </TabsTrigger>
-          <TabsTrigger value="facebook">
+          <TabsTrigger
+            value="facebook"
+            className="cursor-pointer data-[state=active]:cursor-default"
+          >
             <FacebookIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Facebook</span>
           </TabsTrigger>
-          <TabsTrigger value="linkedin">
+          <TabsTrigger
+            value="linkedin"
+            className="cursor-pointer data-[state=active]:cursor-default"
+          >
             <LinkedinIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">LinkedIn</span>
           </TabsTrigger>
-          <TabsTrigger value="discord">
+          <TabsTrigger
+            value="discord"
+            className="cursor-pointer data-[state=active]:cursor-default"
+          >
             <DiscordIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Discord</span>
           </TabsTrigger>
-          <TabsTrigger value="slack">
+          <TabsTrigger
+            value="slack"
+            className="cursor-pointer data-[state=active]:cursor-default"
+          >
             <SlackIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Slack</span>
           </TabsTrigger>

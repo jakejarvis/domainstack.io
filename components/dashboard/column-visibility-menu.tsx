@@ -60,7 +60,11 @@ export function ColumnVisibilityMenu<TData>({
       <Tooltip>
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="size-9">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-9 cursor-pointer"
+            >
               <Columns3Cog className="size-4" />
               <span className="sr-only">Toggle columns</span>
             </Button>
@@ -86,6 +90,7 @@ export function ColumnVisibilityMenu<TData>({
                 e.preventDefault();
                 toggleColumn(column.id);
               }}
+              className="cursor-pointer"
             >
               <Checkbox checked={isVisible} className="pointer-events-none" />
               <span className="capitalize">{header}</span>
@@ -100,7 +105,7 @@ export function ColumnVisibilityMenu<TData>({
                 e.preventDefault();
                 showAllColumns();
               }}
-              className="text-muted-foreground"
+              className="cursor-pointer text-muted-foreground"
             >
               <RefreshCcw className="size-4" />
               Show all columns

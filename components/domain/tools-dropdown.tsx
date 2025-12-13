@@ -139,7 +139,12 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" aria-label="Open menu" size="icon">
+        <Button
+          variant="outline"
+          aria-label="Open menu"
+          size="icon"
+          className="cursor-pointer"
+        >
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>

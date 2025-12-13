@@ -180,6 +180,7 @@ export function DomainFilters({
                   size="icon-xs"
                   onClick={() => onSearchChange("")}
                   aria-label="Clear search"
+                  className="cursor-pointer"
                 >
                   <X />
                 </InputGroupButton>
@@ -196,6 +197,7 @@ export function DomainFilters({
             options={STATUS_OPTIONS}
             selected={status}
             onSelectionChange={onStatusChange}
+            className="cursor-pointer"
           />
           <MultiSelect
             label="Health"
@@ -203,6 +205,7 @@ export function DomainFilters({
             options={HEALTH_OPTIONS}
             selected={health}
             onSelectionChange={onHealthChange}
+            className="cursor-pointer"
           />
           {availableTlds.length > 0 && (
             <MultiSelect
@@ -212,6 +215,7 @@ export function DomainFilters({
               selected={tlds}
               onSelectionChange={onTldsChange}
               searchable
+              className="cursor-pointer"
             />
           )}
         </div>
@@ -225,7 +229,7 @@ export function DomainFilters({
             variant="ghost"
             size="sm"
             onClick={onClearFilters}
-            className="text-muted-foreground"
+            className="cursor-pointer text-muted-foreground"
           >
             <X className="size-4" />
             Clear all
@@ -236,7 +240,10 @@ export function DomainFilters({
         {viewMode === "grid" && onSortChange && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 gap-2 px-3">
+              <Button
+                variant="outline"
+                className="h-9 cursor-pointer gap-2 px-3"
+              >
                 <span className="text-muted-foreground">Sort:</span>
                 <span className="inline-flex items-center gap-1.5">
                   {currentSort?.shortLabel ?? "Select"}
@@ -253,7 +260,7 @@ export function DomainFilters({
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => onSortChange(option.value)}
-                  className="gap-2"
+                  className="cursor-pointer gap-2"
                 >
                   <Check
                     className={cn(
@@ -288,7 +295,10 @@ export function DomainFilters({
         <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
           <div className="flex items-center gap-2">
             <CollapsibleTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-between">
+              <Button
+                variant="outline"
+                className="flex-1 cursor-pointer justify-between"
+              >
                 <span className="flex items-center gap-2">
                   <Filter className="size-4" />
                   Filters

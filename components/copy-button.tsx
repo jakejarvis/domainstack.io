@@ -5,13 +5,15 @@ import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CopyButtonProps {
   value: string;
   label?: string;
+  className?: string;
 }
 
-export function CopyButton({ value, label }: CopyButtonProps) {
+export function CopyButton({ value, label, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
 
@@ -45,11 +47,18 @@ export function CopyButton({ value, label }: CopyButtonProps) {
     <Button
       variant="outline"
       size="sm"
-      className="shrink-0 border-black/15 bg-background/50 backdrop-blur dark:border-white/10"
+      className={cn(
+        "shrink-0 cursor-pointer border-black/15 bg-background/50 backdrop-blur dark:border-white/10",
+        className,
+      )}
       aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
       onClick={handleCopy}
     >
-      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+      {copied ? (
+        <Check className="size-3.5 text-accent-green" />
+      ) : (
+        <Copy className="size-3.5" />
+      )}
       <span className="sr-only">{copied ? "Copied" : "Copy"}</span>
     </Button>
   );

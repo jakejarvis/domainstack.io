@@ -489,7 +489,7 @@ export function DashboardContent() {
           <Button
             variant="ghost"
             onClick={() => setActiveTab("active")}
-            className="gap-2 text-muted-foreground hover:text-foreground"
+            className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             Back to domains

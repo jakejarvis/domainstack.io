@@ -202,6 +202,7 @@ export function RobotsSummary({
                         size="sm"
                         variant="ghost"
                         onClick={() => setQuery("")}
+                        className="cursor-pointer"
                       >
                         <X />
                       </InputGroupButton>
@@ -216,8 +217,9 @@ export function RobotsSummary({
                     aria-pressed={only === "all"}
                     onClick={() => setOnly("all")}
                     className={cn(
-                      "h-9 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "all" && "!bg-muted/50 dark:!bg-accent",
+                      "h-9 cursor-pointer px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
+                      only === "all" &&
+                        "!bg-muted/50 dark:!bg-accent cursor-default",
                     )}
                   >
                     All
@@ -228,8 +230,9 @@ export function RobotsSummary({
                     aria-pressed={only === "allow"}
                     onClick={() => setOnly("allow")}
                     className={cn(
-                      "h-9 gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "allow" && "!bg-muted/50 dark:!bg-accent",
+                      "h-9 cursor-pointer gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
+                      only === "allow" &&
+                        "!bg-muted/50 dark:!bg-accent cursor-default",
                     )}
                   >
                     <CircleCheck
@@ -245,8 +248,9 @@ export function RobotsSummary({
                     aria-pressed={only === "disallow"}
                     onClick={() => setOnly("disallow")}
                     className={cn(
-                      "h-9 gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "disallow" && "!bg-muted/50 dark:!bg-accent",
+                      "h-9 cursor-pointer gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
+                      only === "disallow" &&
+                        "!bg-muted/50 dark:!bg-accent cursor-default",
                     )}
                   >
                     <Ban
@@ -265,7 +269,7 @@ export function RobotsSummary({
                   <Button
                     type="button"
                     variant="link"
-                    className="px-1"
+                    className="cursor-pointer px-1"
                     onClick={() => {
                       setQuery("");
                       setOnly("all");
@@ -334,7 +338,7 @@ function RobotsGroupHeader({
   showDisallow?: boolean;
 }) {
   return (
-    <div className="flex w-full items-center justify-between rounded-md p-1.5 hover:bg-accent/35">
+    <div className="flex w-full items-center justify-between rounded-md p-1.5 hover:cursor-pointer hover:bg-accent/35">
       <div className="flex flex-wrap items-center gap-1.5">
         <ChevronRight className="size-3 text-muted-foreground transition-transform group-data-[state=open]/accordion:rotate-90" />
         {userAgents.map((ua) => (
