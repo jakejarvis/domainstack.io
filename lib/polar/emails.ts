@@ -1,8 +1,6 @@
 import "server-only";
 
-import { render } from "@react-email/components";
 import { format } from "date-fns";
-import type React from "react";
 import ProUpgradeSuccessEmail from "@/emails/pro-upgrade-success";
 import ProWelcomeEmail from "@/emails/pro-welcome";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
@@ -10,7 +8,7 @@ import SubscriptionExpiredEmail from "@/emails/subscription-expired";
 import { getUserById } from "@/lib/db/repos/users";
 import { getTierLimits } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "../resend";
 
 const logger = createLogger({ source: "polar-emails" });
 
@@ -58,11 +56,6 @@ function generateWelcomeIdempotencyKey(userId: string): string {
  * Uses idempotency key to prevent duplicate emails on webhook retries.
  */
 export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { userId });
-    return false;
-  }
-
   const user = await getUserById(userId);
   if (!user) {
     logger.error("User not found for upgrade email", { userId });
@@ -75,19 +68,14 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
-    const emailHtml = await render(
-      ProUpgradeSuccessEmail({
-        userName: firstName,
-        proMaxDomains: tierLimits.pro,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: user.email,
         subject: "🎉 Welcome to Domainstack Pro!",
-        html: emailHtml,
+        react: ProUpgradeSuccessEmail({
+          userName: firstName,
+          proMaxDomains: tierLimits.pro,
+        }),
       },
       {
         idempotencyKey,
@@ -138,29 +126,19 @@ async function sendProWelcomeEmail(
   userEmail: string,
   proMaxDomains: number,
 ): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { userId });
-    return false;
-  }
-
   const idempotencyKey = generateWelcomeIdempotencyKey(userId);
 
   try {
     const firstName = getFirstName(userName);
 
-    const emailHtml = await render(
-      ProWelcomeEmail({
-        userName: firstName,
-        proMaxDomains,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject: "Getting the most out of Domainstack Pro",
-        html: emailHtml,
+        react: ProWelcomeEmail({
+          userName: firstName,
+          proMaxDomains,
+        }),
       },
       {
         idempotencyKey,
@@ -216,11 +194,6 @@ export async function sendSubscriptionCancelingEmail(
   userId: string,
   endsAt: Date,
 ): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { userId });
-    return false;
-  }
-
   const user = await getUserById(userId);
   if (!user) {
     logger.error("User not found for canceling email", { userId });
@@ -233,19 +206,14 @@ export async function sendSubscriptionCancelingEmail(
     const firstName = getFirstName(user.name);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
-    const emailHtml = await render(
-      SubscriptionCancelingEmail({
-        userName: firstName,
-        endDate,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: user.email,
         subject: `Your Pro subscription ends on ${endDate}`,
-        html: emailHtml,
+        react: SubscriptionCancelingEmail({
+          userName: firstName,
+          endDate,
+        }),
       },
       {
         idempotencyKey,
@@ -299,11 +267,6 @@ export async function sendSubscriptionExpiredEmail(
   userId: string,
   archivedCount: number,
 ): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { userId });
-    return false;
-  }
-
   const user = await getUserById(userId);
   if (!user) {
     logger.error("User not found for expired email", { userId });
@@ -316,21 +279,16 @@ export async function sendSubscriptionExpiredEmail(
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
-    const emailHtml = await render(
-      SubscriptionExpiredEmail({
-        userName: firstName,
-        archivedCount,
-        freeMaxDomains: tierLimits.free,
-        proMaxDomains: tierLimits.pro,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: user.email,
         subject: "Your Pro subscription has ended",
-        html: emailHtml,
+        react: SubscriptionExpiredEmail({
+          userName: firstName,
+          archivedCount,
+          freeMaxDomains: tierLimits.free,
+          proMaxDomains: tierLimits.pro,
+        }),
       },
       {
         idempotencyKey,

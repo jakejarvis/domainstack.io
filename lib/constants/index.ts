@@ -4,6 +4,7 @@ export * from "./auth-errors";
 export * from "./decay";
 export * from "./domain-filters";
 export * from "./domain-validation";
+export * from "./email";
 export * from "./gdpr";
 export * from "./headers";
 export * from "./notifications";

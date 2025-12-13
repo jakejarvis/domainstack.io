@@ -1,8 +1,6 @@
 import "server-only";
 
-import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
-import type React from "react";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import {
   getUsersWithEndingSubscriptions,
@@ -10,7 +8,7 @@ import {
 } from "@/lib/db/repos/user-subscription";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-subscription-expiry" });
 
@@ -206,11 +204,6 @@ async function sendSubscriptionExpiryNotification({
   daysRemaining: number;
   threshold: SubscriptionExpiryThreshold;
 }): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { userId });
-    return false;
-  }
-
   const idempotencyKey = generateSubscriptionIdempotencyKey(
     userId,
     threshold,
@@ -221,25 +214,20 @@ async function sendSubscriptionExpiryNotification({
     const firstName = getFirstName(userName);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
-    const emailHtml = await render(
-      SubscriptionCancelingEmail({
-        userName: firstName,
-        endDate,
-      }) as React.ReactElement,
-    );
-
     // Determine urgency for subject line
     const isUrgent = daysRemaining <= 3;
     const subject = isUrgent
       ? `⚠️ Your Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
       : `Your Pro subscription ends on ${endDate}`;
 
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject,
-        html: emailHtml,
+        react: SubscriptionCancelingEmail({
+          userName: firstName,
+          endDate,
+        }),
       },
       {
         idempotencyKey,

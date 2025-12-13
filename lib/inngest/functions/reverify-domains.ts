@@ -1,8 +1,6 @@
 import "server-only";
 
-import { render } from "@react-email/components";
 import { differenceInDays } from "date-fns";
-import type React from "react";
 import { VerificationFailingEmail } from "@/emails/verification-failing";
 import { VerificationRevokedEmail } from "@/emails/verification-revoked";
 import {
@@ -20,7 +18,7 @@ import {
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "@/lib/resend";
 import { verifyDomainOwnership } from "@/server/services/verification";
 
 const logger = createLogger({ source: "reverify-domains" });
@@ -226,13 +224,6 @@ async function handleVerificationFailure(
 async function sendVerificationFailingEmail(
   domain: TrackedDomainForReverification,
 ): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", {
-      domainName: domain.domainName,
-    });
-    return false;
-  }
-
   // Check if we've already sent this notification
   const alreadySent = await hasNotificationBeenSent(
     domain.id,
@@ -243,20 +234,15 @@ async function sendVerificationFailingEmail(
   }
 
   try {
-    const emailHtml = await render(
-      VerificationFailingEmail({
+    const { data, error } = await sendPrettyEmail({
+      to: domain.userEmail,
+      subject: `⚠️ Verification failing for ${domain.domainName}`,
+      react: VerificationFailingEmail({
         userName: domain.userName.split(" ")[0] || "there",
         domainName: domain.domainName,
         verificationMethod: domain.verificationMethod,
         gracePeriodDays: GRACE_PERIOD_DAYS,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send({
-      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
-      to: domain.userEmail,
-      subject: `⚠️ Verification failing for ${domain.domainName}`,
-      html: emailHtml,
+      }),
     });
 
     if (error) {
@@ -303,13 +289,6 @@ async function sendVerificationFailingEmail(
 async function sendVerificationRevokedEmail(
   domain: TrackedDomainForReverification,
 ): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", {
-      domainName: domain.domainName,
-    });
-    return false;
-  }
-
   // Check if we've already sent this notification
   const alreadySent = await hasNotificationBeenSent(
     domain.id,
@@ -320,18 +299,13 @@ async function sendVerificationRevokedEmail(
   }
 
   try {
-    const emailHtml = await render(
-      VerificationRevokedEmail({
-        userName: domain.userName.split(" ")[0] || "there",
-        domainName: domain.domainName,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send({
-      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+    const { data, error } = await sendPrettyEmail({
       to: domain.userEmail,
       subject: `❌ Verification revoked for ${domain.domainName}`,
-      html: emailHtml,
+      react: VerificationRevokedEmail({
+        userName: domain.userName.split(" ")[0] || "there",
+        domainName: domain.domainName,
+      }),
     });
 
     if (error) {

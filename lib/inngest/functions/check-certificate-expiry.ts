@@ -1,8 +1,6 @@
 import "server-only";
 
-import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
-import type React from "react";
 import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
 import { getVerifiedTrackedDomainsCertificates } from "@/lib/db/repos/certificates";
 import {
@@ -19,7 +17,7 @@ import {
   getCertificateExpiryNotificationType,
   type NotificationType,
 } from "@/lib/notifications";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-certificate-expiry" });
 
@@ -179,11 +177,6 @@ async function sendCertificateExpiryNotification({
   daysRemaining: number;
   notificationType: NotificationType;
 }): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { domainName });
-    return false;
-  }
-
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
     notificationType,
@@ -203,22 +196,17 @@ async function sendCertificateExpiryNotification({
       });
     }
 
-    const emailHtml = await render(
-      CertificateExpiryEmail({
-        userName: userName.split(" ")[0] || "there",
-        domainName,
-        expirationDate: format(validTo, "MMMM d, yyyy"),
-        daysRemaining,
-        issuer,
-      }) as React.ReactElement,
-    );
-
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject: `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-        html: emailHtml,
+        react: CertificateExpiryEmail({
+          userName: userName.split(" ")[0] || "there",
+          domainName,
+          expirationDate: format(validTo, "MMMM d, yyyy"),
+          daysRemaining,
+          issuer,
+        }),
       },
       {
         idempotencyKey,

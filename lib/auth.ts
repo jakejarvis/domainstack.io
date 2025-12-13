@@ -18,7 +18,7 @@ import {
   handleSubscriptionRevoked,
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { addContact, removeContact, sendPrettyEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "auth" });
 
@@ -126,24 +126,7 @@ export const auth = betterAuth({
           await createSubscription(user.id);
 
           // Create Resend contact for marketing communications
-          try {
-            // Parse name into first/last (best-effort)
-            const nameParts = user.name?.trim().split(/\s+/) || [];
-            const firstName = nameParts[0];
-            const lastName =
-              nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
-
-            await resend?.contacts.create({
-              email: user.email,
-              firstName,
-              lastName,
-              unsubscribed: false,
-            });
-          } catch (err) {
-            logger.error("failed to create Resend contact", err, {
-              userId: user.id,
-            });
-          }
+          after(() => addContact(user.email, user.name));
         },
       },
     },
@@ -180,21 +163,12 @@ export const auth = betterAuth({
         }
 
         // Delete Resend contact
-        try {
-          await resend?.contacts.remove({
-            email: user.email,
-          });
-        } catch (err) {
-          logger.error("failed to delete Resend contact", err, {
-            userId: user.id,
-          });
-        }
+        after(() => removeContact(user.email));
       },
       sendDeleteAccountVerification: async ({ user, url }) => {
         // Use after() to reduce risk of timing attacks
         after(() =>
-          resend?.emails.send({
-            from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+          sendPrettyEmail({
             to: user.email,
             subject: "Confirm your account deletion",
             react: DeleteAccountVerifyEmail({

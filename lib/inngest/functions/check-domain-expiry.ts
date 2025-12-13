@@ -1,8 +1,6 @@
 import "server-only";
 
-import { render } from "@react-email/components";
 import { differenceInDays, format } from "date-fns";
-import type React from "react";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
 import {
   clearDomainExpiryNotifications,
@@ -19,7 +17,7 @@ import {
   getDomainExpiryNotificationType,
   type NotificationType,
 } from "@/lib/notifications";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "check-domain-expiry" });
 
@@ -176,11 +174,6 @@ async function sendExpiryNotification({
   registrar?: string;
   notificationType: NotificationType;
 }): Promise<boolean> {
-  if (!resend) {
-    logger.warn("Resend not configured, skipping email", { domainName });
-    return false;
-  }
-
   // Generate a stable idempotency key BEFORE any operations
   // This ensures retries use the same key and Resend won't send duplicates
   const idempotencyKey = generateIdempotencyKey(
@@ -189,7 +182,7 @@ async function sendExpiryNotification({
   );
 
   try {
-    // Step 1: Create the notification record first (upsert with onConflictDoNothing)
+    // Create the notification record first (upsert with onConflictDoNothing)
     // This acts as a lock - if we crash after this but before email sends,
     // the next retry will still have this record, and hasNotificationBeenSent
     // will return true (preventing re-entry to this function)
@@ -211,26 +204,20 @@ async function sendExpiryNotification({
       // Resend's idempotency key will handle deduplication if we proceed
     }
 
-    // Step 2: Render the email
-    const emailHtml = await render(
-      DomainExpiryEmail({
-        userName: userName.split(" ")[0] || "there",
-        domainName,
-        expirationDate: format(expirationDate, "MMMM d, yyyy"),
-        daysRemaining,
-        registrar,
-      }) as React.ReactElement,
-    );
-
-    // Step 3: Send the email with idempotency key
+    // Send the email with idempotency key
     // If this request fails and retries with the same idempotencyKey,
     // Resend will return the original response without sending again
-    const { data, error } = await resend.emails.send(
+    const { data, error } = await sendPrettyEmail(
       {
-        from: `Domainstack <${RESEND_FROM_EMAIL}>`,
         to: userEmail,
         subject: `${daysRemaining <= 7 ? "⚠️ " : ""}${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-        html: emailHtml,
+        react: DomainExpiryEmail({
+          userName: userName.split(" ")[0] || "there",
+          domainName,
+          expirationDate: format(expirationDate, "MMMM d, yyyy"),
+          daysRemaining,
+          registrar,
+        }),
       },
       {
         idempotencyKey,

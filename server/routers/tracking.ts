@@ -24,7 +24,7 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/logger/server";
-import { RESEND_FROM_EMAIL, resend } from "@/lib/resend";
+import { sendPrettyEmail } from "@/lib/resend";
 import { VerificationMethodSchema } from "@/lib/schemas";
 import {
   generateVerificationToken,
@@ -575,14 +575,6 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      // Check if resend is configured
-      if (!resend) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Email service is not configured",
-        });
-      }
-
       // Build verification instructions for all methods
       const instructions = buildVerificationInstructions(
         tracked.domainName,
@@ -594,8 +586,7 @@ export const trackingRouter = createTRPCRouter({
       const senderEmail = ctx.user.email;
 
       try {
-        const { error } = await resend.emails.send({
-          from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+        const { error } = await sendPrettyEmail({
           to: recipientEmail,
           subject: `Domain verification instructions for ${tracked.domainName}`,
           react: VerificationInstructionsEmail({
