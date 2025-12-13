@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, HeartCrack, Loader2 } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -107,25 +107,18 @@ export function DeleteAccountDialog({
               </AlertDialogDescription>
             </AlertDialogHeader>
 
-            <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-destructive">•</span>
-                  <span>All your tracked domains</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-destructive">•</span>
-                  <span>Notification preferences</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-destructive">•</span>
-                  <span>Subscription data</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 text-destructive">•</span>
-                  <span>Account information</span>
-                </li>
-              </ul>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                <ul className="list-disc space-y-2 pl-4 text-sm marker:text-destructive">
+                  <li>All your tracked domains</li>
+                  <li>Notification preferences</li>
+                  <li>Subscription data</li>
+                  <li>Account information</li>
+                </ul>
+              </div>
+              <p className="text-center text-[13px] text-muted-foreground">
+                You will receive an email with a link to confirm this action.
+              </p>
             </div>
 
             {errorMessage && (
@@ -150,13 +143,11 @@ export function DeleteAccountDialog({
                 )}
               >
                 {state === "loading" ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Requesting...
-                  </>
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  "Delete Account"
+                  <HeartCrack className="size-4" />
                 )}
+                {state === "loading" ? "Loading..." : "I'm Sure"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </>

@@ -175,7 +175,7 @@ export function TrackedDomainCard({
                 <>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="cursor-default truncate">
+                      <span className="truncate">
                         {format(expirationDate, "MMM d, yyyy")}
                       </span>
                     </TooltipTrigger>

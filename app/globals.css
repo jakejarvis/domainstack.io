@@ -44,6 +44,7 @@
   --color-accent-orange: var(--accent-orange);
   --color-accent-cyan: var(--accent-cyan);
   --color-accent-slate: var(--accent-slate);
+  --color-accent-red: var(--accent-red);
   --color-accent-gold: var(--accent-gold);
   --color-accent-gold-muted: var(--accent-gold-muted);
   --radius-sm: calc(var(--radius) - 4px);
@@ -73,9 +74,9 @@
   --danger: oklch(96.6% 0.016 16.278);
   --danger-foreground: oklch(57.9% 0.237 29.233);
   --danger-border: oklch(93.3% 0.033 16.63);
-  --warning: oklch(99% 0.016 96.37);
-  --warning-foreground: oklch(66.9% 0.16 56.73);
-  --warning-border: oklch(94.4% 0.078 96.97);
+  --warning: oklch(98% 0.02 80);
+  --warning-foreground: oklch(68.588% 0.16389 57.489);
+  --warning-border: oklch(89% 0.11 75);
   --info: oklch(97.4% 0.012 244.25);
   --info-foreground: oklch(56.2% 0.182 255.12);
   --info-border: oklch(92.7% 0.032 265.82);
@@ -94,6 +95,7 @@
   --accent-orange: oklch(78% 0.17 70);
   --accent-cyan: oklch(64% 0.16 195);
   --accent-slate: oklch(48% 0 0);
+  --accent-red: oklch(64% 0.2 27);
 
   /* Gold accent - warm orange-gold for premium CTAs */
   --accent-gold: oklch(65% 0.18 55);
@@ -101,6 +103,11 @@
 
   /* Section accent glows */
   --glow-blue: radial-gradient(closest-side, var(--accent-blue), transparent);
+  --glow-indigo: radial-gradient(
+    closest-side,
+    var(--accent-indigo),
+    transparent
+  );
   --glow-cyan: radial-gradient(closest-side, var(--accent-cyan), transparent);
   --glow-purple: radial-gradient(
     closest-side,
@@ -113,6 +120,7 @@
     var(--accent-orange),
     transparent
   );
+  --glow-red: radial-gradient(closest-side, var(--accent-red), transparent);
   --glow-pink: radial-gradient(closest-side, var(--accent-pink), transparent);
   --glow-slate: radial-gradient(closest-side, var(--accent-slate), transparent);
 }
@@ -137,9 +145,9 @@
   --danger: oklch(19.9% 0.063 23.01);
   --danger-foreground: oklch(68.71% 0.202 24.112);
   --danger-border: oklch(26.9% 0.102 25.45);
-  --warning: oklch(22.7% 0.05 113.29);
-  --warning-foreground: oklch(86.4% 0.141 92.19);
-  --warning-border: oklch(29.1% 0.063 109.77);
+  --warning: oklch(22.7% 0.05 75);
+  --warning-foreground: oklch(86.4% 0.141 70);
+  --warning-border: oklch(29.1% 0.063 77);
   --info: oklch(22% 0.065 250.71);
   --info-foreground: oklch(85% 0.12 258.33);
   --info-border: oklch(32% 0.075 266.51);
@@ -158,6 +166,7 @@
   --accent-orange: oklch(86% 0.14 70);
   --accent-cyan: oklch(78% 0.12 195);
   --accent-slate: oklch(81% 0 54.26);
+  --accent-red: oklch(78% 0.16 27);
 
   /* Gold accent (dark) - brighter gold for dark backgrounds */
   --accent-gold: oklch(80% 0.12 70);
@@ -216,6 +225,9 @@
   [data-accent="blue"] .accent-glow {
     --section-accent-glow: var(--glow-blue);
   }
+  [data-accent="indigo"] .accent-glow {
+    --section-accent-glow: var(--glow-indigo);
+  }
   [data-accent="cyan"] .accent-glow {
     --section-accent-glow: var(--glow-cyan);
   }
@@ -227,6 +239,9 @@
   }
   [data-accent="orange"] .accent-glow {
     --section-accent-glow: var(--glow-orange);
+  }
+  [data-accent="red"] .accent-glow {
+    --section-accent-glow: var(--glow-red);
   }
   [data-accent="pink"] .accent-glow {
     --section-accent-glow: var(--glow-pink);

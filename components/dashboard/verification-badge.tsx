@@ -24,9 +24,9 @@ const VERIFICATION_METHOD_LABELS: Record<
   NonNullable<VerificationMethod>,
   string
 > = {
-  dns_txt: "DNS TXT Record",
-  html_file: "HTML File",
-  meta_tag: "Meta Tag",
+  dns_txt: "TXT record",
+  html_file: "file",
+  meta_tag: "meta tag",
 };
 
 export function VerificationBadge({
@@ -40,7 +40,7 @@ export function VerificationBadge({
     return (
       <Badge
         className={cn(
-          "select-none gap-1 border-amber-300 bg-amber-500/10 py-1 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+          "select-none gap-1 border-danger-border bg-danger/20 py-1 font-semibold text-danger-foreground",
           className,
         )}
       >
@@ -54,7 +54,7 @@ export function VerificationBadge({
     const badge = (
       <Badge
         className={cn(
-          "select-none gap-1 border-success-border bg-success/10 py-1 font-semibold text-success-foreground",
+          "select-none gap-1 border-success-border bg-success/20 py-1 font-semibold text-success-foreground",
           className,
         )}
       >
@@ -71,7 +71,7 @@ export function VerificationBadge({
             <span className="cursor-default">{badge}</span>
           </TooltipTrigger>
           <TooltipContent>
-            Verified via {VERIFICATION_METHOD_LABELS[verificationMethod]}
+            Using {VERIFICATION_METHOD_LABELS[verificationMethod]}
           </TooltipContent>
         </Tooltip>
       );
@@ -84,7 +84,7 @@ export function VerificationBadge({
     <Badge
       variant="outline"
       className={cn(
-        "select-none gap-1 border-amber-300 py-1 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+        "select-none gap-1 border-warning-border bg-warning/20 py-1 font-semibold text-warning-foreground",
         className,
       )}
     >

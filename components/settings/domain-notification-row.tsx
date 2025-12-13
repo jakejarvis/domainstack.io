@@ -2,8 +2,8 @@
 
 import { RotateCcw } from "lucide-react";
 import { Favicon } from "@/components/domain/favicon";
-import { ThreeStateCheckbox } from "@/components/settings/three-state-checkbox";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +35,10 @@ interface DomainNotificationRowProps {
 
 /**
  * A row for managing per-domain notification overrides.
- * Clean design with subtle hover states matching the global row aesthetic.
+ * Switches show the effective state (inherited or overridden):
+ * - Regular opacity: Inheriting from global settings
+ * - Reduced opacity + "Override" label: Explicitly overridden
+ * - Clicking a switch sets an override; clicking to match global clears it
  */
 export function DomainNotificationRow({
   domainName,
@@ -78,6 +81,7 @@ export function DomainNotificationRow({
           const override = overrides[category];
           const globalValue = globalPrefs[category];
           const isInherited = override === undefined;
+          const effectiveValue = override ?? globalValue;
 
           return (
             <div
@@ -92,12 +96,26 @@ export function DomainNotificationRow({
               >
                 {NOTIFICATION_CATEGORY_INFO[category].label}
               </span>
-              <ThreeStateCheckbox
-                value={override}
-                globalValue={globalValue}
-                onChange={(value) => onToggle(category, value)}
-                disabled={disabled}
-              />
+              <div className="flex items-center gap-2">
+                {!isInherited && (
+                  <span className="text-[10px] text-muted-foreground">
+                    Override
+                  </span>
+                )}
+                <Switch
+                  checked={effectiveValue}
+                  onCheckedChange={(checked) => {
+                    // If clicking would make it match global, clear override (inherit)
+                    // Otherwise, set explicit override
+                    onToggle(
+                      category,
+                      checked === globalValue ? undefined : checked,
+                    );
+                  }}
+                  disabled={disabled}
+                  className={cn("cursor-pointer", isInherited && "opacity-60")}
+                />
+              </div>
             </div>
           );
         })}
@@ -118,41 +136,62 @@ export function DomainNotificationRow({
         <Favicon domain={domainName} size={18} />
         <span className="truncate text-sm">{domainName}</span>
       </div>
-      <div className="flex justify-center">
-        {NOTIFICATION_CATEGORIES.map((category) => {
-          const override = overrides[category];
-          const globalValue = globalPrefs[category];
+      {NOTIFICATION_CATEGORIES.map((category) => {
+        const override = overrides[category];
+        const globalValue = globalPrefs[category];
+        const isInherited = override === undefined;
+        const effectiveValue = override ?? globalValue;
 
-          return (
-            <div key={category} className="flex justify-center">
-              <ThreeStateCheckbox
-                value={override}
-                globalValue={globalValue}
-                onChange={(value) => onToggle(category, value)}
-                disabled={disabled}
-              />
-            </div>
-          );
-        })}
-        {hasOverrides ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 cursor-pointer text-muted-foreground hover:text-foreground"
-                onClick={onReset}
-                disabled={disabled}
-              >
-                <RotateCcw className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Reset to defaults</TooltipContent>
-          </Tooltip>
-        ) : (
-          <div className="size-7" /> // Spacer to maintain grid alignment
-        )}
-      </div>
+        return (
+          <div key={category} className="flex justify-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Switch
+                    checked={effectiveValue}
+                    onCheckedChange={(checked) => {
+                      // If clicking would make it match global, clear override (inherit)
+                      // Otherwise, set explicit override
+                      onToggle(
+                        category,
+                        checked === globalValue ? undefined : checked,
+                      );
+                    }}
+                    disabled={disabled}
+                    className={cn(
+                      "cursor-pointer",
+                      isInherited && "opacity-60",
+                    )}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isInherited
+                  ? `Inheriting (${effectiveValue ? "enabled" : "disabled"})`
+                  : `Override: ${effectiveValue ? "enabled" : "disabled"}`}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        );
+      })}
+      {hasOverrides ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 cursor-pointer text-muted-foreground hover:text-foreground"
+              onClick={onReset}
+              disabled={disabled}
+            >
+              <RotateCcw className="size-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Reset to defaults</TooltipContent>
+        </Tooltip>
+      ) : (
+        <div className="size-7" /> // Spacer to maintain grid alignment
+      )}
     </div>
   );
 

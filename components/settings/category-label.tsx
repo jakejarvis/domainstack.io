@@ -17,7 +17,7 @@ interface CategoryLabelProps {
 }
 
 const SHORT_LABELS: Record<NotificationCategory, string> = {
-  domainExpiry: "Domain",
+  domainExpiry: "Expiration",
   certificateExpiry: "Certificate",
   verificationStatus: "Status",
 };

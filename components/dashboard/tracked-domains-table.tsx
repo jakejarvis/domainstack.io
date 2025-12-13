@@ -17,7 +17,7 @@ import {
   ExternalLink,
   FileSymlink,
   MoreVertical,
-  RefreshCw,
+  Play,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
@@ -212,7 +212,9 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger>{format(date, "MMM d, yyyy")}</TooltipTrigger>
+                <TooltipTrigger asChild>
+                  <span>{format(date, "MMM d, yyyy")}</span>
+                </TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
@@ -263,7 +265,9 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger>{format(date, "MMM d, yyyy")}</TooltipTrigger>
+                <TooltipTrigger asChild>
+                  <span>{format(date, "MMM d, yyyy")}</span>
+                </TooltipTrigger>
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
@@ -547,8 +551,8 @@ export function TrackedDomainsTable({
                             onClick={() => onVerify(row.original)}
                             className="h-8 cursor-pointer px-2 text-[13px]"
                           >
-                            <RefreshCw className="size-3.5 text-accent-green" />
-                            Verify
+                            <Play className="size-3.5 text-accent-green" />
+                            Continue
                           </Button>
                           <Button
                             size="sm"

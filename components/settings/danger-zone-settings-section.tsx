@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ChevronDown } from "lucide-react";
+import { AlertTriangle, ChevronDown, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 import { Button } from "@/components/ui/button";
@@ -22,22 +22,17 @@ export function DangerZoneSettingsSection() {
           <button
             type="button"
             className={cn(
-              "group flex w-full items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
+              "group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
               "hover:border-destructive/30 hover:bg-destructive/10",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2",
               isDangerZoneOpen && "rounded-b-none border-b-0",
             )}
           >
             <div className="flex items-center gap-3">
-              <AlertTriangle className="size-4 text-destructive" />
-              <div>
-                <span className="font-medium text-destructive text-sm">
-                  Danger Zone
-                </span>
-                <p className="text-muted-foreground text-xs">
-                  Irreversible account actions
-                </p>
-              </div>
+              <AlertTriangle className="size-5 text-destructive" />
+              <span className="font-medium text-destructive text-sm leading-none">
+                Danger Zone!
+              </span>
             </div>
             <ChevronDown
               className={cn(
@@ -58,11 +53,11 @@ export function DangerZoneSettingsSection() {
               </div>
               <Button
                 variant="destructive"
-                size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
                 className="shrink-0 cursor-pointer"
               >
-                Delete Account
+                <Trash2 className="size-4" />
+                Delete
               </Button>
             </div>
           </div>

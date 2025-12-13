@@ -44,7 +44,7 @@ export function ProviderWithTooltip({
         <Favicon
           domain={provider.domain}
           size={faviconSize}
-          className="shrink-0"
+          className="shrink-0 rounded"
         />
       )}
       <span ref={truncationRef} className="truncate text-[13px]">
@@ -58,7 +58,7 @@ export function ProviderWithTooltip({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="cursor-default">{content}</div>
+          <span>{content}</span>
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-2 py-1">
@@ -68,7 +68,7 @@ export function ProviderWithTooltip({
                 <Favicon
                   domain={provider.domain}
                   size={16}
-                  className="shrink-0"
+                  className="shrink-0 rounded"
                 />
               )}
               <span className="font-medium">{provider.name}</span>
@@ -94,7 +94,7 @@ export function ProviderWithTooltip({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div>{content}</div>
+          <span>{content}</span>
         </TooltipTrigger>
         <TooltipContent>{provider.name}</TooltipContent>
       </Tooltip>

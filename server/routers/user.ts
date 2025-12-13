@@ -99,17 +99,18 @@ export const userRouter = createTRPCRouter({
       }
 
       // Merge existing overrides with new ones (avoiding second lookup)
+      // Use Object.hasOwn to detect explicit undefined (clear override) vs missing key
       const mergedOverrides = {
         ...tracked.notificationOverrides,
       };
 
-      if (overrides.domainExpiry !== undefined) {
+      if (Object.hasOwn(overrides, "domainExpiry")) {
         mergedOverrides.domainExpiry = overrides.domainExpiry;
       }
-      if (overrides.certificateExpiry !== undefined) {
+      if (Object.hasOwn(overrides, "certificateExpiry")) {
         mergedOverrides.certificateExpiry = overrides.certificateExpiry;
       }
-      if (overrides.verificationStatus !== undefined) {
+      if (Object.hasOwn(overrides, "verificationStatus")) {
         mergedOverrides.verificationStatus = overrides.verificationStatus;
       }
 
