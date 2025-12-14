@@ -180,7 +180,7 @@ describe("getHeaders", () => {
     // which is mocked in vitest.setup.ts to not actually log anything
   });
 
-  it("falls back to GET when server returns 405 for HEAD", async () => {
+  it("configures fetchRemoteAsset with HEAD method and fallback enabled", async () => {
     // Create domain record first (simulates registered domain)
     const { upsertDomain } = await import("@/lib/db/repos/domains");
     await upsertDomain({
@@ -189,8 +189,6 @@ describe("getHeaders", () => {
       unicodeName: "example.com",
     });
 
-    // Mock should be called once (the fallback happens internally in fetchRemoteAsset)
-    // The mock returns success from the GET fallback
     fetchRemoteAssetMock.mockResolvedValueOnce({
       buffer: Buffer.from(""),
       contentType: "text/html",
@@ -205,12 +203,13 @@ describe("getHeaders", () => {
     const { getHeaders } = await import("./headers");
     const out = await getHeaders("example.com");
 
-    // Should successfully return headers (either from HEAD or GET fallback)
+    // Should successfully return headers
     expect(out.headers.length).toBeGreaterThan(0);
     expect(out.status).toBe(200);
     expect(out.statusMessage).toBe("OK");
 
-    // Verify the call included fallbackToGetOnHeadFailure
+    // Verify the service passes correct configuration to fetchRemoteAsset
+    // (actual fallback behavior is tested in lib/fetch-remote-asset.test.ts)
     expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "HEAD",
