@@ -46,7 +46,7 @@
     "@vercel/blob": "^2.0.0",
     "@vercel/edge-config": "^1.4.3",
     "@vercel/functions": "^3.3.4",
-    "better-auth": "^1.4.7-beta.4",
+    "better-auth": "^1.4.7",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clipboard-copy": "^4.0.1",
