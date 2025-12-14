@@ -161,6 +161,7 @@ export function DashboardContent() {
       id: domain.id,
       domainName: domain.domainName,
       verificationToken: domain.verificationToken,
+      verificationMethod: domain.verificationMethod,
     });
     setAddDialogOpen(true);
   }, []);

@@ -172,13 +172,26 @@ export function TrackedDomainsTable({
       {
         accessorKey: "verified",
         header: "Status",
-        cell: ({ row }) => (
-          <VerificationBadge
-            verified={row.original.verified}
-            verificationStatus={row.original.verificationStatus}
-            verificationMethod={row.original.verificationMethod}
-          />
-        ),
+        cell: ({ row }) => {
+          const isFailing =
+            row.original.verified &&
+            row.original.verificationStatus === "failing";
+          const isPending = !row.original.verified;
+
+          return (
+            <VerificationBadge
+              verified={row.original.verified}
+              verificationStatus={row.original.verificationStatus}
+              verificationMethod={row.original.verificationMethod}
+              verificationFailedAt={row.original.verificationFailedAt}
+              onClick={
+                isFailing || isPending
+                  ? () => onVerify(row.original)
+                  : undefined
+              }
+            />
+          );
+        },
         size: 100,
         // Sort verified domains first (verified = -1, unverified = 1)
         sortingFn: (rowA, rowB) => {
@@ -347,7 +360,7 @@ export function TrackedDomainsTable({
         enableHiding: false, // Always show actions menu
       },
     ],
-    [selectedIds, onToggleSelect, onRemove, onArchive],
+    [selectedIds, onToggleSelect, onRemove, onArchive, onVerify],
   );
 
   const table = useReactTable({

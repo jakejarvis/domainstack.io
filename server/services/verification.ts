@@ -1,6 +1,15 @@
 import "server-only";
 
 import * as cheerio from "cheerio";
+import {
+  DNS_VERIFICATION_PREFIX,
+  DNS_VERIFICATION_TTL,
+  DNS_VERIFICATION_TTL_LABEL,
+  HTML_FILE_CONTENT_PREFIX,
+  HTML_FILE_DIR,
+  HTML_FILE_PATH_LEGACY,
+  META_TAG_NAME,
+} from "@/lib/constants/verification";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
 import {
   buildDohUrl,
@@ -19,20 +28,6 @@ import type {
 } from "@/lib/schemas";
 
 const logger = createLogger({ source: "verification" });
-
-// DNS verification constants
-const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
-
-// HTML file verification constants
-// New: per-token file in a directory (supports multiple users)
-const HTML_FILE_DIR = "/.well-known/domainstack-verify";
-// Legacy: single file (backward compatibility)
-const HTML_FILE_PATH_LEGACY = "/.well-known/domainstack-verify.html";
-// Content format: "domainstack-verify: TOKEN"
-const HTML_FILE_CONTENT_PREFIX = "domainstack-verify: ";
-
-// Meta tag verification constants
-const META_TAG_NAME = "domainstack-verify";
 
 type VerificationResult = {
   verified: boolean;
@@ -437,8 +432,8 @@ export function getVerificationInstructions(
         hostname: domain,
         recordType: "TXT",
         value: `${DNS_VERIFICATION_PREFIX}${token}`,
-        suggestedTTL: 3600,
-        suggestedTTLLabel: "1 hour",
+        suggestedTTL: DNS_VERIFICATION_TTL,
+        suggestedTTLLabel: DNS_VERIFICATION_TTL_LABEL,
       };
     case "html_file":
       return {

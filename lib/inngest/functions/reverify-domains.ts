@@ -3,6 +3,7 @@ import "server-only";
 import { differenceInDays } from "date-fns";
 import { VerificationFailingEmail } from "@/emails/verification-failing";
 import { VerificationRevokedEmail } from "@/emails/verification-revoked";
+import { VERIFICATION_GRACE_PERIOD_DAYS } from "@/lib/constants/verification";
 import {
   createNotification,
   hasNotificationBeenSent,
@@ -22,9 +23,6 @@ import { sendPrettyEmail } from "@/lib/resend";
 import { verifyDomainOwnership } from "@/server/services/verification";
 
 const logger = createLogger({ source: "reverify-domains" });
-
-// Grace period before revoking verification (in days)
-const GRACE_PERIOD_DAYS = 7;
 
 // Result of handling a verification failure
 type VerificationFailureAction =
@@ -186,7 +184,7 @@ async function handleVerificationFailure(
 
     const daysFailing = differenceInDays(now, failedAt);
 
-    if (daysFailing >= GRACE_PERIOD_DAYS) {
+    if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification
       await revokeVerification(domain.id);
 
@@ -207,7 +205,7 @@ async function handleVerificationFailure(
         domainId: domain.id,
         domainName: domain.domainName,
         daysFailing,
-        daysRemaining: GRACE_PERIOD_DAYS - daysFailing,
+        daysRemaining: VERIFICATION_GRACE_PERIOD_DAYS - daysFailing,
       });
 
       return "in_grace_period";
@@ -241,7 +239,7 @@ async function sendVerificationFailingEmail(
         userName: domain.userName.split(" ")[0] || "there",
         domainName: domain.domainName,
         verificationMethod: domain.verificationMethod,
-        gracePeriodDays: GRACE_PERIOD_DAYS,
+        gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
       }),
     });
 

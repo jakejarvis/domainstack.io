@@ -2,12 +2,13 @@
 
 import { format } from "date-fns";
 import {
+  AlertCircle,
   Archive,
   ExternalLink,
   FileSymlink,
   MoreVertical,
-  RefreshCw,
   Trash2,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -46,6 +47,7 @@ type TrackedDomainCardProps = {
   verified: boolean;
   verificationStatus: VerificationStatusType;
   verificationMethod: VerificationMethod | null;
+  verificationFailedAt?: Date | null;
   expirationDate: Date | null;
   registrar: ProviderInfo;
   dns: ProviderInfo;
@@ -62,6 +64,7 @@ export function TrackedDomainCard({
   verified,
   verificationStatus,
   verificationMethod,
+  verificationFailedAt,
   expirationDate,
   registrar,
   dns,
@@ -73,6 +76,8 @@ export function TrackedDomainCard({
   className,
 }: TrackedDomainCardProps) {
   const accent = getHealthAccent(expirationDate, verified);
+  const isFailing = verified && verificationStatus === "failing";
+  const isPending = !verified;
 
   return (
     <Card
@@ -116,6 +121,8 @@ export function TrackedDomainCard({
                 verified={verified}
                 verificationStatus={verificationStatus}
                 verificationMethod={verificationMethod}
+                verificationFailedAt={verificationFailedAt}
+                onClick={isFailing || isPending ? onVerify : undefined}
               />
             </div>
           </div>
@@ -167,7 +174,7 @@ export function TrackedDomainCard({
       </CardHeader>
 
       <CardContent className="relative flex flex-1 flex-col pt-2 pb-6">
-        {verified ? (
+        {verified && !isFailing ? (
           <div className="space-y-2">
             {/* Expires */}
             <InfoRow label="Expires">
@@ -208,6 +215,55 @@ export function TrackedDomainCard({
             {/* Email */}
             <InfoRow label="Email" provider={email} />
           </div>
+        ) : verified && isFailing ? (
+          <>
+            <div className="space-y-2">
+              {/* Expires */}
+              <InfoRow label="Expires">
+                {expirationDate ? (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="truncate">
+                          {format(expirationDate, "MMM d, yyyy")}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {formatDateTimeUtc(expirationDate.toISOString())}
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
+                      <RelativeExpiryString
+                        to={expirationDate}
+                        dangerDays={30}
+                        warnDays={45}
+                      />
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">Unknown</span>
+                )}
+              </InfoRow>
+
+              {/* Registrar */}
+              <InfoRow label="Registrar" provider={registrar} />
+
+              {/* DNS */}
+              <InfoRow label="DNS" provider={dns} />
+
+              {/* Hosting */}
+              <InfoRow label="Hosting" provider={hosting} />
+
+              {/* Email */}
+              <InfoRow label="Email" provider={email} />
+            </div>
+            {/* Spacer to ensure minimum gap above button */}
+            <div className="min-h-4 flex-1" />
+            <Button onClick={onVerify} className="mt-3 w-full cursor-pointer">
+              <Wrench className="size-4" />
+              Fix Verification
+            </Button>
+          </>
         ) : (
           <div className="flex flex-1 flex-col pt-2">
             <p className="text-muted-foreground text-sm">
@@ -216,7 +272,7 @@ export function TrackedDomainCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="w-full cursor-pointer">
-              <RefreshCw className="size-4" />
+              <AlertCircle className="size-4" />
               Complete Verification
             </Button>
           </div>

@@ -16,6 +16,7 @@ export type ResumeDomainData = {
   id: string;
   domainName: string;
   verificationToken: string;
+  verificationMethod?: VerificationMethod | null;
 };
 
 export type VerificationState =
@@ -45,11 +46,13 @@ export function useDomainVerification({
   const initialDomain = resumeDomain?.domainName ?? prefillDomain ?? "";
   const initialStep = resumeDomain ? 2 : 1;
   const initialTrackedDomainId = resumeDomain?.id ?? null;
+  const initialMethod =
+    resumeDomain?.verificationMethod ?? ("dns_txt" as VerificationMethod);
 
   const [step, setStep] = useState(initialStep);
   const [domain, setDomain] = useState(initialDomain);
   const [domainError, setDomainError] = useState("");
-  const [method, setMethod] = useState<VerificationMethod>("dns_txt");
+  const [method, setMethod] = useState<VerificationMethod>(initialMethod);
   const [trackedDomainId, setTrackedDomainId] = useState<string | null>(
     initialTrackedDomainId,
   );
@@ -101,7 +104,7 @@ export function useDomainVerification({
       // Reset state that could be stale from a previous domain
       setVerificationState({ status: "idle" });
       setDomainError("");
-      setMethod("dns_txt");
+      setMethod(resumeDomain.verificationMethod ?? "dns_txt");
       setInstructions(null); // Will be set by instructionsQuery effect
     }
   }, [resumeDomain, open]);

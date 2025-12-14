@@ -84,6 +84,7 @@ export function SelectableDomainCard({
         verified={domain.verified}
         verificationStatus={domain.verificationStatus}
         verificationMethod={domain.verificationMethod}
+        verificationFailedAt={domain.verificationFailedAt}
         expirationDate={domain.expirationDate}
         registrar={domain.registrar}
         dns={domain.dns}
