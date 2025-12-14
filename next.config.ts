@@ -14,6 +14,11 @@ let nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/**": ["node_modules/@sparticuz/chromium/bin/**"],
   },
+  logging: {
+    incomingRequests: {
+      ignore: [/\/api\/inngest/],
+    },
+  },
   rewrites: async () => {
     return [
       {
