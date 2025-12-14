@@ -1,17 +1,16 @@
 "use client";
 
-import { differenceInDays } from "date-fns";
-import {
-  Activity,
-  AlertTriangle,
-  CircleHelp,
-  ClockFading,
-  Siren,
-} from "lucide-react";
+import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
+import { Activity, AlertTriangle, CircleHelp, Siren } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-type HealthStatus = "healthy" | "warning" | "critical" | "pending" | "unknown";
+type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 
 type DomainHealthBadgeProps = {
   expirationDate: Date | null;
@@ -25,16 +24,34 @@ export function DomainHealthBadge({
   className,
 }: DomainHealthBadgeProps) {
   const status = getHealthStatus(expirationDate, verified);
-  const { label, variant, colorClass, icon } = getStatusConfig(status);
+  const { label, colorClass, icon } = getStatusConfig(status);
 
-  return (
+  const tooltipText = expirationDate
+    ? `${expirationDate > new Date() ? "Expires" : "Expired"} ${formatDistanceToNowStrict(expirationDate, { addSuffix: true })}`
+    : null;
+
+  const badge = (
     <Badge
-      variant={variant}
-      className={cn("select-none gap-1 py-1", colorClass, className)}
+      className={cn(
+        "select-none gap-1 py-1 font-semibold",
+        colorClass,
+        className,
+      )}
     >
       {icon}
       {label}
     </Badge>
+  );
+
+  if (!tooltipText) {
+    return badge;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent>{tooltipText}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -42,11 +59,7 @@ function getHealthStatus(
   expirationDate: Date | null,
   verified: boolean,
 ): HealthStatus {
-  if (!verified) {
-    return "pending";
-  }
-
-  if (!expirationDate) {
+  if (!verified || !expirationDate) {
     return "unknown";
   }
 
@@ -63,7 +76,6 @@ function getHealthStatus(
 
 function getStatusConfig(status: HealthStatus): {
   label: string;
-  variant: "default" | "secondary" | "destructive" | "outline";
   colorClass: string;
   icon: React.ReactNode;
 } {
@@ -71,39 +83,27 @@ function getStatusConfig(status: HealthStatus): {
     case "healthy":
       return {
         label: "Healthy",
-        variant: "default",
         colorClass:
-          "border-success-border bg-success/10 font-semibold text-success-foreground",
+          "border-success-border bg-success/20 text-success-foreground",
         icon: <Activity className="size-3" />,
       };
     case "warning":
       return {
-        label: "Expiring Soon",
-        variant: "default",
+        label: "Needs Attention",
         colorClass:
-          "border-amber-300 bg-amber-500/10 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
+          "border-warning-border bg-warning/20 text-warning-foreground",
         icon: <AlertTriangle className="size-3" />,
       };
     case "critical":
       return {
-        label: "Critical",
-        variant: "destructive",
-        colorClass: "gap-1 font-semibold",
+        label: "Needs Attention",
+        colorClass: "border-danger-border bg-danger/20 text-danger-foreground",
         icon: <Siren className="size-3" />,
       };
-    case "pending":
-      return {
-        label: "Pending",
-        variant: "outline",
-        colorClass:
-          "border-amber-300 font-semibold text-amber-600 dark:border-amber-600 dark:text-amber-400",
-        icon: <ClockFading className="size-3" />,
-      };
-    case "unknown":
+    default:
       return {
         label: "Unknown",
-        variant: "secondary",
-        colorClass: "font-semibold",
+        colorClass: "border-muted-border bg-muted/20 text-muted-foreground",
         icon: <CircleHelp className="size-3" />,
       };
   }
