@@ -69,7 +69,15 @@ type TrackedDomainsTableProps = {
   ) => void;
 };
 
-function ProviderCell({ provider }: { provider: ProviderInfo }) {
+function ProviderCell({
+  provider,
+  trackedDomainId,
+  providerType,
+}: {
+  provider: ProviderInfo;
+  trackedDomainId: string;
+  providerType: "registrar" | "dns" | "hosting" | "email";
+}) {
   const { valueRef, isTruncated } = useTruncation();
 
   return (
@@ -78,6 +86,8 @@ function ProviderCell({ provider }: { provider: ProviderInfo }) {
       truncationRef={valueRef}
       isTruncated={isTruncated}
       faviconSize={13}
+      trackedDomainId={trackedDomainId}
+      providerType={providerType}
     />
   );
 }
@@ -246,28 +256,52 @@ export function TrackedDomainsTable({
         id: "registrar",
         accessorFn: (row) => row.registrar.name ?? "",
         header: "Registrar",
-        cell: ({ row }) => <ProviderCell provider={row.original.registrar} />,
+        cell: ({ row }) => (
+          <ProviderCell
+            provider={row.original.registrar}
+            trackedDomainId={row.original.id}
+            providerType="registrar"
+          />
+        ),
         size: 128,
       },
       {
         id: "dns",
         accessorFn: (row) => row.dns.name ?? "",
         header: "DNS",
-        cell: ({ row }) => <ProviderCell provider={row.original.dns} />,
+        cell: ({ row }) => (
+          <ProviderCell
+            provider={row.original.dns}
+            trackedDomainId={row.original.id}
+            providerType="dns"
+          />
+        ),
         size: 128,
       },
       {
         id: "hosting",
         accessorFn: (row) => row.hosting.name ?? "",
         header: "Hosting",
-        cell: ({ row }) => <ProviderCell provider={row.original.hosting} />,
+        cell: ({ row }) => (
+          <ProviderCell
+            provider={row.original.hosting}
+            trackedDomainId={row.original.id}
+            providerType="hosting"
+          />
+        ),
         size: 128,
       },
       {
         id: "email",
         accessorFn: (row) => row.email.name ?? "",
         header: "Email",
-        cell: ({ row }) => <ProviderCell provider={row.original.email} />,
+        cell: ({ row }) => (
+          <ProviderCell
+            provider={row.original.email}
+            trackedDomainId={row.original.id}
+            providerType="email"
+          />
+        ),
         size: 128,
       },
       {

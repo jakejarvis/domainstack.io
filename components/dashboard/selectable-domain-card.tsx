@@ -41,6 +41,7 @@ export function SelectableDomainCard({
 
       {/* The actual card with integrated checkbox */}
       <TrackedDomainCard
+        trackedDomainId={domain.id}
         domainName={domain.domainName}
         verified={domain.verified}
         verificationStatus={domain.verificationStatus}

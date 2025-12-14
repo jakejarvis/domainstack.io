@@ -555,13 +555,16 @@ export type PaginatedTrackedDomainsResult = {
  * @param userId - The user ID
  * @param cursor - Cursor from previous page (createdAt:id format)
  * @param limit - Number of items per page (default 20)
+ * @param options - Optional configuration for query
  * @returns Paginated result with items, nextCursor, and totalCount
  */
 export async function getTrackedDomainsForUserPaginated(
   userId: string,
   cursor: string | undefined,
   limit = 20,
+  options: QueryTrackedDomainsOptions = {},
 ): Promise<PaginatedTrackedDomainsResult> {
+  const { includeDnsRecords = true } = options;
   // Create aliases for the providers table (joined multiple times)
   const registrarProvider = alias(providers, "registrar_provider");
   const dnsProvider = alias(providers, "dns_provider");
@@ -665,13 +668,41 @@ export async function getTrackedDomainsForUserPaginated(
     nextCursor = `${lastItem.createdAt.toISOString()}:${lastItem.id}`;
   }
 
+  const domainsWithoutRecords = items.map(transformToTrackedDomainWithDetails);
+
   return {
-    items: await attachDnsRecords(
-      items.map(transformToTrackedDomainWithDetails),
-    ),
+    items: includeDnsRecords
+      ? await attachDnsRecords(domainsWithoutRecords)
+      : domainsWithoutRecords,
     nextCursor,
     totalCount,
   };
+}
+
+/**
+ * Get a single tracked domain with full details including DNS records.
+ * Ensures the domain is owned by the specified user.
+ *
+ * @param userId - The user ID (for ownership verification)
+ * @param trackedDomainId - The tracked domain ID to fetch
+ * @returns TrackedDomainWithDetails or null if not found or not owned by user
+ */
+export async function getTrackedDomainDetails(
+  userId: string,
+  trackedDomainId: string,
+): Promise<TrackedDomainWithDetails | null> {
+  const whereCondition = and(
+    eq(userTrackedDomains.id, trackedDomainId),
+    eq(userTrackedDomains.userId, userId),
+  ) as SQL;
+
+  const results = await queryTrackedDomainsWithDetails(
+    whereCondition,
+    userTrackedDomains.createdAt,
+    { includeDnsRecords: true },
+  );
+
+  return results[0] ?? null;
 }
 
 /**

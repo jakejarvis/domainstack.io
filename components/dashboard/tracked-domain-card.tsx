@@ -44,6 +44,7 @@ import { formatDateTimeUtc } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type TrackedDomainCardProps = {
+  trackedDomainId: string;
   domainName: string;
   verified: boolean;
   verificationStatus: VerificationStatusType;
@@ -64,6 +65,7 @@ type TrackedDomainCardProps = {
 };
 
 export function TrackedDomainCard({
+  trackedDomainId,
   domainName,
   verified,
   verificationStatus,
@@ -232,16 +234,36 @@ export function TrackedDomainCard({
             </InfoRow>
 
             {/* Registrar */}
-            <InfoRow label="Registrar" provider={registrar} />
+            <InfoRow
+              label="Registrar"
+              provider={registrar}
+              trackedDomainId={trackedDomainId}
+              providerType="registrar"
+            />
 
             {/* DNS */}
-            <InfoRow label="DNS" provider={dns} />
+            <InfoRow
+              label="DNS"
+              provider={dns}
+              trackedDomainId={trackedDomainId}
+              providerType="dns"
+            />
 
             {/* Hosting */}
-            <InfoRow label="Hosting" provider={hosting} />
+            <InfoRow
+              label="Hosting"
+              provider={hosting}
+              trackedDomainId={trackedDomainId}
+              providerType="hosting"
+            />
 
             {/* Email */}
-            <InfoRow label="Email" provider={email} />
+            <InfoRow
+              label="Email"
+              provider={email}
+              trackedDomainId={trackedDomainId}
+              providerType="email"
+            />
           </div>
         ) : verified && isFailing ? (
           <>
@@ -274,16 +296,36 @@ export function TrackedDomainCard({
               </InfoRow>
 
               {/* Registrar */}
-              <InfoRow label="Registrar" provider={registrar} />
+              <InfoRow
+                label="Registrar"
+                provider={registrar}
+                trackedDomainId={trackedDomainId}
+                providerType="registrar"
+              />
 
               {/* DNS */}
-              <InfoRow label="DNS" provider={dns} />
+              <InfoRow
+                label="DNS"
+                provider={dns}
+                trackedDomainId={trackedDomainId}
+                providerType="dns"
+              />
 
               {/* Hosting */}
-              <InfoRow label="Hosting" provider={hosting} />
+              <InfoRow
+                label="Hosting"
+                provider={hosting}
+                trackedDomainId={trackedDomainId}
+                providerType="hosting"
+              />
 
               {/* Email */}
-              <InfoRow label="Email" provider={email} />
+              <InfoRow
+                label="Email"
+                provider={email}
+                trackedDomainId={trackedDomainId}
+                providerType="email"
+              />
             </div>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
@@ -314,10 +356,14 @@ function InfoRow({
   label,
   provider,
   children,
+  trackedDomainId,
+  providerType,
 }: {
   label: string;
   provider?: ProviderInfo;
   children?: React.ReactNode;
+  trackedDomainId?: string;
+  providerType?: "registrar" | "dns" | "hosting" | "email";
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">
@@ -325,7 +371,14 @@ function InfoRow({
         {label}
       </span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] text-foreground/95">
-        {children || (provider && <ProviderWithTooltip provider={provider} />)}
+        {children ||
+          (provider && (
+            <ProviderWithTooltip
+              provider={provider}
+              trackedDomainId={trackedDomainId}
+              providerType={providerType}
+            />
+          ))}
       </span>
     </div>
   );

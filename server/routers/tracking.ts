@@ -13,6 +13,7 @@ import {
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
   getArchivedDomainsForUser,
+  getTrackedDomainDetails,
   getTrackedDomainsForUser,
   getTrackedDomainsForUserPaginated,
   unarchiveTrackedDomainWithLimitCheck,
@@ -64,17 +65,21 @@ export const trackingRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      // If pagination params provided, use paginated query
+      // If pagination params provided, use paginated query without DNS records
       if (input?.limit) {
         return getTrackedDomainsForUserPaginated(
           ctx.user.id,
           input.cursor,
           input.limit,
+          { includeDnsRecords: false },
         );
       }
 
       // Otherwise return all domains (wrapped in same shape for consistency)
-      const items = await getTrackedDomainsForUser(ctx.user.id, false);
+      const items = await getTrackedDomainsForUser(ctx.user.id, {
+        includeArchived: false,
+        includeDnsRecords: false,
+      });
       return {
         items,
         nextCursor: null,
@@ -89,6 +94,36 @@ export const trackingRouter = createTRPCRouter({
     const domains = await getArchivedDomainsForUser(ctx.user.id);
     return domains;
   }),
+
+  /**
+   * Get full details for a tracked domain including DNS records.
+   * Used for on-demand loading of provider DNS records in tooltips.
+   */
+  getDomainDetails: protectedProcedure
+    .input(
+      z.object({
+        trackedDomainId: z.string().uuid(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { trackedDomainId } = input;
+
+      const domain = await getTrackedDomainDetails(
+        ctx.user.id,
+        trackedDomainId,
+      );
+
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
+      if (!domain) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tracked domain not found",
+        });
+      }
+
+      return domain;
+    }),
 
   /**
    * Add a new domain to track (or resume tracking an unverified domain).
