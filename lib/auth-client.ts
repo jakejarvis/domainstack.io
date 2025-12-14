@@ -1,4 +1,4 @@
-import { polarClient } from "@polar-sh/better-auth";
+import { polarClient } from "@polar-sh/better-auth/client";
 import { createAuthClient } from "better-auth/react";
 import { BASE_URL } from "@/lib/constants";
 
@@ -8,21 +8,15 @@ export const authClient = createAuthClient({
 });
 
 export const {
-  signIn,
-  signOut,
-  signUp,
   useSession,
   getSession,
-  checkout,
-  deleteUser,
+  signIn,
+  signUp,
+  signOut,
   linkSocial,
   unlinkAccount,
+  deleteUser,
+  // Provided by Polar client adapter:
+  customer,
+  checkout,
 } = authClient;
-
-/**
- * Open the Polar customer portal.
- * Uses authClient.customer.portal() under the hood.
- */
-export async function customerPortal() {
-  return authClient.customer.portal();
-}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
-import { customerPortal } from "@/lib/auth-client";
+import { customer } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 
 /**
@@ -27,7 +27,7 @@ export function useCustomerPortal() {
     setIsLoading(true);
     analytics.track("customer_portal_opened");
     try {
-      await customerPortal();
+      await customer.portal();
     } catch (err) {
       logger.error("Failed to open customer portal", err);
       toast.error("Failed to open customer portal. Please try again.");
