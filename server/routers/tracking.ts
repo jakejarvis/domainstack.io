@@ -12,10 +12,8 @@ import {
   findTrackedDomain,
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
-  getArchivedDomainsForUser,
   getTrackedDomainDetails,
   getTrackedDomainsForUser,
-  getTrackedDomainsForUserPaginated,
   unarchiveTrackedDomainWithLimitCheck,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
@@ -48,52 +46,29 @@ const DomainInputSchema = z
 
 export const trackingRouter = createTRPCRouter({
   /**
-   * List active (non-archived) tracked domains for the current user.
-   * Supports optional cursor-based pagination for infinite scroll.
+   * List tracked domains for the current user.
    *
-   * @param cursor - Optional cursor from previous page
-   * @param limit - Optional page size (defaults to returning all if not provided)
-   * @returns { items, nextCursor, totalCount } - Paginated result
+   * @param includeArchived - Whether to include archived domains (defaults to false)
+   * @returns Array of tracked domains
    */
   listDomains: protectedProcedure
     .input(
       z
         .object({
-          cursor: z.string().optional(),
-          limit: z.number().min(1).max(100).optional(),
+          includeArchived: z.boolean().optional(),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      // If pagination params provided, use paginated query without DNS records
-      if (input?.limit) {
-        return getTrackedDomainsForUserPaginated(
-          ctx.user.id,
-          input.cursor,
-          input.limit,
-          { includeDnsRecords: false },
-        );
-      }
+      const includeArchived = input?.includeArchived ?? false;
 
-      // Otherwise return all domains (wrapped in same shape for consistency)
       const items = await getTrackedDomainsForUser(ctx.user.id, {
-        includeArchived: false,
+        includeArchived,
         includeDnsRecords: false,
       });
-      return {
-        items,
-        nextCursor: null,
-        totalCount: items.length,
-      };
-    }),
 
-  /**
-   * List all archived tracked domains for the current user.
-   */
-  listArchivedDomains: protectedProcedure.query(async ({ ctx }) => {
-    const domains = await getArchivedDomainsForUser(ctx.user.id);
-    return domains;
-  }),
+      return items;
+    }),
 
   /**
    * Get full details for a tracked domain including DNS records.

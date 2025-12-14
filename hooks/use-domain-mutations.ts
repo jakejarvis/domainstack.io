@@ -1,10 +1,8 @@
 "use client";
 
-import type { InfiniteData } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
@@ -21,25 +19,16 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type LimitsData = RouterOutputs["user"]["getLimits"];
 
 /**
- * Paginated domains data shape from tracking.listDomains procedure.
+ * Domains data shape from tracking.listDomains procedure.
  */
 type DomainsData = RouterOutputs["tracking"]["listDomains"];
-
-/**
- * Infinite query data shape for domains.
- */
-type InfiniteDomainsData = InfiniteData<DomainsData, string | null>;
 
 /**
  * Shared context type for optimistic update rollback.
  * Stores snapshots of all query caches that may be modified.
  */
 type MutationContext = {
-  previousDomainsQueries?: [
-    readonly unknown[],
-    InfiniteDomainsData | undefined,
-  ][];
-  previousArchived?: TrackedDomainWithDetails[];
+  previousDomains?: DomainsData;
   previousLimits?: LimitsData;
 };
 
@@ -118,51 +107,31 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const queryClient = useQueryClient();
 
   // Query keys for cache manipulation
-  const limitsQueryKey = trpc.user.getLimits.queryKey();
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const archivedDomainsQueryKey = trpc.tracking.listArchivedDomains.queryKey();
+  const limitsQueryKey = trpc.user.getLimits.queryKey();
 
   /**
    * Cancel all domain-related queries to prevent race conditions.
-   * Uses partial matching to ensure we match infinite queries correctly.
    */
-  const cancelQueries = async (includeArchived = false) => {
-    // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+  const cancelQueries = async () => {
     await queryClient.cancelQueries({ queryKey: domainsQueryKey });
     await queryClient.cancelQueries({ queryKey: limitsQueryKey });
-    if (includeArchived) {
-      await queryClient.cancelQueries({ queryKey: archivedDomainsQueryKey });
-    }
   };
 
   /**
    * Invalidate all domain-related queries after mutation.
-   * Uses partial matching to ensure we match infinite queries correctly.
    */
-  const invalidateQueries = (includeArchived = false) => {
-    // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
+  const invalidateQueries = () => {
     void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
     void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
-    if (includeArchived) {
-      void queryClient.invalidateQueries({ queryKey: archivedDomainsQueryKey });
-    }
   };
 
   /**
    * Rollback cache to previous state on error.
    */
   const rollback = (context: MutationContext | undefined) => {
-    // Restore all infinite query snapshots
-    if (context?.previousDomainsQueries) {
-      for (const [queryKey, data] of context.previousDomainsQueries) {
-        queryClient.setQueryData(queryKey, data);
-      }
-    }
-    if (context?.previousArchived) {
-      queryClient.setQueryData(
-        archivedDomainsQueryKey,
-        context.previousArchived,
-      );
+    if (context?.previousDomains) {
+      queryClient.setQueryData(domainsQueryKey, context.previousDomains);
     }
     if (context?.previousLimits) {
       queryClient.setQueryData(limitsQueryKey, context.previousLimits);
@@ -173,61 +142,25 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const removeMutation = useMutation({
     ...trpc.tracking.removeDomain.mutationOptions(),
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
-      // Cancel both active and archived queries since we don't know where the domain is
-      await cancelQueries(true);
+      await cancelQueries();
 
-      // Snapshot all matching infinite query caches for rollback
-      const previousDomainsQueries =
-        queryClient.getQueriesData<InfiniteDomainsData>({
-          queryKey: domainsQueryKey,
-        });
-      const previousArchived = queryClient.getQueryData<
-        TrackedDomainWithDetails[]
-      >(archivedDomainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
-      // Optimistically update all matching infinite query caches
-      queryClient.setQueriesData<InfiniteDomainsData>(
-        { queryKey: domainsQueryKey },
-        (old) => {
-          if (!old || !old.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => {
-              const originalLength = page.items.length;
-              const filteredItems = page.items.filter(
-                (d) => d.id !== trackedDomainId,
-              );
-              const removedCount = originalLength - filteredItems.length;
-              return {
-                ...page,
-                items: filteredItems,
-                // Only decrement totalCount if it was provided (first page)
-                totalCount:
-                  page.totalCount !== null
-                    ? page.totalCount - removedCount
-                    : null,
-              };
-            }),
-          };
-        },
-      );
-
-      // Optimistically remove from archived list if present
-      if (previousArchived) {
-        queryClient.setQueryData<TrackedDomainWithDetails[]>(
-          archivedDomainsQueryKey,
-          (old) => old?.filter((d) => d.id !== trackedDomainId) ?? [],
-        );
-      }
+      // Optimistically remove domain
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
+        if (!old) return old;
+        return old.filter((d) => d.id !== trackedDomainId);
+      });
 
       // Optimistically update limits
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
         updateLimitsForRemoval(old, 1),
       );
 
-      return { previousDomainsQueries, previousArchived, previousLimits };
+      return { previousDomains, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -238,8 +171,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       toast.success("Domain removed");
     },
     onSettled: () => {
-      // Invalidate both lists since the domain could have been in either
-      invalidateQueries(true);
+      invalidateQueries();
     },
   });
 
@@ -247,75 +179,26 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const archiveMutation = useMutation({
     ...trpc.tracking.archiveDomain.mutationOptions(),
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
-      await cancelQueries(true);
+      await cancelQueries();
 
-      // Snapshot all matching infinite query caches for rollback
-      const previousDomainsQueries =
-        queryClient.getQueriesData<InfiniteDomainsData>({
-          queryKey: domainsQueryKey,
-        });
-      const previousArchived = queryClient.getQueryData<
-        TrackedDomainWithDetails[]
-      >(archivedDomainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
-      // Find the domain being archived from any page
-      let domainToArchive: TrackedDomainWithDetails | undefined;
-      for (const [, data] of previousDomainsQueries) {
-        if (!data) continue;
-        for (const page of data.pages) {
-          const found = page.items.find((d) => d.id === trackedDomainId);
-          if (found) {
-            domainToArchive = found;
-            break;
-          }
-        }
-        if (domainToArchive) break;
-      }
-
-      // Move from active to archived - update all infinite query caches
-      queryClient.setQueriesData<InfiniteDomainsData>(
-        { queryKey: domainsQueryKey },
-        (old) => {
-          if (!old || !old.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => {
-              const originalLength = page.items.length;
-              const filteredItems = page.items.filter(
-                (d) => d.id !== trackedDomainId,
-              );
-              const removedCount = originalLength - filteredItems.length;
-              return {
-                ...page,
-                items: filteredItems,
-                // Only decrement totalCount if it was provided (first page)
-                totalCount:
-                  page.totalCount !== null
-                    ? page.totalCount - removedCount
-                    : null,
-              };
-            }),
-          };
-        },
-      );
-
-      if (domainToArchive) {
-        queryClient.setQueryData<TrackedDomainWithDetails[]>(
-          archivedDomainsQueryKey,
-          (old) => [
-            ...(old ?? []),
-            { ...domainToArchive, archivedAt: new Date() },
-          ],
+      // Optimistically mark domain as archived
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((d) =>
+          d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d,
         );
-      }
+      });
 
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
         updateLimitsForArchive(old, 1),
       );
 
-      return { previousDomainsQueries, previousArchived, previousLimits };
+      return { previousDomains, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -327,7 +210,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       options.onArchiveSuccess?.();
     },
     onSettled: () => {
-      invalidateQueries(true);
+      invalidateQueries();
     },
   });
 
@@ -335,69 +218,26 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const unarchiveMutation = useMutation({
     ...trpc.tracking.unarchiveDomain.mutationOptions(),
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
-      await cancelQueries(true);
+      await cancelQueries();
 
-      // Snapshot all matching infinite query caches for rollback
-      const previousDomainsQueries =
-        queryClient.getQueriesData<InfiniteDomainsData>({
-          queryKey: domainsQueryKey,
-        });
-      const previousArchived = queryClient.getQueryData<
-        TrackedDomainWithDetails[]
-      >(archivedDomainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
-      // Find the domain being unarchived
-      const domainToUnarchive = previousArchived?.find(
-        (d) => d.id === trackedDomainId,
-      );
-
-      // Move from archived to active
-      queryClient.setQueryData<TrackedDomainWithDetails[]>(
-        archivedDomainsQueryKey,
-        (old) => old?.filter((d) => d.id !== trackedDomainId) ?? [],
-      );
-
-      if (domainToUnarchive) {
-        // Add to the first page of all infinite query caches
-        queryClient.setQueriesData<InfiniteDomainsData>(
-          { queryKey: domainsQueryKey },
-          (old) => {
-            if (!old || !old.pages || old.pages.length === 0) return old;
-            return {
-              ...old,
-              pages: old.pages.map((page, index) => {
-                // Only add to the first page
-                if (index === 0) {
-                  return {
-                    ...page,
-                    items: [
-                      ...page.items,
-                      { ...domainToUnarchive, archivedAt: null },
-                    ],
-                    // Only increment totalCount if it was provided (first page)
-                    totalCount:
-                      page.totalCount !== null ? page.totalCount + 1 : null,
-                  };
-                }
-                return {
-                  ...page,
-                  // Only increment totalCount if it was provided (first page)
-                  totalCount:
-                    page.totalCount !== null ? page.totalCount + 1 : null,
-                };
-              }),
-            };
-          },
+      // Optimistically mark domain as unarchived
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((d) =>
+          d.id === trackedDomainId ? { ...d, archivedAt: null } : d,
         );
-      }
+      });
 
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
         updateLimitsForUnarchive(old, 1),
       );
 
-      return { previousDomainsQueries, previousArchived, previousLimits };
+      return { previousDomains, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -412,7 +252,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       options.onUnarchiveSuccess?.();
     },
     onSettled: () => {
-      invalidateQueries(true);
+      invalidateQueries();
     },
   });
 
@@ -420,77 +260,32 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const bulkArchiveMutation = useMutation({
     mutationFn: trpc.tracking.bulkArchiveDomains.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainIds }): Promise<MutationContext> => {
-      await cancelQueries(true);
+      await cancelQueries();
 
-      // Snapshot all matching infinite query caches for rollback
-      const previousDomainsQueries =
-        queryClient.getQueriesData<InfiniteDomainsData>({
-          queryKey: domainsQueryKey,
-        });
-      const previousArchived = queryClient.getQueryData<
-        TrackedDomainWithDetails[]
-      >(archivedDomainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Find all domains to archive from any page, deduplicated by id
-      // (multiple cached queries may have overlapping data)
-      const domainsToArchiveMap = new Map<string, TrackedDomainWithDetails>();
-      for (const [, data] of previousDomainsQueries) {
-        if (!data) continue;
-        for (const page of data.pages) {
-          for (const d of page.items) {
-            if (idsSet.has(d.id) && !domainsToArchiveMap.has(d.id)) {
-              domainsToArchiveMap.set(d.id, d);
-            }
-          }
-        }
-      }
-      const domainsToArchive = Array.from(domainsToArchiveMap.values());
-      const archiveDelta = domainsToArchive.length;
+      // Count how many will be archived
+      const archiveCount =
+        previousDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
 
-      // Move from active to archived - update all infinite query caches
-      queryClient.setQueriesData<InfiniteDomainsData>(
-        { queryKey: domainsQueryKey },
-        (old) => {
-          if (!old || !old.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => {
-              const originalLength = page.items.length;
-              const filteredItems = page.items.filter((d) => !idsSet.has(d.id));
-              const removedCount = originalLength - filteredItems.length;
-              return {
-                ...page,
-                items: filteredItems,
-                // Only decrement totalCount if it was provided (first page)
-                totalCount:
-                  page.totalCount !== null
-                    ? page.totalCount - removedCount
-                    : null,
-              };
-            }),
-          };
-        },
-      );
-
-      if (domainsToArchive.length > 0) {
-        queryClient.setQueryData<TrackedDomainWithDetails[]>(
-          archivedDomainsQueryKey,
-          (old) => [
-            ...(old ?? []),
-            ...domainsToArchive.map((d) => ({ ...d, archivedAt: new Date() })),
-          ],
+      // Optimistically mark domains as archived
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
+        if (!old) return old;
+        return old.map((d) =>
+          idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d,
         );
-      }
+      });
 
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForArchive(old, archiveDelta),
+        updateLimitsForArchive(old, archiveCount),
       );
 
-      return { previousDomainsQueries, previousArchived, previousLimits };
+      return { previousDomains, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -498,7 +293,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       toast.error("Failed to archive domains");
     },
     onSettled: () => {
-      invalidateQueries(true);
+      invalidateQueries();
     },
   });
 
@@ -506,74 +301,30 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const bulkDeleteMutation = useMutation({
     mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
     onMutate: async ({ trackedDomainIds }): Promise<MutationContext> => {
-      await cancelQueries(true);
+      await cancelQueries();
 
-      // Snapshot all matching infinite query caches for rollback
-      const previousDomainsQueries =
-        queryClient.getQueriesData<InfiniteDomainsData>({
-          queryKey: domainsQueryKey,
-        });
-      const previousArchived = queryClient.getQueryData<
-        TrackedDomainWithDetails[]
-      >(archivedDomainsQueryKey);
+      const previousDomains =
+        queryClient.getQueryData<DomainsData>(domainsQueryKey);
       const previousLimits =
         queryClient.getQueryData<LimitsData>(limitsQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count domains to delete from cache, deduplicated by id
-      // (multiple cached queries may have overlapping data)
-      const seenIds = new Set<string>();
-      for (const [, data] of previousDomainsQueries) {
-        if (!data) continue;
-        for (const page of data.pages) {
-          for (const d of page.items) {
-            if (idsSet.has(d.id)) {
-              seenIds.add(d.id);
-            }
-          }
-        }
-      }
-      const deleteDelta = seenIds.size;
+      // Count how many will be deleted
+      const deleteCount =
+        previousDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
 
-      // Update all infinite query caches
-      queryClient.setQueriesData<InfiniteDomainsData>(
-        { queryKey: domainsQueryKey },
-        (old) => {
-          if (!old || !old.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => {
-              const originalLength = page.items.length;
-              const filteredItems = page.items.filter((d) => !idsSet.has(d.id));
-              const removedCount = originalLength - filteredItems.length;
-              return {
-                ...page,
-                items: filteredItems,
-                // Only decrement totalCount if it was provided (first page)
-                totalCount:
-                  page.totalCount !== null
-                    ? page.totalCount - removedCount
-                    : null,
-              };
-            }),
-          };
-        },
-      );
-
-      // Optimistically remove from archived list
-      if (previousArchived) {
-        queryClient.setQueryData<TrackedDomainWithDetails[]>(
-          archivedDomainsQueryKey,
-          (old) => old?.filter((d) => !idsSet.has(d.id)) ?? [],
-        );
-      }
+      // Optimistically remove domains
+      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
+        if (!old) return old;
+        return old.filter((d) => !idsSet.has(d.id));
+      });
 
       queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForRemoval(old, deleteDelta),
+        updateLimitsForRemoval(old, deleteCount),
       );
 
-      return { previousDomainsQueries, previousArchived, previousLimits };
+      return { previousDomains, previousLimits };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -581,7 +332,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
       toast.error("Failed to delete domains");
     },
     onSettled: () => {
-      invalidateQueries(true);
+      invalidateQueries();
     },
   });
 

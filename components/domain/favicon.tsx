@@ -56,11 +56,8 @@ export function Favicon({
     trpc.domain.getFavicon.queryOptions(
       { domain },
       {
-        // Keep previous data while refetching to prevent flicker
-        placeholderData: (prev) => prev,
         // Keep in cache indefinitely during session
         staleTime: Number.POSITIVE_INFINITY,
-        gcTime: Number.POSITIVE_INFINITY,
       },
     ),
   );

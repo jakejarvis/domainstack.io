@@ -38,7 +38,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   });
 
   // Find if this domain is already tracked
-  const trackedDomain = trackedDomains?.items.find(
+  const trackedDomain = trackedDomains?.find(
     (d) => d.domainName.toLowerCase() === domain.toLowerCase(),
   );
   const isTracked = !!trackedDomain;
@@ -60,7 +60,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
 
   // Handle success from add dialog - invalidate the tracked domains query
   const handleAddSuccess = useCallback(() => {
-    // Use partial matching to invalidate all listDomains queries (including infinite queries with different inputs)
+    // Use partial matching to invalidate all listDomains queries
     void queryClient.invalidateQueries({
       queryKey: trpc.tracking.listDomains.queryKey(),
     });

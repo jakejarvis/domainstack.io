@@ -67,24 +67,31 @@ export function useDomainVerification({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query key for limits invalidation
-  const limitsQueryKey = trpc.user.getLimits.queryKey();
-  const domainsQueryKey = trpc.tracking.listDomains.queryKey();
+  /**
+   * Invalidate all domain-related queries after mutation.
+   */
+  const invalidateQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: trpc.tracking.listDomains.queryKey(),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: trpc.user.getLimits.queryKey(),
+    });
+  };
 
   const addDomainMutation = useMutation({
     ...trpc.tracking.addDomain.mutationOptions(),
     onSettled: () => {
-      // Invalidate queries so the domain appears in the list
-      // Use onSettled (not onSuccess) per guidelines to ensure invalidation regardless of outcome
-      // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-      void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+      invalidateQueries();
     },
   });
 
-  const verifyDomainMutation = useMutation(
-    trpc.tracking.verifyDomain.mutationOptions(),
-  );
+  const verifyDomainMutation = useMutation({
+    ...trpc.tracking.verifyDomain.mutationOptions(),
+    onSettled: () => {
+      invalidateQueries();
+    },
+  });
 
   // Fetch instructions when resuming verification (keyed on trackedDomainId for safety)
   const instructionsQuery = useQuery({
@@ -205,10 +212,7 @@ export function useDomainVerification({
           domain,
           method: result.method,
         });
-        // Invalidate queries so the dashboard shows the updated verified status
-        // Invalidate using the array prefix to match all variations (infinite, filtered, etc.)
-        void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-        void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+
         // Call onSuccess immediately so the dashboard refetches and shows updated status
         onSuccess();
       } else {
@@ -235,16 +239,7 @@ export function useDomainVerification({
         error: "exception",
       });
     }
-  }, [
-    trackedDomainId,
-    domain,
-    method,
-    verifyDomainMutation,
-    queryClient,
-    limitsQueryKey,
-    domainsQueryKey,
-    onSuccess,
-  ]);
+  }, [trackedDomainId, domain, method, verifyDomainMutation, onSuccess]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {

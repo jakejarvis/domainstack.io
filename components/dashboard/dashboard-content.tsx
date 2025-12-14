@@ -1,6 +1,6 @@
 "use client";
 
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -60,19 +60,8 @@ export function DashboardContent() {
   const router = useRouter();
 
   const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
-
-  // Use infinite query for domains (enables infinite scroll in grid view)
-  const domainsInfiniteQuery = useInfiniteQuery({
-    ...trpc.tracking.listDomains.infiniteQueryOptions(
-      { limit: 20 },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-      },
-    ),
-  });
-
-  const archivedDomainsQuery = useQuery(
-    trpc.tracking.listArchivedDomains.queryOptions(),
+  const domainsQuery = useQuery(
+    trpc.tracking.listDomains.queryOptions({ includeArchived: true }),
   );
 
   // Domain mutations with optimistic updates
@@ -87,15 +76,16 @@ export function DashboardContent() {
     onUnarchiveSuccess: () => setActiveTab("active"),
   });
 
-  // Flatten all pages into a single domains array
+  const allDomains = domainsQuery.data ?? [];
   const domains = useMemo(
-    () => domainsInfiniteQuery.data?.pages.flatMap((page) => page.items) ?? [],
-    [domainsInfiniteQuery.data],
+    () => allDomains.filter((d) => d.archivedAt === null),
+    [allDomains],
   );
-
-  // Get total count from the first page (all pages have the same totalCount)
-  const totalDomainsCount =
-    domainsInfiniteQuery.data?.pages[0]?.totalCount ?? 0;
+  const archivedDomains = useMemo(
+    () => allDomains.filter((d) => d.archivedAt !== null),
+    [allDomains],
+  );
+  const totalDomainsCount = domains.length;
   const {
     search,
     status,
@@ -152,7 +142,7 @@ export function DashboardContent() {
   const handleAddSuccess = useCallback(() => {
     setResumeDomain(null);
     // Invalidate queries to refetch fresh data
-    invalidateQueries(true);
+    invalidateQueries();
   }, [invalidateQueries]);
 
   const handleVerify = useCallback((domain: TrackedDomainWithDetails) => {
@@ -334,21 +324,14 @@ export function DashboardContent() {
 
   const confirmDialogContent = getConfirmDialogContent();
 
-  const isLoading =
-    limitsQuery.isLoading ||
-    domainsInfiniteQuery.isLoading ||
-    archivedDomainsQuery.isLoading;
+  const isLoading = limitsQuery.isLoading || domainsQuery.isLoading;
 
-  const hasError =
-    limitsQuery.isError ||
-    domainsInfiniteQuery.isError ||
-    archivedDomainsQuery.isError;
+  const hasError = limitsQuery.isError || domainsQuery.isError;
 
   const handleRetry = useCallback(() => {
     if (limitsQuery.isError) void limitsQuery.refetch();
-    if (domainsInfiniteQuery.isError) void domainsInfiniteQuery.refetch();
-    if (archivedDomainsQuery.isError) void archivedDomainsQuery.refetch();
-  }, [limitsQuery, domainsInfiniteQuery, archivedDomainsQuery]);
+    if (domainsQuery.isError) void domainsQuery.refetch();
+  }, [limitsQuery, domainsQuery]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -367,7 +350,6 @@ export function DashboardContent() {
   const tier = limitsQuery.data?.tier ?? "free";
   const canAddMore = limitsQuery.data?.canAddMore ?? true;
   const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
-  const archivedDomains = archivedDomainsQuery.data ?? [];
   const hasAnyDomains = activeCount > 0 || archivedCount > 0;
 
   return (
@@ -460,10 +442,6 @@ export function DashboardContent() {
             onBulkDelete={handleBulkDelete}
             isBulkArchiving={isBulkArchiving}
             isBulkDeleting={isBulkDeleting}
-            // Infinite scroll props for grid view
-            hasNextPage={domainsInfiniteQuery.hasNextPage}
-            isFetchingNextPage={domainsInfiniteQuery.isFetchingNextPage}
-            onLoadMore={() => domainsInfiniteQuery.fetchNextPage()}
             onTableReady={setTableInstance}
           />
 

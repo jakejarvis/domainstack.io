@@ -7,7 +7,6 @@ type DomainCardSkeletonProps = {
 
 /**
  * Skeleton for a single domain card matching TrackedDomainCard layout.
- * Used in both initial page load and infinite scroll loading states.
  */
 export function DomainCardSkeleton({ infoRows = 3 }: DomainCardSkeletonProps) {
   return (

@@ -2,10 +2,6 @@
 
 import { motion } from "motion/react";
 import { useMemo, useRef } from "react";
-import {
-  InfiniteScrollSkeletons,
-  InfiniteScrollTrigger,
-} from "@/components/dashboard/infinite-scroll-trigger";
 import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -20,10 +16,6 @@ type TrackedDomainsGridProps = {
   onArchive?: (id: string, domainName: string) => void;
   tier: UserTier;
   proMaxDomains: number;
-  // Infinite scroll props
-  hasNextPage?: boolean;
-  isFetchingNextPage?: boolean;
-  onLoadMore?: () => void;
 };
 
 export function TrackedDomainsGrid({
@@ -35,9 +27,6 @@ export function TrackedDomainsGrid({
   onArchive,
   tier,
   proMaxDomains,
-  hasNextPage = false,
-  isFetchingNextPage = false,
-  onLoadMore,
 }: TrackedDomainsGridProps) {
   const showUpgradeCard = tier === "free";
 
@@ -60,61 +49,47 @@ export function TrackedDomainsGrid({
   }, [domains]);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {domainAnimationStates.map(({ domain, isNew, index }) => (
-          <motion.div
-            key={domain.id}
-            className="h-full"
-            initial={isNew ? { opacity: 0, y: 20 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={
-              isNew
-                ? { delay: Math.min((index % 20) * 0.05, 0.3), duration: 0.3 }
-                : { duration: 0 }
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {domainAnimationStates.map(({ domain, isNew, index }) => (
+        <motion.div
+          key={domain.id}
+          className="h-full"
+          initial={isNew ? { opacity: 0, y: 20 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={
+            isNew
+              ? { delay: Math.min(index * 0.05, 0.3), duration: 0.3 }
+              : { duration: 0 }
+          }
+        >
+          <SelectableDomainCard
+            domain={domain}
+            isSelected={selectedIds.has(domain.id)}
+            onToggleSelect={() => onToggleSelect?.(domain.id)}
+            onVerify={() => onVerify(domain)}
+            onRemove={() => onRemove(domain.id, domain.domainName)}
+            onArchive={
+              onArchive
+                ? () => onArchive(domain.id, domain.domainName)
+                : undefined
             }
-          >
-            <SelectableDomainCard
-              domain={domain}
-              isSelected={selectedIds.has(domain.id)}
-              onToggleSelect={() => onToggleSelect?.(domain.id)}
-              onVerify={() => onVerify(domain)}
-              onRemove={() => onRemove(domain.id, domain.domainName)}
-              onArchive={
-                onArchive
-                  ? () => onArchive(domain.id, domain.domainName)
-                  : undefined
-              }
-            />
-          </motion.div>
-        ))}
+          />
+        </motion.div>
+      ))}
 
-        {/* Show skeleton cards while loading more */}
-        {isFetchingNextPage && <InfiniteScrollSkeletons count={3} />}
-
-        {/* Upgrade CTA card for free tier users - show at end when no more pages */}
-        {showUpgradeCard && !hasNextPage && (
-          <motion.div
-            className="h-full"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: Math.min(domains.length * 0.05, 0.3),
-              duration: 0.3,
-            }}
-          >
-            <UpgradeCard proMaxDomains={proMaxDomains} />
-          </motion.div>
-        )}
-      </div>
-
-      {/* Infinite scroll trigger */}
-      {onLoadMore && (
-        <InfiniteScrollTrigger
-          onLoadMore={onLoadMore}
-          hasMore={hasNextPage}
-          isLoading={isFetchingNextPage}
-        />
+      {/* Upgrade CTA card for free tier users */}
+      {showUpgradeCard && (
+        <motion.div
+          className="h-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: Math.min(domains.length * 0.05, 0.3),
+            duration: 0.3,
+          }}
+        >
+          <UpgradeCard proMaxDomains={proMaxDomains} />
+        </motion.div>
       )}
     </div>
   );

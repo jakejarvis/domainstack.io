@@ -5,13 +5,11 @@ import {
   and,
   asc,
   count,
-  desc,
   eq,
   inArray,
   isNotNull,
   isNull,
   lt,
-  or,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
@@ -391,11 +389,23 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
     }
   }
 
-  // Deduplicate records within each group to prevent duplicate IPs in tooltips
+  // Deduplicate and sort records within each group
   for (const groups of recordsByDomain.values()) {
-    groups.hosting = deduplicateTooltipRecords(groups.hosting);
-    groups.email = deduplicateTooltipRecords(groups.email);
-    groups.dns = deduplicateTooltipRecords(groups.dns);
+    // Sort A/AAAA records (hosting) alphabetically by value
+    groups.hosting = deduplicateTooltipRecords(groups.hosting).sort((a, b) =>
+      a.value.localeCompare(b.value),
+    );
+    // Sort NS records (dns) alphabetically by value
+    groups.dns = deduplicateTooltipRecords(groups.dns).sort((a, b) =>
+      a.value.localeCompare(b.value),
+    );
+    // Sort MX records (email) by priority, then alphabetically by value
+    groups.email = deduplicateTooltipRecords(groups.email).sort((a, b) => {
+      const priorityA = a.priority ?? Number.MAX_SAFE_INTEGER;
+      const priorityB = b.priority ?? Number.MAX_SAFE_INTEGER;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      return a.value.localeCompare(b.value);
+    });
   }
 
   return recordsByDomain;
@@ -432,6 +442,8 @@ async function attachDnsRecords(
 type QueryTrackedDomainsOptions = {
   /** Whether to include DNS records (requires additional query). Default true. */
   includeDnsRecords?: boolean;
+  /** Whether to include archived domains. Default false. */
+  includeArchived?: boolean;
 };
 
 /**
@@ -538,145 +550,6 @@ export async function getTrackedDomainsForUser(
     userTrackedDomains.createdAt,
     { includeDnsRecords },
   );
-}
-
-export type PaginatedTrackedDomainsResult = {
-  items: TrackedDomainWithDetails[];
-  nextCursor: string | null;
-  /** Total count of domains. Only provided on first page (when cursor is undefined). */
-  totalCount: number | null;
-};
-
-/**
- * Get tracked domains for a user with cursor-based pagination.
- * Uses (createdAt DESC, id DESC) for stable ordering - newest domains first.
- * Cursor format: "createdAt:id" where createdAt is ISO timestamp.
- *
- * @param userId - The user ID
- * @param cursor - Cursor from previous page (createdAt:id format)
- * @param limit - Number of items per page (default 20)
- * @param options - Optional configuration for query
- * @returns Paginated result with items, nextCursor, and totalCount
- */
-export async function getTrackedDomainsForUserPaginated(
-  userId: string,
-  cursor: string | undefined,
-  limit = 20,
-  options: QueryTrackedDomainsOptions = {},
-): Promise<PaginatedTrackedDomainsResult> {
-  const { includeDnsRecords = true } = options;
-  // Create aliases for the providers table (joined multiple times)
-  const registrarProvider = alias(providers, "registrar_provider");
-  const dnsProvider = alias(providers, "dns_provider");
-  const hostingProvider = alias(providers, "hosting_provider");
-  const emailProvider = alias(providers, "email_provider");
-
-  // Base condition: user's non-archived domains
-  const baseCondition = and(
-    eq(userTrackedDomains.userId, userId),
-    isNull(userTrackedDomains.archivedAt),
-  ) as SQL;
-
-  // Parse cursor if provided (format: "createdAt:id")
-  let cursorCondition: SQL | undefined;
-  if (cursor) {
-    const [cursorCreatedAt, cursorId] = cursor.split(":");
-    if (cursorCreatedAt && cursorId) {
-      const cursorDate = new Date(cursorCreatedAt);
-      // For DESC ordering, we want items that come AFTER the cursor
-      // (createdAt < cursorDate) OR (createdAt = cursorDate AND id < cursorId)
-      cursorCondition = or(
-        lt(userTrackedDomains.createdAt, cursorDate),
-        and(
-          eq(userTrackedDomains.createdAt, cursorDate),
-          lt(userTrackedDomains.id, cursorId),
-        ),
-      ) as SQL;
-    }
-  }
-
-  // Combine conditions
-  const whereCondition = cursorCondition
-    ? (and(baseCondition, cursorCondition) as SQL)
-    : baseCondition;
-
-  // Fetch one extra to determine if there's a next page
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      tld: domains.tld,
-      verified: userTrackedDomains.verified,
-      verificationMethod: userTrackedDomains.verificationMethod,
-      verificationToken: userTrackedDomains.verificationToken,
-      verificationStatus: userTrackedDomains.verificationStatus,
-      verificationFailedAt: userTrackedDomains.verificationFailedAt,
-      lastVerifiedAt: userTrackedDomains.lastVerifiedAt,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      createdAt: userTrackedDomains.createdAt,
-      verifiedAt: userTrackedDomains.verifiedAt,
-      archivedAt: userTrackedDomains.archivedAt,
-      expirationDate: registrations.expirationDate,
-      registrarName: registrarProvider.name,
-      registrarDomain: registrarProvider.domain,
-      dnsName: dnsProvider.name,
-      dnsDomain: dnsProvider.domain,
-      hostingName: hostingProvider.name,
-      hostingDomain: hostingProvider.domain,
-      emailName: emailProvider.name,
-      emailDomain: emailProvider.domain,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .leftJoin(registrations, eq(domains.id, registrations.domainId))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
-    .leftJoin(hosting, eq(domains.id, hosting.domainId))
-    .leftJoin(dnsProvider, eq(hosting.dnsProviderId, dnsProvider.id))
-    .leftJoin(
-      hostingProvider,
-      eq(hosting.hostingProviderId, hostingProvider.id),
-    )
-    .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
-    .where(whereCondition)
-    .orderBy(desc(userTrackedDomains.createdAt), desc(userTrackedDomains.id))
-    .limit(limit + 1);
-
-  // Only fetch count on first page (when cursor is undefined)
-  // Subsequent pages can use the cached count from the first page
-  let totalCount: number | null = null;
-  if (!cursor) {
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(userTrackedDomains)
-      .where(baseCondition);
-    totalCount = countResult?.count ?? 0;
-  }
-
-  // Check if there's a next page
-  const hasNextPage = rows.length > limit;
-  const items = hasNextPage ? rows.slice(0, limit) : rows;
-
-  // Generate next cursor from last item
-  let nextCursor: string | null = null;
-  if (hasNextPage && items.length > 0) {
-    const lastItem = items[items.length - 1];
-    nextCursor = `${lastItem.createdAt.toISOString()}:${lastItem.id}`;
-  }
-
-  const domainsWithoutRecords = items.map(transformToTrackedDomainWithDetails);
-
-  return {
-    items: includeDnsRecords
-      ? await attachDnsRecords(domainsWithoutRecords)
-      : domainsWithoutRecords,
-    nextCursor,
-    totalCount,
-  };
 }
 
 /**

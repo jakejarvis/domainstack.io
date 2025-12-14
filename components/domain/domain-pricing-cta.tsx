@@ -60,8 +60,8 @@ export function DomainPricingCTA({
     trpc.domain.getPricing.queryOptions(
       { domain },
       {
-        enabled: !!domain,
-        placeholderData: (prev) => prev,
+        // Keep in cache indefinitely during session
+        staleTime: Number.POSITIVE_INFINITY,
       },
     ),
   );

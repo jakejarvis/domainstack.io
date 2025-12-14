@@ -92,20 +92,17 @@ export function NotificationSettingsSection() {
         domainsQueryKey,
         (old) =>
           old
-            ? {
-                ...old,
-                items: old.items.map((d) =>
-                  d.id === trackedDomainId
-                    ? {
-                        ...d,
-                        notificationOverrides: {
-                          ...(d.notificationOverrides ?? {}),
-                          ...overrides,
-                        },
-                      }
-                    : d,
-                ),
-              }
+            ? old.map((d) =>
+                d.id === trackedDomainId
+                  ? {
+                      ...d,
+                      notificationOverrides: {
+                        ...(d.notificationOverrides ?? {}),
+                        ...overrides,
+                      },
+                    }
+                  : d,
+              )
             : old,
       );
 
@@ -141,14 +138,11 @@ export function NotificationSettingsSection() {
         domainsQueryKey,
         (old) =>
           old
-            ? {
-                ...old,
-                items: old.items.map((d) =>
-                  d.id === trackedDomainId
-                    ? { ...d, notificationOverrides: {} }
-                    : d,
-                ),
-              }
+            ? old.map((d) =>
+                d.id === trackedDomainId
+                  ? { ...d, notificationOverrides: {} }
+                  : d,
+              )
             : old,
       );
 
@@ -226,7 +220,7 @@ export function NotificationSettingsSection() {
     );
   }
 
-  const domains = domainsQuery.data?.items ?? [];
+  const domains = domainsQuery.data ?? [];
   const verifiedDomains = domains.filter((d) => d.verified);
 
   const defaultGlobalPrefs: GlobalPrefs = Object.fromEntries(
