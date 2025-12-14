@@ -22,14 +22,19 @@ export async function putBlob(options: {
       allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
     });
 
-    logger.debug("put ok", { url: blob.url, options });
+    logger.debug("put ok", {
+      url: blob.url,
+      pathname: options.pathname,
+    });
 
     return {
       url: blob.url,
       pathname: options.pathname,
     };
   } catch (err) {
-    logger.error("put failed", err, { options });
+    logger.error("put failed", err, {
+      pathname: options.pathname,
+    });
     throw err;
   }
 }
