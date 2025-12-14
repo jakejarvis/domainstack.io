@@ -7,16 +7,13 @@ import { replaceDns } from "@/lib/db/repos/dns";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { dnsRecords } from "@/lib/db/schema";
 import {
-  buildDohUrl,
   DNS_TYPE_NUMBERS,
   type DnsAnswer,
-  type DnsJson,
-  DOH_HEADERS,
   DOH_PROVIDERS,
   type DohProvider,
   providerOrderForLookup,
+  queryDohProvider,
 } from "@/lib/dns-utils";
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
 import {
@@ -452,32 +449,15 @@ async function resolveTypeWithProvider(
   type: DnsType,
   provider: DohProvider,
 ): Promise<DnsRecord[]> {
-  const url = buildDohUrl(provider, domain, type);
-  // Each DoH call is potentially flaky; short timeout + single retry keeps latency bounded.
-  const res = await fetchWithTimeoutAndRetry(
-    url,
-    {
-      headers: { ...DOH_HEADERS, ...provider.headers },
-    },
-    { timeoutMs: 2000, retries: 1, backoffMs: 150 },
-  );
-  if (!res.ok) throw new Error(`DoH failed: ${provider.key} ${res.status}`);
-  const json = (await res.json()) as DnsJson;
-
-  // Validate JSON shape to prevent crashes on unexpected provider responses
-  if (!json || typeof json !== "object") {
-    throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
-  }
-
-  const ans = json.Answer ?? [];
-  if (!Array.isArray(ans)) {
-    throw new Error(
-      `DoH invalid response: ${provider.key} (Answer is not an array)`,
-    );
-  }
+  // Use shared DoH query logic
+  const answers = await queryDohProvider(provider, domain, type, {
+    timeoutMs: 2000,
+    retries: 1,
+    backoffMs: 150,
+  });
 
   const normalizedRecords = await Promise.all(
-    ans.map((a) => normalizeAnswer(domain, type, a)),
+    answers.map((a) => normalizeAnswer(domain, type, a)),
   );
   const records = normalizedRecords.filter(Boolean) as DnsRecord[];
   return sortDnsRecordsForType(records, type);

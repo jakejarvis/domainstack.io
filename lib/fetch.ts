@@ -4,18 +4,31 @@ import { createLogger } from "@/lib/logger/server";
 const logger = createLogger({ source: "fetch" });
 
 /**
+ * Options for fetch with timeout and retry behavior.
+ */
+export type FetchOptions = {
+  /** Abort timeout per request (ms). */
+  timeoutMs?: number;
+  /** Number of retry attempts (defaults to 0). */
+  retries?: number;
+  /** Backoff delay multiplier for retries (ms). */
+  backoffMs?: number;
+};
+
+/**
  * Fetch a trusted upstream resource with a timeout and optional retries.
  * Do not use this for user-controlled URLs; prefer the hardened remote asset helper.
  */
 export async function fetchWithTimeoutAndRetry(
   input: RequestInfo | URL,
   init: RequestInit = {},
-  opts: { timeoutMs?: number; retries?: number; backoffMs?: number } = {},
+  opts: FetchOptions = {},
 ): Promise<Response> {
   const timeoutMs = opts.timeoutMs ?? 5000;
   const retries = Math.max(0, opts.retries ?? 0);
   const backoffMs = Math.max(0, opts.backoffMs ?? 150);
   const externalSignal = init.signal ?? undefined;
+
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const { signal, cleanup } = createAbortSignal(timeoutMs, externalSignal);
@@ -35,9 +48,12 @@ export async function fetchWithTimeoutAndRetry(
     } catch (err) {
       lastError = err;
       cleanup();
+
+      // Don't retry if external signal was aborted
       if (externalSignal?.aborted) {
         throw err instanceof Error ? err : new Error("fetch aborted");
       }
+
       if (attempt < retries) {
         logger.warn(
           `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,

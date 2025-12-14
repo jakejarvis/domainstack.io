@@ -1,6 +1,7 @@
-import { lookup as dnsLookup } from "node:dns/promises";
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
+import { dnsLookupViaHttps } from "@/lib/dns-lookup";
+import { type FetchOptions, fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "remote-asset" });
@@ -13,6 +14,8 @@ const BLOCKED_SUFFIXES = [".local", ".internal", ".localhost"];
 const DEFAULT_MAX_BYTES = 5 * 1024 * 1024; // 5MB
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_MAX_REDIRECTS = 3;
+const DEFAULT_RETRIES = 0;
+const DEFAULT_BACKOFF_MS = 150;
 
 export type RemoteAssetErrorCode =
   | "invalid_url"
@@ -36,15 +39,13 @@ export class RemoteAssetError extends Error {
   }
 }
 
-type BaseFetchRemoteAssetOptions = {
+type BaseFetchRemoteAssetOptions = FetchOptions & {
   /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
   currentUrl?: string | URL;
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
-  /** Abort timeout per request/redirect hop (ms). */
-  timeoutMs?: number;
   /** Maximum bytes to buffer before aborting (or truncating if truncateOnLimit is true). */
   maxBytes?: number;
   /** Maximum redirects we will follow while re-checking the host. */
@@ -96,6 +97,8 @@ export async function fetchRemoteAsset(
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
+  const retries = opts.retries ?? DEFAULT_RETRIES;
+  const backoffMs = opts.backoffMs ?? DEFAULT_BACKOFF_MS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
   const fallbackToGetOnHeadFailure =
@@ -104,16 +107,24 @@ export async function fetchRemoteAsset(
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
       .filter(Boolean) ?? [];
+
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
     // Treat every hop (including the initial request) as untrusted and re-run
     // the hostname/IP vetting so redirects cannot smuggle us into a private net.
     await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
 
-    const response = await timedFetch(currentUrl.toString(), {
-      method,
-      headers: opts.headers,
-      timeoutMs,
-    });
+    const response = await fetchWithTimeoutAndRetry(
+      currentUrl.toString(),
+      {
+        method,
+        headers: {
+          "User-Agent": USER_AGENT,
+          ...opts.headers,
+        },
+        redirect: "manual",
+      },
+      { timeoutMs, retries, backoffMs },
+    );
 
     if (isRedirect(response)) {
       if (redirectCount === maxRedirects) {
@@ -272,7 +283,10 @@ async function ensureUrlAllowed(
 
   let records: Array<{ address: string; family: number }>;
   try {
-    records = await dnsLookup(hostname, { all: true });
+    // Use DoH-based DNS lookup to avoid blocking Node.js threadpool.
+    // This prevents EBUSY errors under high concurrency.
+    const result = await dnsLookupViaHttps(hostname, { all: true });
+    records = Array.isArray(result) ? result : [result];
   } catch (err) {
     logger.error("unexpected lookup error", err, {
       url: url.toString(),
@@ -298,30 +312,6 @@ async function ensureUrlAllowed(
       "private_ip",
       `DNS for ${hostname} resolved to private address`,
     );
-  }
-}
-
-/**
- * Wrapper around `fetch` that adds an AbortController/timeout per request.
- */
-async function timedFetch(
-  url: string,
-  opts: { headers?: HeadersInit; timeoutMs: number; method: "GET" | "HEAD" },
-): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
-  try {
-    return await fetch(url, {
-      method: opts.method,
-      headers: {
-        "User-Agent": USER_AGENT,
-        ...opts.headers,
-      },
-      redirect: "manual",
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
   }
 }
 

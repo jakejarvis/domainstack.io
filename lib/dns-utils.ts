@@ -1,18 +1,51 @@
-import { USER_AGENT } from "@/lib/constants/app";
-import { simpleHash } from "@/lib/hash";
-import type { DnsType } from "@/lib/schemas";
+import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
+import { createLogger } from "@/lib/logger/server";
+import { simpleHash } from "@/lib/simple-hash";
 
-export type DohProvider = {
-  key: string;
-  url: string;
-  headers?: Record<string, string>;
-};
+const logger = createLogger({ source: "dns-utils" });
 
-export type DnsJson = {
-  Status: number;
-  Answer?: DnsAnswer[];
-};
+// ============================================================================
+// DNS-over-HTTPS (DoH) providers
+// ============================================================================
 
+export const DOH_PROVIDERS = [
+  {
+    key: "cloudflare",
+    url: "https://cloudflare-dns.com/dns-query",
+    headers: {},
+  },
+  {
+    key: "google",
+    url: "https://dns.google/resolve",
+    headers: {},
+  },
+] as const;
+
+export type DohProvider = (typeof DOH_PROVIDERS)[number];
+
+/**
+ * Common HTTP headers for all DoH requests.
+ * Use application/dns-json instead of application/dns-message for simpler parsing.
+ */
+export const DOH_HEADERS = {
+  Accept: "application/dns-json",
+} as const;
+
+/**
+ * DNS record type numbers (RFC 1035 and extensions).
+ */
+export const DNS_TYPE_NUMBERS = {
+  A: 1,
+  NS: 2,
+  CNAME: 5,
+  MX: 15,
+  TXT: 16,
+  AAAA: 28,
+} as const;
+
+/**
+ * DNS answer from DoH JSON response.
+ */
 export type DnsAnswer = {
   name: string;
   type: number;
@@ -20,41 +53,25 @@ export type DnsAnswer = {
   data: string;
 };
 
-export const DOH_HEADERS: Record<string, string> = {
-  accept: "application/dns-json",
-  "user-agent": USER_AGENT,
+/**
+ * DoH JSON response format (RFC 8427).
+ */
+export type DnsJson = {
+  Status: number;
+  Answer?: DnsAnswer[];
 };
 
-export const DOH_PROVIDERS: DohProvider[] = [
-  {
-    key: "cloudflare",
-    url: "https://cloudflare-dns.com/dns-query",
-  },
-  {
-    key: "google",
-    url: "https://dns.google/resolve",
-  },
-  // {
-  //   key: "quad9",
-  //   // dns10 is the unfiltered server
-  //   url: "https://dns10.quad9.net/dns-query",
-  // },
-];
+// ============================================================================
+// Provider ordering and URL building
+// ============================================================================
 
-// DNS record type numbers (RFC 1035)
-export const DNS_TYPE_NUMBERS = {
-  A: 1,
-  AAAA: 28,
-  CNAME: 5,
-  MX: 15,
-  TXT: 16,
-  NS: 2,
-} as const;
-
+/**
+ * Build a DoH query URL for a given provider, domain, and record type.
+ */
 export function buildDohUrl(
   provider: DohProvider,
   domain: string,
-  type: DnsType | string,
+  type: string,
 ): URL {
   const url = new URL(provider.url);
   url.searchParams.set("name", domain);
@@ -62,15 +79,108 @@ export function buildDohUrl(
   return url;
 }
 
+/**
+ * Deterministic provider ordering based on domain hash for cache consistency.
+ * Ensures the same domain always tries providers in the same order across requests.
+ */
 export function providerOrderForLookup(domain: string): DohProvider[] {
-  // Deterministic provider selection based on domain hash for cache consistency
-  // Same domain always uses same primary provider, with others as fallbacks
+  // Normalize to lowercase for case-insensitive DNS name matching (RFC 1035)
   const hash = simpleHash(domain.toLowerCase());
-  const primaryIndex = hash % DOH_PROVIDERS.length;
+  const start = hash % DOH_PROVIDERS.length;
+  return [
+    ...DOH_PROVIDERS.slice(start),
+    ...DOH_PROVIDERS.slice(0, start),
+  ] as DohProvider[];
+}
 
-  // Return primary provider first, followed by others in original order
-  const primary = DOH_PROVIDERS[primaryIndex] as DohProvider;
-  const fallbacks = DOH_PROVIDERS.filter((_, i) => i !== primaryIndex);
+// ============================================================================
+// Shared DoH query logic
+// ============================================================================
 
-  return [primary, ...fallbacks];
+export type DohQueryOptions = {
+  timeoutMs?: number;
+  retries?: number;
+  backoffMs?: number;
+};
+
+/**
+ * Query a single record type from a DoH provider.
+ * Returns parsed DNS answers or empty array if no records found.
+ *
+ * This is the shared primitive used by both:
+ * - `server/services/dns.ts` for full DNS lookups
+ * - `lib/dns-lookup.ts` for SSRF protection IP resolution
+ */
+export async function queryDohProvider(
+  provider: DohProvider,
+  domain: string,
+  type: string,
+  options: DohQueryOptions = {},
+): Promise<DnsAnswer[]> {
+  const url = buildDohUrl(provider, domain, type);
+  const timeoutMs = options.timeoutMs ?? 2000;
+  const retries = options.retries ?? 1;
+  const backoffMs = options.backoffMs ?? 150;
+
+  logger.debug("doh query start", {
+    provider: provider.key,
+    domain,
+    type,
+  });
+
+  const res = await fetchWithTimeoutAndRetry(
+    url,
+    {
+      headers: { ...DOH_HEADERS, ...provider.headers },
+    },
+    { timeoutMs, retries, backoffMs },
+  );
+
+  if (!res.ok) {
+    throw new Error(`DoH query failed: ${provider.key} ${type} ${res.status}`);
+  }
+
+  const json = (await res.json()) as DnsJson;
+
+  // Validate JSON shape to prevent crashes on unexpected provider responses
+  if (!json || typeof json !== "object") {
+    throw new Error(`DoH invalid response: ${provider.key} (not an object)`);
+  }
+
+  // NXDOMAIN or no answers
+  if (json.Status !== 0 || !json.Answer) {
+    logger.debug("doh query no records", {
+      provider: provider.key,
+      domain,
+      type,
+      status: json.Status,
+    });
+    return [];
+  }
+
+  if (!Array.isArray(json.Answer)) {
+    throw new Error(
+      `DoH invalid response: ${provider.key} (Answer is not an array)`,
+    );
+  }
+
+  logger.debug("doh query success", {
+    provider: provider.key,
+    domain,
+    type,
+    count: json.Answer.length,
+  });
+
+  return json.Answer;
+}
+
+/**
+ * Filter DNS answers to only those matching the expected type number.
+ * DoH providers often include CNAME records in answer chains.
+ */
+export function filterAnswersByType(
+  answers: DnsAnswer[],
+  expectedType: number,
+): DnsAnswer[] {
+  return answers.filter((a) => a.type === expectedType);
 }

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { simpleHash } from "@/lib/hash";
+import { simpleHash } from "@/lib/simple-hash";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
