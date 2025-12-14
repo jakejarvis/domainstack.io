@@ -32,9 +32,6 @@ export function AnnouncementPill() {
     setLoginOpen(true);
   };
 
-  // Link to dashboard if logged in, otherwise to login (fallback for ctrl+click)
-  const href = session?.user ? "/dashboard" : "/login";
-
   return (
     <>
       <AnimatePresence>
@@ -53,10 +50,10 @@ export function AnnouncementPill() {
               </div>
 
               <Link
-                href={href}
+                href="/dashboard"
                 onClick={handleLinkClick}
-                // Disable progress bar when opening modal (logged out), allow for navigation (logged in)
-                data-disable-progress={!session?.user}
+                prefetch={false}
+                data-disable-progress={true}
                 className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3"
               >
                 <BellRing className="size-3.5 text-accent-gold" />
