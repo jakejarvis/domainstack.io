@@ -5,18 +5,7 @@ vi.mock("@/lib/schedule", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(true),
 }));
 
-const fetchRemoteAssetMock = vi.hoisted(() =>
-  vi.fn(async () => ({
-    buffer: Buffer.from(""),
-    contentType: "text/html",
-    finalUrl: "https://example.com/",
-    status: 200,
-    headers: {
-      server: "vercel",
-      "x-vercel-id": "abc",
-    },
-  })),
-);
+const fetchRemoteAssetMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/fetch-remote-asset", async () => {
   const actual = await vi.importActual<
@@ -48,6 +37,18 @@ beforeAll(async () => {
 beforeEach(async () => {
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
+  
+  // Set default mock implementation
+  fetchRemoteAssetMock.mockResolvedValue({
+    buffer: Buffer.from(""),
+    contentType: "text/html",
+    finalUrl: "https://example.com/",
+    status: 200,
+    headers: {
+      server: "vercel",
+      "x-vercel-id": "abc",
+    },
+  });
 });
 
 afterEach(async () => {
@@ -177,5 +178,44 @@ describe("getHeaders", () => {
 
     // Note: Logger calls are tested by integration - the service calls logger.error()
     // which is mocked in vitest.setup.ts to not actually log anything
+  });
+
+  it("falls back to GET when server returns 405 for HEAD", async () => {
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "example.com",
+      tld: "com",
+      unicodeName: "example.com",
+    });
+
+    // Mock should be called once (the fallback happens internally in fetchRemoteAsset)
+    // The mock returns success from the GET fallback
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
+      status: 200,
+      headers: {
+        server: "nginx",
+        "content-type": "text/html",
+      },
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("example.com");
+
+    // Should successfully return headers (either from HEAD or GET fallback)
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(200);
+    expect(out.statusMessage).toBe("OK");
+
+    // Verify the call included fallbackToGetOn405
+    expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "HEAD",
+        fallbackToGetOn405: true,
+      }),
+    );
   });
 });

@@ -78,6 +78,7 @@ export const getHeaders = cache(async function getHeaders(
       maxRedirects: 5,
       allowedHosts,
       method: "HEAD", // only need headers, not body
+      fallbackToGetOn405: true, // retry with GET if HEAD is not allowed
     });
 
     const headers: Header[] = Object.entries(final.headers).map(

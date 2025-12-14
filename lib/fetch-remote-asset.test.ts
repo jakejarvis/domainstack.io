@@ -253,4 +253,154 @@ describe("fetchRemoteAsset", () => {
       "x-custom-header": "test-value",
     });
   });
+
+  it("falls back to GET when HEAD returns 405 and fallbackToGetOn405 is enabled", async () => {
+    const headResponse = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+    const getResponse = new Response(new Uint8Array([1, 2, 3]), {
+      status: 200,
+      headers: {
+        "content-type": "text/html",
+        server: "nginx",
+      },
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(headResponse)
+      .mockResolvedValueOnce(getResponse);
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "HEAD",
+      fallbackToGetOn405: true,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://example.com/",
+      expect.objectContaining({ method: "HEAD" }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://example.com/",
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(result.status).toBe(200);
+    expect(result.headers).toEqual({
+      "content-type": "text/html",
+      server: "nginx",
+    });
+  });
+
+  it("throws 405 error when HEAD returns 405 and fallbackToGetOn405 is disabled", async () => {
+    const headResponse = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+
+    fetchMock.mockResolvedValueOnce(headResponse);
+
+    await expect(
+      fetchRemoteAsset({
+        url: "https://example.com/",
+        method: "HEAD",
+        fallbackToGetOn405: false,
+      }),
+    ).rejects.toMatchObject({
+      code: "response_error",
+      status: 405,
+    } satisfies Partial<RemoteAssetError>);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry with GET if initial method is already GET", async () => {
+    const getResponse = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+
+    fetchMock.mockResolvedValueOnce(getResponse);
+
+    await expect(
+      fetchRemoteAsset({
+        url: "https://example.com/",
+        method: "GET",
+        fallbackToGetOn405: true,
+      }),
+    ).rejects.toMatchObject({
+      code: "response_error",
+      status: 405,
+    } satisfies Partial<RemoteAssetError>);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("handles 405 fallback with redirects", async () => {
+    const headResponse = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+    const redirectResponse = new Response(null, {
+      status: 302,
+      headers: { location: "https://cdn.example.com/page" },
+    });
+    const finalResponse = new Response(new Uint8Array([1, 2, 3]), {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(headResponse) // HEAD -> 405
+      .mockResolvedValueOnce(redirectResponse) // GET -> 302
+      .mockResolvedValueOnce(finalResponse); // GET after redirect -> 200
+
+    dnsLookupMock
+      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.com for HEAD
+      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.com for GET retry
+      .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]); // cdn.example.com for redirect
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "HEAD",
+      fallbackToGetOn405: true,
+      maxRedirects: 5,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(result.status).toBe(200);
+    expect(result.finalUrl).toBe("https://cdn.example.com/page");
+  });
+
+  it("only retries once on 405 to prevent infinite loops", async () => {
+    const head405Response = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+    const get405Response = new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(head405Response)
+      .mockResolvedValueOnce(get405Response);
+
+    await expect(
+      fetchRemoteAsset({
+        url: "https://example.com/",
+        method: "HEAD",
+        fallbackToGetOn405: true,
+      }),
+    ).rejects.toMatchObject({
+      code: "response_error",
+      status: 405,
+    } satisfies Partial<RemoteAssetError>);
+
+    // Should only make 2 requests: HEAD (405) -> GET (405) -> throw
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

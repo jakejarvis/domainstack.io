@@ -57,6 +57,8 @@ export type FetchRemoteAssetOptions = {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
+  /** If true, automatically retry with GET when HEAD returns 405 (Method Not Allowed). */
+  fallbackToGetOn405?: boolean;
 };
 
 export type RemoteAssetResult = {
@@ -75,7 +77,8 @@ export async function fetchRemoteAsset(
   opts: FetchRemoteAssetOptions,
 ): Promise<RemoteAssetResult> {
   const initialUrl = toUrl(opts.url, opts.currentUrl);
-  const method = opts.method ?? "GET";
+  let method = opts.method ?? "GET";
+  let retryingWithGet = false;
 
   let currentUrl = initialUrl;
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -83,6 +86,7 @@ export async function fetchRemoteAsset(
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
+  const fallbackToGetOn405 = opts.fallbackToGetOn405 ?? false;
   const allowedHosts =
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
@@ -115,6 +119,24 @@ export async function fetchRemoteAsset(
       }
       const nextUrl = new URL(location, currentUrl);
       currentUrl = nextUrl;
+      continue;
+    }
+
+    // If we got 405 on HEAD and fallback is enabled, retry with GET
+    if (
+      response.status === 405 &&
+      method === "HEAD" &&
+      fallbackToGetOn405 &&
+      !retryingWithGet
+    ) {
+      logger.debug("HEAD returned 405, retrying with GET", {
+        url: currentUrl.toString(),
+      });
+      method = "GET";
+      retryingWithGet = true;
+      // Reset redirect count since we're starting over with GET
+      redirectCount = -1; // Will be incremented to 0 on next loop iteration
+      currentUrl = initialUrl; // Reset to initial URL
       continue;
     }
 
