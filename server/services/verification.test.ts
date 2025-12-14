@@ -133,6 +133,51 @@ describe("verifyDomainOwnership", () => {
       expect(result.method).toBe("dns_txt");
     });
 
+    it("returns verified when TXT record matches on legacy subdomain", async () => {
+      // Apex domain (first provider) returns no records
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          Status: 0,
+          Answer: [],
+        }),
+      });
+      // Apex domain (second provider) returns no records
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          Status: 0,
+          Answer: [],
+        }),
+      });
+      // Legacy subdomain (first provider) returns matching record
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          Status: 0,
+          Answer: [
+            {
+              name: "_domainstack-verify.example.com.",
+              type: 16,
+              TTL: 300,
+              data: `"domainstack-verify=${token}"`,
+            },
+          ],
+        }),
+      });
+
+      const result = await verifyDomainOwnership(
+        "example.com",
+        token,
+        "dns_txt",
+      );
+
+      expect(result.verified).toBe(true);
+      expect(result.method).toBe("dns_txt");
+      // Should try apex domain with both providers, then legacy subdomain with first provider
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+    });
+
     it("returns not verified when TXT record is missing", async () => {
       // Both providers return no records
       mockFetch.mockResolvedValue({
@@ -151,8 +196,8 @@ describe("verifyDomainOwnership", () => {
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
-      // Should try both providers
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      // Should try both hostnames (apex + legacy) × both providers = 4 calls
+      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it("returns not verified when TXT record value is wrong", async () => {
@@ -179,8 +224,8 @@ describe("verifyDomainOwnership", () => {
       );
 
       expect(result.verified).toBe(false);
-      // Should try both providers
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      // Should try both hostnames (apex + legacy) × both providers = 4 calls
+      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it("handles DNS query failure", async () => {
@@ -599,12 +644,8 @@ describe("tryAllVerificationMethods", () => {
   });
 
   it("falls back to html_file when DNS fails", async () => {
-    // Both DNS providers fail (no matching TXT records)
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    mockFetch.mockResolvedValueOnce({
+    // DNS providers fail (no matching TXT records) - 2 hostnames × 2 providers = 4 calls
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
@@ -620,15 +661,13 @@ describe("tryAllVerificationMethods", () => {
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("html_file");
+    // Should try DNS with both hostnames × both providers = 4 calls
+    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it("falls back to meta_tag when DNS and HTML fail", async () => {
-    // Both DNS providers fail
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    mockFetch.mockResolvedValueOnce({
+    // DNS providers fail - 2 hostnames × 2 providers = 4 calls
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
@@ -662,15 +701,13 @@ describe("tryAllVerificationMethods", () => {
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("meta_tag");
+    // Should try DNS with both hostnames × both providers = 4 calls
+    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it("returns not verified when all methods fail", async () => {
-    // Both DNS providers fail
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    mockFetch.mockResolvedValueOnce({
+    // DNS providers fail - 2 hostnames × 2 providers = 4 calls
+    mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({ Status: 0, Answer: [] }),
     });
@@ -681,5 +718,7 @@ describe("tryAllVerificationMethods", () => {
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
+    // Should try DNS with both hostnames × both providers = 4 calls
+    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 });

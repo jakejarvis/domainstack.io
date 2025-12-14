@@ -2,6 +2,7 @@ import "server-only";
 
 import * as cheerio from "cheerio";
 import {
+  DNS_VERIFICATION_HOST_LEGACY,
   DNS_VERIFICATION_PREFIX,
   DNS_VERIFICATION_TTL,
   DNS_VERIFICATION_TTL_LABEL,
@@ -118,6 +119,9 @@ export async function tryAllVerificationMethods(
  * Verify ownership via DNS TXT record.
  * Expected record: example.com TXT "domainstack-verify=<token>"
  *
+ * For backward compatibility, also checks legacy subdomain format:
+ * _domainstack-verify.example.com TXT "domainstack-verify=<token>"
+ *
  * Uses multiple DoH providers for reliability and cache busting.
  * Leverages the same provider ordering and fallback logic as dns.ts.
  */
@@ -127,70 +131,94 @@ async function verifyDnsTxtImpl(
 ): Promise<VerificationResult> {
   const expectedValue = `${DNS_VERIFICATION_PREFIX}${token}`;
 
+  // Check both apex domain (new) and legacy subdomain format
+  const hostsToCheck = [
+    domain, // New format: example.com
+    `${DNS_VERIFICATION_HOST_LEGACY}.${domain}`, // Legacy format: _domainstack-verify.example.com
+  ];
+
   // Use the same provider ordering logic as dns.ts for consistency
   const providers = providerOrderForLookup(domain);
 
-  let lastError: unknown = null;
+  // Try each hostname with all providers
+  for (const hostname of hostsToCheck) {
+    let lastError: unknown = null;
 
-  // Try providers in sequence
-  for (const provider of providers) {
-    try {
-      const url = buildDohUrl(provider, domain, "TXT");
-      // Add random parameter to bypass HTTP caches
-      url.searchParams.set("t", Date.now().toString());
+    // Try providers in sequence for this hostname
+    for (const provider of providers) {
+      try {
+        const url = buildDohUrl(provider, hostname, "TXT");
+        // Add random parameter to bypass HTTP caches
+        url.searchParams.set("t", Date.now().toString());
 
-      const res = await fetchWithTimeoutAndRetry(
-        url,
-        {
-          headers: { ...DOH_HEADERS, ...provider.headers },
-        },
-        { timeoutMs: 5000, retries: 1, backoffMs: 200 },
-      );
-      if (!res.ok) {
-        logger.warn("DNS query failed", {
-          domain,
-          provider: provider.key,
-          status: res.status,
-        });
-        continue;
-      }
+        const res = await fetchWithTimeoutAndRetry(
+          url,
+          {
+            headers: { ...DOH_HEADERS, ...provider.headers },
+          },
+          { timeoutMs: 5000, retries: 1, backoffMs: 200 },
+        );
+        if (!res.ok) {
+          logger.warn("DNS query failed", {
+            domain,
+            hostname,
+            provider: provider.key,
+            status: res.status,
+          });
+          continue;
+        }
 
-      const json = (await res.json()) as DnsJson;
-      const answers = json.Answer ?? [];
+        const json = (await res.json()) as DnsJson;
+        const answers = json.Answer ?? [];
 
-      // Check if any TXT record matches
-      for (const answer of answers) {
-        if (answer.type === DNS_TYPE_NUMBERS.TXT) {
-          // TXT
-          // Remove surrounding quotes from TXT record value
-          const value = answer.data.replace(/^"|"$/g, "").trim();
-          if (value === expectedValue) {
-            logger.info("DNS TXT verification successful", {
-              domain,
-              provider: provider.key,
-            });
-            return { verified: true, method: "dns_txt" };
+        // Check if any TXT record matches
+        for (const answer of answers) {
+          if (answer.type === DNS_TYPE_NUMBERS.TXT) {
+            // TXT
+            // Remove surrounding quotes from TXT record value
+            const value = answer.data.replace(/^"|"$/g, "").trim();
+            if (value === expectedValue) {
+              const isLegacy = hostname !== domain;
+              logger.info("DNS TXT verification successful", {
+                domain,
+                hostname,
+                provider: provider.key,
+                legacy: isLegacy,
+              });
+              return { verified: true, method: "dns_txt" };
+            }
           }
         }
+      } catch (err) {
+        logger.warn("DNS provider error", err, {
+          domain,
+          hostname,
+          provider: provider.key,
+        });
+        lastError = err;
       }
-    } catch (err) {
-      logger.warn("DNS provider error", err, {
+    }
+
+    logger.debug("DNS TXT record not found for hostname", {
+      domain,
+      hostname,
+    });
+    if (lastError) {
+      logger.debug("DNS TXT last error for hostname", {
         domain,
-        provider: provider.key,
+        hostname,
+        error: lastError,
       });
-      lastError = err;
     }
   }
 
   logger.debug(
-    "DNS TXT record not found or mismatched after checking providers",
+    "DNS TXT record not found or mismatched after checking all hostnames",
     {
       domain,
+      hostsChecked: hostsToCheck,
     },
   );
-  if (lastError) {
-    logger.error("DNS TXT verification final error", lastError, { domain });
-  }
 
   return { verified: false, method: null };
 }

@@ -51,6 +51,13 @@ export const VERIFICATION_METHOD_DESCRIPTIONS: Record<
 export const DNS_VERIFICATION_PREFIX = "domainstack-verify=";
 
 /**
+ * Legacy subdomain prefix for DNS verification (backward compatibility).
+ * Old format: _domainstack-verify.example.com TXT "domainstack-verify=TOKEN"
+ * New format: example.com TXT "domainstack-verify=TOKEN"
+ */
+export const DNS_VERIFICATION_HOST_LEGACY = "_domainstack-verify";
+
+/**
  * Recommended TTL for DNS verification records (in seconds).
  * 1 hour allows for reasonable propagation testing without excessive caching.
  */
