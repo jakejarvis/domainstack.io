@@ -5,18 +5,7 @@ vi.mock("@/lib/schedule", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(true),
 }));
 
-const fetchRemoteAssetMock = vi.hoisted(() =>
-  vi.fn(async () => ({
-    buffer: Buffer.from(""),
-    contentType: "text/html",
-    finalUrl: "https://example.com/",
-    status: 200,
-    headers: {
-      server: "vercel",
-      "x-vercel-id": "abc",
-    },
-  })),
-);
+const fetchRemoteAssetMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/fetch-remote-asset", async () => {
   const actual = await vi.importActual<
@@ -48,6 +37,18 @@ beforeAll(async () => {
 beforeEach(async () => {
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
+
+  // Set default mock implementation
+  fetchRemoteAssetMock.mockResolvedValue({
+    buffer: Buffer.from(""),
+    contentType: "text/html",
+    finalUrl: "https://example.com/",
+    status: 200,
+    headers: {
+      server: "vercel",
+      "x-vercel-id": "abc",
+    },
+  });
 });
 
 afterEach(async () => {
@@ -177,5 +178,43 @@ describe("getHeaders", () => {
 
     // Note: Logger calls are tested by integration - the service calls logger.error()
     // which is mocked in vitest.setup.ts to not actually log anything
+  });
+
+  it("configures fetchRemoteAsset with HEAD method and fallback enabled", async () => {
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "example.com",
+      tld: "com",
+      unicodeName: "example.com",
+    });
+
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
+      status: 200,
+      headers: {
+        server: "nginx",
+        "content-type": "text/html",
+      },
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("example.com");
+
+    // Should successfully return headers
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(200);
+    expect(out.statusMessage).toBe("OK");
+
+    // Verify the service passes correct configuration to fetchRemoteAsset
+    // (actual fallback behavior is tested in lib/fetch-remote-asset.test.ts)
+    expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "HEAD",
+        fallbackToGetOnHeadFailure: true,
+      }),
+    );
   });
 });

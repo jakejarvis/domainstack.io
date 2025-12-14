@@ -36,13 +36,11 @@ export class RemoteAssetError extends Error {
   }
 }
 
-export type FetchRemoteAssetOptions = {
+type BaseFetchRemoteAssetOptions = {
   /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
   currentUrl?: string | URL;
-  /** HTTP method to use (defaults to GET). */
-  method?: "GET" | "HEAD";
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
   /** Abort timeout per request/redirect hop (ms). */
@@ -58,6 +56,22 @@ export type FetchRemoteAssetOptions = {
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
 };
+
+type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
+  /** HTTP method to use (defaults to GET). */
+  method?: "GET";
+};
+
+type FetchRemoteAssetOptionsWithHead = BaseFetchRemoteAssetOptions & {
+  /** HTTP method to use. */
+  method: "HEAD";
+  /** If true, automatically retry with GET when HEAD fails with 405 (Method Not Allowed). */
+  fallbackToGetOnHeadFailure?: boolean;
+};
+
+export type FetchRemoteAssetOptions =
+  | FetchRemoteAssetOptionsWithGet
+  | FetchRemoteAssetOptionsWithHead;
 
 export type RemoteAssetResult = {
   buffer: Buffer;
@@ -75,7 +89,8 @@ export async function fetchRemoteAsset(
   opts: FetchRemoteAssetOptions,
 ): Promise<RemoteAssetResult> {
   const initialUrl = toUrl(opts.url, opts.currentUrl);
-  const method = opts.method ?? "GET";
+  let method = opts.method ?? "GET";
+  let retryingWithGet = false;
 
   let currentUrl = initialUrl;
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -83,6 +98,8 @@ export async function fetchRemoteAsset(
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
+  const fallbackToGetOnHeadFailure =
+    opts.method === "HEAD" ? (opts.fallbackToGetOnHeadFailure ?? false) : false;
   const allowedHosts =
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
@@ -115,6 +132,24 @@ export async function fetchRemoteAsset(
       }
       const nextUrl = new URL(location, currentUrl);
       currentUrl = nextUrl;
+      continue;
+    }
+
+    // If we got 405 on HEAD and fallback is enabled, retry with GET
+    if (
+      response.status === 405 &&
+      method === "HEAD" &&
+      fallbackToGetOnHeadFailure &&
+      !retryingWithGet
+    ) {
+      logger.debug("HEAD returned 405, retrying with GET", {
+        url: currentUrl.toString(),
+      });
+      method = "GET";
+      retryingWithGet = true;
+      // Reset redirect count since we're starting over with GET
+      redirectCount = -1; // Will be incremented to 0 on next loop iteration
+      currentUrl = initialUrl; // Reset to initial URL
       continue;
     }
 
