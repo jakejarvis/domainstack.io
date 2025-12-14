@@ -279,7 +279,7 @@ describe("getCertificates", () => {
     });
 
     const { getCertificates } = await import("./certificates");
-    
+
     // First call - fetches from TLS
     const out1 = await getCertificates("cached-expired.example.com");
     expect(out1[0].expired).toBe(true);

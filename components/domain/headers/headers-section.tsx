@@ -2,6 +2,7 @@
 
 import { ExternalLink, Info, Logs, Search } from "lucide-react";
 import Link from "next/link";
+import { CertificateBypassedAlert } from "@/components/domain/headers/certificate-bypassed-alert";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { Section } from "@/components/domain/section";
@@ -34,6 +35,7 @@ function extractDomainFromLocation(locationValue: string): string | null {
 }
 
 export function HeadersSection({
+  domain,
   data,
 }: {
   domain?: string;
@@ -42,11 +44,16 @@ export function HeadersSection({
   const headers = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
   const status = data?.status;
   const statusMessage = data?.statusMessage;
+  const certificateBypassUsed = data?.certificateBypassUsed;
 
   return (
     <Section {...sections.headers}>
       {headers && headers.length > 0 ? (
         <div className="space-y-4">
+          {certificateBypassUsed && domain && (
+            <CertificateBypassedAlert domain={domain} />
+          )}
+
           {status !== 200 && (
             <Alert className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
               <Info aria-hidden="true" />

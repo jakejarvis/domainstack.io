@@ -127,18 +127,18 @@ export const getHeaders = cache(async function getHeaders(
       statusMessage = undefined;
     }
 
-    return { headers: normalized, status: final.status, statusMessage };
+    return {
+      headers: normalized,
+      status: final.status,
+      statusMessage,
+      certificateBypassUsed: final.certificateBypassUsed,
+    };
   } catch (err) {
     // Classify error: DNS resolution failures are expected for domains without A/AAAA records
     const isDnsError = isExpectedDnsError(err);
-    const isCertError = isExpectedCertificateError(err);
 
     if (isDnsError) {
       logger.debug("no web hosting (no A/AAAA records)", {
-        domain,
-      });
-    } else if (isCertError) {
-      logger.debug("certificate error (expired or invalid)", {
         domain,
       });
     } else {
@@ -188,38 +188,5 @@ function isExpectedDnsError(err: unknown): boolean {
     message.includes("enotfound") ||
     message.includes("getaddrinfo") ||
     message.includes("dns lookup failed")
-  );
-}
-
-/**
- * Check if an error is an expected certificate error.
- * These occur when a domain has HTTPS but the certificate is expired or invalid.
- */
-function isExpectedCertificateError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-
-  // Check for certificate errors in the cause chain
-  const cause = (err as Error & { cause?: Error & { code?: string } }).cause;
-  if (cause?.code) {
-    const certErrorCodes = [
-      "CERT_HAS_EXPIRED",
-      "CERT_NOT_YET_VALID",
-      "DEPTH_ZERO_SELF_SIGNED_CERT",
-      "SELF_SIGNED_CERT_IN_CHAIN",
-      "UNABLE_TO_GET_ISSUER_CERT",
-      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
-      "ERR_TLS_CERT_ALTNAME_INVALID",
-    ];
-    if (certErrorCodes.includes(cause.code)) {
-      return true;
-    }
-  }
-
-  // Check error message patterns
-  const message = err.message.toLowerCase();
-  return (
-    message.includes("certificate") ||
-    message.includes("cert has expired") ||
-    message.includes("self signed certificate")
   );
 }

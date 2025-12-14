@@ -6,16 +6,25 @@ vi.mock("@/lib/schedule", () => ({
 }));
 
 const fetchRemoteAssetMock = vi.hoisted(() =>
-  vi.fn(async () => ({
-    buffer: Buffer.from(""),
-    contentType: "text/html",
-    finalUrl: "https://example.com/",
-    status: 200,
-    headers: {
-      server: "vercel",
-      "x-vercel-id": "abc",
-    },
-  })),
+  vi.fn(
+    async (): Promise<{
+      buffer: Buffer;
+      contentType: string;
+      finalUrl: string;
+      status: number;
+      headers: Record<string, string>;
+      certificateBypassUsed?: boolean;
+    }> => ({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://example.com/",
+      status: 200,
+      headers: {
+        server: "vercel",
+        "x-vercel-id": "abc",
+      },
+    }),
+  ),
 );
 
 vi.mock("@/lib/fetch-remote-asset", async () => {
@@ -177,5 +186,63 @@ describe("getHeaders", () => {
 
     // Note: Logger calls are tested by integration - the service calls logger.error()
     // which is mocked in vitest.setup.ts to not actually log anything
+  });
+
+  it("indicates when certificate bypass was used", async () => {
+    // Create domain record first (simulates registered domain)
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "expired-cert.com",
+      tld: "com",
+      unicodeName: "expired-cert.com",
+    });
+
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://expired-cert.com/",
+      status: 200,
+      headers: {
+        server: "nginx",
+        "x-vercel-id": "abc",
+      },
+      certificateBypassUsed: true,
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("expired-cert.com");
+
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(200);
+    expect(out.certificateBypassUsed).toBe(true);
+  });
+
+  it("does not indicate certificate bypass when not used", async () => {
+    // Create domain record first
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "valid-cert.com",
+      tld: "com",
+      unicodeName: "valid-cert.com",
+    });
+
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://valid-cert.com/",
+      status: 200,
+      headers: {
+        server: "nginx",
+        "x-vercel-id": "xyz",
+      },
+      // certificateBypassUsed not set (undefined)
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("valid-cert.com");
+
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(200);
+    expect(out.certificateBypassUsed).toBeUndefined();
   });
 });

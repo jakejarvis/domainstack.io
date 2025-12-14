@@ -77,7 +77,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       const out: Certificate[] = existing.map((c) => {
         const validTo = new Date(c.validTo);
         const isExpired = validTo.getTime() < nowMs;
-        
+
         return {
           issuer: c.issuer,
           subject: c.subject,
@@ -158,7 +158,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       const issuerName = toName(c.issuer);
       const validTo = new Date(c.valid_to);
       const isExpired = validTo.getTime() < Date.now();
-      
+
       return {
         issuer: issuerName,
         subject: toName(c.subject),
