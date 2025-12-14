@@ -1,12 +1,8 @@
 "use client";
 
-import {
-  differenceInDays,
-  format,
-  formatDistanceToNow,
-  isPast,
-} from "date-fns";
+import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { CalendarClock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
@@ -22,10 +18,20 @@ export function SubscriptionEndingBanner({
   const { openPortal: handleManage, isLoading: isManageLoading } =
     useCustomerPortal();
 
-  // Don't show if already expired (they would have been downgraded)
-  if (isPast(subscriptionEndsAt)) return null;
+  // Capture current time only on client after mount (not during SSR)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
 
-  const daysRemaining = differenceInDays(subscriptionEndsAt, new Date());
+  // During SSR, don't show the banner (will render after hydration)
+  if (!now) return null;
+
+  // Don't show if already expired (they would have been downgraded)
+  const isExpired = subscriptionEndsAt < now;
+  if (isExpired) return null;
+
+  const daysRemaining = differenceInDays(subscriptionEndsAt, now);
   const formattedDate = format(subscriptionEndsAt, "MMMM d, yyyy");
   const relativeTime = formatDistanceToNow(subscriptionEndsAt, {
     addSuffix: true,

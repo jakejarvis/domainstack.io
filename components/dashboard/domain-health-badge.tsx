@@ -2,6 +2,7 @@
 
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { Activity, AlertTriangle, CircleHelp, Siren } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -23,12 +24,26 @@ export function DomainHealthBadge({
   verified,
   className,
 }: DomainHealthBadgeProps) {
-  const status = getHealthStatus(expirationDate, verified);
+  // Capture current time only on client after mount (not during SSR)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  // During SSR (when now is null), show "Unknown" status without calculating
+  const status = now
+    ? getHealthStatus(expirationDate, verified, now)
+    : "unknown";
   const { label, colorClass, icon } = getStatusConfig(status);
 
-  const tooltipText = expirationDate
-    ? `${expirationDate > new Date() ? "Expires" : "Expired"} ${formatDistanceToNowStrict(expirationDate, { addSuffix: true })}`
-    : null;
+  const tooltipText = useMemo(() => {
+    if (!expirationDate || !now) return null;
+    const isExpired = expirationDate <= now;
+    const relativeTime = formatDistanceToNowStrict(expirationDate, {
+      addSuffix: true,
+    });
+    return `${isExpired ? "Expired" : "Expires"} ${relativeTime}`;
+  }, [expirationDate, now]);
 
   const badge = (
     <Badge
@@ -58,12 +73,13 @@ export function DomainHealthBadge({
 function getHealthStatus(
   expirationDate: Date | null,
   verified: boolean,
+  now: Date,
 ): HealthStatus {
   if (!verified || !expirationDate) {
     return "unknown";
   }
 
-  const daysUntilExpiry = differenceInDays(expirationDate, new Date());
+  const daysUntilExpiry = differenceInDays(expirationDate, now);
 
   if (daysUntilExpiry <= 7) {
     return "critical";
@@ -111,12 +127,18 @@ function getStatusConfig(status: HealthStatus): {
 
 /**
  * Get the accent color for a domain card based on health status.
+ * This should only be called from client components after hydration.
+ * During SSR, it will return "slate" (unknown).
  */
 export function getHealthAccent(
   expirationDate: Date | null,
   verified: boolean,
+  now?: Date,
 ): "green" | "orange" | "red" | "slate" {
-  const status = getHealthStatus(expirationDate, verified);
+  // If no 'now' provided, return slate (unknown) to avoid Date.now() during SSR
+  if (!now) return "slate";
+
+  const status = getHealthStatus(expirationDate, verified, now);
 
   switch (status) {
     case "healthy":

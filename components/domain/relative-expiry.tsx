@@ -22,7 +22,7 @@ export function RelativeExpiryString({
   const [text, setText] = useState<string | null>(null);
   const [daysUntil, setDaysUntil] = useState<number | null>(null);
 
-  // format distance to now
+  // format distance to now (runs on client after mount)
   useEffect(() => {
     try {
       const rel = formatDistanceToNowStrict(new Date(to), { addSuffix: true });
@@ -30,10 +30,11 @@ export function RelativeExpiryString({
     } catch {}
   }, [to]);
 
-  // calculate days until expiry
+  // calculate days until expiry (runs on client after mount)
   useEffect(() => {
     try {
-      const days = differenceInDays(new Date(to), new Date());
+      const now = new Date();
+      const days = differenceInDays(new Date(to), now);
       setDaysUntil(days);
     } catch {}
   }, [to]);

@@ -83,6 +83,7 @@ export function ArchivedDomainsView({
                     {domain.archivedAt
                       ? formatDistanceToNow(new Date(domain.archivedAt), {
                           addSuffix: true,
+                          includeSeconds: false,
                         })
                       : "recently"}
                   </div>

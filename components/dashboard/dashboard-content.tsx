@@ -55,7 +55,7 @@ export function DashboardContent() {
   const [sortOption, setSortOption] = useGridSortPreference();
   const [tableInstance, setTableInstance] =
     useState<Table<TrackedDomainWithDetails> | null>(null);
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionLoading } = useSession();
   const trpc = useTRPC();
   const router = useRouter();
 
@@ -324,7 +324,12 @@ export function DashboardContent() {
 
   const confirmDialogContent = getConfirmDialogContent();
 
-  const isLoading = limitsQuery.isLoading || domainsQuery.isLoading;
+  // Show loading until we have both query data AND session data
+  const isLoading =
+    limitsQuery.isLoading ||
+    domainsQuery.isLoading ||
+    sessionLoading ||
+    !session;
 
   const hasError = limitsQuery.isError || domainsQuery.isError;
 
@@ -341,7 +346,7 @@ export function DashboardContent() {
     return <DashboardError onRetry={handleRetry} />;
   }
 
-  const userName = session?.user?.name || "there";
+  const userName = session?.user?.name || "";
   const activeCount = limitsQuery.data?.activeCount ?? 0;
   const archivedCount = limitsQuery.data?.archivedCount ?? 0;
   const maxDomains = limitsQuery.data?.maxDomains ?? DEFAULT_TIER_LIMITS.free;

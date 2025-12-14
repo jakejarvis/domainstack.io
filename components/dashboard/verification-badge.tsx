@@ -2,6 +2,7 @@
 
 import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -35,15 +36,22 @@ export function VerificationBadge({
   onClick,
   className,
 }: VerificationBadgeProps) {
+  // Capture current time only on client after mount (not during SSR)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
   // Show failing state if verified but verification is failing
   if (verified && verificationStatus === "failing") {
-    const daysRemaining = verificationFailedAt
-      ? Math.max(
-          0,
-          VERIFICATION_GRACE_PERIOD_DAYS -
-            differenceInDays(new Date(), verificationFailedAt),
-        )
-      : VERIFICATION_GRACE_PERIOD_DAYS;
+    const daysRemaining =
+      verificationFailedAt && now
+        ? Math.max(
+            0,
+            VERIFICATION_GRACE_PERIOD_DAYS -
+              differenceInDays(now, verificationFailedAt),
+          )
+        : VERIFICATION_GRACE_PERIOD_DAYS;
 
     const badge = (
       <Badge

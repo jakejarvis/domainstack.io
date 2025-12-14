@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   DomainHealthBadge,
   getHealthAccent,
@@ -83,7 +84,13 @@ export function TrackedDomainCard({
   isSelected = false,
   onToggleSelect,
 }: TrackedDomainCardProps) {
-  const accent = getHealthAccent(expirationDate, verified);
+  // Capture current time only on client after mount (not during SSR)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  const accent = getHealthAccent(expirationDate, verified, now || undefined);
   const isFailing = verified && verificationStatus === "failing";
   const isPending = !verified;
 

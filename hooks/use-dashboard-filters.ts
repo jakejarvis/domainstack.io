@@ -1,7 +1,7 @@
 "use client";
 
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants";
 import type {
   HealthFilter,
@@ -21,10 +21,10 @@ export type {
 function getHealthStatus(
   expirationDate: Date | null,
   verified: boolean,
+  now: Date,
 ): HealthFilter | null {
   if (!verified || !expirationDate) return null;
 
-  const now = new Date();
   const daysUntilExpiry = Math.ceil(
     (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
@@ -43,6 +43,12 @@ export function useDashboardFilters(
   domains: TrackedDomainWithDetails[],
   options?: { onFilterChange?: () => void },
 ) {
+  // Capture current time only on client after mount (not during SSR)
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
   // URL state with nuqs
   const [filters, setFilters] = useQueryStates(
     {
@@ -77,6 +83,9 @@ export function useDashboardFilters(
 
   // Filter domains based on current filters
   const filteredDomains = useMemo(() => {
+    // During SSR, before we have a 'now' value, return all domains
+    if (!now) return domains;
+
     return domains.filter((domain) => {
       // Search filter
       if (filters.search) {
@@ -99,6 +108,7 @@ export function useDashboardFilters(
         const healthStatus = getHealthStatus(
           domain.expirationDate,
           domain.verified,
+          now,
         );
         // If domain has no health status (unverified), only show if no health filter
         if (!healthStatus || !filters.health.includes(healthStatus)) {
@@ -115,12 +125,17 @@ export function useDashboardFilters(
 
       return true;
     });
-  }, [domains, filters]);
+  }, [domains, filters, now]);
 
   // Compute stats for health summary
   const stats = useMemo(() => {
     let expiringSoon = 0;
     let pendingVerification = 0;
+
+    // During SSR, before we have a 'now' value, return zeros
+    if (!now) {
+      return { expiringSoon: 0, pendingVerification: 0 };
+    }
 
     for (const domain of domains) {
       if (!domain.verified) {
@@ -131,6 +146,7 @@ export function useDashboardFilters(
       const healthStatus = getHealthStatus(
         domain.expirationDate,
         domain.verified,
+        now,
       );
       if (healthStatus === "expiring" || healthStatus === "expired") {
         expiringSoon++;
@@ -138,7 +154,7 @@ export function useDashboardFilters(
     }
 
     return { expiringSoon, pendingVerification };
-  }, [domains]);
+  }, [domains, now]);
 
   // Filter setters
   const setSearch = (value: string) => {

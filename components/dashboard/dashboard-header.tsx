@@ -45,7 +45,8 @@ export function DashboardHeader({
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
-          Welcome back{userName ? `, ${userName.split(" ")[0]}` : ""}!
+          Welcome back
+          {userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
         {tier === "pro" ? (
           subscriptionEndsAt ? (
