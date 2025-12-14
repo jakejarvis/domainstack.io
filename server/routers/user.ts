@@ -4,6 +4,7 @@ import z from "zod";
 import { analytics } from "@/lib/analytics/server";
 import { db } from "@/lib/db/client";
 import {
+  countTrackedDomainsByStatus,
   findTrackedDomainById,
   resetNotificationOverrides,
 } from "@/lib/db/repos/tracked-domains";
@@ -11,7 +12,9 @@ import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
+import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { accounts, userTrackedDomains } from "@/lib/db/schema";
+import { getMaxDomainsForTier } from "@/lib/edge-config";
 import {
   NotificationOverridesSchema,
   UpdateNotificationPreferencesSchema,
@@ -36,6 +39,32 @@ export const userRouter = createTRPCRouter({
       providerId: account.providerId,
       createdAt: account.createdAt,
     }));
+  }),
+
+  /**
+   * Get user's limits and current usage.
+   * Optimized to run all queries in parallel.
+   */
+  getLimits: protectedProcedure.query(async ({ ctx }) => {
+    // Run all independent queries in parallel for better performance
+    const [sub, counts, proMaxDomains] = await Promise.all([
+      getUserSubscription(ctx.user.id),
+      countTrackedDomainsByStatus(ctx.user.id),
+      getMaxDomainsForTier("pro"),
+    ]);
+
+    return {
+      tier: sub.tier,
+      maxDomains: sub.maxDomains,
+      activeCount: counts.active,
+      archivedCount: counts.archived,
+      // Only active domains count against limit
+      canAddMore: counts.active < sub.maxDomains,
+      // When a canceled subscription expires (null = no pending cancellation)
+      subscriptionEndsAt: sub.endsAt,
+      // Pro tier limit for upgrade prompts
+      proMaxDomains,
+    };
   }),
 
   /**

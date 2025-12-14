@@ -7,7 +7,6 @@ import {
   archiveTrackedDomain,
   bulkArchiveTrackedDomains,
   bulkRemoveTrackedDomains,
-  countTrackedDomainsByStatus,
   createTrackedDomainWithLimitCheck,
   deleteTrackedDomain,
   findTrackedDomain,
@@ -21,14 +20,13 @@ import {
 } from "@/lib/db/repos/tracked-domains";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
 import { VerificationMethodSchema } from "@/lib/schemas";
 import {
+  buildVerificationInstructions,
   generateVerificationToken,
-  getVerificationInstructions,
   tryAllVerificationMethods,
   verifyDomainOwnership,
 } from "@/server/services/verification";
@@ -47,45 +45,7 @@ const DomainInputSchema = z
     return { domain: registrable };
   });
 
-/**
- * Build verification instructions for all methods.
- * Centralizes instruction generation to avoid drift if methods are added.
- */
-function buildVerificationInstructions(domain: string, token: string) {
-  return {
-    dns_txt: getVerificationInstructions(domain, token, "dns_txt"),
-    html_file: getVerificationInstructions(domain, token, "html_file"),
-    meta_tag: getVerificationInstructions(domain, token, "meta_tag"),
-  };
-}
-
 export const trackingRouter = createTRPCRouter({
-  /**
-   * Get user's limits and current usage.
-   * Optimized to run all queries in parallel.
-   */
-  getLimits: protectedProcedure.query(async ({ ctx }) => {
-    // Run all independent queries in parallel for better performance
-    const [sub, counts, proMaxDomains] = await Promise.all([
-      getUserSubscription(ctx.user.id),
-      countTrackedDomainsByStatus(ctx.user.id),
-      getMaxDomainsForTier("pro"),
-    ]);
-
-    return {
-      tier: sub.tier,
-      maxDomains: sub.maxDomains,
-      activeCount: counts.active,
-      archivedCount: counts.archived,
-      // Only active domains count against limit
-      canAddMore: counts.active < sub.maxDomains,
-      // When a canceled subscription expires (null = no pending cancellation)
-      subscriptionEndsAt: sub.endsAt,
-      // Pro tier limit for upgrade prompts
-      proMaxDomains,
-    };
-  }),
-
   /**
    * List active (non-archived) tracked domains for the current user.
    * Supports optional cursor-based pagination for infinite scroll.

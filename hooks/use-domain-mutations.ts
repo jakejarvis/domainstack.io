@@ -15,10 +15,10 @@ import type { AppRouter } from "@/server/routers/_app";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 /**
- * Limits data shape inferred from tracking.getLimits procedure.
+ * Limits data shape inferred from user.getLimits procedure.
  * Using inference ensures client types stay in sync with server.
  */
-type LimitsData = RouterOutputs["tracking"]["getLimits"];
+type LimitsData = RouterOutputs["user"]["getLimits"];
 
 /**
  * Paginated domains data shape from tracking.listDomains procedure.
@@ -118,7 +118,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
   const queryClient = useQueryClient();
 
   // Query keys for cache manipulation
-  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+  const limitsQueryKey = trpc.user.getLimits.queryKey();
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const archivedDomainsQueryKey = trpc.tracking.listArchivedDomains.queryKey();
 

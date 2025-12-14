@@ -38,7 +38,7 @@ interface OAuthButtonProps {
  */
 export function OAuthButton({
   provider,
-  callbackURL = "/dashboard",
+  callbackURL,
   className,
   isLoading = false,
   isAnyLoading = false,

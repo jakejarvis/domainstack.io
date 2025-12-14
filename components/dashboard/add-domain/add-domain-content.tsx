@@ -66,7 +66,7 @@ export function AddDomainContent({
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
   // Check user limits
-  const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
+  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
 
   const {
     // State

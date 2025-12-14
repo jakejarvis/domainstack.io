@@ -453,3 +453,15 @@ export function getVerificationInstructions(
       };
   }
 }
+
+/**
+ * Build verification instructions for all methods.
+ * Centralizes instruction generation to avoid drift if methods are added.
+ */
+export function buildVerificationInstructions(domain: string, token: string) {
+  return {
+    dns_txt: getVerificationInstructions(domain, token, "dns_txt"),
+    html_file: getVerificationInstructions(domain, token, "html_file"),
+    meta_tag: getVerificationInstructions(domain, token, "meta_tag"),
+  };
+}

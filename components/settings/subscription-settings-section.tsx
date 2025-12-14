@@ -29,7 +29,7 @@ export function SubscriptionSettingsSection() {
     useCustomerPortal();
 
   // Query
-  const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
+  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
 
   if (limitsQuery.isLoading) {
     return <SubscriptionSkeleton showCard={false} />;

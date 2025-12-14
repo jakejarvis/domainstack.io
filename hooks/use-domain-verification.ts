@@ -68,7 +68,7 @@ export function useDomainVerification({
   const queryClient = useQueryClient();
 
   // Query key for limits invalidation
-  const limitsQueryKey = trpc.tracking.getLimits.queryKey();
+  const limitsQueryKey = trpc.user.getLimits.queryKey();
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
 
   const addDomainMutation = useMutation({

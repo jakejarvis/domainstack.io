@@ -59,7 +59,7 @@ export function DashboardContent() {
   const trpc = useTRPC();
   const router = useRouter();
 
-  const limitsQuery = useQuery(trpc.tracking.getLimits.queryOptions());
+  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
 
   // Use infinite query for domains (enables infinite scroll in grid view)
   const domainsInfiniteQuery = useInfiniteQuery({

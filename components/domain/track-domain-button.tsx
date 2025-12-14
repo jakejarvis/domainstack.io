@@ -65,7 +65,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
       queryKey: trpc.tracking.listDomains.queryKey(),
     });
     void queryClient.invalidateQueries({
-      queryKey: trpc.tracking.getLimits.queryKey(),
+      queryKey: trpc.user.getLimits.queryKey(),
     });
   }, [queryClient, trpc]);
 
