@@ -8,12 +8,18 @@ import type {
   StatusFilter,
 } from "@/lib/constants/domain-filters";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { ProviderCategory } from "@/lib/schemas";
 
-// Re-export filter types for convenience
-export type {
-  HealthFilter,
-  StatusFilter,
-} from "@/lib/constants/domain-filters";
+export type AvailableProvider = {
+  id: string;
+  name: string;
+  domain: string | null;
+};
+
+export type AvailableProvidersByCategory = Record<
+  ProviderCategory,
+  AvailableProvider[]
+>;
 
 /**
  * Determine health status based on expiration date
@@ -56,6 +62,7 @@ export function useDashboardFilters(
       status: parseAsArrayOf(parseAsString).withDefault([]),
       health: parseAsArrayOf(parseAsString).withDefault([]),
       tlds: parseAsArrayOf(parseAsString).withDefault([]),
+      providers: parseAsArrayOf(parseAsString).withDefault([]),
     },
     {
       shallow: true, // Don't trigger server re-render
@@ -74,12 +81,124 @@ export function useDashboardFilters(
     return Array.from(tldSet).sort();
   }, [domains]);
 
+  // Extract unique providers from domains, grouped by category
+  // Only include providers from verified, non-archived domains
+  const availableProviders = useMemo((): AvailableProvidersByCategory => {
+    const providersByCategory: AvailableProvidersByCategory = {
+      registrar: [],
+      dns: [],
+      hosting: [],
+      email: [],
+      ca: [],
+    };
+
+    // Use Maps to deduplicate by ID within each category
+    const registrarMap = new Map<string, AvailableProvider>();
+    const dnsMap = new Map<string, AvailableProvider>();
+    const hostingMap = new Map<string, AvailableProvider>();
+    const emailMap = new Map<string, AvailableProvider>();
+    const caMap = new Map<string, AvailableProvider>();
+
+    for (const domain of domains) {
+      // Skip unverified or archived domains
+      if (!domain.verified || domain.archivedAt !== null) {
+        continue;
+      }
+
+      // Extract registrar
+      if (domain.registrar.id && domain.registrar.name) {
+        if (!registrarMap.has(domain.registrar.id)) {
+          registrarMap.set(domain.registrar.id, {
+            id: domain.registrar.id,
+            name: domain.registrar.name,
+            domain: domain.registrar.domain,
+          });
+        }
+      }
+
+      // Extract DNS
+      if (domain.dns.id && domain.dns.name) {
+        if (!dnsMap.has(domain.dns.id)) {
+          dnsMap.set(domain.dns.id, {
+            id: domain.dns.id,
+            name: domain.dns.name,
+            domain: domain.dns.domain,
+          });
+        }
+      }
+
+      // Extract hosting
+      if (domain.hosting.id && domain.hosting.name) {
+        if (!hostingMap.has(domain.hosting.id)) {
+          hostingMap.set(domain.hosting.id, {
+            id: domain.hosting.id,
+            name: domain.hosting.name,
+            domain: domain.hosting.domain,
+          });
+        }
+      }
+
+      // Extract email
+      if (domain.email.id && domain.email.name) {
+        if (!emailMap.has(domain.email.id)) {
+          emailMap.set(domain.email.id, {
+            id: domain.email.id,
+            name: domain.email.name,
+            domain: domain.email.domain,
+          });
+        }
+      }
+
+      // Extract CA
+      if (domain.ca.id && domain.ca.name) {
+        if (!caMap.has(domain.ca.id)) {
+          caMap.set(domain.ca.id, {
+            id: domain.ca.id,
+            name: domain.ca.name,
+            domain: domain.ca.domain,
+          });
+        }
+      }
+    }
+
+    // Convert maps to sorted arrays
+    providersByCategory.registrar = Array.from(registrarMap.values()).sort(
+      (a, b) => a.name.localeCompare(b.name),
+    );
+    providersByCategory.dns = Array.from(dnsMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    providersByCategory.hosting = Array.from(hostingMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    providersByCategory.email = Array.from(emailMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    providersByCategory.ca = Array.from(caMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    return providersByCategory;
+  }, [domains]);
+
+  // Create a flat set of all valid provider IDs for validation
+  const validProviderIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const category of Object.values(availableProviders)) {
+      for (const provider of category) {
+        ids.add(provider.id);
+      }
+    }
+    return ids;
+  }, [availableProviders]);
+
   // Check if any filters are active
   const hasActiveFilters =
     filters.search.length > 0 ||
     filters.status.length > 0 ||
     filters.health.length > 0 ||
-    filters.tlds.length > 0;
+    filters.tlds.length > 0 ||
+    filters.providers.length > 0;
 
   // Filter domains based on current filters
   const filteredDomains = useMemo(() => {
@@ -123,9 +242,45 @@ export function useDashboardFilters(
         }
       }
 
+      // Provider filter - match if ANY provider matches
+      // Only consider valid provider IDs (from verified, non-archived domains)
+      if (filters.providers.length > 0) {
+        // Filter to only valid provider IDs
+        const validSelectedProviders = filters.providers.filter((id) =>
+          validProviderIds.has(id),
+        );
+
+        // If no valid providers after filtering, skip this filter
+        if (validSelectedProviders.length === 0) {
+          return true;
+        }
+
+        const providerSet = new Set(validSelectedProviders);
+        let hasMatch = false;
+
+        // Check each provider category using their database IDs
+        if (domain.registrar.id && providerSet.has(domain.registrar.id)) {
+          hasMatch = true;
+        }
+        if (domain.dns.id && providerSet.has(domain.dns.id)) {
+          hasMatch = true;
+        }
+        if (domain.hosting.id && providerSet.has(domain.hosting.id)) {
+          hasMatch = true;
+        }
+        if (domain.email.id && providerSet.has(domain.email.id)) {
+          hasMatch = true;
+        }
+        if (domain.ca.id && providerSet.has(domain.ca.id)) {
+          hasMatch = true;
+        }
+
+        if (!hasMatch) return false;
+      }
+
       return true;
     });
-  }, [domains, filters, now]);
+  }, [domains, filters, now, validProviderIds]);
 
   // Compute stats for health summary
   const stats = useMemo(() => {
@@ -177,8 +332,19 @@ export function useDashboardFilters(
     options?.onFilterChange?.();
   };
 
+  const setProviders = (values: string[]) => {
+    setFilters({ providers: values.length > 0 ? values : null });
+    options?.onFilterChange?.();
+  };
+
   const clearFilters = () => {
-    setFilters({ search: null, status: null, health: null, tlds: null });
+    setFilters({
+      search: null,
+      status: null,
+      health: null,
+      tlds: null,
+      providers: null,
+    });
     options?.onFilterChange?.();
   };
 
@@ -198,18 +364,21 @@ export function useDashboardFilters(
     status: filters.status as StatusFilter[],
     health: filters.health as HealthFilter[],
     tlds: filters.tlds,
+    providers: filters.providers,
 
     // Setters
     setSearch,
     setStatus,
     setHealth,
     setTlds,
+    setProviders,
     clearFilters,
     applyHealthFilter,
 
     // Computed values
     filteredDomains,
     availableTlds,
+    availableProviders,
     hasActiveFilters,
     stats,
   };

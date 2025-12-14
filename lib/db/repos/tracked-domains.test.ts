@@ -362,10 +362,11 @@ describe("getTrackedDomainsForUser", () => {
       verificationStatus: "unverified",
       notificationOverrides: {},
     });
-    expect(result[0].registrar).toEqual({ name: null, domain: null });
-    expect(result[0].dns).toEqual({ name: null, domain: null });
-    expect(result[0].hosting).toEqual({ name: null, domain: null });
-    expect(result[0].email).toEqual({ name: null, domain: null });
+    expect(result[0].registrar).toEqual({ id: null, name: null, domain: null });
+    expect(result[0].dns).toEqual({ id: null, name: null, domain: null });
+    expect(result[0].hosting).toEqual({ id: null, name: null, domain: null });
+    expect(result[0].email).toEqual({ id: null, name: null, domain: null });
+    expect(result[0].ca).toEqual({ id: null, name: null, domain: null });
   });
 });
 

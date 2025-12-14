@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +26,13 @@ export type MultiSelectOption<T extends string> = {
   label: string;
   /** Optional search keywords to match against (in addition to value and label) */
   keywords?: string[];
+  /** Optional domain for favicon rendering */
+  domain?: string | null;
+};
+
+export type MultiSelectSection<T extends string> = {
+  label: string;
+  options: MultiSelectOption<T>[];
 };
 
 export type MultiSelectProps<T extends string> = {
@@ -32,12 +40,16 @@ export type MultiSelectProps<T extends string> = {
   label: string;
   /** Icon displayed before the label */
   icon: LucideIcon;
-  /** Available options to select from */
-  options: MultiSelectOption<T>[];
+  /** Available options to select from (flat list) */
+  options?: MultiSelectOption<T>[];
+  /** Available options grouped into sections (mutually exclusive with options) */
+  sections?: MultiSelectSection<T>[];
   /** Currently selected values */
   selected: T[];
   /** Callback when selection changes */
   onSelectionChange: (values: T[]) => void;
+  /** Custom option renderer (receives option and returns content) */
+  renderOption?: (option: MultiSelectOption<T>) => ReactNode;
   /** Whether to show a search input (default: false) */
   searchable?: boolean;
   /** Custom class name for the trigger button */
@@ -48,14 +60,16 @@ export type MultiSelectProps<T extends string> = {
 
 /**
  * A multi-select dropdown component using Popover + Command (cmdk).
- * Supports optional search and displays a selection count badge.
+ * Supports optional search, sections, custom rendering, and displays a selection count badge.
  */
 export function MultiSelect<T extends string>({
   label,
   icon: Icon,
   options,
+  sections,
   selected,
   onSelectionChange,
+  renderOption,
   searchable = false,
   className,
   popoverWidth = "w-48",
@@ -69,6 +83,10 @@ export function MultiSelect<T extends string>({
       onSelectionChange([...selected, value]);
     }
   };
+
+  // Default option renderer
+  const defaultRenderOption = (option: MultiSelectOption<T>) => option.label;
+  const optionRenderer = renderOption ?? defaultRenderOption;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -97,26 +115,53 @@ export function MultiSelect<T extends string>({
           {searchable && <CommandInput placeholder={`Search ${label}...`} />}
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => {
-                const isSelected = selected.includes(option.value);
-                return (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    keywords={option.keywords}
-                    onSelect={() => toggleOption(option.value)}
-                    className="cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={isSelected}
-                      className="pointer-events-none"
-                    />
-                    {option.label}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
+            {sections ? (
+              // Render sections
+              sections.map((section) => (
+                <CommandGroup key={section.label} heading={section.label}>
+                  {section.options.map((option) => {
+                    const isSelected = selected.includes(option.value);
+                    return (
+                      <CommandItem
+                        key={option.value}
+                        value={option.value}
+                        keywords={option.keywords}
+                        onSelect={() => toggleOption(option.value)}
+                        className="cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          className="pointer-events-none"
+                        />
+                        {optionRenderer(option)}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              ))
+            ) : (
+              // Render flat options list
+              <CommandGroup>
+                {options?.map((option) => {
+                  const isSelected = selected.includes(option.value);
+                  return (
+                    <CommandItem
+                      key={option.value}
+                      value={option.value}
+                      keywords={option.keywords}
+                      onSelect={() => toggleOption(option.value)}
+                      className="cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        className="pointer-events-none"
+                      />
+                      {optionRenderer(option)}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

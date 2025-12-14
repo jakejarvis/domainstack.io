@@ -75,7 +75,11 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button variant="outline" onClick={onClearFilters}>
+          <Button
+            variant="outline"
+            onClick={onClearFilters}
+            className="cursor-pointer"
+          >
             Clear Filters
           </Button>
         </EmptyContent>

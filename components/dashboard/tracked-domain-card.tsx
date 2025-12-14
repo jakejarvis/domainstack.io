@@ -140,6 +140,7 @@ export function TrackedDomainCard({
             <ScreenshotTooltip domain={domainName}>
               <Link
                 href={`/${domainName}`}
+                prefetch={false}
                 className="block min-w-0 hover:underline"
               >
                 <CardTitle className="truncate text-base">
@@ -172,7 +173,11 @@ export function TrackedDomainCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/${domainName}`} className="cursor-pointer pr-4">
+                <Link
+                  href={`/${domainName}`}
+                  prefetch={false}
+                  className="cursor-pointer pr-4"
+                >
                   <FileSymlink className="size-4" />
                   Open Report
                 </Link>

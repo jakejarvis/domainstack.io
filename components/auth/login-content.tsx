@@ -75,6 +75,7 @@ export function LoginContent({
           href="/terms"
           className="underline underline-offset-2 hover:text-foreground"
           onClick={onNavigate}
+          prefetch={false}
         >
           Terms of Service
         </Link>{" "}
@@ -83,6 +84,7 @@ export function LoginContent({
           href="/privacy"
           className="underline underline-offset-2 hover:text-foreground"
           onClick={onNavigate}
+          prefetch={false}
         >
           Privacy Policy
         </Link>

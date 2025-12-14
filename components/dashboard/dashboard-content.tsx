@@ -91,12 +91,15 @@ export function DashboardContent() {
     status,
     health,
     tlds,
+    providers,
     setSearch,
     setStatus,
     setHealth,
     setTlds,
+    setProviders,
     filteredDomains: filteredUnsorted,
     availableTlds,
+    availableProviders,
     hasActiveFilters,
     clearFilters,
     applyHealthFilter,
@@ -416,11 +419,14 @@ export function DashboardContent() {
               status={status}
               health={health}
               tlds={tlds}
+              providers={providers}
               availableTlds={availableTlds}
+              availableProviders={availableProviders}
               onSearchChange={setSearch}
               onStatusChange={setStatus}
               onHealthChange={setHealth}
               onTldsChange={setTlds}
+              onProvidersChange={setProviders}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
               viewMode={viewMode}

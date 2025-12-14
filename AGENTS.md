@@ -213,7 +213,9 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
 - Unarchiving checks capacity before allowing reactivation.
 
 ### Dashboard Features
-- **Filtering:** URL-persisted filters via `nuqs` (search, status, health, TLDs). Hook: `hooks/use-dashboard-filters.ts`.
+- **Filtering:** URL-persisted filters via `nuqs` (search, health, TLDs, providers). Hook: `hooks/use-dashboard-filters.ts`.
+  - Providers filter: Multi-section dropdown showing registrar, DNS, hosting, email, and CA providers with favicons
+  - Status filter: Hidden filter only accessible via health summary "pending verification" badge
 - **Sorting:** URL-persisted sorting via `nuqs` for both grid and table views. Hook: `hooks/use-dashboard-sort.ts`.
   - Default: Alphabetical by name (domainName.asc)
   - Grid view: Dropdown with preset sort options (domainName.asc, domainName.desc, expirationDate.asc, expirationDate.desc, createdAt.desc)
@@ -231,7 +233,7 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
   - Consolidated into single localStorage key for efficiency
 - **Bulk actions:** Multi-select with floating toolbar for archive/delete. Hook: `hooks/use-selection.ts`. Component: `components/dashboard/bulk-actions-toolbar.tsx`.
 - **Health summary:** Clickable badges showing expiring/pending counts. Component: `components/dashboard/health-summary.tsx`.
-- **Filter constants:** `lib/constants/domain-filters.ts` defines `STATUS_OPTIONS` and `HEALTH_OPTIONS`.
+- **Filter constants:** `lib/constants/domain-filters.ts` defines `HEALTH_OPTIONS` and re-exports `ProviderCategory` from schemas.
 
 ### Environment variables
 - `POLAR_ACCESS_TOKEN`: API token from Polar dashboard.

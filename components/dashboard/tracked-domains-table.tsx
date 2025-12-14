@@ -168,6 +168,7 @@ export function TrackedDomainsTable({
           <ScreenshotTooltip domain={row.original.domainName}>
             <Link
               href={`/${row.original.domainName}`}
+              prefetch={false}
               className="group/link flex items-center"
             >
               <span className="font-medium text-[13px] group-hover/link:underline">
@@ -349,6 +350,7 @@ export function TrackedDomainsTable({
               <DropdownMenuItem asChild>
                 <Link
                   href={`/${row.original.domainName}`}
+                  prefetch={false}
                   className="cursor-pointer pr-4"
                 >
                   <FileSymlink className="size-3.5" />

@@ -5,14 +5,15 @@ import {
   Activity,
   Check,
   ChevronDown,
+  EthernetPort,
   Filter,
   Globe,
   Search,
-  ShieldCheck,
   X,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
+import { Favicon } from "@/components/domain/favicon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,13 +34,14 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { MultiSelect } from "@/components/ui/multi-select";
+import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import { SORT_OPTIONS, type SortOption } from "@/hooks/use-dashboard-sort";
-import { HEALTH_OPTIONS, STATUS_OPTIONS } from "@/lib/constants";
-import type {
-  HealthFilter,
-  StatusFilter,
-} from "@/lib/constants/domain-filters";
+import {
+  HEALTH_OPTIONS,
+  type HealthFilter,
+  type StatusFilter,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type DomainFiltersProps = {
@@ -47,12 +49,15 @@ type DomainFiltersProps = {
   status: StatusFilter[];
   health: HealthFilter[];
   tlds: string[];
+  providers: string[];
   availableTlds: string[];
+  availableProviders: AvailableProvidersByCategory;
   hasActiveFilters: boolean;
   onSearchChange: (value: string) => void;
   onStatusChange: (values: StatusFilter[]) => void;
   onHealthChange: (values: HealthFilter[]) => void;
   onTldsChange: (values: string[]) => void;
+  onProvidersChange: (values: string[]) => void;
   onClearFilters: () => void;
   // Sort (only shown in grid view)
   viewMode: ViewMode;
@@ -68,19 +73,28 @@ type FilterChip =
   | { type: "search"; value: string; label: string }
   | { type: "status"; value: StatusFilter; label: string }
   | { type: "health"; value: HealthFilter; label: string }
-  | { type: "tld"; value: string; label: string };
+  | { type: "tld"; value: string; label: string }
+  | {
+      type: "provider";
+      value: string;
+      label: string;
+      domain: string | null;
+    };
 
 export function DomainFilters({
   search,
   status,
   health,
   tlds,
+  providers,
   availableTlds,
+  availableProviders,
   hasActiveFilters,
   onSearchChange,
   onStatusChange,
   onHealthChange,
   onTldsChange,
+  onProvidersChange,
   onClearFilters,
   viewMode,
   sortOption,
@@ -102,6 +116,84 @@ export function DomainFilters({
     [availableTlds],
   );
 
+  // Memoize provider sections for the multi-select
+  const providerSections = useMemo(() => {
+    const sections = [];
+
+    if (availableProviders.registrar.length > 0) {
+      sections.push({
+        label: "Registrar",
+        options: availableProviders.registrar.map((p) => ({
+          value: p.id,
+          label: p.name,
+          domain: p.domain,
+          keywords: [p.name],
+        })),
+      });
+    }
+
+    if (availableProviders.dns.length > 0) {
+      sections.push({
+        label: "DNS",
+        options: availableProviders.dns.map((p) => ({
+          value: p.id,
+          label: p.name,
+          domain: p.domain,
+          keywords: [p.name],
+        })),
+      });
+    }
+
+    if (availableProviders.hosting.length > 0) {
+      sections.push({
+        label: "Hosting",
+        options: availableProviders.hosting.map((p) => ({
+          value: p.id,
+          label: p.name,
+          domain: p.domain,
+          keywords: [p.name],
+        })),
+      });
+    }
+
+    if (availableProviders.email.length > 0) {
+      sections.push({
+        label: "Email",
+        options: availableProviders.email.map((p) => ({
+          value: p.id,
+          label: p.name,
+          domain: p.domain,
+          keywords: [p.name],
+        })),
+      });
+    }
+
+    if (availableProviders.ca.length > 0) {
+      sections.push({
+        label: "CA",
+        options: availableProviders.ca.map((p) => ({
+          value: p.id,
+          label: p.name,
+          domain: p.domain,
+          keywords: [p.name],
+        })),
+      });
+    }
+
+    return sections;
+  }, [availableProviders]);
+
+  // Flat map of all providers for chip rendering
+  const allProvidersMap = useMemo(() => {
+    const map = new Map<string, { name: string; domain: string | null }>();
+    for (const category of Object.values(availableProviders)) {
+      for (const provider of category) {
+        map.set(provider.id, { name: provider.name, domain: provider.domain });
+      }
+    }
+    return map;
+  }, [availableProviders]);
+
   // Get labels for active filters to show as chips
   const activeFilterChips: FilterChip[] = [
     // Include search term as a chip if present
@@ -114,10 +206,11 @@ export function DomainFilters({
           },
         ]
       : []),
+    // Status chips (from health summary clicks)
     ...status.map((s) => ({
       type: "status" as const,
       value: s,
-      label: STATUS_OPTIONS.find((o) => o.value === s)?.label ?? s,
+      label: s === "verified" ? "Verified" : "Pending Verification",
     })),
     ...health.map((h) => ({
       type: "health" as const,
@@ -128,6 +221,12 @@ export function DomainFilters({
       type: "tld" as const,
       value: t,
       label: `.${t}`, // Display with leading dot
+    })),
+    ...providers.map((p) => ({
+      type: "provider" as const,
+      value: p,
+      label: allProvidersMap.get(p)?.name ?? p,
+      domain: allProvidersMap.get(p)?.domain ?? null,
     })),
   ];
 
@@ -144,18 +243,22 @@ export function DomainFilters({
         onStatusChange(status.filter((s) => s !== chip.value));
       } else if (chip.type === "health") {
         onHealthChange(health.filter((h) => h !== chip.value));
-      } else {
+      } else if (chip.type === "tld") {
         onTldsChange(tlds.filter((t) => t !== chip.value));
+      } else {
+        onProvidersChange(providers.filter((p) => p !== chip.value));
       }
     },
     [
       status,
       health,
       tlds,
+      providers,
       onSearchChange,
       onStatusChange,
       onHealthChange,
       onTldsChange,
+      onProvidersChange,
     ],
   );
 
@@ -192,14 +295,6 @@ export function DomainFilters({
         {/* Filter dropdowns */}
         <div className="flex flex-wrap gap-2">
           <MultiSelect
-            label="Status"
-            icon={ShieldCheck}
-            options={STATUS_OPTIONS}
-            selected={status}
-            onSelectionChange={onStatusChange}
-            className="cursor-pointer"
-          />
-          <MultiSelect
             label="Health"
             icon={Activity}
             options={HEALTH_OPTIONS}
@@ -218,6 +313,30 @@ export function DomainFilters({
               className="cursor-pointer"
             />
           )}
+          {providerSections.length > 0 && (
+            <MultiSelect
+              label="Providers"
+              icon={EthernetPort}
+              sections={providerSections}
+              selected={providers}
+              onSelectionChange={onProvidersChange}
+              renderOption={(option) => (
+                <div className="flex items-center gap-2 truncate">
+                  {option.domain && (
+                    <Favicon
+                      domain={option.domain}
+                      size={14}
+                      className="shrink-0 rounded"
+                    />
+                  )}
+                  <span className="truncate">{option.label}</span>
+                </div>
+              )}
+              searchable
+              popoverWidth="w-72"
+              className="cursor-pointer"
+            />
+          )}
         </div>
       </div>
 
@@ -227,7 +346,6 @@ export function DomainFilters({
         {hasActiveFilters && (
           <Button
             variant="ghost"
-            size="sm"
             onClick={onClearFilters}
             className="cursor-pointer text-muted-foreground"
           >
@@ -335,14 +453,20 @@ export function DomainFilters({
           {activeFilterChips.map((chip) => (
             <Badge
               key={`${chip.type}-${chip.value}`}
-              variant="secondary"
-              className="gap-1 pr-1"
+              className="select-none gap-1 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30"
             >
-              {chip.label}
+              {chip.type === "provider" && chip.domain && (
+                <Favicon
+                  domain={chip.domain}
+                  size={12}
+                  className="shrink-0 rounded"
+                />
+              )}
+              <span className="truncate">{chip.label}</span>
               <button
                 type="button"
                 onClick={() => removeFilter(chip)}
-                className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/30"
+                className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
                 aria-label={`Remove ${chip.label} filter`}
               >
                 <X className="size-3" />

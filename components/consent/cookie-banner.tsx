@@ -98,6 +98,7 @@ export function CookieBanner() {
           We use cookies to understand how you use our service.{" "}
           <Link
             href="/privacy#cookies"
+            prefetch={false}
             className="text-foreground/80 underline underline-offset-2 hover:text-foreground"
           >
             Learn more.

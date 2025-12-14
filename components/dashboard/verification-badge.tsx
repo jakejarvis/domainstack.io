@@ -58,7 +58,7 @@ export function VerificationBadge({
         asChild={!!onClick}
         className={cn(
           "select-none gap-1 border-danger-border bg-danger/20 py-1 font-semibold text-danger-foreground",
-          onClick && "cursor-pointer transition-opacity hover:opacity-80",
+          onClick && "cursor-pointer transition-opacity hover:opacity-95",
           className,
         )}
       >
@@ -132,7 +132,7 @@ export function VerificationBadge({
       variant="outline"
       className={cn(
         "select-none gap-1 border-warning-border bg-warning/20 py-1 font-semibold text-warning-foreground",
-        onClick && "cursor-pointer transition-opacity hover:opacity-80",
+        onClick && "cursor-pointer transition-opacity hover:opacity-95",
         className,
       )}
     >

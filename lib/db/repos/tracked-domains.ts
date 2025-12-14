@@ -5,6 +5,7 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
   inArray,
   isNotNull,
@@ -14,6 +15,7 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
+  certificates,
   dnsRecords,
   domains,
   hosting,
@@ -43,6 +45,7 @@ export type CreateTrackedDomainParams = {
 export type DnsRecordForTooltip = Pick<DnsRecord, "value" | "priority">;
 
 export type ProviderInfo = {
+  id: string | null;
   name: string | null;
   domain: string | null;
   records?: DnsRecordForTooltip[];
@@ -69,6 +72,7 @@ export type TrackedDomainWithDetails = {
   dns: ProviderInfo;
   hosting: ProviderInfo;
   email: ProviderInfo;
+  ca: ProviderInfo;
 };
 
 /**
@@ -258,14 +262,21 @@ type TrackedDomainRow = {
   verifiedAt: Date | null;
   archivedAt: Date | null;
   expirationDate: Date | null;
+  registrarId: string | null;
   registrarName: string | null;
   registrarDomain: string | null;
+  dnsId: string | null;
   dnsName: string | null;
   dnsDomain: string | null;
+  hostingId: string | null;
   hostingName: string | null;
   hostingDomain: string | null;
+  emailId: string | null;
   emailName: string | null;
   emailDomain: string | null;
+  caId: string | null;
+  caName: string | null;
+  caDomain: string | null;
 };
 
 /**
@@ -291,10 +302,19 @@ function transformToTrackedDomainWithDetails(
     verifiedAt: row.verifiedAt,
     archivedAt: row.archivedAt,
     expirationDate: row.expirationDate,
-    registrar: { name: row.registrarName, domain: row.registrarDomain },
-    dns: { name: row.dnsName, domain: row.dnsDomain },
-    hosting: { name: row.hostingName, domain: row.hostingDomain },
-    email: { name: row.emailName, domain: row.emailDomain },
+    registrar: {
+      id: row.registrarId,
+      name: row.registrarName,
+      domain: row.registrarDomain,
+    },
+    dns: { id: row.dnsId, name: row.dnsName, domain: row.dnsDomain },
+    hosting: {
+      id: row.hostingId,
+      name: row.hostingName,
+      domain: row.hostingDomain,
+    },
+    email: { id: row.emailId, name: row.emailName, domain: row.emailDomain },
+    ca: { id: row.caId, name: row.caName, domain: row.caDomain },
   };
 }
 
@@ -464,6 +484,17 @@ async function queryTrackedDomainsWithDetails(
   const dnsProvider = alias(providers, "dns_provider");
   const hostingProvider = alias(providers, "hosting_provider");
   const emailProvider = alias(providers, "email_provider");
+  const caProvider = alias(providers, "ca_provider");
+
+  // Subquery to get the latest certificate per domain
+  const latestCertificate = db
+    .selectDistinctOn([certificates.domainId], {
+      domainId: certificates.domainId,
+      caProviderId: certificates.caProviderId,
+    })
+    .from(certificates)
+    .orderBy(certificates.domainId, desc(certificates.validTo))
+    .as("latest_certificate");
 
   const rows = await db
     .select({
@@ -483,14 +514,21 @@ async function queryTrackedDomainsWithDetails(
       verifiedAt: userTrackedDomains.verifiedAt,
       archivedAt: userTrackedDomains.archivedAt,
       expirationDate: registrations.expirationDate,
+      registrarId: registrarProvider.id,
       registrarName: registrarProvider.name,
       registrarDomain: registrarProvider.domain,
+      dnsId: dnsProvider.id,
       dnsName: dnsProvider.name,
       dnsDomain: dnsProvider.domain,
+      hostingId: hostingProvider.id,
       hostingName: hostingProvider.name,
       hostingDomain: hostingProvider.domain,
+      emailId: emailProvider.id,
       emailName: emailProvider.name,
       emailDomain: emailProvider.domain,
+      caId: caProvider.id,
+      caName: caProvider.name,
+      caDomain: caProvider.domain,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
@@ -506,6 +544,8 @@ async function queryTrackedDomainsWithDetails(
       eq(hosting.hostingProviderId, hostingProvider.id),
     )
     .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
+    .leftJoin(latestCertificate, eq(domains.id, latestCertificate.domainId))
+    .leftJoin(caProvider, eq(latestCertificate.caProviderId, caProvider.id))
     .where(whereCondition)
     .orderBy(orderByColumn);
 
