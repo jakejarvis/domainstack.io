@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   ArrowUp,
   ChevronDown,
   ChevronUp,
@@ -14,6 +15,7 @@ import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,11 +43,25 @@ export function CertificatesSection({
   const [showAll, setShowAll] = useState(false);
   const firstCert = data && data.length > 0 ? data[0] : null;
   const remainingCerts = data && data.length > 1 ? data.slice(1) : [];
+  const hasExpiredCert = data?.some((cert) => cert.expired) ?? false;
 
   return (
     <Section {...sections.certificates}>
       {firstCert ? (
         <>
+          {hasExpiredCert && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle />
+              <AlertTitle>Certificate Expired</AlertTitle>
+              <AlertDescription>
+                This domain&apos;s SSL/TLS certificate has expired. Browsers
+                will show security warnings when visitors try to access this
+                site over HTTPS. Renew the certificate as soon as possible to
+                restore secure connections.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Fragment
             key={`cert-${firstCert.subject}-${firstCert.validFrom}-${firstCert.validTo}`}
           >

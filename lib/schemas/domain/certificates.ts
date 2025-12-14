@@ -8,6 +8,9 @@ export const CertificateSchema = z.object({
   validFrom: z.string(),
   validTo: z.string(),
   caProvider: ProviderRefSchema,
+  // Indicates if this certificate is currently expired
+  // This allows us to show expired certs with appropriate UI warnings
+  expired: z.boolean().optional(),
 });
 
 export const CertificatesResponseSchema = z.array(CertificateSchema);

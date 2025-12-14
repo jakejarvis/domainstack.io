@@ -161,6 +161,135 @@ describe("getCertificates", () => {
     expect(nextCalls).toBe(prevCalls);
   });
 
+  it("marks expired certificates with expired flag", async () => {
+    tlsMock.callListener = true;
+    const expiredLeaf = makePeer({
+      subject: {
+        CN: "expired.example.com",
+      } as unknown as tls.PeerCertificate["subject"],
+      issuer: {
+        O: "Let's Encrypt",
+      } as unknown as tls.PeerCertificate["issuer"],
+      // Certificate expired in 2020
+      valid_from: "Jan 1 00:00:00 2020 GMT",
+      valid_to: "Jan 8 00:00:00 2020 GMT",
+    });
+
+    const getPeerCertificate = vi.fn().mockReturnValueOnce({
+      ...expiredLeaf,
+      // Self-reference to simulate single-cert chain
+      issuerCertificate: expiredLeaf,
+    });
+
+    tlsMock.socketMock = {
+      getPeerCertificate,
+      setTimeout: vi.fn(),
+      end: vi.fn(),
+      on: vi.fn(),
+    } as unknown as tls.TLSSocket;
+
+    // Create domain record first
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "expired.example.com",
+      tld: "com",
+      unicodeName: "expired.example.com",
+    });
+
+    const { getCertificates } = await import("./certificates");
+    const out = await getCertificates("expired.example.com");
+
+    expect(out.length).toBeGreaterThan(0);
+    // The expired flag should be set for the expired certificate
+    expect(out[0].expired).toBe(true);
+    expect(out[0].validTo).toBe("2020-01-08T00:00:00.000Z");
+  });
+
+  it("does not set expired flag for valid certificates", async () => {
+    tlsMock.callListener = true;
+    const validLeaf = makePeer({
+      subject: {
+        CN: "valid.example.com",
+      } as unknown as tls.PeerCertificate["subject"],
+      issuer: {
+        O: "Let's Encrypt",
+      } as unknown as tls.PeerCertificate["issuer"],
+      // Certificate valid until 2040
+      valid_from: "Jan 1 00:00:00 2039 GMT",
+      valid_to: "Jan 8 00:00:00 2040 GMT",
+    });
+
+    const getPeerCertificate = vi.fn().mockReturnValueOnce({
+      ...validLeaf,
+      issuerCertificate: validLeaf,
+    });
+
+    tlsMock.socketMock = {
+      getPeerCertificate,
+      setTimeout: vi.fn(),
+      end: vi.fn(),
+      on: vi.fn(),
+    } as unknown as tls.TLSSocket;
+
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "valid.example.com",
+      tld: "com",
+      unicodeName: "valid.example.com",
+    });
+
+    const { getCertificates } = await import("./certificates");
+    const out = await getCertificates("valid.example.com");
+
+    expect(out.length).toBeGreaterThan(0);
+    // expired field should be undefined (or not present) for valid certificates
+    expect(out[0].expired).toBeUndefined();
+  });
+
+  it("marks expired certificates from cache", async () => {
+    tlsMock.callListener = true;
+    const expiredLeaf = makePeer({
+      subject: {
+        CN: "cached-expired.example.com",
+      } as unknown as tls.PeerCertificate["subject"],
+      issuer: {
+        O: "Let's Encrypt",
+      } as unknown as tls.PeerCertificate["issuer"],
+      valid_from: "Jan 1 00:00:00 2020 GMT",
+      valid_to: "Jan 8 00:00:00 2020 GMT",
+    });
+
+    const getPeerCertificate = vi.fn().mockReturnValueOnce({
+      ...expiredLeaf,
+      issuerCertificate: expiredLeaf,
+    });
+
+    tlsMock.socketMock = {
+      getPeerCertificate,
+      setTimeout: vi.fn(),
+      end: vi.fn(),
+      on: vi.fn(),
+    } as unknown as tls.TLSSocket;
+
+    const { upsertDomain } = await import("@/lib/db/repos/domains");
+    await upsertDomain({
+      name: "cached-expired.example.com",
+      tld: "com",
+      unicodeName: "cached-expired.example.com",
+    });
+
+    const { getCertificates } = await import("./certificates");
+    
+    // First call - fetches from TLS
+    const out1 = await getCertificates("cached-expired.example.com");
+    expect(out1[0].expired).toBe(true);
+
+    // Second call - should use cache and still mark as expired
+    const out2 = await getCertificates("cached-expired.example.com");
+    expect(out2[0].expired).toBe(true);
+    expect(out2[0].validTo).toBe("2020-01-08T00:00:00.000Z");
+  });
+
   it("throws on timeout", async () => {
     tlsMock.callListener = false;
     // Ensure cache is clear and use a distinct domain key

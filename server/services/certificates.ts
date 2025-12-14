@@ -74,18 +74,24 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
     );
     if (fresh) {
-      const out: Certificate[] = existing.map((c) => ({
-        issuer: c.issuer,
-        subject: c.subject,
-        altNames: safeAltNamesArray(c.altNames),
-        validFrom: new Date(c.validFrom).toISOString(),
-        validTo: new Date(c.validTo).toISOString(),
-        // Use cached provider data if available, otherwise detect
-        caProvider:
-          c.caProviderDomain && c.caProviderName
-            ? { domain: c.caProviderDomain, name: c.caProviderName }
-            : detectCertificateAuthority(c.issuer),
-      }));
+      const out: Certificate[] = existing.map((c) => {
+        const validTo = new Date(c.validTo);
+        const isExpired = validTo.getTime() < nowMs;
+        
+        return {
+          issuer: c.issuer,
+          subject: c.subject,
+          altNames: safeAltNamesArray(c.altNames),
+          validFrom: new Date(c.validFrom).toISOString(),
+          validTo: validTo.toISOString(),
+          // Use cached provider data if available, otherwise detect
+          caProvider:
+            c.caProviderDomain && c.caProviderName
+              ? { domain: c.caProviderDomain, name: c.caProviderName }
+              : detectCertificateAuthority(c.issuer),
+          expired: isExpired || undefined, // Only include if true
+        };
+      });
 
       logger.info("cache hit", {
         domain,
@@ -150,6 +156,9 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
 
     const out: Certificate[] = chain.map((c) => {
       const issuerName = toName(c.issuer);
+      const validTo = new Date(c.valid_to);
+      const isExpired = validTo.getTime() < Date.now();
+      
       return {
         issuer: issuerName,
         subject: toName(c.subject),
@@ -157,8 +166,9 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           (c as Partial<{ subjectaltname: string }>).subjectaltname,
         ),
         validFrom: new Date(c.valid_from).toISOString(),
-        validTo: new Date(c.valid_to).toISOString(),
+        validTo: validTo.toISOString(),
         caProvider: detectCertificateAuthority(issuerName),
+        expired: isExpired || undefined, // Only include if true
       };
     });
 
