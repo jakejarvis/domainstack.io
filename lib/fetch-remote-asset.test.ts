@@ -254,7 +254,7 @@ describe("fetchRemoteAsset", () => {
     });
   });
 
-  it("falls back to GET when HEAD returns 405 and fallbackToGetOn405 is enabled", async () => {
+  it("falls back to GET when HEAD returns 405 and fallbackToGetOnHeadFailure is enabled", async () => {
     const headResponse = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
@@ -274,7 +274,7 @@ describe("fetchRemoteAsset", () => {
     const result = await fetchRemoteAsset({
       url: "https://example.com/",
       method: "HEAD",
-      fallbackToGetOn405: true,
+      fallbackToGetOnHeadFailure: true,
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -295,7 +295,7 @@ describe("fetchRemoteAsset", () => {
     });
   });
 
-  it("throws 405 error when HEAD returns 405 and fallbackToGetOn405 is disabled", async () => {
+  it("throws 405 error when HEAD returns 405 and fallbackToGetOnHeadFailure is disabled", async () => {
     const headResponse = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
@@ -307,7 +307,7 @@ describe("fetchRemoteAsset", () => {
       fetchRemoteAsset({
         url: "https://example.com/",
         method: "HEAD",
-        fallbackToGetOn405: false,
+        fallbackToGetOnHeadFailure: false,
       }),
     ).rejects.toMatchObject({
       code: "response_error",
@@ -329,7 +329,6 @@ describe("fetchRemoteAsset", () => {
       fetchRemoteAsset({
         url: "https://example.com/",
         method: "GET",
-        fallbackToGetOn405: true,
       }),
     ).rejects.toMatchObject({
       code: "response_error",
@@ -366,7 +365,7 @@ describe("fetchRemoteAsset", () => {
     const result = await fetchRemoteAsset({
       url: "https://example.com/",
       method: "HEAD",
-      fallbackToGetOn405: true,
+      fallbackToGetOnHeadFailure: true,
       maxRedirects: 5,
     });
 
@@ -393,7 +392,7 @@ describe("fetchRemoteAsset", () => {
       fetchRemoteAsset({
         url: "https://example.com/",
         method: "HEAD",
-        fallbackToGetOn405: true,
+        fallbackToGetOnHeadFailure: true,
       }),
     ).rejects.toMatchObject({
       code: "response_error",

@@ -36,13 +36,11 @@ export class RemoteAssetError extends Error {
   }
 }
 
-export type FetchRemoteAssetOptions = {
+type BaseFetchRemoteAssetOptions = {
   /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
   currentUrl?: string | URL;
-  /** HTTP method to use (defaults to GET). */
-  method?: "GET" | "HEAD";
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
   /** Abort timeout per request/redirect hop (ms). */
@@ -57,9 +55,23 @@ export type FetchRemoteAssetOptions = {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
-  /** If true, automatically retry with GET when HEAD returns 405 (Method Not Allowed). */
-  fallbackToGetOn405?: boolean;
 };
+
+type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
+  /** HTTP method to use (defaults to GET). */
+  method?: "GET";
+};
+
+type FetchRemoteAssetOptionsWithHead = BaseFetchRemoteAssetOptions & {
+  /** HTTP method to use. */
+  method: "HEAD";
+  /** If true, automatically retry with GET when HEAD fails with 405 (Method Not Allowed). */
+  fallbackToGetOnHeadFailure?: boolean;
+};
+
+export type FetchRemoteAssetOptions =
+  | FetchRemoteAssetOptionsWithGet
+  | FetchRemoteAssetOptionsWithHead;
 
 export type RemoteAssetResult = {
   buffer: Buffer;
@@ -86,7 +98,8 @@ export async function fetchRemoteAsset(
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
-  const fallbackToGetOn405 = opts.fallbackToGetOn405 ?? false;
+  const fallbackToGetOnHeadFailure =
+    opts.method === "HEAD" ? (opts.fallbackToGetOnHeadFailure ?? false) : false;
   const allowedHosts =
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
@@ -126,7 +139,7 @@ export async function fetchRemoteAsset(
     if (
       response.status === 405 &&
       method === "HEAD" &&
-      fallbackToGetOn405 &&
+      fallbackToGetOnHeadFailure &&
       !retryingWithGet
     ) {
       logger.debug("HEAD returned 405, retrying with GET", {

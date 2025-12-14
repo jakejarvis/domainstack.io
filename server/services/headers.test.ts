@@ -37,7 +37,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
-  
+
   // Set default mock implementation
   fetchRemoteAssetMock.mockResolvedValue({
     buffer: Buffer.from(""),
@@ -210,11 +210,11 @@ describe("getHeaders", () => {
     expect(out.status).toBe(200);
     expect(out.statusMessage).toBe("OK");
 
-    // Verify the call included fallbackToGetOn405
+    // Verify the call included fallbackToGetOnHeadFailure
     expect(fetchRemoteAssetMock).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "HEAD",
-        fallbackToGetOn405: true,
+        fallbackToGetOnHeadFailure: true,
       }),
     );
   });
