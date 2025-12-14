@@ -1,8 +1,7 @@
 "use client";
 
-import { ExternalLink, Info, Logs, Search } from "lucide-react";
+import { ExternalLink, Info, Logs, Search, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { CertificateBypassedAlert } from "@/components/domain/headers/certificate-bypassed-alert";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { Section } from "@/components/domain/section";
@@ -17,7 +16,7 @@ import {
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { sections } from "@/lib/constants/sections";
 import { normalizeDomainInput } from "@/lib/domain";
-import type { HeadersResponse } from "@/lib/schemas";
+import type { Certificate, HeadersResponse } from "@/lib/schemas";
 
 /**
  * Extract domain from a Location header value.
@@ -37,23 +36,21 @@ function extractDomainFromLocation(locationValue: string): string | null {
 export function HeadersSection({
   domain,
   data,
+  certificates,
 }: {
   domain?: string;
   data?: HeadersResponse | null;
+  certificates?: Certificate[] | null;
 }) {
   const headers = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
   const status = data?.status;
   const statusMessage = data?.statusMessage;
-  const certificateBypassUsed = data?.certificateBypassUsed;
+  const hasExpiredCert = certificates?.some((cert) => cert.expired) ?? false;
 
   return (
     <Section {...sections.headers}>
       {headers && headers.length > 0 ? (
         <div className="space-y-4">
-          {certificateBypassUsed && domain && (
-            <CertificateBypassedAlert domain={domain} />
-          )}
-
           {status !== 200 && (
             <Alert className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
               <Info aria-hidden="true" />
@@ -115,12 +112,33 @@ export function HeadersSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Logs />
+              {hasExpiredCert ? <ShieldAlert /> : <Logs />}
             </EmptyMedia>
-            <EmptyTitle>No HTTP headers detected</EmptyTitle>
+            <EmptyTitle>
+              {hasExpiredCert
+                ? "Cannot fetch headers"
+                : "No HTTP headers detected"}
+            </EmptyTitle>
             <EmptyDescription>
-              We couldn&apos;t fetch any HTTP response headers for this site. It
-              may be offline or blocking requests.
+              {hasExpiredCert && domain ? (
+                <>
+                  This site&apos;s SSL/TLS certificate is invalid or expired,
+                  preventing secure connections. See the{" "}
+                  <Link
+                    href={`/${encodeURIComponent(domain)}#certificates`}
+                    className="inline-flex items-center gap-1 text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
+                    title="View certificate details"
+                  >
+                    <span className="font-medium">Certificates section</span>
+                  </Link>{" "}
+                  for details.
+                </>
+              ) : (
+                <>
+                  We couldn&apos;t fetch any HTTP response headers for this
+                  site. It may be offline or blocking requests.
+                </>
+              )}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

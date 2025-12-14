@@ -1,5 +1,4 @@
 import { lookup as dnsLookup } from "node:dns/promises";
-import { Agent } from "node:https";
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
@@ -24,8 +23,7 @@ export type RemoteAssetErrorCode =
   | "private_ip"
   | "redirect_limit"
   | "response_error"
-  | "size_exceeded"
-  | "cert_error";
+  | "size_exceeded";
 
 export class RemoteAssetError extends Error {
   constructor(
@@ -59,8 +57,6 @@ export type FetchRemoteAssetOptions = {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
-  /** If true, bypass certificate validation (useful for expired/self-signed certs). */
-  rejectUnauthorized?: boolean;
 };
 
 export type RemoteAssetResult = {
@@ -69,8 +65,6 @@ export type RemoteAssetResult = {
   finalUrl: string;
   status: number;
   headers: Record<string, string>;
-  /** True if we bypassed certificate validation due to an invalid/expired cert */
-  certificateBypassUsed?: boolean;
 };
 
 /**
@@ -89,45 +83,20 @@ export async function fetchRemoteAsset(
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
-  const rejectUnauthorized = opts.rejectUnauthorized ?? true;
   const allowedHosts =
     opts.allowedHosts
       ?.map((host) => host.trim().toLowerCase())
       .filter(Boolean) ?? [];
-
-  let certificateBypassUsed = false;
-
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
     // Treat every hop (including the initial request) as untrusted and re-run
     // the hostname/IP vetting so redirects cannot smuggle us into a private net.
     await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
 
-    let response: Response;
-    try {
-      response = await timedFetch(currentUrl.toString(), {
-        method,
-        headers: opts.headers,
-        timeoutMs,
-        rejectUnauthorized,
-      });
-    } catch (err) {
-      // Check if this is a certificate error
-      if (rejectUnauthorized && isCertificateError(err)) {
-        // Retry with certificate validation disabled
-        logger.debug("retrying with certificate bypass", {
-          url: currentUrl.toString(),
-        });
-        certificateBypassUsed = true;
-        response = await timedFetch(currentUrl.toString(), {
-          method,
-          headers: opts.headers,
-          timeoutMs,
-          rejectUnauthorized: false,
-        });
-      } else {
-        throw err;
-      }
-    }
+    const response = await timedFetch(currentUrl.toString(), {
+      method,
+      headers: opts.headers,
+      timeoutMs,
+    });
 
     if (isRedirect(response)) {
       if (redirectCount === maxRedirects) {
@@ -192,7 +161,6 @@ export async function fetchRemoteAsset(
       finalUrl: currentUrl.toString(),
       status: response.status,
       headers,
-      certificateBypassUsed: certificateBypassUsed || undefined,
     };
   }
 
@@ -303,22 +271,10 @@ async function ensureUrlAllowed(
  */
 async function timedFetch(
   url: string,
-  opts: {
-    headers?: HeadersInit;
-    timeoutMs: number;
-    method: "GET" | "HEAD";
-    rejectUnauthorized?: boolean;
-  },
+  opts: { headers?: HeadersInit; timeoutMs: number; method: "GET" | "HEAD" },
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs);
-
-  // Create a custom HTTPS agent if we need to bypass certificate validation
-  const agent =
-    opts.rejectUnauthorized === false && url.startsWith("https://")
-      ? new Agent({ rejectUnauthorized: false })
-      : undefined;
-
   try {
     return await fetch(url, {
       method: opts.method,
@@ -328,8 +284,6 @@ async function timedFetch(
       },
       redirect: "manual",
       signal: controller.signal,
-      // @ts-expect-error - Node.js fetch supports agent, but types don't include it yet
-      agent,
     });
   } finally {
     clearTimeout(timer);
@@ -414,36 +368,4 @@ function isBlockedIp(address: string): boolean {
   } catch {
     return true;
   }
-}
-
-/**
- * Check if an error is a certificate validation error.
- */
-function isCertificateError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-
-  // Check for certificate errors in the cause chain
-  const cause = (err as Error & { cause?: Error & { code?: string } }).cause;
-  if (cause?.code) {
-    const certErrorCodes = [
-      "CERT_HAS_EXPIRED",
-      "CERT_NOT_YET_VALID",
-      "DEPTH_ZERO_SELF_SIGNED_CERT",
-      "SELF_SIGNED_CERT_IN_CHAIN",
-      "UNABLE_TO_GET_ISSUER_CERT",
-      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
-      "ERR_TLS_CERT_ALTNAME_INVALID",
-    ];
-    if (certErrorCodes.includes(cause.code)) {
-      return true;
-    }
-  }
-
-  // Check error message patterns
-  const message = err.message.toLowerCase();
-  return (
-    message.includes("certificate") ||
-    message.includes("cert has expired") ||
-    message.includes("self signed certificate")
-  );
 }

@@ -57,10 +57,19 @@ function CertificatesSectionContent({ domain }: { domain: string }) {
 
 function HeadersSectionContent({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
+  const { data: headersData } = useSuspenseQuery(
     trpc.domain.getHeaders.queryOptions({ domain }),
   );
-  return <HeadersSection domain={domain} data={data} />;
+  const { data: certificatesData } = useSuspenseQuery(
+    trpc.domain.getCertificates.queryOptions({ domain }),
+  );
+  return (
+    <HeadersSection
+      domain={domain}
+      data={headersData}
+      certificates={certificatesData}
+    />
+  );
 }
 
 function SeoSectionContent({ domain }: { domain: string }) {

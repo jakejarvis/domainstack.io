@@ -127,12 +127,7 @@ export const getHeaders = cache(async function getHeaders(
       statusMessage = undefined;
     }
 
-    return {
-      headers: normalized,
-      status: final.status,
-      statusMessage,
-      certificateBypassUsed: final.certificateBypassUsed,
-    };
+    return { headers: normalized, status: final.status, statusMessage };
   } catch (err) {
     // Classify error: DNS resolution failures are expected for domains without A/AAAA records
     const isDnsError = isExpectedDnsError(err);

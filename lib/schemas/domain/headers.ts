@@ -11,8 +11,6 @@ export const HeadersResponseSchema = z.object({
   headers: HeadersSchema,
   status: z.number(),
   statusMessage: z.string().optional(),
-  // True if we bypassed certificate validation due to an invalid/expired cert
-  certificateBypassUsed: z.boolean().optional(),
 });
 
 export type Header = z.infer<typeof HeaderSchema>;
