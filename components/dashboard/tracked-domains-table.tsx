@@ -501,7 +501,7 @@ export function TrackedDomainsTable({
                       key={row.id}
                       className={cn(
                         "group transition-colors hover:bg-muted/30",
-                        isSelected && "bg-primary/10",
+                        isSelected && "bg-primary/5",
                       )}
                     >
                       {/* Checkbox column */}
@@ -610,7 +610,7 @@ export function TrackedDomainsTable({
                     key={row.id}
                     className={cn(
                       "group transition-colors hover:bg-muted/30",
-                      isSelected && "bg-primary/10",
+                      isSelected && "bg-primary/5",
                     )}
                   >
                     {cells.map((cell, index) => {

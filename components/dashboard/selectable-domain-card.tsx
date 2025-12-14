@@ -39,46 +39,7 @@ export function SelectableDomainCard({
         aria-hidden
       />
 
-      {/* Checkbox - hidden by default, shown on hover/focus or when selected */}
-      <div
-        className={cn(
-          "absolute top-3 left-3 z-10 transition-all duration-150",
-          isSelected
-            ? "opacity-100"
-            : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-        )}
-      >
-        <button
-          type="button"
-          onClick={onToggleSelect}
-          aria-label={`Select ${domain.domainName}`}
-          aria-pressed={isSelected}
-          className={cn(
-            "flex size-5 cursor-pointer items-center justify-center rounded transition-all",
-            isSelected
-              ? "bg-primary text-primary-foreground"
-              : "border-2 border-foreground/40 bg-transparent hover:border-foreground/60",
-          )}
-        >
-          {isSelected && (
-            <svg
-              className="size-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={3}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          )}
-        </button>
-      </div>
-
-      {/* The actual card */}
+      {/* The actual card with integrated checkbox */}
       <TrackedDomainCard
         domainName={domain.domainName}
         verified={domain.verified}
@@ -93,6 +54,8 @@ export function SelectableDomainCard({
         onVerify={onVerify}
         onRemove={onRemove}
         onArchive={onArchive}
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
         className={cn("h-full", isSelected && "bg-primary/10")}
       />
     </motion.div>

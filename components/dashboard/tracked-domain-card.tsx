@@ -22,6 +22,7 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +58,9 @@ type TrackedDomainCardProps = {
   onRemove: () => void;
   onArchive?: () => void;
   className?: string;
+  // Selection props - when provided, enables checkbox functionality
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 };
 
 export function TrackedDomainCard({
@@ -74,6 +78,8 @@ export function TrackedDomainCard({
   onRemove,
   onArchive,
   className,
+  isSelected = false,
+  onToggleSelect,
 }: TrackedDomainCardProps) {
   const accent = getHealthAccent(expirationDate, verified);
   const isFailing = verified && verificationStatus === "failing";
@@ -98,7 +104,29 @@ export function TrackedDomainCard({
 
       <CardHeader className="relative pt-6 pb-2">
         <div className="flex items-center gap-3">
-          <Favicon domain={domainName} size={32} />
+          <div className="relative size-8 shrink-0">
+            {/* Favicon - hidden on hover or when selected (only if selection is enabled) */}
+            <Favicon
+              domain={domainName}
+              size={32}
+              className={cn(
+                onToggleSelect &&
+                  (isSelected ? "hidden" : "group-hover:hidden"),
+              )}
+            />
+            {/* Checkbox - shown on hover or when selected (only if selection is enabled) */}
+            {onToggleSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={onToggleSelect}
+                aria-label={`Select ${domainName}`}
+                className={cn(
+                  "-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 size-5 cursor-pointer",
+                  isSelected ? "flex" : "hidden group-hover:flex",
+                )}
+              />
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <ScreenshotTooltip domain={domainName}>
               <Link

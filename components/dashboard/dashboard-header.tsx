@@ -74,8 +74,11 @@ export function DashboardHeader({
       </div>
       <div className="flex items-center justify-between gap-3">
         {/* Progress indicator */}
-        <div className="flex items-center gap-3">
-          <Progress value={percentage} className="w-24 md:w-32" />
+        <div className="flex items-center gap-3 pr-1">
+          <Progress
+            value={percentage}
+            className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
+          />
           <span className="text-[13px] text-muted-foreground tabular-nums">
             {trackedCount}/{maxDomains}
           </span>
@@ -85,7 +88,7 @@ export function DashboardHeader({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* View toggle - only show when there are domains */}
           {hasAnyDomains && (
-            <div className="inline-flex rounded-md border border-input dark:border-white/20">
+            <div className="inline-flex rounded-md border border-muted-foreground/30">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -94,7 +97,7 @@ export function DashboardHeader({
                     aria-label="Grid view"
                     aria-pressed={viewMode === "grid"}
                     className={cn(
-                      "flex h-9 w-10 items-center justify-center rounded-l-[5px] border-input border-r transition-colors dark:border-white/20",
+                      "flex h-9 w-10 items-center justify-center rounded-l-md border-input border-r transition-colors dark:border-white/20",
                       viewMode === "grid"
                         ? "bg-primary text-primary-foreground"
                         : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
@@ -113,7 +116,7 @@ export function DashboardHeader({
                     aria-label="Table view"
                     aria-pressed={viewMode === "table"}
                     className={cn(
-                      "flex h-9 w-10 items-center justify-center rounded-r-[5px] transition-colors",
+                      "flex h-9 w-10 items-center justify-center rounded-r-md transition-colors",
                       viewMode === "table"
                         ? "bg-primary text-primary-foreground"
                         : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
