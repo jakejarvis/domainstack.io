@@ -42,6 +42,7 @@ import type {
   VerificationStatusType,
 } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
+import type { ProviderCategory } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type TrackedDomainCardProps = {
@@ -56,6 +57,7 @@ type TrackedDomainCardProps = {
   dns: ProviderInfo;
   hosting: ProviderInfo;
   email: ProviderInfo;
+  ca: ProviderInfo;
   onVerify: () => void;
   onRemove: () => void;
   onArchive?: () => void;
@@ -77,6 +79,7 @@ export function TrackedDomainCard({
   dns,
   hosting,
   email,
+  ca,
   onVerify,
   onRemove,
   onArchive,
@@ -276,6 +279,14 @@ export function TrackedDomainCard({
               trackedDomainId={trackedDomainId}
               providerType="email"
             />
+
+            {/* CA */}
+            <InfoRow
+              label="CA"
+              provider={ca}
+              trackedDomainId={trackedDomainId}
+              providerType="ca"
+            />
           </div>
         ) : verified && isFailing ? (
           <>
@@ -338,6 +349,14 @@ export function TrackedDomainCard({
                 trackedDomainId={trackedDomainId}
                 providerType="email"
               />
+
+              {/* CA */}
+              <InfoRow
+                label="CA"
+                provider={ca}
+                trackedDomainId={trackedDomainId}
+                providerType="ca"
+              />
             </div>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
@@ -375,7 +394,7 @@ function InfoRow({
   provider?: ProviderInfo;
   children?: React.ReactNode;
   trackedDomainId?: string;
-  providerType?: "registrar" | "dns" | "hosting" | "email";
+  providerType?: ProviderCategory;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">

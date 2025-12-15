@@ -13,9 +13,8 @@ import type {
   DnsRecordForTooltip,
   ProviderInfo,
 } from "@/lib/db/repos/tracked-domains";
+import type { ProviderCategory } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
-
-type ProviderType = "registrar" | "dns" | "hosting" | "email";
 
 type ProviderWithTooltipProps = {
   provider: ProviderInfo;
@@ -30,7 +29,7 @@ type ProviderWithTooltipProps = {
   /** Tracked domain ID for lazy loading DNS records */
   trackedDomainId?: string;
   /** Provider type for extracting the correct records from domain details */
-  providerType?: ProviderType;
+  providerType?: ProviderCategory;
 };
 
 /**
@@ -51,12 +50,13 @@ export function ProviderWithTooltip({
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   const hasRecords = provider.records && provider.records.length > 0;
-  // Only lazy-load DNS records for DNS, hosting, and email providers (not registrars)
+  // Only lazy-load DNS records for DNS, hosting, and email providers (not registrars or CA)
   const shouldLazyLoad =
     !hasRecords &&
     !!trackedDomainId &&
     !!providerType &&
-    providerType !== "registrar";
+    providerType !== "registrar" &&
+    providerType !== "ca";
 
   // Lazy load domain details when tooltip opens (only if needed)
   // Always call the hook, but use enabled flag to control when it runs

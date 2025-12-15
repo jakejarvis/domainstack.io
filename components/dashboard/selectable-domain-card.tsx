@@ -52,6 +52,7 @@ export function SelectableDomainCard({
         dns={domain.dns}
         hosting={domain.hosting}
         email={domain.email}
+        ca={domain.ca}
         onVerify={onVerify}
         onRemove={onRemove}
         onArchive={onArchive}

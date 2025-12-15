@@ -52,7 +52,7 @@ import type {
   TrackedDomainWithDetails,
 } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
-import type { UserTier } from "@/lib/schemas";
+import type { ProviderCategory, UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type TrackedDomainsTableProps = {
@@ -76,7 +76,7 @@ function ProviderCell({
 }: {
   provider: ProviderInfo;
   trackedDomainId: string;
-  providerType: "registrar" | "dns" | "hosting" | "email";
+  providerType: ProviderCategory;
 }) {
   const { valueRef, isTruncated } = useTruncation();
 
@@ -301,6 +301,19 @@ export function TrackedDomainsTable({
             provider={row.original.email}
             trackedDomainId={row.original.id}
             providerType="email"
+          />
+        ),
+        size: 128,
+      },
+      {
+        id: "ca",
+        accessorFn: (row) => row.ca.name ?? "",
+        header: "CA",
+        cell: ({ row }) => (
+          <ProviderCell
+            provider={row.original.ca}
+            trackedDomainId={row.original.id}
+            providerType="ca"
           />
         ),
         size: 128,
