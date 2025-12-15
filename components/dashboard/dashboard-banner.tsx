@@ -148,7 +148,21 @@ export function DashboardBanner({
 
   return (
     <div className={cn(bannerVariants({ variant }), className)}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Decorative golden glows for gold variant */}
+      {variant === "gold" && (
+        <>
+          <div
+            aria-hidden
+            className="-right-16 -top-16 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="-bottom-16 -left-16 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
+          />
+        </>
+      )}
+
+      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Content */}
         <div className="flex items-start gap-3 sm:items-center">
           {Icon && (

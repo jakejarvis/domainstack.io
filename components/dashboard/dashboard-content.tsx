@@ -395,7 +395,6 @@ export function DashboardContent() {
       <UpgradePrompt
         currentCount={activeCount}
         maxDomains={maxDomains}
-        proMaxDomains={proMaxDomains}
         tier={tier}
       />
 

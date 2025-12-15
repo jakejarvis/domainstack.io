@@ -4,27 +4,23 @@ import { Gauge, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { UserTier } from "@/lib/schemas";
 
 type UpgradePromptProps = {
   currentCount: number;
   maxDomains: number;
-  proMaxDomains: number;
   tier: UserTier;
 };
 
 export function UpgradePrompt({
   currentCount,
   maxDomains,
-  proMaxDomains,
   tier,
 }: UpgradePromptProps) {
   const { handleUpgrade, isLoading } = useUpgradeCheckout();
@@ -39,47 +35,43 @@ export function UpgradePrompt({
   if (!nearLimit) return null;
 
   return (
-    <Card className="border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <Gauge className="size-5 text-accent-gold" />
-          <CardTitle className="text-lg">
-            {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
-          </CardTitle>
-        </div>
-        <CardDescription>
-          {atLimit
-            ? `You've reached your limit of ${maxDomains} tracked domains.`
-            : `You're using ${currentCount} of ${maxDomains} domain slots.`}{" "}
-          Upgrade to Pro for more capacity.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-muted-foreground text-sm">
-          <span className="font-medium text-foreground">
-            {PRO_TIER_INFO.name}
-          </span>
-          : Track up to {proMaxDomains} domains •{" "}
-          <span className="font-medium text-accent-gold">
-            {PRO_TIER_INFO.monthly.label}
-          </span>{" "}
-          or{" "}
-          <span className="font-medium text-accent-gold">
-            {PRO_TIER_INFO.yearly.label}
-          </span>{" "}
-          <span className="text-muted-foreground/70">
-            ({PRO_TIER_INFO.yearly.savings})
-          </span>
+    <Card className="relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+      {/* Decorative elements - subtle warm glows */}
+      <div
+        aria-hidden
+        className="-right-8 -top-8 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="-bottom-8 -left-8 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
+      />
+
+      <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 sm:flex-row sm:items-center">
+        <div className="flex-1 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
+              <Gauge className="size-5 text-accent-gold" />
+            </div>
+            <CardTitle className="text-lg">
+              {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
+            </CardTitle>
+          </div>
+          <CardDescription>
+            {atLimit
+              ? `You've reached your limit of ${maxDomains} tracked domains.`
+              : `You're using ${currentCount} of ${maxDomains} domain slots.`}{" "}
+            Upgrade to Pro for more capacity.
+          </CardDescription>
         </div>
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="cursor-pointer bg-foreground text-background hover:bg-foreground/90"
+          className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 sm:w-auto"
         >
           {isLoading ? <Spinner /> : <Gem className="size-4" />}
           {isLoading ? "Opening..." : "Upgrade to Pro"}
         </Button>
-      </CardContent>
+      </CardHeader>
     </Card>
   );
 }

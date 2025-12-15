@@ -194,14 +194,26 @@ export function AddDomainContent({
           {tier === "free" ? (
             <>
               {/* Pro upgrade option */}
-              <div className="rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-                <div className="mb-2 font-medium">{proTierInfo.name}</div>
-                <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
+              <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+                {/* Decorative elements - subtle warm glows */}
+                <div
+                  aria-hidden
+                  className="-right-8 -top-8 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+                />
+                <div
+                  aria-hidden
+                  className="-bottom-8 -left-8 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
+                />
+
+                <div className="relative mb-2 font-medium">
+                  {proTierInfo.name}
+                </div>
+                <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
                   {proTierInfo.features.map((feature) => (
                     <li key={feature}>• {feature}</li>
                   ))}
                 </ul>
-                <div className="flex items-baseline gap-2 text-sm">
+                <div className="relative flex items-baseline gap-2 text-sm">
                   <span className="font-semibold text-accent-gold">
                     {proTierInfo.monthly.label}
                   </span>
