@@ -443,6 +443,9 @@ function InfoRow({
                     isLoading={tooltipData.isLoading}
                     records={tooltipData.records}
                     certificateExpiryDate={tooltipData.certificateExpiryDate}
+                    whoisServer={tooltipData.whoisServer}
+                    rdapServers={tooltipData.rdapServers}
+                    registrationSource={tooltipData.registrationSource}
                   />
                 </TooltipContent>
               </Tooltip>
