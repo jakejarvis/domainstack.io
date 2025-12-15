@@ -31,12 +31,6 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Health summary skeleton - optional badges */}
-      <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-8 w-40 rounded-full" />
-        <Skeleton className="h-8 w-44 rounded-full" />
-      </div>
-
       {/* Filters skeleton */}
       <div className="space-y-3">
         {/* Mobile: collapsible button */}

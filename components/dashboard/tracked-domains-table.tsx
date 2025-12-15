@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
-import { ProviderWithTooltip } from "@/components/dashboard/provider-with-tooltip";
+import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
+import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTablePagination } from "@/hooks/use-table-pagination";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -80,16 +81,59 @@ function ProviderCell({
 }) {
   const { valueRef, isTruncated } = useTruncation();
 
-  return (
-    <ProviderWithTooltip
-      provider={provider}
-      truncationRef={valueRef}
-      isTruncated={isTruncated}
-      faviconSize={13}
-      trackedDomainId={trackedDomainId}
-      providerType={providerType}
-    />
+  const tooltipData = useProviderTooltipData({
+    provider,
+    trackedDomainId,
+    providerType,
+  });
+
+  if (!provider.name) {
+    return <span className="text-muted-foreground text-xs">—</span>;
+  }
+
+  const providerContent = (
+    <span className="flex min-w-0 items-center gap-1.5">
+      {provider.domain && (
+        <Favicon
+          domain={provider.domain}
+          size={13}
+          className="shrink-0 rounded"
+        />
+      )}
+      <span ref={valueRef} className="min-w-0 flex-1 truncate">
+        {provider.name}
+      </span>
+    </span>
   );
+
+  if (tooltipData.shouldShowTooltip) {
+    return (
+      <Tooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
+        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+        <TooltipContent>
+          <ProviderTooltipContent
+            providerName={provider.name}
+            providerDomain={provider.domain}
+            providerType={providerType}
+            isLoading={tooltipData.isLoading}
+            records={tooltipData.records}
+            certificateExpiryDate={tooltipData.certificateExpiryDate}
+          />
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (isTruncated) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+        <TooltipContent>{provider.name}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return providerContent;
 }
 
 function SortIndicator({ isSorted }: { isSorted: false | "asc" | "desc" }) {

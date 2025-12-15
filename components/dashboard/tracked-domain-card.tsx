@@ -16,7 +16,7 @@ import {
   DomainHealthBadge,
   getHealthAccent,
 } from "@/components/dashboard/domain-health-badge";
-import { ProviderWithTooltip } from "@/components/dashboard/provider-with-tooltip";
+import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
@@ -36,6 +36,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
+import { useTruncation } from "@/hooks/use-truncation";
 import type {
   ProviderInfo,
   VerificationMethod,
@@ -396,19 +398,64 @@ function InfoRow({
   trackedDomainId?: string;
   providerType?: ProviderCategory;
 }) {
+  const { valueRef, isTruncated } = useTruncation();
+
+  const tooltipData = useProviderTooltipData({
+    provider: provider ?? { id: null, name: null, domain: null },
+    trackedDomainId,
+    providerType,
+  });
+
+  const providerContent = (
+    <span className="flex min-w-0 items-center gap-1.5">
+      {provider?.domain && (
+        <Favicon
+          domain={provider.domain}
+          size={14}
+          className="shrink-0 rounded"
+        />
+      )}
+      <span ref={valueRef} className="min-w-0 flex-1 truncate">
+        {provider?.name}
+      </span>
+    </span>
+  );
+
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">
-      <span className="shrink-0 text-[10px] text-foreground/75 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+      <span className="flex shrink-0 items-center text-[10px] text-foreground/75 uppercase leading-[1.2] tracking-[0.08em] dark:text-foreground/80">
         {label}
       </span>
-      <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] text-foreground/95">
+      <span className="flex min-w-0 items-center justify-end gap-1.5 text-[13px] text-foreground/95 leading-[1.2]">
         {children ||
-          (provider && (
-            <ProviderWithTooltip
-              provider={provider}
-              trackedDomainId={trackedDomainId}
-              providerType={providerType}
-            />
+          (provider?.name ? (
+            tooltipData.shouldShowTooltip ? (
+              <Tooltip
+                open={tooltipData.isOpen}
+                onOpenChange={tooltipData.setIsOpen}
+              >
+                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+                <TooltipContent>
+                  <ProviderTooltipContent
+                    providerName={provider.name}
+                    providerDomain={provider.domain}
+                    providerType={providerType}
+                    isLoading={tooltipData.isLoading}
+                    records={tooltipData.records}
+                    certificateExpiryDate={tooltipData.certificateExpiryDate}
+                  />
+                </TooltipContent>
+              </Tooltip>
+            ) : isTruncated ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+                <TooltipContent>{provider.name}</TooltipContent>
+              </Tooltip>
+            ) : (
+              providerContent
+            )
+          ) : (
+            <span className="text-muted-foreground text-xs">—</span>
           ))}
       </span>
     </div>

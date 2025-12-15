@@ -5,7 +5,6 @@ import {
   and,
   asc,
   count,
-  desc,
   eq,
   inArray,
   isNotNull,
@@ -49,6 +48,7 @@ export type ProviderInfo = {
   name: string | null;
   domain: string | null;
   records?: DnsRecordForTooltip[];
+  certificateExpiryDate?: Date | null;
 };
 
 export type TrackedDomainWithDetails = {
@@ -277,6 +277,7 @@ type TrackedDomainRow = {
   caId: string | null;
   caName: string | null;
   caDomain: string | null;
+  certificateExpiryDate: Date | null;
 };
 
 /**
@@ -314,7 +315,12 @@ function transformToTrackedDomainWithDetails(
       domain: row.hostingDomain,
     },
     email: { id: row.emailId, name: row.emailName, domain: row.emailDomain },
-    ca: { id: row.caId, name: row.caName, domain: row.caDomain },
+    ca: {
+      id: row.caId,
+      name: row.caName,
+      domain: row.caDomain,
+      certificateExpiryDate: row.certificateExpiryDate,
+    },
   };
 }
 
@@ -486,14 +492,16 @@ async function queryTrackedDomainsWithDetails(
   const emailProvider = alias(providers, "email_provider");
   const caProvider = alias(providers, "ca_provider");
 
-  // Subquery to get the latest certificate per domain
+  // Subquery to get the leaf certificate per domain (expires first)
+  // Leaf certificates expire before intermediate/root certificates in the chain
   const latestCertificate = db
     .selectDistinctOn([certificates.domainId], {
       domainId: certificates.domainId,
       caProviderId: certificates.caProviderId,
+      validTo: certificates.validTo,
     })
     .from(certificates)
-    .orderBy(certificates.domainId, desc(certificates.validTo))
+    .orderBy(certificates.domainId, certificates.validTo)
     .as("latest_certificate");
 
   const rows = await db
@@ -529,6 +537,7 @@ async function queryTrackedDomainsWithDetails(
       caId: caProvider.id,
       caName: caProvider.name,
       caDomain: caProvider.domain,
+      certificateExpiryDate: latestCertificate.validTo,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
