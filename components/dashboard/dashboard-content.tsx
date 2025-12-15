@@ -389,12 +389,10 @@ export function DashboardContent() {
       )}
 
       {/* Subscription ending banner for users who canceled */}
-      {subscriptionEndsAt && (
-        <SubscriptionEndingBanner subscriptionEndsAt={subscriptionEndsAt} />
-      )}
+      <SubscriptionEndingBanner />
 
       {/* Upgrade prompt when near limit */}
-      <UpgradePrompt currentCount={activeCount} maxDomains={maxDomains} />
+      <UpgradePrompt />
 
       {/* Active domains view */}
       {activeTab === "active" && (

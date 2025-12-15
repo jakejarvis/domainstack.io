@@ -5,15 +5,11 @@ import { CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 
-type SubscriptionEndingBannerProps = {
-  subscriptionEndsAt: Date;
-};
-
-export function SubscriptionEndingBanner({
-  subscriptionEndsAt,
-}: SubscriptionEndingBannerProps) {
+export function SubscriptionEndingBanner() {
+  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
   const { handleUpgrade: handleResubscribe, isLoading } = useUpgradeCheckout();
   const { openPortal: handleManage, isLoading: isManageLoading } =
     useCustomerPortal();
@@ -24,8 +20,19 @@ export function SubscriptionEndingBanner({
     setNow(new Date());
   }, []);
 
+  // Don't show while loading, if subscription unavailable, or no end date
+  if (
+    isLoadingSubscription ||
+    !subscription ||
+    !subscription.subscriptionEndsAt
+  ) {
+    return null;
+  }
+
   // During SSR, don't show the banner (will render after hydration)
   if (!now) return null;
+
+  const { subscriptionEndsAt } = subscription;
 
   // Don't show if already expired (they would have been downgraded)
   const isExpired = subscriptionEndsAt < now;

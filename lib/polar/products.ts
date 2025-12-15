@@ -95,7 +95,7 @@ export function getTierForProductId(productId: string): UserTier | null {
 
 /**
  * Pro tier display info for UI components.
- * Use getProTierInfo() when you need dynamic limit from Edge Config.
+ * Use getProTierInfo() when you need the dynamic domain limit from the subscription.
  */
 export const PRO_TIER_INFO = {
   name: "Pro",
@@ -105,7 +105,7 @@ export const PRO_TIER_INFO = {
 
 /**
  * Get Pro tier info with dynamic domain limit.
- * Use this when you have access to the proMaxDomains from getSubscription query.
+ * Pass the proMaxDomains value from the getSubscription query.
  */
 export function getProTierInfo(proMaxDomains: number) {
   return {

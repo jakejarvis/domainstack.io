@@ -64,7 +64,12 @@ export function AddDomainContent({
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
   // Check user subscription
-  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
+  const {
+    subscription,
+    isLoading: isLoadingSubscription,
+    isError: isSubscriptionError,
+    refetch: refetchSubscription,
+  } = useSubscription();
 
   const {
     // State
@@ -133,6 +138,62 @@ export function AddDomainContent({
 
     return (
       <Card className={cn("w-full max-w-lg", className)}>{loadingContent}</Card>
+    );
+  }
+
+  // Show error state if subscription check failed
+  if (isSubscriptionError) {
+    const errorContent = (
+      <>
+        {showCard ? (
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="size-6 text-destructive" />
+            </div>
+            <CardTitle>Unable to Load Subscription</CardTitle>
+            <CardDescription>
+              We couldn&apos;t load your subscription details. Please try again.
+            </CardDescription>
+          </CardHeader>
+        ) : (
+          <div className="mb-4 flex flex-col items-center text-center">
+            <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="size-6 text-destructive" />
+            </div>
+            <h2 className="font-semibold text-lg leading-none tracking-tight">
+              Unable to Load Subscription
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">
+              We couldn&apos;t load your subscription details. Please try again.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => refetchSubscription()}
+            className="w-full cursor-pointer"
+          >
+            Retry
+          </Button>
+          {onClose && (
+            <Button variant="outline" onClick={onClose} className="w-full">
+              Close
+            </Button>
+          )}
+        </div>
+      </>
+    );
+
+    if (!showCard) {
+      return <div className={className}>{errorContent}</div>;
+    }
+
+    return (
+      <Card className={cn("w-full max-w-lg", className)}>
+        {errorContent}
+        <CardContent />
+      </Card>
     );
   }
 
