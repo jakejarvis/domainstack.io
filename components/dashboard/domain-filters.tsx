@@ -5,6 +5,7 @@ import {
   Activity,
   Check,
   ChevronDown,
+  ClockFading,
   EthernetPort,
   Filter,
   Globe,
@@ -69,17 +70,13 @@ type DomainFiltersProps = {
 };
 
 /** Discriminated union for type-safe filter chip handling */
-type FilterChip =
-  | { type: "search"; value: string; label: string }
-  | { type: "status"; value: StatusFilter; label: string }
-  | { type: "health"; value: HealthFilter; label: string }
-  | { type: "tld"; value: string; label: string }
-  | {
-      type: "provider";
-      value: string;
-      label: string;
-      domain: string | null;
-    };
+type FilterChip = {
+  type: "search" | "status" | "health" | "tld" | "provider";
+  value: string;
+  label: string;
+  prefix?: string;
+  icon: React.ReactNode;
+};
 
 export function DomainFilters({
   search,
@@ -185,10 +182,44 @@ export function DomainFilters({
 
   // Flat map of all providers for chip rendering
   const allProvidersMap = useMemo(() => {
-    const map = new Map<string, { name: string; domain: string | null }>();
-    for (const category of Object.values(availableProviders)) {
-      for (const provider of category) {
-        map.set(provider.id, { name: provider.name, domain: provider.domain });
+    const map = new Map<
+      string,
+      {
+        name: string;
+        category: string | undefined;
+        icon: React.ReactNode | null;
+      }
+    >();
+
+    for (const [categoryKey, providers] of Object.entries(availableProviders)) {
+      // Map category keys to display labels
+      const categoryLabel =
+        categoryKey === "registrar"
+          ? "Registrar"
+          : categoryKey === "dns"
+            ? "DNS"
+            : categoryKey === "hosting"
+              ? "Hosting"
+              : categoryKey === "email"
+                ? "Email"
+                : categoryKey === "ca"
+                  ? "CA"
+                  : undefined;
+
+      for (const provider of providers) {
+        map.set(provider.id, {
+          name: provider.name,
+          category: categoryLabel,
+          icon: provider.domain ? (
+            <Favicon
+              domain={provider.domain}
+              size={12}
+              className="shrink-0 rounded"
+            />
+          ) : (
+            <EthernetPort className="size-3 text-muted-foreground" />
+          ),
+        });
       }
     }
     return map;
@@ -202,7 +233,8 @@ export function DomainFilters({
           {
             type: "search" as const,
             value: search,
-            label: `Search: "${search}"`,
+            label: `"${search}"`,
+            icon: <Search className="size-3 text-muted-foreground" />,
           },
         ]
       : []),
@@ -211,22 +243,27 @@ export function DomainFilters({
       type: "status" as const,
       value: s,
       label: s === "verified" ? "Verified" : "Pending Verification",
+      icon: <ClockFading className="size-3 text-muted-foreground" />,
     })),
     ...health.map((h) => ({
       type: "health" as const,
       value: h,
       label: HEALTH_OPTIONS.find((o) => o.value === h)?.label ?? h,
+      icon: <Activity className="size-3 text-muted-foreground" />,
     })),
     ...tlds.map((t) => ({
       type: "tld" as const,
       value: t,
       label: `.${t}`, // Display with leading dot
+      prefix: "TLD",
+      icon: <Globe className="size-3 text-muted-foreground" />,
     })),
     ...providers.map((p) => ({
       type: "provider" as const,
       value: p,
       label: allProvidersMap.get(p)?.name ?? p,
-      domain: allProvidersMap.get(p)?.domain ?? null,
+      prefix: allProvidersMap.get(p)?.category ?? "",
+      icon: allProvidersMap.get(p)?.icon ?? null,
     })),
   ];
 
@@ -263,11 +300,11 @@ export function DomainFilters({
   );
 
   const filterContent = (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Left side: Search and filter dropdowns */}
-      <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+      <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
         {/* Search input */}
-        <div className="flex-1 md:max-w-xs">
+        <div className="flex-1 lg:max-w-xs">
           <InputGroup>
             <InputGroupAddon>
               <Search />
@@ -393,9 +430,9 @@ export function DomainFilters({
           </DropdownMenu>
         )}
 
-        {/* Column visibility - only for table view, hidden on mobile (shown outside collapsible) */}
+        {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}
         {viewMode === "table" && table && (
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <ColumnVisibilityMenu table={table} />
           </div>
         )}
@@ -405,11 +442,11 @@ export function DomainFilters({
 
   return (
     <div className="space-y-3">
-      {/* Desktop: always visible */}
-      <div className="hidden md:block">{filterContent}</div>
+      {/* Large screens: always visible */}
+      <div className="hidden lg:block">{filterContent}</div>
 
-      {/* Mobile/tablet: collapsible */}
-      <div className="md:hidden">
+      {/* Small/medium screens: collapsible */}
+      <div className="lg:hidden">
         <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
           <div className="flex items-center gap-2">
             <CollapsibleTrigger asChild>
@@ -435,7 +472,7 @@ export function DomainFilters({
               </Button>
             </CollapsibleTrigger>
 
-            {/* Column visibility - always visible on mobile for table view */}
+            {/* Column visibility - always visible in collapsed mode for table view */}
             {viewMode === "table" && table && (
               <ColumnVisibilityMenu table={table} />
             )}
@@ -453,21 +490,22 @@ export function DomainFilters({
           {activeFilterChips.map((chip) => (
             <Badge
               key={`${chip.type}-${chip.value}`}
-              className="select-none gap-1 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30"
+              className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30"
             >
-              {chip.type === "provider" && chip.domain && (
-                <Favicon
-                  domain={chip.domain}
-                  size={12}
-                  className="shrink-0 rounded"
-                />
-              )}
-              <span className="truncate">{chip.label}</span>
+              {chip.icon}
+              <span className="flex items-center gap-1 text-xs leading-none">
+                {chip.prefix && (
+                  <span className="shrink-0 text-muted-foreground">
+                    {chip.prefix}:
+                  </span>
+                )}
+                <span className="truncate">{chip.label}</span>
+              </span>
               <button
                 type="button"
                 onClick={() => removeFilter(chip)}
                 className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
-                aria-label={`Remove ${chip.label} filter`}
+                aria-label={`Remove ${chip.type} filter`}
               >
                 <X className="size-3" />
               </button>
