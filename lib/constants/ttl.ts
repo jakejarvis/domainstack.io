@@ -10,6 +10,12 @@ export const TTL_FAVICON = ONE_WEEK; // 1 week
 export const TTL_SCREENSHOT = 2 * ONE_WEEK; // 2 weeks
 export const TTL_OPENGRAPH_IMAGE = ONE_WEEK; // 1 week
 
+// ===== Avatar Proxy Cache TTLs =====
+// CDN cache duration for proxied user avatars from OAuth providers
+export const TTL_AVATAR_CDN = ONE_DAY; // 24 hours (s-maxage for CDN)
+export const TTL_AVATAR_BROWSER = ONE_HOUR; // 1 hour (max-age for browser)
+export const TTL_AVATAR_STALE = ONE_WEEK; // 1 week (stale-while-revalidate)
+
 // ===== Database Cache Expiry TTLs =====
 // When cached data in Postgres becomes stale and needs refresh.
 // Used by lib/ttl.ts functions to calculate expiresAt timestamps.

@@ -1,8 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
 
 type StepEnterDomainProps = {
@@ -42,44 +47,37 @@ export function StepEnterDomain({
   const canSubmit = domain.trim().length > 0 && !isLoading && !clientError;
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="add-domain-input">Domain name</Label>
-        <Input
-          id="add-domain-input"
-          placeholder="example.com"
-          value={domain}
-          onChange={(e) => setDomain(e.target.value)}
-          disabled={isLoading}
-          readOnly={readOnly}
-          inputMode="url"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          aria-invalid={!!displayError}
-          aria-describedby={displayError ? "add-domain-error" : undefined}
-          className={readOnly ? "cursor-default bg-muted" : undefined}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              if (canSubmit) {
-                onSubmit();
-              }
+    <Field data-invalid={!!displayError || undefined}>
+      <FieldLabel htmlFor="add-domain-input">Domain name</FieldLabel>
+      <Input
+        id="add-domain-input"
+        placeholder="example.com"
+        value={domain}
+        onChange={(e) => setDomain(e.target.value)}
+        disabled={isLoading}
+        readOnly={readOnly}
+        inputMode="url"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        aria-invalid={!!displayError}
+        className={readOnly ? "cursor-default opacity-70" : undefined}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (canSubmit) {
+              onSubmit();
             }
-          }}
-        />
-        {displayError && (
-          <p id="add-domain-error" className="text-destructive text-sm">
-            {displayError}
-          </p>
-        )}
-      </div>
-      <p className="text-muted-foreground text-sm">
+          }
+        }}
+      />
+      <FieldError>{displayError}</FieldError>
+      <FieldDescription>
         {readOnly
           ? "This domain will be added to your tracking list. Continue to verify ownership."
           : "Enter the domain you want to track. You'll need to verify ownership in the next step."}
-      </p>
-    </div>
+      </FieldDescription>
+    </Field>
   );
 }

@@ -30,3 +30,23 @@ export async function getUserById(userId: string): Promise<UserData | null> {
 
   return rows[0];
 }
+
+/**
+ * Get user's avatar URL by ID.
+ * Returns the external OAuth avatar URL or null if not found.
+ */
+export async function getUserAvatarUrl(userId: string): Promise<string | null> {
+  const rows = await db
+    .select({
+      image: users.image,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return rows[0].image;
+}

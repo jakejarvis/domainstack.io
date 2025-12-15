@@ -33,6 +33,7 @@ export function UserMenu() {
   }
 
   const user = session.user;
+  const avatarUrl = `/api/avatar/${user.id}`;
   const initials =
     (user.name || "")
       .split(" ")
@@ -78,10 +79,7 @@ export function UserMenu() {
             aria-label="User menu"
           >
             <Avatar className="size-8">
-              <AvatarImage
-                src={user.image || undefined}
-                alt={user.name || "User avatar"}
-              />
+              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {initials}
               </AvatarFallback>
@@ -92,10 +90,7 @@ export function UserMenu() {
           <DropdownMenuLabel className="font-normal">
             <div className="flex items-center gap-2.5">
               <Avatar className="size-8">
-                <AvatarImage
-                  src={user.image || undefined}
-                  alt={user.name || "User avatar"}
-                />
+                <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
                 <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                   {initials}
                 </AvatarFallback>
