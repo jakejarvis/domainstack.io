@@ -13,10 +13,10 @@ import type { AppRouter } from "@/server/routers/_app";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 /**
- * Limits data shape inferred from user.getLimits procedure.
+ * Subscription data shape inferred from user.getSubscription procedure.
  * Using inference ensures client types stay in sync with server.
  */
-type LimitsData = RouterOutputs["user"]["getLimits"];
+type SubscriptionData = RouterOutputs["user"]["getSubscription"];
 
 /**
  * Domains data shape from tracking.listDomains procedure.
@@ -29,7 +29,7 @@ type DomainsData = RouterOutputs["tracking"]["listDomains"];
  */
 type MutationContext = {
   previousDomains?: DomainsData;
-  previousLimits?: LimitsData;
+  previousSubscription?: SubscriptionData;
 };
 
 /**
@@ -47,12 +47,12 @@ type MutationHandlerOptions = {
 };
 
 /**
- * Helper to update limits cache for removing domains from active list.
+ * Helper to update subscription cache for removing domains from active list.
  */
-function updateLimitsForRemoval(
-  old: LimitsData | undefined,
+function updateSubscriptionForRemoval(
+  old: SubscriptionData | undefined,
   count: number,
-): LimitsData | undefined {
+): SubscriptionData | undefined {
   if (!old) return old;
   const newActiveCount = Math.max(0, old.activeCount - count);
   return {
@@ -63,12 +63,12 @@ function updateLimitsForRemoval(
 }
 
 /**
- * Helper to update limits cache for archiving domains.
+ * Helper to update subscription cache for archiving domains.
  */
-function updateLimitsForArchive(
-  old: LimitsData | undefined,
+function updateSubscriptionForArchive(
+  old: SubscriptionData | undefined,
   count: number,
-): LimitsData | undefined {
+): SubscriptionData | undefined {
   if (!old) return old;
   const newActiveCount = Math.max(0, old.activeCount - count);
   return {
@@ -80,12 +80,12 @@ function updateLimitsForArchive(
 }
 
 /**
- * Helper to update limits cache for unarchiving domains.
+ * Helper to update subscription cache for unarchiving domains.
  */
-function updateLimitsForUnarchive(
-  old: LimitsData | undefined,
+function updateSubscriptionForUnarchive(
+  old: SubscriptionData | undefined,
   count: number,
-): LimitsData | undefined {
+): SubscriptionData | undefined {
   if (!old) return old;
   const newActiveCount = old.activeCount + count;
   return {
@@ -108,14 +108,14 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const limitsQueryKey = trpc.user.getLimits.queryKey();
+  const subscriptionQueryKey = trpc.user.getSubscription.queryKey();
 
   /**
    * Cancel all domain-related queries to prevent race conditions.
    */
   const cancelQueries = async () => {
     await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-    await queryClient.cancelQueries({ queryKey: limitsQueryKey });
+    await queryClient.cancelQueries({ queryKey: subscriptionQueryKey });
   };
 
   /**
@@ -123,7 +123,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
    */
   const invalidateQueries = () => {
     void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    void queryClient.invalidateQueries({ queryKey: limitsQueryKey });
+    void queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
   };
 
   /**
@@ -133,8 +133,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     if (context?.previousDomains) {
       queryClient.setQueryData(domainsQueryKey, context.previousDomains);
     }
-    if (context?.previousLimits) {
-      queryClient.setQueryData(limitsQueryKey, context.previousLimits);
+    if (context?.previousSubscription) {
+      queryClient.setQueryData(
+        subscriptionQueryKey,
+        context.previousSubscription,
+      );
     }
   };
 
@@ -146,8 +149,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const previousDomains =
         queryClient.getQueryData<DomainsData>(domainsQueryKey);
-      const previousLimits =
-        queryClient.getQueryData<LimitsData>(limitsQueryKey);
+      const previousSubscription =
+        queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       // Optimistically remove domain
       queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
@@ -155,12 +158,12 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         return old.filter((d) => d.id !== trackedDomainId);
       });
 
-      // Optimistically update limits
-      queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForRemoval(old, 1),
+      // Optimistically update subscription
+      queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
+        updateSubscriptionForRemoval(old, 1),
       );
 
-      return { previousDomains, previousLimits };
+      return { previousDomains, previousSubscription };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -183,8 +186,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const previousDomains =
         queryClient.getQueryData<DomainsData>(domainsQueryKey);
-      const previousLimits =
-        queryClient.getQueryData<LimitsData>(limitsQueryKey);
+      const previousSubscription =
+        queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       // Optimistically mark domain as archived
       queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
@@ -194,11 +197,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         );
       });
 
-      queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForArchive(old, 1),
+      queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
+        updateSubscriptionForArchive(old, 1),
       );
 
-      return { previousDomains, previousLimits };
+      return { previousDomains, previousSubscription };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -222,8 +225,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const previousDomains =
         queryClient.getQueryData<DomainsData>(domainsQueryKey);
-      const previousLimits =
-        queryClient.getQueryData<LimitsData>(limitsQueryKey);
+      const previousSubscription =
+        queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       // Optimistically mark domain as unarchived
       queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
@@ -233,11 +236,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         );
       });
 
-      queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForUnarchive(old, 1),
+      queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
+        updateSubscriptionForUnarchive(old, 1),
       );
 
-      return { previousDomains, previousLimits };
+      return { previousDomains, previousSubscription };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -264,8 +267,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const previousDomains =
         queryClient.getQueryData<DomainsData>(domainsQueryKey);
-      const previousLimits =
-        queryClient.getQueryData<LimitsData>(limitsQueryKey);
+      const previousSubscription =
+        queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
@@ -281,11 +284,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         );
       });
 
-      queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForArchive(old, archiveCount),
+      queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
+        updateSubscriptionForArchive(old, archiveCount),
       );
 
-      return { previousDomains, previousLimits };
+      return { previousDomains, previousSubscription };
     },
     onError: (err, _variables, context) => {
       rollback(context);
@@ -305,8 +308,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       const previousDomains =
         queryClient.getQueryData<DomainsData>(domainsQueryKey);
-      const previousLimits =
-        queryClient.getQueryData<LimitsData>(limitsQueryKey);
+      const previousSubscription =
+        queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
@@ -320,11 +323,11 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
         return old.filter((d) => !idsSet.has(d.id));
       });
 
-      queryClient.setQueryData<LimitsData>(limitsQueryKey, (old) =>
-        updateLimitsForRemoval(old, deleteCount),
+      queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
+        updateSubscriptionForRemoval(old, deleteCount),
       );
 
-      return { previousDomains, previousLimits };
+      return { previousDomains, previousSubscription };
     },
     onError: (err, _variables, context) => {
       rollback(context);

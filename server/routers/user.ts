@@ -42,10 +42,10 @@ export const userRouter = createTRPCRouter({
   }),
 
   /**
-   * Get user's limits and current usage.
+   * Get user's subscription data including tier, limits, and current usage.
    * Optimized to run all queries in parallel.
    */
-  getLimits: protectedProcedure.query(async ({ ctx }) => {
+  getSubscription: protectedProcedure.query(async ({ ctx }) => {
     // Run all independent queries in parallel for better performance
     const [sub, counts, proMaxDomains] = await Promise.all([
       getUserSubscription(ctx.user.id),

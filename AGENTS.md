@@ -145,7 +145,9 @@ Verification service: `server/services/verification.ts` with `tryAllVerification
 - **Idempotency:** Notification records created before email send; Resend idempotency keys prevent duplicates on retry.
 - **Troubleshooting:** `resendId` column stores Resend email ID for delivery debugging.
 
-### tRPC Router (`server/routers/tracking.ts`)
+### tRPC Routers
+
+#### Tracking Router (`server/routers/tracking.ts`)
 Key procedures:
 - `addDomain`: Add domain to tracking (or resume unverified). Triggers `auto-verify-pending-domain` Inngest job.
 - `verifyDomain`: Verify ownership.
@@ -153,9 +155,12 @@ Key procedures:
 - `archiveDomain` / `unarchiveDomain`: Soft-archive or reactivate domains.
 - `bulkArchiveDomains` / `bulkRemoveDomains`: Bulk operations on multiple domains (parallel execution, max 100).
 - `listDomains`: Get all tracked domains for the user (optionally including archived via `includeArchived` parameter).
-- `getLimits`: Get user's tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 - `getNotificationPreferences` / `updateGlobalNotificationPreferences`: Global toggles.
 - `updateDomainNotificationOverrides` / `resetDomainNotificationOverrides`: Per-domain overrides.
+
+#### User Router (`server/routers/user.ts`)
+Key procedures:
+- `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 
 ### Inngest Background Jobs
 - `check-domain-expiry`: Daily at 9 AM UTC; sends domain expiration notifications.

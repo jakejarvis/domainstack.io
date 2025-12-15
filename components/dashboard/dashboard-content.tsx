@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@tanstack/react-table";
 import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
@@ -28,10 +27,11 @@ import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
 import { useDomainMutations } from "@/hooks/use-domain-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useSelection } from "@/hooks/use-selection";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import { useTRPC } from "@/lib/trpc/client";
 
 type ConfirmAction =
   | { type: "remove"; domainId: string; domainName: string }
@@ -56,13 +56,20 @@ export function DashboardContent() {
   const [tableInstance, setTableInstance] =
     useState<Table<TrackedDomainWithDetails> | null>(null);
   const { data: session, isPending: sessionLoading } = useSession();
-  const trpc = useTRPC();
   const router = useRouter();
 
-  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
-  const domainsQuery = useQuery(
-    trpc.tracking.listDomains.queryOptions({ includeArchived: true }),
-  );
+  const {
+    subscription,
+    isLoading: subscriptionLoading,
+    isError: subscriptionError,
+    refetch: refetchSubscription,
+  } = useSubscription();
+  const {
+    domains: allDomains,
+    isLoading: domainsLoading,
+    isError: domainsError,
+    refetch: refetchDomains,
+  } = useTrackedDomains({ includeArchived: true });
 
   // Domain mutations with optimistic updates
   const {
@@ -76,13 +83,12 @@ export function DashboardContent() {
     onUnarchiveSuccess: () => setActiveTab("active"),
   });
 
-  const allDomains = domainsQuery.data ?? [];
   const domains = useMemo(
-    () => allDomains.filter((d) => d.archivedAt === null),
+    () => allDomains?.filter((d) => d.archivedAt === null) ?? [],
     [allDomains],
   );
   const archivedDomains = useMemo(
-    () => allDomains.filter((d) => d.archivedAt !== null),
+    () => allDomains?.filter((d) => d.archivedAt !== null) ?? [],
     [allDomains],
   );
   const totalDomainsCount = domains.length;
@@ -329,17 +335,14 @@ export function DashboardContent() {
 
   // Show loading until we have both query data AND session data
   const isLoading =
-    limitsQuery.isLoading ||
-    domainsQuery.isLoading ||
-    sessionLoading ||
-    !session;
+    subscriptionLoading || domainsLoading || sessionLoading || !session;
 
-  const hasError = limitsQuery.isError || domainsQuery.isError;
+  const hasError = subscriptionError || domainsError;
 
   const handleRetry = useCallback(() => {
-    if (limitsQuery.isError) void limitsQuery.refetch();
-    if (domainsQuery.isError) void domainsQuery.refetch();
-  }, [limitsQuery, domainsQuery]);
+    refetchSubscription();
+    refetchDomains();
+  }, [refetchSubscription, refetchDomains]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -350,14 +353,13 @@ export function DashboardContent() {
   }
 
   const userName = session?.user?.name || "";
-  const activeCount = limitsQuery.data?.activeCount ?? 0;
-  const archivedCount = limitsQuery.data?.archivedCount ?? 0;
-  const maxDomains = limitsQuery.data?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains =
-    limitsQuery.data?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const tier = limitsQuery.data?.tier ?? "free";
-  const canAddMore = limitsQuery.data?.canAddMore ?? true;
-  const subscriptionEndsAt = limitsQuery.data?.subscriptionEndsAt ?? null;
+  const activeCount = subscription?.activeCount ?? 0;
+  const archivedCount = subscription?.archivedCount ?? 0;
+  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const tier = subscription?.tier ?? "free";
+  const canAddMore = subscription?.canAddMore ?? true;
+  const subscriptionEndsAt = subscription?.subscriptionEndsAt ?? null;
   const hasAnyDomains = activeCount > 0 || archivedCount > 0;
 
   return (
@@ -387,16 +389,10 @@ export function DashboardContent() {
       )}
 
       {/* Subscription ending banner for users who canceled */}
-      {subscriptionEndsAt && (
-        <SubscriptionEndingBanner subscriptionEndsAt={subscriptionEndsAt} />
-      )}
+      <SubscriptionEndingBanner />
 
       {/* Upgrade prompt when near limit */}
-      <UpgradePrompt
-        currentCount={activeCount}
-        maxDomains={maxDomains}
-        tier={tier}
-      />
+      <UpgradePrompt />
 
       {/* Active domains view */}
       {activeTab === "active" && (

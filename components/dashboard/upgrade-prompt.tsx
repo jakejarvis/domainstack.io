@@ -9,28 +9,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import type { UserTier } from "@/lib/schemas";
 
-type UpgradePromptProps = {
-  currentCount: number;
-  maxDomains: number;
-  tier: UserTier;
-};
+export function UpgradePrompt() {
+  const {
+    subscription,
+    isPro,
+    isLoading: isLoadingSubscription,
+  } = useSubscription();
+  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
-export function UpgradePrompt({
-  currentCount,
-  maxDomains,
-  tier,
-}: UpgradePromptProps) {
-  const { handleUpgrade, isLoading } = useUpgradeCheckout();
+  // Don't show while loading, if already on Pro, or if subscription data unavailable
+  if (isLoadingSubscription || !subscription || isPro) return null;
 
-  // Don't show if already on Pro or not near limit
-  if (tier === "pro") return null;
+  const { activeCount, maxDomains } = subscription;
 
   // Show prompt when at 80% capacity or at limit
-  const nearLimit = currentCount >= maxDomains * 0.8;
-  const atLimit = currentCount >= maxDomains;
+  const nearLimit = activeCount >= maxDomains * 0.8;
+  const atLimit = activeCount >= maxDomains;
 
   if (!nearLimit) return null;
 
@@ -59,17 +56,17 @@ export function UpgradePrompt({
           <CardDescription>
             {atLimit
               ? `You've reached your limit of ${maxDomains} tracked domains.`
-              : `You're using ${currentCount} of ${maxDomains} domain slots.`}{" "}
+              : `You're using ${activeCount} of ${maxDomains} domain slots.`}{" "}
             Upgrade to Pro for more capacity.
           </CardDescription>
         </div>
         <Button
           onClick={handleUpgrade}
-          disabled={isLoading}
+          disabled={isCheckoutLoading}
           className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 sm:w-auto"
         >
-          {isLoading ? <Spinner /> : <Gem className="size-4" />}
-          {isLoading ? "Opening..." : "Upgrade to Pro"}
+          {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
+          {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
         </Button>
       </CardHeader>
     </Card>

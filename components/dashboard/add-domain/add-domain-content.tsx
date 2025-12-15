@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -25,10 +24,10 @@ import {
   type ResumeDomainData,
   useDomainVerification,
 } from "@/hooks/use-domain-verification";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
-import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 export type { ResumeDomainData };
@@ -62,11 +61,15 @@ export function AddDomainContent({
   resumeDomain,
   prefillDomain,
 }: AddDomainContentProps) {
-  const trpc = useTRPC();
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
-  // Check user limits
-  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
+  // Check user subscription
+  const {
+    subscription,
+    isLoading: isLoadingSubscription,
+    isError: isSubscriptionError,
+    refetch: refetchSubscription,
+  } = useSubscription();
 
   const {
     // State
@@ -114,16 +117,15 @@ export function AddDomainContent({
     prefillDomain,
   });
 
-  // Extract limits data
-  const limits = limitsQuery.data;
-  const activeCount = limits?.activeCount ?? 0;
-  const maxDomains = limits?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = limits?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const tier = limits?.tier ?? "free";
-  const canAddMore = limits?.canAddMore ?? true;
+  // Extract subscription data
+  const activeCount = subscription?.activeCount ?? 0;
+  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const tier = subscription?.tier ?? "free";
+  const canAddMore = subscription?.canAddMore ?? true;
 
-  // Show loading spinner while checking limits
-  if (limitsQuery.isLoading) {
+  // Show loading spinner while checking subscription
+  if (isLoadingSubscription) {
     const loadingContent = (
       <div className="flex min-h-[200px] items-center justify-center">
         <Spinner className="size-6" />
@@ -136,6 +138,62 @@ export function AddDomainContent({
 
     return (
       <Card className={cn("w-full max-w-lg", className)}>{loadingContent}</Card>
+    );
+  }
+
+  // Show error state if subscription check failed
+  if (isSubscriptionError) {
+    const errorContent = (
+      <>
+        {showCard ? (
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="size-6 text-destructive" />
+            </div>
+            <CardTitle>Unable to Load Subscription</CardTitle>
+            <CardDescription>
+              We couldn&apos;t load your subscription details. Please try again.
+            </CardDescription>
+          </CardHeader>
+        ) : (
+          <div className="mb-4 flex flex-col items-center text-center">
+            <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="size-6 text-destructive" />
+            </div>
+            <h2 className="font-semibold text-lg leading-none tracking-tight">
+              Unable to Load Subscription
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">
+              We couldn&apos;t load your subscription details. Please try again.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => refetchSubscription()}
+            className="w-full cursor-pointer"
+          >
+            Retry
+          </Button>
+          {onClose && (
+            <Button variant="outline" onClick={onClose} className="w-full">
+              Close
+            </Button>
+          )}
+        </div>
+      </>
+    );
+
+    if (!showCard) {
+      return <div className={className}>{errorContent}</div>;
+    }
+
+    return (
+      <Card className={cn("w-full max-w-lg", className)}>
+        {errorContent}
+        <CardContent />
+      </Card>
     );
   }
 

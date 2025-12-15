@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ExternalLink, Gem } from "lucide-react";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
@@ -14,28 +13,26 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
-import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 export function SubscriptionSettingsSection() {
-  const trpc = useTRPC();
-
   // Subscription hooks
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
   const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
     useCustomerPortal();
 
   // Query
-  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
+  const { subscription, isPro, isLoading, isError } = useSubscription();
 
-  if (limitsQuery.isLoading) {
+  if (isLoading) {
     return <SubscriptionSkeleton showCard={false} />;
   }
 
-  if (limitsQuery.isError) {
+  if (isError) {
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
@@ -48,12 +45,10 @@ export function SubscriptionSettingsSection() {
     );
   }
 
-  const limits = limitsQuery.data;
-  const isPro = limits?.tier === "pro";
-  const activeCount = limits?.activeCount ?? 0;
-  const maxDomains = limits?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = limits?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const subscriptionEndsAt = limits?.subscriptionEndsAt ?? null;
+  const activeCount = subscription?.activeCount ?? 0;
+  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const subscriptionEndsAt = subscription?.subscriptionEndsAt ?? null;
   const percentage =
     maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
   const proTierInfo = getProTierInfo(proMaxDomains);
