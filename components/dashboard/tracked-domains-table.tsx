@@ -167,7 +167,7 @@ export function TrackedDomainsTable({
         cell: ({ row }) => (
           <ScreenshotTooltip domain={row.original.domainName}>
             <Link
-              href={`/${row.original.domainName}`}
+              href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}
               className="group/link flex items-center"
             >
@@ -349,7 +349,7 @@ export function TrackedDomainsTable({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link
-                  href={`/${row.original.domainName}`}
+                  href={`/${encodeURIComponent(row.original.domainName)}`}
                   prefetch={false}
                   className="cursor-pointer pr-4"
                 >
@@ -550,7 +550,7 @@ export function TrackedDomainsTable({
                                 }
                               : undefined
                           }
-                          className="h-12 pr-2.5 pl-5 align-middle"
+                          className="h-11 pr-2.5 pl-5 align-middle"
                         >
                           {flexRender(
                             selectCell.column.columnDef.cell,
@@ -560,7 +560,7 @@ export function TrackedDomainsTable({
                       )}
                       {/* Domain column */}
                       {domainCell && (
-                        <td className="h-12 px-2.5 align-middle">
+                        <td className="h-11 px-2.5 align-middle">
                           {flexRender(
                             domainCell.column.columnDef.cell,
                             domainCell.getContext(),
@@ -577,7 +577,7 @@ export function TrackedDomainsTable({
                                 }
                               : undefined
                           }
-                          className="h-12 px-2.5 align-middle"
+                          className="h-11 px-2.5 align-middle"
                         >
                           {flexRender(
                             statusCell.column.columnDef.cell,
@@ -588,7 +588,7 @@ export function TrackedDomainsTable({
                       {/* Span remaining detail columns with verify message */}
                       <td
                         colSpan={collapseCount}
-                        className="h-12 px-2.5 align-middle"
+                        className="h-11 px-2.5 align-middle"
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="mr-2 text-muted-foreground text-xs">
@@ -598,7 +598,7 @@ export function TrackedDomainsTable({
                             size="sm"
                             variant="outline"
                             onClick={() => onVerify(row.original)}
-                            className="h-8 cursor-pointer px-2 text-[13px]"
+                            className="cursor-pointer px-2 text-[13px]"
                           >
                             <Play className="size-3.5 text-accent-green" />
                             Continue
@@ -609,7 +609,7 @@ export function TrackedDomainsTable({
                             onClick={() =>
                               onRemove(row.original.id, row.original.domainName)
                             }
-                            className="h-8 cursor-pointer px-2 text-[13px]"
+                            className="cursor-pointer px-2 text-[13px]"
                           >
                             <Trash2 className="size-3.5 text-danger-foreground" />
                             Remove
@@ -628,7 +628,7 @@ export function TrackedDomainsTable({
                             position: "sticky",
                             right: 0,
                           }}
-                          className="h-12 px-2.5 pr-4 align-middle"
+                          className="h-11 px-2.5 pr-4 align-middle"
                         >
                           {flexRender(
                             actionsCell.column.columnDef.cell,
@@ -664,7 +664,7 @@ export function TrackedDomainsTable({
                               : {}),
                           }}
                           className={cn(
-                            "h-10 px-2.5 align-middle",
+                            "h-11 px-2.5 align-middle",
                             index === 0 && "pl-5 text-center",
                             index === cells.length - 1 && "pr-4",
                           )}

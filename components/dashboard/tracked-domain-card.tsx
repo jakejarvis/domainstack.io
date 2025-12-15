@@ -139,7 +139,7 @@ export function TrackedDomainCard({
           <div className="min-w-0 flex-1">
             <ScreenshotTooltip domain={domainName}>
               <Link
-                href={`/${domainName}`}
+                href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}
                 className="block min-w-0 hover:underline"
               >
@@ -174,7 +174,7 @@ export function TrackedDomainCard({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link
-                  href={`/${domainName}`}
+                  href={`/${encodeURIComponent(domainName)}`}
                   prefetch={false}
                   className="cursor-pointer pr-4"
                 >

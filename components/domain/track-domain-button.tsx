@@ -105,7 +105,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button variant="outline" asChild className="text-success-foreground">
-            <Link href="/dashboard">
+            <Link href="/dashboard" prefetch={false}>
               <BadgeCheck className="size-4" />
             </Link>
           </Button>
@@ -150,6 +150,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
             <Button asChild variant="outline" className="cursor-pointer">
               <Link
                 href="/login"
+                prefetch={false}
                 onClick={handleButtonClick}
                 data-disable-progress={true}
               >

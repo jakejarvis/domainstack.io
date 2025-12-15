@@ -73,18 +73,18 @@ export function LoginContent({
         By signing in, you agree to our{" "}
         <Link
           href="/terms"
-          className="underline underline-offset-2 hover:text-foreground"
-          onClick={onNavigate}
           prefetch={false}
+          onClick={onNavigate}
+          className="underline underline-offset-2 hover:text-foreground"
         >
           Terms of Service
         </Link>{" "}
         and{" "}
         <Link
           href="/privacy"
-          className="underline underline-offset-2 hover:text-foreground"
-          onClick={onNavigate}
           prefetch={false}
+          onClick={onNavigate}
+          className="underline underline-offset-2 hover:text-foreground"
         >
           Privacy Policy
         </Link>

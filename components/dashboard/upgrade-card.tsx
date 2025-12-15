@@ -26,33 +26,32 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
         className="-bottom-8 -left-8 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
       />
 
-      <CardContent className="relative flex h-full flex-1 flex-col items-center p-6 text-center">
-        {/* Icon */}
-        <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-gold/5 dark:bg-white/5">
-          <CircleFadingArrowUp className="size-7 text-accent-gold" />
+      <CardContent className="relative flex h-full flex-1 flex-col items-center gap-6 p-6 text-center">
+        <div className="flex h-full flex-1 flex-col items-center justify-center">
+          {/* Icon */}
+          <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-gold/5 dark:bg-white/5">
+            <CircleFadingArrowUp className="size-7 text-accent-gold" />
+          </div>
+
+          {/* Heading */}
+          <h3 className="mb-2 font-semibold text-lg">Upgrade to Pro</h3>
+
+          {/* Value prop */}
+          <p className="mb-4 text-muted-foreground text-sm">
+            Track up to {proMaxDomains} domains with priority notifications.
+          </p>
+
+          {/* Pricing */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-accent-gold">
+              {PRO_TIER_INFO.monthly.label}
+            </span>
+            <span className="text-muted-foreground">or</span>
+            <span className="font-medium text-accent-gold">
+              {PRO_TIER_INFO.yearly.label}
+            </span>
+          </div>
         </div>
-
-        {/* Heading */}
-        <h3 className="mb-2 font-semibold text-lg">Upgrade to Pro</h3>
-
-        {/* Value prop */}
-        <p className="mb-4 text-muted-foreground text-sm">
-          Track up to {proMaxDomains} domains with priority notifications.
-        </p>
-
-        {/* Pricing */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-accent-gold">
-            {PRO_TIER_INFO.monthly.label}
-          </span>
-          <span className="text-muted-foreground">or</span>
-          <span className="font-medium text-accent-gold">
-            {PRO_TIER_INFO.yearly.label}
-          </span>
-        </div>
-
-        {/* Spacer to ensure minimum gap above button */}
-        <div className="min-h-4 flex-1" />
 
         {/* CTA Button - pushed to bottom */}
         <Button

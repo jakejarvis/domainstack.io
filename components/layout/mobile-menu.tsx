@@ -66,6 +66,7 @@ export function MobileMenu() {
           <DropdownMenuItem asChild>
             <Link
               href="/login"
+              prefetch={false}
               className="cursor-pointer"
               onClick={handleSignInClick}
               data-disable-progress={true}

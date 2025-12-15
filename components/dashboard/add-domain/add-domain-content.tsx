@@ -234,7 +234,9 @@ export function AddDomainContent({
                   </Button>
                 ) : (
                   <Button variant="outline" asChild className="w-full">
-                    <Link href="/dashboard">Back to Dashboard</Link>
+                    <Link href="/dashboard" prefetch={false}>
+                      Back to Dashboard
+                    </Link>
                   </Button>
                 )}
               </div>
@@ -252,7 +254,9 @@ export function AddDomainContent({
                 </Button>
               ) : (
                 <Button variant="outline" asChild className="w-full">
-                  <Link href="/dashboard">Back to Dashboard</Link>
+                  <Link href="/dashboard" prefetch={false}>
+                    Back to Dashboard
+                  </Link>
                 </Button>
               )}
             </>

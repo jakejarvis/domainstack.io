@@ -115,6 +115,7 @@ export function TrackedDomainsView({
           <Button asChild size="lg">
             <Link
               href="/dashboard/add-domain"
+              prefetch={false}
               data-disable-progress={true}
               onClick={(e) => {
                 // Allow modifier clicks to open in new tab/window

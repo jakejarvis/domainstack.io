@@ -112,7 +112,7 @@ export function UserMenu() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/dashboard" className="cursor-pointer">
+            <Link href="/dashboard" prefetch={false} className="cursor-pointer">
               <Table2 className="size-4" />
               Dashboard
             </Link>
@@ -120,6 +120,7 @@ export function UserMenu() {
           <DropdownMenuItem asChild>
             <Link
               href="/settings"
+              prefetch={false}
               className="cursor-pointer"
               onClick={handleSettingsClick}
               data-disable-progress={true}

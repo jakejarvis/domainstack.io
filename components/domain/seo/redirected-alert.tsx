@@ -30,6 +30,7 @@ export function RedirectedAlert({
             We followed a redirect to{" "}
             <Link
               href={`/${encodeURIComponent(dest)}`}
+              prefetch={false}
               className="inline-flex items-center gap-1 text-foreground/90 underline underline-offset-3 hover:text-muted-foreground"
               title={`View report for ${dest}`}
             >

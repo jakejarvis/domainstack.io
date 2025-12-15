@@ -91,7 +91,8 @@ export function HeadersSection({
                   suffix={
                     locationDomain ? (
                       <Link
-                        href={`/${locationDomain}`}
+                        href={`/${encodeURIComponent(locationDomain)}`}
+                        prefetch={false}
                         className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
                         title={`View report for ${locationDomain}`}
                       >

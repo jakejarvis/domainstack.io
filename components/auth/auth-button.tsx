@@ -51,7 +51,12 @@ export function AuthButton() {
   return (
     <>
       <Button asChild variant="ghost" size="sm">
-        <Link href="/login" onClick={handleClick} data-disable-progress={true}>
+        <Link
+          href="/login"
+          prefetch={false}
+          onClick={handleClick}
+          data-disable-progress={true}
+        >
           Sign In
         </Link>
       </Button>
