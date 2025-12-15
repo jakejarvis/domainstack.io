@@ -153,7 +153,7 @@ Key procedures:
 - `archiveDomain` / `unarchiveDomain`: Soft-archive or reactivate domains.
 - `bulkArchiveDomains` / `bulkRemoveDomains`: Bulk operations on multiple domains (parallel execution, max 100).
 - `listDomains`: Get all tracked domains for the user (optionally including archived via `includeArchived` parameter).
-- `getLimits`: Get user's tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
+- `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 - `getNotificationPreferences` / `updateGlobalNotificationPreferences`: Global toggles.
 - `updateDomainNotificationOverrides` / `resetDomainNotificationOverrides`: Per-domain overrides.
 

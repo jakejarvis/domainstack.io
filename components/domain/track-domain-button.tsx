@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, BadgeCheck, BellPlus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
@@ -16,8 +15,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
-import { useTRPC } from "@/lib/trpc/client";
 
 type TrackDomainButtonProps = {
   domain: string;
@@ -28,14 +28,12 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  // Only fetch tracked domains when logged in
-  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery({
-    ...trpc.tracking.listDomains.queryOptions(),
-    enabled: !!session?.user,
-  });
+  const { invalidate: invalidateSubscription } = useSubscription();
+  const {
+    domains: trackedDomains,
+    isLoading: isLoadingDomains,
+    invalidate: invalidateTrackedDomains,
+  } = useTrackedDomains();
 
   // Find if this domain is already tracked
   const trackedDomain = trackedDomains?.find(
@@ -61,14 +59,9 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
 
   // Handle success from add dialog - invalidate the tracked domains query
   const handleAddSuccess = useCallback(() => {
-    // Use partial matching to invalidate all listDomains queries
-    void queryClient.invalidateQueries({
-      queryKey: trpc.tracking.listDomains.queryKey(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: trpc.user.getLimits.queryKey(),
-    });
-  }, [queryClient, trpc]);
+    invalidateTrackedDomains();
+    invalidateSubscription();
+  }, [invalidateTrackedDomains, invalidateSubscription]);
 
   const handleDialogOpenChange = useCallback((open: boolean) => {
     setAddDialogOpen(open);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Check, Gauge, Gem } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -25,10 +24,10 @@ import {
   type ResumeDomainData,
   useDomainVerification,
 } from "@/hooks/use-domain-verification";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
-import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
 export type { ResumeDomainData };
@@ -62,11 +61,10 @@ export function AddDomainContent({
   resumeDomain,
   prefillDomain,
 }: AddDomainContentProps) {
-  const trpc = useTRPC();
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
-  // Check user limits
-  const limitsQuery = useQuery(trpc.user.getLimits.queryOptions());
+  // Check user subscription
+  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
 
   const {
     // State
@@ -114,16 +112,15 @@ export function AddDomainContent({
     prefillDomain,
   });
 
-  // Extract limits data
-  const limits = limitsQuery.data;
-  const activeCount = limits?.activeCount ?? 0;
-  const maxDomains = limits?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = limits?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const tier = limits?.tier ?? "free";
-  const canAddMore = limits?.canAddMore ?? true;
+  // Extract subscription data
+  const activeCount = subscription?.activeCount ?? 0;
+  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
+  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
+  const tier = subscription?.tier ?? "free";
+  const canAddMore = subscription?.canAddMore ?? true;
 
-  // Show loading spinner while checking limits
-  if (limitsQuery.isLoading) {
+  // Show loading spinner while checking subscription
+  if (isLoadingSubscription) {
     const loadingContent = (
       <div className="flex min-h-[200px] items-center justify-center">
         <Spinner className="size-6" />

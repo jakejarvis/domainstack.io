@@ -206,7 +206,41 @@ const withAuth = t.middleware(async ({ ctx, next }) => {
 });
 
 /**
+ * Middleware to ensure user has Pro subscription.
+ * Throws FORBIDDEN if user is on free tier.
+ */
+const withProTier = t.middleware(async (opts) => {
+  const { getUserSubscription } = await import(
+    "@/lib/db/repos/user-subscription"
+  );
+
+  // Type assertion needed because middleware chaining doesn't preserve extended context types
+  const ctx = opts.ctx as typeof opts.ctx & { user: { id: string } };
+  const sub = await getUserSubscription(ctx.user.id);
+
+  if (sub.tier !== "pro") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "This feature requires a Pro subscription",
+    });
+  }
+
+  return opts.next({
+    ctx: {
+      ...ctx,
+      subscription: sub,
+    },
+  });
+});
+
+/**
  * Protected procedure requiring authentication.
  * Use this for all endpoints that require a logged-in user.
  */
 export const protectedProcedure = publicProcedure.use(withAuth);
+
+/**
+ * Pro-only procedure requiring Pro subscription.
+ * Use this for endpoints that should only be accessible to Pro users.
+ */
+export const proOnlyProcedure = protectedProcedure.use(withProTier);

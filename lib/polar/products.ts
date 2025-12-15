@@ -105,7 +105,7 @@ export const PRO_TIER_INFO = {
 
 /**
  * Get Pro tier info with dynamic domain limit.
- * Use this when you have access to the proMaxDomains from getLimits query.
+ * Use this when you have access to the proMaxDomains from getSubscription query.
  */
 export function getProTierInfo(proMaxDomains: number) {
   return {

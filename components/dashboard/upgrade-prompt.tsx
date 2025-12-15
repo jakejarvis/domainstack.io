@@ -9,24 +9,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import type { UserTier } from "@/lib/schemas";
 
 type UpgradePromptProps = {
   currentCount: number;
   maxDomains: number;
-  tier: UserTier;
 };
 
 export function UpgradePrompt({
   currentCount,
   maxDomains,
-  tier,
 }: UpgradePromptProps) {
+  const { isPro } = useSubscription();
   const { handleUpgrade, isLoading } = useUpgradeCheckout();
 
   // Don't show if already on Pro or not near limit
-  if (tier === "pro") return null;
+  if (isPro) return null;
 
   // Show prompt when at 80% capacity or at limit
   const nearLimit = currentCount >= maxDomains * 0.8;

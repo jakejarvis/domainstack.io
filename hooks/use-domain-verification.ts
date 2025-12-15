@@ -75,7 +75,7 @@ export function useDomainVerification({
       queryKey: trpc.tracking.listDomains.queryKey(),
     });
     void queryClient.invalidateQueries({
-      queryKey: trpc.user.getLimits.queryKey(),
+      queryKey: trpc.user.getSubscription.queryKey(),
     });
   };
 

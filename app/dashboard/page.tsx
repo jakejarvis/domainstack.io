@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   // Only prefetch if we have an authenticated user
   if (session?.user) {
     void Promise.all([
-      queryClient.prefetchQuery(trpc.user.getLimits.queryOptions()),
+      queryClient.prefetchQuery(trpc.user.getSubscription.queryOptions()),
       queryClient.prefetchQuery(
         trpc.tracking.listDomains.queryOptions({ includeArchived: true }),
       ),

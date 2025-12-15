@@ -13,10 +13,10 @@ import type { AppRouter } from "@/server/routers/_app";
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 /**
- * Limits data shape inferred from user.getLimits procedure.
+ * Subscription data shape inferred from user.getSubscription procedure.
  * Using inference ensures client types stay in sync with server.
  */
-type LimitsData = RouterOutputs["user"]["getLimits"];
+type LimitsData = RouterOutputs["user"]["getSubscription"];
 
 /**
  * Domains data shape from tracking.listDomains procedure.
@@ -108,7 +108,7 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
-  const limitsQueryKey = trpc.user.getLimits.queryKey();
+  const limitsQueryKey = trpc.user.getSubscription.queryKey();
 
   /**
    * Cancel all domain-related queries to prevent race conditions.
