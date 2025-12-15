@@ -245,6 +245,12 @@ export function useDashboardFilters(
       // Provider filter - match if ANY provider matches
       // Only consider valid provider IDs (from verified, non-archived domains)
       if (filters.providers.length > 0) {
+        // Provider filter only applies to verified domains
+        // (since availableProviders is built from verified domains only)
+        if (!domain.verified) {
+          return false;
+        }
+
         // Filter to only valid provider IDs
         const validSelectedProviders = filters.providers.filter((id) =>
           validProviderIds.has(id),
