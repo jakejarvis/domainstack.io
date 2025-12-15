@@ -124,8 +124,8 @@ importers:
         specifier: ^3.17.0
         version: 3.17.0
       media-chrome:
-        specifier: ^4.17.1
-        version: 4.17.1(react@19.2.3)
+        specifier: ^4.17.2
+        version: 4.17.2(react@19.2.3)
       motion:
         specifier: ^12.23.26
         version: 12.23.26(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -4858,8 +4858,8 @@ packages:
   mdn-data@2.12.2:
     resolution: {integrity: sha512-IEn+pegP1aManZuckezWCO+XZQDplx1366JoVhTpMpBB1sPey/SbveZQUosKiKiGYjg1wH4pMlNgXbCiYgihQA==}
 
-  media-chrome@4.17.1:
-    resolution: {integrity: sha512-oqMijpzmreOZycVY3JgBo+gUyUttm3Rh6t0YrmO8DRr8iP5z9EpdiZ6iuYokKQYZnKLpbSkmSZmLEBwvx3GX2w==}
+  media-chrome@4.17.2:
+    resolution: {integrity: sha512-o/IgiHx0tdSVwRxxqF5H12FK31A/A8T71sv3KdAvh7b6XeBS9dXwqvIFwlR9kdEuqg3n7xpmRIuL83rmYq8FTg==}
 
   mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -10651,7 +10651,7 @@ snapshots:
 
   mdn-data@2.12.2: {}
 
-  media-chrome@4.17.1(react@19.2.3):
+  media-chrome@4.17.2(react@19.2.3):
     dependencies:
       ce-la-react: 0.3.2(react@19.2.3)
     transitivePeerDependencies:
