@@ -103,7 +103,7 @@ export function CopyableField({
             size="icon-xs"
             aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
             onClick={handleCopy}
-            className="text-muted-foreground hover:text-foreground"
+            className="cursor-pointer text-muted-foreground hover:text-foreground"
           >
             {copied ? (
               <Check className="size-3.5" />

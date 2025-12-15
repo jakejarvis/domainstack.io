@@ -53,6 +53,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
         id: trackedDomain.id,
         domainName: trackedDomain.domainName,
         verificationToken: trackedDomain.verificationToken,
+        verificationMethod: trackedDomain.verificationMethod,
       };
     }
     return null;

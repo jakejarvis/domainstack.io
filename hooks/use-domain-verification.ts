@@ -101,6 +101,19 @@ export function useDomainVerification({
     enabled: !!trackedDomainId && open,
   });
 
+  // Log errors for debugging
+  useEffect(() => {
+    if (instructionsQuery.error) {
+      logger.error(
+        "Failed to fetch verification instructions",
+        instructionsQuery.error,
+        {
+          trackedDomainId,
+        },
+      );
+    }
+  }, [instructionsQuery.error, trackedDomainId]);
+
   // When resumeDomain changes, update the state accordingly
   // This handles the case when TrackDomainButton switches from prefill to resume mode
   useEffect(() => {
@@ -184,6 +197,7 @@ export function useDomainVerification({
         });
       }
     } catch (err) {
+      logger.error("Failed to add domain for tracking", err, { domain });
       if (err instanceof Error) {
         setDomainError(err.message);
       } else {
