@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import useLocalStorageState from "use-local-storage-state";
 import { Button } from "@/components/ui/button";
-import { CONSENT_REQUIRED_COOKIE } from "@/lib/constants/gdpr";
 
 const CONSENT_KEY = "cookie-consent";
 
@@ -15,41 +13,24 @@ type ConsentStatus = "pending" | "accepted" | "declined";
 /**
  * Minimal cookie consent banner for GDPR compliance.
  *
- * - Only shows for EU/EEA users (based on geo-location cookie from proxy)
+ * - Only shows for EU/EEA users (based on geolocation header from request)
  * - Non-EU users are auto-accepted silently
  * - Syncs with PostHog opt-in/opt-out
  */
-export function CookieBanner() {
-  const searchParams = useSearchParams();
-  const [consent, setConsent, { removeItem, isPersistent }] =
+export function CookiePrompt({
+  consentRequired,
+}: {
+  consentRequired: boolean;
+}) {
+  const [consent, setConsent, { isPersistent }] =
     useLocalStorageState<ConsentStatus>(CONSENT_KEY, {
       defaultValue: "pending",
     });
   const [show, setShow] = useState(false);
 
-  // Dev override: ?consent-banner forces the banner to show
-  const forceShow =
-    process.env.NODE_ENV === "development" &&
-    searchParams.has("consent-banner");
-
   useEffect(() => {
     // Wait for localStorage to be available
     if (!isPersistent) return;
-
-    if (forceShow) {
-      removeItem();
-      setShow(true);
-      return;
-    }
-
-    // Check if consent is required based on geo-location cookie set by proxy
-    // Default to requiring consent if cookie is missing (safer default)
-    const cookies = document.cookie.split("; ");
-    const consentCookie = cookies.find((c) =>
-      c.startsWith(`${CONSENT_REQUIRED_COOKIE}=`),
-    );
-    const consentRequired =
-      !consentCookie || consentCookie.split("=")[1] === "1";
 
     if (consent !== "pending") {
       // User has already made a choice - re-apply PostHog state
@@ -69,7 +50,7 @@ export function CookieBanner() {
       // EU user needs to make a choice - show banner
       setShow(true);
     }
-  }, [forceShow, consent, isPersistent, removeItem, setConsent]);
+  }, [consent, consentRequired, isPersistent, setConsent]);
 
   const accept = () => {
     setConsent("accepted");

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Gauge, Gem } from "lucide-react";
+import { AlertCircle, Check, Gauge, ShoppingCart } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
@@ -291,7 +291,11 @@ export function AddDomainContent({
                   disabled={isCheckoutLoading}
                   className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
                 >
-                  {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
+                  {isCheckoutLoading ? (
+                    <Spinner />
+                  ) : (
+                    <ShoppingCart className="size-4" />
+                  )}
                   {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
                 </Button>
                 {onClose ? (

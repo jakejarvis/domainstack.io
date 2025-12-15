@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleFadingArrowUp, Gem } from "lucide-react";
+import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -60,7 +60,7 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
           variant="outline"
           className="w-full cursor-pointer"
         >
-          {isLoading ? <Spinner /> : <Gem className="size-4" />}
+          {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
         </Button>
       </CardContent>

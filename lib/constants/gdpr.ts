@@ -39,9 +39,3 @@ export const GDPR_COUNTRY_CODES = new Set([
   // UK (GDPR-equivalent via UK GDPR)
   "GB", // United Kingdom
 ]);
-
-/**
- * Cookie name for consent requirement flag.
- * Set by proxy based on geolocation.
- */
-export const CONSENT_REQUIRED_COOKIE = "consent-required";

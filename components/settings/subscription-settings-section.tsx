@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { ExternalLink, Gem } from "lucide-react";
+import { ExternalLink, ShoppingCart } from "lucide-react";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -155,7 +155,11 @@ export function SubscriptionSettingsSection() {
                 disabled={isCheckoutLoading}
                 className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
               >
-                {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
+                {isCheckoutLoading ? (
+                  <Spinner />
+                ) : (
+                  <ShoppingCart className="size-4" />
+                )}
                 {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
               </Button>
             </div>

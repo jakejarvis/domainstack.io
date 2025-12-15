@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleFadingArrowUp, Gem } from "lucide-react";
+import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
@@ -55,7 +55,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
           disabled={isLoading}
           className="shrink-0 cursor-pointer"
         >
-          {isLoading ? <Spinner /> : <Gem className="size-4" />}
+          {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
         </Button>
       </div>

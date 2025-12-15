@@ -1,6 +1,6 @@
 "use client";
 
-import { Gauge, Gem } from "lucide-react";
+import { Gauge, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -65,7 +65,11 @@ export function UpgradePrompt() {
           disabled={isCheckoutLoading}
           className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 sm:w-auto"
         >
-          {isCheckoutLoading ? <Spinner /> : <Gem className="size-4" />}
+          {isCheckoutLoading ? (
+            <Spinner />
+          ) : (
+            <ShoppingCart className="size-4" />
+          )}
           {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
         </Button>
       </CardHeader>
