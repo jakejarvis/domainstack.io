@@ -82,6 +82,19 @@ export function ProviderTooltipContent({
         })()
       : null;
 
+  // Extract registration verification details
+  const serverUrl =
+    rdapServers && rdapServers.length > 0
+      ? rdapServers[rdapServers.length - 1]
+      : undefined;
+  const serverName = serverUrl
+    ? (extractDomain(serverUrl) ?? "RDAP")
+    : (whoisServer ?? "WHOIS");
+  const learnUrl =
+    registrationSource === "rdap"
+      ? "https://about.rdap.org/"
+      : "https://en.wikipedia.org/wiki/WHOIS";
+
   return (
     <div className="space-y-2 py-1">
       {/* Provider info */}
@@ -122,55 +135,40 @@ export function ProviderTooltipContent({
               </div>
             )}
 
-            {(() => {
-              const serverUrl =
-                rdapServers && rdapServers.length > 0
-                  ? rdapServers[rdapServers.length - 1]
-                  : undefined;
-              const serverName = serverUrl
-                ? (extractDomain(serverUrl) ?? "RDAP")
-                : (whoisServer ?? "WHOIS");
-              const learnUrl =
-                registrationSource === "rdap"
-                  ? "https://about.rdap.org/"
-                  : "https://en.wikipedia.org/wiki/WHOIS";
-
-              return (
-                <p className="inline-flex items-center gap-1.5 py-1.5">
-                  <BadgeCheck className="!h-3.5 !w-3.5 text-green-300 dark:text-green-600" />
-                  <span>
-                    Verified by{" "}
-                    <span className="font-medium">
-                      {serverUrl ? (
-                        <a
-                          href={serverUrl}
-                          target="_blank"
-                          rel="noopener"
-                          className="underline underline-offset-2"
-                        >
-                          {serverName}
-                        </a>
-                      ) : (
-                        serverName
-                      )}
-                    </span>{" "}
+            {/* Verification source */}
+            <p className="inline-flex items-center gap-1.5 pt-1.5">
+              <BadgeCheck className="!h-3.5 !w-3.5 text-green-300 dark:text-green-600" />
+              <span>
+                Verified by{" "}
+                <span className="font-medium">
+                  {serverUrl ? (
                     <a
-                      href={learnUrl}
+                      href={serverUrl}
                       target="_blank"
                       rel="noopener"
-                      title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
-                      className=""
+                      className="underline underline-offset-2"
                     >
-                      <span className="text-muted/75">(</span>
-                      <span className="text-muted/90 underline decoration-dotted underline-offset-2">
-                        {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
-                      </span>
-                      <span className="text-muted/75">)</span>
+                      {serverName}
                     </a>
+                  ) : (
+                    serverName
+                  )}
+                </span>{" "}
+                <a
+                  href={learnUrl}
+                  target="_blank"
+                  rel="noopener"
+                  title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
+                  className=""
+                >
+                  <span className="text-muted/75">(</span>
+                  <span className="text-muted/90 underline decoration-dotted underline-offset-2">
+                    {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
                   </span>
-                </p>
-              );
-            })()}
+                  <span className="text-muted/75">)</span>
+                </a>
+              </span>
+            </p>
           </div>
         ) : (
           <div className="py-1 text-muted/80 text-xs">

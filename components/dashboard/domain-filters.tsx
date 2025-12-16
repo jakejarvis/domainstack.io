@@ -480,7 +480,7 @@ export function DomainFilters({
                 className="flex-1 cursor-pointer justify-between"
               >
                 <span className="flex items-center gap-2">
-                  <Filter className="size-4" />
+                  <Filter className="size-4 opacity-60" />
                   Filters
                   <AnimatePresence initial={false}>
                     {hasActiveFilters && (
