@@ -3,14 +3,10 @@
 import { Menu } from "@base-ui/react/menu";
 import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
-import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Menubar({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenubarPrimitive>) {
+function Menubar({ className, ...props }: MenubarPrimitive.Props) {
   return (
     <MenubarPrimitive
       data-slot="menubar"
@@ -23,28 +19,23 @@ function Menubar({
   );
 }
 
-function MenubarMenu({ ...props }: React.ComponentProps<typeof Menu.Root>) {
+function MenubarMenu({ ...props }: Menu.Root.Props) {
   return <Menu.Root data-slot="menubar-menu" {...props} />;
 }
 
-function MenubarGroup({ ...props }: React.ComponentProps<typeof Menu.Group>) {
+function MenubarGroup({ ...props }: Menu.Group.Props) {
   return <Menu.Group data-slot="menubar-group" {...props} />;
 }
 
-function MenubarPortal({ ...props }: React.ComponentProps<typeof Menu.Portal>) {
+function MenubarPortal({ ...props }: Menu.Portal.Props) {
   return <Menu.Portal data-slot="menubar-portal" {...props} />;
 }
 
-function MenubarRadioGroup({
-  ...props
-}: React.ComponentProps<typeof Menu.RadioGroup>) {
+function MenubarRadioGroup({ ...props }: Menu.RadioGroup.Props) {
   return <Menu.RadioGroup data-slot="menubar-radio-group" {...props} />;
 }
 
-function MenubarTrigger({
-  className,
-  ...props
-}: React.ComponentProps<typeof Menu.Trigger>) {
+function MenubarTrigger({ className, ...props }: Menu.Trigger.Props) {
   return (
     <Menu.Trigger
       data-slot="menubar-trigger"
@@ -67,9 +58,9 @@ function MenubarContent({
   sideOffset = 8,
   side = "bottom",
   ...props
-}: React.ComponentProps<typeof Menu.Popup> &
+}: Menu.Popup.Props &
   Pick<
-    React.ComponentProps<typeof Menu.Positioner>,
+    Menu.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
   return (
@@ -103,7 +94,7 @@ function MenubarItem({
   inset,
   variant = "default",
   ...props
-}: React.ComponentProps<typeof Menu.Item> & {
+}: Menu.Item.Props & {
   inset?: boolean;
   variant?: "default" | "destructive";
 }) {
@@ -128,7 +119,7 @@ function MenubarCheckboxItem({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof Menu.CheckboxItem>) {
+}: Menu.CheckboxItem.Props) {
   return (
     <Menu.CheckboxItem
       data-slot="menubar-checkbox-item"
@@ -154,7 +145,7 @@ function MenubarRadioItem({
   className,
   children,
   ...props
-}: React.ComponentProps<typeof Menu.RadioItem>) {
+}: Menu.RadioItem.Props) {
   return (
     <Menu.RadioItem
       data-slot="menubar-radio-item"
@@ -180,7 +171,7 @@ function MenubarLabel({
   className,
   inset,
   ...props
-}: React.ComponentProps<"div"> & {
+}: React.ComponentPropsWithoutRef<"div"> & {
   inset?: boolean;
 }) {
   return (
@@ -196,10 +187,7 @@ function MenubarLabel({
   );
 }
 
-function MenubarSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof Menu.Separator>) {
+function MenubarSeparator({ className, ...props }: Menu.Separator.Props) {
   return (
     <Menu.Separator
       data-slot="menubar-separator"
@@ -212,7 +200,7 @@ function MenubarSeparator({
 function MenubarShortcut({
   className,
   ...props
-}: React.ComponentProps<"span">) {
+}: React.ComponentPropsWithoutRef<"span">) {
   return (
     <span
       data-slot="menubar-shortcut"
@@ -225,9 +213,7 @@ function MenubarShortcut({
   );
 }
 
-function MenubarSub({
-  ...props
-}: React.ComponentProps<typeof Menu.SubmenuRoot>) {
+function MenubarSub({ ...props }: Menu.SubmenuRoot.Props) {
   return <Menu.SubmenuRoot data-slot="menubar-sub" {...props} />;
 }
 
@@ -236,7 +222,7 @@ function MenubarSubTrigger({
   inset,
   children,
   ...props
-}: React.ComponentProps<typeof Menu.SubmenuTrigger> & {
+}: Menu.SubmenuTrigger.Props & {
   inset?: boolean;
 }) {
   return (
@@ -263,11 +249,8 @@ function MenubarSubContent({
   sideOffset = 4,
   alignOffset = -4,
   ...props
-}: React.ComponentProps<typeof Menu.Popup> &
-  Pick<
-    React.ComponentProps<typeof Menu.Positioner>,
-    "sideOffset" | "alignOffset"
-  >) {
+}: Menu.Popup.Props &
+  Pick<Menu.Positioner.Props, "sideOffset" | "alignOffset">) {
   return (
     <Menu.Portal>
       <Menu.Positioner

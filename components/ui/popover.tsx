@@ -1,17 +1,12 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-function Popover({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
@@ -26,9 +21,9 @@ function PopoverContent({
   sticky,
   positionMethod,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Popup> &
+}: PopoverPrimitive.Popup.Props &
   Pick<
-    React.ComponentProps<typeof PopoverPrimitive.Positioner>,
+    PopoverPrimitive.Positioner.Props,
     | "align"
     | "alignOffset"
     | "anchor"

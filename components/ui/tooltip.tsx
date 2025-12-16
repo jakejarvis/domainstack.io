@@ -5,7 +5,7 @@ import * as React from "react";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
-type TooltipRootProps = React.ComponentProps<typeof PopoverPrimitive.Root> & {
+type TooltipRootProps = PopoverPrimitive.Root.Props & {
   /**
    * Open on hover for pointer devices. Defaults to true on pointer devices and false on touch.
    * Can be overridden per-trigger via <TooltipTrigger openOnHover ... />.
@@ -17,19 +17,15 @@ type TooltipRootProps = React.ComponentProps<typeof PopoverPrimitive.Root> & {
   closeDelay?: number;
 };
 
-type TooltipTriggerProps = React.ComponentProps<
-  typeof PopoverPrimitive.Trigger
-> & {
+type TooltipTriggerProps = PopoverPrimitive.Trigger.Props & {
   /** Hover-open delay override (ms). */
   delay?: number;
   /** Hover-close delay override (ms). */
   closeDelay?: number;
 };
 
-type TooltipPositionerProps = React.ComponentProps<
-  typeof PopoverPrimitive.Positioner
->;
-type TooltipPopupProps = React.ComponentProps<typeof PopoverPrimitive.Popup>;
+type TooltipPositionerProps = PopoverPrimitive.Positioner.Props;
+type TooltipPopupProps = PopoverPrimitive.Popup.Props;
 
 const TooltipContext = React.createContext<{
   openOnHover: boolean;

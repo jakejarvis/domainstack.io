@@ -1,6 +1,5 @@
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -30,7 +29,7 @@ function Badge({
   variant,
   render,
   ...props
-}: React.ComponentProps<"span"> &
+}: React.ComponentPropsWithoutRef<"span"> &
   VariantProps<typeof badgeVariants> & { render?: React.ReactElement }) {
   return useRender({
     defaultTagName: "span",

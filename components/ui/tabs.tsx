@@ -2,15 +2,11 @@
 
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { motion } from "motion/react";
-import type * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
-function Tabs({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -20,11 +16,7 @@ function Tabs({
   );
 }
 
-function TabsList({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
+function TabsList({ className, children, ...props }: TabsPrimitive.List.Props) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const [indicatorRect, setIndicatorRect] = useState<{
     x: number;
@@ -159,10 +151,7 @@ function TabsList({
   );
 }
 
-function TabsTrigger({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Tab>) {
+function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
@@ -175,10 +164,7 @@ function TabsTrigger({
   );
 }
 
-function TabsContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof TabsPrimitive.Panel>) {
+function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       data-slot="tabs-content"

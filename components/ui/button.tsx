@@ -35,7 +35,7 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps = useRender.ComponentProps<"button"> &
+export type ButtonProps = useRender.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     ref?: React.Ref<React.ElementRef<"button">>;
   };

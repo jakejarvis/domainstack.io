@@ -2,11 +2,7 @@ import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 
 import { cn } from "@/lib/utils";
 
-function Meter({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof MeterPrimitive.Root>) {
+function Meter({ className, children, ...props }: MeterPrimitive.Root.Props) {
   return (
     <MeterPrimitive.Root
       data-slot="meter"

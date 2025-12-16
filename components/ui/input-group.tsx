@@ -1,13 +1,16 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import type * as React from "react";
+import type { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, type InputProps } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
+function InputGroup({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="input-group"
@@ -60,7 +63,8 @@ function InputGroupAddon({
   className,
   align = "inline-start",
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
+}: React.ComponentPropsWithoutRef<"div"> &
+  VariantProps<typeof inputGroupAddonVariants>) {
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: this is intentional
     <div
@@ -103,8 +107,7 @@ function InputGroupButton({
   variant = "ghost",
   size = "xs",
   ...props
-}: Omit<React.ComponentProps<typeof Button>, "size"> &
-  VariantProps<typeof inputGroupButtonVariants>) {
+}: Omit<ButtonProps, "size"> & VariantProps<typeof inputGroupButtonVariants>) {
   return (
     <Button
       type={type}
@@ -116,7 +119,10 @@ function InputGroupButton({
   );
 }
 
-function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
+function InputGroupText({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"span">) {
   return (
     <span
       className={cn(
@@ -128,12 +134,10 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   );
 }
 
-function InputGroupInput({
-  className,
-  ...props
-}: React.ComponentProps<"input">) {
+function InputGroupInput({ className, ref, ...props }: InputProps) {
   return (
     <Input
+      ref={ref}
       data-slot="input-group-control"
       className={cn(
         "flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent",
@@ -147,7 +151,7 @@ function InputGroupInput({
 function InputGroupTextarea({
   className,
   ...props
-}: React.ComponentProps<"textarea">) {
+}: React.ComponentPropsWithoutRef<"textarea">) {
   return (
     <Textarea
       data-slot="input-group-control"

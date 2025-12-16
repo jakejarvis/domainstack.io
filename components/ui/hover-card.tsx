@@ -2,15 +2,11 @@ import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card
 
 import { cn } from "@/lib/utils";
 
-function HoverCard({
-  ...props
-}: React.ComponentProps<typeof PreviewCardPrimitive.Root>) {
+function HoverCard({ ...props }: PreviewCardPrimitive.Root.Props) {
   return <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
-function HoverCardTrigger({
-  ...props
-}: React.ComponentProps<typeof PreviewCardPrimitive.Trigger>) {
+function HoverCardTrigger({ ...props }: PreviewCardPrimitive.Trigger.Props) {
   return (
     <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
   );
@@ -26,9 +22,9 @@ function HoverCardContent({
   sticky,
   positionMethod,
   ...props
-}: React.ComponentProps<typeof PreviewCardPrimitive.Popup> &
+}: PreviewCardPrimitive.Popup.Props &
   Pick<
-    React.ComponentProps<typeof PreviewCardPrimitive.Positioner>,
+    PreviewCardPrimitive.Positioner.Props,
     | "align"
     | "alignOffset"
     | "side"

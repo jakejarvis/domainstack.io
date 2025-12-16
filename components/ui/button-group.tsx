@@ -3,9 +3,8 @@
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import { motion } from "motion/react";
-import type * as React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
-import { Separator } from "@/components/ui/separator";
+import { Separator, type SeparatorProps } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 const buttonGroupVariants = cva(
@@ -32,7 +31,7 @@ function ButtonGroup({
   withActiveIndicator = false,
   indicatorClassName,
   ...props
-}: React.ComponentProps<"div"> &
+}: React.ComponentPropsWithoutRef<"div"> &
   VariantProps<typeof buttonGroupVariants> & {
     /**
      * Enables a segmented-control style animated pill behind the active item.
@@ -178,7 +177,7 @@ function ButtonGroupText({
   className,
   render,
   ...props
-}: React.ComponentProps<"div"> & {
+}: React.ComponentPropsWithoutRef<"div"> & {
   render?: React.ReactElement;
 }) {
   return useRender({
@@ -198,7 +197,7 @@ function ButtonGroupSeparator({
   className,
   orientation = "vertical",
   ...props
-}: React.ComponentProps<typeof Separator>) {
+}: SeparatorProps) {
   return (
     <Separator
       data-slot="button-group-separator"

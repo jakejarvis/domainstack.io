@@ -5,10 +5,7 @@ import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-function FieldSet({
-  className,
-  ...props
-}: React.ComponentProps<typeof FieldsetPrimitive.Root>) {
+function FieldSet({ className, ...props }: FieldsetPrimitive.Root.Props) {
   return (
     <FieldsetPrimitive.Root
       data-slot="field-set"
@@ -26,7 +23,7 @@ function FieldLegend({
   className,
   variant = "legend",
   ...props
-}: React.ComponentProps<typeof FieldsetPrimitive.Legend> & {
+}: FieldsetPrimitive.Legend.Props & {
   variant?: "legend" | "label";
 }) {
   return (
@@ -44,7 +41,10 @@ function FieldLegend({
   );
 }
 
-function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
+function FieldGroup({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-group"
@@ -85,8 +85,7 @@ function Field({
   className,
   orientation = "vertical",
   ...props
-}: React.ComponentProps<typeof FieldPrimitive.Root> &
-  VariantProps<typeof fieldVariants>) {
+}: FieldPrimitive.Root.Props & VariantProps<typeof fieldVariants>) {
   return (
     <FieldPrimitive.Root
       role="group"
@@ -98,7 +97,10 @@ function Field({
   );
 }
 
-function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
+function FieldContent({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-content"
@@ -111,10 +113,7 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function FieldLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof FieldPrimitive.Label>) {
+function FieldLabel({ className, ...props }: FieldPrimitive.Label.Props) {
   return (
     <FieldPrimitive.Label
       data-slot="field-label"
@@ -129,7 +128,10 @@ function FieldLabel({
   );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+function FieldTitle({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-label"
@@ -145,7 +147,7 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
 function FieldDescription({
   className,
   ...props
-}: React.ComponentProps<typeof FieldPrimitive.Description>) {
+}: FieldPrimitive.Description.Props) {
   return (
     <FieldPrimitive.Description
       data-slot="field-description"
@@ -164,7 +166,7 @@ function FieldSeparator({
   children,
   className,
   ...props
-}: React.ComponentProps<"div"> & {
+}: React.ComponentPropsWithoutRef<"div"> & {
   children?: React.ReactNode;
 }) {
   return (
@@ -195,7 +197,7 @@ function FieldError({
   children,
   errors,
   ...props
-}: Omit<React.ComponentProps<typeof FieldPrimitive.Error>, "match"> & {
+}: Omit<FieldPrimitive.Error.Props, "match"> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
   const content = useMemo(() => {
