@@ -1,3 +1,4 @@
+import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Separator, type SeparatorProps } from "@/components/ui/separator";
@@ -55,17 +56,20 @@ function Item({
   size = "default",
   render,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> &
-  VariantProps<typeof itemVariants> & { render?: React.ReactElement }) {
+}: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>) {
   return useRender({
     defaultTagName: "div",
     render,
-    props: {
-      "data-slot": "item",
-      "data-variant": variant,
-      "data-size": size,
-      className: cn(itemVariants({ variant, size, className })),
-      ...props,
+    props: mergeProps<"div">(
+      {
+        className: cn(itemVariants({ variant, size, className })),
+      },
+      props,
+    ),
+    state: {
+      slot: "item",
+      variant,
+      size,
     },
   });
 }
