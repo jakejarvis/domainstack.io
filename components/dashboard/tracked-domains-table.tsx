@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { TablePagination } from "@/components/dashboard/table-pagination";
@@ -47,6 +47,7 @@ import {
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
+import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { useTablePagination } from "@/hooks/use-table-pagination";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -168,9 +169,6 @@ export function TrackedDomainsTable({
   // See: https://github.com/TanStack/table/issues/5567
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const updateScrollGradientsRef = useRef<(() => void) | null>(null);
-  const [showLeftGradient, setShowLeftGradient] = useState(false);
-  const [showRightGradient, setShowRightGradient] = useState(false);
 
   const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
     useTablePagination();
@@ -179,6 +177,11 @@ export function TrackedDomainsTable({
   });
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
+
+  const { showStart, showEnd, update } = useScrollIndicators({
+    containerRef: scrollContainerRef,
+    direction: "horizontal",
+  });
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
@@ -487,60 +490,10 @@ export function TrackedDomainsTable({
     onTableReady?.(table);
   }, [table, onTableReady]);
 
-  // Horizontal scroll indicators (fade gradients) for the table
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    let rafId: number | null = null;
-
-    const updateGradients = () => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        const { scrollLeft, scrollWidth, clientWidth } = container;
-
-        const shouldShowLeft = scrollLeft > 0;
-        const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1;
-
-        setShowLeftGradient((prev) =>
-          prev === shouldShowLeft ? prev : shouldShowLeft,
-        );
-        setShowRightGradient((prev) =>
-          prev === shouldShowRight ? prev : shouldShowRight,
-        );
-      });
-    };
-
-    updateScrollGradientsRef.current = updateGradients;
-    updateGradients();
-
-    const handleScroll = () => updateScrollGradientsRef.current?.();
-
-    container.addEventListener("scroll", handleScroll);
-
-    const resizeObserver = new ResizeObserver(() =>
-      updateScrollGradientsRef.current?.(),
-    );
-    resizeObserver.observe(container);
-
-    return () => {
-      updateScrollGradientsRef.current = null;
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-      container.removeEventListener("scroll", handleScroll);
-      resizeObserver.disconnect();
-    };
-  }, []);
-
   // Re-check gradients when column visibility/data changes (table width can change)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-check when table layout changes (column visibility / row count) even though we only call the ref updater
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-check when table layout changes (column visibility / row count) even though we only call the updater
   useEffect(() => {
-    updateScrollGradientsRef.current?.();
+    update();
   }, [columnVisibility, domains.length]);
 
   return (
@@ -841,7 +794,7 @@ export function TrackedDomainsTable({
         </div>
 
         {/* Left gradient - shown when scrolled right from start */}
-        {showLeftGradient && (
+        {showStart && (
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-background/60 to-transparent"
@@ -849,7 +802,7 @@ export function TrackedDomainsTable({
         )}
 
         {/* Right gradient - shown when more content available */}
-        {showRightGradient && (
+        {showEnd && (
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-background/60 to-transparent"

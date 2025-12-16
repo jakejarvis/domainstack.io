@@ -1,14 +1,8 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import {
-  forwardRef,
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, type RefObject, useEffect, useRef } from "react";
+import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
 interface ScrollAreaWithIndicatorsProps
@@ -28,47 +22,29 @@ export const ScrollAreaWithIndicators = forwardRef<
   const internalRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const ref = (forwardedRef as RefObject<HTMLDivElement>) || internalRef;
-  const [canScrollUp, setCanScrollUp] = useState(false);
-  const [canScrollDown, setCanScrollDown] = useState(false);
 
-  const updateScrollState = useCallback(() => {
-    const element = typeof ref === "object" ? ref.current : null;
-    if (!element) return;
+  const {
+    showStart: canScrollUp,
+    showEnd: canScrollDown,
+    update,
+  } = useScrollIndicators({
+    containerRef: ref,
+    direction: "vertical",
+    threshold: 5,
+  });
 
-    const { scrollTop, scrollHeight, clientHeight } = element;
-    const threshold = 5; // Small threshold to account for sub-pixel rendering
-
-    setCanScrollUp(scrollTop > threshold);
-    setCanScrollDown(scrollTop + clientHeight < scrollHeight - threshold);
-  }, [ref]);
-
+  // Also observe the content wrapper - this catches when children expand/collapse
   useEffect(() => {
-    const scrollElement = typeof ref === "object" ? ref.current : null;
     const contentElement = contentRef.current;
-    if (!scrollElement) return;
+    if (!contentElement) return;
 
-    // Initial check
-    updateScrollState();
-
-    // Check on scroll
-    scrollElement.addEventListener("scroll", updateScrollState, {
-      passive: true,
-    });
-
-    // Observe the scroll container for size changes
-    const resizeObserver = new ResizeObserver(updateScrollState);
-    resizeObserver.observe(scrollElement);
-
-    // Also observe the content wrapper - this catches when children expand/collapse
-    if (contentElement) {
-      resizeObserver.observe(contentElement);
-    }
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(contentElement);
 
     return () => {
-      scrollElement.removeEventListener("scroll", updateScrollState);
       resizeObserver.disconnect();
     };
-  }, [ref, updateScrollState]);
+  }, [update]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">

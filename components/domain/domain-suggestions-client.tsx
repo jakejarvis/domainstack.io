@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Favicon } from "@/components/domain/favicon";
 import { useHomeSearch } from "@/components/layout/home-search-context";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useRouter } from "@/hooks/use-router";
+import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { useAnalytics } from "@/lib/analytics/client";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 import { cn } from "@/lib/utils";
@@ -33,11 +34,12 @@ export function DomainSuggestionsClient({
   const analytics = useAnalytics();
   const { onSuggestionClick } = useHomeSearch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const updateGradientsRef = useRef<(() => void) | null>(null);
 
   const { history, isHistoryLoaded, clearHistory } = useDomainHistory();
-  const [showLeftGradient, setShowLeftGradient] = useState(false);
-  const [showRightGradient, setShowRightGradient] = useState(false);
+  const { showStart, showEnd, update } = useScrollIndicators({
+    containerRef: scrollContainerRef,
+    direction: "horizontal",
+  });
 
   const displayedSuggestions = useMemo(() => {
     const merged = [
@@ -46,62 +48,6 @@ export function DomainSuggestionsClient({
     ];
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
-
-  // Set up scroll and resize observers once on mount
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    let rafId: number | null = null;
-
-    const updateGradients = () => {
-      // Cancel any pending frame
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-
-      // Schedule update for next frame to throttle and prevent layout thrashing
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        const { scrollLeft, scrollWidth, clientWidth } = container;
-
-        const shouldShowLeft = scrollLeft > 0;
-        const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1;
-
-        // Only update state if values actually changed to prevent render loops
-        setShowLeftGradient((prev) =>
-          prev === shouldShowLeft ? prev : shouldShowLeft,
-        );
-        setShowRightGradient((prev) =>
-          prev === shouldShowRight ? prev : shouldShowRight,
-        );
-      });
-    };
-
-    updateGradientsRef.current = updateGradients;
-
-    // Initial check
-    updateGradients();
-
-    const handleScroll = () => updateGradientsRef.current?.();
-
-    // Update on scroll
-    container.addEventListener("scroll", handleScroll);
-
-    // Update on resize (in case content changes)
-    const resizeObserver = new ResizeObserver(() =>
-      updateGradientsRef.current?.(),
-    );
-    resizeObserver.observe(container);
-
-    return () => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-      container.removeEventListener("scroll", handleScroll);
-      resizeObserver.disconnect();
-    };
-  }, []); // Only run once on mount
 
   function handleClick(domain: string) {
     analytics.track("search_suggestion_clicked", {
@@ -125,6 +71,8 @@ export function DomainSuggestionsClient({
         left: 0,
         behavior: "smooth",
       });
+      // Manually update indicators after scroll
+      update();
     }
   }
 
@@ -187,11 +135,11 @@ export function DomainSuggestionsClient({
         </div>
       </div>
       {/* Left gradient - shown when scrolled right from start */}
-      {showLeftGradient && (
+      {showStart && (
         <div className="pointer-events-none absolute top-0 left-0 h-full w-12 bg-gradient-to-r from-background to-transparent" />
       )}
       {/* Right gradient - shown when more content available */}
-      {showRightGradient && (
+      {showEnd && (
         <div className="pointer-events-none absolute top-0 right-0 h-full w-12 bg-gradient-to-l from-background to-transparent" />
       )}
     </div>
