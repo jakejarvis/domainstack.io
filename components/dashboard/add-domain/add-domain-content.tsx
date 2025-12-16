@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Meter } from "@/components/ui/meter";
 import { Spinner } from "@/components/ui/spinner";
 import { type Step, Stepper } from "@/components/ui/stepper";
 import {
@@ -242,7 +242,7 @@ export function AddDomainContent({
                 {activeCount} of {maxDomains} domains used
               </p>
             </div>
-            <Progress
+            <Meter
               value={percentage}
               className="w-24"
               aria-label="Domain usage"

@@ -1,25 +1,18 @@
-"use client";
-
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import type * as React from "react";
+import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 
 import { cn } from "@/lib/utils";
 
 function HoverCard({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="hover-card" {...props} />;
+}: React.ComponentProps<typeof PreviewCardPrimitive.Root>) {
+  return <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
 function HoverCardTrigger({
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+}: React.ComponentProps<typeof PreviewCardPrimitive.Trigger>) {
   return (
-    <PopoverPrimitive.Trigger
-      data-slot="hover-card-trigger"
-      openOnHover
-      {...props}
-    />
+    <PreviewCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
   );
 }
 
@@ -33,9 +26,9 @@ function HoverCardContent({
   sticky,
   positionMethod,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Popup> &
+}: React.ComponentProps<typeof PreviewCardPrimitive.Popup> &
   Pick<
-    React.ComponentProps<typeof PopoverPrimitive.Positioner>,
+    React.ComponentProps<typeof PreviewCardPrimitive.Positioner>,
     | "align"
     | "alignOffset"
     | "side"
@@ -45,8 +38,8 @@ function HoverCardContent({
     | "positionMethod"
   >) {
   return (
-    <PopoverPrimitive.Portal data-slot="hover-card-portal">
-      <PopoverPrimitive.Positioner
+    <PreviewCardPrimitive.Portal data-slot="hover-card-portal">
+      <PreviewCardPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
         side={side}
@@ -55,7 +48,7 @@ function HoverCardContent({
         sticky={sticky}
         positionMethod={positionMethod}
       >
-        <PopoverPrimitive.Popup
+        <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
           className={cn(
             "z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden",
@@ -66,8 +59,8 @@ function HoverCardContent({
           )}
           {...props}
         />
-      </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
+      </PreviewCardPrimitive.Positioner>
+    </PreviewCardPrimitive.Portal>
   );
 }
 

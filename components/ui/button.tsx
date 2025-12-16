@@ -1,6 +1,5 @@
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,10 +35,19 @@ const buttonVariants = cva(
   },
 );
 
-const Button = React.forwardRef<
-  React.ElementRef<"button">,
-  useRender.ComponentProps<"button"> & VariantProps<typeof buttonVariants>
->(function Button({ className, variant, size, render, ...props }, ref) {
+type ButtonProps = useRender.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    ref?: React.Ref<React.ElementRef<"button">>;
+  };
+
+function Button({
+  className,
+  variant,
+  size,
+  render,
+  ref,
+  ...props
+}: ButtonProps) {
   return useRender({
     ref,
     defaultTagName: "button",
@@ -50,8 +58,6 @@ const Button = React.forwardRef<
       ...props,
     },
   });
-});
-
-Button.displayName = "Button";
+}
 
 export { Button, buttonVariants };

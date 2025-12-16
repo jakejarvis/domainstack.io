@@ -3,7 +3,7 @@ import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import * as motion from "motion/react-client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Meter } from "@/components/ui/meter";
 import {
   Tooltip,
   TooltipContent,
@@ -77,7 +77,7 @@ export function DashboardHeader({
       <div className="flex items-center justify-between gap-3">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
-          <Progress
+          <Meter
             value={percentage}
             className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
           />

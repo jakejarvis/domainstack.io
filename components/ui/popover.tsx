@@ -1,22 +1,12 @@
-"use client";
-
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import * as React from "react";
+import type * as React from "react";
 
 import { cn } from "@/lib/utils";
-
-const PopoverAnchorContext =
-  React.createContext<React.RefObject<Element | null> | null>(null);
 
 function Popover({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  const anchorRef = React.useRef<Element | null>(null);
-  return (
-    <PopoverAnchorContext.Provider value={anchorRef}>
-      <PopoverPrimitive.Root data-slot="popover" {...props} />
-    </PopoverAnchorContext.Provider>
-  );
+  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
 function PopoverTrigger({
@@ -48,9 +38,6 @@ function PopoverContent({
     | "sticky"
     | "positionMethod"
   >) {
-  const anchorRef = React.useContext(PopoverAnchorContext);
-  const resolvedAnchor = anchor ?? anchorRef ?? undefined;
-
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -58,7 +45,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        anchor={resolvedAnchor}
+        anchor={anchor}
         collisionPadding={collisionPadding}
         sticky={sticky}
         positionMethod={positionMethod}
@@ -79,36 +66,4 @@ function PopoverContent({
   );
 }
 
-/**
- * Compatibility shim.
- * Radix had an explicit `Anchor` part; Base UI positions against the trigger or a supplied `anchor` on `Positioner`.
- * This export now wires through to `PopoverContent` by setting `Positioner`'s `anchor` prop.
- */
-const PopoverAnchor = React.forwardRef<
-  React.ElementRef<"span">,
-  React.ComponentPropsWithoutRef<"span">
->(function PopoverAnchor({ ...props }, forwardedRef) {
-  const anchorRef = React.useContext(PopoverAnchorContext);
-
-  return (
-    <span
-      data-slot="popover-anchor"
-      ref={(node) => {
-        if (anchorRef) {
-          (anchorRef as React.MutableRefObject<Element | null>).current = node;
-        }
-
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (
-            forwardedRef as React.MutableRefObject<HTMLSpanElement | null>
-          ).current = node;
-        }
-      }}
-      {...props}
-    />
-  );
-});
-
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+export { Popover, PopoverTrigger, PopoverContent };

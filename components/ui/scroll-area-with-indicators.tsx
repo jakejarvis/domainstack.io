@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { forwardRef, type RefObject, useEffect, useRef } from "react";
+import * as React from "react";
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
@@ -9,32 +9,44 @@ interface ScrollAreaWithIndicatorsProps
   extends React.HTMLAttributes<HTMLDivElement> {
   /** Whether to show indicators (can disable for non-scrollable content) */
   showIndicators?: boolean;
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+function setRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
+  if (!ref) return;
+  if (typeof ref === "function") {
+    ref(value);
+  } else {
+    (ref as React.MutableRefObject<T | null>).current = value;
+  }
 }
 
 /**
  * A scrollable container that shows subtle shadow indicators
  * when there's more content above or below the visible area.
  */
-export const ScrollAreaWithIndicators = forwardRef<
-  HTMLDivElement,
-  ScrollAreaWithIndicatorsProps
->(({ children, className, showIndicators = true, ...props }, forwardedRef) => {
-  const internalRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const ref = (forwardedRef as RefObject<HTMLDivElement>) || internalRef;
+export function ScrollAreaWithIndicators({
+  children,
+  className,
+  showIndicators = true,
+  ref,
+  ...props
+}: ScrollAreaWithIndicatorsProps) {
+  const internalRef = React.useRef<HTMLDivElement | null>(null);
+  const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   const {
     showStart: canScrollUp,
     showEnd: canScrollDown,
     update,
   } = useScrollIndicators({
-    containerRef: ref,
+    containerRef: internalRef,
     direction: "vertical",
     threshold: 5,
   });
 
   // Also observe the content wrapper - this catches when children expand/collapse
-  useEffect(() => {
+  React.useEffect(() => {
     const contentElement = contentRef.current;
     if (!contentElement) return;
 
@@ -61,7 +73,10 @@ export const ScrollAreaWithIndicators = forwardRef<
 
       {/* Scrollable content */}
       <div
-        ref={ref}
+        ref={(node) => {
+          internalRef.current = node;
+          setRef(ref, node);
+        }}
         className={cn("min-h-0 flex-1 overflow-y-auto", className)}
         {...props}
       >
@@ -88,6 +103,4 @@ export const ScrollAreaWithIndicators = forwardRef<
       )}
     </div>
   );
-});
-
-ScrollAreaWithIndicators.displayName = "ScrollAreaWithIndicators";
+}

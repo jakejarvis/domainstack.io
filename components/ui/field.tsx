@@ -1,14 +1,16 @@
-"use client";
-
+import { Field as FieldPrimitive } from "@base-ui/react/field";
+import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
+function FieldSet({
+  className,
+  ...props
+}: React.ComponentProps<typeof FieldsetPrimitive.Root>) {
   return (
-    <fieldset
+    <FieldsetPrimitive.Root
       data-slot="field-set"
       className={cn(
         "flex flex-col gap-6",
@@ -24,9 +26,11 @@ function FieldLegend({
   className,
   variant = "legend",
   ...props
-}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
+}: React.ComponentProps<typeof FieldsetPrimitive.Legend> & {
+  variant?: "legend" | "label";
+}) {
   return (
-    <legend
+    <FieldsetPrimitive.Legend
       data-slot="field-legend"
       data-variant={variant}
       className={cn(
@@ -54,7 +58,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 const fieldVariants = cva(
-  "group/field flex w-full gap-3 data-[invalid=true]:text-destructive",
+  "group/field flex w-full gap-3 data-[invalid]:text-destructive",
   {
     variants: {
       orientation: {
@@ -81,9 +85,10 @@ function Field({
   className,
   orientation = "vertical",
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
+}: React.ComponentProps<typeof FieldPrimitive.Root> &
+  VariantProps<typeof fieldVariants>) {
   return (
-    <div
+    <FieldPrimitive.Root
       role="group"
       data-slot="field"
       data-orientation={orientation}
@@ -109,12 +114,12 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
 function FieldLabel({
   className,
   ...props
-}: React.ComponentProps<typeof Label>) {
+}: React.ComponentProps<typeof FieldPrimitive.Label>) {
   return (
-    <Label
+    <FieldPrimitive.Label
       data-slot="field-label"
       className={cn(
-        "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50",
+        "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled]/field:opacity-50",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4",
         "has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 dark:has-data-[state=checked]:bg-primary/10",
         className,
@@ -129,7 +134,7 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="field-label"
       className={cn(
-        "flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled=true]/field:opacity-50",
+        "flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled]/field:opacity-50",
         className,
       )}
       {...props}
@@ -137,9 +142,12 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
+function FieldDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof FieldPrimitive.Description>) {
   return (
-    <p
+    <FieldPrimitive.Description
       data-slot="field-description"
       className={cn(
         "font-normal text-muted-foreground text-sm leading-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
@@ -187,7 +195,7 @@ function FieldError({
   children,
   errors,
   ...props
-}: React.ComponentProps<"div"> & {
+}: Omit<React.ComponentProps<typeof FieldPrimitive.Error>, "match"> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
   const content = useMemo(() => {
@@ -219,14 +227,15 @@ function FieldError({
   }
 
   return (
-    <div
+    <FieldPrimitive.Error
+      match
       role="alert"
       data-slot="field-error"
       className={cn("font-normal text-destructive text-sm", className)}
       {...props}
     >
       {content}
-    </div>
+    </FieldPrimitive.Error>
   );
 }
 
