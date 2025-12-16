@@ -46,10 +46,7 @@ export function DangerZoneSettingsSection() {
         />
         <CollapsibleContent
           keepMounted
-          className={cn(
-            "overflow-hidden transition-[max-height,opacity] duration-200",
-            isDangerZoneOpen ? "opacity-100" : "max-h-0 opacity-0",
-          )}
+          className="overflow-hidden transition-[max-height,opacity] duration-200 ease-out data-[closed]:max-h-0 data-[open]:max-h-96 data-[closed]:opacity-0 data-[open]:opacity-100"
         >
           <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
