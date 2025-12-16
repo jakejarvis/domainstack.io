@@ -40,10 +40,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
@@ -110,9 +110,15 @@ function ProviderCell({
 
   if (tooltipData.shouldShowTooltip) {
     return (
-      <Tooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-        <TooltipTrigger render={providerContent} />
-        <TooltipContent>
+      <ResponsiveTooltip
+        open={tooltipData.isOpen}
+        onOpenChange={tooltipData.setIsOpen}
+      >
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={providerContent}
+        />
+        <ResponsiveTooltipContent>
           <ProviderTooltipContent
             providerName={provider.name}
             providerDomain={provider.domain}
@@ -125,17 +131,20 @@ function ProviderCell({
             registrationSource={tooltipData.registrationSource}
             registrantInfo={tooltipData.registrantInfo}
           />
-        </TooltipContent>
-      </Tooltip>
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 
   if (isTruncated) {
     return (
-      <Tooltip>
-        <TooltipTrigger render={providerContent} />
-        <TooltipContent>{provider.name}</TooltipContent>
-      </Tooltip>
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={providerContent}
+        />
+        <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 
@@ -292,14 +301,15 @@ export function TrackedDomainsTable({
           }
           return (
             <div className="whitespace-nowrap text-[13px]">
-              <Tooltip>
-                <TooltipTrigger
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
                   render={<span>{format(date, "MMM d, yyyy")}</span>}
                 />
-                <TooltipContent>
+                <ResponsiveTooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             </div>
           );
         },
@@ -382,14 +392,15 @@ export function TrackedDomainsTable({
           const date = row.original.createdAt;
           return (
             <div className="whitespace-nowrap text-[13px]">
-              <Tooltip>
-                <TooltipTrigger
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
                   render={<span>{format(date, "MMM d, yyyy")}</span>}
                 />
-                <TooltipContent>
+                <ResponsiveTooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             </div>
           );
         },

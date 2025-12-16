@@ -5,10 +5,10 @@ import { TtlBadge } from "@/components/domain/dns/ttl-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import type { DnsRecord } from "@/lib/schemas";
 
 export function DnsRecordList({
@@ -39,18 +39,19 @@ export function DnsRecordList({
           }
           suffix={
             r.isCloudflare ? (
-              <Tooltip>
-                <TooltipTrigger
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
                   render={
                     <span>
                       <Favicon domain="cloudflare.com" />
                     </span>
                   }
                 />
-                <TooltipContent>
+                <ResponsiveTooltipContent>
                   <p>Real IP is being concealed using Cloudflare.</p>
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             ) : undefined
           }
         />

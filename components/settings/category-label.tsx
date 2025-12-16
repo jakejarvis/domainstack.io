@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import {
   NOTIFICATION_CATEGORY_INFO,
   type NotificationCategory,
@@ -32,15 +32,16 @@ export function CategoryLabel({
   const info = NOTIFICATION_CATEGORY_INFO[category];
 
   return (
-    <Tooltip>
-      <TooltipTrigger
+    <ResponsiveTooltip>
+      <ResponsiveTooltipTrigger
+        nativeButton={false}
         render={
           <span className="cursor-help">
             {compact ? SHORT_LABELS[category] : info.label}
           </span>
         }
       />
-      <TooltipContent>{info.description}</TooltipContent>
-    </Tooltip>
+      <ResponsiveTooltipContent>{info.description}</ResponsiveTooltipContent>
+    </ResponsiveTooltip>
   );
 }

@@ -5,12 +5,12 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 export function Section({
@@ -70,8 +70,9 @@ export function Section({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-base">{title}</span>
                   {help && (
-                    <Tooltip>
-                      <TooltipTrigger
+                    <ResponsiveTooltip>
+                      <ResponsiveTooltipTrigger
+                        nativeButton={false}
                         render={
                           <span
                             role="img"
@@ -84,8 +85,10 @@ export function Section({
                           </span>
                         }
                       />
-                      <TooltipContent>{help}</TooltipContent>
-                    </Tooltip>
+                      <ResponsiveTooltipContent>
+                        {help}
+                      </ResponsiveTooltipContent>
+                    </ResponsiveTooltip>
                   )}
                 </CardTitle>
                 {(description || help) && (

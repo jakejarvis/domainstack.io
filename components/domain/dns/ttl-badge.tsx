@@ -4,15 +4,16 @@ import { ClockFading } from "lucide-react";
 import { ms } from "ms";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 
 export function TtlBadge({ ttl }: { ttl: number }) {
   return (
-    <Tooltip>
-      <TooltipTrigger
+    <ResponsiveTooltip>
+      <ResponsiveTooltipTrigger
+        nativeButton={false}
         render={
           <Badge
             variant="outline"
@@ -25,9 +26,9 @@ export function TtlBadge({ ttl }: { ttl: number }) {
           </Badge>
         }
       />
-      <TooltipContent>
+      <ResponsiveTooltipContent>
         <span className="font-mono text-xs">{ttl}</span>
-      </TooltipContent>
-    </Tooltip>
+      </ResponsiveTooltipContent>
+    </ResponsiveTooltip>
   );
 }

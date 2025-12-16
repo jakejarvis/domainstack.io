@@ -32,10 +32,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -239,18 +239,18 @@ export function TrackedDomainCard({
             <InfoRow label="Expires">
               {expirationDate ? (
                 <>
-                  <Tooltip>
-                    <TooltipTrigger
+                  <ResponsiveTooltip>
+                    <ResponsiveTooltipTrigger
                       render={
                         <span className="truncate">
                           {format(expirationDate, "MMM d, yyyy")}
                         </span>
                       }
                     />
-                    <TooltipContent>
+                    <ResponsiveTooltipContent>
                       {formatDateTimeUtc(expirationDate.toISOString())}
-                    </TooltipContent>
-                  </Tooltip>
+                    </ResponsiveTooltipContent>
+                  </ResponsiveTooltip>
                   <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
                     <RelativeExpiryString
                       to={expirationDate}
@@ -311,18 +311,18 @@ export function TrackedDomainCard({
               <InfoRow label="Expires">
                 {expirationDate ? (
                   <>
-                    <Tooltip>
-                      <TooltipTrigger
+                    <ResponsiveTooltip>
+                      <ResponsiveTooltipTrigger
                         render={
                           <span className="truncate">
                             {format(expirationDate, "MMM d, yyyy")}
                           </span>
                         }
                       />
-                      <TooltipContent>
+                      <ResponsiveTooltipContent>
                         {formatDateTimeUtc(expirationDate.toISOString())}
-                      </TooltipContent>
-                    </Tooltip>
+                      </ResponsiveTooltipContent>
+                    </ResponsiveTooltip>
                     <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
                       <RelativeExpiryString
                         to={expirationDate}
@@ -446,12 +446,12 @@ function InfoRow({
         {children ||
           (provider?.name ? (
             tooltipData.shouldShowTooltip ? (
-              <Tooltip
+              <ResponsiveTooltip
                 open={tooltipData.isOpen}
                 onOpenChange={tooltipData.setIsOpen}
               >
-                <TooltipTrigger render={providerContent} />
-                <TooltipContent>
+                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipContent>
                   <ProviderTooltipContent
                     providerName={provider.name}
                     providerDomain={provider.domain}
@@ -464,13 +464,15 @@ function InfoRow({
                     registrationSource={tooltipData.registrationSource}
                     registrantInfo={tooltipData.registrantInfo}
                   />
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             ) : isTruncated ? (
-              <Tooltip>
-                <TooltipTrigger render={providerContent} />
-                <TooltipContent>{provider.name}</TooltipContent>
-              </Tooltip>
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipContent>
+                  {provider.name}
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             ) : (
               providerContent
             )

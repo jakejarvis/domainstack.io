@@ -4,10 +4,10 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
@@ -49,32 +49,30 @@ export function LinkedAccountRow({
           Unavailable
         </Button>
       ) : isLinked ? (
-        <Tooltip>
-          <TooltipTrigger
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
             render={
-              <span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onUnlink}
-                  disabled={!canUnlink || isLoading}
-                  className={cn(
-                    "gap-2",
-                    canUnlink ? "cursor-pointer" : "cursor-not-allowed",
-                  )}
-                >
-                  {isUnlinking && <Loader2 className="size-4 animate-spin" />}
-                  Unlink
-                </Button>
-              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onUnlink}
+                disabled={!canUnlink || isLoading}
+                className={cn(
+                  "gap-2",
+                  canUnlink ? "cursor-pointer" : "cursor-not-allowed",
+                )}
+              >
+                {isUnlinking && <Loader2 className="size-4 animate-spin" />}
+                Unlink
+              </Button>
             }
           />
           {!canUnlink && (
-            <TooltipContent>
+            <ResponsiveTooltipContent>
               You must have at least one linked account to sign in
-            </TooltipContent>
+            </ResponsiveTooltipContent>
           )}
-        </Tooltip>
+        </ResponsiveTooltip>
       ) : (
         <Button
           variant="outline"

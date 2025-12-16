@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { Screenshot } from "@/components/domain/screenshot";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
@@ -42,26 +42,33 @@ export function ScreenshotTooltip({
   };
 
   return (
-    <Tooltip
+    <Popover
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
         if (v) setHasOpened(true);
       }}
     >
-      <TooltipTrigger onClick={handleInteraction} render={children} />
-      <TooltipContent
+      <PopoverTrigger
+        nativeButton={false}
+        openOnHover
+        delay={0}
+        closeDelay={0}
+        onClick={handleInteraction}
+        render={children}
+      />
+      <PopoverContent
         sideOffset={6}
         alignOffset={-12}
-        className="bg-transparent"
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
       >
         <div className="w-[300px] sm:w-[360px] md:w-[420px]">
           <BrowserWindow url={domain} className="h-auto w-full shadow-xl">
             <Screenshot domain={domain} enabled={hasOpened} />
           </BrowserWindow>
         </div>
-      </TooltipContent>
-    </Tooltip>
+      </PopoverContent>
+    </Popover>
   );
 }
 

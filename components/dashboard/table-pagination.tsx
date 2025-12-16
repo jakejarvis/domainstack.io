@@ -44,10 +44,7 @@ export function TablePagination({
         <span className="text-muted-foreground text-xs">Show</span>
         <Select
           value={String(pageSize)}
-          onValueChange={(value) => {
-            if (value == null) return;
-            onPageSizeChange(Number(value) as PageSize);
-          }}
+          onValueChange={(value) => onPageSizeChange(Number(value) as PageSize)}
         >
           <SelectTrigger className="!h-8 gap-1.5 px-2 text-xs">
             <SelectValue />

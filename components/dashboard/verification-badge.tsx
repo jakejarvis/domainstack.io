@@ -5,10 +5,10 @@ import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import {
   VERIFICATION_GRACE_PERIOD_DAYS,
   VERIFICATION_METHOD_LABELS,
@@ -70,9 +70,12 @@ export function VerificationBadge({
     );
 
     return (
-      <Tooltip>
-        <TooltipTrigger render={<span>{badge}</span>} />
-        <TooltipContent>
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={<span>{badge}</span>}
+        />
+        <ResponsiveTooltipContent>
           {daysRemaining > 0 ? (
             <>
               {daysRemaining} {daysRemaining === 1 ? "day" : "days"} to fix
@@ -81,8 +84,8 @@ export function VerificationBadge({
           ) : (
             <>Verification will be revoked soon</>
           )}
-        </TooltipContent>
-      </Tooltip>
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 
@@ -102,14 +105,15 @@ export function VerificationBadge({
     // Show tooltip with verification method if available
     if (verificationMethod) {
       return (
-        <Tooltip>
-          <TooltipTrigger
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
+            nativeButton={false}
             render={<span className="cursor-default">{badge}</span>}
           />
-          <TooltipContent>
+          <ResponsiveTooltipContent>
             Using {VERIFICATION_METHOD_LABELS[verificationMethod]}
-          </TooltipContent>
-        </Tooltip>
+          </ResponsiveTooltipContent>
+        </ResponsiveTooltip>
       );
     }
 
@@ -135,10 +139,15 @@ export function VerificationBadge({
   // Show tooltip when clickable
   if (onClick) {
     return (
-      <Tooltip>
-        <TooltipTrigger render={<span>{pendingBadge}</span>} />
-        <TooltipContent>Complete verification</TooltipContent>
-      </Tooltip>
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={<span>{pendingBadge}</span>}
+        />
+        <ResponsiveTooltipContent>
+          Complete verification
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 

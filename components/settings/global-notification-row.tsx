@@ -1,12 +1,12 @@
 "use client";
 
 import { BadgeAlert, CalendarDays, Info, ShieldAlert } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
+import { Switch } from "@/components/ui/switch";
 import {
   NOTIFICATION_CATEGORY_INFO,
   type NotificationCategory,
@@ -84,18 +84,19 @@ export function GlobalNotificationRow({
       {/* Label with info tooltip */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span className="font-medium text-sm">{info.label}</span>
-        <Tooltip>
-          <TooltipTrigger
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
+            nativeButton={false}
             render={
               <span className="inline-flex text-foreground/70">
                 <Info className="size-3.5" />
               </span>
             }
           />
-          <TooltipContent className="max-w-xs">
+          <ResponsiveTooltipContent className="max-w-xs">
             {info.description}
-          </TooltipContent>
-        </Tooltip>
+          </ResponsiveTooltipContent>
+        </ResponsiveTooltip>
       </div>
 
       {/* Toggle */}

@@ -5,10 +5,10 @@ import { toast } from "sonner";
 import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
@@ -80,8 +80,8 @@ export function HtmlFileVerificationInstructions({
         <CopyableField label="Upload Path" value={instructions.fullPath} />
         <CopyableField label="File Contents" value={instructions.fileContent} />
 
-        <Tooltip>
-          <TooltipTrigger
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
             render={
               <Button
                 variant="outline"
@@ -94,8 +94,10 @@ export function HtmlFileVerificationInstructions({
               </Button>
             }
           />
-          <TooltipContent>{instructions.filename}</TooltipContent>
-        </Tooltip>
+          <ResponsiveTooltipContent>
+            {instructions.filename}
+          </ResponsiveTooltipContent>
+        </ResponsiveTooltip>
       </div>
     </>
   );

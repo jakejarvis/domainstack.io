@@ -24,10 +24,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { Certificate } from "@/lib/schemas";
@@ -83,8 +83,9 @@ export function CertificatesSection({
                         )
                       : [];
                     return sans.length > 0 ? (
-                      <Tooltip>
-                        <TooltipTrigger
+                      <ResponsiveTooltip>
+                        <ResponsiveTooltipTrigger
+                          nativeButton={false}
                           render={
                             <Badge
                               variant="outline"
@@ -95,10 +96,10 @@ export function CertificatesSection({
                             </Badge>
                           }
                         />
-                        <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                        <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                           {sans.join(", ")}
-                        </TooltipContent>
-                      </Tooltip>
+                        </ResponsiveTooltipContent>
+                      </ResponsiveTooltip>
                     ) : undefined;
                   })()}
                 />
@@ -199,8 +200,9 @@ export function CertificatesSection({
                                   )
                                 : [];
                               return sans.length > 0 ? (
-                                <Tooltip>
-                                  <TooltipTrigger
+                                <ResponsiveTooltip>
+                                  <ResponsiveTooltipTrigger
+                                    nativeButton={false}
                                     render={
                                       <Badge
                                         variant="outline"
@@ -213,10 +215,10 @@ export function CertificatesSection({
                                       </Badge>
                                     }
                                   />
-                                  <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                                  <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                                     {sans.join(", ")}
-                                  </TooltipContent>
-                                </Tooltip>
+                                  </ResponsiveTooltipContent>
+                                </ResponsiveTooltip>
                               ) : undefined;
                             })()}
                           />
