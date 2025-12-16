@@ -79,11 +79,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
       variant={variant}
       size={size}
       className={className}
-      render={(anchorProps) => (
-        <a {...anchorProps} href={issueUrl} target="_blank" rel="noopener">
-          {anchorProps.children}
-        </a>
-      )}
+      render={<a href={issueUrl} target="_blank" rel="noopener" />}
     >
       <Bug />
       {children ?? "Create GitHub issue"}

@@ -100,9 +100,8 @@ export function DomainPricingCTA({
               key={providerPricing.provider}
               variant="outline"
               className="w-full min-w-[250px]"
-              render={(anchorProps) => (
+              render={
                 <a
-                  {...anchorProps}
                   href={config.searchUrl(domain)}
                   target="_blank"
                   rel="noopener"
@@ -113,10 +112,8 @@ export function DomainPricingCTA({
                       provider: providerPricing.provider,
                     })
                   }
-                >
-                  {anchorProps.children}
-                </a>
-              )}
+                />
+              }
             >
               <Tooltip>
                 <TooltipTrigger

@@ -44,18 +44,16 @@ export async function GithubStars() {
     <Button
       variant="ghost"
       size="sm"
-      render={(anchorProps) => (
+      nativeButton={false}
+      render={
         <a
-          {...anchorProps}
           href={`https://github.com/${REPOSITORY_SLUG}`}
           target="_blank"
           rel="noopener"
           className="group flex select-none items-center gap-2 transition-colors"
           aria-label="Open GitHub repository"
-        >
-          {anchorProps.children}
-        </a>
-      )}
+        />
+      }
     >
       <svg
         role="img"

@@ -38,6 +38,7 @@
       },
       "a11y": {
         "noSvgWithoutTitle": "off",
+        "useAnchorContent": "off",
         "useSemanticElements": "off"
       },
       "nursery": {
