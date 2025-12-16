@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeAlert, Info, ShieldAlert, TimerReset } from "lucide-react";
+import { BadgeAlert, CalendarDays, Info, ShieldAlert } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -24,7 +24,7 @@ const CATEGORY_ICONS: Record<
   NotificationCategory,
   React.ComponentType<{ className?: string }>
 > = {
-  domainExpiry: TimerReset,
+  domainExpiry: CalendarDays,
   certificateExpiry: ShieldAlert,
   verificationStatus: BadgeAlert,
 };

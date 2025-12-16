@@ -41,13 +41,13 @@ export function SettingsDialog({
       )}
 
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 p-0 dark:border-white/10">
-        <DialogHeader className="sr-only">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-0 text-left">
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Manage your subscription and notification preferences.
+            Manage your subscription, notifications, and account preferences.
           </DialogDescription>
         </DialogHeader>
-        <ScrollAreaWithIndicators className="max-h-full px-6 py-6">
+        <ScrollAreaWithIndicators className="max-h-full px-6 pb-6">
           <SettingsContent showCard={false} />
         </ScrollAreaWithIndicators>
       </DialogContent>

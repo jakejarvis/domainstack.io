@@ -6,7 +6,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="font-semibold text-2xl">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your subscription and notification preferences.
+          Manage your subscription, notifications, and account preferences.
         </p>
       </div>
 

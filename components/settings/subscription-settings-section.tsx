@@ -36,7 +36,7 @@ export function SubscriptionSettingsSection() {
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Subscription</CardTitle>
+          <CardTitle>Plan</CardTitle>
           <CardDescription className="text-destructive">
             Failed to load subscription information
           </CardDescription>
@@ -56,7 +56,7 @@ export function SubscriptionSettingsSection() {
   return (
     <div>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Subscription</CardTitle>
+        <CardTitle>Plan</CardTitle>
         <CardDescription>
           {isPro
             ? "You're on the Pro plan. Thank you for your support!"

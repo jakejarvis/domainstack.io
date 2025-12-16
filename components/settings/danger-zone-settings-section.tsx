@@ -52,9 +52,8 @@ export function DangerZoneSettingsSection() {
                 </p>
               </div>
               <Button
-                variant="destructive"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="shrink-0 cursor-pointer"
+                className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 <Trash2 className="size-4" />
                 Delete
