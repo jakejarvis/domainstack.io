@@ -61,7 +61,6 @@ export function KeyValue({
 
           <Tooltip>
             <TooltipTrigger
-              nativeButton={false}
               render={
                 <span ref={valueRef} className="min-w-0 flex-1 truncate">
                   {value}

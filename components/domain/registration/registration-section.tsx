@@ -49,7 +49,6 @@ function VerificationBadge({
   return (
     <Tooltip>
       <TooltipTrigger
-        nativeButton={false}
         render={
           <span>
             <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />

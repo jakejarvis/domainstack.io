@@ -41,7 +41,6 @@ export function DnsRecordList({
             r.isCloudflare ? (
               <Tooltip>
                 <TooltipTrigger
-                  nativeButton={false}
                   render={
                     <span>
                       <Favicon domain="cloudflare.com" />

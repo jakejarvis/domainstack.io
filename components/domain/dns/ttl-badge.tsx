@@ -13,7 +13,6 @@ export function TtlBadge({ ttl }: { ttl: number }) {
   return (
     <Tooltip>
       <TooltipTrigger
-        nativeButton={false}
         render={
           <Badge
             variant="outline"

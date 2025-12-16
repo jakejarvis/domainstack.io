@@ -109,7 +109,6 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     return (
       <Tooltip>
         <TooltipTrigger
-          nativeButton={false}
           render={
             <Button
               variant="outline"

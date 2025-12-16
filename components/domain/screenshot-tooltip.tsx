@@ -49,16 +49,11 @@ export function ScreenshotTooltip({
         if (v) setHasOpened(true);
       }}
     >
-      <TooltipTrigger
-        nativeButton={false}
-        onClick={handleInteraction}
-        render={children}
-      />
+      <TooltipTrigger onClick={handleInteraction} render={children} />
       <TooltipContent
         sideOffset={6}
         alignOffset={-12}
         className="bg-transparent"
-        hideArrow
       >
         <div className="w-[300px] sm:w-[360px] md:w-[420px]">
           <BrowserWindow url={domain} className="h-auto w-full shadow-xl">

@@ -17,7 +17,6 @@ export function DashboardButton() {
   return (
     <Tooltip>
       <TooltipTrigger
-        nativeButton={false}
         render={
           <Button
             variant="ghost"

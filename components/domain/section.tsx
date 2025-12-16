@@ -72,7 +72,6 @@ export function Section({
                   {help && (
                     <Tooltip>
                       <TooltipTrigger
-                        nativeButton={false}
                         render={
                           <span
                             role="img"

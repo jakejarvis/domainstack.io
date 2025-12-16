@@ -1,144 +1,70 @@
 "use client";
 
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import * as React from "react";
-import { usePointerCapability } from "@/hooks/use-pointer-capability";
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+
 import { cn } from "@/lib/utils";
 
-type TooltipRootProps = PopoverPrimitive.Root.Props & {
-  /**
-   * Open on hover for pointer devices. Defaults to true on pointer devices and false on touch.
-   * Can be overridden per-trigger via <TooltipTrigger openOnHover ... />.
-   */
-  openOnHover?: boolean;
-  /** Hover-open delay (ms) when openOnHover is enabled. */
-  delay?: number;
-  /** Hover-close delay (ms) when openOnHover is enabled. */
-  closeDelay?: number;
-};
-
-type TooltipTriggerProps = PopoverPrimitive.Trigger.Props & {
-  /** Hover-open delay override (ms). */
-  delay?: number;
-  /** Hover-close delay override (ms). */
-  closeDelay?: number;
-};
-
-type TooltipPositionerProps = PopoverPrimitive.Positioner.Props;
-type TooltipPopupProps = PopoverPrimitive.Popup.Props;
-
-const TooltipContext = React.createContext<{
-  openOnHover: boolean;
-  delay: number;
-  closeDelay: number;
-} | null>(null);
-
-function Tooltip({
-  openOnHover,
-  delay,
-  closeDelay,
+function TooltipProvider({
+  delay = 0,
   ...props
-}: TooltipRootProps) {
-  const { isTouchDevice } = usePointerCapability();
-  const resolvedOpenOnHover = openOnHover ?? !isTouchDevice;
-  const resolvedDelay = delay ?? 0;
-  const resolvedCloseDelay = closeDelay ?? 0;
-
+}: TooltipPrimitive.Provider.Props) {
   return (
-    <TooltipContext.Provider
-      value={{
-        openOnHover: resolvedOpenOnHover,
-        delay: resolvedDelay,
-        closeDelay: resolvedCloseDelay,
-      }}
-    >
-      <PopoverPrimitive.Root data-slot="tooltip" {...props} />
-    </TooltipContext.Provider>
-  );
-}
-
-function TooltipTrigger({
-  openOnHover,
-  delay,
-  closeDelay,
-  ...props
-}: TooltipTriggerProps) {
-  const ctx = React.useContext(TooltipContext);
-  const resolvedOpenOnHover = openOnHover ?? ctx?.openOnHover ?? false;
-  const resolvedDelay = delay ?? ctx?.delay ?? 0;
-  const resolvedCloseDelay = closeDelay ?? ctx?.closeDelay ?? 0;
-
-  return (
-    <PopoverPrimitive.Trigger
-      data-slot="tooltip-trigger"
-      openOnHover={resolvedOpenOnHover}
-      delay={resolvedDelay}
-      closeDelay={resolvedCloseDelay}
+    <TooltipPrimitive.Provider
+      data-slot="tooltip-provider"
+      delay={delay}
       {...props}
     />
   );
 }
 
-function TooltipContent({
-  className,
-  sideOffset = 0,
-  children,
-  hideArrow,
-  side,
-  align,
-  alignOffset,
-  collisionPadding,
-  sticky,
-  positionMethod,
-  ...props
-}: Pick<
-  TooltipPositionerProps,
-  | "side"
-  | "sideOffset"
-  | "align"
-  | "alignOffset"
-  | "collisionPadding"
-  | "sticky"
-  | "positionMethod"
-  | "className"
-> & {
-  hideArrow?: boolean;
-  children?: React.ReactNode;
-} & Omit<TooltipPopupProps, "className" | "children">) {
-  const baseClasses = cn(
-    "group z-50 w-fit whitespace-normal break-words rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-xs outline-hidden selection:bg-background selection:text-foreground",
-    "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
-    "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
-    "data-[starting-style]:scale-95 data-[ending-style]:scale-95",
-    // Keep tooltips from overflowing the viewport on small screens.
-    "max-w-[calc(100vw-2rem)] md:max-w-[28rem]",
-  );
-  const heightClampWrapperClasses = "max-h-[calc(100vh-2rem)] overflow-y-auto";
-  const arrowClass =
-    "z-50 size-2.5 rotate-45 rounded-[1px] bg-primary fill-primary translate-y-[calc(-50%_-_2px)]";
-
+function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Positioner
-        side={side ?? "top"}
-        sideOffset={sideOffset}
-        align={align}
-        alignOffset={alignOffset}
-        collisionPadding={collisionPadding ?? 8}
-        sticky={sticky}
-        positionMethod={positionMethod}
-      >
-        <PopoverPrimitive.Popup
-          data-slot="tooltip-content"
-          className={cn(baseClasses, className)}
-          {...props}
-        >
-          <div className={heightClampWrapperClasses}>{children}</div>
-          {hideArrow ? null : <PopoverPrimitive.Arrow className={arrowClass} />}
-        </PopoverPrimitive.Popup>
-      </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
+    <TooltipProvider>
+      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+    </TooltipProvider>
   );
 }
 
-export { Tooltip, TooltipTrigger, TooltipContent };
+function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+}
+
+function TooltipContent({
+  className,
+  side = "top",
+  sideOffset = 4,
+  align = "center",
+  alignOffset = 0,
+  children,
+  ...props
+}: TooltipPrimitive.Popup.Props &
+  Pick<
+    TooltipPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset"
+  >) {
+  return (
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Positioner
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        className="isolate z-50"
+      >
+        <TooltipPrimitive.Popup
+          data-slot="tooltip-content"
+          className={cn(
+            "data-open:fade-in-0 data-open:zoom-in-95 data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit max-w-xs origin-(--transform-origin) rounded-md bg-foreground px-3 py-1.5 text-background text-xs data-[state=delayed-open]:animate-in data-closed:animate-out data-open:animate-in",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=left]:top-1/2! data-[side=right]:top-1/2! data-[side=left]:-right-1 data-[side=top]:-bottom-2.5 data-[side=right]:-left-1 data-[side=left]:-translate-y-1/2 data-[side=right]:-translate-y-1/2" />
+        </TooltipPrimitive.Popup>
+      </TooltipPrimitive.Positioner>
+    </TooltipPrimitive.Portal>
+  );
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };

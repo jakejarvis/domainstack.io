@@ -33,7 +33,6 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
             {/* Circle with tooltip */}
             <Tooltip>
               <TooltipTrigger
-                nativeButton={false}
                 render={
                   <div
                     className={cn(

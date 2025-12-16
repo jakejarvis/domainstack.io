@@ -86,7 +86,6 @@ export function GlobalNotificationRow({
         <span className="font-medium text-sm">{info.label}</span>
         <Tooltip>
           <TooltipTrigger
-            nativeButton={false}
             render={
               <span className="inline-flex text-foreground/70">
                 <Info className="size-3.5" />

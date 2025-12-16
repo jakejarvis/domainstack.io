@@ -118,7 +118,6 @@ export function DomainPricingCTA({
             >
               <Tooltip>
                 <TooltipTrigger
-                  nativeButton={false}
                   render={
                     <span
                       className={cn(

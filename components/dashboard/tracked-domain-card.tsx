@@ -241,7 +241,6 @@ export function TrackedDomainCard({
                 <>
                   <Tooltip>
                     <TooltipTrigger
-                      nativeButton={false}
                       render={
                         <span className="truncate">
                           {format(expirationDate, "MMM d, yyyy")}
@@ -314,7 +313,6 @@ export function TrackedDomainCard({
                   <>
                     <Tooltip>
                       <TooltipTrigger
-                        nativeButton={false}
                         render={
                           <span className="truncate">
                             {format(expirationDate, "MMM d, yyyy")}
@@ -452,7 +450,7 @@ function InfoRow({
                 open={tooltipData.isOpen}
                 onOpenChange={tooltipData.setIsOpen}
               >
-                <TooltipTrigger nativeButton={false} render={providerContent} />
+                <TooltipTrigger render={providerContent} />
                 <TooltipContent>
                   <ProviderTooltipContent
                     providerName={provider.name}
@@ -470,7 +468,7 @@ function InfoRow({
               </Tooltip>
             ) : isTruncated ? (
               <Tooltip>
-                <TooltipTrigger nativeButton={false} render={providerContent} />
+                <TooltipTrigger render={providerContent} />
                 <TooltipContent>{provider.name}</TooltipContent>
               </Tooltip>
             ) : (
