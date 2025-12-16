@@ -1,21 +1,49 @@
 "use client";
 
-import { Separator as SeparatorPrimitive } from "radix-ui";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
+
+type SeparatorProps = React.ComponentPropsWithoutRef<"div"> & {
+  orientation?: "horizontal" | "vertical";
+  decorative?: boolean;
+};
+
+type NonDecorativeSeparatorProps = Omit<SeparatorProps, "decorative"> & {
+  decorative: false;
+};
 
 function Separator({
   className,
   orientation = "horizontal",
   decorative = true,
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+}: SeparatorProps | NonDecorativeSeparatorProps) {
+  if (decorative) {
+    return (
+      <div
+        data-slot="separator"
+        role="presentation"
+        aria-hidden={true}
+        data-orientation={orientation}
+        className={cn(
+          "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px",
+          className,
+        )}
+        {...props}
+      />
+    );
+  }
+
+  const ariaOrientation = orientation as "horizontal" | "vertical";
   return (
-    <SeparatorPrimitive.Root
+    <div
       data-slot="separator"
-      decorative={decorative}
-      orientation={orientation}
+      role="separator"
+      tabIndex={-1}
+      aria-orientation={ariaOrientation}
+      aria-valuenow={0}
+      data-orientation={orientation}
       className={cn(
         "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px",
         className,

@@ -32,19 +32,21 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
           <div key={stepNumber} className="contents">
             {/* Circle with tooltip */}
             <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    "flex size-8 shrink-0 cursor-default items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
-                    isActive || isCompleted
-                      ? "bg-primary text-primary-foreground"
-                      : "border-2 border-muted-foreground/40 text-muted-foreground",
-                  )}
-                  aria-current={isActive ? "step" : undefined}
-                >
-                  {stepNumber}
-                </div>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <div
+                    className={cn(
+                      "flex size-8 shrink-0 cursor-default items-center justify-center rounded-full font-medium text-sm transition-all duration-300",
+                      isActive || isCompleted
+                        ? "bg-primary text-primary-foreground"
+                        : "border-2 border-muted-foreground/40 text-muted-foreground",
+                    )}
+                    aria-current={isActive ? "step" : undefined}
+                  >
+                    {stepNumber}
+                  </div>
+                }
+              />
               <TooltipContent>
                 <p>{step.title}</p>
               </TooltipContent>

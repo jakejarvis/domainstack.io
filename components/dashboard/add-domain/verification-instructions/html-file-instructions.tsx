@@ -81,17 +81,19 @@ export function HtmlFileVerificationInstructions({
         <CopyableField label="File Contents" value={instructions.fileContent} />
 
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full cursor-pointer"
-              onClick={handleDownload}
-              type="button"
-            >
-              <Download className="size-4" />
-              Download file
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="outline"
+                className="w-full cursor-pointer"
+                onClick={handleDownload}
+                type="button"
+              >
+                <Download className="size-4" />
+                Download file
+              </Button>
+            }
+          />
           <TooltipContent>{instructions.filename}</TooltipContent>
         </Tooltip>
       </div>

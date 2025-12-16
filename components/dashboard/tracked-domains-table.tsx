@@ -111,7 +111,7 @@ function ProviderCell({
   if (tooltipData.shouldShowTooltip) {
     return (
       <Tooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+        <TooltipTrigger render={providerContent} />
         <TooltipContent>
           <ProviderTooltipContent
             providerName={provider.name}
@@ -133,7 +133,7 @@ function ProviderCell({
   if (isTruncated) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+        <TooltipTrigger render={providerContent} />
         <TooltipContent>{provider.name}</TooltipContent>
       </Tooltip>
     );
@@ -293,9 +293,9 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>{format(date, "MMM d, yyyy")}</span>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={<span>{format(date, "MMM d, yyyy")}</span>}
+                />
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
@@ -383,9 +383,9 @@ export function TrackedDomainsTable({
           return (
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>{format(date, "MMM d, yyyy")}</span>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={<span>{format(date, "MMM d, yyyy")}</span>}
+                />
                 <TooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
                 </TooltipContent>
@@ -406,38 +406,44 @@ export function TrackedDomainsTable({
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="cursor-pointer"
-              >
-                <MoreVertical />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="cursor-pointer"
+                >
+                  <MoreVertical />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a
-                  href={`https://${row.original.domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer pr-4"
-                >
-                  <ExternalLink className="size-3.5" />
-                  Open
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(row.original.domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <BookMarked className="size-3.5" />
-                  View Report
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <a
+                    href={`https://${row.original.domainName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer pr-4"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Open
+                  </a>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={`/${encodeURIComponent(row.original.domainName)}`}
+                    prefetch={false}
+                    className="cursor-pointer pr-4"
+                  >
+                    <BookMarked className="size-3.5" />
+                    View Report
+                  </Link>
+                }
+              />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={() =>

@@ -55,32 +55,23 @@ export function VerificationBadge({
 
     const badge = (
       <Badge
-        asChild={!!onClick}
         className={cn(
           "select-none gap-1 border-danger-border bg-danger/20 py-1 font-semibold text-danger-foreground",
           onClick && "cursor-pointer transition-opacity hover:opacity-95",
           className,
         )}
+        render={
+          onClick ? <button type="button" onClick={onClick} /> : undefined
+        }
       >
-        {onClick ? (
-          <button type="button" onClick={onClick}>
-            <AlertTriangle className="size-3" />
-            Failing
-          </button>
-        ) : (
-          <>
-            <AlertTriangle className="size-3" />
-            Failing
-          </>
-        )}
+        <AlertTriangle className="size-3" />
+        Failing
       </Badge>
     );
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span>{badge}</span>
-        </TooltipTrigger>
+        <TooltipTrigger render={<span>{badge}</span>} />
         <TooltipContent>
           {daysRemaining > 0 ? (
             <>
@@ -112,9 +103,9 @@ export function VerificationBadge({
     if (verificationMethod) {
       return (
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="cursor-default">{badge}</span>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={<span className="cursor-default">{badge}</span>}
+          />
           <TooltipContent>
             Using {VERIFICATION_METHOD_LABELS[verificationMethod]}
           </TooltipContent>
@@ -128,25 +119,16 @@ export function VerificationBadge({
   // Pending verification state
   const pendingBadge = (
     <Badge
-      asChild={!!onClick}
       variant="outline"
       className={cn(
         "select-none gap-1 border-warning-border bg-warning/20 py-1 font-semibold text-warning-foreground",
         onClick && "cursor-pointer transition-opacity hover:opacity-95",
         className,
       )}
+      render={onClick ? <button type="button" onClick={onClick} /> : undefined}
     >
-      {onClick ? (
-        <button type="button" onClick={onClick}>
-          <ClockFading className="size-3" />
-          Pending
-        </button>
-      ) : (
-        <>
-          <ClockFading className="size-3" />
-          Pending
-        </>
-      )}
+      <ClockFading className="size-3" />
+      Pending
     </Badge>
   );
 
@@ -154,9 +136,7 @@ export function VerificationBadge({
   if (onClick) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span>{pendingBadge}</span>
-        </TooltipTrigger>
+        <TooltipTrigger render={<span>{pendingBadge}</span>} />
         <TooltipContent>Complete verification</TooltipContent>
       </Tooltip>
     );

@@ -427,11 +427,11 @@ function GroupsAccordion({
   });
 
   return isSearching ? (
-    <Accordion type="multiple" value={openValues as string[]}>
+    <Accordion multiple value={openValues as string[]}>
       {content}
     </Accordion>
   ) : (
-    <Accordion type="single" collapsible defaultValue={defaultValue}>
+    <Accordion defaultValue={defaultValue ? [defaultValue] : []}>
       {content}
     </Accordion>
   );
@@ -589,11 +589,13 @@ function RuleTypeDot({
           : "text-purple-500";
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex h-4 w-4 items-center justify-center">
-          <Icon className={cn("size-3.5", colorClass)} aria-hidden />
-        </div>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <div className="flex h-4 w-4 items-center justify-center">
+            <Icon className={cn("size-3.5", colorClass)} aria-hidden />
+          </div>
+        }
+      />
       <TooltipContent side="left">{label}</TooltipContent>
     </Tooltip>
   );

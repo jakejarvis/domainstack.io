@@ -71,17 +71,19 @@ export function Section({
                   <span className="text-base">{title}</span>
                   {help && (
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span
-                          role="img"
-                          aria-label={`More info about ${title}`}
-                        >
-                          <Info
-                            className="h-3.5 w-3.5 opacity-60"
-                            aria-hidden
-                          />
-                        </span>
-                      </TooltipTrigger>
+                      <TooltipTrigger
+                        render={
+                          <span
+                            role="img"
+                            aria-label={`More info about ${title}`}
+                          >
+                            <Info
+                              className="h-3.5 w-3.5 opacity-60"
+                              aria-hidden
+                            />
+                          </span>
+                        }
+                      />
                       <TooltipContent>{help}</TooltipContent>
                     </Tooltip>
                   )}

@@ -1,8 +1,9 @@
 "use client";
 
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import { motion } from "motion/react";
-import { Slot as SlotPrimitive } from "radix-ui";
+import type * as React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -175,22 +176,22 @@ function ButtonGroup({
 
 function ButtonGroupText({
   className,
-  asChild = false,
+  render,
   ...props
 }: React.ComponentProps<"div"> & {
-  asChild?: boolean;
+  render?: React.ReactElement;
 }) {
-  const Comp = asChild ? SlotPrimitive.Slot : "div";
-
-  return (
-    <Comp
-      className={cn(
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: {
+      className: cn(
         "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
         className,
-      )}
-      {...props}
-    />
-  );
+      ),
+      ...props,
+    },
+  });
 }
 
 function ButtonGroupSeparator({

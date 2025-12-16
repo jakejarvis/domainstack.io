@@ -12,17 +12,19 @@ import {
 export function TtlBadge({ ttl }: { ttl: number }) {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge
-          variant="outline"
-          className="cursor-default py-1 text-[11px] text-muted-foreground"
-        >
-          <ClockFading />
-          <span className="leading-none" suppressHydrationWarning>
-            {ms(ttl * 1000)}
-          </span>
-        </Badge>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <Badge
+            variant="outline"
+            className="cursor-default py-1 text-[11px] text-muted-foreground"
+          >
+            <ClockFading />
+            <span className="leading-none" suppressHydrationWarning>
+              {ms(ttl * 1000)}
+            </span>
+          </Badge>
+        }
+      />
       <TooltipContent>
         <span className="font-mono text-xs">{ttl}</span>
       </TooltipContent>

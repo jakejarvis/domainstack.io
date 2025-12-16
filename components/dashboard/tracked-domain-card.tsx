@@ -170,34 +170,44 @@ export function TrackedDomainCard({
             </div>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="cursor-pointer">
-                <MoreVertical className="size-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="cursor-pointer"
+                >
+                  <MoreVertical className="size-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a
-                  href={`https://${domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer pr-4"
-                >
-                  <ExternalLink className="size-4" />
-                  Open
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <BookMarked className="size-4" />
-                  View Report
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={
+                  <a
+                    href={`https://${domainName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer pr-4"
+                  >
+                    <ExternalLink className="size-4" />
+                    Open
+                  </a>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link
+                    href={`/${encodeURIComponent(domainName)}`}
+                    prefetch={false}
+                    className="cursor-pointer pr-4"
+                  >
+                    <BookMarked className="size-4" />
+                    View Report
+                  </Link>
+                }
+              />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
@@ -228,11 +238,13 @@ export function TrackedDomainCard({
               {expirationDate ? (
                 <>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="truncate">
-                        {format(expirationDate, "MMM d, yyyy")}
-                      </span>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={
+                        <span className="truncate">
+                          {format(expirationDate, "MMM d, yyyy")}
+                        </span>
+                      }
+                    />
                     <TooltipContent>
                       {formatDateTimeUtc(expirationDate.toISOString())}
                     </TooltipContent>
@@ -298,11 +310,13 @@ export function TrackedDomainCard({
                 {expirationDate ? (
                   <>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="truncate">
-                          {format(expirationDate, "MMM d, yyyy")}
-                        </span>
-                      </TooltipTrigger>
+                      <TooltipTrigger
+                        render={
+                          <span className="truncate">
+                            {format(expirationDate, "MMM d, yyyy")}
+                          </span>
+                        }
+                      />
                       <TooltipContent>
                         {formatDateTimeUtc(expirationDate.toISOString())}
                       </TooltipContent>
@@ -434,7 +448,7 @@ function InfoRow({
                 open={tooltipData.isOpen}
                 onOpenChange={tooltipData.setIsOpen}
               >
-                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+                <TooltipTrigger render={providerContent} />
                 <TooltipContent>
                   <ProviderTooltipContent
                     providerName={provider.name}
@@ -452,7 +466,7 @@ function InfoRow({
               </Tooltip>
             ) : isTruncated ? (
               <Tooltip>
-                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
+                <TooltipTrigger render={providerContent} />
                 <TooltipContent>{provider.name}</TooltipContent>
               </Tooltip>
             ) : (

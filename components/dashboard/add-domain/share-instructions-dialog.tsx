@@ -222,12 +222,14 @@ export function ShareInstructionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="cursor-pointer gap-1.5">
-          <Share2 className="size-4" />
-          Share
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" className="cursor-pointer gap-1.5">
+            <Share2 className="size-4" />
+            Share
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Verification Instructions</DialogTitle>

@@ -15,7 +15,7 @@ export function ScreenshotTooltip({
   children,
 }: {
   domain: string;
-  children: React.ReactNode;
+  children: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
@@ -49,9 +49,7 @@ export function ScreenshotTooltip({
         if (v) setHasOpened(true);
       }}
     >
-      <TooltipTrigger asChild onClick={handleInteraction}>
-        {children}
-      </TooltipTrigger>
+      <TooltipTrigger onClick={handleInteraction} render={children} />
       <TooltipContent
         sideOffset={6}
         alignOffset={-12}

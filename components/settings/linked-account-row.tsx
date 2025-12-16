@@ -50,23 +50,25 @@ export function LinkedAccountRow({
         </Button>
       ) : isLinked ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onUnlink}
-                disabled={!canUnlink || isLoading}
-                className={cn(
-                  "gap-2",
-                  canUnlink ? "cursor-pointer" : "cursor-not-allowed",
-                )}
-              >
-                {isUnlinking && <Loader2 className="size-4 animate-spin" />}
-                Unlink
-              </Button>
-            </span>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onUnlink}
+                  disabled={!canUnlink || isLoading}
+                  className={cn(
+                    "gap-2",
+                    canUnlink ? "cursor-pointer" : "cursor-not-allowed",
+                  )}
+                >
+                  {isUnlinking && <Loader2 className="size-4 animate-spin" />}
+                  Unlink
+                </Button>
+              </span>
+            }
+          />
           {!canUnlink && (
             <TooltipContent>
               You must have at least one linked account to sign in

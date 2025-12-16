@@ -424,11 +424,7 @@ export function FaqAccordion({ tierLimits, pricing }: FaqAccordionProps) {
       {faqSections.map((section) => (
         <div key={section.title}>
           <h2 className="mb-4">{section.title}</h2>
-          <Accordion
-            type="single"
-            collapsible
-            className="w-full rounded-lg border border-border/50 bg-muted/20"
-          >
+          <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
             {section.items.map((item) => (
               <AccordionItem
                 key={item.question}

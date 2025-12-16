@@ -84,15 +84,17 @@ export function CertificatesSection({
                       : [];
                     return sans.length > 0 ? (
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                          >
-                            <span>+</span>
-                            <span className="px-[1px]">{sans.length}</span>
-                          </Badge>
-                        </TooltipTrigger>
+                        <TooltipTrigger
+                          render={
+                            <Badge
+                              variant="outline"
+                              className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                            >
+                              <span>+</span>
+                              <span className="px-[1px]">{sans.length}</span>
+                            </Badge>
+                          }
+                        />
                         <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                           {sans.join(", ")}
                         </TooltipContent>
@@ -198,17 +200,19 @@ export function CertificatesSection({
                                 : [];
                               return sans.length > 0 ? (
                                 <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge
-                                      variant="outline"
-                                      className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                                    >
-                                      <span>+</span>
-                                      <span className="px-[1px]">
-                                        {sans.length}
-                                      </span>
-                                    </Badge>
-                                  </TooltipTrigger>
+                                  <TooltipTrigger
+                                    render={
+                                      <Badge
+                                        variant="outline"
+                                        className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                                      >
+                                        <span>+</span>
+                                        <span className="px-[1px]">
+                                          {sans.length}
+                                        </span>
+                                      </Badge>
+                                    }
+                                  />
                                   <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                                     {sans.join(", ")}
                                   </TooltipContent>

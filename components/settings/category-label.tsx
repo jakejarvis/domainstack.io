@@ -33,11 +33,13 @@ export function CategoryLabel({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="cursor-help">
-          {compact ? SHORT_LABELS[category] : info.label}
-        </span>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <span className="cursor-help">
+            {compact ? SHORT_LABELS[category] : info.label}
+          </span>
+        }
+      />
       <TooltipContent>{info.description}</TooltipContent>
     </Tooltip>
   );

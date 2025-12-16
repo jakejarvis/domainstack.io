@@ -307,10 +307,12 @@ export function AddDomainContent({
                     Close
                   </Button>
                 ) : (
-                  <Button variant="outline" asChild className="w-full">
-                    <Link href="/dashboard" prefetch={false}>
-                      Back to Dashboard
-                    </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    render={<Link href="/dashboard" prefetch={false} />}
+                  >
+                    Back to Dashboard
                   </Button>
                 )}
               </div>
@@ -327,10 +329,12 @@ export function AddDomainContent({
                   Close
                 </Button>
               ) : (
-                <Button variant="outline" asChild className="w-full">
-                  <Link href="/dashboard" prefetch={false}>
-                    Back to Dashboard
-                  </Link>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  render={<Link href="/dashboard" prefetch={false} />}
+                >
+                  Back to Dashboard
                 </Button>
               )}
             </>

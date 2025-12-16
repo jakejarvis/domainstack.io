@@ -48,11 +48,13 @@ function VerificationBadge({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <span>
-          <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />
-        </span>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <span>
+            <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />
+          </span>
+        }
+      />
       <TooltipContent>
         <p className="inline-flex items-center gap-[5px]">
           <span>

@@ -1,7 +1,7 @@
 "use client";
 
+import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { motion } from "motion/react";
-import { Tabs as TabsPrimitive } from "radix-ui";
 import type * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -58,9 +58,9 @@ function TabsList({
 
         const active =
           (list.querySelector(
-            '[data-slot="tabs-trigger"][data-state="active"]',
+            '[data-slot="tabs-trigger"][data-active]',
           ) as HTMLElement | null) ??
-          (list.querySelector('[data-state="active"]') as HTMLElement | null);
+          (list.querySelector("[data-active]") as HTMLElement | null);
 
         if (!active) {
           setIndicatorRect(null);
@@ -104,7 +104,7 @@ function TabsList({
     mutationObserver.observe(list, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state"],
+      attributeFilter: ["data-active"],
     });
 
     window.addEventListener("resize", updateIndicator);
@@ -162,12 +162,12 @@ function TabsList({
 function TabsTrigger({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+}: React.ComponentProps<typeof TabsPrimitive.Tab>) {
   return (
-    <TabsPrimitive.Trigger
+    <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative z-10 inline-flex h-full flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 font-medium text-muted-foreground text-sm transition-[color,box-shadow] focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "relative z-10 inline-flex h-full flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 font-medium text-muted-foreground text-sm transition-[color,box-shadow] focus-visible:border-ring focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[active]:text-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -178,9 +178,9 @@ function TabsTrigger({
 function TabsContent({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: React.ComponentProps<typeof TabsPrimitive.Panel>) {
   return (
-    <TabsPrimitive.Content
+    <TabsPrimitive.Panel
       data-slot="tabs-content"
       className={cn("flex-1 outline-none", className)}
       {...props}

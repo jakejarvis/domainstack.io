@@ -29,6 +29,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@base-ui/react": "^1.0.0",
     "@bprogress/next": "^3.2.12",
     "@polar-sh/better-auth": "^1.6.1",
     "@polar-sh/sdk": "^0.41.5",
@@ -77,7 +78,6 @@
     "posthog-node": "^5.17.2",
     "prettier": "^3.7.4",
     "puppeteer-core": "24.32.0",
-    "radix-ui": "^1.4.3",
     "rdapper": "^0.11.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

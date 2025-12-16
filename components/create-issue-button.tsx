@@ -75,11 +75,18 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
   const issueUrl = useMemo(() => buildIssueUrl(error), [error]);
 
   return (
-    <Button asChild variant={variant} size={size} className={className}>
-      <a href={issueUrl} target="_blank" rel="noopener">
-        <Bug />
-        {children ?? "Create GitHub issue"}
-      </a>
+    <Button
+      variant={variant}
+      size={size}
+      className={className}
+      render={(anchorProps) => (
+        <a {...anchorProps} href={issueUrl} target="_blank" rel="noopener">
+          {anchorProps.children}
+        </a>
+      )}
+    >
+      <Bug />
+      {children ?? "Create GitHub issue"}
     </Button>
   );
 }

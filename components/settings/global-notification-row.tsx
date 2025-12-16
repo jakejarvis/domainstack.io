@@ -85,11 +85,13 @@ export function GlobalNotificationRow({
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span className="font-medium text-sm">{info.label}</span>
         <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="inline-flex text-foreground/70">
-              <Info className="size-3.5" />
-            </span>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <span className="inline-flex text-foreground/70">
+                <Info className="size-3.5" />
+              </span>
+            }
+          />
           <TooltipContent className="max-w-xs">
             {info.description}
           </TooltipContent>

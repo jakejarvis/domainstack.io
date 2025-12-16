@@ -60,11 +60,13 @@ export function KeyValue({
           ) : null}
 
           <Tooltip>
-            <TooltipTrigger asChild>
-              <span ref={valueRef} className="min-w-0 flex-1 truncate">
-                {value}
-              </span>
-            </TooltipTrigger>
+            <TooltipTrigger
+              render={
+                <span ref={valueRef} className="min-w-0 flex-1 truncate">
+                  {value}
+                </span>
+              }
+            />
             <TooltipContent
               className={cn(
                 isTruncated || valueTooltip != null

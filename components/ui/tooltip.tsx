@@ -1,14 +1,24 @@
 "use client";
 
-import {
-  Popover as PopoverPrimitive,
-  Tooltip as TooltipPrimitive,
-} from "radix-ui";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import * as React from "react";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
 type HybridMode = "tooltip" | "popover";
+type HybridRootProps = React.ComponentProps<typeof TooltipPrimitive.Root> &
+  React.ComponentProps<typeof PopoverPrimitive.Root>;
+type HybridTriggerProps = React.ComponentProps<
+  typeof TooltipPrimitive.Trigger
+> &
+  React.ComponentProps<typeof PopoverPrimitive.Trigger>;
+type HybridPositionerProps = React.ComponentProps<
+  typeof TooltipPrimitive.Positioner
+> &
+  React.ComponentProps<typeof PopoverPrimitive.Positioner>;
+type HybridPopupProps = React.ComponentProps<typeof TooltipPrimitive.Popup> &
+  React.ComponentProps<typeof PopoverPrimitive.Popup>;
 
 const HybridTooltipContext = React.createContext<{ mode: HybridMode } | null>(
   null,
@@ -17,19 +27,19 @@ const HybridTooltipContext = React.createContext<{ mode: HybridMode } | null>(
 function TooltipProvider({
   delayDuration = 0,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+}: Omit<React.ComponentProps<typeof TooltipPrimitive.Provider>, "delay"> & {
+  delayDuration?: number;
+}) {
   return (
     <TooltipPrimitive.Provider
       data-slot="tooltip-provider"
-      delayDuration={delayDuration}
+      delay={delayDuration}
       {...props}
     />
   );
 }
 
-function Tooltip({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+function Tooltip({ ...props }: HybridRootProps) {
   const { isTouchDevice } = usePointerCapability();
   // Current heuristic: prefer popover on touch devices
   const mode: HybridMode = isTouchDevice ? "popover" : "tooltip";
@@ -53,11 +63,10 @@ function Tooltip({
   );
 }
 
-function TooltipTrigger({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+function TooltipTrigger({ ...props }: HybridTriggerProps) {
   const ctx = React.useContext(HybridTooltipContext);
   const mode: HybridMode = ctx?.mode ?? "tooltip";
+
   return mode === "tooltip" ? (
     <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
   ) : (
@@ -70,76 +79,89 @@ function TooltipContent({
   sideOffset = 0,
   children,
   hideArrow,
+  side,
+  align,
+  alignOffset,
+  collisionPadding,
+  sticky,
+  positionMethod,
   ...props
 }: Pick<
-  React.ComponentProps<typeof TooltipPrimitive.Content>,
+  HybridPositionerProps,
   | "side"
   | "sideOffset"
   | "align"
   | "alignOffset"
-  | "avoidCollisions"
   | "collisionPadding"
   | "sticky"
+  | "positionMethod"
   | "className"
-  | "children"
 > & {
   hideArrow?: boolean;
-} & React.ComponentPropsWithoutRef<"div">) {
+  children?: React.ReactNode;
+} & Omit<HybridPopupProps, "className" | "children">) {
   const ctx = React.useContext(HybridTooltipContext);
   const mode: HybridMode = ctx?.mode ?? "tooltip";
 
-  const baseClasses =
-    "group fade-in-0 zoom-in-95 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit animate-in whitespace-normal break-words max-w-[calc(100vw-2rem)] rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-xs outline-hidden data-[state=closed]:animate-out selection:bg-background selection:text-foreground";
-  const originClass =
-    mode === "tooltip"
-      ? "origin-(--radix-tooltip-content-transform-origin)"
-      : "origin-(--radix-popover-content-transform-origin)";
-  const widthClampClasses =
-    mode === "tooltip"
-      ? "max-w-[min(var(--radix-tooltip-content-available-width),calc(100vw-2rem))] md:max-w-[min(var(--radix-tooltip-content-available-width),28rem)]"
-      : "max-w-[min(var(--radix-popover-content-available-width),calc(100vw-2rem))] md:max-w-[min(var(--radix-popover-content-available-width),28rem)]";
-  const heightClampWrapperClasses =
-    mode === "tooltip"
-      ? "max-h-[min(var(--radix-tooltip-content-available-height),calc(100vh-2rem))] overflow-y-auto"
-      : "max-h-[min(var(--radix-popover-content-available-height),calc(100vh-2rem))] overflow-y-auto";
+  const baseClasses = cn(
+    "group z-50 w-fit whitespace-normal break-words rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-xs outline-hidden selection:bg-background selection:text-foreground",
+    "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
+    "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
+    "data-[starting-style]:scale-95 data-[ending-style]:scale-95",
+    // Keep tooltips from overflowing the viewport on small screens.
+    "max-w-[calc(100vw-2rem)] md:max-w-[28rem]",
+  );
+  const heightClampWrapperClasses = "max-h-[calc(100vh-2rem)] overflow-y-auto";
   const arrowClass =
     "z-50 size-2.5 rotate-45 rounded-[1px] bg-primary fill-primary translate-y-[calc(-50%_-_2px)]";
 
   if (mode === "tooltip") {
     return (
       <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          data-slot="tooltip-content"
-          side={props.side ?? "top"}
+        <TooltipPrimitive.Positioner
+          side={side ?? "top"}
           sideOffset={sideOffset}
-          avoidCollisions
-          collisionPadding={8}
-          sticky="partial"
-          className={cn(baseClasses, widthClampClasses, originClass, className)}
-          {...props}
+          align={align}
+          alignOffset={alignOffset}
+          collisionPadding={collisionPadding ?? 8}
+          sticky={sticky}
+          positionMethod={positionMethod}
         >
-          <div className={heightClampWrapperClasses}>{children}</div>
-          {hideArrow ? null : <TooltipPrimitive.Arrow className={arrowClass} />}
-        </TooltipPrimitive.Content>
+          <TooltipPrimitive.Popup
+            data-slot="tooltip-content"
+            className={cn(baseClasses, className)}
+            {...props}
+          >
+            <div className={heightClampWrapperClasses}>{children}</div>
+            {hideArrow ? null : (
+              <TooltipPrimitive.Arrow className={arrowClass} />
+            )}
+          </TooltipPrimitive.Popup>
+        </TooltipPrimitive.Positioner>
       </TooltipPrimitive.Portal>
     );
   }
 
   return (
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="tooltip-content"
-        side={props.side ?? "top"}
+      <PopoverPrimitive.Positioner
+        side={side ?? "top"}
         sideOffset={sideOffset}
-        avoidCollisions
-        collisionPadding={8}
-        sticky="partial"
-        className={cn(baseClasses, widthClampClasses, originClass, className)}
-        {...props}
+        align={align}
+        alignOffset={alignOffset}
+        collisionPadding={collisionPadding ?? 8}
+        sticky={sticky}
+        positionMethod={positionMethod}
       >
-        <div className={heightClampWrapperClasses}>{children}</div>
-        {hideArrow ? null : <PopoverPrimitive.Arrow className={arrowClass} />}
-      </PopoverPrimitive.Content>
+        <PopoverPrimitive.Popup
+          data-slot="tooltip-content"
+          className={cn(baseClasses, className)}
+          {...props}
+        >
+          <div className={heightClampWrapperClasses}>{children}</div>
+          {hideArrow ? null : <PopoverPrimitive.Arrow className={arrowClass} />}
+        </PopoverPrimitive.Popup>
+      </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   );
 }

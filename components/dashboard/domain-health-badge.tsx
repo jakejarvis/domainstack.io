@@ -64,7 +64,7 @@ export function DomainHealthBadge({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipTrigger render={badge} />
       <TooltipContent>{tooltipText}</TooltipContent>
     </Tooltip>
   );

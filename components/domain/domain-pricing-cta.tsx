@@ -99,24 +99,28 @@ export function DomainPricingCTA({
             <Button
               key={providerPricing.provider}
               variant="outline"
-              asChild
               className="w-full min-w-[250px]"
+              render={(anchorProps) => (
+                <a
+                  {...anchorProps}
+                  href={config.searchUrl(domain)}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={`Register this domain with ${config.name}`}
+                  onClick={() =>
+                    analytics.track("registrar_referral_clicked", {
+                      domain,
+                      provider: providerPricing.provider,
+                    })
+                  }
+                >
+                  {anchorProps.children}
+                </a>
+              )}
             >
-              <a
-                href={config.searchUrl(domain)}
-                target="_blank"
-                rel="noopener"
-                aria-label={`Register this domain with ${config.name}`}
-                className="flex items-center gap-2"
-                onClick={() =>
-                  analytics.track("registrar_referral_clicked", {
-                    domain,
-                    provider: providerPricing.provider,
-                  })
-                }
-              >
-                <Tooltip>
-                  <TooltipTrigger asChild>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
                     <span
                       className={cn(
                         "rounded-full",
@@ -125,16 +129,16 @@ export function DomainPricingCTA({
                     >
                       <Icon className="size-5" />
                     </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{config.name}</TooltipContent>
-                </Tooltip>
+                  }
+                />
+                <TooltipContent>{config.name}</TooltipContent>
+              </Tooltip>
 
-                <span>
-                  <span className="text-foreground/85">.{tldSuffix} from</span>{" "}
-                  <span className="font-semibold">{price}</span>
-                  <span className="text-muted-foreground text-xs">/year</span>
-                </span>
-              </a>
+              <span>
+                <span className="text-foreground/85">.{tldSuffix} from</span>{" "}
+                <span className="font-semibold">{price}</span>
+                <span className="text-muted-foreground text-xs">/year</span>
+              </span>
             </Button>
           );
         })}

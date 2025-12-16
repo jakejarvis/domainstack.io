@@ -262,22 +262,24 @@ export function NotificationSettingsSection() {
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (
           <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50"
-              >
-                <span className="font-medium text-muted-foreground text-xs">
-                  Per-domain overrides
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "size-4 text-muted-foreground transition-transform duration-200",
-                    isPerDomainOpen && "rotate-180",
-                  )}
-                />
-              </button>
-            </CollapsibleTrigger>
+            <CollapsibleTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                >
+                  <span className="font-medium text-muted-foreground text-xs">
+                    Per-domain overrides
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 text-muted-foreground transition-transform duration-200",
+                      isPerDomainOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+              }
+            />
             <CollapsibleContent className="pt-2">
               <div className="space-y-2">
                 {/* Column Headers */}

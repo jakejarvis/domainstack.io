@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { Favicon } from "@/components/domain/favicon";
 import { useHomeSearch } from "@/components/layout/home-search-context";
@@ -98,35 +99,32 @@ export function DomainSuggestionsClient({
                   e.preventDefault();
                   handleClick(domain);
                 }}
-                asChild
+                render={<Link href={`/${domain}`} prefetch={false} />}
               >
-                <a
-                  href={`/${encodeURIComponent(domain)}`}
-                  className="inline-flex items-center gap-2"
-                >
-                  <Favicon
-                    domain={domain}
-                    size={faviconSize}
-                    className="pointer-events-none size-4 shrink-0 rounded"
-                  />
-                  {domain}
-                </a>
+                <Favicon
+                  domain={domain}
+                  size={faviconSize}
+                  className="pointer-events-none size-4 shrink-0 rounded"
+                />
+                {domain}
               </Button>
             ),
           )}
           {isHistoryLoaded && history.length > 0 ? (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleClearHistory}
-                  className="flex-shrink-0"
-                  aria-label="Clear history"
-                >
-                  <X />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleClearHistory}
+                    className="flex-shrink-0"
+                    aria-label="Clear history"
+                  >
+                    <X />
+                  </Button>
+                }
+              />
               <TooltipContent>Clear history</TooltipContent>
             </Tooltip>
           ) : (

@@ -16,17 +16,19 @@ type ExportButtonProps = {
 export function ExportButton({ disabled, onExport }: ExportButtonProps) {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="outline"
-          className="cursor-pointer"
-          onClick={onExport}
-          disabled={disabled}
-        >
-          <Download />
-          <span className="hidden sm:inline-block">Export</span>
-        </Button>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="outline"
+            className="cursor-pointer"
+            onClick={onExport}
+            disabled={disabled}
+          >
+            <Download />
+            <span className="hidden sm:inline-block">Export</span>
+          </Button>
+        }
+      />
       <TooltipContent>
         <p>
           Save this report as a <span className="font-mono">JSON</span> file

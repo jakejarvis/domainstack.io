@@ -30,17 +30,17 @@ type TrackedDomainsViewProps = {
   selection: SelectionState;
   tier: UserTier;
   proMaxDomains: number;
-  onAddDomain: () => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive?: (id: string, domainName: string) => void;
-  onClearFilters?: () => void;
-  onBulkArchive: () => void;
-  onBulkDelete: () => void;
+  onAddDomainAction: () => void;
+  onVerifyAction: (domain: TrackedDomainWithDetails) => void;
+  onRemoveAction: (id: string, domainName: string) => void;
+  onArchiveAction?: (id: string, domainName: string) => void;
+  onClearFiltersAction?: () => void;
+  onBulkArchiveAction: () => void;
+  onBulkDeleteAction: () => void;
   isBulkArchiving?: boolean;
   isBulkDeleting?: boolean;
   // Table instance callback (table view only)
-  onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
+  onTableReadyAction?: (table: Table<TrackedDomainWithDetails>) => void;
 };
 
 export function TrackedDomainsView({
@@ -51,16 +51,16 @@ export function TrackedDomainsView({
   selection,
   tier,
   proMaxDomains,
-  onAddDomain,
-  onVerify,
-  onRemove,
-  onArchive,
-  onClearFilters,
-  onBulkArchive,
-  onBulkDelete,
+  onAddDomainAction,
+  onVerifyAction,
+  onRemoveAction,
+  onArchiveAction,
+  onClearFiltersAction,
+  onBulkArchiveAction,
+  onBulkDeleteAction,
   isBulkArchiving = false,
   isBulkDeleting = false,
-  onTableReady,
+  onTableReadyAction,
 }: TrackedDomainsViewProps) {
   const [hasHydrated, setHasHydrated] = useState(false);
 
@@ -86,7 +86,7 @@ export function TrackedDomainsView({
         <EmptyContent>
           <Button
             variant="outline"
-            onClick={onClearFilters}
+            onClick={onClearFiltersAction}
             className="cursor-pointer"
           >
             Clear Filters
@@ -121,23 +121,26 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
-          <Button asChild size="lg">
-            <Link
-              href="/dashboard/add-domain"
-              prefetch={false}
-              data-disable-progress={true}
-              onClick={(e) => {
-                // Allow modifier clicks to open in new tab/window
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-                  return;
-                }
-                e.preventDefault();
-                onAddDomain();
-              }}
-            >
-              <Plus className="size-4" />
-              Add Your First Domain
-            </Link>
+          <Button
+            size="lg"
+            render={
+              <Link
+                href="/dashboard/add-domain"
+                prefetch={false}
+                data-disable-progress={true}
+                onClick={(e) => {
+                  // Allow modifier clicks to open in new tab/window
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+                    return;
+                  }
+                  e.preventDefault();
+                  onAddDomainAction();
+                }}
+              />
+            }
+          >
+            <Plus className="size-4" />
+            Add Your First Domain
           </Button>
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
             <Timer className="size-4" />
@@ -167,21 +170,21 @@ export function TrackedDomainsView({
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}
-              onVerify={onVerify}
-              onRemove={onRemove}
-              onArchive={onArchive}
+              onVerify={onVerifyAction}
+              onRemove={onRemoveAction}
+              onArchive={onArchiveAction}
               tier={tier}
               proMaxDomains={proMaxDomains}
-              onTableReady={onTableReady}
+              onTableReady={onTableReadyAction}
             />
           ) : (
             <TrackedDomainsGrid
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}
-              onVerify={onVerify}
-              onRemove={onRemove}
-              onArchive={onArchive}
+              onVerify={onVerifyAction}
+              onRemove={onRemoveAction}
+              onArchive={onArchiveAction}
               tier={tier}
               proMaxDomains={proMaxDomains}
             />
@@ -196,8 +199,8 @@ export function TrackedDomainsView({
         isAllSelected={selection.isAllSelected}
         isPartiallySelected={selection.isPartiallySelected}
         onToggleAll={selection.toggleAll}
-        onArchive={onBulkArchive}
-        onDelete={onBulkDelete}
+        onArchive={onBulkArchiveAction}
+        onDelete={onBulkDeleteAction}
         onCancel={selection.clearSelection}
         isArchiving={isBulkArchiving}
         isDeleting={isBulkDeleting}

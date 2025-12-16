@@ -90,26 +90,28 @@ export function MultiSelect<T extends string>({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "h-9 gap-2 px-3",
-            selected.length > 0 &&
-              "border-foreground/20 bg-primary/3 dark:border-foreground/15 dark:bg-primary/10",
-            className,
-          )}
-        >
-          <Icon className="size-4 opacity-60" />
-          {label}
-          {selected.length > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
-              {selected.length}
-            </span>
-          )}
-          <ChevronDown className="size-4 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            className={cn(
+              "h-9 gap-2 px-3",
+              selected.length > 0 &&
+                "border-foreground/20 bg-primary/3 dark:border-foreground/15 dark:bg-primary/10",
+              className,
+            )}
+          >
+            <Icon className="size-4 opacity-60" />
+            {label}
+            {selected.length > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
+                {selected.length}
+              </span>
+            )}
+            <ChevronDown className="size-4 opacity-50" />
+          </Button>
+        }
+      />
       <PopoverContent className={cn(popoverWidth, "p-0")} align="start">
         <Command>
           {searchable && <CommandInput placeholder={`Search ${label}...`} />}

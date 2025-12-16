@@ -40,11 +40,13 @@ export function DnsRecordList({
           suffix={
             r.isCloudflare ? (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Favicon domain="cloudflare.com" />
-                  </span>
-                </TooltipTrigger>
+                <TooltipTrigger
+                  render={
+                    <span>
+                      <Favicon domain="cloudflare.com" />
+                    </span>
+                  }
+                />
                 <TooltipContent>
                   <p>Real IP is being concealed using Cloudflare.</p>
                 </TooltipContent>

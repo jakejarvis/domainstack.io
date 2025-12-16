@@ -18,31 +18,41 @@ export function DangerZoneSettingsSection() {
   return (
     <>
       <Collapsible open={isDangerZoneOpen} onOpenChange={setIsDangerZoneOpen}>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
-              "hover:border-destructive/30 hover:bg-destructive/10",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2",
-              isDangerZoneOpen && "rounded-b-none border-b-0",
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="size-5 text-destructive" />
-              <span className="font-medium text-destructive text-sm leading-none">
-                Danger Zone!
-              </span>
-            </div>
-            <ChevronDown
+        <CollapsibleTrigger
+          render={
+            <button
+              type="button"
               className={cn(
-                "size-4 text-destructive/60 transition-transform duration-200",
-                isDangerZoneOpen && "rotate-180",
+                "group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
+                "hover:border-destructive/30 hover:bg-destructive/10",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2",
+                isDangerZoneOpen && "rounded-b-none border-b-0",
               )}
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 overflow-hidden data-[state=closed]:animate-out data-[state=open]:animate-in">
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="size-5 text-destructive" />
+                <span className="font-medium text-destructive text-sm leading-none">
+                  Danger Zone!
+                </span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "size-4 text-destructive/60 transition-transform duration-200",
+                  isDangerZoneOpen && "rotate-180",
+                )}
+              />
+            </button>
+          }
+        />
+        <CollapsibleContent
+          keepMounted
+          className={cn(
+            "overflow-hidden transition-[max-height,opacity] duration-200",
+            isDangerZoneOpen
+              ? "max-h-[400px] opacity-100"
+              : "max-h-0 opacity-0",
+          )}
+        >
           <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

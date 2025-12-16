@@ -1,6 +1,6 @@
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Slot as SlotPrimitive } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,25 +36,22 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? SlotPrimitive.Slot : "button";
+const Button = React.forwardRef<
+  React.ElementRef<"button">,
+  useRender.ComponentProps<"button"> & VariantProps<typeof buttonVariants>
+>(function Button({ className, variant, size, render, ...props }, ref) {
+  return useRender({
+    ref,
+    defaultTagName: "button",
+    render,
+    props: {
+      "data-slot": "button",
+      className: cn(buttonVariants({ variant, size, className })),
+      ...props,
+    },
+  });
+});
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
-}
+Button.displayName = "Button";
 
 export { Button, buttonVariants };

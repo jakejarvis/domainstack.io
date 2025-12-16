@@ -1,5 +1,5 @@
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Slot as SlotPrimitive } from "radix-ui";
 import type * as React from "react";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -54,20 +54,21 @@ function Item({
   className,
   variant = "default",
   size = "default",
-  asChild = false,
+  render,
   ...props
 }: React.ComponentProps<"div"> &
-  VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? SlotPrimitive.Slot : "div";
-  return (
-    <Comp
-      data-slot="item"
-      data-variant={variant}
-      data-size={size}
-      className={cn(itemVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+  VariantProps<typeof itemVariants> & { render?: React.ReactElement }) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: {
+      "data-slot": "item",
+      "data-variant": variant,
+      "data-size": size,
+      className: cn(itemVariants({ variant, size, className })),
+      ...props,
+    },
+  });
 }
 
 const itemMediaVariants = cva(
