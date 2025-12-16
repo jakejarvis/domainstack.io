@@ -1,14 +1,22 @@
 "use client";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import type * as React from "react";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
+
+const PopoverAnchorContext =
+  React.createContext<React.RefObject<Element | null> | null>(null);
 
 function Popover({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+  const anchorRef = React.useRef<Element | null>(null);
+  return (
+    <PopoverAnchorContext.Provider value={anchorRef}>
+      <PopoverPrimitive.Root data-slot="popover" {...props} />
+    </PopoverAnchorContext.Provider>
+  );
 }
 
 function PopoverTrigger({
@@ -22,6 +30,7 @@ function PopoverContent({
   align = "center",
   sideOffset = 4,
   side,
+  anchor,
   alignOffset,
   collisionPadding,
   sticky,
@@ -32,12 +41,16 @@ function PopoverContent({
     React.ComponentProps<typeof PopoverPrimitive.Positioner>,
     | "align"
     | "alignOffset"
+    | "anchor"
     | "side"
     | "sideOffset"
     | "collisionPadding"
     | "sticky"
     | "positionMethod"
   >) {
+  const anchorRef = React.useContext(PopoverAnchorContext);
+  const resolvedAnchor = anchor ?? anchorRef ?? undefined;
+
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -45,6 +58,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        anchor={resolvedAnchor}
         collisionPadding={collisionPadding}
         sticky={sticky}
         positionMethod={positionMethod}
@@ -68,10 +82,33 @@ function PopoverContent({
 /**
  * Compatibility shim.
  * Radix had an explicit `Anchor` part; Base UI positions against the trigger or a supplied `anchor` on `Positioner`.
- * This export is currently unused in this repo, but is retained to avoid breaking existing imports.
+ * This export now wires through to `PopoverContent` by setting `Positioner`'s `anchor` prop.
  */
-function PopoverAnchor(props: React.ComponentProps<"span">) {
-  return <span data-slot="popover-anchor" {...props} />;
-}
+const PopoverAnchor = React.forwardRef<
+  React.ElementRef<"span">,
+  React.ComponentPropsWithoutRef<"span">
+>(function PopoverAnchor({ ...props }, forwardedRef) {
+  const anchorRef = React.useContext(PopoverAnchorContext);
+
+  return (
+    <span
+      data-slot="popover-anchor"
+      ref={(node) => {
+        if (anchorRef) {
+          (anchorRef as React.MutableRefObject<Element | null>).current = node;
+        }
+
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          (
+            forwardedRef as React.MutableRefObject<HTMLSpanElement | null>
+          ).current = node;
+        }
+      }}
+      {...props}
+    />
+  );
+});
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };

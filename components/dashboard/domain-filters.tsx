@@ -523,7 +523,7 @@ export function DomainFilters({
           <CollapsibleContent
             keepMounted
             render={(contentProps) => {
-              const { hidden: _hidden, children, ...rest } = contentProps;
+              const { children, ...rest } = contentProps;
               return (
                 <div {...rest}>
                   <motion.div
