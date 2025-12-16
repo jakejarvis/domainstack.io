@@ -5,6 +5,11 @@ import type * as React from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type BaseUIClickEvent = React.MouseEvent<HTMLButtonElement, MouseEvent> & {
+  preventBaseUIHandler: () => void;
+  readonly baseUIHandlerPrevented?: boolean;
+};
+
 function AlertDialog({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
@@ -125,11 +130,32 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  closeOnClick = true,
+  onClick,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Close>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Close> & {
+  /** Prevent the dialog from closing when this button is clicked. */
+  closeOnClick?: boolean;
+}) {
+  /**
+   * Base UI AlertDialog doesn’t have separate Action/Cancel parts; it only exposes `Close`.
+   * We keep the shadcn-style names for ergonomics, but note:
+   * - Both Action and Cancel close by default.
+   * - For async “confirm” flows where you want to keep the dialog open, set `closeOnClick={false}`
+   *   (or call `event.preventBaseUIHandler()` inside `onClick`) and close manually via controlled state.
+   */
+  const handleClick = (event: BaseUIClickEvent) => {
+    if (!closeOnClick) {
+      // Base UI escape hatch to prevent its internal click handler.
+      event.preventBaseUIHandler();
+    }
+    onClick?.(event);
+  };
+
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
+      onClick={handleClick}
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -138,11 +164,24 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
+  closeOnClick = true,
+  onClick,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Close>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Close> & {
+  /** Prevent the dialog from closing when this button is clicked. */
+  closeOnClick?: boolean;
+}) {
+  const handleClick = (event: BaseUIClickEvent) => {
+    if (!closeOnClick) {
+      event.preventBaseUIHandler();
+    }
+    onClick?.(event);
+  };
+
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
+      onClick={handleClick}
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
