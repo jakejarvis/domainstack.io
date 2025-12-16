@@ -14,8 +14,8 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  BookMarked,
   ExternalLink,
-  FileSymlink,
   MoreVertical,
   Play,
   Trash2,
@@ -121,6 +121,7 @@ function ProviderCell({
             whoisServer={tooltipData.whoisServer}
             rdapServers={tooltipData.rdapServers}
             registrationSource={tooltipData.registrationSource}
+            registrantInfo={tooltipData.registrantInfo}
           />
         </TooltipContent>
       </Tooltip>
@@ -141,12 +142,12 @@ function ProviderCell({
 
 function SortIndicator({ isSorted }: { isSorted: false | "asc" | "desc" }) {
   if (isSorted === "asc") {
-    return <ArrowUp className="size-3 text-primary" />;
+    return <ArrowUp className="size-3 shrink-0 text-primary" />;
   }
   if (isSorted === "desc") {
-    return <ArrowDown className="size-3 text-primary" />;
+    return <ArrowDown className="size-3 shrink-0 text-primary" />;
   }
-  return <ArrowUpDown className="size-3 opacity-50" />;
+  return <ArrowUpDown className="size-3 shrink-0 opacity-50" />;
 }
 
 const EMPTY_SET = new Set<string>();
@@ -408,16 +409,6 @@ export function TrackedDomainsTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(row.original.domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <FileSymlink className="size-3.5" />
-                  Open Report
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <a
                   href={`https://${row.original.domainName}`}
                   target="_blank"
@@ -425,8 +416,18 @@ export function TrackedDomainsTable({
                   className="cursor-pointer pr-4"
                 >
                   <ExternalLink className="size-3.5" />
-                  Open Domain
+                  Open
                 </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/${encodeURIComponent(row.original.domainName)}`}
+                  prefetch={false}
+                  className="cursor-pointer pr-4"
+                >
+                  <BookMarked className="size-3.5" />
+                  View Report
+                </Link>
               </DropdownMenuItem>
               {onArchive && (
                 <DropdownMenuItem
@@ -533,7 +534,7 @@ export function TrackedDomainsTable({
                         <button
                           type="button"
                           className={cn(
-                            "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs transition-colors hover:bg-accent hover:text-foreground",
+                            "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs leading-none transition-colors hover:bg-accent hover:text-foreground",
                             isSorted && "text-foreground",
                           )}
                           onClick={header.column.getToggleSortingHandler()}

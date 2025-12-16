@@ -369,6 +369,10 @@ describe("getTrackedDomainsForUser", () => {
       whoisServer: null,
       rdapServers: null,
       registrationSource: null,
+      registrantInfo: {
+        privacyEnabled: null,
+        contacts: null,
+      },
     });
     expect(result[0].dns).toEqual({ id: null, name: null, domain: null });
     expect(result[0].hosting).toEqual({ id: null, name: null, domain: null });

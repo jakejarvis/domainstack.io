@@ -18,7 +18,7 @@ export function AuthButton() {
   // Mobile: square (hamburger menu or avatar), Desktop: wider (Sign In button or avatar)
   if (isPending) {
     return (
-      <div className="mr-1 ml-2 h-8 w-8 animate-pulse rounded-full bg-muted md:w-16 md:rounded-md" />
+      <div className="mr-1 ml-1 h-8 w-8 animate-pulse rounded-full bg-muted md:w-16 md:rounded-md" />
     );
   }
 

@@ -23,6 +23,10 @@ type ProviderTooltipData = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  registrantInfo?: {
+    privacyEnabled: boolean | null;
+    contacts: unknown;
+  };
 };
 
 /**
@@ -87,6 +91,9 @@ export function useProviderTooltipData({
   let lazyLoadedWhoisServer: string | null | undefined;
   let lazyLoadedRdapServers: string[] | null | undefined;
   let lazyLoadedRegistrationSource: "rdap" | "whois" | null | undefined;
+  let lazyLoadedRegistrantInfo:
+    | { privacyEnabled: boolean | null; contacts: unknown }
+    | undefined;
 
   if (domainDetails && providerType) {
     if (providerType === "ca") {
@@ -96,6 +103,7 @@ export function useProviderTooltipData({
       lazyLoadedRdapServers = domainDetails.registrar?.rdapServers;
       lazyLoadedRegistrationSource =
         domainDetails.registrar?.registrationSource;
+      lazyLoadedRegistrantInfo = domainDetails.registrar?.registrantInfo;
     } else {
       lazyLoadedRecords = domainDetails[providerType]?.records;
     }
@@ -108,6 +116,8 @@ export function useProviderTooltipData({
   const displayRdapServers = provider.rdapServers ?? lazyLoadedRdapServers;
   const displayRegistrationSource =
     provider.registrationSource ?? lazyLoadedRegistrationSource;
+  const displayRegistrantInfo =
+    provider.registrantInfo ?? lazyLoadedRegistrantInfo;
 
   const hasDisplayRecords = displayRecords && displayRecords.length > 0;
   const hasDisplayCertificateExpiry = displayCertificateExpiry != null;
@@ -130,5 +140,6 @@ export function useProviderTooltipData({
     whoisServer: displayWhoisServer,
     rdapServers: displayRdapServers,
     registrationSource: displayRegistrationSource,
+    registrantInfo: displayRegistrantInfo,
   };
 }

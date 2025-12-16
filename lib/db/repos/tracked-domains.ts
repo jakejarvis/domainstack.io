@@ -52,6 +52,10 @@ export type ProviderInfo = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  registrantInfo?: {
+    privacyEnabled: boolean | null;
+    contacts: unknown;
+  };
   // CA-specific verification data
   certificateExpiryDate?: Date | null;
 };
@@ -286,6 +290,8 @@ type TrackedDomainRow = {
   registrationWhoisServer: string | null;
   registrationRdapServers: string[] | null;
   registrationSource: "rdap" | "whois" | null;
+  registrationPrivacyEnabled: boolean | null;
+  registrationContacts: unknown;
 };
 
 /**
@@ -318,6 +324,10 @@ function transformToTrackedDomainWithDetails(
       whoisServer: row.registrationWhoisServer,
       rdapServers: row.registrationRdapServers,
       registrationSource: row.registrationSource,
+      registrantInfo: {
+        privacyEnabled: row.registrationPrivacyEnabled,
+        contacts: row.registrationContacts,
+      },
     },
     dns: { id: row.dnsId, name: row.dnsName, domain: row.dnsDomain },
     hosting: {
@@ -552,6 +562,8 @@ async function queryTrackedDomainsWithDetails(
       registrationWhoisServer: registrations.whoisServer,
       registrationRdapServers: registrations.rdapServers,
       registrationSource: registrations.source,
+      registrationPrivacyEnabled: registrations.privacyEnabled,
+      registrationContacts: registrations.contacts,
     })
     .from(userTrackedDomains)
     .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))

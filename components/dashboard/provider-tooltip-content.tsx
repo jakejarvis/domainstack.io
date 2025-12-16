@@ -1,9 +1,10 @@
 import { format } from "date-fns";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, HatGlasses } from "lucide-react";
 import { Favicon } from "@/components/domain/favicon";
+import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { Spinner } from "@/components/ui/spinner";
 import type { DnsRecordForTooltip } from "@/lib/db/repos/tracked-domains";
-import type { ProviderCategory } from "@/lib/schemas";
+import type { ProviderCategory, RegistrationContacts } from "@/lib/schemas";
 
 type ProviderTooltipContentProps = {
   providerName: string;
@@ -15,6 +16,10 @@ type ProviderTooltipContentProps = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  registrantInfo?: {
+    privacyEnabled: boolean | null;
+    contacts: unknown;
+  };
 };
 
 /**
@@ -49,10 +54,33 @@ export function ProviderTooltipContent({
   whoisServer,
   rdapServers,
   registrationSource,
+  registrantInfo,
 }: ProviderTooltipContentProps) {
   const hasRecords = records && records.length > 0;
   const hasCertificateExpiry = certificateExpiryDate != null;
   const hasRegistrationInfo = whoisServer != null || rdapServers != null;
+
+  // Extract registrant details for display
+  const registrant =
+    registrantInfo?.contacts && !registrantInfo.privacyEnabled
+      ? (() => {
+          const contacts = registrantInfo.contacts as RegistrationContacts;
+          const registrantContact = contacts.find(
+            (c) => c.type === "registrant",
+          );
+          if (!registrantContact) return null;
+          const organization =
+            (
+              registrantContact.organization ||
+              registrantContact.name ||
+              ""
+            ).trim() || "Unknown";
+          const country =
+            registrantContact.country || registrantContact.countryCode || "";
+          const state = registrantContact.state || undefined;
+          return { organization, country, state };
+        })()
+      : null;
 
   return (
     <div className="space-y-2 py-1">
@@ -75,9 +103,25 @@ export function ProviderTooltipContent({
           <span>Loading…</span>
         </div>
       ) : providerType === "registrar" ? (
-        // Registrar verification info (WHOIS/RDAP)
+        // Registrar verification info (WHOIS/RDAP) and registrant details
         hasRegistrationInfo ? (
           <div className="text-xs">
+            {/* Registrant info */}
+            {registrantInfo && (
+              <div className="flex items-center gap-1.5">
+                {registrantInfo.privacyEnabled || !registrant ? (
+                  <>
+                    <HatGlasses className="size-3.5 text-muted" />
+                    <span className="text-background/90">Privacy enabled</span>
+                  </>
+                ) : (
+                  <span className="text-background/90">
+                    {formatRegistrant(registrant)}
+                  </span>
+                )}
+              </div>
+            )}
+
             {(() => {
               const serverUrl =
                 rdapServers && rdapServers.length > 0
@@ -92,7 +136,7 @@ export function ProviderTooltipContent({
                   : "https://en.wikipedia.org/wiki/WHOIS";
 
               return (
-                <p className="inline-flex items-center gap-1">
+                <p className="inline-flex items-center gap-1.5 py-1.5">
                   <BadgeCheck className="!h-3.5 !w-3.5 text-green-300 dark:text-green-600" />
                   <span>
                     Verified by{" "}

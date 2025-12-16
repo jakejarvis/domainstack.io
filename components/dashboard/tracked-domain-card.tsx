@@ -4,8 +4,8 @@ import { format } from "date-fns";
 import {
   AlertCircle,
   Archive,
+  BookMarked,
   ExternalLink,
-  FileSymlink,
   MoreVertical,
   Trash2,
   Wrench,
@@ -178,16 +178,6 @@ export function TrackedDomainCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <FileSymlink className="size-4" />
-                  Open Report
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <a
                   href={`https://${domainName}`}
                   target="_blank"
@@ -195,8 +185,18 @@ export function TrackedDomainCard({
                   className="cursor-pointer pr-4"
                 >
                   <ExternalLink className="size-4" />
-                  Open Domain
+                  Open
                 </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/${encodeURIComponent(domainName)}`}
+                  prefetch={false}
+                  className="cursor-pointer pr-4"
+                >
+                  <BookMarked className="size-4" />
+                  View Report
+                </Link>
               </DropdownMenuItem>
               {onArchive && (
                 <DropdownMenuItem
@@ -446,6 +446,7 @@ function InfoRow({
                     whoisServer={tooltipData.whoisServer}
                     rdapServers={tooltipData.rdapServers}
                     registrationSource={tooltipData.registrationSource}
+                    registrantInfo={tooltipData.registrantInfo}
                   />
                 </TooltipContent>
               </Tooltip>
