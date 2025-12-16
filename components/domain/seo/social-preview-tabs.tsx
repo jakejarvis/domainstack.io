@@ -37,7 +37,7 @@ export function SocialPreviewTabs({
         value={selectedTab}
         onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}
       >
-        <TabsList className="h-11 w-full gap-1 border border-muted-foreground/15 bg-muted/30 md:justify-start dark:bg-muted/50 dark:*:data-[state=active]:bg-accent">
+        <TabsList className="h-11 w-full gap-1 border border-muted-foreground/15 bg-muted/30 md:justify-start dark:bg-muted/50">
           <TabsTrigger
             value="twitter"
             className="cursor-pointer data-[state=active]:cursor-default"

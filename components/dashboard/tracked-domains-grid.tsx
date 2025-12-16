@@ -32,6 +32,7 @@ export function TrackedDomainsGrid({
 
   // Track seen domain IDs to only animate new items
   const seenIdsRef = useRef<Set<string>>(new Set());
+  const hasSeenUpgradeRef = useRef(false);
 
   // Determine which items are new (for animation)
   const domainAnimationStates = useMemo(() => {
@@ -48,12 +49,18 @@ export function TrackedDomainsGrid({
     return states;
   }, [domains]);
 
+  const shouldAnimateUpgrade = showUpgradeCard && !hasSeenUpgradeRef.current;
+  if (showUpgradeCard) {
+    hasSeenUpgradeRef.current = true;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {domainAnimationStates.map(({ domain, isNew, index }) => (
         <motion.div
           key={domain.id}
           className="h-full"
+          layout="position"
           initial={isNew ? { opacity: 0, y: 20 } : false}
           animate={{ opacity: 1, y: 0 }}
           transition={
@@ -81,12 +88,28 @@ export function TrackedDomainsGrid({
       {showUpgradeCard && (
         <motion.div
           className="h-full"
-          initial={{ opacity: 0, y: 20 }}
+          layout="position"
+          initial={shouldAnimateUpgrade ? { opacity: 0, y: 20 } : false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: Math.min(domains.length * 0.05, 0.3),
-            duration: 0.3,
-          }}
+          transition={
+            shouldAnimateUpgrade
+              ? {
+                  opacity: {
+                    delay: Math.min(domains.length * 0.05, 0.3),
+                    duration: 0.18,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                  },
+                  y: {
+                    delay: Math.min(domains.length * 0.05, 0.3),
+                    duration: 0.18,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                  },
+                  // Never delay layout reflow; otherwise the CTA can feel like it
+                  // "slowly slides in" as the grid settles.
+                  layout: { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const },
+                }
+              : { duration: 0, layout: { duration: 0 } }
+          }
         >
           <UpgradeCard proMaxDomains={proMaxDomains} />
         </motion.div>

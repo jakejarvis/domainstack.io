@@ -12,6 +12,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
 import { Favicon } from "@/components/domain/favicon";
@@ -314,18 +315,30 @@ export function DomainFilters({
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
             />
-            {search && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-xs"
-                  onClick={() => onSearchChange("")}
-                  aria-label="Clear search"
-                  className="cursor-pointer"
-                >
-                  <X />
-                </InputGroupButton>
-              </InputGroupAddon>
-            )}
+            <AnimatePresence initial={false}>
+              {search && (
+                <InputGroupAddon align="inline-end">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{
+                      duration: 0.16,
+                      ease: [0.22, 1, 0.36, 1] as const,
+                    }}
+                  >
+                    <InputGroupButton
+                      size="icon-xs"
+                      onClick={() => onSearchChange("")}
+                      aria-label="Clear search"
+                      className="cursor-pointer"
+                    >
+                      <X />
+                    </InputGroupButton>
+                  </motion.div>
+                </InputGroupAddon>
+              )}
+            </AnimatePresence>
           </InputGroup>
         </div>
 
@@ -380,16 +393,28 @@ export function DomainFilters({
       {/* Right side: View-specific controls and clear button */}
       <div className="flex flex-wrap items-center gap-2">
         {/* Clear all button */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            onClick={onClearFilters}
-            className="cursor-pointer text-muted-foreground"
-          >
-            <X className="size-4" />
-            Clear all
-          </Button>
-        )}
+        <AnimatePresence initial={false}>
+          {hasActiveFilters && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{
+                duration: 0.18,
+                ease: [0.22, 1, 0.36, 1] as const,
+              }}
+            >
+              <Button
+                variant="ghost"
+                onClick={onClearFilters}
+                className="cursor-pointer text-muted-foreground"
+              >
+                <X className="size-4" />
+                Clear all
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Sort dropdown - only for grid view */}
         {viewMode === "grid" && onSortChange && (
@@ -457,11 +482,24 @@ export function DomainFilters({
                 <span className="flex items-center gap-2">
                   <Filter className="size-4" />
                   Filters
-                  {hasActiveFilters && (
-                    <Badge variant="secondary" className="ml-1">
-                      {activeFilterChips.length}
-                    </Badge>
-                  )}
+                  <AnimatePresence initial={false}>
+                    {hasActiveFilters && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{
+                          duration: 0.16,
+                          ease: [0.22, 1, 0.36, 1] as const,
+                        }}
+                        className="ml-1 inline-flex"
+                      >
+                        <Badge variant="secondary">
+                          {activeFilterChips.length}
+                        </Badge>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </span>
                 <ChevronDown
                   className={cn(
@@ -478,41 +516,81 @@ export function DomainFilters({
             )}
           </div>
 
-          <CollapsibleContent className="pt-3">
-            {filterContent}
+          <CollapsibleContent forceMount asChild>
+            <motion.div
+              initial={false}
+              animate={
+                mobileOpen
+                  ? { height: "auto", opacity: 1 }
+                  : { height: 0, opacity: 0 }
+              }
+              transition={{
+                duration: 0.22,
+                ease: [0.22, 1, 0.36, 1] as const,
+              }}
+              style={{ overflow: "hidden" }}
+            >
+              <div className="pt-3">{filterContent}</div>
+            </motion.div>
           </CollapsibleContent>
         </Collapsible>
       </div>
 
       {/* Active filter chips */}
-      {activeFilterChips.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {activeFilterChips.map((chip) => (
-            <Badge
-              key={`${chip.type}-${chip.value}`}
-              className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30"
-            >
-              {chip.icon}
-              <span className="flex items-center gap-1 text-xs leading-none">
-                {chip.prefix && (
-                  <span className="shrink-0 text-muted-foreground">
-                    {chip.prefix}:
-                  </span>
-                )}
-                <span className="truncate">{chip.label}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => removeFilter(chip)}
-                className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
-                aria-label={`Remove ${chip.type} filter`}
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          ))}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {activeFilterChips.length > 0 && (
+          <motion.div
+            key="active-filter-chips"
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{
+              duration: 0.18,
+              ease: [0.22, 1, 0.36, 1] as const,
+            }}
+            className="flex flex-wrap gap-2"
+          >
+            <AnimatePresence initial={false}>
+              {activeFilterChips.map((chip, index) => (
+                <motion.div
+                  key={`${chip.type}-${chip.value}`}
+                  layout="position"
+                  initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{
+                    duration: 0.18,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                    delay: Math.min(index * 0.01, 0.06),
+                  }}
+                  className="inline-flex"
+                >
+                  <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30">
+                    {chip.icon}
+                    <span className="flex items-center gap-1 text-xs leading-none">
+                      {chip.prefix && (
+                        <span className="shrink-0 text-muted-foreground">
+                          {chip.prefix}:
+                        </span>
+                      )}
+                      <span className="truncate">{chip.label}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFilter(chip)}
+                      className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
+                      aria-label={`Remove ${chip.type} filter`}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </Badge>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

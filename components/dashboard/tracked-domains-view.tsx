@@ -2,7 +2,9 @@
 
 import type { Table } from "@tanstack/react-table";
 import { FilterX, Globe, Plus, Timer } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";
 import { TrackedDomainsTable } from "@/components/dashboard/tracked-domains-table";
@@ -60,6 +62,13 @@ export function TrackedDomainsView({
   isBulkDeleting = false,
   onTableReady,
 }: TrackedDomainsViewProps) {
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
@@ -141,30 +150,44 @@ export function TrackedDomainsView({
 
   return (
     <>
-      {viewMode === "table" ? (
-        <TrackedDomainsTable
-          domains={domains}
-          selectedIds={selection.selectedIds}
-          onToggleSelect={selection.toggle}
-          onVerify={onVerify}
-          onRemove={onRemove}
-          onArchive={onArchive}
-          tier={tier}
-          proMaxDomains={proMaxDomains}
-          onTableReady={onTableReady}
-        />
-      ) : (
-        <TrackedDomainsGrid
-          domains={domains}
-          selectedIds={selection.selectedIds}
-          onToggleSelect={selection.toggle}
-          onVerify={onVerify}
-          onRemove={onRemove}
-          onArchive={onArchive}
-          tier={tier}
-          proMaxDomains={proMaxDomains}
-        />
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={viewMode}
+          initial={hasHydrated ? { opacity: 0, y: 8 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          exit={hasHydrated ? { opacity: 0, y: -8 } : undefined}
+          transition={
+            hasHydrated
+              ? { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const }
+              : { duration: 0 }
+          }
+        >
+          {viewMode === "table" ? (
+            <TrackedDomainsTable
+              domains={domains}
+              selectedIds={selection.selectedIds}
+              onToggleSelect={selection.toggle}
+              onVerify={onVerify}
+              onRemove={onRemove}
+              onArchive={onArchive}
+              tier={tier}
+              proMaxDomains={proMaxDomains}
+              onTableReady={onTableReady}
+            />
+          ) : (
+            <TrackedDomainsGrid
+              domains={domains}
+              selectedIds={selection.selectedIds}
+              onToggleSelect={selection.toggle}
+              onVerify={onVerify}
+              onRemove={onRemove}
+              onArchive={onArchive}
+              tier={tier}
+              proMaxDomains={proMaxDomains}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Bulk actions toolbar - appears when items are selected */}
       <BulkActionsToolbar

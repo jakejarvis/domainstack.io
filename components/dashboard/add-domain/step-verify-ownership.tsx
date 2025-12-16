@@ -53,21 +53,21 @@ export function StepVerifyOwnership({
           <TabsTrigger
             value="dns_txt"
             disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+            className="cursor-pointer data-[state=active]:cursor-default"
           >
             DNS Record
           </TabsTrigger>
           <TabsTrigger
             value="html_file"
             disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+            className="cursor-pointer data-[state=active]:cursor-default"
           >
             HTML File
           </TabsTrigger>
           <TabsTrigger
             value="meta_tag"
             disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:bg-background data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/15"
+            className="cursor-pointer data-[state=active]:cursor-default"
           >
             Meta Tag
           </TabsTrigger>

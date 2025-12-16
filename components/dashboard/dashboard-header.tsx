@@ -2,7 +2,9 @@
 
 import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
+import { motion } from "motion/react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -40,6 +42,13 @@ export function DashboardHeader({
   hasAnyDomains = false,
 }: DashboardHeaderProps) {
   const percentage = maxDomains > 0 ? (trackedCount / maxDomains) * 100 : 0;
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Avoid animating the toggle during hydration when localStorage preferences reconcile
+  // (e.g. SSR renders grid, client prefers table). Enable motion after mount.
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -89,7 +98,18 @@ export function DashboardHeader({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* View toggle - only show when there are domains */}
           {hasAnyDomains && (
-            <div className="inline-flex rounded-md border border-muted-foreground/30">
+            <div className="relative inline-flex overflow-hidden rounded-md border border-muted-foreground/30">
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-0 z-0 w-10 rounded-md bg-primary"
+                animate={{ x: viewMode === "grid" ? 0 : 40 }}
+                transition={
+                  hasHydrated
+                    ? { type: "spring", stiffness: 550, damping: 45 }
+                    : { duration: 0 }
+                }
+                initial={false}
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -98,9 +118,9 @@ export function DashboardHeader({
                     aria-label="Grid view"
                     aria-pressed={viewMode === "grid"}
                     className={cn(
-                      "flex h-9 w-10 items-center justify-center rounded-l-md border-input border-r transition-colors dark:border-white/20",
+                      "relative z-10 flex h-9 w-10 items-center justify-center rounded-l-md border-input border-r bg-transparent transition-colors dark:border-white/20",
                       viewMode === "grid"
-                        ? "bg-primary text-primary-foreground"
+                        ? "text-primary-foreground"
                         : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
                     )}
                   >
@@ -117,9 +137,9 @@ export function DashboardHeader({
                     aria-label="Table view"
                     aria-pressed={viewMode === "table"}
                     className={cn(
-                      "flex h-9 w-10 items-center justify-center rounded-r-md transition-colors",
+                      "relative z-10 flex h-9 w-10 items-center justify-center rounded-r-md bg-transparent transition-colors",
                       viewMode === "table"
-                        ? "bg-primary text-primary-foreground"
+                        ? "text-primary-foreground"
                         : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
                     )}
                   >

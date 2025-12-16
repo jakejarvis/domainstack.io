@@ -210,29 +210,30 @@ export function RobotsSummary({
                   ) : null}
                 </InputGroup>
 
-                <ButtonGroup className="!w-full sm:!w-auto h-9 items-stretch [&>*]:flex-1 sm:[&>*]:flex-none">
+                <ButtonGroup
+                  withActiveIndicator
+                  className="!w-full sm:!w-auto h-9 items-stretch rounded-lg border border-muted-foreground/15 bg-muted/30 p-[3px] dark:border-white/15 dark:bg-muted/50 [&>*]:flex-1 sm:[&>*]:flex-none"
+                >
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     aria-pressed={only === "all"}
                     onClick={() => setOnly("all")}
                     className={cn(
-                      "h-9 cursor-pointer px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "all" &&
-                        "!bg-muted/50 dark:!bg-accent cursor-default",
+                      "h-[calc(100%-1px)] cursor-pointer px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
+                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
                     )}
                   >
                     All
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     aria-pressed={only === "allow"}
                     onClick={() => setOnly("allow")}
                     className={cn(
-                      "h-9 cursor-pointer gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "allow" &&
-                        "!bg-muted/50 dark:!bg-accent cursor-default",
+                      "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
+                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
                     )}
                   >
                     <CircleCheck
@@ -244,13 +245,12 @@ export function RobotsSummary({
                   </Button>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     aria-pressed={only === "disallow"}
                     onClick={() => setOnly("disallow")}
                     className={cn(
-                      "h-9 cursor-pointer gap-2 px-3 text-[13px] hover:bg-muted/30 dark:hover:bg-accent/50",
-                      only === "disallow" &&
-                        "!bg-muted/50 dark:!bg-accent cursor-default",
+                      "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
+                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
                     )}
                   >
                     <Ban
