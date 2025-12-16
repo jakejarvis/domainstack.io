@@ -17,7 +17,7 @@ type DashboardPreferences = {
 const STORAGE_KEY = "dashboard-preferences";
 const DEFAULT_PREFERENCES: DashboardPreferences = {
   viewMode: "grid",
-  pageSize: 25,
+  pageSize: 10,
   columnVisibility: {}, // Empty means all columns visible (default)
 };
 

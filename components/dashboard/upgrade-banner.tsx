@@ -14,7 +14,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
   const { handleUpgrade, isLoading } = useUpgradeCheckout();
 
   return (
-    <div className="relative overflow-hidden rounded-b-xl border border-black/10 bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.02] dark:via-transparent dark:to-white/[0.03]">
+    <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.02] dark:via-transparent dark:to-white/[0.03]">
       {/* Decorative elements - subtle warm glows */}
       <div
         aria-hidden
