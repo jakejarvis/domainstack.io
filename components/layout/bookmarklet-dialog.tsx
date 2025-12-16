@@ -140,7 +140,10 @@ export function BookmarkletDialog({
           </a>
         </div>
 
-        <Separator className="bg-border/80 dark:bg-border/50" />
+        <Separator
+          aria-hidden="true"
+          className="bg-border/80 dark:bg-border/50"
+        />
 
         <div className="space-y-3.5">
           <p className="text-muted-foreground text-sm">

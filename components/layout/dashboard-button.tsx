@@ -17,10 +17,12 @@ export function DashboardButton() {
   return (
     <Tooltip>
       <TooltipTrigger
+        nativeButton={false}
         render={
           <Button
             variant="ghost"
             size="sm"
+            nativeButton={false}
             render={<Link href="/dashboard" className="cursor-pointer" />}
           >
             <Table2 />

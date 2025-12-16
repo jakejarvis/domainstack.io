@@ -51,6 +51,7 @@ export function LinkedAccountRow({
       ) : isLinked ? (
         <Tooltip>
           <TooltipTrigger
+            nativeButton={false}
             render={
               <span>
                 <Button

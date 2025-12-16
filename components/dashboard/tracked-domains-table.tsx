@@ -111,7 +111,7 @@ function ProviderCell({
   if (tooltipData.shouldShowTooltip) {
     return (
       <Tooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-        <TooltipTrigger render={providerContent} />
+        <TooltipTrigger nativeButton={false} render={providerContent} />
         <TooltipContent>
           <ProviderTooltipContent
             providerName={provider.name}
@@ -133,7 +133,7 @@ function ProviderCell({
   if (isTruncated) {
     return (
       <Tooltip>
-        <TooltipTrigger render={providerContent} />
+        <TooltipTrigger nativeButton={false} render={providerContent} />
         <TooltipContent>{provider.name}</TooltipContent>
       </Tooltip>
     );
@@ -294,6 +294,7 @@ export function TrackedDomainsTable({
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger
+                  nativeButton={false}
                   render={<span>{format(date, "MMM d, yyyy")}</span>}
                 />
                 <TooltipContent>
@@ -384,6 +385,7 @@ export function TrackedDomainsTable({
             <div className="whitespace-nowrap text-[13px]">
               <Tooltip>
                 <TooltipTrigger
+                  nativeButton={false}
                   render={<span>{format(date, "MMM d, yyyy")}</span>}
                 />
                 <TooltipContent>
@@ -420,6 +422,7 @@ export function TrackedDomainsTable({
             />
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                nativeButton={false}
                 render={
                   <a
                     href={`https://${row.original.domainName}`}
@@ -433,6 +436,7 @@ export function TrackedDomainsTable({
                 }
               />
               <DropdownMenuItem
+                nativeButton={false}
                 render={
                   <Link
                     href={`/${encodeURIComponent(row.original.domainName)}`}

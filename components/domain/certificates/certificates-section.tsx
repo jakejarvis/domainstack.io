@@ -85,6 +85,7 @@ export function CertificatesSection({
                     return sans.length > 0 ? (
                       <Tooltip>
                         <TooltipTrigger
+                          nativeButton={false}
                           render={
                             <Badge
                               variant="outline"

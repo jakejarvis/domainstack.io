@@ -71,7 +71,7 @@ export function VerificationBadge({
 
     return (
       <Tooltip>
-        <TooltipTrigger render={<span>{badge}</span>} />
+        <TooltipTrigger nativeButton={false} render={<span>{badge}</span>} />
         <TooltipContent>
           {daysRemaining > 0 ? (
             <>
@@ -104,6 +104,7 @@ export function VerificationBadge({
       return (
         <Tooltip>
           <TooltipTrigger
+            nativeButton={false}
             render={<span className="cursor-default">{badge}</span>}
           />
           <TooltipContent>
@@ -136,7 +137,10 @@ export function VerificationBadge({
   if (onClick) {
     return (
       <Tooltip>
-        <TooltipTrigger render={<span>{pendingBadge}</span>} />
+        <TooltipTrigger
+          nativeButton={false}
+          render={<span>{pendingBadge}</span>}
+        />
         <TooltipContent>Complete verification</TooltipContent>
       </Tooltip>
     );

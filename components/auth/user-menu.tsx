@@ -109,6 +109,7 @@ export function UserMenu() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            nativeButton={false}
             render={
               <Link
                 href="/dashboard"
@@ -121,6 +122,7 @@ export function UserMenu() {
             }
           />
           <DropdownMenuItem
+            nativeButton={false}
             render={
               <Link
                 href="/settings"

@@ -34,7 +34,11 @@ export function HealthSummary({
         <Tooltip>
           <TooltipTrigger
             render={
-              <button type="button" onClick={onExpiringClick}>
+              <button
+                type="button"
+                onClick={onExpiringClick}
+                aria-label="Filter by expiring domains"
+              >
                 <Badge
                   variant="outline"
                   className={cn(
@@ -59,7 +63,11 @@ export function HealthSummary({
         <Tooltip>
           <TooltipTrigger
             render={
-              <button type="button" onClick={onPendingClick}>
+              <button
+                type="button"
+                onClick={onPendingClick}
+                aria-label="Filter by pending verification"
+              >
                 <Badge
                   variant="outline"
                   className={cn(

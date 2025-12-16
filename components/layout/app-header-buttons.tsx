@@ -18,10 +18,18 @@ export function AppHeaderButtons() {
     return (
       <>
         {/* Bookmarklet button skeleton on desktop */}
-        <Separator orientation="vertical" className="!h-4 hidden md:block" />
+        <Separator
+          aria-hidden="true"
+          orientation="vertical"
+          className="!h-4 hidden md:block"
+        />
         <div className="hidden size-8 animate-pulse rounded-md bg-muted md:flex" />
         {/* Theme toggle button skeleton on desktop */}
-        <Separator orientation="vertical" className="!h-4 hidden md:block" />
+        <Separator
+          aria-hidden="true"
+          orientation="vertical"
+          className="!h-4 hidden md:block"
+        />
         <div className="hidden size-8 animate-pulse rounded-md bg-muted md:flex" />
       </>
     );
@@ -31,7 +39,7 @@ export function AppHeaderButtons() {
     return (
       <>
         {/* When signed in: show Dashboard button */}
-        <Separator orientation="vertical" className="!h-4" />
+        <Separator aria-hidden="true" orientation="vertical" className="!h-4" />
         <DashboardButton />
       </>
     );
@@ -40,9 +48,17 @@ export function AppHeaderButtons() {
   return (
     <>
       {/* When signed out: show bookmarklet and theme toggle on desktop */}
-      <Separator orientation="vertical" className="!h-4 hidden md:block" />
+      <Separator
+        aria-hidden="true"
+        orientation="vertical"
+        className="!h-4 hidden md:block"
+      />
       <BookmarkletDialog className="hidden md:flex" />
-      <Separator orientation="vertical" className="!h-4 hidden md:block" />
+      <Separator
+        aria-hidden="true"
+        orientation="vertical"
+        className="!h-4 hidden md:block"
+      />
       <ThemeToggle className="hidden md:flex" />
     </>
   );

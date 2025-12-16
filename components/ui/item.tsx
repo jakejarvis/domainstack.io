@@ -21,6 +21,7 @@ function ItemGroup({
 function ItemSeparator({ className, ...props }: SeparatorProps) {
   return (
     <Separator
+      aria-hidden="true"
       data-slot="item-separator"
       orientation="horizontal"
       className={cn("my-0", className)}

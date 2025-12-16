@@ -49,7 +49,11 @@ export function ScreenshotTooltip({
         if (v) setHasOpened(true);
       }}
     >
-      <TooltipTrigger onClick={handleInteraction} render={children} />
+      <TooltipTrigger
+        nativeButton={false}
+        onClick={handleInteraction}
+        render={children}
+      />
       <TooltipContent
         sideOffset={6}
         alignOffset={-12}

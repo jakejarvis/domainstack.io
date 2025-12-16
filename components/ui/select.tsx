@@ -38,7 +38,7 @@ function SelectTrigger({
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
         "data-[size=default]:h-9 data-[size=sm]:h-8",
         // Base UI marks the trigger as "filled" when it has a value.
-        "not-[[data-filled]]:text-muted-foreground",
+        "[&:not([data-filled])]:text-muted-foreground",
         "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2",
         "dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:hover:bg-input/50",
         "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -124,7 +124,8 @@ function SelectItem({
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        "*:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        // Ensure the last span child (typically the text wrapper) lays out nicely.
+        "[&>span:last-child]:flex [&>span:last-child]:items-center [&>span:last-child]:gap-2",
         className,
       )}
       {...props}

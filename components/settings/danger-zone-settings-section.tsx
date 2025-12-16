@@ -48,9 +48,7 @@ export function DangerZoneSettingsSection() {
           keepMounted
           className={cn(
             "overflow-hidden transition-[max-height,opacity] duration-200",
-            isDangerZoneOpen
-              ? "max-h-[400px] opacity-100"
-              : "max-h-0 opacity-0",
+            isDangerZoneOpen ? "opacity-100" : "max-h-0 opacity-0",
           )}
         >
           <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">

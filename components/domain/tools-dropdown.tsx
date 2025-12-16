@@ -154,6 +154,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
         {TOOLS.map((tool) => (
           <DropdownMenuItem
             key={tool.name}
+            nativeButton={false}
             render={
               <a
                 href={tool.buildUrl(domain)}
@@ -169,6 +170,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          nativeButton={false}
           render={
             <a
               href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}

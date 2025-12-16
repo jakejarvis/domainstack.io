@@ -34,6 +34,7 @@ export function CategoryLabel({
   return (
     <Tooltip>
       <TooltipTrigger
+        nativeButton={false}
         render={
           <span className="cursor-help">
             {compact ? SHORT_LABELS[category] : info.label}

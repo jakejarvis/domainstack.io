@@ -109,10 +109,12 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     return (
       <Tooltip>
         <TooltipTrigger
+          nativeButton={false}
           render={
             <Button
               variant="outline"
               className="text-success-foreground"
+              nativeButton={false}
               render={<Link href="/dashboard" prefetch={false} />}
             >
               <BadgeCheck className="size-4" />
@@ -160,6 +162,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
               <Button
                 variant="outline"
                 className="cursor-pointer"
+                nativeButton={false}
                 render={
                   <Link
                     href="/login"

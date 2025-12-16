@@ -100,6 +100,7 @@ export function DomainPricingCTA({
               key={providerPricing.provider}
               variant="outline"
               className="w-full min-w-[250px]"
+              nativeButton={false}
               render={
                 <a
                   href={config.searchUrl(domain)}
@@ -117,6 +118,7 @@ export function DomainPricingCTA({
             >
               <Tooltip>
                 <TooltipTrigger
+                  nativeButton={false}
                   render={
                     <span
                       className={cn(

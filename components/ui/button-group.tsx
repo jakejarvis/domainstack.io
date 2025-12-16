@@ -1,5 +1,3 @@
-"use client";
-
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -63,6 +61,9 @@ function ButtonGroupText({
     state: {
       slot: "button-group-text",
     },
+    stateAttributesMapping: {
+      slot: (value) => ({ "data-slot": value }),
+    },
   });
 }
 
@@ -73,6 +74,7 @@ function ButtonGroupSeparator({
 }: SeparatorProps) {
   return (
     <Separator
+      aria-hidden="true"
       data-slot="button-group-separator"
       orientation={orientation}
       className={cn(

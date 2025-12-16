@@ -1,3 +1,5 @@
+"use client";
+
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -134,7 +136,7 @@ function FieldTitle({
 }: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
-      data-slot="field-label"
+      data-slot="field-title"
       className={cn(
         "flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled]/field:opacity-50",
         className,
@@ -166,9 +168,7 @@ function FieldSeparator({
   children,
   className,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> & {
-  children?: React.ReactNode;
-}) {
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="field-separator"
@@ -179,7 +179,7 @@ function FieldSeparator({
       )}
       {...props}
     >
-      <Separator className="absolute inset-0 top-1/2" />
+      <Separator aria-hidden="true" className="absolute inset-0 top-1/2" />
       {children && (
         <span
           className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"

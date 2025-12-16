@@ -51,6 +51,7 @@ export function DashboardHeader({
           subscriptionEndsAt ? (
             <Tooltip>
               <TooltipTrigger
+                nativeButton={false}
                 render={
                   <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
                     <Gem className="size-3" />
@@ -146,6 +147,7 @@ export function DashboardHeader({
           {trackedCount >= maxDomains ? (
             <Tooltip>
               <TooltipTrigger
+                nativeButton={false}
                 render={
                   <span>
                     <Button disabled className="pointer-events-none">
@@ -163,6 +165,7 @@ export function DashboardHeader({
             </Tooltip>
           ) : (
             <Button
+              nativeButton={false}
               render={
                 <Link
                   href="/dashboard/add-domain"

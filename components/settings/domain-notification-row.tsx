@@ -147,24 +147,22 @@ export function DomainNotificationRow({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <div>
-                    <Switch
-                      checked={effectiveValue}
-                      onCheckedChange={(checked) => {
-                        // If clicking would make it match global, clear override (inherit)
-                        // Otherwise, set explicit override
-                        onToggle(
-                          category,
-                          checked === globalValue ? undefined : checked,
-                        );
-                      }}
-                      disabled={disabled}
-                      className={cn(
-                        "cursor-pointer",
-                        isInherited && "opacity-60",
-                      )}
-                    />
-                  </div>
+                  <Switch
+                    checked={effectiveValue}
+                    onCheckedChange={(checked) => {
+                      // If clicking would make it match global, clear override (inherit)
+                      // Otherwise, set explicit override
+                      onToggle(
+                        category,
+                        checked === globalValue ? undefined : checked,
+                      );
+                    }}
+                    disabled={disabled}
+                    className={cn(
+                      "cursor-pointer",
+                      isInherited && "opacity-60",
+                    )}
+                  />
                 }
               />
               <TooltipContent>

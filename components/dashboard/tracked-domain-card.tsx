@@ -184,6 +184,7 @@ export function TrackedDomainCard({
             />
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                nativeButton={false}
                 render={
                   <a
                     href={`https://${domainName}`}
@@ -197,6 +198,7 @@ export function TrackedDomainCard({
                 }
               />
               <DropdownMenuItem
+                nativeButton={false}
                 render={
                   <Link
                     href={`/${encodeURIComponent(domainName)}`}
@@ -239,6 +241,7 @@ export function TrackedDomainCard({
                 <>
                   <Tooltip>
                     <TooltipTrigger
+                      nativeButton={false}
                       render={
                         <span className="truncate">
                           {format(expirationDate, "MMM d, yyyy")}
@@ -311,6 +314,7 @@ export function TrackedDomainCard({
                   <>
                     <Tooltip>
                       <TooltipTrigger
+                        nativeButton={false}
                         render={
                           <span className="truncate">
                             {format(expirationDate, "MMM d, yyyy")}
@@ -448,7 +452,7 @@ function InfoRow({
                 open={tooltipData.isOpen}
                 onOpenChange={tooltipData.setIsOpen}
               >
-                <TooltipTrigger render={providerContent} />
+                <TooltipTrigger nativeButton={false} render={providerContent} />
                 <TooltipContent>
                   <ProviderTooltipContent
                     providerName={provider.name}
@@ -466,7 +470,7 @@ function InfoRow({
               </Tooltip>
             ) : isTruncated ? (
               <Tooltip>
-                <TooltipTrigger render={providerContent} />
+                <TooltipTrigger nativeButton={false} render={providerContent} />
                 <TooltipContent>{provider.name}</TooltipContent>
               </Tooltip>
             ) : (

@@ -310,6 +310,7 @@ export function AddDomainContent({
                   <Button
                     variant="outline"
                     className="w-full"
+                    nativeButton={false}
                     render={<Link href="/dashboard" prefetch={false} />}
                   >
                     Back to Dashboard
@@ -332,6 +333,7 @@ export function AddDomainContent({
                 <Button
                   variant="outline"
                   className="w-full"
+                  nativeButton={false}
                   render={<Link href="/dashboard" prefetch={false} />}
                 >
                   Back to Dashboard

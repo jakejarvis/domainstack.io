@@ -66,6 +66,7 @@ export function MobileMenu() {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            nativeButton={false}
             render={
               <Link
                 href="/login"

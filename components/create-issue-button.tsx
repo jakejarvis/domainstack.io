@@ -79,6 +79,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
       variant={variant}
       size={size}
       className={className}
+      nativeButton={false}
       render={<a href={issueUrl} target="_blank" rel="noopener" />}
     >
       <Bug />

@@ -99,6 +99,7 @@ export function DomainSuggestionsClient({
                   e.preventDefault();
                   handleClick(domain);
                 }}
+                nativeButton={false}
                 render={<Link href={`/${domain}`} prefetch={false} />}
               >
                 <Favicon
