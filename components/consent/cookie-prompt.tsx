@@ -27,6 +27,7 @@ export function CookiePrompt({
       defaultValue: "pending",
     });
   const [show, setShow] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     // Wait for localStorage to be available
@@ -52,16 +53,24 @@ export function CookiePrompt({
     }
   }, [consent, consentRequired, isPersistent, setConsent]);
 
+  const handleHide = (consentStatus: ConsentStatus) => {
+    setIsExiting(true);
+    // Wait for exit animation to complete before actually hiding
+    setTimeout(() => {
+      setConsent(consentStatus);
+      setShow(false);
+      setIsExiting(false);
+    }, 200); // Match animation duration
+  };
+
   const accept = () => {
-    setConsent("accepted");
     posthog.opt_in_capturing();
-    setShow(false);
+    handleHide("accepted");
   };
 
   const decline = () => {
-    setConsent("declined");
     posthog.opt_out_capturing();
-    setShow(false);
+    handleHide("declined");
   };
 
   if (!show || consent !== "pending") {
@@ -69,7 +78,13 @@ export function CookiePrompt({
   }
 
   return (
-    <div className="fade-in slide-in-from-bottom-2 fixed bottom-3 left-3 z-50 max-w-[260px] animate-in duration-200">
+    <div
+      className={`fixed bottom-3 left-3 z-50 max-w-[260px] duration-200 ${
+        isExiting
+          ? "slide-out-to-bottom-8 animate-out"
+          : "slide-in-from-bottom-8 animate-in"
+      }`}
+    >
       <div
         role="dialog"
         aria-label="Cookie consent"
