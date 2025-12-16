@@ -22,6 +22,11 @@ export type SubscriptionData = {
   proMaxDomains: number;
 };
 
+export type UseSubscriptionOptions = {
+  /** Whether to enable the query (defaults to true) */
+  enabled?: boolean;
+};
+
 export type UseSubscriptionResult = {
   /** Subscription data (undefined while loading) */
   subscription: SubscriptionData | undefined;
@@ -40,6 +45,9 @@ export type UseSubscriptionResult = {
 /**
  * Hook to check user's subscription tier and limits.
  * Use this to guard Pro features and display upgrade prompts.
+ *
+ * @param options - Configuration options
+ * @param options.enabled - Whether to enable the query (defaults to true)
  *
  * @example
  * ```tsx
@@ -71,12 +79,33 @@ export type UseSubscriptionResult = {
  *   );
  * }
  * ```
+ *
+ * @example
+ * ```tsx
+ * // Conditionally enable query based on auth state
+ * function PublicComponent() {
+ *   const { data: session } = useSession();
+ *   const { subscription } = useSubscription({ enabled: !!session?.user });
+ *
+ *   if (!session?.user) {
+ *     return <LoginPrompt />;
+ *   }
+ *
+ *   return <div>Tier: {subscription?.tier}</div>;
+ * }
+ * ```
  */
-export function useSubscription(): UseSubscriptionResult {
+export function useSubscription(
+  options: UseSubscriptionOptions = {},
+): UseSubscriptionResult {
+  const { enabled = true } = options;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const query = useQuery(trpc.user.getSubscription.queryOptions());
+  const query = useQuery({
+    ...trpc.user.getSubscription.queryOptions(),
+    enabled,
+  });
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({

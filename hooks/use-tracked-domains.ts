@@ -8,6 +8,8 @@ import { useTRPC } from "@/lib/trpc/client";
 export type UseTrackedDomainsOptions = {
   /** Whether to include archived domains in the results (defaults to false) */
   includeArchived?: boolean;
+  /** Whether to enable the query (defaults to true) */
+  enabled?: boolean;
 };
 
 export type UseTrackedDomainsResult = {
@@ -29,6 +31,7 @@ export type UseTrackedDomainsResult = {
  *
  * @param options - Configuration options
  * @param options.includeArchived - Whether to include archived domains (defaults to false)
+ * @param options.enabled - Whether to enable the query (defaults to true)
  *
  * @example
  * ```tsx
@@ -61,17 +64,33 @@ export type UseTrackedDomainsResult = {
  *   return <DomainGrid domains={domains} onArchive={handleArchive} />;
  * }
  * ```
+ *
+ * @example
+ * ```tsx
+ * // Conditionally enable query based on auth state
+ * function PublicComponent() {
+ *   const { data: session } = useSession();
+ *   const { domains } = useTrackedDomains({ enabled: !!session?.user });
+ *
+ *   if (!session?.user) {
+ *     return <LoginPrompt />;
+ *   }
+ *
+ *   return <DomainList domains={domains} />;
+ * }
+ * ```
  */
 export function useTrackedDomains(
   options: UseTrackedDomainsOptions = {},
 ): UseTrackedDomainsResult {
-  const { includeArchived = false } = options;
+  const { includeArchived = false, enabled = true } = options;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const query = useQuery(
-    trpc.tracking.listDomains.queryOptions({ includeArchived }),
-  );
+  const query = useQuery({
+    ...trpc.tracking.listDomains.queryOptions({ includeArchived }),
+    enabled,
+  });
 
   const invalidate = useCallback(() => {
     void queryClient.invalidateQueries({

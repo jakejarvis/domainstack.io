@@ -2,7 +2,7 @@
 
 import { AlertCircle, BadgeCheck, BellPlus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoginDialog } from "@/components/auth/login-dialog";
 import {
   AddDomainDialog,
@@ -27,13 +27,23 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const [loginOpen, setLoginOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const { invalidate: invalidateSubscription } = useSubscription();
+  // Track mounted state to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Only query subscription and tracked domains when user is authenticated
+  const isAuthenticated = !!session?.user;
+  const { invalidate: invalidateSubscription } = useSubscription({
+    enabled: isAuthenticated,
+  });
   const {
     domains: trackedDomains,
     isLoading: isLoadingDomains,
     invalidate: invalidateTrackedDomains,
-  } = useTrackedDomains();
+  } = useTrackedDomains({ enabled: isAuthenticated });
 
   // Find if this domain is already tracked
   const trackedDomain = trackedDomains?.find(
@@ -84,8 +94,9 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     [session?.user],
   );
 
-  // Show loading state while session or domains are loading
-  if (isSessionPending || (session?.user && isLoadingDomains)) {
+  // Show loading state during SSR, initial hydration, or while data is loading
+  // This ensures consistent rendering between server and client
+  if (!mounted || isSessionPending || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled>
         <Spinner className="size-4" />
