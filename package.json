@@ -52,7 +52,6 @@
     "class-variance-authority": "^0.7.1",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "country-flag-icons": "^1.6.4",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
