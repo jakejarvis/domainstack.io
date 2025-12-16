@@ -22,7 +22,7 @@ export function DomainUnregisteredState({
     >
       <div
         aria-hidden
-        className="-inset-x-16 -top-16 pointer-events-none absolute h-40 accent-glow opacity-40 blur-3xl"
+        className="pointer-events-none absolute -inset-x-16 -top-16 h-40 accent-glow opacity-40 blur-3xl"
       />
 
       <h2 className="font-semibold text-2xl tracking-tight sm:text-3xl">

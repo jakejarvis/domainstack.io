@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Ban,
   ChevronRight,
@@ -12,7 +10,7 @@ import {
   Signal,
   X,
 } from "lucide-react";
-import { motion } from "motion/react";
+import * as motion from "motion/react-client";
 import { useCallback, useMemo, useState } from "react";
 import { SubheadCount } from "@/components/domain/subhead-count";
 import {

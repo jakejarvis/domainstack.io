@@ -1,10 +1,7 @@
-"use client";
-
 import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
-import { motion } from "motion/react";
+import * as motion from "motion/react-client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -42,13 +39,6 @@ export function DashboardHeader({
   hasAnyDomains = false,
 }: DashboardHeaderProps) {
   const percentage = maxDomains > 0 ? (trackedCount / maxDomains) * 100 : 0;
-  const [hasHydrated, setHasHydrated] = useState(false);
-
-  // Avoid animating the toggle during hydration when localStorage preferences reconcile
-  // (e.g. SSR renders grid, client prefers table). Enable motion after mount.
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -103,11 +93,7 @@ export function DashboardHeader({
                 aria-hidden
                 className="pointer-events-none absolute inset-y-0 left-0 z-0 w-10 rounded-md bg-primary"
                 animate={{ x: viewMode === "grid" ? 0 : 40 }}
-                transition={
-                  hasHydrated
-                    ? { type: "spring", stiffness: 550, damping: 45 }
-                    : { duration: 0 }
-                }
+                transition={{ type: "spring", stiffness: 550, damping: 45 }}
                 initial={false}
               />
               <Tooltip>

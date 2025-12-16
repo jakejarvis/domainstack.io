@@ -153,11 +153,11 @@ export function DashboardBanner({
         <>
           <div
             aria-hidden
-            className="-right-16 -top-16 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+            className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent-gold/15 blur-3xl"
           />
           <div
             aria-hidden
-            className="-bottom-16 -left-16 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
+            className="pointer-events-none absolute -bottom-16 -left-16 size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
           />
         </>
       )}

@@ -103,7 +103,7 @@ export function TrackedDomainsView({
         {/* Decorative gradient orbs */}
         <div
           aria-hidden
-          className="-translate-x-1/2 -translate-y-1/2 pointer-events-none absolute top-0 left-1/4 size-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
+          className="pointer-events-none absolute top-0 left-1/4 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
         />
         <div
           aria-hidden

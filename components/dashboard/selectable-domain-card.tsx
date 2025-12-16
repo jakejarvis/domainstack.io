@@ -1,6 +1,4 @@
-"use client";
-
-import { motion } from "motion/react";
+import * as motion from "motion/react-client";
 import { TrackedDomainCard } from "@/components/dashboard/tracked-domain-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { cn } from "@/lib/utils";

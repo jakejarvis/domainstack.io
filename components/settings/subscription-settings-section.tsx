@@ -124,11 +124,11 @@ export function SubscriptionSettingsSection() {
             {/* Decorative elements - subtle warm glows */}
             <div
               aria-hidden
-              className="-right-8 -top-8 pointer-events-none absolute size-32 rounded-full bg-accent-gold/15 blur-3xl"
+              className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/15 blur-3xl"
             />
             <div
               aria-hidden
-              className="-bottom-8 -left-8 pointer-events-none absolute size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
+              className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
             />
 
             <div className="relative">

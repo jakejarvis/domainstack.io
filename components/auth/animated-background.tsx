@@ -11,7 +11,7 @@ export function AnimatedBackground() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="-z-10 pointer-events-none fixed inset-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {/* Base gradient layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5" />
 

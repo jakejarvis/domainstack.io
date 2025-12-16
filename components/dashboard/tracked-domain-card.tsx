@@ -111,7 +111,7 @@ export function TrackedDomainCard({
       <div
         aria-hidden
         className={cn(
-          "-inset-x-8 -top-8 pointer-events-none absolute h-24 opacity-30 blur-2xl",
+          "pointer-events-none absolute -inset-x-8 -top-8 h-24 opacity-30 blur-2xl",
           "accent-glow",
         )}
       />
@@ -135,7 +135,7 @@ export function TrackedDomainCard({
                 onCheckedChange={onToggleSelect}
                 aria-label={`Select ${domainName}`}
                 className={cn(
-                  "-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 size-5 cursor-pointer",
+                  "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer",
                   isSelected ? "flex" : "hidden group-hover:flex",
                 )}
               />

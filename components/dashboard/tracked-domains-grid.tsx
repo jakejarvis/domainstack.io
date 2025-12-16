@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
-import { useMemo, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef } from "react";
 import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -30,90 +30,68 @@ export function TrackedDomainsGrid({
 }: TrackedDomainsGridProps) {
   const showUpgradeCard = tier === "free";
 
-  // Track seen domain IDs to only animate new items
-  const seenIdsRef = useRef<Set<string>>(new Set());
-  const hasSeenUpgradeRef = useRef(false);
+  // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
+  const isFirstMountRef = useRef(true);
+  useEffect(() => {
+    isFirstMountRef.current = false;
+  }, []);
 
-  // Determine which items are new (for animation)
-  const domainAnimationStates = useMemo(() => {
-    const states = domains.map((domain, index) => {
-      const isNew = !seenIdsRef.current.has(domain.id);
-      return { domain, isNew, index };
-    });
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const duration = 0.18;
+  const layoutTransition = { duration, ease } as const;
 
-    // Update seen IDs after computing states
-    for (const domain of domains) {
-      seenIdsRef.current.add(domain.id);
-    }
+  const getItemMotionProps = (index: number) => {
+    const delay = isFirstMountRef.current ? Math.min(index * 0.05, 0.3) : 0;
 
-    return states;
-  }, [domains]);
-
-  const shouldAnimateUpgrade = showUpgradeCard && !hasSeenUpgradeRef.current;
-  if (showUpgradeCard) {
-    hasSeenUpgradeRef.current = true;
-  }
+    return {
+      layout: "position" as const,
+      initial: { opacity: 0, y: 10 },
+      animate: { opacity: 1, y: 0 },
+      exit: { opacity: 0, y: -10 },
+      transition: {
+        // Stagger only the "enter" fade/slide; never delay layout reflow.
+        opacity: { duration, ease, delay },
+        y: { duration, ease, delay },
+        layout: layoutTransition,
+      },
+    };
+  };
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {domainAnimationStates.map(({ domain, isNew, index }) => (
-        <motion.div
-          key={domain.id}
-          className="h-full"
-          layout="position"
-          initial={isNew ? { opacity: 0, y: 20 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={
-            isNew
-              ? { delay: Math.min(index * 0.05, 0.3), duration: 0.3 }
-              : { duration: 0 }
-          }
-        >
-          <SelectableDomainCard
-            domain={domain}
-            isSelected={selectedIds.has(domain.id)}
-            onToggleSelect={() => onToggleSelect?.(domain.id)}
-            onVerify={() => onVerify(domain)}
-            onRemove={() => onRemove(domain.id, domain.domainName)}
-            onArchive={
-              onArchive
-                ? () => onArchive(domain.id, domain.domainName)
-                : undefined
-            }
-          />
-        </motion.div>
-      ))}
+      <AnimatePresence>
+        {domains.map((domain, index) => (
+          <motion.div
+            key={domain.id}
+            className="h-full"
+            {...getItemMotionProps(index)}
+          >
+            <SelectableDomainCard
+              domain={domain}
+              isSelected={selectedIds.has(domain.id)}
+              onToggleSelect={() => onToggleSelect?.(domain.id)}
+              onVerify={() => onVerify(domain)}
+              onRemove={() => onRemove(domain.id, domain.domainName)}
+              onArchive={
+                onArchive
+                  ? () => onArchive(domain.id, domain.domainName)
+                  : undefined
+              }
+            />
+          </motion.div>
+        ))}
 
-      {/* Upgrade CTA card for free tier users */}
-      {showUpgradeCard && (
-        <motion.div
-          className="h-full"
-          layout="position"
-          initial={shouldAnimateUpgrade ? { opacity: 0, y: 20 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={
-            shouldAnimateUpgrade
-              ? {
-                  opacity: {
-                    delay: Math.min(domains.length * 0.05, 0.3),
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1] as const,
-                  },
-                  y: {
-                    delay: Math.min(domains.length * 0.05, 0.3),
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1] as const,
-                  },
-                  // Never delay layout reflow; otherwise the CTA can feel like it
-                  // "slowly slides in" as the grid settles.
-                  layout: { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const },
-                }
-              : { duration: 0, layout: { duration: 0 } }
-          }
-        >
-          <UpgradeCard proMaxDomains={proMaxDomains} />
-        </motion.div>
-      )}
+        {/* Free-tier CTA: treated as just another (last) grid item */}
+        {showUpgradeCard && (
+          <motion.div
+            key="upgrade-cta"
+            className="h-full"
+            {...getItemMotionProps(domains.length)}
+          >
+            <UpgradeCard proMaxDomains={proMaxDomains} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

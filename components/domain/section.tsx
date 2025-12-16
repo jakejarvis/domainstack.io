@@ -54,7 +54,7 @@ export function Section({
         <div
           aria-hidden
           className={cn(
-            "-inset-x-8 -top-8 pointer-events-none absolute h-24 opacity-30 blur-2xl",
+            "pointer-events-none absolute -inset-x-8 -top-8 h-24 opacity-30 blur-2xl",
             "accent-glow",
           )}
         />

@@ -47,7 +47,7 @@ export default function RootLayout({
       <body className="min-h-svh overscroll-none font-sans tabular-nums antialiased">
         <Providers>
           {/* Solid background for light/dark modes */}
-          <div aria-hidden className="-z-10 fixed inset-0 bg-background" />
+          <div aria-hidden className="fixed inset-0 -z-10 bg-background" />
 
           {/* App Shell */}
           <div className="isolate flex min-h-svh flex-col">

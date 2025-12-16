@@ -63,7 +63,7 @@ export function AnnouncementPill() {
                   </span>
                   <span>Track domains &amp; get health alerts.</span>
                 </div>
-                <ArrowUpRight className="group-hover:-translate-y-[1px] size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px]" />
+                <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />
               </Link>
 
               <div className="h-4 w-px bg-black/10 dark:bg-white/10" />

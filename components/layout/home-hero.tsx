@@ -71,7 +71,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
         style={{ width: measuredWidth ?? undefined }}
       >
         <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
-          <span className="-translate-x-1/2 absolute left-1/2">
+          <span className="absolute left-1/2 -translate-x-1/2">
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={rotatingWords[index]}

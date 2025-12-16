@@ -4,7 +4,7 @@ export default function StaticLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative flex-1">
       {/* Subtle gradient background accents */}
-      <div className="-z-10 pointer-events-none fixed inset-0 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/3 via-transparent to-accent-purple/3" />
         <div className="absolute top-0 right-1/4 h-[500px] w-[500px] rounded-full bg-accent-blue/5 blur-3xl" />
         <div className="absolute bottom-0 left-1/4 h-[500px] w-[500px] rounded-full bg-accent-purple/5 blur-3xl" />
