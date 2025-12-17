@@ -10,9 +10,11 @@ describe("CreateIssueButton", () => {
     expect(
       screen.getByRole("button", { name: /create github issue/i }),
     ).toBeInTheDocument();
-    // The svg isn't directly role-accessible; check it exists under the link
-    const linkEl = screen.getByRole("button", { name: /create github issue/i });
-    expect(linkEl.querySelector("svg")).not.toBeNull();
+    // The svg isn't directly role-accessible; check it exists under the button
+    const buttonEl = screen.getByRole("button", {
+      name: /create github issue/i,
+    });
+    expect(buttonEl.querySelector("svg")).not.toBeNull();
   });
 
   it("prefills URL parameters", () => {
