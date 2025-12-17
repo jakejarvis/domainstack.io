@@ -172,13 +172,12 @@ export function MultiSelect<T extends string>({
         <Combobox.Positioner align="start" sideOffset={4}>
           <Combobox.Popup
             className={cn(
-              // Mirror `PopoverContent` base styling exactly.
-              "z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden",
+              // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
+              "z-50 w-72 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
               "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
               "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
               "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
               popoverWidth,
-              "p-0",
             )}
           >
             {/* Mirror `Command` wrapper styling */}
@@ -204,7 +203,9 @@ export function MultiSelect<T extends string>({
 
               <Combobox.Empty
                 data-slot="command-empty"
-                className="py-6 text-center text-sm"
+                // Base UI keeps the element mounted; when `children` becomes `null`, padding would still reserve space.
+                // `empty:hidden` ensures this doesn't create a blank region at the top of the list.
+                className="py-6 text-center text-sm empty:hidden"
               >
                 No results found.
               </Combobox.Empty>
