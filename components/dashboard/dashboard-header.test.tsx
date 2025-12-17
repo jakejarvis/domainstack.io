@@ -149,7 +149,7 @@ describe("DashboardHeader", () => {
       />,
     );
 
-    const addButton = screen.getByRole("link", { name: /Add Domain/i });
+    const addButton = screen.getByRole("button", { name: /Add Domain/i });
     expect(addButton).not.toBeDisabled();
   });
 });

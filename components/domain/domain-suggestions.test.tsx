@@ -50,7 +50,7 @@ describe("DomainSuggestionsClient", () => {
     );
     // Wait for a known suggestion like jarv.is to appear
     expect(
-      await screen.findByRole("link", { name: /jarv\.is/i }),
+      await screen.findByRole("button", { name: /jarv\.is/i }),
     ).toBeInTheDocument();
     // At least one favicon placeholder should exist
     expect(
@@ -61,7 +61,7 @@ describe("DomainSuggestionsClient", () => {
   it("renders no suggestions when defaultSuggestions is empty and no history", async () => {
     renderWithProvider(<DomainSuggestionsClient defaultSuggestions={[]} />);
     // Container should render but with no buttons
-    const buttons = screen.queryAllByRole("link");
+    const buttons = screen.queryAllByRole("button");
     expect(buttons.length).toBe(0);
   });
 
@@ -78,11 +78,13 @@ describe("DomainSuggestionsClient", () => {
     );
     // History entries appear
     expect(
-      await screen.findByRole("link", { name: /foo\.com/i }),
+      await screen.findByRole("button", { name: /foo\.com/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /bar\.org/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /bar\.org/i }),
+    ).toBeInTheDocument();
     // github.com appears only once (deduped with suggestions)
-    expect(screen.getAllByRole("link", { name: /github\.com/i }).length).toBe(
+    expect(screen.getAllByRole("button", { name: /github\.com/i }).length).toBe(
       1,
     );
   });
@@ -95,14 +97,16 @@ describe("DomainSuggestionsClient", () => {
     renderWithProvider(<DomainSuggestionsClient defaultSuggestions={[]} />);
     // History entries appear
     expect(
-      await screen.findByRole("link", { name: /example\.com/i }),
+      await screen.findByRole("button", { name: /example\.com/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /test\.org/i }),
+      screen.getByRole("button", { name: /test\.org/i }),
     ).toBeInTheDocument();
     // Should show 2 history items + 1 clear history button
-    expect(screen.getAllByRole("link").length).toBe(2);
-    expect(screen.getAllByRole("button").length).toBe(1);
+    expect(screen.getAllByRole("button").length).toBe(3);
+    expect(
+      screen.getByRole("button", { name: /clear history/i }),
+    ).toBeInTheDocument();
   });
 
   it("invokes onSelect when a suggestion is clicked", async () => {
@@ -112,7 +116,7 @@ describe("DomainSuggestionsClient", () => {
       <DomainSuggestionsClient defaultSuggestions={DEFAULT_TEST_SUGGESTIONS} />,
       onSelect,
     );
-    await userEvent.click(screen.getByRole("link", { name: /example.com/i }));
+    await userEvent.click(screen.getByRole("button", { name: /example.com/i }));
     expect(onSelect).toHaveBeenCalledWith("example.com");
   });
 });

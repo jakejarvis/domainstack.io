@@ -8,17 +8,17 @@ describe("CreateIssueButton", () => {
     render(<CreateIssueButton />);
     // lucide icons render an svg with aria-hidden=true; presence of svg is enough
     expect(
-      screen.getByRole("link", { name: /create github issue/i }),
+      screen.getByRole("button", { name: /create github issue/i }),
     ).toBeInTheDocument();
     // The svg isn't directly role-accessible; check it exists under the link
-    const linkEl = screen.getByRole("link", { name: /create github issue/i });
+    const linkEl = screen.getByRole("button", { name: /create github issue/i });
     expect(linkEl.querySelector("svg")).not.toBeNull();
   });
 
   it("prefills URL parameters", () => {
     const error = new Error("Something exploded");
     render(<CreateIssueButton error={error} />);
-    const link = screen.getByRole("link", {
+    const link = screen.getByRole("button", {
       name: /create github issue/i,
     }) as HTMLAnchorElement;
     const url = new URL(link.href);
