@@ -53,6 +53,7 @@ export function AuthButton() {
       <Button
         variant="ghost"
         size="sm"
+        nativeButton={false}
         render={
           <Link
             href="/login"
