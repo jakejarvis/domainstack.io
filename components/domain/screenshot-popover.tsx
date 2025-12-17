@@ -21,7 +21,7 @@ export function ScreenshotPopover({
   const [tapCount, setTapCount] = useState(0);
   const { isTouchDevice } = usePointerCapability();
 
-  // Reset tap count when tooltip closes
+  // Reset tap count when popover closes
   useEffect(() => {
     if (!open) {
       setTapCount(0);

@@ -4,7 +4,7 @@ import { Combobox } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -67,11 +67,16 @@ export function MultiSelect<T extends string>({
 
   const { contains } = Combobox.useFilter({ multiple: true });
 
-  const flatOptions = sections
-    ? sections.flatMap((section) => section.options)
-    : (options ?? []);
+  const flatOptions = useMemo(() => {
+    return sections
+      ? sections.flatMap((section) => section.options)
+      : (options ?? []);
+  }, [options, sections]);
 
-  const optionByValue = new Map(flatOptions.map((opt) => [opt.value, opt]));
+  const optionByValue = useMemo(() => {
+    return new Map(flatOptions.map((opt) => [opt.value, opt]));
+  }, [flatOptions]);
+
   const selectedItems = selected
     .map((v) => optionByValue.get(v))
     .filter(Boolean) as Array<MultiSelectOption<T>>;
