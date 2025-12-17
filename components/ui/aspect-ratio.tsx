@@ -15,7 +15,7 @@ function AspectRatio({
       style: {
         "--ratio": ratio,
       } as React.CSSProperties,
-      className: cn("relative aspect-(--ratio)", className),
+      className: cn("relative aspect-[var(--ratio)]", className),
     }),
     state: {
       slot: "aspect-ratio",

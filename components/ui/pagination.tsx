@@ -123,11 +123,10 @@ function PaginationEllipsis({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(props, {
-      "aria-hidden": true,
       className: cn("flex size-9 items-center justify-center", className),
       children: (
         <>
-          <MoreHorizontalIcon className="size-4" />
+          <MoreHorizontalIcon className="size-4" aria-hidden={true} />
           <span className="sr-only">More pages</span>
         </>
       ),

@@ -123,18 +123,11 @@ function BreadcrumbEllipsis({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(props, {
-      role: "presentation",
-      "aria-hidden": "true",
       className: cn(
         "flex size-5 items-center justify-center [&>svg]:size-4",
         className,
       ),
-      children: (
-        <>
-          <MoreHorizontalIcon />
-          <span className="sr-only">More</span>
-        </>
-      ),
+      children: <MoreHorizontalIcon aria-hidden={true} />,
     }),
     state: {
       slot: "breadcrumb-ellipsis",

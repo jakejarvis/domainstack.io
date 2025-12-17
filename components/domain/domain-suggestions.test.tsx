@@ -123,8 +123,7 @@ describe("DomainSuggestionsClient", () => {
 
     await waitFor(() => {
       const stored = localStorage.getItem("search-history");
-      const parsed = JSON.parse(stored ?? "[]") as unknown;
-      expect(parsed).toEqual([]);
+      expect(JSON.parse(stored ?? "[]")).toEqual([]);
       expect(
         screen.queryByRole("button", { name: /example\.com/i }),
       ).not.toBeInTheDocument();
