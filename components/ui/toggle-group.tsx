@@ -1,7 +1,9 @@
 "use client";
 
+import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
+import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "class-variance-authority";
-import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui";
+import { motion } from "motion/react";
 import * as React from "react";
 import { toggleVariants } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
@@ -18,24 +20,152 @@ function ToggleGroup({
   variant,
   size,
   children,
+  withActiveIndicator = false,
+  indicatorClassName,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
-  VariantProps<typeof toggleVariants>) {
+}: ToggleGroupPrimitive.Props &
+  VariantProps<typeof toggleVariants> & {
+    /**
+     * Enables a segmented-control style animated pill behind the active item.
+     * Detects active items by checking (in order):
+     * - aria-pressed="true"
+     * - data-pressed (Base UI Toggle)
+     * - data-state="on"
+     * - data-state="active"
+     */
+    withActiveIndicator?: boolean;
+    /** Optional classes for the animated pill */
+    indicatorClassName?: string;
+  }) {
+  const groupRef = React.useRef<HTMLDivElement | null>(null);
+  const [indicatorRect, setIndicatorRect] = React.useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (!withActiveIndicator) return;
+    const group = groupRef.current;
+    if (!group) return;
+
+    let rafId: number | null = null;
+
+    const updateIndicator = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+
+        const active =
+          (group.querySelector(
+            '[aria-pressed="true"]',
+          ) as HTMLElement | null) ??
+          (group.querySelector("[data-pressed]") as HTMLElement | null) ??
+          (group.querySelector('[data-state="on"]') as HTMLElement | null) ??
+          (group.querySelector('[data-state="active"]') as HTMLElement | null);
+
+        if (!active) {
+          setIndicatorRect(null);
+          return;
+        }
+
+        // Prefer offset* metrics (pixel-perfect in layout coords) to avoid subtle
+        // sub-pixel drift from getBoundingClientRect() across browsers/zoom levels.
+        if (active.offsetParent === group) {
+          if (active.offsetWidth <= 0 || active.offsetHeight <= 0) return;
+          setIndicatorRect({
+            x: active.offsetLeft,
+            y: active.offsetTop,
+            width: active.offsetWidth,
+            height: active.offsetHeight,
+          });
+          return;
+        }
+
+        // Fallback: compute relative rects
+        const groupRect = group.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
+
+        if (activeRect.width <= 0 || activeRect.height <= 0) return;
+
+        setIndicatorRect({
+          x: activeRect.left - groupRect.left,
+          y: activeRect.top - groupRect.top,
+          width: activeRect.width,
+          height: activeRect.height,
+        });
+      });
+    };
+
+    updateIndicator();
+
+    const resizeObserver = new ResizeObserver(updateIndicator);
+    resizeObserver.observe(group);
+
+    const mutationObserver = new MutationObserver(updateIndicator);
+    mutationObserver.observe(group, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-pressed", "data-state", "data-pressed", "class"],
+    });
+
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [withActiveIndicator]);
+
   return (
-    <ToggleGroupPrimitive.Root
+    <ToggleGroupPrimitive
       data-slot="toggle-group"
       data-variant={variant}
       data-size={size}
       className={cn(
-        "group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
+        "group/toggle-group flex w-fit items-stretch rounded-md data-[variant=outline]:shadow-xs",
+        withActiveIndicator &&
+          "relative overflow-hidden [&>*:not([data-slot=toggle-group-indicator])]:relative [&>*:not([data-slot=toggle-group-indicator])]:z-10",
         className,
       )}
+      ref={groupRef}
       {...props}
     >
+      {withActiveIndicator && (
+        <motion.span
+          aria-hidden="true"
+          data-slot="toggle-group-indicator"
+          className={cn(
+            "pointer-events-none absolute top-0 left-0 z-0 rounded-md",
+            "bg-background/90 shadow-sm ring-1 ring-black/10",
+            "dark:bg-white/10 dark:shadow-none dark:ring-white/15",
+            "will-change-[transform,width,height]",
+            indicatorClassName,
+          )}
+          initial={false}
+          animate={
+            indicatorRect
+              ? {
+                  opacity: 1,
+                  x: indicatorRect.x,
+                  y: indicatorRect.y,
+                  width: indicatorRect.width,
+                  height: indicatorRect.height,
+                }
+              : { opacity: 0 }
+          }
+          // Use a tween to avoid spring overshoot increasing scroll size and
+          // subtly shifting adjacent layout in tight flex rows.
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] as const }}
+        />
+      )}
       <ToggleGroupContext.Provider value={{ variant, size }}>
         {children}
       </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive.Root>
+    </ToggleGroupPrimitive>
   );
 }
 
@@ -45,12 +175,11 @@ function ToggleGroupItem({
   variant,
   size,
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
-  VariantProps<typeof toggleVariants>) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
   const context = React.useContext(ToggleGroupContext);
 
   return (
-    <ToggleGroupPrimitive.Item
+    <TogglePrimitive
       data-slot="toggle-group-item"
       data-variant={context.variant || variant}
       data-size={context.size || size}
@@ -65,7 +194,7 @@ function ToggleGroupItem({
       {...props}
     >
       {children}
-    </ToggleGroupPrimitive.Item>
+    </TogglePrimitive>
   );
 }
 

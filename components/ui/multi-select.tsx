@@ -1,24 +1,12 @@
 "use client";
 
+import { Combobox, type ComboboxFilterOptions } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, SearchIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export type MultiSelectOption<T extends string> = {
@@ -59,7 +47,7 @@ export type MultiSelectProps<T extends string> = {
 };
 
 /**
- * A multi-select dropdown component using Popover + Command (cmdk).
+ * A multi-select dropdown component using Base UI Combobox.
  * Supports optional search, sections, custom rendering, and displays a selection count badge.
  */
 export function MultiSelect<T extends string>({
@@ -75,96 +63,226 @@ export function MultiSelect<T extends string>({
   popoverWidth = "w-48",
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
-  const toggleOption = (value: T) => {
-    if (selected.includes(value)) {
-      onSelectionChange(selected.filter((v) => v !== value));
-    } else {
-      onSelectionChange([...selected, value]);
-    }
-  };
+  const { contains } = Combobox.useFilter({
+    multiple: true,
+  } satisfies ComboboxFilterOptions);
+
+  const flatOptions = useMemo(() => {
+    return sections
+      ? sections.flatMap((section) => section.options)
+      : (options ?? []);
+  }, [options, sections]);
+
+  const optionByValue = useMemo(() => {
+    return new Map(flatOptions.map((opt) => [opt.value, opt]));
+  }, [flatOptions]);
+
+  const selectedItems = selected
+    .map((v) => optionByValue.get(v))
+    .filter(Boolean) as Array<MultiSelectOption<T>>;
 
   // Default option renderer
   const defaultRenderOption = (option: MultiSelectOption<T>) => option.label;
   const optionRenderer = renderOption ?? defaultRenderOption;
 
+  const filterOption = (option: MultiSelectOption<T>, query: string) => {
+    const q = query.trim();
+    if (q === "") return true;
+
+    // Match label/value/keywords using Base UI's locale-aware matcher.
+    if (contains(option.label, q)) return true;
+    if (contains(option.value, q)) return true;
+    return (option.keywords ?? []).some((keyword) => contains(keyword, q));
+  };
+
+  const itemClassName = cn(
+    "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden",
+    "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+    // `data-highlighted` matches the highlighted/active item state.
+    "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+    "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  );
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "h-9 gap-2 px-3",
-            selected.length > 0 &&
-              "border-foreground/20 bg-primary/3 dark:border-foreground/15 dark:bg-primary/10",
-            className,
-          )}
-        >
-          <Icon className="size-4 opacity-60" />
-          {label}
-          {selected.length > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
-              {selected.length}
-            </span>
-          )}
-          <ChevronDown className="size-4 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className={cn(popoverWidth, "p-0")} align="start">
-        <Command>
-          {searchable && <CommandInput placeholder={`Search ${label}...`} />}
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            {sections ? (
-              // Render sections
-              sections.map((section) => (
-                <CommandGroup key={section.label} heading={section.label}>
-                  {section.options.map((option) => {
+    <Combobox.Root
+      items={
+        sections
+          ? sections.map((section) => ({
+              value: section.label,
+              items: section.options,
+            }))
+          : (options ?? [])
+      }
+      multiple
+      open={open}
+      onOpenChange={(nextOpen, eventDetails) => {
+        // Preserve previous behavior: selecting items should not close the popup.
+        if (
+          !nextOpen &&
+          // Base UI uses reason strings like "item-press" in its change event details.
+          (eventDetails as { reason?: string } | undefined)?.reason ===
+            "item-press"
+        ) {
+          return;
+        }
+
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setInputValue("");
+        }
+      }}
+      value={selectedItems}
+      onValueChange={(next, _eventDetails) => {
+        const nextArray = Array.isArray(next) ? next : next ? [next] : [];
+        onSelectionChange(nextArray.map((opt) => opt.value));
+      }}
+      // Keep the search query stable when selecting items.
+      inputValue={searchable ? inputValue : undefined}
+      onInputValueChange={
+        searchable
+          ? (nextSearch, { reason }) => {
+              if (reason === "item-press") {
+                return;
+              }
+              setInputValue(nextSearch);
+            }
+          : undefined
+      }
+      filter={searchable ? filterOption : null}
+    >
+      <Combobox.Trigger
+        render={
+          <Button
+            variant="outline"
+            className={cn(
+              "h-9 gap-2 px-3",
+              selected.length > 0 &&
+                "border-foreground/20 bg-primary/3 dark:border-foreground/15 dark:bg-primary/10",
+              className,
+            )}
+          >
+            <Icon className="size-4 opacity-60" />
+            {label}
+            {selected.length > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
+                {selected.length}
+              </span>
+            )}
+            <ChevronDown className="size-4 opacity-50" />
+          </Button>
+        }
+      />
+
+      <Combobox.Portal>
+        <Combobox.Positioner align="start" sideOffset={4}>
+          <Combobox.Popup
+            className={cn(
+              // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
+              "z-50 w-72 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
+              "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
+              "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+              "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
+              popoverWidth,
+            )}
+          >
+            {/* Mirror `Command` wrapper styling */}
+            <div
+              data-slot="command"
+              className="flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground"
+            >
+              {searchable && (
+                <div
+                  data-slot="command-input-wrapper"
+                  className="flex h-9 items-center gap-2 border-b px-3"
+                >
+                  <SearchIcon className="size-4 shrink-0 opacity-50" />
+                  <Combobox.Input
+                    autoFocus
+                    placeholder={`Search ${label}...`}
+                    className={cn(
+                      "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                  />
+                </div>
+              )}
+
+              <Combobox.Empty
+                data-slot="command-empty"
+                // Base UI keeps the element mounted; when `children` becomes `null`, padding would still reserve space.
+                // `empty:hidden` ensures this doesn't create a blank region at the top of the list.
+                className="py-6 text-center text-sm empty:hidden"
+              >
+                No results found.
+              </Combobox.Empty>
+
+              {sections ? (
+                <Combobox.List
+                  data-slot="command-list"
+                  className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden"
+                >
+                  {(group: {
+                    value: string;
+                    items: Array<MultiSelectOption<T>>;
+                  }) => (
+                    <Combobox.Group
+                      key={group.value}
+                      items={group.items}
+                      data-slot="command-group"
+                      className="overflow-hidden p-1 text-foreground"
+                    >
+                      <Combobox.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
+                        {group.value}
+                      </Combobox.GroupLabel>
+                      <Combobox.Collection>
+                        {(option: MultiSelectOption<T>) => {
+                          const isSelected = selected.includes(option.value);
+                          return (
+                            <Combobox.Item
+                              key={option.value}
+                              value={option}
+                              className={itemClassName}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                className="pointer-events-none"
+                              />
+                              {optionRenderer(option)}
+                            </Combobox.Item>
+                          );
+                        }}
+                      </Combobox.Collection>
+                    </Combobox.Group>
+                  )}
+                </Combobox.List>
+              ) : (
+                <Combobox.List
+                  data-slot="command-list"
+                  className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden p-1 text-foreground"
+                >
+                  {(option: MultiSelectOption<T>) => {
                     const isSelected = selected.includes(option.value);
                     return (
-                      <CommandItem
+                      <Combobox.Item
                         key={option.value}
-                        value={option.value}
-                        keywords={option.keywords}
-                        onSelect={() => toggleOption(option.value)}
-                        className="cursor-pointer"
+                        value={option}
+                        className={itemClassName}
                       >
                         <Checkbox
                           checked={isSelected}
                           className="pointer-events-none"
                         />
                         {optionRenderer(option)}
-                      </CommandItem>
+                      </Combobox.Item>
                     );
-                  })}
-                </CommandGroup>
-              ))
-            ) : (
-              // Render flat options list
-              <CommandGroup>
-                {options?.map((option) => {
-                  const isSelected = selected.includes(option.value);
-                  return (
-                    <CommandItem
-                      key={option.value}
-                      value={option.value}
-                      keywords={option.keywords}
-                      onSelect={() => toggleOption(option.value)}
-                      className="cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        className="pointer-events-none"
-                      />
-                      {optionRenderer(option)}
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                  }}
+                </Combobox.List>
+              )}
+            </div>
+          </Combobox.Popup>
+        </Combobox.Positioner>
+      </Combobox.Portal>
+    </Combobox.Root>
   );
 }

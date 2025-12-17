@@ -20,7 +20,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Empty,
   EmptyDescription,
@@ -34,6 +33,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
@@ -208,30 +208,32 @@ export function RobotsSummary({
                   ) : null}
                 </InputGroup>
 
-                <ButtonGroup
+                <ToggleGroup
+                  multiple={false}
+                  value={[only]}
+                  onValueChange={(groupValue) => {
+                    const next = groupValue[0] as typeof only | undefined;
+                    setOnly(next ?? "all");
+                  }}
                   withActiveIndicator
                   className="!w-full sm:!w-auto h-9 items-stretch rounded-lg border border-muted-foreground/15 bg-muted/30 p-[3px] dark:border-white/15 dark:bg-muted/50 [&>*]:flex-1 sm:[&>*]:flex-none"
                 >
-                  <Button
-                    type="button"
+                  <ToggleGroupItem
+                    value="all"
                     variant="ghost"
-                    aria-pressed={only === "all"}
-                    onClick={() => setOnly("all")}
                     className={cn(
                       "h-[calc(100%-1px)] cursor-pointer px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
+                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
                     )}
                   >
                     All
-                  </Button>
-                  <Button
-                    type="button"
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="allow"
                     variant="ghost"
-                    aria-pressed={only === "allow"}
-                    onClick={() => setOnly("allow")}
                     className={cn(
                       "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
+                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
                     )}
                   >
                     <CircleCheck
@@ -240,15 +242,13 @@ export function RobotsSummary({
                     />
                     <span>Allow</span>
                     <SubheadCount count={counts.allows} color="slate" />
-                  </Button>
-                  <Button
-                    type="button"
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="disallow"
                     variant="ghost"
-                    aria-pressed={only === "disallow"}
-                    onClick={() => setOnly("disallow")}
                     className={cn(
                       "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[aria-pressed=true]]:cursor-default [&[aria-pressed=true]]:text-foreground",
+                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
                     )}
                   >
                     <Ban
@@ -257,8 +257,8 @@ export function RobotsSummary({
                     />
                     <span>Disallow</span>
                     <SubheadCount count={counts.disallows} color="slate" />
-                  </Button>
-                </ButtonGroup>
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
               {filtersActive && !hasFilteredRules ? (
@@ -427,11 +427,11 @@ function GroupsAccordion({
   });
 
   return isSearching ? (
-    <Accordion type="multiple" value={openValues as string[]}>
+    <Accordion multiple value={openValues as string[]}>
       {content}
     </Accordion>
   ) : (
-    <Accordion type="single" collapsible defaultValue={defaultValue}>
+    <Accordion defaultValue={defaultValue ? [defaultValue] : []}>
       {content}
     </Accordion>
   );
@@ -589,11 +589,13 @@ function RuleTypeDot({
           : "text-purple-500";
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex h-4 w-4 items-center justify-center">
-          <Icon className={cn("size-3.5", colorClass)} aria-hidden />
-        </div>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <div className="flex h-4 w-4 items-center justify-center">
+            <Icon className={cn("size-3.5", colorClass)} aria-hidden />
+          </div>
+        }
+      />
       <TooltipContent side="left">{label}</TooltipContent>
     </Tooltip>
   );

@@ -5,12 +5,12 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 export function Section({
@@ -70,20 +70,25 @@ export function Section({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-base">{title}</span>
                   {help && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span
-                          role="img"
-                          aria-label={`More info about ${title}`}
-                        >
-                          <Info
-                            className="h-3.5 w-3.5 opacity-60"
-                            aria-hidden
-                          />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>{help}</TooltipContent>
-                    </Tooltip>
+                    <ResponsiveTooltip>
+                      <ResponsiveTooltipTrigger
+                        nativeButton={false}
+                        render={
+                          <span
+                            role="img"
+                            aria-label={`More info about ${title}`}
+                          >
+                            <Info
+                              className="h-3.5 w-3.5 opacity-60"
+                              aria-hidden
+                            />
+                          </span>
+                        }
+                      />
+                      <ResponsiveTooltipContent>
+                        {help}
+                      </ResponsiveTooltipContent>
+                    </ResponsiveTooltip>
                   )}
                 </CardTitle>
                 {(description || help) && (

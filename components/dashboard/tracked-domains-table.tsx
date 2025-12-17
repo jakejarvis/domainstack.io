@@ -29,7 +29,7 @@ import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
-import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -40,10 +40,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
@@ -110,9 +110,15 @@ function ProviderCell({
 
   if (tooltipData.shouldShowTooltip) {
     return (
-      <Tooltip open={tooltipData.isOpen} onOpenChange={tooltipData.setIsOpen}>
-        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
-        <TooltipContent>
+      <ResponsiveTooltip
+        open={tooltipData.isOpen}
+        onOpenChange={tooltipData.setIsOpen}
+      >
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={providerContent}
+        />
+        <ResponsiveTooltipContent>
           <ProviderTooltipContent
             providerName={provider.name}
             providerDomain={provider.domain}
@@ -125,17 +131,20 @@ function ProviderCell({
             registrationSource={tooltipData.registrationSource}
             registrantInfo={tooltipData.registrantInfo}
           />
-        </TooltipContent>
-      </Tooltip>
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 
   if (isTruncated) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
-        <TooltipContent>{provider.name}</TooltipContent>
-      </Tooltip>
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          nativeButton={false}
+          render={providerContent}
+        />
+        <ResponsiveTooltipContent>{provider.name}</ResponsiveTooltipContent>
+      </ResponsiveTooltip>
     );
   }
 
@@ -222,7 +231,7 @@ export function TrackedDomainsTable({
         accessorKey: "domainName",
         header: "Domain",
         cell: ({ row }) => (
-          <ScreenshotTooltip domain={row.original.domainName}>
+          <ScreenshotPopover domain={row.original.domainName}>
             <Link
               href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}
@@ -232,7 +241,7 @@ export function TrackedDomainsTable({
                 {row.original.domainName}
               </span>
             </Link>
-          </ScreenshotTooltip>
+          </ScreenshotPopover>
         ),
         enableHiding: false, // Always show domain name
         // No size - let it auto-size to content
@@ -292,14 +301,15 @@ export function TrackedDomainsTable({
           }
           return (
             <div className="whitespace-nowrap text-[13px]">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>{format(date, "MMM d, yyyy")}</span>
-                </TooltipTrigger>
-                <TooltipContent>
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
+                  render={<span>{format(date, "MMM d, yyyy")}</span>}
+                />
+                <ResponsiveTooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             </div>
           );
         },
@@ -382,14 +392,15 @@ export function TrackedDomainsTable({
           const date = row.original.createdAt;
           return (
             <div className="whitespace-nowrap text-[13px]">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>{format(date, "MMM d, yyyy")}</span>
-                </TooltipTrigger>
-                <TooltipContent>
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
+                  render={<span>{format(date, "MMM d, yyyy")}</span>}
+                />
+                <ResponsiveTooltipContent>
                   {formatDateTimeUtc(date.toISOString())}
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             </div>
           );
         },
@@ -406,38 +417,46 @@ export function TrackedDomainsTable({
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon-sm"
-                className="cursor-pointer"
-              >
-                <MoreVertical />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="cursor-pointer"
+                >
+                  <MoreVertical />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a
-                  href={`https://${row.original.domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer pr-4"
-                >
-                  <ExternalLink className="size-3.5" />
-                  Open
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(row.original.domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <BookMarked className="size-3.5" />
-                  View Report
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                nativeButton={false}
+                render={
+                  <a
+                    href={`https://${row.original.domainName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer pr-4"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Open
+                  </a>
+                }
+              />
+              <DropdownMenuItem
+                nativeButton={false}
+                render={
+                  <Link
+                    href={`/${encodeURIComponent(row.original.domainName)}`}
+                    prefetch={false}
+                    className="cursor-pointer pr-4"
+                  >
+                    <BookMarked className="size-3.5" />
+                    View Report
+                  </Link>
+                }
+              />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={() =>

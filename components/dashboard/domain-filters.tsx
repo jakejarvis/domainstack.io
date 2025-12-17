@@ -419,22 +419,24 @@ export function DomainFilters({
         {/* Sort dropdown - only for grid view */}
         {viewMode === "grid" && onSortChange && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-9 cursor-pointer gap-2 px-3"
-              >
-                <span className="text-muted-foreground">Sort:</span>
-                <span className="inline-flex items-center gap-1.5">
-                  {currentSort?.shortLabel ?? "Select"}
-                  {currentSort?.direction && (
-                    <span className="text-muted-foreground">
-                      {currentSort.direction === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="h-9 cursor-pointer gap-2 px-3"
+                >
+                  <span className="text-muted-foreground">Sort:</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    {currentSort?.shortLabel ?? "Select"}
+                    {currentSort?.direction && (
+                      <span className="text-muted-foreground">
+                        {currentSort.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenuItem
@@ -474,41 +476,43 @@ export function DomainFilters({
       <div className="lg:hidden">
         <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
           <div className="flex items-center gap-2">
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex-1 cursor-pointer justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <Filter className="size-4 opacity-60" />
-                  Filters
-                  <AnimatePresence initial={false}>
-                    {hasActiveFilters && (
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{
-                          duration: 0.16,
-                          ease: [0.22, 1, 0.36, 1] as const,
-                        }}
-                        className="ml-1 inline-flex"
-                      >
-                        <Badge variant="secondary">
-                          {activeFilterChips.length}
-                        </Badge>
-                      </motion.span>
+            <CollapsibleTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="flex-1 cursor-pointer justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <Filter className="size-4 opacity-60" />
+                    Filters
+                    <AnimatePresence initial={false}>
+                      {hasActiveFilters && (
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{
+                            duration: 0.16,
+                            ease: [0.22, 1, 0.36, 1] as const,
+                          }}
+                          className="ml-1 inline-flex"
+                        >
+                          <Badge variant="secondary">
+                            {activeFilterChips.length}
+                          </Badge>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 transition-transform",
+                      mobileOpen && "rotate-180",
                     )}
-                  </AnimatePresence>
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "size-4 transition-transform",
-                    mobileOpen && "rotate-180",
-                  )}
-                />
-              </Button>
-            </CollapsibleTrigger>
+                  />
+                </Button>
+              }
+            />
 
             {/* Column visibility - always visible in collapsed mode for table view */}
             {viewMode === "table" && table && (
@@ -516,22 +520,32 @@ export function DomainFilters({
             )}
           </div>
 
-          <CollapsibleContent forceMount asChild>
-            <motion.div
-              initial={false}
-              animate={
-                mobileOpen
-                  ? { height: "auto", opacity: 1 }
-                  : { height: 0, opacity: 0 }
-              }
-              transition={{
-                duration: 0.22,
-                ease: [0.22, 1, 0.36, 1] as const,
-              }}
-              style={{ overflow: "hidden" }}
-            >
-              <div className="pt-3">{filterContent}</div>
-            </motion.div>
+          <CollapsibleContent
+            keepMounted
+            render={(contentProps) => {
+              const { children, ...rest } = contentProps;
+              return (
+                <div {...rest}>
+                  <motion.div
+                    initial={false}
+                    animate={
+                      mobileOpen
+                        ? { height: "auto", opacity: 1 }
+                        : { height: 0, opacity: 0 }
+                    }
+                    transition={{
+                      duration: 0.22,
+                      ease: [0.22, 1, 0.36, 1] as const,
+                    }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    {children}
+                  </motion.div>
+                </div>
+              );
+            }}
+          >
+            <div className="pt-3">{filterContent}</div>
           </CollapsibleContent>
         </Collapsible>
       </div>

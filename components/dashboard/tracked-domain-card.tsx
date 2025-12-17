@@ -20,7 +20,7 @@ import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
-import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,10 +32,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -142,7 +142,7 @@ export function TrackedDomainCard({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <ScreenshotTooltip domain={domainName}>
+            <ScreenshotPopover domain={domainName}>
               <Link
                 href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}
@@ -152,7 +152,7 @@ export function TrackedDomainCard({
                   {domainName}
                 </CardTitle>
               </Link>
-            </ScreenshotTooltip>
+            </ScreenshotPopover>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {verified && (
                 <DomainHealthBadge
@@ -170,34 +170,46 @@ export function TrackedDomainCard({
             </div>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="cursor-pointer">
-                <MoreVertical className="size-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="cursor-pointer"
+                >
+                  <MoreVertical className="size-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <a
-                  href={`https://${domainName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cursor-pointer pr-4"
-                >
-                  <ExternalLink className="size-4" />
-                  Open
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/${encodeURIComponent(domainName)}`}
-                  prefetch={false}
-                  className="cursor-pointer pr-4"
-                >
-                  <BookMarked className="size-4" />
-                  View Report
-                </Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem
+                nativeButton={false}
+                render={
+                  <a
+                    href={`https://${domainName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cursor-pointer pr-4"
+                  >
+                    <ExternalLink className="size-4" />
+                    Open
+                  </a>
+                }
+              />
+              <DropdownMenuItem
+                nativeButton={false}
+                render={
+                  <Link
+                    href={`/${encodeURIComponent(domainName)}`}
+                    prefetch={false}
+                    className="cursor-pointer pr-4"
+                  >
+                    <BookMarked className="size-4" />
+                    View Report
+                  </Link>
+                }
+              />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
@@ -227,16 +239,18 @@ export function TrackedDomainCard({
             <InfoRow label="Expires">
               {expirationDate ? (
                 <>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="truncate">
-                        {format(expirationDate, "MMM d, yyyy")}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
+                  <ResponsiveTooltip>
+                    <ResponsiveTooltipTrigger
+                      render={
+                        <span className="truncate">
+                          {format(expirationDate, "MMM d, yyyy")}
+                        </span>
+                      }
+                    />
+                    <ResponsiveTooltipContent>
                       {formatDateTimeUtc(expirationDate.toISOString())}
-                    </TooltipContent>
-                  </Tooltip>
+                    </ResponsiveTooltipContent>
+                  </ResponsiveTooltip>
                   <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
                     <RelativeExpiryString
                       to={expirationDate}
@@ -297,16 +311,18 @@ export function TrackedDomainCard({
               <InfoRow label="Expires">
                 {expirationDate ? (
                   <>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="truncate">
-                          {format(expirationDate, "MMM d, yyyy")}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
+                    <ResponsiveTooltip>
+                      <ResponsiveTooltipTrigger
+                        render={
+                          <span className="truncate">
+                            {format(expirationDate, "MMM d, yyyy")}
+                          </span>
+                        }
+                      />
+                      <ResponsiveTooltipContent>
                         {formatDateTimeUtc(expirationDate.toISOString())}
-                      </TooltipContent>
-                    </Tooltip>
+                      </ResponsiveTooltipContent>
+                    </ResponsiveTooltip>
                     <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
                       <RelativeExpiryString
                         to={expirationDate}
@@ -430,12 +446,12 @@ function InfoRow({
         {children ||
           (provider?.name ? (
             tooltipData.shouldShowTooltip ? (
-              <Tooltip
+              <ResponsiveTooltip
                 open={tooltipData.isOpen}
                 onOpenChange={tooltipData.setIsOpen}
               >
-                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
-                <TooltipContent>
+                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipContent>
                   <ProviderTooltipContent
                     providerName={provider.name}
                     providerDomain={provider.domain}
@@ -448,13 +464,15 @@ function InfoRow({
                     registrationSource={tooltipData.registrationSource}
                     registrantInfo={tooltipData.registrantInfo}
                   />
-                </TooltipContent>
-              </Tooltip>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             ) : isTruncated ? (
-              <Tooltip>
-                <TooltipTrigger asChild>{providerContent}</TooltipTrigger>
-                <TooltipContent>{provider.name}</TooltipContent>
-              </Tooltip>
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger render={providerContent} />
+                <ResponsiveTooltipContent>
+                  {provider.name}
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             ) : (
               providerContent
             )

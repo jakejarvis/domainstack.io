@@ -5,12 +5,12 @@ import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Field, FieldLabel } from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
 } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
 import { logger } from "@/lib/logger/client";
 import { cn } from "@/lib/utils";
 
@@ -80,10 +80,10 @@ export function CopyableField({
   };
 
   return (
-    <div className={cn("min-w-0 space-y-1.5", className)}>
-      <Label className="text-muted-foreground text-xs uppercase tracking-wide">
+    <Field className={cn("min-w-0", className)}>
+      <FieldLabel className="text-muted-foreground text-xs uppercase tracking-wide">
         {label}
-      </Label>
+      </FieldLabel>
       <InputGroup className="max-w-full border-border bg-background">
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <button
@@ -113,6 +113,6 @@ export function CopyableField({
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-    </div>
+    </Field>
   );
 }

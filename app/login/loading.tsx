@@ -1,4 +1,4 @@
-import { AnimatedBackground } from "@/components/auth/animated-background";
+import { AnimatedBackground } from "@/components/layout/animated-background";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";

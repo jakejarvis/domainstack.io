@@ -13,10 +13,10 @@ import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { RegistrationResponse } from "@/lib/schemas";
@@ -47,13 +47,16 @@ function VerificationBadge({
       : "https://en.wikipedia.org/wiki/WHOIS";
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span>
-          <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>
+    <ResponsiveTooltip>
+      <ResponsiveTooltipTrigger
+        nativeButton={false}
+        render={
+          <span>
+            <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />
+          </span>
+        }
+      />
+      <ResponsiveTooltipContent>
         <p className="inline-flex items-center gap-[5px]">
           <span>
             Verified by{" "}
@@ -82,8 +85,8 @@ function VerificationBadge({
             <GraduationCap className="size-3" />
           </a>
         </p>
-      </TooltipContent>
-    </Tooltip>
+      </ResponsiveTooltipContent>
+    </ResponsiveTooltip>
   );
 }
 

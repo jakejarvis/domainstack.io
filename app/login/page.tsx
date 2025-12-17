@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { AnimatedBackground } from "@/components/auth/animated-background";
 import { LoginContent } from "@/components/auth/login-content";
+import { AnimatedBackground } from "@/components/layout/animated-background";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 

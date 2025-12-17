@@ -1,4 +1,6 @@
 /* @vitest-environment jsdom */
+
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { CertificatesSection, equalHostname } from "./certificates-section";
@@ -13,9 +15,15 @@ vi.mock("@/components/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+  TooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {children}
+      {render ?? children}
     </button>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
@@ -24,7 +32,7 @@ vi.mock("@/components/ui/tooltip", () => ({
 }));
 
 describe("CertificatesSection", () => {
-  it("renders certificate fields and SAN count", () => {
+  it("renders certificate fields and SAN count", async () => {
     const data = [
       {
         issuer: "Let's Encrypt",
@@ -50,7 +58,9 @@ describe("CertificatesSection", () => {
 
     // Assert tooltip wrapper and content with SAN domains
     expect(screen.getByRole("button", { name: /\+1/i })).toBeInTheDocument();
-    expect(screen.getByText("*.example.com")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /\+1/i }));
+    expect(await screen.findByText("*.example.com")).toBeInTheDocument();
 
     // Assert CA provider favicon with correct domain
     const favicon = screen.getByTestId("favicon");

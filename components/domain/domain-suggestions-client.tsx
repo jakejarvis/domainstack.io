@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { Favicon } from "@/components/domain/favicon";
 import { useHomeSearch } from "@/components/layout/home-search-context";
@@ -66,7 +67,10 @@ export function DomainSuggestionsClient({
     analytics.track("search_history_cleared");
 
     // Scroll back to the left with smooth animation
-    if (scrollContainerRef.current) {
+    if (
+      scrollContainerRef.current &&
+      typeof scrollContainerRef.current.scrollTo === "function"
+    ) {
       scrollContainerRef.current.scrollTo({
         left: 0,
         behavior: "smooth",
@@ -90,7 +94,7 @@ export function DomainSuggestionsClient({
                 variant="secondary"
                 size="sm"
                 className={cn(
-                  "shrink-0 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                  "shrink-0 gap-2 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
                   "first-of-type:ml-[1px]",
                   isHistoryLoaded ? "visible" : "invisible",
                 )}
@@ -98,35 +102,33 @@ export function DomainSuggestionsClient({
                   e.preventDefault();
                   handleClick(domain);
                 }}
-                asChild
+                nativeButton={false}
+                render={<Link href={`/${domain}`} prefetch={false} />}
               >
-                <a
-                  href={`/${encodeURIComponent(domain)}`}
-                  className="inline-flex items-center gap-2"
-                >
-                  <Favicon
-                    domain={domain}
-                    size={faviconSize}
-                    className="pointer-events-none size-4 shrink-0 rounded"
-                  />
-                  {domain}
-                </a>
+                <Favicon
+                  domain={domain}
+                  size={faviconSize}
+                  className="pointer-events-none size-4 shrink-0 rounded-sm"
+                />
+                {domain}
               </Button>
             ),
           )}
           {isHistoryLoaded && history.length > 0 ? (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleClearHistory}
-                  className="flex-shrink-0"
-                  aria-label="Clear history"
-                >
-                  <X />
-                </Button>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleClearHistory}
+                    className="flex-shrink-0"
+                    aria-label="Clear history"
+                  >
+                    <X />
+                  </Button>
+                }
+              />
               <TooltipContent>Clear history</TooltipContent>
             </Tooltip>
           ) : (

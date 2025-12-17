@@ -16,14 +16,19 @@ import {
 export function DashboardButton() {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/dashboard" className="cursor-pointer">
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" className="cursor-pointer" />}
+          >
             <Table2 />
             <span className="sr-only">Dashboard</span>
-          </Link>
-        </Button>
-      </TooltipTrigger>
+          </Button>
+        }
+      />
       <TooltipContent>Dashboard</TooltipContent>
     </Tooltip>
   );

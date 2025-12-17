@@ -1,27 +1,25 @@
 "use client";
 
-import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
-import type * as React from "react";
+import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-function AlertDialog({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+type BaseUIClickEvent = React.MouseEvent<HTMLButtonElement, MouseEvent> & {
+  preventBaseUIHandler: () => void;
+  readonly baseUIHandlerPrevented?: boolean;
+};
+
+function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
 
-function AlertDialogTrigger({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
   return (
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
   );
 }
 
-function AlertDialogPortal({
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
   );
@@ -30,12 +28,15 @@ function AlertDialogPortal({
 function AlertDialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+}: AlertDialogPrimitive.Backdrop.Props) {
   return (
-    <AlertDialogPrimitive.Overlay
+    <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity",
+        "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        // iOS 26+: ensure backdrops cover the visual viewport
+        "supports-[-webkit-touch-callout:none]:absolute",
         className,
       )}
       {...props}
@@ -46,14 +47,21 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+}: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
-      <AlertDialogPrimitive.Content
+      <AlertDialogOverlay forceRender />
+      <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in sm:max-w-lg",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 text-foreground shadow-lg outline-hidden sm:max-w-lg",
+          "transition-[transform,opacity] duration-200",
+          "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+          "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+          // Nested dialog styling: Dim the parent popup
+          "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
+          // Prevent interaction with parent dialog when nested dialog is open
+          "data-[nested-dialog-open]:pointer-events-none",
           className,
         )}
         {...props}
@@ -65,7 +73,7 @@ function AlertDialogContent({
 function AlertDialogHeader({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="alert-dialog-header"
@@ -78,7 +86,7 @@ function AlertDialogHeader({
 function AlertDialogFooter({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentPropsWithoutRef<"div">) {
   return (
     <div
       data-slot="alert-dialog-footer"
@@ -94,7 +102,7 @@ function AlertDialogFooter({
 function AlertDialogTitle({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+}: AlertDialogPrimitive.Title.Props) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
@@ -107,7 +115,7 @@ function AlertDialogTitle({
 function AlertDialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+}: AlertDialogPrimitive.Description.Props) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
@@ -119,10 +127,32 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  closeOnClick = true,
+  onClick,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: AlertDialogPrimitive.Close.Props & {
+  /** Prevent the dialog from closing when this button is clicked. */
+  closeOnClick?: boolean;
+}) {
+  /**
+   * Base UI AlertDialog doesn’t have separate Action/Cancel parts; it only exposes `Close`.
+   * We keep the shadcn-style names for ergonomics, but note:
+   * - Both Action and Cancel close by default.
+   * - For async “confirm” flows where you want to keep the dialog open, set `closeOnClick={false}`
+   *   (or call `event.preventBaseUIHandler()` inside `onClick`) and close manually via controlled state.
+   */
+  const handleClick = (event: BaseUIClickEvent) => {
+    if (!closeOnClick) {
+      // Base UI escape hatch to prevent its internal click handler.
+      event.preventBaseUIHandler();
+    }
+    onClick?.(event);
+  };
+
   return (
-    <AlertDialogPrimitive.Action
+    <AlertDialogPrimitive.Close
+      data-slot="alert-dialog-action"
+      onClick={handleClick}
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -131,10 +161,24 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
+  closeOnClick = true,
+  onClick,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+}: AlertDialogPrimitive.Close.Props & {
+  /** Prevent the dialog from closing when this button is clicked. */
+  closeOnClick?: boolean;
+}) {
+  const handleClick = (event: BaseUIClickEvent) => {
+    if (!closeOnClick) {
+      event.preventBaseUIHandler();
+    }
+    onClick?.(event);
+  };
+
   return (
-    <AlertDialogPrimitive.Cancel
+    <AlertDialogPrimitive.Close
+      data-slot="alert-dialog-cancel"
+      onClick={handleClick}
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />

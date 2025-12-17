@@ -32,12 +32,19 @@ export function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {!isControlled && (
-        <DialogTrigger className={className} asChild>
-          <Button aria-label="Open settings" variant="ghost" size="sm">
-            <Settings />
-            <span className="sr-only">Open settings</span>
-          </Button>
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            <Button
+              aria-label="Open settings"
+              variant="ghost"
+              size="sm"
+              className={className}
+            >
+              <Settings />
+              <span className="sr-only">Open settings</span>
+            </Button>
+          }
+        />
       )}
 
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 p-0 dark:border-white/10">

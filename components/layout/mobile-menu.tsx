@@ -36,18 +36,20 @@ export function MobileMenu() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Menu"
-            className="cursor-pointer"
-          >
-            <Menu className="size-5" />
-          </Button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Menu"
+              className="cursor-pointer"
+            >
+              <Menu className="size-5" />
+            </Button>
+          }
+        />
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem className="cursor-pointer" onSelect={toggleTheme}>
+          <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
             {theme === "dark" ? (
               <Sun className="size-4" />
             ) : (
@@ -57,24 +59,27 @@ export function MobileMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
-            onSelect={() => setBookmarkletOpen(true)}
+            onClick={() => setBookmarkletOpen(true)}
           >
             <Bookmark className="size-4" />
             Bookmarklet
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link
-              href="/login"
-              prefetch={false}
-              className="cursor-pointer"
-              onClick={handleSignInClick}
-              data-disable-progress={true}
-            >
-              <LogIn className="size-4" />
-              Sign In
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/login"
+                prefetch={false}
+                className="cursor-pointer"
+                onClick={handleSignInClick}
+                data-disable-progress={true}
+              >
+                <LogIn className="size-4" />
+                Sign In
+              </Link>
+            }
+          />
         </DropdownMenuContent>
       </DropdownMenu>
 

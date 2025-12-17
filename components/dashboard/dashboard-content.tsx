@@ -443,12 +443,12 @@ export function DashboardContent() {
             onVerify={handleVerify}
             onRemove={handleRemove}
             onArchive={handleArchive}
-            onClearFilters={clearFilters}
             onBulkArchive={handleBulkArchive}
             onBulkDelete={handleBulkDelete}
+            onTableReady={setTableInstance}
+            onClearFilters={clearFilters}
             isBulkArchiving={isBulkArchiving}
             isBulkDeleting={isBulkDeleting}
-            onTableReady={setTableInstance}
           />
 
           {/* Link to archived domains - only show when there are archived domains */}

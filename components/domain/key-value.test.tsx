@@ -1,10 +1,12 @@
 /* @vitest-environment jsdom */
+
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { KeyValue } from "./key-value";
 
 // Mock CopyButton - we're testing KeyValue, not clipboard functionality
-vi.mock("@/components/domain/copy-button", () => ({
+vi.mock("@/components/copy-button", () => ({
   CopyButton: () => <button type="button">Copy</button>,
 }));
 
@@ -12,9 +14,15 @@ vi.mock("@/components/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+  TooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {children}
+      {render ?? children}
     </button>
   ),
   TooltipContent: ({ children }: { children: React.ReactNode }) => (
@@ -26,14 +34,14 @@ describe("KeyValue", () => {
   it("renders label/value and shows copy button when copyable", () => {
     render(<KeyValue label="Registrar" value="Namecheap" copyable />);
     expect(screen.getByText("Registrar")).toBeInTheDocument();
-    expect(screen.getAllByText("Namecheap")).toHaveLength(2);
+    expect(screen.getByText("Namecheap")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy/i })).toBeInTheDocument();
   });
 
   it("renders without copy button when not copyable", () => {
     render(<KeyValue label="Registrar" value="NameCheap" />);
     expect(screen.getByText("Registrar")).toBeInTheDocument();
-    expect(screen.getAllByText("NameCheap")).toHaveLength(2);
+    expect(screen.getByText("NameCheap")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
   });
 });
@@ -49,6 +57,10 @@ describe("KeyValue tooltip", () => {
       />,
     );
     expect(screen.getByText("Oct. 2, 2025")).toBeInTheDocument();
-    expect(screen.getByText("2025-10-02 00:00:00 UTC")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Oct. 2, 2025" }));
+    expect(
+      await screen.findByText("2025-10-02 00:00:00 UTC"),
+    ).toBeInTheDocument();
   });
 });

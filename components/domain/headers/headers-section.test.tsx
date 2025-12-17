@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { HeadersSection } from "./headers-section";
 
@@ -8,9 +8,15 @@ vi.mock("@/components/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+  TooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
     <button type="button" data-slot="tooltip-trigger">
-      {children}
+      {render ?? children}
     </button>
   ),
   TooltipContent: (_: { children: React.ReactNode }) => null,

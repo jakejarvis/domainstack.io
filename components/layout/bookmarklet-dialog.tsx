@@ -43,6 +43,12 @@ export function BookmarkletDialog({
   open,
   onOpenChange,
 }: BookmarkletDialogProps) {
+  // Controlled mode: open/onOpenChange are provided
+  const isControlled = open !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const dialogOpen = isControlled ? open : internalOpen;
+
   // Capture the origin after mount to avoid SSR issues and ensure we have the correct origin
   const [origin, setOrigin] = useState<string>("");
 
@@ -62,34 +68,35 @@ export function BookmarkletDialog({
 
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(newOpen);
+      }
       if (!newOpen) {
         toast.dismiss("bookmarklet-reminder");
       }
       onOpenChange?.(newOpen);
     },
-    [onOpenChange],
+    [isControlled, onOpenChange],
   );
 
-  // Controlled mode: open/onOpenChange are provided
-  const isControlled = open !== undefined;
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       {!isControlled && (
         <Tooltip>
-          <TooltipTrigger className={className} asChild>
-            <DialogTrigger asChild>
+          <TooltipTrigger
+            render={
               <Button
                 aria-label="Open bookmarklet info"
                 variant="ghost"
                 size="sm"
-                className="cursor-pointer"
+                className={cn("cursor-pointer", className)}
+                onClick={() => handleOpenChange(true)}
               >
                 <Bookmark />
                 <span className="sr-only">Open bookmarklet info</span>
               </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
+            }
+          />
           <TooltipContent>Bookmarklet</TooltipContent>
         </Tooltip>
       )}
@@ -133,7 +140,10 @@ export function BookmarkletDialog({
           </a>
         </div>
 
-        <Separator className="bg-border/80 dark:bg-border/50" />
+        <Separator
+          aria-hidden="true"
+          className="bg-border/80 dark:bg-border/50"
+        />
 
         <div className="space-y-3.5">
           <p className="text-muted-foreground text-sm">
@@ -159,17 +169,19 @@ export function BookmarkletDialog({
             </a>
 
             <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="!px-3 cursor-pointer"
-                  aria-label="Watch demo"
-                >
-                  <Play />
-                  <span>Watch Demo</span>
-                </Button>
-              </DialogTrigger>
+              <DialogTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="!px-3 cursor-pointer"
+                    aria-label="Watch demo"
+                  >
+                    <Play />
+                    <span>Watch Demo</span>
+                  </Button>
+                }
+              />
 
               <DialogContent className="max-h-[90vh] overflow-y-auto border-border/80 dark:border-border/50">
                 <DialogHeader className="sr-only">

@@ -2,10 +2,10 @@
 
 import { CopyButton } from "@/components/copy-button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { useTruncation } from "@/hooks/use-truncation";
 import { cn } from "@/lib/utils";
 
@@ -59,13 +59,16 @@ export function KeyValue({
             </span>
           ) : null}
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span ref={valueRef} className="min-w-0 flex-1 truncate">
-                {value}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent
+          <ResponsiveTooltip>
+            <ResponsiveTooltipTrigger
+              nativeButton={false}
+              render={
+                <span ref={valueRef} className="min-w-0 flex-1 truncate">
+                  {value}
+                </span>
+              }
+            />
+            <ResponsiveTooltipContent
               className={cn(
                 isTruncated || valueTooltip != null
                   ? "max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]"
@@ -73,8 +76,8 @@ export function KeyValue({
               )}
             >
               {valueTooltip ?? value}
-            </TooltipContent>
-          </Tooltip>
+            </ResponsiveTooltipContent>
+          </ResponsiveTooltip>
 
           {suffix ? (
             <span className="leading-none [&_img]:block [&_img]:h-4 [&_img]:w-4 [&_span]:leading-none [&_svg]:block [&_svg]:h-4 [&_svg]:w-4">

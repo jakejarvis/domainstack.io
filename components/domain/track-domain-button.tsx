@@ -108,13 +108,18 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   if (isTracked && isVerified) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="outline" asChild className="text-success-foreground">
-            <Link href="/dashboard" prefetch={false}>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="outline"
+              className="text-success-foreground"
+              nativeButton={false}
+              render={<Link href="/dashboard" prefetch={false} />}
+            >
               <BadgeCheck className="size-4" />
-            </Link>
-          </Button>
-        </TooltipTrigger>
+            </Button>
+          }
+        />
         <TooltipContent>
           <p>You own and track this domain</p>
         </TooltipContent>
@@ -142,28 +147,35 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   return (
     <>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {session?.user ? (
-            <Button
-              variant="outline"
-              onClick={handleButtonClick}
-              className="cursor-pointer"
-            >
-              {buttonContent}
-            </Button>
-          ) : (
-            <Button asChild variant="outline" className="cursor-pointer">
-              <Link
-                href="/login"
-                prefetch={false}
+        <TooltipTrigger
+          render={
+            session?.user ? (
+              <Button
+                variant="outline"
                 onClick={handleButtonClick}
-                data-disable-progress={true}
+                className="cursor-pointer"
               >
                 {buttonContent}
-              </Link>
-            </Button>
-          )}
-        </TooltipTrigger>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                nativeButton={false}
+                render={
+                  <Link
+                    href="/login"
+                    prefetch={false}
+                    onClick={handleButtonClick}
+                    data-disable-progress={true}
+                  />
+                }
+              >
+                {buttonContent}
+              </Button>
+            )
+          }
+        />
         <TooltipContent>
           <p>{tooltipText}</p>
         </TooltipContent>

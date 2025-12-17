@@ -2,7 +2,7 @@
 
 import { Bug } from "lucide-react";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };
@@ -11,8 +11,8 @@ type CreateIssueButtonProps = {
   error?: ErrorWithOptionalDigest;
   children?: React.ReactNode;
   className?: string;
-  variant?: React.ComponentProps<typeof Button>["variant"];
-  size?: React.ComponentProps<typeof Button>["size"];
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
 };
 
 function buildIssueUrl(error?: ErrorWithOptionalDigest) {
@@ -75,11 +75,15 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
   const issueUrl = useMemo(() => buildIssueUrl(error), [error]);
 
   return (
-    <Button asChild variant={variant} size={size} className={className}>
-      <a href={issueUrl} target="_blank" rel="noopener">
-        <Bug />
-        {children ?? "Create GitHub issue"}
-      </a>
+    <Button
+      variant={variant}
+      size={size}
+      className={className}
+      nativeButton={false}
+      render={<a href={issueUrl} target="_blank" rel="noopener" />}
+    >
+      <Bug />
+      {children ?? "Create GitHub issue"}
     </Button>
   );
 }

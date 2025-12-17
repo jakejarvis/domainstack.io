@@ -66,7 +66,6 @@
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
   - Do not add direct tests for `components/ui/*` (shadcn).
-  - Mock Radix primitives (Accordion, Tooltip) when testing domain sections.
   - Mock tRPC/React Query for components like `Favicon` and `Screenshot`.
 - Server tests:
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).

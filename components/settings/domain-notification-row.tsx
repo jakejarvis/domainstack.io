@@ -145,8 +145,8 @@ export function DomainNotificationRow({
         return (
           <div key={category} className="flex justify-center">
             <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
+              <TooltipTrigger
+                render={
                   <Switch
                     checked={effectiveValue}
                     onCheckedChange={(checked) => {
@@ -163,8 +163,8 @@ export function DomainNotificationRow({
                       isInherited && "opacity-60",
                     )}
                   />
-                </div>
-              </TooltipTrigger>
+                }
+              />
               <TooltipContent>
                 {isInherited
                   ? `Inheriting (${effectiveValue ? "enabled" : "disabled"})`
@@ -176,17 +176,19 @@ export function DomainNotificationRow({
       })}
       {hasOverrides ? (
         <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 cursor-pointer text-muted-foreground hover:text-foreground"
-              onClick={onReset}
-              disabled={disabled}
-            >
-              <RotateCcw className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 cursor-pointer text-muted-foreground hover:text-foreground"
+                onClick={onReset}
+                disabled={disabled}
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
+            }
+          />
           <TooltipContent>Reset to defaults</TooltipContent>
         </Tooltip>
       ) : (

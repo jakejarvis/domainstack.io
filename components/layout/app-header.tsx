@@ -31,7 +31,11 @@ export function AppHeader() {
             <GithubStars />
           </Suspense>
           <AppHeaderButtons />
-          <Separator orientation="vertical" className="!h-4" />
+          <Separator
+            aria-hidden="true"
+            orientation="vertical"
+            className="!h-4"
+          />
           <AuthButton />
         </HeaderButtons>
       </HeaderGrid>

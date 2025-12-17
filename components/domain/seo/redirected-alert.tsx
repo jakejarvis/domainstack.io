@@ -2,13 +2,17 @@
 
 import { Milestone, Search } from "lucide-react";
 import Link from "next/link";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Alert,
+  AlertDescription,
+  type AlertProps,
+} from "@/components/ui/alert";
 
 export function RedirectedAlert({
   domain,
   finalUrl,
   ...props
-}: React.ComponentProps<typeof Alert> & {
+}: AlertProps & {
   domain: string;
   finalUrl?: string | null;
 }) {

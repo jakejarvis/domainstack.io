@@ -24,10 +24,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
 import type { Certificate } from "@/lib/schemas";
@@ -83,20 +83,23 @@ export function CertificatesSection({
                         )
                       : [];
                     return sans.length > 0 ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                          >
-                            <span>+</span>
-                            <span className="px-[1px]">{sans.length}</span>
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                      <ResponsiveTooltip>
+                        <ResponsiveTooltipTrigger
+                          nativeButton={false}
+                          render={
+                            <Badge
+                              variant="outline"
+                              className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                            >
+                              <span>+</span>
+                              <span className="px-[1px]">{sans.length}</span>
+                            </Badge>
+                          }
+                        />
+                        <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                           {sans.join(", ")}
-                        </TooltipContent>
-                      </Tooltip>
+                        </ResponsiveTooltipContent>
+                      </ResponsiveTooltip>
                     ) : undefined;
                   })()}
                 />
@@ -197,22 +200,25 @@ export function CertificatesSection({
                                   )
                                 : [];
                               return sans.length > 0 ? (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge
-                                      variant="outline"
-                                      className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                                    >
-                                      <span>+</span>
-                                      <span className="px-[1px]">
-                                        {sans.length}
-                                      </span>
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                                <ResponsiveTooltip>
+                                  <ResponsiveTooltipTrigger
+                                    nativeButton={false}
+                                    render={
+                                      <Badge
+                                        variant="outline"
+                                        className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                                      >
+                                        <span>+</span>
+                                        <span className="px-[1px]">
+                                          {sans.length}
+                                        </span>
+                                      </Badge>
+                                    }
+                                  />
+                                  <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
                                     {sans.join(", ")}
-                                  </TooltipContent>
-                                </Tooltip>
+                                  </ResponsiveTooltipContent>
+                                </ResponsiveTooltip>
                               ) : undefined;
                             })()}
                           />

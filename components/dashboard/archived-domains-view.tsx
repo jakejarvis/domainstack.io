@@ -91,20 +91,22 @@ export function ArchivedDomainsView({
               </div>
               <div className="flex items-center gap-2">
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUnarchive(domain.id)}
-                      disabled={!canUnarchive}
-                      className="cursor-pointer"
-                    >
-                      <RotateCcw className="size-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-2">
-                        Reactivate
-                      </span>
-                    </Button>
-                  </TooltipTrigger>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onUnarchive(domain.id)}
+                        disabled={!canUnarchive}
+                        className="cursor-pointer"
+                      >
+                        <RotateCcw className="size-4" />
+                        <span className="sr-only sm:not-sr-only sm:ml-2">
+                          Reactivate
+                        </span>
+                      </Button>
+                    }
+                  />
                   <TooltipContent>
                     {canUnarchive
                       ? "Reactivate this domain"

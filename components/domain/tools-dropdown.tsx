@@ -138,55 +138,64 @@ const TOOLS = (
 export function ToolsDropdown({ domain }: ToolsDropdownProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          aria-label="Open menu"
-          size="icon"
-          className="cursor-pointer"
-        >
-          <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {TOOLS.map((tool) => (
-          <DropdownMenuItem key={tool.name} asChild>
-            <a
-              href={tool.buildUrl(domain)}
-              className="cursor-pointer"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Favicon domain={tool.faviconDomain} />
-              {tool.name}
-            </a>
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a
-            href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}
-            onClick={(e) => {
-              e.preventDefault();
-              const url = new URL(
-                `https://github.com/${REPOSITORY_SLUG}/issues/new`,
-              );
-              url.searchParams.set("labels", "suggestion");
-              url.searchParams.set("title", "Add [TOOL] to tools dropdown");
-              url.searchParams.set(
-                "body",
-                "I suggest adding the following tool to the tools dropdown:\n\n[Add the name, URL, and a brief description of the tool here]",
-              );
-              window.open(url.toString(), "_blank", "noopener");
-            }}
-            target="_blank"
-            rel="noopener"
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            aria-label="Open menu"
+            size="icon"
             className="cursor-pointer"
           >
-            <Plus />
-            Suggest a tool
-          </a>
-        </DropdownMenuItem>
+            <MoreHorizontal />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        {TOOLS.map((tool) => (
+          <DropdownMenuItem
+            key={tool.name}
+            nativeButton={false}
+            render={
+              <a
+                href={tool.buildUrl(domain)}
+                className="cursor-pointer"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Favicon domain={tool.faviconDomain} />
+                {tool.name}
+              </a>
+            }
+          />
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          nativeButton={false}
+          render={
+            <a
+              href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}
+              onClick={(e) => {
+                e.preventDefault();
+                const url = new URL(
+                  `https://github.com/${REPOSITORY_SLUG}/issues/new`,
+                );
+                url.searchParams.set("labels", "suggestion");
+                url.searchParams.set("title", "Add [TOOL] to tools dropdown");
+                url.searchParams.set(
+                  "body",
+                  "I suggest adding the following tool to the tools dropdown:\n\n[Add the name, URL, and a brief description of the tool here]",
+                );
+                window.open(url.toString(), "_blank", "noopener");
+              }}
+              target="_blank"
+              rel="noopener"
+              className="cursor-pointer"
+            >
+              <Plus />
+              Suggest a tool
+            </a>
+          }
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

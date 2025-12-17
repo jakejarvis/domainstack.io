@@ -72,20 +72,22 @@ export function UserMenu() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
-            aria-label="User menu"
-          >
-            <Avatar className="size-8">
-              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </button>
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+              aria-label="User menu"
+            >
+              <Avatar className="size-8">
+                <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          }
+        />
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
             <div className="flex items-center gap-2.5">
@@ -106,27 +108,37 @@ export function UserMenu() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard" prefetch={false} className="cursor-pointer">
-              <Table2 className="size-4" />
-              Dashboard
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/settings"
-              prefetch={false}
-              className="cursor-pointer"
-              onClick={handleSettingsClick}
-              data-disable-progress={true}
-            >
-              <Settings className="size-4" />
-              Settings
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/dashboard"
+                prefetch={false}
+                className="cursor-pointer"
+              >
+                <Table2 className="size-4" />
+                Dashboard
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/settings"
+                prefetch={false}
+                className="cursor-pointer"
+                onClick={handleSettingsClick}
+                data-disable-progress={true}
+              >
+                <Settings className="size-4" />
+                Settings
+              </Link>
+            }
+          />
           <DropdownMenuSeparator />
           {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
-          <DropdownMenuItem className="cursor-pointer" onSelect={toggleTheme}>
+          <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
             {theme === "dark" ? (
               <Sun className="size-4" />
             ) : (
@@ -136,7 +148,7 @@ export function UserMenu() {
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer"
-            onSelect={() => setBookmarkletOpen(true)}
+            onClick={() => setBookmarkletOpen(true)}
           >
             <Bookmark className="size-4" />
             Bookmarklet

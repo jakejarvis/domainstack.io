@@ -50,15 +50,20 @@ export function AuthButton() {
 
   return (
     <>
-      <Button asChild variant="ghost" size="sm">
-        <Link
-          href="/login"
-          prefetch={false}
-          onClick={handleClick}
-          data-disable-progress={true}
-        >
-          Sign In
-        </Link>
+      <Button
+        variant="ghost"
+        size="sm"
+        nativeButton={false}
+        render={
+          <Link
+            href="/login"
+            prefetch={false}
+            onClick={handleClick}
+            data-disable-progress={true}
+          />
+        }
+      >
+        Sign In
       </Button>
 
       <LoginDialog open={open} onOpenChange={setOpen} />

@@ -5,10 +5,10 @@ import { Activity, AlertTriangle, CircleHelp, Siren } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { cn } from "@/lib/utils";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
@@ -63,10 +63,10 @@ export function DomainHealthBadge({
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{badge}</TooltipTrigger>
-      <TooltipContent>{tooltipText}</TooltipContent>
-    </Tooltip>
+    <ResponsiveTooltip>
+      <ResponsiveTooltipTrigger render={badge} />
+      <ResponsiveTooltipContent>{tooltipText}</ResponsiveTooltipContent>
+    </ResponsiveTooltip>
   );
 }
 

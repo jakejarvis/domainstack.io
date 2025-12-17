@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Providers } from "@/app/providers";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
@@ -25,6 +25,16 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover", // iOS 26 quirk, extends the viewport behind the liquid glass address bar
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#252525" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,11 +54,8 @@ export default function RootLayout({
           title="Domainstack"
         />
       </head>
-      <body className="min-h-svh overscroll-none font-sans tabular-nums antialiased">
+      <body className="relative min-h-svh overscroll-none font-sans tabular-nums antialiased">
         <Providers>
-          {/* Solid background for light/dark modes */}
-          <div aria-hidden className="fixed inset-0 -z-10 bg-background" />
-
           {/* App Shell */}
           <div className="isolate flex min-h-svh flex-col">
             <AppHeader />

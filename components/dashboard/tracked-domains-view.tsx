@@ -37,10 +37,10 @@ type TrackedDomainsViewProps = {
   onClearFilters?: () => void;
   onBulkArchive: () => void;
   onBulkDelete: () => void;
-  isBulkArchiving?: boolean;
-  isBulkDeleting?: boolean;
   // Table instance callback (table view only)
   onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
+  isBulkArchiving?: boolean;
+  isBulkDeleting?: boolean;
 };
 
 export function TrackedDomainsView({
@@ -58,9 +58,9 @@ export function TrackedDomainsView({
   onClearFilters,
   onBulkArchive,
   onBulkDelete,
+  onTableReady,
   isBulkArchiving = false,
   isBulkDeleting = false,
-  onTableReady,
 }: TrackedDomainsViewProps) {
   const [hasHydrated, setHasHydrated] = useState(false);
 
@@ -121,23 +121,26 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
-          <Button asChild size="lg">
-            <Link
-              href="/dashboard/add-domain"
-              prefetch={false}
-              data-disable-progress={true}
-              onClick={(e) => {
-                // Allow modifier clicks to open in new tab/window
-                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-                  return;
-                }
-                e.preventDefault();
-                onAddDomain();
-              }}
-            >
-              <Plus className="size-4" />
-              Add Your First Domain
-            </Link>
+          <Button
+            size="lg"
+            render={
+              <Link
+                href="/dashboard/add-domain"
+                prefetch={false}
+                data-disable-progress={true}
+                onClick={(e) => {
+                  // Allow modifier clicks to open in new tab/window
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+                    return;
+                  }
+                  e.preventDefault();
+                  onAddDomain();
+                }}
+              />
+            }
+          >
+            <Plus className="size-4" />
+            Add Your First Domain
           </Button>
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
             <Timer className="size-4" />
@@ -170,9 +173,9 @@ export function TrackedDomainsView({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
+              onTableReady={onTableReady}
               tier={tier}
               proMaxDomains={proMaxDomains}
-              onTableReady={onTableReady}
             />
           ) : (
             <TrackedDomainsGrid

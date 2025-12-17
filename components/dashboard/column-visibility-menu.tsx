@@ -11,11 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 
 type ColumnVisibilityMenuProps<TData> = {
@@ -57,25 +52,23 @@ export function ColumnVisibilityMenu<TData>({
 
   return (
     <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-9 cursor-pointer"
-            >
-              <Columns3Cog className="size-4" />
-              <span className="sr-only">Toggle columns</span>
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent>
-          {hiddenCount > 0
-            ? `Toggle columns (${hiddenCount} hidden)`
-            : "Toggle columns"}
-        </TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-9 cursor-pointer"
+            title={
+              hiddenCount > 0
+                ? `Toggle columns (${hiddenCount} hidden)`
+                : "Toggle columns"
+            }
+          >
+            <Columns3Cog className="size-4" />
+            <span className="sr-only">Toggle columns</span>
+          </Button>
+        }
+      />
       <DropdownMenuContent align="end" className="w-48">
         {allColumns.map((column) => {
           const columnDef = column.columnDef;
@@ -86,10 +79,8 @@ export function ColumnVisibilityMenu<TData>({
           return (
             <DropdownMenuItem
               key={column.id}
-              onSelect={(e) => {
-                e.preventDefault();
-                toggleColumn(column.id);
-              }}
+              closeOnClick={false}
+              onClick={() => toggleColumn(column.id)}
               className="cursor-pointer"
             >
               <Checkbox checked={isVisible} className="pointer-events-none" />
@@ -101,10 +92,8 @@ export function ColumnVisibilityMenu<TData>({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                showAllColumns();
-              }}
+              closeOnClick={false}
+              onClick={showAllColumns}
               className="cursor-pointer text-muted-foreground"
             >
               <RefreshCcw className="size-4" />

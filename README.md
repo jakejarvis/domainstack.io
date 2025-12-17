@@ -20,7 +20,7 @@
 ## 🛠️ Tech Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Tailwind CSS v4** + **shadcn/ui** components
+- **Tailwind CSS v4** + **shadcn/ui** components (of the [Base UI](https://x.com/colmtuite/status/1999535911126565050) variety)
 - **tRPC** API with **TanStack Query** for data fetching and optimistic updates
 - **TanStack Table** for sortable dashboard table view
 - **PlanetScale Postgres** + **Drizzle ORM** with connection pooling

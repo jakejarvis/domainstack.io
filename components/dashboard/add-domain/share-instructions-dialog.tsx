@@ -22,8 +22,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { logger } from "@/lib/logger/client";
 import type { VerificationInstructions } from "@/lib/schemas";
@@ -222,12 +222,14 @@ export function ShareInstructionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="cursor-pointer gap-1.5">
-          <Share2 className="size-4" />
-          Share
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" className="cursor-pointer gap-1.5">
+            <Share2 className="size-4" />
+            Share
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Verification Instructions</DialogTitle>
@@ -299,49 +301,51 @@ export function ShareInstructionsDialog({
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="min-w-0 flex-1">
-                <Label htmlFor="email" className="sr-only">
-                  Email address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && isValidEmail) {
-                      handleSendEmail();
-                    }
-                  }}
-                  disabled={sendEmailMutation.isPending || emailSent}
-                />
+            <Field>
+              <FieldLabel htmlFor="email" className="sr-only">
+                Email address
+              </FieldLabel>
+              <div className="flex gap-2">
+                <div className="min-w-0 flex-1">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && isValidEmail) {
+                        handleSendEmail();
+                      }
+                    }}
+                    disabled={sendEmailMutation.isPending || emailSent}
+                  />
+                </div>
+                <Button
+                  onClick={handleSendEmail}
+                  variant="outline"
+                  disabled={
+                    !isValidEmail || sendEmailMutation.isPending || emailSent
+                  }
+                  className="shrink-0 cursor-pointer"
+                >
+                  {sendEmailMutation.isPending ? (
+                    <Spinner className="size-4" />
+                  ) : emailSent ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Mail className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {sendEmailMutation.isPending
+                      ? "Sending..."
+                      : emailSent
+                        ? "Sent!"
+                        : "Send"}
+                  </span>
+                </Button>
               </div>
-              <Button
-                onClick={handleSendEmail}
-                variant="outline"
-                disabled={
-                  !isValidEmail || sendEmailMutation.isPending || emailSent
-                }
-                className="shrink-0 cursor-pointer"
-              >
-                {sendEmailMutation.isPending ? (
-                  <Spinner className="size-4" />
-                ) : emailSent ? (
-                  <Check className="size-4" />
-                ) : (
-                  <Mail className="size-4" />
-                )}
-                <span className="hidden sm:inline">
-                  {sendEmailMutation.isPending
-                    ? "Sending..."
-                    : emailSent
-                      ? "Sent!"
-                      : "Send"}
-                </span>
-              </Button>
-            </div>
+            </Field>
           </div>
         </div>
       </DialogContent>

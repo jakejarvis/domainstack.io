@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Meter } from "@/components/ui/meter";
 import { Spinner } from "@/components/ui/spinner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -88,7 +88,7 @@ export function SubscriptionSettingsSection() {
               {activeCount} of {maxDomains} domains used
             </p>
           </div>
-          <Progress
+          <Meter
             value={percentage}
             className="w-24"
             aria-label="Domain usage"

@@ -4,10 +4,10 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
@@ -49,9 +49,9 @@ export function LinkedAccountRow({
           Unavailable
         </Button>
       ) : isLinked ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
+        <ResponsiveTooltip>
+          <ResponsiveTooltipTrigger
+            render={
               <Button
                 variant="secondary"
                 size="sm"
@@ -65,14 +65,14 @@ export function LinkedAccountRow({
                 {isUnlinking && <Loader2 className="size-4 animate-spin" />}
                 Unlink
               </Button>
-            </span>
-          </TooltipTrigger>
+            }
+          />
           {!canUnlink && (
-            <TooltipContent>
+            <ResponsiveTooltipContent>
               You must have at least one linked account to sign in
-            </TooltipContent>
+            </ResponsiveTooltipContent>
           )}
-        </Tooltip>
+        </ResponsiveTooltip>
       ) : (
         <Button
           variant="outline"
