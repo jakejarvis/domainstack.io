@@ -1,14 +1,17 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-function Empty({ render, ...props }: useRender.ComponentProps<"div">) {
+function Empty({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center md:p-12",
+        className,
+      ),
     }),
     state: {
       slot: "empty",
@@ -16,12 +19,19 @@ function Empty({ render, ...props }: useRender.ComponentProps<"div">) {
   });
 }
 
-function EmptyHeader({ render, ...props }: useRender.ComponentProps<"div">) {
+function EmptyHeader({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: "flex max-w-sm flex-col items-center gap-2 text-center",
+      className: cn(
+        "flex max-w-sm flex-col items-center gap-2 text-center",
+        className,
+      ),
     }),
     state: {
       slot: "empty-header",
@@ -46,6 +56,7 @@ const emptyMediaVariants = cva(
 
 function EmptyMedia({
   variant = "default",
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
@@ -53,7 +64,7 @@ function EmptyMedia({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: emptyMediaVariants({ variant }),
+      className: cn(emptyMediaVariants({ variant }), className),
     }),
     state: {
       slot: "empty-icon",
@@ -62,12 +73,12 @@ function EmptyMedia({
   });
 }
 
-function EmptyTitle({ render, ...props }: useRender.ComponentProps<"div">) {
+function EmptyTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: "font-medium text-lg tracking-tight",
+      className: cn("font-medium text-lg tracking-tight", className),
     }),
     state: {
       slot: "empty-title",
@@ -76,6 +87,7 @@ function EmptyTitle({ render, ...props }: useRender.ComponentProps<"div">) {
 }
 
 function EmptyDescription({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div">) {
@@ -83,8 +95,10 @@ function EmptyDescription({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "text-muted-foreground text-sm/relaxed [&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        className,
+      ),
     }),
     state: {
       slot: "empty-description",
@@ -92,13 +106,19 @@ function EmptyDescription({
   });
 }
 
-function EmptyContent({ render, ...props }: useRender.ComponentProps<"div">) {
+function EmptyContent({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "flex w-full min-w-0 max-w-sm flex-col items-center gap-4 text-balance text-sm",
+        className,
+      ),
     }),
     state: {
       slot: "empty-content",

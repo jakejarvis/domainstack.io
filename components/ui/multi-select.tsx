@@ -1,6 +1,6 @@
 "use client";
 
-import { Combobox } from "@base-ui/react/combobox";
+import { Combobox, type ComboboxFilterOptions } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -65,7 +65,9 @@ export function MultiSelect<T extends string>({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const { contains } = Combobox.useFilter({ multiple: true });
+  const { contains } = Combobox.useFilter({
+    multiple: true,
+  } satisfies ComboboxFilterOptions);
 
   const flatOptions = useMemo(() => {
     return sections

@@ -2,13 +2,18 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+import { cn } from "@/lib/utils";
 
-function Table({ render, ...props }: useRender.ComponentProps<"table">) {
+function Table({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"table">) {
   const table = useRender({
     defaultTagName: "table",
     render,
     props: mergeProps<"table">(props, {
-      className: "w-full caption-bottom text-sm",
+      className: cn("w-full caption-bottom text-sm", className),
     }),
     state: {
       slot: "table",
@@ -25,12 +30,16 @@ function Table({ render, ...props }: useRender.ComponentProps<"table">) {
   );
 }
 
-function TableHeader({ render, ...props }: useRender.ComponentProps<"thead">) {
+function TableHeader({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"thead">) {
   return useRender({
     defaultTagName: "thead",
     render,
     props: mergeProps<"thead">(props, {
-      className: "[&_tr]:border-b",
+      className: cn("[&_tr]:border-b", className),
     }),
     state: {
       slot: "table-header",
@@ -38,12 +47,16 @@ function TableHeader({ render, ...props }: useRender.ComponentProps<"thead">) {
   });
 }
 
-function TableBody({ render, ...props }: useRender.ComponentProps<"tbody">) {
+function TableBody({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"tbody">) {
   return useRender({
     defaultTagName: "tbody",
     render,
     props: mergeProps<"tbody">(props, {
-      className: "[&_tr:last-child]:border-0",
+      className: cn("[&_tr:last-child]:border-0", className),
     }),
     state: {
       slot: "table-body",
@@ -51,12 +64,19 @@ function TableBody({ render, ...props }: useRender.ComponentProps<"tbody">) {
   });
 }
 
-function TableFooter({ render, ...props }: useRender.ComponentProps<"tfoot">) {
+function TableFooter({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"tfoot">) {
   return useRender({
     defaultTagName: "tfoot",
     render,
     props: mergeProps<"tfoot">(props, {
-      className: "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      className: cn(
+        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        className,
+      ),
     }),
     state: {
       slot: "table-footer",
@@ -64,13 +84,19 @@ function TableFooter({ render, ...props }: useRender.ComponentProps<"tfoot">) {
   });
 }
 
-function TableRow({ render, ...props }: useRender.ComponentProps<"tr">) {
+function TableRow({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"tr">) {
   return useRender({
     defaultTagName: "tr",
     render,
     props: mergeProps<"tr">(props, {
-      className:
+      className: cn(
         "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        className,
+      ),
     }),
     state: {
       slot: "table-row",
@@ -78,13 +104,19 @@ function TableRow({ render, ...props }: useRender.ComponentProps<"tr">) {
   });
 }
 
-function TableHead({ render, ...props }: useRender.ComponentProps<"th">) {
+function TableHead({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"th">) {
   return useRender({
     defaultTagName: "th",
     render,
     props: mergeProps<"th">(props, {
-      className:
+      className: cn(
         "h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0",
+        className,
+      ),
     }),
     state: {
       slot: "table-head",
@@ -92,13 +124,19 @@ function TableHead({ render, ...props }: useRender.ComponentProps<"th">) {
   });
 }
 
-function TableCell({ render, ...props }: useRender.ComponentProps<"td">) {
+function TableCell({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"td">) {
   return useRender({
     defaultTagName: "td",
     render,
     props: mergeProps<"td">(props, {
-      className:
+      className: cn(
         "whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0",
+        className,
+      ),
     }),
     state: {
       slot: "table-cell",
@@ -107,6 +145,7 @@ function TableCell({ render, ...props }: useRender.ComponentProps<"td">) {
 }
 
 function TableCaption({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"caption">) {
@@ -114,7 +153,7 @@ function TableCaption({
     defaultTagName: "caption",
     render,
     props: mergeProps<"caption">(props, {
-      className: "mt-4 text-muted-foreground text-sm",
+      className: cn("mt-4 text-muted-foreground text-sm", className),
     }),
     state: {
       slot: "table-caption",

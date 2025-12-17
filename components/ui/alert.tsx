@@ -23,17 +23,13 @@ const alertVariants = cva(
 export type AlertProps = useRender.ComponentProps<"div"> &
   VariantProps<typeof alertVariants>;
 
-function Alert({
-  variant,
-  render,
-  ...props
-}: useRender.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+function Alert({ variant, className, render, ...props }: AlertProps) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       role: "alert",
-      className: alertVariants({ variant }),
+      className: cn(alertVariants({ variant }), className),
     }),
     state: {
       slot: "alert",
@@ -50,15 +46,12 @@ function AlertTitle({
   return useRender({
     defaultTagName: "div",
     render,
-    props: mergeProps<"div">(
-      {
-        className: cn(
-          "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
-          className,
-        ),
-      },
-      props,
-    ),
+    props: mergeProps<"div">(props, {
+      className: cn(
+        "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
+        className,
+      ),
+    }),
     state: {
       slot: "alert-title",
     },
@@ -73,15 +66,12 @@ function AlertDescription({
   return useRender({
     defaultTagName: "div",
     render,
-    props: mergeProps<"div">(
-      {
-        className: cn(
-          "col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed",
-          className,
-        ),
-      },
-      props,
-    ),
+    props: mergeProps<"div">(props, {
+      className: cn(
+        "col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed",
+        className,
+      ),
+    }),
     state: {
       slot: "alert-description",
     },

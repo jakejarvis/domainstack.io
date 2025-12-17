@@ -23,6 +23,7 @@ const buttonGroupVariants = cva(
 
 function ButtonGroup({
   orientation,
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
@@ -31,7 +32,7 @@ function ButtonGroup({
     render,
     props: mergeProps<"div">(props, {
       role: "group",
-      className: buttonGroupVariants({ orientation }),
+      className: cn(buttonGroupVariants({ orientation }), className),
     }),
     state: {
       slot: "button-group",
@@ -41,6 +42,7 @@ function ButtonGroup({
 }
 
 function ButtonGroupText({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div">) {
@@ -48,14 +50,13 @@ function ButtonGroupText({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        className,
+      ),
     }),
     state: {
       slot: "button-group-text",
-    },
-    stateAttributesMapping: {
-      slot: (value) => ({ "data-slot": value }),
     },
   });
 }

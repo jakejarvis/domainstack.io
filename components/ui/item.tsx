@@ -4,13 +4,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Separator, type SeparatorProps } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-function ItemGroup({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemGroup({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
       role: "list",
-      className: "group/item-group flex flex-col",
+      className: cn("group/item-group flex flex-col", className),
     }),
     state: {
       slot: "item-group",
@@ -54,6 +54,7 @@ const itemVariants = cva(
 function Item({
   variant = "default",
   size = "default",
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>) {
@@ -61,7 +62,7 @@ function Item({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: itemVariants({ variant, size }),
+      className: cn(itemVariants({ variant, size }), className),
     }),
     state: {
       slot: "item",
@@ -90,6 +91,7 @@ const itemMediaVariants = cva(
 
 function ItemMedia({
   variant = "default",
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
@@ -97,7 +99,7 @@ function ItemMedia({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: itemMediaVariants({ variant }),
+      className: cn(itemMediaVariants({ variant }), className),
     }),
     state: {
       slot: "item-media",
@@ -106,13 +108,15 @@ function ItemMedia({
   });
 }
 
-function ItemContent({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemContent({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
+        className,
+      ),
     }),
     state: {
       slot: "item-content",
@@ -120,13 +124,15 @@ function ItemContent({ render, ...props }: useRender.ComponentProps<"div">) {
   });
 }
 
-function ItemTitle({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className:
+      className: cn(
         "flex w-fit items-center gap-2 font-medium text-sm leading-snug",
+        className,
+      ),
     }),
     state: {
       slot: "item-title",
@@ -134,7 +140,7 @@ function ItemTitle({ render, ...props }: useRender.ComponentProps<"div">) {
   });
 }
 
-function ItemDescription({ render, ...props }: useRender.ComponentProps<"p">) {
+function ItemDescription({ className, render, ...props }: useRender.ComponentProps<"p">) {
   return useRender({
     defaultTagName: "p",
     render,
@@ -142,6 +148,7 @@ function ItemDescription({ render, ...props }: useRender.ComponentProps<"p">) {
       className: cn(
         "line-clamp-2 text-balance font-normal text-muted-foreground text-sm leading-normal",
         "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+        className,
       ),
     }),
     state: {
@@ -150,12 +157,12 @@ function ItemDescription({ render, ...props }: useRender.ComponentProps<"p">) {
   });
 }
 
-function ItemActions({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemActions({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: "flex items-center gap-2",
+      className: cn("flex items-center gap-2", className),
     }),
     state: {
       slot: "item-actions",
@@ -163,12 +170,15 @@ function ItemActions({ render, ...props }: useRender.ComponentProps<"div">) {
   });
 }
 
-function ItemHeader({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemHeader({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: "flex basis-full items-center justify-between gap-2",
+      className: cn(
+        "flex basis-full items-center justify-between gap-2",
+        className,
+      ),
     }),
     state: {
       slot: "item-header",
@@ -176,12 +186,15 @@ function ItemHeader({ render, ...props }: useRender.ComponentProps<"div">) {
   });
 }
 
-function ItemFooter({ render, ...props }: useRender.ComponentProps<"div">) {
+function ItemFooter({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
     props: mergeProps<"div">(props, {
-      className: "flex basis-full items-center justify-between gap-2",
+      className: cn(
+        "flex basis-full items-center justify-between gap-2",
+        className,
+      ),
     }),
     state: {
       slot: "item-footer",

@@ -8,13 +8,13 @@ import {
 import { type ButtonProps, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-function Pagination({ render, ...props }: useRender.ComponentProps<"nav">) {
+function Pagination({ className, render, ...props }: useRender.ComponentProps<"nav">) {
   return useRender({
     defaultTagName: "nav",
     render,
     props: mergeProps<"nav">(props, {
       "aria-label": "pagination",
-      className: "mx-auto flex w-full justify-center",
+      className: cn("mx-auto flex w-full justify-center", className),
     }),
     state: {
       slot: "pagination",
@@ -23,6 +23,7 @@ function Pagination({ render, ...props }: useRender.ComponentProps<"nav">) {
 }
 
 function PaginationContent({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"ul">) {
@@ -30,7 +31,7 @@ function PaginationContent({
     defaultTagName: "ul",
     render,
     props: mergeProps<"ul">(props, {
-      className: "flex flex-row items-center gap-1",
+      className: cn("flex flex-row items-center gap-1", className),
     }),
     state: {
       slot: "pagination-content",
@@ -57,6 +58,7 @@ type PaginationLinkProps = {
 function PaginationLink({
   isActive,
   size = "icon",
+  className,
   render,
   ...props
 }: PaginationLinkProps) {
@@ -65,10 +67,13 @@ function PaginationLink({
     render,
     props: mergeProps<"a">(props, {
       "aria-current": isActive ? "page" : undefined,
-      className: buttonVariants({
-        variant: isActive ? "outline" : "ghost",
-        size,
-      }),
+      className: cn(
+        buttonVariants({
+          variant: isActive ? "outline" : "ghost",
+          size,
+        }),
+        className,
+      ),
     }),
     state: {
       slot: "pagination-link",
@@ -106,6 +111,7 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
 }
 
 function PaginationEllipsis({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"span">) {
@@ -114,7 +120,7 @@ function PaginationEllipsis({
     render,
     props: mergeProps<"span">(props, {
       "aria-hidden": true,
-      className: "flex size-9 items-center justify-center",
+      className: cn("flex size-9 items-center justify-center", className),
       children: (
         <>
           <MoreHorizontalIcon className="size-4" />

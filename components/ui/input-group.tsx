@@ -9,7 +9,7 @@ import { Input, type InputProps } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-function InputGroup({ render, ...props }: useRender.ComponentProps<"div">) {
+function InputGroup({ className, render, ...props }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -30,6 +30,7 @@ function InputGroup({ render, ...props }: useRender.ComponentProps<"div">) {
 
         // Error state.
         "has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40",
+        className,
       ),
     }),
     state: {
@@ -61,6 +62,7 @@ const inputGroupAddonVariants = cva(
 
 function InputGroupAddon({
   align = "inline-start",
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> &
@@ -70,7 +72,7 @@ function InputGroupAddon({
     render,
     props: mergeProps<"div">(props, {
       role: "group",
-      className: inputGroupAddonVariants({ align }),
+      className: cn(inputGroupAddonVariants({ align }), className),
       onClick: (e) => {
         if ((e.target as HTMLElement).closest("button")) {
           return;
@@ -125,6 +127,7 @@ function InputGroupButton({
 }
 
 function InputGroupText({
+  className,
   render,
   ...props
 }: useRender.ComponentProps<"span">) {
@@ -132,8 +135,10 @@ function InputGroupText({
     defaultTagName: "span",
     render,
     props: mergeProps<"span">(props, {
-      className:
+      className: cn(
         "flex items-center gap-2 text-muted-foreground text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        className,
+      ),
     }),
     state: {
       slot: "input-group-text",
