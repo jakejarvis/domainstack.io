@@ -12,22 +12,16 @@ import {
 import { cn } from "@/lib/utils";
 
 export function DangerZoneSettingsSection() {
-  const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
     <>
-      <Collapsible open={isDangerZoneOpen} onOpenChange={setIsDangerZoneOpen}>
+      <Collapsible>
         <CollapsibleTrigger
           render={
             <button
               type="button"
-              className={cn(
-                "group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all",
-                "hover:border-destructive/30 hover:bg-destructive/10",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2",
-                isDangerZoneOpen && "rounded-b-none border-b-0",
-              )}
+              className="group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all hover:border-destructive/30 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none data-[panel-open]:border-b-0"
             >
               <div className="flex items-center gap-3">
                 <AlertTriangle className="size-5 text-destructive" />
@@ -35,18 +29,18 @@ export function DangerZoneSettingsSection() {
                   Danger Zone!
                 </span>
               </div>
-              <ChevronDown
-                className={cn(
-                  "size-4 text-destructive/60 transition-transform duration-200",
-                  isDangerZoneOpen && "rotate-180",
-                )}
-              />
+              <ChevronDown className="size-4 text-destructive/60 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
             </button>
           }
         />
         <CollapsibleContent
           keepMounted
-          className="overflow-hidden transition-[max-height,opacity] duration-200 ease-out data-[closed]:max-h-0 data-[open]:max-h-96 data-[closed]:opacity-0 data-[open]:opacity-100"
+          className={cn(
+            "h-[var(--collapsible-panel-height)] overflow-hidden transition-[height,opacity] duration-200 ease-out",
+            "data-[ending-style]:h-0 data-[starting-style]:h-0",
+            "data-closed:opacity-0 data-open:opacity-100",
+            "[&[hidden]:not([hidden='until-found'])]:hidden",
+          )}
         >
           <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
