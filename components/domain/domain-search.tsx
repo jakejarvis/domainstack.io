@@ -2,6 +2,7 @@
 
 import { ArrowRight, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Field, FieldLabel } from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
@@ -135,85 +136,86 @@ export function DomainSearch({
           submit();
         }}
       >
-        {variant === "lg" && (
-          <label htmlFor="domain" className="sr-only">
+        <Field>
+          <FieldLabel htmlFor="domain" className="sr-only">
             Domain
-          </label>
-        )}
+          </FieldLabel>
+          <div className="relative w-full flex-1">
+            <InputGroup
+              className={cn(
+                "border-none ring-1 ring-border/60",
+                variant === "lg" ? "h-12" : "h-10",
+              )}
+            >
+              <InputGroupInput
+                id="domain"
+                ref={inputRef}
+                autoFocus={variant === "lg"}
+                inputMode="url"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                disabled={loading}
+                placeholder={
+                  variant === "lg"
+                    ? "domainstack.io"
+                    : isMobile
+                      ? "Search"
+                      : "Search any domain"
+                }
+                aria-label="Search any domain"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onPointerDown={handlePointerDown}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                onClick={handleClick}
+                onKeyDown={handleKeyDown}
+                className="relative top-0 truncate sm:top-px"
+              />
 
-        <div className="relative w-full flex-1">
-          <InputGroup
-            className={cn(
-              "border-none ring-1 ring-border/60",
-              variant === "lg" ? "h-12" : "h-10",
-            )}
-          >
-            <InputGroupInput
-              id="domain"
-              ref={inputRef}
-              autoFocus={variant === "lg"}
-              inputMode="url"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              disabled={loading}
-              placeholder={
-                variant === "lg"
-                  ? "domainstack.io"
-                  : isMobile
-                    ? "Search"
-                    : "Search any domain"
-              }
-              aria-label="Search any domain"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onPointerDown={handlePointerDown}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              onClick={handleClick}
-              onKeyDown={handleKeyDown}
-              className="relative top-0 truncate sm:top-px"
-            />
-
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-
-            {variant === "sm" && (loading || mounted) && (
-              <InputGroupAddon align="inline-end">
-                {loading ? (
-                  <Spinner />
-                ) : (
-                  <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-                    {isFocused ? "Esc" : isMac ? "⌘ K" : "Ctrl+K"}
-                  </Kbd>
-                )}
+              <InputGroupAddon>
+                <Search />
               </InputGroupAddon>
-            )}
 
-            {variant === "lg" && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  type="submit"
-                  disabled={loading}
-                  className="h-8"
-                  variant="ghost"
-                >
+              {variant === "sm" && (loading || mounted) && (
+                <InputGroupAddon align="inline-end">
                   {loading ? (
                     <Spinner />
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px]">Inspect</span>
-                      <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
-                      <ArrowRight className="inline-flex sm:hidden" />
-                    </div>
+                    <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+                      {isFocused ? "Esc" : isMac ? "⌘ K" : "Ctrl+K"}
+                    </Kbd>
                   )}
-                </InputGroupButton>
-              </InputGroupAddon>
-            )}
-          </InputGroup>
-        </div>
+                </InputGroupAddon>
+              )}
+
+              {variant === "lg" && (
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    type="submit"
+                    disabled={loading}
+                    className="h-8"
+                    variant="ghost"
+                  >
+                    {loading ? (
+                      <Spinner />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px]">Inspect</span>
+                        <Kbd className="hidden text-[13px] sm:inline-flex">
+                          ⏎
+                        </Kbd>
+                        <ArrowRight className="inline-flex sm:hidden" />
+                      </div>
+                    )}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
+          </div>
+        </Field>
       </form>
     </div>
   );
