@@ -44,7 +44,7 @@ export default function RootLayout({
           title="Domainstack"
         />
       </head>
-      <body className="min-h-svh overscroll-none font-sans tabular-nums antialiased">
+      <body className="relative min-h-svh overscroll-none font-sans tabular-nums antialiased">
         <Providers>
           {/* Solid background for light/dark modes */}
           <div aria-hidden className="fixed inset-0 -z-10 bg-background" />

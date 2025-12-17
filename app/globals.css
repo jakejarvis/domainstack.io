@@ -184,7 +184,6 @@
 
   body {
     @apply bg-background text-foreground;
-    position: relative;
   }
 
   ::selection {
