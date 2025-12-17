@@ -2,17 +2,15 @@
 
 import { Milestone, Search } from "lucide-react";
 import Link from "next/link";
-import {
-  Alert,
-  AlertDescription,
-  type AlertProps,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 export function RedirectedAlert({
   domain,
   finalUrl,
+  className,
   ...props
-}: AlertProps & {
+}: React.ComponentProps<typeof Alert> & {
   domain: string;
   finalUrl?: string | null;
 }) {
@@ -25,8 +23,11 @@ export function RedirectedAlert({
     if (dest === src) return null;
     return (
       <Alert
+        className={cn(
+          "border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10",
+          className,
+        )}
         {...props}
-        className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10"
       >
         <Milestone aria-hidden="true" />
         <AlertDescription>

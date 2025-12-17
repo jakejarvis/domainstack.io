@@ -1,7 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Separator, type SeparatorProps } from "@/components/ui/separator";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 const buttonGroupVariants = cva(
@@ -65,7 +65,7 @@ function ButtonGroupSeparator({
   className,
   orientation = "vertical",
   ...props
-}: SeparatorProps) {
+}: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       aria-hidden="true"

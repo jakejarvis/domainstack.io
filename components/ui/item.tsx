@@ -1,7 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Separator, type SeparatorProps } from "@/components/ui/separator";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 function ItemGroup({
@@ -22,7 +22,10 @@ function ItemGroup({
   });
 }
 
-function ItemSeparator({ className, ...props }: SeparatorProps) {
+function ItemSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       aria-hidden="true"

@@ -3,9 +3,8 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import type { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
-import { Input, type InputProps } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -115,7 +114,7 @@ function InputGroupButton({
   variant = "ghost",
   size = "xs",
   ...props
-}: Omit<ButtonProps, "size" | "type"> &
+}: Omit<React.ComponentProps<typeof Button>, "size" | "type"> &
   VariantProps<typeof inputGroupButtonVariants> & {
     type?: "button" | "submit" | "reset";
   }) {
@@ -150,7 +149,11 @@ function InputGroupText({
   });
 }
 
-function InputGroupInput({ className, ref, ...props }: InputProps) {
+function InputGroupInput({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithRef<typeof Input>) {
   return (
     <Input
       ref={ref}

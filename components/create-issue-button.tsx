@@ -2,7 +2,7 @@
 
 import { Bug } from "lucide-react";
 import { useMemo } from "react";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };
@@ -11,9 +11,7 @@ type CreateIssueButtonProps = {
   error?: ErrorWithOptionalDigest;
   children?: React.ReactNode;
   className?: string;
-  variant?: ButtonProps["variant"];
-  size?: ButtonProps["size"];
-};
+} & Pick<React.ComponentProps<typeof Button>, "variant" | "size">;
 
 function buildIssueUrl(error?: ErrorWithOptionalDigest) {
   const message = error?.message?.trim() || "Unexpected error";

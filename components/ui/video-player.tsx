@@ -11,10 +11,7 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
-import type { ComponentProps, CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-
-export type VideoPlayerProps = ComponentProps<typeof MediaController>;
 
 const variables = {
   "--media-primary-color": "var(--primary)",
@@ -26,100 +23,96 @@ const variables = {
   "--media-live-button-icon-color": "var(--muted-foreground)",
   "--media-live-button-indicator-color": "var(--destructive)",
   "--media-range-track-background": "var(--border)",
-} as CSSProperties;
+} as React.CSSProperties;
 
-export const VideoPlayer = ({ style, ...props }: VideoPlayerProps) => (
-  <MediaController
-    style={{
-      ...variables,
-      ...style,
-    }}
-    {...props}
-  />
-);
+function VideoPlayer({
+  style,
+  ...props
+}: React.ComponentProps<typeof MediaController>) {
+  return (
+    <MediaController
+      style={{
+        ...variables,
+        ...style,
+      }}
+      {...props}
+    />
+  );
+}
 
-export type VideoPlayerControlBarProps = ComponentProps<typeof MediaControlBar>;
+function VideoPlayerControlBar(
+  props: React.ComponentProps<typeof MediaControlBar>,
+) {
+  return <MediaControlBar {...props} />;
+}
 
-export const VideoPlayerControlBar = (props: VideoPlayerControlBarProps) => (
-  <MediaControlBar {...props} />
-);
-
-export type VideoPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
-
-export const VideoPlayerTimeRange = ({
+function VideoPlayerTimeRange({
   className,
   ...props
-}: VideoPlayerTimeRangeProps) => (
-  <MediaTimeRange className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaTimeRange>) {
+  return <MediaTimeRange className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerTimeDisplayProps = ComponentProps<
-  typeof MediaTimeDisplay
->;
-
-export const VideoPlayerTimeDisplay = ({
+function VideoPlayerTimeDisplay({
   className,
   ...props
-}: VideoPlayerTimeDisplayProps) => (
-  <MediaTimeDisplay className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaTimeDisplay>) {
+  return <MediaTimeDisplay className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerVolumeRangeProps = ComponentProps<
-  typeof MediaVolumeRange
->;
-
-export const VideoPlayerVolumeRange = ({
+function VideoPlayerVolumeRange({
   className,
   ...props
-}: VideoPlayerVolumeRangeProps) => (
-  <MediaVolumeRange className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaVolumeRange>) {
+  return <MediaVolumeRange className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
-
-export const VideoPlayerPlayButton = ({
+function VideoPlayerPlayButton({
   className,
   ...props
-}: VideoPlayerPlayButtonProps) => (
-  <MediaPlayButton className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaPlayButton>) {
+  return <MediaPlayButton className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerSeekBackwardButtonProps = ComponentProps<
-  typeof MediaSeekBackwardButton
->;
-
-export const VideoPlayerSeekBackwardButton = ({
+function VideoPlayerSeekBackwardButton({
   className,
   ...props
-}: VideoPlayerSeekBackwardButtonProps) => (
-  <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaSeekBackwardButton>) {
+  <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerSeekForwardButtonProps = ComponentProps<
-  typeof MediaSeekForwardButton
->;
-
-export const VideoPlayerSeekForwardButton = ({
+function VideoPlayerSeekForwardButton({
   className,
   ...props
-}: VideoPlayerSeekForwardButtonProps) => (
-  <MediaSeekForwardButton className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaSeekForwardButton>) {
+  return (
+    <MediaSeekForwardButton className={cn("p-2.5", className)} {...props} />
+  );
+}
 
-export type VideoPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
-
-export const VideoPlayerMuteButton = ({
+function VideoPlayerMuteButton({
   className,
   ...props
-}: VideoPlayerMuteButtonProps) => (
-  <MediaMuteButton className={cn("p-2.5", className)} {...props} />
-);
+}: React.ComponentProps<typeof MediaMuteButton>) {
+  return <MediaMuteButton className={cn("p-2.5", className)} {...props} />;
+}
 
-export type VideoPlayerContentProps = ComponentProps<"video">;
-
-export const VideoPlayerContent = ({
+function VideoPlayerContent({
   className,
   ...props
-}: VideoPlayerContentProps) => (
-  <video className={cn("mt-0 mb-0", className)} {...props} />
-);
+}: React.ComponentProps<"video">) {
+  return <video className={cn("mt-0 mb-0", className)} {...props} />;
+}
+
+export {
+  VideoPlayer,
+  VideoPlayerControlBar,
+  VideoPlayerTimeRange,
+  VideoPlayerTimeDisplay,
+  VideoPlayerVolumeRange,
+  VideoPlayerPlayButton,
+  VideoPlayerSeekBackwardButton,
+  VideoPlayerSeekForwardButton,
+  VideoPlayerMuteButton,
+  VideoPlayerContent,
+};

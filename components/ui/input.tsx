@@ -2,11 +2,11 @@ import { Input as InputPrimitive } from "@base-ui/react/input";
 
 import { cn } from "@/lib/utils";
 
-export type InputProps = InputPrimitive.Props & {
-  ref?: React.Ref<React.ElementRef<"input">>;
-};
-
-function Input({ className, ref, ...props }: InputProps) {
+function Input({
+  ref,
+  className,
+  ...props
+}: React.ComponentPropsWithRef<typeof InputPrimitive>) {
   return (
     <InputPrimitive
       ref={ref}

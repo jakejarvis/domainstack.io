@@ -20,10 +20,12 @@ const alertVariants = cva(
   },
 );
 
-export type AlertProps = useRender.ComponentProps<"div"> &
-  VariantProps<typeof alertVariants>;
-
-function Alert({ variant, className, render, ...props }: AlertProps) {
+function Alert({
+  variant,
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
   return useRender({
     defaultTagName: "div",
     render,
