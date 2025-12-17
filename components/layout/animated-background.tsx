@@ -8,6 +8,7 @@ import {
   useReducedMotion,
 } from "motion/react";
 import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Animated gradient background with organic, drifting motion.
@@ -19,15 +20,19 @@ export function AnimatedBackground() {
   const baseId = useId();
 
   const [blobParams, setBlobParams] = useState<BlobParams[] | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Generate randomness only after hydration to keep SSR/prerender deterministic.
     // This avoids Next.js' prerender hydration safeguards around Math.random().
     setBlobParams(generateBlobParams(createClientRand(), baseId));
+    setMounted(true);
   }, [baseId]);
 
-  return (
-    <div className="pointer-events-none absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="pointer-events-none fixed top-0 left-0 -z-10 h-[100lvh] w-full overflow-hidden">
       {/* Base gradient layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/10 via-transparent to-accent-purple/10 dark:from-accent-blue/5 dark:to-accent-purple/5" />
 
@@ -41,7 +46,8 @@ export function AnimatedBackground() {
           transition={shouldReduceMotion ? undefined : b.transition}
         />
       )) ?? null}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
