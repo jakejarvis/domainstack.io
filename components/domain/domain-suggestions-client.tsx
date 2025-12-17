@@ -67,7 +67,10 @@ export function DomainSuggestionsClient({
     analytics.track("search_history_cleared");
 
     // Scroll back to the left with smooth animation
-    if (scrollContainerRef.current) {
+    if (
+      scrollContainerRef.current &&
+      typeof scrollContainerRef.current.scrollTo === "function"
+    ) {
       scrollContainerRef.current.scrollTo({
         left: 0,
         behavior: "smooth",
@@ -91,7 +94,7 @@ export function DomainSuggestionsClient({
                 variant="secondary"
                 size="sm"
                 className={cn(
-                  "shrink-0 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                  "shrink-0 gap-2 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
                   "first-of-type:ml-[1px]",
                   isHistoryLoaded ? "visible" : "invisible",
                 )}
@@ -105,7 +108,7 @@ export function DomainSuggestionsClient({
                 <Favicon
                   domain={domain}
                   size={faviconSize}
-                  className="pointer-events-none size-4 shrink-0 rounded"
+                  className="pointer-events-none size-4 shrink-0 rounded-sm"
                 />
                 {domain}
               </Button>

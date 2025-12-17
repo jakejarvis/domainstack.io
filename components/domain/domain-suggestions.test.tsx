@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSuggestionsClient } from "@/components/domain/domain-suggestions-client";
 import { HomeSearchProvider } from "@/components/layout/home-search-context";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen, waitFor } from "@/lib/test-utils";
 
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -107,6 +107,31 @@ describe("DomainSuggestionsClient", () => {
     expect(
       screen.getByRole("button", { name: /clear history/i }),
     ).toBeInTheDocument();
+  });
+
+  it("clears history when clear button is clicked", async () => {
+    localStorage.setItem("search-history", JSON.stringify(["example.com"]));
+    renderWithProvider(<DomainSuggestionsClient defaultSuggestions={[]} />);
+
+    // Ensure history is loaded and rendered
+    expect(
+      await screen.findByRole("button", { name: /example\.com/i }),
+    ).toBeInTheDocument();
+
+    const clearButton = screen.getByRole("button", { name: /clear history/i });
+    await userEvent.click(clearButton);
+
+    await waitFor(() => {
+      const stored = localStorage.getItem("search-history");
+      const parsed = JSON.parse(stored ?? "[]") as unknown;
+      expect(parsed).toEqual([]);
+      expect(
+        screen.queryByRole("button", { name: /example\.com/i }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /clear history/i }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("invokes onSelect when a suggestion is clicked", async () => {
