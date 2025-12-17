@@ -20,7 +20,7 @@ import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
-import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -142,7 +142,7 @@ export function TrackedDomainCard({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <ScreenshotTooltip domain={domainName}>
+            <ScreenshotPopover domain={domainName}>
               <Link
                 href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}
@@ -152,7 +152,7 @@ export function TrackedDomainCard({
                   {domainName}
                 </CardTitle>
               </Link>
-            </ScreenshotTooltip>
+            </ScreenshotPopover>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               {verified && (
                 <DomainHealthBadge

@@ -29,7 +29,7 @@ import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
-import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -231,7 +231,7 @@ export function TrackedDomainsTable({
         accessorKey: "domainName",
         header: "Domain",
         cell: ({ row }) => (
-          <ScreenshotTooltip domain={row.original.domainName}>
+          <ScreenshotPopover domain={row.original.domainName}>
             <Link
               href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}
@@ -241,7 +241,7 @@ export function TrackedDomainsTable({
                 {row.original.domainName}
               </span>
             </Link>
-          </ScreenshotTooltip>
+          </ScreenshotPopover>
         ),
         enableHiding: false, // Always show domain name
         // No size - let it auto-size to content

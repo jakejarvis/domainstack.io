@@ -3,7 +3,7 @@
 import { ExternalLink } from "lucide-react";
 import { ExportButton } from "@/components/domain/export-button";
 import { Favicon } from "@/components/domain/favicon";
-import { ScreenshotTooltip } from "@/components/domain/screenshot-tooltip";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { useAnalytics } from "@/lib/analytics/client";
@@ -27,7 +27,7 @@ export function DomainReportHeader({
 
   return (
     <div className="flex min-w-0 items-center justify-between gap-4">
-      <ScreenshotTooltip domain={domain}>
+      <ScreenshotPopover domain={domain}>
         <a
           href={`https://${domain}`}
           target="_blank"
@@ -53,7 +53,7 @@ export function DomainReportHeader({
             aria-hidden="true"
           />
         </a>
-      </ScreenshotTooltip>
+      </ScreenshotPopover>
 
       <div className="flex flex-shrink-0 items-center gap-2">
         <TrackDomainButton domain={domain} />
