@@ -439,16 +439,16 @@ export function DashboardContent() {
             selection={selection}
             tier={tier}
             proMaxDomains={proMaxDomains}
-            onAddDomainAction={handleAddDomain}
-            onVerifyAction={handleVerify}
-            onRemoveAction={handleRemove}
-            onArchiveAction={handleArchive}
-            onClearFiltersAction={clearFilters}
-            onBulkArchiveAction={handleBulkArchive}
-            onBulkDeleteAction={handleBulkDelete}
+            onAddDomain={handleAddDomain}
+            onVerify={handleVerify}
+            onRemove={handleRemove}
+            onArchive={handleArchive}
+            onBulkArchive={handleBulkArchive}
+            onBulkDelete={handleBulkDelete}
+            onTableReady={setTableInstance}
+            onClearFilters={clearFilters}
             isBulkArchiving={isBulkArchiving}
             isBulkDeleting={isBulkDeleting}
-            onTableReadyAction={setTableInstance}
           />
 
           {/* Link to archived domains - only show when there are archived domains */}

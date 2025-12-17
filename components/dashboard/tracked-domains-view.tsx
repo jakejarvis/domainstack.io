@@ -30,17 +30,17 @@ type TrackedDomainsViewProps = {
   selection: SelectionState;
   tier: UserTier;
   proMaxDomains: number;
-  onAddDomainAction: () => void;
-  onVerifyAction: (domain: TrackedDomainWithDetails) => void;
-  onRemoveAction: (id: string, domainName: string) => void;
-  onArchiveAction?: (id: string, domainName: string) => void;
-  onClearFiltersAction?: () => void;
-  onBulkArchiveAction: () => void;
-  onBulkDeleteAction: () => void;
+  onAddDomain: () => void;
+  onVerify: (domain: TrackedDomainWithDetails) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
+  onClearFilters?: () => void;
+  onBulkArchive: () => void;
+  onBulkDelete: () => void;
+  // Table instance callback (table view only)
+  onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
   isBulkArchiving?: boolean;
   isBulkDeleting?: boolean;
-  // Table instance callback (table view only)
-  onTableReadyAction?: (table: Table<TrackedDomainWithDetails>) => void;
 };
 
 export function TrackedDomainsView({
@@ -51,16 +51,16 @@ export function TrackedDomainsView({
   selection,
   tier,
   proMaxDomains,
-  onAddDomainAction,
-  onVerifyAction,
-  onRemoveAction,
-  onArchiveAction,
-  onClearFiltersAction,
-  onBulkArchiveAction,
-  onBulkDeleteAction,
+  onAddDomain,
+  onVerify,
+  onRemove,
+  onArchive,
+  onClearFilters,
+  onBulkArchive,
+  onBulkDelete,
+  onTableReady,
   isBulkArchiving = false,
   isBulkDeleting = false,
-  onTableReadyAction,
 }: TrackedDomainsViewProps) {
   const [hasHydrated, setHasHydrated] = useState(false);
 
@@ -86,7 +86,7 @@ export function TrackedDomainsView({
         <EmptyContent>
           <Button
             variant="outline"
-            onClick={onClearFiltersAction}
+            onClick={onClearFilters}
             className="cursor-pointer"
           >
             Clear Filters
@@ -134,7 +134,7 @@ export function TrackedDomainsView({
                     return;
                   }
                   e.preventDefault();
-                  onAddDomainAction();
+                  onAddDomain();
                 }}
               />
             }
@@ -170,21 +170,21 @@ export function TrackedDomainsView({
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}
-              onVerify={onVerifyAction}
-              onRemove={onRemoveAction}
-              onArchive={onArchiveAction}
+              onVerify={onVerify}
+              onRemove={onRemove}
+              onArchive={onArchive}
+              onTableReady={onTableReady}
               tier={tier}
               proMaxDomains={proMaxDomains}
-              onTableReady={onTableReadyAction}
             />
           ) : (
             <TrackedDomainsGrid
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}
-              onVerify={onVerifyAction}
-              onRemove={onRemoveAction}
-              onArchive={onArchiveAction}
+              onVerify={onVerify}
+              onRemove={onRemove}
+              onArchive={onArchive}
               tier={tier}
               proMaxDomains={proMaxDomains}
             />
@@ -199,8 +199,8 @@ export function TrackedDomainsView({
         isAllSelected={selection.isAllSelected}
         isPartiallySelected={selection.isPartiallySelected}
         onToggleAll={selection.toggleAll}
-        onArchive={onBulkArchiveAction}
-        onDelete={onBulkDeleteAction}
+        onArchive={onBulkArchive}
+        onDelete={onBulkDelete}
         onCancel={selection.clearSelection}
         isArchiving={isBulkArchiving}
         isDeleting={isBulkDeleting}
