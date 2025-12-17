@@ -18,7 +18,11 @@ function Kbd({ className, render, ...props }: useRender.ComponentProps<"kbd">) {
   });
 }
 
-function KbdGroup({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function KbdGroup({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,

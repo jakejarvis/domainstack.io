@@ -2,7 +2,11 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cn } from "@/lib/utils";
 
-function Card({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function Card({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -38,7 +42,11 @@ function CardHeader({
   });
 }
 
-function CardTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function CardTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -68,7 +76,11 @@ function CardDescription({
   });
 }
 
-function CardAction({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function CardAction({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,

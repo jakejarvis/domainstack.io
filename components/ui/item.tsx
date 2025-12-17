@@ -4,7 +4,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Separator, type SeparatorProps } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-function ItemGroup({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemGroup({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -108,7 +112,11 @@ function ItemMedia({
   });
 }
 
-function ItemContent({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemContent({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -124,7 +132,11 @@ function ItemContent({ className, render, ...props }: useRender.ComponentProps<"
   });
 }
 
-function ItemTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -140,7 +152,11 @@ function ItemTitle({ className, render, ...props }: useRender.ComponentProps<"di
   });
 }
 
-function ItemDescription({ className, render, ...props }: useRender.ComponentProps<"p">) {
+function ItemDescription({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"p">) {
   return useRender({
     defaultTagName: "p",
     render,
@@ -157,7 +173,11 @@ function ItemDescription({ className, render, ...props }: useRender.ComponentPro
   });
 }
 
-function ItemActions({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemActions({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -170,7 +190,11 @@ function ItemActions({ className, render, ...props }: useRender.ComponentProps<"
   });
 }
 
-function ItemHeader({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemHeader({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -186,7 +210,11 @@ function ItemHeader({ className, render, ...props }: useRender.ComponentProps<"d
   });
 }
 
-function ItemFooter({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function ItemFooter({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,

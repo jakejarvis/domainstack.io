@@ -8,7 +8,11 @@ import {
 import { type ButtonProps, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-function Pagination({ className, render, ...props }: useRender.ComponentProps<"nav">) {
+function Pagination({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"nav">) {
   return useRender({
     defaultTagName: "nav",
     render,

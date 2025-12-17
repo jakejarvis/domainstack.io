@@ -9,7 +9,11 @@ import { Input, type InputProps } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-function InputGroup({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function InputGroup({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,

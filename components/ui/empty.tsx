@@ -3,7 +3,11 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-function Empty({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function Empty({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
@@ -73,7 +77,11 @@ function EmptyMedia({
   });
 }
 
-function EmptyTitle({ className, render, ...props }: useRender.ComponentProps<"div">) {
+function EmptyTitle({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
