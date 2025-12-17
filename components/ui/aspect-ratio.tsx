@@ -1,22 +1,24 @@
-import { cn } from "@/lib/utils";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 
 function AspectRatio({
   ratio,
-  className,
+  render,
   ...props
-}: React.ComponentProps<"div"> & { ratio: number }) {
-  return (
-    <div
-      data-slot="aspect-ratio"
-      style={
-        {
-          "--ratio": ratio,
-        } as React.CSSProperties
-      }
-      className={cn("relative aspect-(--ratio)", className)}
-      {...props}
-    />
-  );
+}: useRender.ComponentProps<"div"> & { ratio: number }) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(props, {
+      style: {
+        "--ratio": ratio,
+      } as React.CSSProperties,
+      className: "relative aspect-(--ratio)",
+    }),
+    state: {
+      slot: "aspect-ratio",
+    },
+  });
 }
 
 export { AspectRatio };

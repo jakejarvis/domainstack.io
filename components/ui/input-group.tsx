@@ -1,5 +1,7 @@
 "use client";
 
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ButtonProps } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
@@ -7,15 +9,13 @@ import { Input, type InputProps } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-function InputGroup({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
-  return (
-    <div
-      data-slot="input-group"
-      role="group"
-      className={cn(
+function InputGroup({ render, ...props }: useRender.ComponentProps<"div">) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(props, {
+      role: "group",
+      className: cn(
         "group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs outline-none transition-[color,box-shadow] dark:bg-input/30",
         "h-9 has-[>textarea]:h-auto",
 
@@ -30,12 +30,12 @@ function InputGroup({
 
         // Error state.
         "has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40",
-
-        className,
-      )}
-      {...props}
-    />
-  );
+      ),
+    }),
+    state: {
+      slot: "input-group",
+    },
+  });
 }
 
 const inputGroupAddonVariants = cva(
@@ -60,27 +60,29 @@ const inputGroupAddonVariants = cva(
 );
 
 function InputGroupAddon({
-  className,
   align = "inline-start",
+  render,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> &
+}: useRender.ComponentProps<"div"> &
   VariantProps<typeof inputGroupAddonVariants>) {
-  return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: this is intentional
-    <div
-      role="group"
-      data-slot="input-group-addon"
-      data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), className)}
-      onClick={(e) => {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(props, {
+      role: "group",
+      className: inputGroupAddonVariants({ align }),
+      onClick: (e) => {
         if ((e.target as HTMLElement).closest("button")) {
           return;
         }
         e.currentTarget.parentElement?.querySelector("input")?.focus();
-      }}
-      {...props}
-    />
-  );
+      },
+    }),
+    state: {
+      slot: "input-group-addon",
+      align,
+    },
+  });
 }
 
 const inputGroupButtonVariants = cva(
@@ -123,18 +125,20 @@ function InputGroupButton({
 }
 
 function InputGroupText({
-  className,
+  render,
   ...props
-}: React.ComponentPropsWithoutRef<"span">) {
-  return (
-    <span
-      className={cn(
+}: useRender.ComponentProps<"span">) {
+  return useRender({
+    defaultTagName: "span",
+    render,
+    props: mergeProps<"span">(props, {
+      className:
         "flex items-center gap-2 text-muted-foreground text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
-        className,
-      )}
-      {...props}
-    />
-  );
+    }),
+    state: {
+      slot: "input-group-text",
+    },
+  });
 }
 
 function InputGroupInput({ className, ref, ...props }: InputProps) {

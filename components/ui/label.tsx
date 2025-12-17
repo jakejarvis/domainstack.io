@@ -1,22 +1,20 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 
-function Label({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"label">) {
-  return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: This is a generic Label primitive; association is provided via props (htmlFor) or nested controls at call sites.
-    <label
-      data-slot="label"
-      className={cn(
+function Label({ render, ...props }: useRender.ComponentProps<"label">) {
+  return useRender({
+    defaultTagName: "label",
+    render,
+    props: mergeProps<"label">(props, {
+      className:
         "flex select-none items-center gap-2 font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50 group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50",
-        className,
-      )}
-      {...props}
-    />
-  );
+    }),
+    state: {
+      slot: "label",
+    },
+  });
 }
 
 export { Label };

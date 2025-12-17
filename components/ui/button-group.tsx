@@ -22,42 +22,35 @@ const buttonGroupVariants = cva(
 );
 
 function ButtonGroup({
-  className,
   orientation,
-  children,
+  render,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> &
-  VariantProps<typeof buttonGroupVariants>) {
-  return (
-    <div
-      role="group"
-      data-slot="button-group"
-      data-orientation={orientation}
-      className={cn(buttonGroupVariants({ orientation }), className)}
-      {...props}
-    >
-      {children}
-    </div>
-  );
+}: useRender.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(props, {
+      role: "group",
+      className: buttonGroupVariants({ orientation }),
+    }),
+    state: {
+      slot: "button-group",
+      orientation,
+    },
+  });
 }
 
 function ButtonGroupText({
-  className,
   render,
   ...props
 }: useRender.ComponentProps<"div">) {
   return useRender({
     defaultTagName: "div",
     render,
-    props: mergeProps<"div">(
-      {
-        className: cn(
-          "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
-          className,
-        ),
-      },
-      props,
-    ),
+    props: mergeProps<"div">(props, {
+      className:
+        "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+    }),
     state: {
       slot: "button-group-text",
     },

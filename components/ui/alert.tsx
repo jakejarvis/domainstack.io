@@ -1,3 +1,5 @@
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -18,50 +20,72 @@ const alertVariants = cva(
   },
 );
 
-export type AlertProps = React.ComponentPropsWithoutRef<"div"> &
+export type AlertProps = useRender.ComponentProps<"div"> &
   VariantProps<typeof alertVariants>;
 
-function Alert({ className, variant, ...props }: AlertProps) {
-  return (
-    <div
-      data-slot="alert"
-      role="alert"
-      className={cn(alertVariants({ variant }), className)}
-      {...props}
-    />
-  );
+function Alert({
+  variant,
+  render,
+  ...props
+}: useRender.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(props, {
+      role: "alert",
+      className: alertVariants({ variant }),
+    }),
+    state: {
+      slot: "alert",
+      variant,
+    },
+  });
 }
 
 function AlertTitle({
   className,
+  render,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
-  return (
-    <div
-      data-slot="alert-title"
-      className={cn(
-        "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
-        className,
-      )}
-      {...props}
-    />
-  );
+}: useRender.ComponentProps<"div">) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(
+      {
+        className: cn(
+          "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
+          className,
+        ),
+      },
+      props,
+    ),
+    state: {
+      slot: "alert-title",
+    },
+  });
 }
 
 function AlertDescription({
   className,
+  render,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn(
-        "col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed",
-        className,
-      )}
-      {...props}
-    />
-  );
+}: useRender.ComponentProps<"div">) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(
+      {
+        className: cn(
+          "col-start-2 grid justify-items-start gap-1 text-muted-foreground text-sm [&_p]:leading-relaxed",
+          className,
+        ),
+      },
+      props,
+    ),
+    state: {
+      slot: "alert-description",
+    },
+  });
 }
 
 export { Alert, AlertTitle, AlertDescription };
