@@ -33,7 +33,7 @@
     "@bprogress/next": "^3.2.12",
     "@polar-sh/better-auth": "^1.6.1",
     "@polar-sh/sdk": "^0.41.5",
-    "@posthog/nextjs-config": "^1.7.1",
+    "@posthog/nextjs-config": "^1.7.3",
     "@react-email/components": "^1.0.1",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "143.0.0",
@@ -73,8 +73,8 @@
     "nuqs": "^2.8.5",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
-    "posthog-js": "^1.307.0",
-    "posthog-node": "^5.17.2",
+    "posthog-js": "^1.309.1",
+    "posthog-node": "^5.17.4",
     "prettier": "^3.7.4",
     "puppeteer-core": "24.32.0",
     "rdapper": "^0.11.0",
@@ -95,7 +95,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.9",
+    "@biomejs/biome": "2.3.10",
     "@electric-sql/pglite": "^0.3.14",
     "@react-email/preview-server": "5.0.8",
     "@tailwindcss/postcss": "^4.1.18",
@@ -103,7 +103,7 @@
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.1",
     "@testing-library/user-event": "14.6.1",
-    "@types/node": "25.0.2",
+    "@types/node": "25.0.3",
     "@types/pg": "^8.16.0",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
@@ -122,7 +122,7 @@
     "tsx": "^4.21.0",
     "tw-animate-css": "^1.4.0",
     "typescript": "5.9.3",
-    "vite-tsconfig-paths": "^6.0.1",
+    "vite-tsconfig-paths": "^6.0.2",
     "vitest": "^4.0.16"
   },
   "engines": {
