@@ -2,73 +2,39 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { createContext, useContext } from "react";
+import { createContext, Fragment, useContext } from "react";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
-type ResponsiveTooltipContextValue = {
+const ResponsiveTooltipContext = createContext<{
   isTouchDevice: boolean;
-};
-
-const ResponsiveTooltipContext =
-  createContext<ResponsiveTooltipContextValue | null>(null);
-
-type ResponsiveTooltipProps = {
-  children?: React.ReactNode;
-  open?: boolean;
-  defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onOpenChangeComplete?: (open: boolean) => void;
-};
+} | null>(null);
 
 function ResponsiveTooltip({
-  children,
-  onOpenChange,
-  onOpenChangeComplete,
   ...props
-}: ResponsiveTooltipProps) {
+}: PopoverPrimitive.Root.Props & TooltipPrimitive.Root.Props) {
   const { isTouchDevice } = usePointerCapability();
+
+  const Root = isTouchDevice ? PopoverPrimitive.Root : TooltipPrimitive.Root;
+  // Base UI popovers do not have a Provider, so we use a Fragment to wrap the children instead
+  const Provider = isTouchDevice ? Fragment : TooltipPrimitive.Provider;
 
   return (
     <ResponsiveTooltipContext.Provider value={{ isTouchDevice }}>
-      {isTouchDevice ? (
-        <PopoverPrimitive.Root
-          data-slot="responsive-tooltip"
-          onOpenChange={(open) => onOpenChange?.(open)}
-          onOpenChangeComplete={(open) => onOpenChangeComplete?.(open)}
-          {...props}
-        >
-          {children}
-        </PopoverPrimitive.Root>
-      ) : (
-        <TooltipPrimitive.Provider
-          data-slot="responsive-tooltip-provider"
-          delay={0}
-        >
-          <TooltipPrimitive.Root
-            data-slot="responsive-tooltip"
-            onOpenChange={(open) => onOpenChange?.(open)}
-            onOpenChangeComplete={(open) => onOpenChangeComplete?.(open)}
-            {...props}
-          >
-            {children}
-          </TooltipPrimitive.Root>
-        </TooltipPrimitive.Provider>
-      )}
+      <Provider delay={0} data-slot="responsive-tooltip-provider">
+        <Root data-slot="responsive-tooltip" {...props} />
+      </Provider>
     </ResponsiveTooltipContext.Provider>
   );
 }
 
-type ResponsiveTooltipTriggerProps = Omit<
-  TooltipPrimitive.Trigger.Props<unknown>,
-  "handle"
-> &
-  Pick<PopoverPrimitive.Trigger.Props<unknown>, "nativeButton">;
-
 function ResponsiveTooltipTrigger({
-  nativeButton,
   ...props
-}: ResponsiveTooltipTriggerProps) {
+}: Omit<
+  TooltipPrimitive.Trigger.Props<unknown> &
+    PopoverPrimitive.Trigger.Props<unknown>,
+  "handle"
+>) {
   const ctx = useContext(ResponsiveTooltipContext);
   if (!ctx) {
     throw new Error(
@@ -76,26 +42,10 @@ function ResponsiveTooltipTrigger({
     );
   }
 
-  return ctx.isTouchDevice ? (
-    <PopoverPrimitive.Trigger
-      data-slot="responsive-tooltip-trigger"
-      nativeButton={nativeButton}
-      {...props}
-    />
-  ) : (
-    <TooltipPrimitive.Trigger
-      data-slot="responsive-tooltip-trigger"
-      {...props}
-    />
-  );
-}
+  const { Trigger } = ctx.isTouchDevice ? PopoverPrimitive : TooltipPrimitive;
 
-type ResponsiveTooltipContentProps = TooltipPrimitive.Popup.Props &
-  PopoverPrimitive.Popup.Props &
-  Pick<
-    TooltipPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "side" | "sideOffset"
-  >;
+  return <Trigger data-slot="responsive-tooltip-trigger" {...props} />;
+}
 
 function ResponsiveTooltipContent({
   className,
@@ -105,7 +55,12 @@ function ResponsiveTooltipContent({
   alignOffset = 0,
   children,
   ...props
-}: ResponsiveTooltipContentProps) {
+}: TooltipPrimitive.Popup.Props &
+  PopoverPrimitive.Popup.Props &
+  Pick<
+    TooltipPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset"
+  >) {
   const ctx = useContext(ResponsiveTooltipContext);
   if (!ctx) {
     throw new Error(
@@ -124,48 +79,29 @@ function ResponsiveTooltipContent({
   const arrowClassName =
     "z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=left]:top-1/2! data-[side=right]:top-1/2! data-[side=left]:-right-1 data-[side=top]:-bottom-2.5 data-[side=right]:-left-1 data-[side=left]:-translate-y-1/2 data-[side=right]:-translate-y-1/2";
 
-  if (ctx.isTouchDevice) {
-    return (
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Positioner
-          sideOffset={sideOffset}
-          align={align}
-          alignOffset={alignOffset}
-          side={side}
-          className="isolate z-50"
-        >
-          <PopoverPrimitive.Popup
-            data-slot="responsive-tooltip-content"
-            className={popupClassName}
-            {...props}
-          >
-            {children}
-            <PopoverPrimitive.Arrow className={arrowClassName} />
-          </PopoverPrimitive.Popup>
-        </PopoverPrimitive.Positioner>
-      </PopoverPrimitive.Portal>
-    );
-  }
+  const { Portal, Positioner, Popup, Arrow } = ctx.isTouchDevice
+    ? PopoverPrimitive
+    : TooltipPrimitive;
 
   return (
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner
+    <Portal>
+      <Positioner
         sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
         side={side}
         className="isolate z-50"
       >
-        <TooltipPrimitive.Popup
+        <Popup
           data-slot="responsive-tooltip-content"
           className={popupClassName}
           {...props}
         >
           {children}
-          <TooltipPrimitive.Arrow className={arrowClassName} />
-        </TooltipPrimitive.Popup>
-      </TooltipPrimitive.Positioner>
-    </TooltipPrimitive.Portal>
+          <Arrow className={arrowClassName} />
+        </Popup>
+      </Positioner>
+    </Portal>
   );
 }
 
