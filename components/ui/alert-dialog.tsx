@@ -50,7 +50,7 @@ function AlertDialogContent({
 }: AlertDialogPrimitive.Popup.Props) {
   return (
     <AlertDialogPortal>
-      <AlertDialogOverlay />
+      <AlertDialogOverlay forceRender />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
@@ -58,6 +58,10 @@ function AlertDialogContent({
           "transition-[transform,opacity] duration-200",
           "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
           "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+          // Nested dialog styling: Dim the parent popup
+          "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
+          // Prevent interaction with parent dialog when nested dialog is open
+          "data-[nested-dialog-open]:pointer-events-none",
           className,
         )}
         {...props}
