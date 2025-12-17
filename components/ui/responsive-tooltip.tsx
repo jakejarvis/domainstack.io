@@ -2,7 +2,7 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { createContext, Fragment, useContext } from "react";
+import { createContext, useContext } from "react";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
@@ -15,26 +15,33 @@ function ResponsiveTooltip({
 }: PopoverPrimitive.Root.Props & TooltipPrimitive.Root.Props) {
   const { isTouchDevice } = usePointerCapability();
 
-  const Root = isTouchDevice ? PopoverPrimitive.Root : TooltipPrimitive.Root;
-  // Base UI popovers do not have a Provider, so we use a Fragment to wrap the children instead
-  const Provider = isTouchDevice ? Fragment : TooltipPrimitive.Provider;
+  const { Root } = isTouchDevice ? PopoverPrimitive : TooltipPrimitive;
 
   return (
     <ResponsiveTooltipContext.Provider value={{ isTouchDevice }}>
-      <Provider delay={0} data-slot="responsive-tooltip-provider">
+      {isTouchDevice ? (
         <Root data-slot="responsive-tooltip" {...props} />
-      </Provider>
+      ) : (
+        <TooltipPrimitive.Provider
+          delay={0}
+          data-slot="responsive-tooltip-provider"
+        >
+          <Root data-slot="responsive-tooltip" {...props} />
+        </TooltipPrimitive.Provider>
+      )}
     </ResponsiveTooltipContext.Provider>
   );
 }
 
 function ResponsiveTooltipTrigger({
+  nativeButton,
   ...props
 }: Omit<
   TooltipPrimitive.Trigger.Props<unknown> &
     PopoverPrimitive.Trigger.Props<unknown>,
   "handle"
->) {
+> &
+  Pick<PopoverPrimitive.Trigger.Props<unknown>, "nativeButton">) {
   const ctx = useContext(ResponsiveTooltipContext);
   if (!ctx) {
     throw new Error(
@@ -43,8 +50,15 @@ function ResponsiveTooltipTrigger({
   }
 
   const { Trigger } = ctx.isTouchDevice ? PopoverPrimitive : TooltipPrimitive;
+  const triggerProps = ctx.isTouchDevice ? { nativeButton } : {};
 
-  return <Trigger data-slot="responsive-tooltip-trigger" {...props} />;
+  return (
+    <Trigger
+      data-slot="responsive-tooltip-trigger"
+      {...props}
+      {...triggerProps}
+    />
+  );
 }
 
 function ResponsiveTooltipContent({
@@ -68,17 +82,6 @@ function ResponsiveTooltipContent({
     );
   }
 
-  const popupClassName = cn(
-    "relative z-50 w-fit max-w-xs overflow-visible rounded-md bg-foreground px-3 py-1.5 text-background text-xs",
-    "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
-    "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
-    "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
-    className,
-  );
-
-  const arrowClassName =
-    "z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=left]:top-1/2! data-[side=right]:top-1/2! data-[side=left]:-right-1 data-[side=top]:-bottom-2.5 data-[side=right]:-left-1 data-[side=left]:-translate-y-1/2 data-[side=right]:-translate-y-1/2";
-
   const { Portal, Positioner, Popup, Arrow } = ctx.isTouchDevice
     ? PopoverPrimitive
     : TooltipPrimitive;
@@ -94,11 +97,17 @@ function ResponsiveTooltipContent({
       >
         <Popup
           data-slot="responsive-tooltip-content"
-          className={popupClassName}
+          className={cn(
+            "relative z-50 w-fit max-w-xs overflow-visible rounded-md bg-foreground px-3 py-1.5 text-background text-xs",
+            "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
+            "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+            "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
+            className,
+          )}
           {...props}
         >
           {children}
-          <Arrow className={arrowClassName} />
+          <Arrow className="z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-foreground fill-foreground data-[side=bottom]:top-1 data-[side=left]:top-1/2! data-[side=right]:top-1/2! data-[side=left]:-right-1 data-[side=top]:-bottom-2.5 data-[side=right]:-left-1 data-[side=left]:-translate-y-1/2 data-[side=right]:-translate-y-1/2" />
         </Popup>
       </Positioner>
     </Portal>
