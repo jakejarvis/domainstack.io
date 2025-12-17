@@ -96,7 +96,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.9",
+    "@biomejs/biome": "2.3.10",
     "@electric-sql/pglite": "^0.3.14",
     "@react-email/preview-server": "5.0.8",
     "@tailwindcss/postcss": "^4.1.18",
