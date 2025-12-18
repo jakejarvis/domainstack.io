@@ -112,7 +112,7 @@
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
-    "bufferutil": "^4.0.9",
+    "bufferutil": "^4.1.0",
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.8",
     "jsdom": "^27.3.0",
