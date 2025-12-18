@@ -138,7 +138,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         // Success! Mark the domain as verified
         const verifiedMethod = result.method;
         await step.run(`mark-verified-${attempt}`, async () => {
-          await verifyTrackedDomain(trackedDomainId, verifiedMethod);
+          return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
 
         inngestLogger.info("Auto-verified pending domain", {
@@ -150,17 +150,18 @@ export const autoVerifyPendingDomain = inngest.createFunction(
 
         return {
           result: "verified",
-          method: result.method,
+          domainName: currentDomainName,
+          verifiedMethod: result.method,
           attempt: attempt + 1,
         };
+      } else {
+        inngestLogger.debug("Verification attempt failed, will retry", {
+          domainName: currentDomainName,
+          verifiedMethod: result.method,
+          attempt: attempt + 1,
+          nextDelay: RETRY_DELAYS[attempt + 1] ?? "none (final attempt)",
+        });
       }
-
-      inngestLogger.debug("Verification attempt failed, will retry", {
-        trackedDomainId,
-        domainName: currentDomainName,
-        attempt: attempt + 1,
-        nextDelay: RETRY_DELAYS[attempt + 1] ?? "none (final attempt)",
-      });
     }
 
     // All attempts exhausted - daily cron will catch it

@@ -32,12 +32,13 @@ const STORAGE_KEY = "search-history";
  * ```
  */
 export function useDomainHistory(domain?: string) {
-  const [history, setHistory, { removeItem }] = useLocalStorageState<string[]>(
-    STORAGE_KEY,
-    {
+  const [history, setHistory, { removeItem, isPersistent }] =
+    useLocalStorageState<string[]>(STORAGE_KEY, {
       defaultValue: [],
-    },
-  );
+      // This ensures the server matches the initial client render (which defaults to [])
+      // before the effect runs to load the actual data from localStorage.
+      defaultServerValue: [],
+    });
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
 
   // Mark history as loaded on mount
@@ -47,7 +48,9 @@ export function useDomainHistory(domain?: string) {
 
   // Add domain to history when provided
   useEffect(() => {
-    if (!domain || !isHistoryLoaded) return;
+    // Only update if we have a domain and storage is synchronized/persistent
+    // This prevents overwriting storage with a partial list if not yet loaded
+    if (!domain || !isPersistent) return;
 
     // Use functional setState to avoid race conditions and ensure we work with latest state
     setHistory((currentHistory) => {
@@ -62,7 +65,7 @@ export function useDomainHistory(domain?: string) {
         MAX_HISTORY_ITEMS,
       );
     });
-  }, [domain, isHistoryLoaded, setHistory]);
+  }, [domain, isPersistent, setHistory]);
 
   // Clear history function
   const clearHistory = useCallback(() => {

@@ -115,7 +115,7 @@ export const reverifyDomains = inngest.createFunction(
         if (result.verified && result.method) {
           const method = result.method;
           await step.run(`mark-pending-verified-${domain.id}`, async () => {
-            await verifyTrackedDomain(domain.id, method);
+            return await verifyTrackedDomain(domain.id, method);
           });
           pendingResults.verified++;
 
@@ -171,7 +171,7 @@ export const reverifyDomains = inngest.createFunction(
         if (result.verified) {
           // Verification successful
           await step.run(`mark-verified-${domain.id}`, async () => {
-            await markVerificationSuccessful(domain.id);
+            return await markVerificationSuccessful(domain.id);
           });
           verifiedResults.verified++;
         } else {
