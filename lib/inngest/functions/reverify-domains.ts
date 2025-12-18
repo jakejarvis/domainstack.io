@@ -10,17 +10,22 @@ import {
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import {
+  getPendingDomainsForAutoVerification,
   getVerifiedDomainsForReverification,
   markVerificationFailing,
   markVerificationSuccessful,
   revokeVerification,
   type TrackedDomainForReverification,
+  verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
-import { verifyDomainOwnership } from "@/server/services/verification";
+import {
+  tryAllVerificationMethods,
+  verifyDomainOwnership,
+} from "@/server/services/verification";
 
 const logger = createLogger({ source: "reverify-domains" });
 
@@ -49,12 +54,17 @@ async function shouldNotifyVerificationStatus(
 }
 
 /**
- * Cron job to re-verify domain ownership for already verified domains.
- * Runs daily at 4:00 AM UTC.
+ * Cron job to verify domain ownership.
+ * Runs daily at 4:00 AM and 4:00 PM UTC.
  *
- * Note: Pending domain auto-verification is handled separately by the
+ * This job handles two types of verification:
+ * 1. Re-verifying already verified domains (to catch if verification is removed)
+ * 2. Auto-verifying pending domains that may have been verified since the initial add
+ *
+ * Note: Initial pending domain auto-verification is handled by the
  * `auto-verify-pending-domain` function, which runs on a smart retry schedule
- * triggered when a domain is added.
+ * triggered when a domain is added. This cron job acts as a safety net for
+ * domains that take longer than ~2 hours to propagate.
  *
  * Grace period workflow for verified domains:
  * - Day 0: Verification fails → mark as 'failing', send warning email
@@ -69,11 +79,66 @@ export const reverifyDomains = inngest.createFunction(
       limit: 1,
     },
   },
-  // Run every day at 4:00 AM UTC
-  { cron: "0 4 * * *" },
+  // Run every day at 4:00 AM and 4:00 PM UTC
+  { cron: "0 4,16 * * *" },
   async ({ step, logger: inngestLogger }) => {
-    inngestLogger.info("Starting domain re-verification job");
+    inngestLogger.info("Starting domain verification job");
 
+    // 1. Process Pending Domains
+    const pendingDomains = await step.run("fetch-pending-domains", async () => {
+      return await getPendingDomainsForAutoVerification();
+    });
+
+    inngestLogger.info(
+      `Found ${pendingDomains.length} pending domains to verify`,
+    );
+
+    const pendingResults = {
+      total: pendingDomains.length,
+      verified: 0,
+      stillPending: 0,
+      errors: 0,
+    };
+
+    for (const domain of pendingDomains) {
+      try {
+        const result = await step.run(
+          `verify-pending-${domain.id}`,
+          async () => {
+            return await tryAllVerificationMethods(
+              domain.domainName,
+              domain.verificationToken,
+            );
+          },
+        );
+
+        if (result.verified && result.method) {
+          const method = result.method;
+          await step.run(`mark-pending-verified-${domain.id}`, async () => {
+            await verifyTrackedDomain(domain.id, method);
+          });
+          pendingResults.verified++;
+
+          inngestLogger.info("Auto-verified pending domain during cron", {
+            domainId: domain.id,
+            domainName: domain.domainName,
+            method: result.method,
+          });
+        } else {
+          pendingResults.stillPending++;
+        }
+      } catch (err) {
+        logger.error("Error verifying pending domain", err, {
+          domainId: domain.id,
+          domainName: domain.domainName,
+        });
+        pendingResults.errors++;
+      }
+    }
+
+    inngestLogger.info("Pending domain verification complete", pendingResults);
+
+    // 2. Process Verified Domains (Re-verification)
     const verifiedDomains = await step.run(
       "fetch-verified-domains",
       async () => {
@@ -141,8 +206,11 @@ export const reverifyDomains = inngest.createFunction(
       }
     }
 
-    inngestLogger.info("Domain re-verification job complete", verifiedResults);
-    return verifiedResults;
+    inngestLogger.info("Domain re-verification job complete", {
+      pending: pendingResults,
+      verified: verifiedResults,
+    });
+    return { pending: pendingResults, verified: verifiedResults };
   },
 );
 
