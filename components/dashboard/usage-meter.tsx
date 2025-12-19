@@ -27,8 +27,8 @@ export function UsageMeter({
         // Base styles
         "bg-primary/12 dark:bg-primary/20",
         // Color variants
-        isAtLimit && "[&_[data-slot=meter-indicator]]:bg-danger",
-        isNearLimit && "[&_[data-slot=meter-indicator]]:bg-warning",
+        isAtLimit && "[&_[data-slot=meter-indicator]]:bg-accent-red",
+        isNearLimit && "[&_[data-slot=meter-indicator]]:bg-accent-orange",
         className,
       )}
       {...props}

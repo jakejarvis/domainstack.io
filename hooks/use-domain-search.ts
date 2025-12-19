@@ -5,17 +5,9 @@ import { useParams } from "next/navigation";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
-import { z } from "zod";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
-
-const domainSchema = z
-  .string()
-  .transform((v) => normalizeDomainInput(v))
-  .refine((v) => isValidDomain(v), {
-    message: "Please enter a valid domain.",
-  });
 
 export type Source = "form" | "header" | "suggestion";
 
@@ -98,17 +90,15 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
   }
 
   function submit() {
-    const parsed = domainSchema.safeParse(value);
-    if (!parsed.success) {
-      const firstIssue = parsed.error.issues?.[0] as
-        | { code?: string; message?: string }
-        | undefined;
+    const normalized = normalizeDomainInput(value);
+    const isValid = isValidDomain(normalized);
+
+    if (!isValid) {
       analytics.track("search_invalid_input", {
-        reason: firstIssue?.code ?? "invalid",
-        value_length: value.length,
+        input: value,
       });
       if (showInvalidToast) {
-        toast.error(firstIssue?.message, {
+        toast.error("Please enter a valid domain.", {
           icon: createElement(CircleX, { className: "h-4 w-4" }),
           position: "bottom-center",
         });
@@ -116,7 +106,7 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
       }
       return;
     }
-    navigateToDomain(parsed.data, source);
+    navigateToDomain(normalized, source);
   }
 
   return {
