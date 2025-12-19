@@ -18,11 +18,7 @@ const REQUEST_TIMEOUT_MS = 5000;
 
 export async function GET(
   _request: NextRequest,
-  context: {
-    params: Promise<{
-      userId: string;
-    }>;
-  },
+  context: RouteContext<"/api/avatar/[userId]">,
 ): Promise<NextResponse> {
   await connection();
 

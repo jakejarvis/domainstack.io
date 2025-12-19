@@ -119,6 +119,13 @@ export function useDomainVerification({
   useEffect(() => {
     if (resumeDomain && open) {
       setDomain(resumeDomain.domainName);
+
+      // If we're already tracking this domain (e.g. just added it and the list refreshed),
+      // don't reset the state. This prevents clearing instructions/ID.
+      if (trackedDomainId === resumeDomain.id) {
+        return;
+      }
+
       setTrackedDomainId(resumeDomain.id);
       setStep(2);
       // Reset state that could be stale from a previous domain
@@ -127,7 +134,7 @@ export function useDomainVerification({
       setMethod(resumeDomain.verificationMethod ?? "dns_txt");
       setInstructions(null); // Will be set by instructionsQuery effect
     }
-  }, [resumeDomain, open]);
+  }, [resumeDomain, open, trackedDomainId]);
 
   // When instructions are fetched (resume mode), set them
   useEffect(() => {

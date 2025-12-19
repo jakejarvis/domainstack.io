@@ -198,7 +198,8 @@ export function AddDomainContent({
   }
 
   // If at quota (and not resuming verification for an existing domain), show quota message
-  if (!canAddMore && !resumeDomain) {
+  // Exception: If we just finished adding a domain (step 3), don't show the limit message yet
+  if (!canAddMore && !resumeDomain && step !== 3) {
     const percentage =
       maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
     const proTierInfo = getProTierInfo(proMaxDomains);
