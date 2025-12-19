@@ -2,8 +2,8 @@ import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import * as motion from "motion/react-client";
 import Link from "next/link";
+import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Button } from "@/components/ui/button";
-import { Meter } from "@/components/ui/meter";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -43,8 +43,6 @@ export function DashboardHeader({
   onAddDomain,
   hasAnyDomains = false,
 }: DashboardHeaderProps) {
-  const percentage = maxDomains > 0 ? (trackedCount / maxDomains) * 100 : 0;
-
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-3">
@@ -83,8 +81,9 @@ export function DashboardHeader({
       <div className="flex items-center justify-between gap-3">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
-          <Meter
-            value={percentage}
+          <UsageMeter
+            activeCount={trackedCount}
+            maxDomains={maxDomains}
             className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
           />
           <span className="text-[13px] text-muted-foreground tabular-nums">

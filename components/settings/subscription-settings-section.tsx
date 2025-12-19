@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { ExternalLink, ShoppingCart } from "lucide-react";
+import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Meter } from "@/components/ui/meter";
 import { Spinner } from "@/components/ui/spinner";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -49,8 +49,6 @@ export function SubscriptionSettingsSection() {
   const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
   const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
   const subscriptionEndsAt = subscription?.subscriptionEndsAt ?? null;
-  const percentage =
-    maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
   const proTierInfo = getProTierInfo(proMaxDomains);
 
   return (
@@ -88,8 +86,9 @@ export function SubscriptionSettingsSection() {
               {activeCount} of {maxDomains} domains used
             </p>
           </div>
-          <Meter
-            value={percentage}
+          <UsageMeter
+            activeCount={activeCount}
+            maxDomains={maxDomains}
             className="w-24"
             aria-label="Domain usage"
             aria-valuetext={`${activeCount} of ${maxDomains} domains used`}

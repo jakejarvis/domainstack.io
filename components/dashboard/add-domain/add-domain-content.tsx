@@ -8,6 +8,7 @@ import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirm
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
+import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Meter } from "@/components/ui/meter";
 import { Spinner } from "@/components/ui/spinner";
 import { type Step, Stepper } from "@/components/ui/stepper";
 import {
@@ -200,8 +200,6 @@ export function AddDomainContent({
   // If at quota (and not resuming verification for an existing domain), show quota message
   // Exception: If we just finished adding a domain (step 3), don't show the limit message yet
   if (!canAddMore && !resumeDomain && step !== 3) {
-    const percentage =
-      maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
     const proTierInfo = getProTierInfo(proMaxDomains);
 
     const quotaContent = (
@@ -243,8 +241,9 @@ export function AddDomainContent({
                 {activeCount} of {maxDomains} domains used
               </p>
             </div>
-            <Meter
-              value={percentage}
+            <UsageMeter
+              activeCount={activeCount}
+              maxDomains={maxDomains}
               className="w-24"
               aria-label="Domain usage"
             />
