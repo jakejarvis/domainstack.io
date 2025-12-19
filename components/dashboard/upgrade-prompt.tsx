@@ -43,7 +43,7 @@ export function UpgradePrompt() {
         className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
       />
 
-      <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 sm:flex-row sm:items-center">
+      <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 md:flex-row md:items-center">
         <div className="flex-1 space-y-1.5">
           <div className="flex items-center gap-2">
             <div className="flex size-10 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
@@ -63,7 +63,7 @@ export function UpgradePrompt() {
         <Button
           onClick={handleUpgrade}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 sm:w-auto"
+          className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 md:w-auto"
         >
           {isCheckoutLoading ? (
             <Spinner />

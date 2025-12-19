@@ -25,7 +25,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         className="pointer-events-none absolute -bottom-16 -left-16 size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
       />
 
-      <div className="relative flex items-center justify-between gap-4">
+      <div className="relative flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         {/* Left side - Icon and text */}
         <div className="flex items-center gap-4">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5">
@@ -33,17 +33,15 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
           </div>
           <div>
             <h3 className="mb-0.5 font-semibold">Upgrade to Pro</h3>
-            <span className="flex flex-col text-muted-foreground text-sm leading-normal sm:flex-row sm:space-y-0">
-              <span>Track up to {proMaxDomains} domains</span>
-              <span className="mx-1 hidden sm:block">•</span>
-              <span>
-                <span className="font-medium text-accent-gold">
-                  {PRO_TIER_INFO.monthly.label}
-                </span>{" "}
-                or{" "}
-                <span className="font-medium text-accent-gold">
-                  {PRO_TIER_INFO.yearly.label}
-                </span>
+            <span className="text-muted-foreground text-sm leading-normal">
+              Track up to {proMaxDomains} domains
+              <span className="mx-1">•</span>
+              <span className="font-medium text-accent-gold">
+                {PRO_TIER_INFO.monthly.label}
+              </span>{" "}
+              or{" "}
+              <span className="font-medium text-accent-gold">
+                {PRO_TIER_INFO.yearly.label}
               </span>
             </span>
           </div>
@@ -53,7 +51,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         <Button
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="shrink-0 cursor-pointer"
+          className="w-full shrink-0 cursor-pointer md:w-auto"
         >
           {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
           {isLoading ? "Opening..." : "Get Pro"}
