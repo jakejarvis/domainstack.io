@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { RaycastIcon } from "@/components/brand-icons";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -147,7 +148,7 @@ export function BookmarkletDialog({
 
         <div className="space-y-3.5">
           <p className="text-muted-foreground text-sm">
-            Or, on Apple devices, add a Shortcut via the button below. An{" "}
+            On Apple devices, add a Shortcut via the button below. An{" "}
             <span className="font-semibold text-foreground/80">
               Inspect Domain
             </span>{" "}
@@ -208,6 +209,48 @@ export function BookmarkletDialog({
               </DialogContent>
             </Dialog>
           </div>
+        </div>
+
+        <Separator
+          aria-hidden="true"
+          className="bg-border/80 dark:bg-border/50"
+        />
+
+        <div className="space-y-3.5">
+          <p className="text-muted-foreground text-sm">
+            If you&rsquo;re a{" "}
+            <a
+              href="https://www.raycast.com/"
+              target="_blank"
+              rel="noopener"
+              className="font-semibold text-foreground/80 underline underline-offset-3 hover:text-foreground/60"
+            >
+              Raycast
+            </a>{" "}
+            user, add a Quicklink to quickly inspect domains from anywhere. Type{" "}
+            <span className="font-semibold text-foreground/80">
+              &ldquo;domain&rdquo;
+            </span>{" "}
+            followed by a domain name.
+          </p>
+          <a
+            // https://manual.raycast.com/deeplinks
+            href={`raycast://extensions/raycast/raycast/create-quicklink?context=${encodeURIComponent(
+              JSON.stringify({
+                name: "Inspect Domain",
+                link: `${origin}/?q={argument name="domain"}`,
+                icon: "magnifying-glass-16",
+              }),
+            )}`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "!px-3",
+            )}
+            data-disable-progress={true}
+          >
+            <RaycastIcon className="h-4 w-4" />
+            <span>Add to Raycast</span>
+          </a>
         </div>
       </DialogContent>
     </Dialog>
