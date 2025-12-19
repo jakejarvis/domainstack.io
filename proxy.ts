@@ -7,10 +7,23 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
   // Fast path: root path or empty
   if (pathname.length <= 1) {
+    // Handle search queries (e.g. /?q=example.com) from homepage or browser search bar
+    const query = searchParams.get("q");
+    if (query) {
+      const registrable = toRegistrableDomain(query);
+      if (registrable) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/${registrable}`;
+        url.search = "";
+        url.hash = "";
+        return NextResponse.redirect(url);
+      }
+    }
+
     return NextResponse.next();
   }
 

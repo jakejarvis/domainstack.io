@@ -8,7 +8,7 @@ export async function GET() {
   <Description>Open a Domainstack report for a given domain name</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/x-icon">${BASE_URL}/favicon.ico</Image>
-  <Url type="text/html" template="${BASE_URL}/{searchTerms}" />
+  <Url type="text/html" template="${BASE_URL}/?q={searchTerms}" />
   <Url type="application/opensearchdescription+xml" rel="self" template="${BASE_URL}/opensearch.xml" />
 </OpenSearchDescription>`;
 
