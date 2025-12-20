@@ -386,6 +386,35 @@ export function TrackedDomainsTable({
         size: 128,
       },
       {
+        accessorKey: "registrationDate",
+        header: "Registered",
+        cell: ({ row }) => {
+          const date = row.original.registrationDate;
+          if (!date) {
+            return <span className="text-muted-foreground text-xs">—</span>;
+          }
+          return (
+            <div className="whitespace-nowrap text-[13px]">
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
+                  render={<span>{format(date, "MMM d, yyyy")}</span>}
+                />
+                <ResponsiveTooltipContent>
+                  {formatDateTimeUtc(date.toISOString())}
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
+            </div>
+          );
+        },
+        size: 110,
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.registrationDate?.getTime() ?? 0;
+          const b = rowB.original.registrationDate?.getTime() ?? 0;
+          return a - b;
+        },
+      },
+      {
         accessorKey: "createdAt",
         header: "Added",
         cell: ({ row }) => {

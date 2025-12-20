@@ -77,6 +77,7 @@ export type TrackedDomainWithDetails = {
   verifiedAt: Date | null;
   archivedAt: Date | null;
   expirationDate: Date | null;
+  registrationDate: Date | null;
   registrar: ProviderInfo;
   dns: ProviderInfo;
   hosting: ProviderInfo;
@@ -271,6 +272,7 @@ type TrackedDomainRow = {
   verifiedAt: Date | null;
   archivedAt: Date | null;
   expirationDate: Date | null;
+  registrationDate: Date | null;
   registrarId: string | null;
   registrarName: string | null;
   registrarDomain: string | null;
@@ -317,6 +319,7 @@ function transformToTrackedDomainWithDetails(
     verifiedAt: row.verifiedAt,
     archivedAt: row.archivedAt,
     expirationDate: row.expirationDate,
+    registrationDate: row.registrationDate,
     registrar: {
       id: row.registrarId,
       name: row.registrarName,
@@ -543,6 +546,7 @@ async function queryTrackedDomainsWithDetails(
       verifiedAt: userTrackedDomains.verifiedAt,
       archivedAt: userTrackedDomains.archivedAt,
       expirationDate: registrations.expirationDate,
+      registrationDate: registrations.creationDate,
       registrarId: registrarProvider.id,
       registrarName: registrarProvider.name,
       registrarDomain: registrarProvider.domain,
