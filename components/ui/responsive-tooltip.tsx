@@ -2,7 +2,7 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 import { cn } from "@/lib/utils";
 
@@ -17,17 +17,14 @@ function ResponsiveTooltip({
 
   const { Root } = isTouchDevice ? PopoverPrimitive : TooltipPrimitive;
 
+  const contextValue = useMemo(() => ({ isTouchDevice }), [isTouchDevice]);
+
   return (
-    <ResponsiveTooltipContext.Provider value={{ isTouchDevice }}>
+    <ResponsiveTooltipContext.Provider value={contextValue}>
       {isTouchDevice ? (
         <Root data-slot="responsive-tooltip" {...props} />
       ) : (
-        <TooltipPrimitive.Provider
-          delay={0}
-          data-slot="responsive-tooltip-provider"
-        >
-          <Root data-slot="responsive-tooltip" {...props} />
-        </TooltipPrimitive.Provider>
+        <Root data-slot="responsive-tooltip" {...props} />
       )}
     </ResponsiveTooltipContext.Provider>
   );
@@ -35,6 +32,7 @@ function ResponsiveTooltip({
 
 function ResponsiveTooltipTrigger({
   nativeButton,
+  closeDelay,
   ...props
 }: Omit<
   TooltipPrimitive.Trigger.Props<unknown> &
@@ -50,7 +48,14 @@ function ResponsiveTooltipTrigger({
   }
 
   const { Trigger } = ctx.isTouchDevice ? PopoverPrimitive : TooltipPrimitive;
-  const triggerProps = ctx.isTouchDevice ? { nativeButton } : {};
+
+  // For tooltips (non-touch), add a small closeDelay by default to prevent
+  // premature closing when content changes size (e.g., during lazy loading).
+  // This gives the positioner time to recalculate without losing hover state.
+  const tooltipCloseDelay = closeDelay ?? (ctx.isTouchDevice ? undefined : 150);
+  const triggerProps = ctx.isTouchDevice
+    ? { nativeButton }
+    : { closeDelay: tooltipCloseDelay };
 
   return (
     <Trigger
