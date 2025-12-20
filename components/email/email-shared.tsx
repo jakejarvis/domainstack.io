@@ -1,8 +1,7 @@
 import { Heading, Hr, Link, Section, Text } from "@react-email/components";
-import type { ReactNode } from "react";
 
 type EmailHeadingProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailHeading({ children }: EmailHeadingProps) {
@@ -10,7 +9,7 @@ export function EmailHeading({ children }: EmailHeadingProps) {
 }
 
 type EmailSubheadingProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailSubheading({ children }: EmailSubheadingProps) {
@@ -22,7 +21,7 @@ export function EmailSubheading({ children }: EmailSubheadingProps) {
 }
 
 type EmailTextProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailText({ children }: EmailTextProps) {
@@ -30,7 +29,7 @@ export function EmailText({ children }: EmailTextProps) {
 }
 
 type EmailMutedTextProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailMutedText({ children }: EmailMutedTextProps) {
@@ -44,7 +43,7 @@ export function EmailHr(_props: EmailHrProps) {
 }
 
 type EmailFooterProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailFooter({ children }: EmailFooterProps) {
@@ -53,7 +52,7 @@ export function EmailFooter({ children }: EmailFooterProps) {
 
 type EmailLinkProps = {
   href: string;
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailLink({ href, children }: EmailLinkProps) {
@@ -65,7 +64,7 @@ export function EmailLink({ href, children }: EmailLinkProps) {
 }
 
 type EmailFieldLabelProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailFieldLabel({ children }: EmailFieldLabelProps) {
@@ -73,7 +72,7 @@ export function EmailFieldLabel({ children }: EmailFieldLabelProps) {
 }
 
 type EmailCodeTextProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailCodeText({ children }: EmailCodeTextProps) {
@@ -81,7 +80,7 @@ export function EmailCodeText({ children }: EmailCodeTextProps) {
 }
 
 type EmailNoteTextProps = {
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailNoteText({ children }: EmailNoteTextProps) {
@@ -89,7 +88,7 @@ export function EmailNoteText({ children }: EmailNoteTextProps) {
 }
 
 type EmailSectionProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   variant?: "default" | "option" | "code" | "secondaryButton";
 };
 

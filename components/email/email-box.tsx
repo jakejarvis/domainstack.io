@@ -1,9 +1,8 @@
 import { Section, Text } from "@react-email/components";
-import type { ReactNode } from "react";
 
 type EmailBoxProps = {
   variant: "info" | "warning" | "success" | "tip" | "danger";
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailBox({ variant, children }: EmailBoxProps) {
@@ -24,7 +23,7 @@ export function EmailBox({ variant, children }: EmailBoxProps) {
 
 type EmailBoxTextProps = {
   variant: "info" | "warning" | "success" | "tip" | "danger";
-  children: ReactNode;
+  children: React.ReactNode;
   strong?: boolean;
 };
 

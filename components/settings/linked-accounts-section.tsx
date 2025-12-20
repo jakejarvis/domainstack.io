@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { LinkedAccountRow } from "@/components/settings/linked-account-row";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
@@ -12,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import {

@@ -3,7 +3,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useLogger } from "@/hooks/use-logger";
@@ -84,7 +84,7 @@ const bannerButtonVariants = cva("", {
 type DashboardBannerProps = VariantProps<typeof bannerVariants> & {
   icon?: LucideIcon;
   title: string;
-  description?: ReactNode;
+  description?: React.ReactNode;
   /** Optional action button */
   action?: {
     label: string;

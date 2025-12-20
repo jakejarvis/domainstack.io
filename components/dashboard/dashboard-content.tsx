@@ -5,7 +5,6 @@ import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import {
   AddDomainDialog,
   type ResumeDomainData,
@@ -21,6 +20,7 @@ import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-en
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import { Button } from "@/components/ui/button";
+import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useViewPreference } from "@/hooks/use-dashboard-preferences";
 import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";

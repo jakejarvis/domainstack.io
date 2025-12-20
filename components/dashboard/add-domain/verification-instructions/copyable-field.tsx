@@ -2,7 +2,6 @@
 
 import clipboardCopy from "clipboard-copy";
 import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -18,7 +17,7 @@ type CopyableFieldProps = {
   label: string;
   value: string;
   /** Optional custom content to render instead of the plain input (e.g., syntax-highlighted code) */
-  children?: ReactNode;
+  children?: React.ReactNode;
   className?: string;
 };
 

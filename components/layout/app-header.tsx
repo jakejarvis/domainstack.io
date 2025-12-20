@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AuthButton } from "@/components/auth/auth-button";
 import { AppHeaderButtons } from "@/components/layout/app-header-buttons";
+import { AuthButton } from "@/components/layout/auth-button";
 import { GithubStars } from "@/components/layout/github-stars";
 import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
 import { HeaderButtons } from "@/components/layout/header-buttons";

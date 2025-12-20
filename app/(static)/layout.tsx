@@ -1,7 +1,10 @@
-import type { ReactNode } from "react";
 import { StaticBackground } from "@/components/layout/static-background";
 
-export default function StaticLayout({ children }: { children: ReactNode }) {
+export default function StaticLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="relative flex-1">
       <StaticBackground />

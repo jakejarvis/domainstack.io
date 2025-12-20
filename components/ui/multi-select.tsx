@@ -3,7 +3,6 @@
 import { Combobox, type ComboboxFilterOptions } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
-import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,7 +36,7 @@ export type MultiSelectProps<T extends string> = {
   /** Callback when selection changes */
   onSelectionChange: (values: T[]) => void;
   /** Custom option renderer (receives option and returns content) */
-  renderOption?: (option: MultiSelectOption<T>) => ReactNode;
+  renderOption?: (option: MultiSelectOption<T>) => React.ReactNode;
   /** Whether to show a search input (default: false) */
   searchable?: boolean;
   /** Custom class name for the trigger button */

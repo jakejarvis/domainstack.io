@@ -6,12 +6,11 @@ import {
   Img,
   Preview,
 } from "@react-email/components";
-import type { ReactNode } from "react";
 import { RESEND_LOGO_CONTENT_ID } from "@/lib/constants/email";
 
 type EmailLayoutProps = {
   previewText: string;
-  children: ReactNode;
+  children: React.ReactNode;
 };
 
 export function EmailLayout({ previewText, children }: EmailLayoutProps) {
