@@ -35,6 +35,10 @@ export function LinkedAccountRow({
     unlinkMutation.isPending && unlinkMutation.variables === provider.id;
   const isLoading = isLinking || isUnlinking;
 
+  if (!provider.enabled) {
+    return null;
+  }
+
   return (
     <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]">
       <div className="flex items-center gap-2.5">
@@ -44,22 +48,18 @@ export function LinkedAccountRow({
         </span>
       </div>
 
-      {!provider.enabled ? (
-        <Button variant="secondary" size="sm" disabled>
-          Unavailable
-        </Button>
-      ) : isLinked ? (
+      {isLinked ? (
         <ResponsiveTooltip>
           <ResponsiveTooltipTrigger
             render={
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={onUnlink}
-                disabled={!canUnlink || isLoading}
+                onClick={canUnlink ? onUnlink : undefined}
+                disabled={isLoading}
                 className={cn(
-                  "gap-2",
-                  canUnlink ? "cursor-pointer" : "cursor-not-allowed",
+                  "cursor-pointer gap-2",
+                  !canUnlink && "cursor-default opacity-50",
                 )}
               >
                 {isUnlinking && <Loader2 className="size-4 animate-spin" />}
@@ -79,10 +79,7 @@ export function LinkedAccountRow({
           size="sm"
           onClick={onLink}
           disabled={isLoading}
-          className={cn(
-            "gap-2",
-            isLinking ? "cursor-not-allowed" : "cursor-pointer",
-          )}
+          className="cursor-pointer gap-2"
         >
           {isLinking && <Loader2 className="size-4 animate-spin" />}
           Link

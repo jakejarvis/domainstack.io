@@ -66,7 +66,7 @@ export function GlobalNotificationRow({
       className={cn(
         "group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
         "hover:bg-muted/50",
-        disabled && "pointer-events-none",
+        disabled ? "pointer-events-none opacity-60" : "cursor-pointer",
       )}
     >
       {/* Icon indicator */}
@@ -83,7 +83,14 @@ export function GlobalNotificationRow({
 
       {/* Label with info tooltip */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span className="font-medium text-sm">{info.label}</span>
+        <span
+          className={cn(
+            "font-medium text-sm",
+            enabled ? "text-foreground" : "text-foreground/70",
+          )}
+        >
+          {info.label}
+        </span>
         <ResponsiveTooltip>
           <ResponsiveTooltipTrigger
             nativeButton={false}

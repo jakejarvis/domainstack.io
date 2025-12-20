@@ -221,7 +221,9 @@ export function NotificationSettingsSection() {
   }
 
   const domains = domainsQuery.data ?? [];
-  const verifiedDomains = domains.filter((d) => d.verified);
+  const verifiedDomains = domains
+    .filter((d) => d.verified)
+    .sort((a, b) => a.domainName.localeCompare(b.domainName));
 
   const defaultGlobalPrefs: GlobalPrefs = Object.fromEntries(
     NOTIFICATION_CATEGORIES.map((category) => [category, true]),
@@ -266,7 +268,7 @@ export function NotificationSettingsSection() {
               render={
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                  className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/50"
                 >
                   <span className="font-medium text-muted-foreground text-xs">
                     Per-domain overrides
@@ -280,7 +282,7 @@ export function NotificationSettingsSection() {
                 </button>
               }
             />
-            <CollapsibleContent className="pt-2">
+            <CollapsibleContent className="mt-4">
               <div className="space-y-2">
                 {/* Column Headers */}
                 <div className="hidden gap-2 px-3 text-[10px] text-muted-foreground uppercase tracking-wider sm:grid sm:grid-cols-[1fr_repeat(3,72px)_36px]">

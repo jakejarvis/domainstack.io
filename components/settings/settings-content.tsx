@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeDollarSign, Bell, User } from "lucide-react";
+import { Bell, User, WalletMinimal } from "lucide-react";
 import { DangerZoneSettingsSection } from "@/components/settings/danger-zone-settings-section";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts-section";
 import { NotificationSettingsSection } from "@/components/settings/notification-settings-section";
@@ -19,28 +19,28 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
     <Tabs defaultValue="subscription" className="w-full">
       <div className={cn(showCard && "px-6 pt-6")}>
         <TabsList
-          className={cn("h-10 w-full justify-start", !showCard && "mb-2")}
+          className={cn("h-auto w-full justify-start", !showCard && "mb-2")}
         >
           <TabsTrigger
             value="subscription"
-            className="cursor-pointer gap-2 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[state=active]:[&_svg]:text-foreground"
+            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
           >
-            <BadgeDollarSign className="size-4" aria-hidden="true" />
-            <span className="hidden leading-none lg:inline">Subscription</span>
+            <WalletMinimal className="size-4.5" aria-hidden="true" />
+            <span className="text-[13px] leading-none">Subscription</span>
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
-            className="cursor-pointer gap-2 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[state=active]:[&_svg]:text-foreground"
+            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
           >
-            <Bell className="size-4" aria-hidden="true" />
-            <span className="hidden leading-none lg:inline">Notifications</span>
+            <Bell className="size-4.5" aria-hidden="true" />
+            <span className="text-[13px] leading-none">Notifications</span>
           </TabsTrigger>
           <TabsTrigger
             value="account"
-            className="cursor-pointer gap-2 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[state=active]:[&_svg]:text-foreground"
+            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
           >
-            <User className="size-4" aria-hidden="true" />
-            <span className="hidden leading-none lg:inline">Account</span>
+            <User className="size-4.5" aria-hidden="true" />
+            <span className="text-[13px] leading-none">Account</span>
           </TabsTrigger>
         </TabsList>
       </div>

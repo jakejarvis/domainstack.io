@@ -82,7 +82,7 @@ function NotificationRowSkeleton() {
 
 /**
  * Skeleton for the notification settings section.
- * Shows placeholders for header and 3 notification rows.
+ * Shows placeholders for header, 3 notification rows, and collapsible trigger.
  */
 export function NotificationsSkeleton({ showCard }: { showCard?: boolean }) {
   return (
@@ -95,16 +95,18 @@ export function NotificationsSkeleton({ showCard }: { showCard?: boolean }) {
         </div>
       </CardHeader>
       <CardContent
-        className={showCard ? "space-y-1" : "space-y-1 px-0 pt-1 pb-0"}
+        className={showCard ? "space-y-5" : "space-y-5 px-0 pt-1 pb-0"}
       >
-        <NotificationRowSkeleton />
-        <NotificationRowSkeleton />
-        <NotificationRowSkeleton />
+        <div className="space-y-1">
+          <NotificationRowSkeleton />
+          <NotificationRowSkeleton />
+          <NotificationRowSkeleton />
+        </div>
 
-        {/* Info note placeholder */}
-        <div className="mt-4 flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
-          <Skeleton className="mt-0.5 size-3.5 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-72" />
+        {/* Per-domain overrides trigger placeholder */}
+        <div className="flex w-full items-center justify-between rounded-lg px-3 py-3">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="size-4 rounded-sm" />
         </div>
       </CardContent>
     </div>
@@ -170,33 +172,51 @@ export function DangerZoneSkeleton() {
 }
 
 /**
+ * Skeleton for the tabs navigation.
+ * Shows placeholders for tab triggers.
+ */
+function TabsSkeleton({ showCard }: { showCard?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "w-full border-border/50 border-b",
+        showCard && "mb-6 border-none px-6 pt-6 pb-0",
+      )}
+    >
+      <div className="flex items-center gap-1">
+        {/* Subscription Tab */}
+        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+          <Skeleton className="size-4.5 rounded-sm" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+        {/* Notifications Tab */}
+        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+          <Skeleton className="size-4.5 rounded-sm" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+        {/* Account Tab */}
+        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+          <Skeleton className="size-4.5 rounded-sm" />
+          <Skeleton className="h-3 w-12" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Loading skeleton for settings content.
- * Shows placeholders for all settings sections.
+ * Reflects the tabbed layout structure, defaulting to the notification settings view.
  */
 export function SettingsSkeleton({ showCard = true }: SettingsSkeletonProps) {
   const content = (
-    <div className={cn("space-y-6", !showCard && "py-1")}>
-      {/* Subscription skeleton */}
-      <SubscriptionSkeleton showCard={showCard} />
+    <div className={cn("w-full")}>
+      {/* Tabs Skeleton */}
+      <TabsSkeleton showCard={showCard} />
 
-      {/* Divider */}
-      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
-
-      {/* Notifications skeleton */}
-      <NotificationsSkeleton showCard={showCard} />
-
-      {/* Divider */}
-      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
-
-      {/* Linked accounts skeleton */}
-      <LinkedAccountsSkeleton showCard={showCard} />
-
-      {/* Divider */}
-      <div className={cn("h-px bg-border/50", showCard ? "mx-6" : "")} />
-
-      {/* Danger zone skeleton */}
-      <div className={showCard ? "px-6 pb-6" : ""}>
-        <DangerZoneSkeleton />
+      {/* Tab Content Skeleton - Defaults to Notifications */}
+      <div className={cn(showCard && "px-6 pb-6")}>
+        <NotificationsSkeleton showCard={false} />
       </div>
     </div>
   );
@@ -205,5 +225,5 @@ export function SettingsSkeleton({ showCard = true }: SettingsSkeletonProps) {
     return content;
   }
 
-  return <Card className="overflow-hidden">{content}</Card>;
+  return <Card className="overflow-hidden p-0">{content}</Card>;
 }

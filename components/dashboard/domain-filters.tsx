@@ -484,7 +484,7 @@ export function DomainFilters({
                 >
                   <span className="flex items-center gap-2">
                     <Filter className="size-4 opacity-60" />
-                    Filters
+                    <span className="text-[15px] leading-none">Filters</span>
                     <AnimatePresence initial={false}>
                       {hasActiveFilters && (
                         <motion.span
