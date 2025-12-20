@@ -1,13 +1,9 @@
+import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
-/**
- * Next.js instrumentation entry point.
- *
- * This file is loaded once when the Next.js server starts.
- * We use it to handle uncaught errors with structured logging.
- *
- * @see https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation
- */
+export function register() {
+  registerOTel({ serviceName: "domainstack" });
+}
 
 /**
  * Handle uncaught errors in Next.js requests.
