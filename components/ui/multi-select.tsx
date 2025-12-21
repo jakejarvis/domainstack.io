@@ -3,9 +3,10 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
 export type MultiSelectOption<T extends string> = {
@@ -45,6 +46,48 @@ export type MultiSelectProps<T extends string> = {
   popoverWidth?: string;
 };
 
+function ScrollableListWrapper({
+  children,
+  scrollRef,
+}: {
+  children: React.ReactNode;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { showStart, showEnd } = useScrollIndicators({
+    containerRef: scrollRef,
+    direction: "vertical",
+  });
+
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* Top scroll shadow */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b from-black/15 to-transparent transition-opacity duration-200 dark:from-black/40",
+          showStart ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+      {children}
+      {/* Bottom scroll indicator with shadow and chevron */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center transition-opacity duration-200",
+          showEnd ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      >
+        {/* Gradient shadow */}
+        <div className="h-12 w-full bg-gradient-to-t from-black/20 to-transparent dark:from-black/50" />
+        {/* Chevron indicator */}
+        <div className="absolute bottom-1 flex items-center justify-center">
+          <ChevronDown className="size-5 animate-bounce text-muted-foreground/70" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * A multi-select dropdown component using Base UI ComboboxPrimitive.
  * Supports optional search, sections, custom rendering, and displays a selection count badge.
@@ -63,6 +106,7 @@ export function MultiSelect<T extends string>({
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { contains } = ComboboxPrimitive.useFilter({
     multiple: true,
@@ -221,66 +265,72 @@ export function MultiSelect<T extends string>({
               </ComboboxPrimitive.Empty>
 
               {sections ? (
-                <ComboboxPrimitive.List
-                  data-slot="command-list"
-                  className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden"
-                >
-                  {(group: {
-                    value: string;
-                    items: Array<MultiSelectOption<T>>;
-                  }) => (
-                    <ComboboxPrimitive.Group
-                      key={group.value}
-                      items={group.items}
-                      data-slot="command-group"
-                      className="overflow-hidden p-1 text-foreground"
-                    >
-                      <ComboboxPrimitive.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
-                        {group.value}
-                      </ComboboxPrimitive.GroupLabel>
-                      <ComboboxPrimitive.Collection>
-                        {(option: MultiSelectOption<T>) => {
-                          const isSelected = selected.includes(option.value);
-                          return (
-                            <ComboboxPrimitive.Item
-                              key={option.value}
-                              value={option}
-                              className={itemClassName}
-                            >
-                              <Checkbox
-                                checked={isSelected}
-                                className="pointer-events-none"
-                              />
-                              {optionRenderer(option)}
-                            </ComboboxPrimitive.Item>
-                          );
-                        }}
-                      </ComboboxPrimitive.Collection>
-                    </ComboboxPrimitive.Group>
-                  )}
-                </ComboboxPrimitive.List>
-              ) : (
-                <ComboboxPrimitive.List
-                  data-slot="command-list"
-                  className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden p-1 text-foreground"
-                >
-                  {(option: MultiSelectOption<T>) => {
-                    const isSelected = selected.includes(option.value);
-                    return (
-                      <ComboboxPrimitive.Item
-                        key={option.value}
-                        value={option}
-                        className={itemClassName}
+                <ScrollableListWrapper scrollRef={scrollRef}>
+                  <ComboboxPrimitive.List
+                    ref={scrollRef}
+                    data-slot="command-list"
+                    className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden"
+                  >
+                    {(group: {
+                      value: string;
+                      items: Array<MultiSelectOption<T>>;
+                    }) => (
+                      <ComboboxPrimitive.Group
+                        key={group.value}
+                        items={group.items}
+                        data-slot="command-group"
+                        className="overflow-hidden p-1 text-foreground"
                       >
-                        <Checkbox
-                          checked={isSelected}
-                          className="pointer-events-none"
-                        />
-                        {optionRenderer(option)}
-                      </ComboboxPrimitive.Item>
-                    );
-                  }}
-                </ComboboxPrimitive.List>
+                        <ComboboxPrimitive.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
+                          {group.value}
+                        </ComboboxPrimitive.GroupLabel>
+                        <ComboboxPrimitive.Collection>
+                          {(option: MultiSelectOption<T>) => {
+                            const isSelected = selected.includes(option.value);
+                            return (
+                              <ComboboxPrimitive.Item
+                                key={option.value}
+                                value={option}
+                                className={itemClassName}
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  className="pointer-events-none"
+                                />
+                                {optionRenderer(option)}
+                              </ComboboxPrimitive.Item>
+                            );
+                          }}
+                        </ComboboxPrimitive.Collection>
+                      </ComboboxPrimitive.Group>
+                    )}
+                  </ComboboxPrimitive.List>
+                </ScrollableListWrapper>
+              ) : (
+                <ScrollableListWrapper scrollRef={scrollRef}>
+                  <ComboboxPrimitive.List
+                    ref={scrollRef}
+                    data-slot="command-list"
+                    className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden p-1 text-foreground"
+                  >
+                    {(option: MultiSelectOption<T>) => {
+                      const isSelected = selected.includes(option.value);
+                      return (
+                        <ComboboxPrimitive.Item
+                          key={option.value}
+                          value={option}
+                          className={itemClassName}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            className="pointer-events-none"
+                          />
+                          {optionRenderer(option)}
+                        </ComboboxPrimitive.Item>
+                      );
+                    }}
+                  </ComboboxPrimitive.List>
+                </ScrollableListWrapper>
               )}
             </div>
           </ComboboxPrimitive.Popup>
