@@ -211,7 +211,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[inset]:pl-8 data-[state=open]:text-accent-foreground",
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-[popup-open]:bg-accent data-[inset]:pl-8 data-[popup-open]:text-accent-foreground",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         "data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",

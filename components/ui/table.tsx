@@ -94,7 +94,7 @@ function TableRow({
     render,
     props: mergeProps<"tr">(props, {
       className: cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        "border-b transition-colors hover:bg-muted/50 aria-selected:bg-muted",
         className,
       ),
     }),

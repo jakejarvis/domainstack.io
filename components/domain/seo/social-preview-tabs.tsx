@@ -37,44 +37,24 @@ export function SocialPreviewTabs({
         value={selectedTab}
         onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}
       >
-        <TabsList className="h-11 w-full gap-1 border border-muted-foreground/15 bg-muted/30 md:justify-start dark:bg-muted/50">
-          <TabsTrigger
-            value="twitter"
-            className="cursor-pointer data-[state=active]:cursor-default"
-            data-1p-ignore
-          >
+        <TabsList className="h-11 gap-1 md:justify-start">
+          <TabsTrigger value="twitter" data-1p-ignore>
             <TwitterIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Twitter</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="facebook"
-            className="cursor-pointer data-[state=active]:cursor-default"
-            data-1p-ignore
-          >
+          <TabsTrigger value="facebook" data-1p-ignore>
             <FacebookIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Facebook</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="linkedin"
-            className="cursor-pointer data-[state=active]:cursor-default"
-            data-1p-ignore
-          >
+          <TabsTrigger value="linkedin" data-1p-ignore>
             <LinkedinIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">LinkedIn</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="discord"
-            className="cursor-pointer data-[state=active]:cursor-default"
-            data-1p-ignore
-          >
+          <TabsTrigger value="discord" data-1p-ignore>
             <DiscordIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Discord</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="slack"
-            className="cursor-pointer data-[state=active]:cursor-default"
-            data-1p-ignore
-          >
+          <TabsTrigger value="slack" data-1p-ignore>
             <SlackIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Slack</span>
           </TabsTrigger>

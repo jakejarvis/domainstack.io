@@ -49,26 +49,14 @@ export function StepVerifyOwnership({
         value={method}
         onValueChange={(v) => setMethod(v as VerificationMethod)}
       >
-        <TabsList className="grid h-10 w-full grid-cols-3 border border-border bg-muted/50 p-1 dark:border-white/15 dark:bg-white/5">
-          <TabsTrigger
-            value="dns_txt"
-            disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:cursor-default"
-          >
+        <TabsList className="grid h-10 grid-cols-3">
+          <TabsTrigger value="dns_txt" disabled={isVerifying}>
             DNS Record
           </TabsTrigger>
-          <TabsTrigger
-            value="html_file"
-            disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:cursor-default"
-          >
+          <TabsTrigger value="html_file" disabled={isVerifying}>
             HTML File
           </TabsTrigger>
-          <TabsTrigger
-            value="meta_tag"
-            disabled={isVerifying}
-            className="cursor-pointer data-[state=active]:cursor-default"
-          >
+          <TabsTrigger value="meta_tag" disabled={isVerifying}>
             Meta Tag
           </TabsTrigger>
         </TabsList>

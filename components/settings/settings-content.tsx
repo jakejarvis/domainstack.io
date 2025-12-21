@@ -16,24 +16,24 @@ interface SettingsContentProps {
 
 export function SettingsTabsList({ className }: { className?: string }) {
   return (
-    <TabsList className={cn("h-auto w-full justify-start", className)}>
+    <TabsList className={cn("h-auto justify-start", className)}>
       <TabsTrigger
         value="subscription"
-        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+        className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
         <WalletMinimal className="size-4.5" aria-hidden="true" />
         <span className="text-[13px] leading-none">Subscription</span>
       </TabsTrigger>
       <TabsTrigger
         value="notifications"
-        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+        className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
         <Bell className="size-4.5" aria-hidden="true" />
         <span className="text-[13px] leading-none">Notifications</span>
       </TabsTrigger>
       <TabsTrigger
         value="account"
-        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+        className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
         <User className="size-4.5" aria-hidden="true" />
         <span className="text-[13px] leading-none">Account</span>

@@ -220,7 +220,7 @@ export function RobotsSummary({
                     setOnly(next ?? "all");
                   }}
                   withActiveIndicator
-                  className="!w-full sm:!w-auto h-9 items-stretch rounded-lg border border-muted-foreground/15 bg-muted/30 p-[3px] dark:border-white/15 dark:bg-muted/50 [&>*]:flex-1 sm:[&>*]:flex-none"
+                  className="h-9 w-full items-stretch sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
                 >
                   <ToggleGroupItem
                     value="all"
@@ -340,9 +340,9 @@ function RobotsGroupHeader({
   showDisallow?: boolean;
 }) {
   return (
-    <div className="flex w-full items-center justify-between rounded-md p-1.5 hover:cursor-pointer hover:bg-accent/35">
+    <div className="flex w-full items-center justify-between">
       <div className="flex flex-wrap items-center gap-1.5">
-        <ChevronRight className="size-3 text-muted-foreground transition-transform group-data-[state=open]/accordion:rotate-90" />
+        <ChevronRight className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
         {userAgents.map((ua) => (
           <span
             key={ua}
@@ -357,7 +357,7 @@ function RobotsGroupHeader({
           </span>
         ))}
       </div>
-      <div className="mr-1 shrink-0 text-muted-foreground text-xs">
+      <div className="shrink-0 text-muted-foreground text-xs">
         {showAllow ? `${allowN} allow` : null}
         {showAllow && showDisallow ? " · " : null}
         {showDisallow ? `${disallowN} disallow` : null}
@@ -407,7 +407,7 @@ function GroupsAccordion({
         value={`g-${idx}`}
         className="border-border/65"
       >
-        <AccordionTrigger className="group/accordion py-2 pr-0 hover:no-underline [&>svg]:hidden">
+        <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
           <RobotsGroupHeader
             userAgents={g.userAgents}
             allowN={allowN}
@@ -416,7 +416,7 @@ function GroupsAccordion({
             showDisallow={showDisallow}
           />
         </AccordionTrigger>
-        <AccordionContent>
+        <AccordionContent className="pb-2">
           <GroupContent
             rules={g.rules}
             query={query}
@@ -431,11 +431,14 @@ function GroupsAccordion({
   });
 
   return isSearching ? (
-    <Accordion multiple value={openValues as string[]}>
+    <Accordion key="accordion-search" multiple value={openValues}>
       {content}
     </Accordion>
   ) : (
-    <Accordion defaultValue={defaultValue ? [defaultValue] : []}>
+    <Accordion
+      key={`accordion-default-${defaultValue}`}
+      defaultValue={defaultValue ? [defaultValue] : []}
+    >
       {content}
     </Accordion>
   );
@@ -552,7 +555,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-input border-t px-2.5 py-2.5 font-mono text-xs",
+        "group flex items-center gap-2 border-input border-t px-2 py-2.5 font-mono text-xs",
         isFirst && "border-t-0",
       )}
     >

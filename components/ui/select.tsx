@@ -34,7 +34,7 @@ function SelectTrigger({
       className={cn(
         "flex w-fit items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow]",
         "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
         "data-[size=default]:h-9 data-[size=sm]:h-8",
         // Base UI marks the trigger as "filled" when it has a value.
@@ -80,9 +80,10 @@ function SelectContent({
             "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden",
             "max-h-[var(--available-height)] origin-[var(--transform-origin)]",
             "min-w-[var(--anchor-width)]",
-            "transition-[transform,opacity] duration-150",
+            "will-change-[transform,opacity]",
             "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+            "data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-closed:animate-out data-open:animate-in",
             className,
           )}
           {...props}

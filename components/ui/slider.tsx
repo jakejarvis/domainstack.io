@@ -54,7 +54,7 @@ function Slider({
               // Base UI needs explicit index when multiple thumbs are used.
               index={index}
               key={`thumb-${_values.length}-${index}`}
-              className="size-4 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:outline-hidden focus-visible:ring-4 disabled:pointer-events-none disabled:opacity-50"
+              className="size-4 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] hover:ring-4 focus-visible:outline-hidden focus-visible:ring-4 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             />
           ))}
         </SliderPrimitive.Track>

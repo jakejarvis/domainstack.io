@@ -103,7 +103,7 @@ function ResponsiveTooltipContent({
         <Popup
           data-slot="responsive-tooltip-content"
           className={cn(
-            "data-open:fade-in-0 data-open:zoom-in-95 data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 w-fit max-w-xs origin-[var(--transform-origin)] overflow-visible rounded-md bg-foreground px-3 py-1.5 text-background text-xs will-change-[transform,opacity] selection:bg-background selection:text-foreground data-[state=delayed-open]:animate-in data-closed:animate-out data-open:animate-in",
+            "data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 w-fit max-w-xs origin-[var(--transform-origin)] overflow-visible rounded-md bg-foreground px-3 py-1.5 text-background text-xs will-change-[transform,opacity] selection:bg-background selection:text-foreground data-closed:animate-out data-open:animate-in",
             className,
           )}
           {...props}
