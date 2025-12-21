@@ -32,8 +32,8 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
             <CircleFadingArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
-            <h3 className="mb-0.5 font-semibold">Upgrade to Pro</h3>
-            <span className="text-muted-foreground text-sm leading-normal">
+            <h3 className="font-semibold">Upgrade to Pro</h3>
+            <span className="text-[13px] text-muted-foreground">
               Track up to {proMaxDomains} domains
               <span className="mx-1">•</span>
               <span className="font-medium text-accent-gold">
@@ -49,6 +49,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
 
         {/* Right side - CTA */}
         <Button
+          size="lg"
           onClick={handleUpgrade}
           disabled={isLoading}
           className="w-full shrink-0 cursor-pointer md:w-auto"

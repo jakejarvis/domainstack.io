@@ -1,6 +1,7 @@
 "use client";
 
-import { Gauge, ShoppingCart } from "lucide-react";
+import { Gauge, ShoppingCart, X } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +14,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 
 export function UpgradePrompt() {
+  const [isVisible, setIsVisible] = useState(true);
   const {
     subscription,
     isPro,
@@ -29,10 +31,21 @@ export function UpgradePrompt() {
   const nearLimit = activeCount >= maxDomains * 0.8;
   const atLimit = activeCount >= maxDomains;
 
-  if (!nearLimit) return null;
+  if (!nearLimit || !isVisible) return null;
 
   return (
     <Card className="relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+      {/* Dismiss button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground"
+        onClick={() => setIsVisible(false)}
+      >
+        <X className="size-4" />
+        <span className="sr-only">Dismiss</span>
+      </Button>
+
       {/* Decorative elements - subtle warm glows */}
       <div
         aria-hidden
