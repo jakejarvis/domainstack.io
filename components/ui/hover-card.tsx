@@ -50,7 +50,7 @@ function HoverCardContent({
           data-slot="hover-card-content"
           className={cn(
             "z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden",
-            "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200",
+            "origin-[var(--transform-origin)] transition-[transform,opacity] duration-200 will-change-[transform,opacity]",
             "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
             "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
             className,

@@ -29,7 +29,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 transition-opacity",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity will-change-[opacity]",
         "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
@@ -55,7 +55,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 text-foreground shadow-lg outline-hidden sm:max-w-lg",
-          "transition-[transform,opacity] duration-200",
+          "transition-[transform,opacity] duration-200 will-change-[transform,opacity]",
           "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
           "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
           // Nested dialog styling: Dim the parent popup

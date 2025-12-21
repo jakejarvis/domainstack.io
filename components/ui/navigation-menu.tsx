@@ -90,7 +90,7 @@ function NavigationMenuContent({
       data-slot="navigation-menu-content"
       className={cn(
         "top-0 left-0 w-full p-2 pr-2.5 md:absolute md:w-auto",
-        "transition-[opacity,transform] duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        "transition-[opacity,transform] duration-200 will-change-[transform,opacity] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
         className,
       )}
       {...props}
@@ -109,14 +109,14 @@ function NavigationMenuViewport({
         sideOffset={10}
         collisionPadding={{ top: 5, bottom: 5, left: 20, right: 20 }}
         className={cn(
-          "z-50 box-border w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out",
+          "z-50 box-border w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out will-change-[top,left,right,bottom]",
         )}
       >
         <NavigationMenuPrimitive.Popup
           data-slot="navigation-menu-popup"
           className={cn(
             "relative mt-1.5 w-[var(--popup-width)] rounded-md border bg-popover text-popover-foreground shadow outline-hidden",
-            "origin-[var(--transform-origin)] transition-[opacity,transform,width,height] duration-200 ease-out",
+            "origin-[var(--transform-origin)] transition-[opacity,transform,width,height] duration-200 ease-out will-change-[transform,opacity,width,height]",
             "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
           )}

@@ -26,7 +26,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 transition-opacity",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity will-change-[opacity]",
         "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
@@ -52,7 +52,7 @@ function SheetContent({
         data-slot="sheet-content"
         className={cn(
           "fixed z-50 flex flex-col gap-4 bg-background shadow-lg outline-hidden",
-          "transition-[transform,opacity] duration-300 ease-in-out",
+          "transition-[transform,opacity] duration-300 ease-in-out will-change-[transform,opacity]",
           "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
           side === "right" &&
             "inset-y-0 right-0 h-full w-3/4 border-l data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full sm:max-w-sm",

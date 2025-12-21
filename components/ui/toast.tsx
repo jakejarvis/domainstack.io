@@ -221,8 +221,8 @@ function ToastList() {
           // Sonner-ish: subtle left accent per type
           toastAccentVariants({ type: type ?? "default" }),
           // Motion
-          "will-change-transform",
           "transition-[opacity,transform,filter] duration-200 ease-out",
+          "will-change-[transform,opacity,filter]",
           // When swiping/dismissing
           "data-[ending-style]:opacity-0 data-[ending-style]:blur-[1px]",
           "data-[limited]:opacity-0",
@@ -239,7 +239,7 @@ function ToastList() {
           className={cn(
             "flex w-full items-start gap-3 overflow-hidden px-3 py-2.5",
             // Collapsed stack: hide content behind the front toast, restore on hover/focus
-            "transition-opacity duration-200",
+            "transition-opacity duration-200 will-change-[opacity]",
             "data-[behind]:opacity-0 data-[expanded]:opacity-100",
           )}
         >

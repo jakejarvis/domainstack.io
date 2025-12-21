@@ -1,6 +1,7 @@
 "use client";
 
-import { MoreHorizontal, Plus } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Favicon } from "@/components/domain/favicon";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
+import { cn } from "@/lib/utils";
 
 type ToolsDropdownProps = {
   domain: string;
@@ -135,6 +138,71 @@ const TOOLS = (
   a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
 );
 
+function ScrollableMenuContent({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const { showStart, showEnd, update } = useScrollIndicators({
+    containerRef: scrollRef,
+    direction: "vertical",
+  });
+
+  useEffect(() => {
+    const contentElement = contentRef.current;
+    if (!contentElement) return;
+
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(contentElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [update]);
+
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* Top scroll shadow */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 z-10 h-8 bg-gradient-to-b from-black/15 to-transparent transition-opacity duration-200 dark:from-black/40",
+          showStart ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      />
+
+      {/* Scrollable content */}
+      <div
+        ref={scrollRef}
+        className={cn("min-h-0 flex-1 overflow-y-auto p-1", className)}
+      >
+        <div ref={contentRef}>{children}</div>
+      </div>
+
+      {/* Bottom scroll indicator with shadow and chevron */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center transition-opacity duration-200",
+          showEnd ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden="true"
+      >
+        {/* Gradient shadow */}
+        <div className="h-8 w-full bg-gradient-to-t from-black/20 to-transparent dark:from-black/50" />
+        {/* Chevron indicator */}
+        <div className="absolute bottom-1 flex items-center justify-center">
+          <ChevronDown className="size-4 animate-bounce text-muted-foreground/90" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ToolsDropdown({ domain }: ToolsDropdownProps) {
   return (
     <DropdownMenu>
@@ -150,52 +218,57 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
           </Button>
         }
       />
-      <DropdownMenuContent align="end">
-        {TOOLS.map((tool) => (
+      <DropdownMenuContent
+        align="end"
+        className="flex flex-col overflow-hidden p-0"
+      >
+        <ScrollableMenuContent>
+          {TOOLS.map((tool) => (
+            <DropdownMenuItem
+              key={tool.name}
+              nativeButton={false}
+              render={
+                <a
+                  href={tool.buildUrl(domain)}
+                  className="cursor-pointer"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Favicon domain={tool.faviconDomain} />
+                  {tool.name}
+                </a>
+              }
+            />
+          ))}
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            key={tool.name}
             nativeButton={false}
             render={
               <a
-                href={tool.buildUrl(domain)}
-                className="cursor-pointer"
+                href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const url = new URL(
+                    `https://github.com/${REPOSITORY_SLUG}/issues/new`,
+                  );
+                  url.searchParams.set("labels", "suggestion");
+                  url.searchParams.set("title", "Add [TOOL] to tools dropdown");
+                  url.searchParams.set(
+                    "body",
+                    "I suggest adding the following tool to the tools dropdown:\n\n[Add the name, URL, and a brief description of the tool here]",
+                  );
+                  window.open(url.toString(), "_blank", "noopener");
+                }}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
+                className="cursor-pointer"
               >
-                <Favicon domain={tool.faviconDomain} />
-                {tool.name}
+                <Plus />
+                Suggest a tool
               </a>
             }
           />
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          nativeButton={false}
-          render={
-            <a
-              href={`https://github.com/${REPOSITORY_SLUG}/issues/new`}
-              onClick={(e) => {
-                e.preventDefault();
-                const url = new URL(
-                  `https://github.com/${REPOSITORY_SLUG}/issues/new`,
-                );
-                url.searchParams.set("labels", "suggestion");
-                url.searchParams.set("title", "Add [TOOL] to tools dropdown");
-                url.searchParams.set(
-                  "body",
-                  "I suggest adding the following tool to the tools dropdown:\n\n[Add the name, URL, and a brief description of the tool here]",
-                );
-                window.open(url.toString(), "_blank", "noopener");
-              }}
-              target="_blank"
-              rel="noopener"
-              className="cursor-pointer"
-            >
-              <Plus />
-              Suggest a tool
-            </a>
-          }
-        />
+        </ScrollableMenuContent>
       </DropdownMenuContent>
     </DropdownMenu>
   );
