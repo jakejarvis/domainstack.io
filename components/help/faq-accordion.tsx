@@ -52,7 +52,7 @@ function createFaqSections(
           question: "Do I need an account to use Domainstack?",
           answer: (
             <>
-              No! You can look up any domain and view its full report without
+              Nope! You can look up any domain and view its full report without
               signing in. An account is only required if you want to track
               domains you own and receive expiration notifications. Sign up is
               free and uses GitHub for authentication.
@@ -431,10 +431,10 @@ export function FaqAccordion({ tierLimits, pricing }: FaqAccordionProps) {
                 value={item.question}
                 className="border-border/30 border-b px-4 last:border-none"
               >
-                <AccordionTrigger className="text-left text-foreground decoration-muted-foreground/50 underline-offset-4 hover:text-muted-foreground hover:underline">
+                <AccordionTrigger className="cursor-pointer text-left text-foreground tracking-[0.01em] decoration-muted-foreground/50 underline-offset-4 hover:text-foreground/85 hover:underline">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="pt-1 text-muted-foreground">
+                <AccordionContent className="pt-1 text-foreground/85">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>
