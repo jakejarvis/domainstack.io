@@ -189,6 +189,10 @@ export function RobotsSummary({
                     value={query}
                     onChange={(e) => setQuery(e.currentTarget.value)}
                     aria-label="Filter robots rules"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                   />
                   <InputGroupAddon>
                     <Filter />

@@ -30,14 +30,12 @@ export function SeoSectionSkeleton() {
           </div>
           {/* Tabs row skeleton */}
           <div className="flex h-auto w-full flex-wrap gap-1 rounded-md border border-muted-foreground/15 p-1 md:justify-start">
-            {["twitter", "facebook", "linkedin", "discord", "slack"].map(
-              (id) => (
-                <Skeleton
-                  key={`og-tab-${id}`}
-                  className="h-9 flex-1 basis-0 rounded-md"
-                />
-              ),
-            )}
+            {[1, 2, 3, 4, 5].map((id) => (
+              <Skeleton
+                key={`og-tab-${id}`}
+                className="h-9 flex-1 basis-0 rounded-md"
+              />
+            ))}
           </div>
           {/* Preview skeleton */}
           <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">

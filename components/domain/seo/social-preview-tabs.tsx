@@ -41,6 +41,7 @@ export function SocialPreviewTabs({
           <TabsTrigger
             value="twitter"
             className="cursor-pointer data-[state=active]:cursor-default"
+            data-1p-ignore
           >
             <TwitterIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Twitter</span>
@@ -48,6 +49,7 @@ export function SocialPreviewTabs({
           <TabsTrigger
             value="facebook"
             className="cursor-pointer data-[state=active]:cursor-default"
+            data-1p-ignore
           >
             <FacebookIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Facebook</span>
@@ -55,6 +57,7 @@ export function SocialPreviewTabs({
           <TabsTrigger
             value="linkedin"
             className="cursor-pointer data-[state=active]:cursor-default"
+            data-1p-ignore
           >
             <LinkedinIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">LinkedIn</span>
@@ -62,6 +65,7 @@ export function SocialPreviewTabs({
           <TabsTrigger
             value="discord"
             className="cursor-pointer data-[state=active]:cursor-default"
+            data-1p-ignore
           >
             <DiscordIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Discord</span>
@@ -69,6 +73,7 @@ export function SocialPreviewTabs({
           <TabsTrigger
             value="slack"
             className="cursor-pointer data-[state=active]:cursor-default"
+            data-1p-ignore
           >
             <SlackIcon className="size-4 md:size-3.5" aria-hidden="true" />
             <span className="hidden text-[13px] md:inline">Slack</span>

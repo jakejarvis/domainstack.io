@@ -47,7 +47,7 @@ import { formatDateTimeUtc } from "@/lib/format";
 import type { ProviderCategory } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
-type TrackedDomainCardProps = {
+type DomainCardProps = {
   trackedDomainId: string;
   domainName: string;
   verified: boolean;
@@ -69,7 +69,7 @@ type TrackedDomainCardProps = {
   onToggleSelect?: () => void;
 };
 
-export function TrackedDomainCard({
+export function DomainCard({
   trackedDomainId,
   domainName,
   verified,
@@ -88,7 +88,7 @@ export function TrackedDomainCard({
   className,
   isSelected = false,
   onToggleSelect,
-}: TrackedDomainCardProps) {
+}: DomainCardProps) {
   // Capture current time only on client after mount (not during SSR)
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -147,6 +147,7 @@ export function TrackedDomainCard({
                 href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}
                 className="block min-w-0 hover:underline"
+                data-disable-progress={true}
               >
                 <CardTitle className="truncate text-base">
                   {domainName}

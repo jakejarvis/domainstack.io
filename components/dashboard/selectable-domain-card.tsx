@@ -1,5 +1,5 @@
 import * as motion from "motion/react-client";
-import { TrackedDomainCard } from "@/components/dashboard/tracked-domain-card";
+import { DomainCard } from "@/components/dashboard/domain-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +38,7 @@ export function SelectableDomainCard({
       />
 
       {/* The actual card with integrated checkbox */}
-      <TrackedDomainCard
+      <DomainCard
         trackedDomainId={domain.id}
         domainName={domain.domainName}
         verified={domain.verified}

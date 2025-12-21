@@ -314,6 +314,10 @@ export function DomainFilters({
               placeholder="Search domains..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
             />
             <AnimatePresence initial={false}>
               {search && (

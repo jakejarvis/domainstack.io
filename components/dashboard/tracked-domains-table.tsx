@@ -236,6 +236,7 @@ export function TrackedDomainsTable({
               href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}
               className="group/link flex items-center"
+              data-disable-progress={true}
             >
               <span className="font-medium text-[13px] group-hover/link:underline">
                 {row.original.domainName}

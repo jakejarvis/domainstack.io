@@ -1,6 +1,6 @@
 "use client";
 
-import { Combobox, type ComboboxFilterOptions } from "@base-ui/react/combobox";
+import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -46,7 +46,7 @@ export type MultiSelectProps<T extends string> = {
 };
 
 /**
- * A multi-select dropdown component using Base UI Combobox.
+ * A multi-select dropdown component using Base UI ComboboxPrimitive.
  * Supports optional search, sections, custom rendering, and displays a selection count badge.
  */
 export function MultiSelect<T extends string>({
@@ -64,9 +64,9 @@ export function MultiSelect<T extends string>({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const { contains } = Combobox.useFilter({
+  const { contains } = ComboboxPrimitive.useFilter({
     multiple: true,
-  } satisfies ComboboxFilterOptions);
+  });
 
   const flatOptions = useMemo(() => {
     return sections
@@ -105,7 +105,7 @@ export function MultiSelect<T extends string>({
   );
 
   return (
-    <Combobox.Root
+    <ComboboxPrimitive.Root
       items={
         sections
           ? sections.map((section) => ({
@@ -151,7 +151,7 @@ export function MultiSelect<T extends string>({
       }
       filter={searchable ? filterOption : null}
     >
-      <Combobox.Trigger
+      <ComboboxPrimitive.Trigger
         render={
           <Button
             variant="outline"
@@ -174,9 +174,9 @@ export function MultiSelect<T extends string>({
         }
       />
 
-      <Combobox.Portal>
-        <Combobox.Positioner align="start" sideOffset={4}>
-          <Combobox.Popup
+      <ComboboxPrimitive.Portal>
+        <ComboboxPrimitive.Positioner align="start" sideOffset={4}>
+          <ComboboxPrimitive.Popup
             className={cn(
               // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
               "z-50 w-72 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
@@ -197,27 +197,31 @@ export function MultiSelect<T extends string>({
                   className="flex h-9 items-center gap-2 border-b px-3"
                 >
                   <SearchIcon className="size-4 shrink-0 opacity-50" />
-                  <Combobox.Input
+                  <ComboboxPrimitive.Input
                     autoFocus
                     placeholder={`Search ${label}...`}
                     className={cn(
                       "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
                     )}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                   />
                 </div>
               )}
 
-              <Combobox.Empty
+              <ComboboxPrimitive.Empty
                 data-slot="command-empty"
                 // Base UI keeps the element mounted; when `children` becomes `null`, padding would still reserve space.
                 // `empty:hidden` ensures this doesn't create a blank region at the top of the list.
                 className="py-6 text-center text-sm empty:hidden"
               >
                 No results found.
-              </Combobox.Empty>
+              </ComboboxPrimitive.Empty>
 
               {sections ? (
-                <Combobox.List
+                <ComboboxPrimitive.List
                   data-slot="command-list"
                   className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden"
                 >
@@ -225,20 +229,20 @@ export function MultiSelect<T extends string>({
                     value: string;
                     items: Array<MultiSelectOption<T>>;
                   }) => (
-                    <Combobox.Group
+                    <ComboboxPrimitive.Group
                       key={group.value}
                       items={group.items}
                       data-slot="command-group"
                       className="overflow-hidden p-1 text-foreground"
                     >
-                      <Combobox.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
+                      <ComboboxPrimitive.GroupLabel className="select-none px-2 py-1.5 font-medium text-muted-foreground text-xs">
                         {group.value}
-                      </Combobox.GroupLabel>
-                      <Combobox.Collection>
+                      </ComboboxPrimitive.GroupLabel>
+                      <ComboboxPrimitive.Collection>
                         {(option: MultiSelectOption<T>) => {
                           const isSelected = selected.includes(option.value);
                           return (
-                            <Combobox.Item
+                            <ComboboxPrimitive.Item
                               key={option.value}
                               value={option}
                               className={itemClassName}
@@ -248,22 +252,22 @@ export function MultiSelect<T extends string>({
                                 className="pointer-events-none"
                               />
                               {optionRenderer(option)}
-                            </Combobox.Item>
+                            </ComboboxPrimitive.Item>
                           );
                         }}
-                      </Combobox.Collection>
-                    </Combobox.Group>
+                      </ComboboxPrimitive.Collection>
+                    </ComboboxPrimitive.Group>
                   )}
-                </Combobox.List>
+                </ComboboxPrimitive.List>
               ) : (
-                <Combobox.List
+                <ComboboxPrimitive.List
                   data-slot="command-list"
                   className="max-h-[300px] scroll-py-1 overflow-y-auto overflow-x-hidden p-1 text-foreground"
                 >
                   {(option: MultiSelectOption<T>) => {
                     const isSelected = selected.includes(option.value);
                     return (
-                      <Combobox.Item
+                      <ComboboxPrimitive.Item
                         key={option.value}
                         value={option}
                         className={itemClassName}
@@ -273,15 +277,15 @@ export function MultiSelect<T extends string>({
                           className="pointer-events-none"
                         />
                         {optionRenderer(option)}
-                      </Combobox.Item>
+                      </ComboboxPrimitive.Item>
                     );
                   }}
-                </Combobox.List>
+                </ComboboxPrimitive.List>
               )}
             </div>
-          </Combobox.Popup>
-        </Combobox.Positioner>
-      </Combobox.Portal>
-    </Combobox.Root>
+          </ComboboxPrimitive.Popup>
+        </ComboboxPrimitive.Positioner>
+      </ComboboxPrimitive.Portal>
+    </ComboboxPrimitive.Root>
   );
 }
