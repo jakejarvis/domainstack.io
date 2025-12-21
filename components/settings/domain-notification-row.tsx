@@ -1,8 +1,13 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Globe, RotateCcw } from "lucide-react";
 import { Favicon } from "@/components/domain/favicon";
 import { Button } from "@/components/ui/button";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -144,8 +149,8 @@ export function DomainNotificationRow({
 
         return (
           <div key={category} className="flex justify-center">
-            <Tooltip>
-              <TooltipTrigger
+            <ResponsiveTooltip>
+              <ResponsiveTooltipTrigger
                 render={
                   <Switch
                     checked={effectiveValue}
@@ -165,12 +170,15 @@ export function DomainNotificationRow({
                   />
                 }
               />
-              <TooltipContent>
-                {isInherited
-                  ? `Inheriting (${effectiveValue ? "enabled" : "disabled"})`
-                  : `Override: ${effectiveValue ? "enabled" : "disabled"}`}
-              </TooltipContent>
-            </Tooltip>
+              <ResponsiveTooltipContent>
+                <div className="flex items-center gap-1">
+                  {isInherited && <Globe className="size-3.5 text-muted" />}
+                  <span className="leading-none">
+                    {effectiveValue ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+              </ResponsiveTooltipContent>
+            </ResponsiveTooltip>
           </div>
         );
       })}

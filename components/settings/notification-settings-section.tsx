@@ -19,6 +19,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { useSession } from "@/lib/auth-client";
 import {
   NOTIFICATION_CATEGORIES,
@@ -247,7 +248,7 @@ export function NotificationSettingsSection() {
           </span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5 px-0 pt-1">
+      <CardContent className="space-y-2.5 px-0 pt-1">
         {/* Global Notifications */}
         <div className="space-y-1">
           {NOTIFICATION_CATEGORIES.map((category) => (
@@ -261,6 +262,9 @@ export function NotificationSettingsSection() {
           ))}
         </div>
 
+        {/* Divider */}
+        <Separator className="bg-border/50" />
+
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (
           <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
@@ -268,9 +272,9 @@ export function NotificationSettingsSection() {
               render={
                 <button
                   type="button"
-                  className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/50"
+                  className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/50"
                 >
-                  <span className="font-medium text-muted-foreground text-xs">
+                  <span className="font-medium text-[13px] text-foreground/85">
                     Per-domain overrides
                   </span>
                   <ChevronDown

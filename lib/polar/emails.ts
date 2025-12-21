@@ -8,7 +8,7 @@ import SubscriptionExpiredEmail from "@/emails/subscription-expired";
 import { getUserById } from "@/lib/db/repos/users";
 import { getTierLimits } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
-import { sendPrettyEmail } from "../resend";
+import { sendPrettyEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "polar-emails" });
 

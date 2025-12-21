@@ -177,25 +177,22 @@ export function DangerZoneSkeleton() {
  */
 function TabsSkeleton({ showCard }: { showCard?: boolean }) {
   return (
-    <div
-      className={cn(
-        "w-full border-border/50 border-b",
-        showCard && "mb-6 border-none px-6 pt-6 pb-0",
-      )}
-    >
-      <div className="flex items-center gap-1">
-        {/* Subscription Tab */}
-        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+    <div className={cn("w-full", showCard && "px-6 pt-6 pb-2")}>
+      <div className="flex h-auto w-full items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+        {/* Subscription Tab (Active) */}
+        <div className="flex flex-1 flex-col items-center gap-2 rounded-md bg-background/60 px-4 py-2.5 shadow-sm ring-1 ring-black/5 dark:bg-white/5 dark:shadow-none dark:ring-white/10">
           <Skeleton className="size-4.5 rounded-sm" />
           <Skeleton className="h-3 w-16" />
         </div>
+
         {/* Notifications Tab */}
-        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+        <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
           <Skeleton className="size-4.5 rounded-sm" />
           <Skeleton className="h-3 w-16" />
         </div>
+
         {/* Account Tab */}
-        <div className="flex h-auto flex-col items-center gap-2 px-4 py-2.5">
+        <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
           <Skeleton className="size-4.5 rounded-sm" />
           <Skeleton className="h-3 w-12" />
         </div>
@@ -214,9 +211,9 @@ export function SettingsSkeleton({ showCard = true }: SettingsSkeletonProps) {
       {/* Tabs Skeleton */}
       <TabsSkeleton showCard={showCard} />
 
-      {/* Tab Content Skeleton - Defaults to Notifications */}
-      <div className={cn(showCard && "px-6 pb-6")}>
-        <NotificationsSkeleton showCard={false} />
+      {/* Tab Content Skeleton - Defaults to Subscription (first tab) */}
+      <div className={cn(showCard && "px-6 pt-2 pb-4")}>
+        <SubscriptionSkeleton showCard={false} />
       </div>
     </div>
   );

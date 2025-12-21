@@ -14,37 +14,37 @@ interface SettingsContentProps {
   showCard?: boolean;
 }
 
-export function SettingsContent({ showCard = true }: SettingsContentProps) {
-  const tabsContent = (
-    <Tabs defaultValue="subscription" className="w-full">
-      <div className={cn(showCard && "px-6 pt-6")}>
-        <TabsList
-          className={cn("h-auto w-full justify-start", !showCard && "mb-2")}
-        >
-          <TabsTrigger
-            value="subscription"
-            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
-          >
-            <WalletMinimal className="size-4.5" aria-hidden="true" />
-            <span className="text-[13px] leading-none">Subscription</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="notifications"
-            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
-          >
-            <Bell className="size-4.5" aria-hidden="true" />
-            <span className="text-[13px] leading-none">Notifications</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="account"
-            className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
-          >
-            <User className="size-4.5" aria-hidden="true" />
-            <span className="text-[13px] leading-none">Account</span>
-          </TabsTrigger>
-        </TabsList>
-      </div>
+export function SettingsTabsList({ className }: { className?: string }) {
+  return (
+    <TabsList className={cn("h-auto w-full justify-start", className)}>
+      <TabsTrigger
+        value="subscription"
+        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+      >
+        <WalletMinimal className="size-4.5" aria-hidden="true" />
+        <span className="text-[13px] leading-none">Subscription</span>
+      </TabsTrigger>
+      <TabsTrigger
+        value="notifications"
+        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+      >
+        <Bell className="size-4.5" aria-hidden="true" />
+        <span className="text-[13px] leading-none">Notifications</span>
+      </TabsTrigger>
+      <TabsTrigger
+        value="account"
+        className="flex h-auto cursor-pointer flex-col items-center gap-2 px-4 py-2.5 data-[state=active]:cursor-default [&_svg]:text-muted-foreground data-[active]:[&_svg]:text-foreground"
+      >
+        <User className="size-4.5" aria-hidden="true" />
+        <span className="text-[13px] leading-none">Account</span>
+      </TabsTrigger>
+    </TabsList>
+  );
+}
 
+export function SettingsTabsPanels({ showCard }: { showCard?: boolean }) {
+  return (
+    <>
       <TabsContent
         value="subscription"
         className={cn("my-2", showCard && "px-6 pt-2 pb-4")}
@@ -72,6 +72,18 @@ export function SettingsContent({ showCard = true }: SettingsContentProps) {
           <DangerZoneSettingsSection />
         </div>
       </TabsContent>
+    </>
+  );
+}
+
+export function SettingsContent({ showCard = true }: SettingsContentProps) {
+  const tabsContent = (
+    <Tabs defaultValue="subscription" className="w-full">
+      <div className={cn(showCard && "px-6 pt-6")}>
+        <SettingsTabsList className={cn(!showCard && "mb-2")} />
+      </div>
+
+      <SettingsTabsPanels showCard={showCard} />
     </Tabs>
   );
 

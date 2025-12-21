@@ -2,7 +2,10 @@
 
 import { ChevronDown, Settings } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { SettingsContent } from "@/components/settings/settings-content";
+import {
+  SettingsTabsList,
+  SettingsTabsPanels,
+} from "@/components/settings/settings-content";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs } from "@/components/ui/tabs";
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
@@ -117,15 +121,21 @@ export function SettingsDialog({
       )}
 
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 p-0 dark:border-white/10">
-        <DialogHeader className="shrink-0 px-6 pt-6 pb-0 text-left">
-          <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>
-            Manage your subscription, notifications, and account preferences.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollableSettingsContent className="max-h-full px-6 pb-6">
-          <SettingsContent showCard={false} />
-        </ScrollableSettingsContent>
+        <Tabs
+          defaultValue="subscription"
+          className="flex h-full flex-col overflow-hidden"
+        >
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-0 text-left">
+            <DialogTitle>Settings</DialogTitle>
+            <DialogDescription>
+              Manage your subscription, notifications, and account preferences.
+            </DialogDescription>
+            <SettingsTabsList className="mt-2" />
+          </DialogHeader>
+          <ScrollableSettingsContent className="max-h-full px-6 pt-2 pb-6">
+            <SettingsTabsPanels showCard={false} />
+          </ScrollableSettingsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
