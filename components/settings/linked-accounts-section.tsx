@@ -6,12 +6,21 @@ import { toast } from "sonner";
 import { LinkedAccountRow } from "@/components/settings/linked-account-row";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import {
@@ -20,6 +29,7 @@ import {
 } from "@/lib/constants/oauth-providers";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
 
 export function LinkedAccountsSection() {
   const trpc = useTRPC();
@@ -170,15 +180,39 @@ export function LinkedAccountsSection() {
         </CardContent>
       </div>
 
-      <ConfirmActionDialog
+      <AlertDialog
         open={unlinkingProvider !== null}
         onOpenChange={(open) => !open && setUnlinkingProvider(null)}
-        title={`Unlink ${providerToUnlink?.name ?? "account"}?`}
-        description={`You will no longer be able to sign in with ${providerToUnlink?.name ?? "this account"}. Make sure you have another way to access your account.`}
-        confirmLabel="Unlink"
-        onConfirm={() => unlinkingProvider && handleUnlink(unlinkingProvider)}
-        variant="destructive"
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Unlink {providerToUnlink?.name ?? "account"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer be able to sign in with{" "}
+              {providerToUnlink?.name ?? "this account"}. Make sure you have
+              another way to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                unlinkingProvider && handleUnlink(unlinkingProvider)
+              }
+              className={cn(
+                "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                "cursor-pointer disabled:cursor-not-allowed",
+              )}
+            >
+              Unlink
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

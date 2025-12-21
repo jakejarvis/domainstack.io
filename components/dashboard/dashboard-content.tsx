@@ -19,8 +19,17 @@ import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useViewPreference } from "@/hooks/use-dashboard-preferences";
 import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
@@ -32,6 +41,7 @@ import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import { cn } from "@/lib/utils";
 
 type ConfirmAction =
   | { type: "remove"; domainId: string; domainName: string }
@@ -475,6 +485,7 @@ export function DashboardContent() {
             variant="ghost"
             onClick={() => setActiveTab("active")}
             className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
+            type="button"
           >
             <ArrowLeft className="size-4" />
             Back to domains
@@ -498,17 +509,36 @@ export function DashboardContent() {
       />
 
       {/* Confirmation dialog for destructive actions */}
-      <ConfirmActionDialog
+      <AlertDialog
         open={confirmAction !== null}
         onOpenChange={(open) => {
           if (!open) setConfirmAction(null);
         }}
-        title={confirmDialogContent.title}
-        description={confirmDialogContent.description}
-        confirmLabel={confirmDialogContent.confirmLabel}
-        onConfirm={handleConfirmAction}
-        variant={confirmDialogContent.variant}
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialogContent.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialogContent.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={cn(
+                confirmDialogContent.variant === "destructive" &&
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+                "cursor-pointer disabled:cursor-not-allowed",
+              )}
+            >
+              {confirmDialogContent.confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

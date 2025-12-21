@@ -3,7 +3,7 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, SearchIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
@@ -107,6 +107,20 @@ export function MultiSelect<T extends string>({
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the input when the popover opens to avoid scroll jumping
+  // caused by autoFocus attempting to scroll the element into view
+  // before it is properly positioned.
+  useEffect(() => {
+    if (open && searchable && inputRef.current) {
+      // Small timeout to ensure positioning is stable
+      const timer = setTimeout(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [open, searchable]);
 
   const { contains } = ComboboxPrimitive.useFilter({
     multiple: true,
@@ -242,7 +256,7 @@ export function MultiSelect<T extends string>({
                 >
                   <SearchIcon className="size-4 shrink-0 opacity-50" />
                   <ComboboxPrimitive.Input
-                    autoFocus
+                    ref={inputRef}
                     placeholder={`Search ${label}...`}
                     className={cn(
                       "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
