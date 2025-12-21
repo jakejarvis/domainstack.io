@@ -250,10 +250,7 @@ export const notifications = pgTable(
     // Resend email ID for troubleshooting delivery issues
     resendId: text("resend_id"),
   },
-  (t) => [
-    unique("u_notification_unique").on(t.trackedDomainId, t.type),
-    index("i_notifications_tracked_domain").on(t.trackedDomainId),
-  ],
+  (t) => [unique("u_notification_unique").on(t.trackedDomainId, t.type)],
 );
 
 // User notification preferences (global defaults for all domains)
@@ -429,7 +426,7 @@ export const certificates = pgTable(
   },
   (t) => [
     index("i_certs_domain").on(t.domainId),
-    index("i_certs_valid_to").on(t.validTo),
+    index("i_certs_ca_provider").on(t.caProviderId),
     index("i_certs_expires").on(t.expiresAt),
     // Ensure validTo >= validFrom
     check("ck_cert_valid_window", sql`${t.validTo} >= ${t.validFrom}`),
@@ -477,57 +474,48 @@ export const hosting = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (t) => [
-    index("i_hosting_providers").on(
-      t.hostingProviderId,
-      t.emailProviderId,
-      t.dnsProviderId,
-    ),
+    index("i_hosting_provider").on(t.hostingProviderId),
+    index("i_hosting_email_provider").on(t.emailProviderId),
+    index("i_hosting_dns_provider").on(t.dnsProviderId),
   ],
 );
 
 // SEO (latest)
-export const seo = pgTable(
-  "seo",
-  {
-    domainId: uuid("domain_id")
-      .primaryKey()
-      .references(() => domains.id, { onDelete: "cascade" }),
-    sourceFinalUrl: text("source_final_url"),
-    sourceStatus: integer("source_status"),
-    metaOpenGraph: jsonb("meta_open_graph")
-      .$type<OpenGraphMeta>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    metaTwitter: jsonb("meta_twitter")
-      .$type<TwitterMeta>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    metaGeneral: jsonb("meta_general")
-      .$type<GeneralMeta>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    previewTitle: text("preview_title"),
-    previewDescription: text("preview_description"),
-    previewImageUrl: text("preview_image_url"),
-    previewImageUploadedUrl: text("preview_image_uploaded_url"),
-    canonicalUrl: text("canonical_url"),
-    robots: jsonb("robots")
-      .$type<RobotsTxt>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    robotsSitemaps: jsonb("robots_sitemaps")
-      .$type<string[]>()
-      .notNull()
-      .default(sql`'[]'::jsonb`),
-    errors: jsonb("errors").notNull().default(sql`'[]'::jsonb`),
-    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [
-    index("i_seo_src_final_url").on(t.sourceFinalUrl),
-    index("i_seo_canonical").on(t.canonicalUrl),
-  ],
-);
+export const seo = pgTable("seo", {
+  domainId: uuid("domain_id")
+    .primaryKey()
+    .references(() => domains.id, { onDelete: "cascade" }),
+  sourceFinalUrl: text("source_final_url"),
+  sourceStatus: integer("source_status"),
+  metaOpenGraph: jsonb("meta_open_graph")
+    .$type<OpenGraphMeta>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  metaTwitter: jsonb("meta_twitter")
+    .$type<TwitterMeta>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  metaGeneral: jsonb("meta_general")
+    .$type<GeneralMeta>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  previewTitle: text("preview_title"),
+  previewDescription: text("preview_description"),
+  previewImageUrl: text("preview_image_url"),
+  previewImageUploadedUrl: text("preview_image_uploaded_url"),
+  canonicalUrl: text("canonical_url"),
+  robots: jsonb("robots")
+    .$type<RobotsTxt>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  robotsSitemaps: jsonb("robots_sitemaps")
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  errors: jsonb("errors").notNull().default(sql`'[]'::jsonb`),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
 
 // Favicons
 export const favicons = pgTable(
