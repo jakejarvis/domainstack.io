@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   type CertificateSnapshotData,
@@ -45,8 +45,10 @@ export const backfillSnapshots = inngest.createFunction(
         .from(userTrackedDomains)
         .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
         .where(
-          eq(userTrackedDomains.verified, true) &&
+          and(
+            eq(userTrackedDomains.verified, true),
             isNull(userTrackedDomains.archivedAt),
+          ),
         );
     });
 
