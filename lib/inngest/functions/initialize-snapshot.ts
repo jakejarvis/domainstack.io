@@ -94,7 +94,7 @@ export const initializeSnapshot = inngest.createFunction(
         caProviderId: leafCert.caProvider.id ?? null,
         issuer: leafCert.issuer,
         validTo: new Date(leafCert.validTo).toISOString(),
-        fingerprint: null,
+        fingerprint: null, // TODO: Add fingerprint extraction when TLS probe supports it
       };
     }
 
