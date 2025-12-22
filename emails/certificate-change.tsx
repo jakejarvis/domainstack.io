@@ -34,10 +34,7 @@ export function CertificateChangeEmail({
   const previewText = `Certificate changes detected for ${domainName}`;
 
   // Determine if this is likely a renewal based on issuer staying the same
-  const likelyRenewal =
-    !changes.caProviderChanged &&
-    !changes.issuerChanged &&
-    changes.previousIssuer === changes.newIssuer;
+  const likelyRenewal = !changes.caProviderChanged && !changes.issuerChanged;
 
   return (
     <EmailLayout previewText={previewText}>
