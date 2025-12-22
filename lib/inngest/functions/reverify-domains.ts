@@ -20,6 +20,7 @@ import {
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
+import { generateIdempotencyKey } from "@/lib/notifications";
 import { sendPrettyEmail } from "@/lib/resend";
 import {
   tryAllVerificationMethods,
@@ -272,36 +273,40 @@ async function sendVerificationFailingEmail(
     return false;
   }
 
+  const idempotencyKey = generateIdempotencyKey(
+    domain.id,
+    "verification_failing",
+  );
+
   try {
-    const { data, error } = await sendPrettyEmail({
-      to: domain.userEmail,
-      subject: `⚠️ Verification failing for ${domain.domainName}`,
-      react: VerificationFailingEmail({
-        userName: domain.userName.split(" ")[0] || "there",
-        domainName: domain.domainName,
-        verificationMethod: domain.verificationMethod,
-        gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
-      }),
+    // Create notification record first for idempotency
+    await createNotification({
+      trackedDomainId: domain.id,
+      type: "verification_failing",
     });
+
+    const { data, error } = await sendPrettyEmail(
+      {
+        to: domain.userEmail,
+        subject: `⚠️ Verification failing for ${domain.domainName}`,
+        react: VerificationFailingEmail({
+          userName: domain.userName.split(" ")[0] || "there",
+          domainName: domain.domainName,
+          verificationMethod: domain.verificationMethod,
+          gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+        }),
+      },
+      { idempotencyKey },
+    );
 
     if (error) {
       logger.error("Failed to send verification failing email", error, {
         domainName: domain.domainName,
         userId: domain.userId,
+        idempotencyKey,
       });
-      return false;
+      throw new Error(`Resend error: ${error.message}`);
     }
-
-    logger.info("Sent verification failing notification", {
-      domainName: domain.domainName,
-      userId: domain.userId,
-      emailId: data?.id,
-    });
-
-    await createNotification({
-      trackedDomainId: domain.id,
-      type: "verification_failing",
-    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -312,13 +317,21 @@ async function sendVerificationFailingEmail(
       );
     }
 
+    logger.info("Sent verification failing notification", {
+      domainName: domain.domainName,
+      userId: domain.userId,
+      emailId: data?.id,
+      idempotencyKey,
+    });
+
     return true;
   } catch (err) {
     logger.error("Error sending verification failing email", err, {
       domainName: domain.domainName,
       userId: domain.userId,
+      idempotencyKey,
     });
-    return false;
+    throw err;
   }
 }
 
@@ -337,34 +350,38 @@ async function sendVerificationRevokedEmail(
     return false;
   }
 
+  const idempotencyKey = generateIdempotencyKey(
+    domain.id,
+    "verification_revoked",
+  );
+
   try {
-    const { data, error } = await sendPrettyEmail({
-      to: domain.userEmail,
-      subject: `❌ Verification revoked for ${domain.domainName}`,
-      react: VerificationRevokedEmail({
-        userName: domain.userName.split(" ")[0] || "there",
-        domainName: domain.domainName,
-      }),
+    // Create notification record first for idempotency
+    await createNotification({
+      trackedDomainId: domain.id,
+      type: "verification_revoked",
     });
+
+    const { data, error } = await sendPrettyEmail(
+      {
+        to: domain.userEmail,
+        subject: `❌ Verification revoked for ${domain.domainName}`,
+        react: VerificationRevokedEmail({
+          userName: domain.userName.split(" ")[0] || "there",
+          domainName: domain.domainName,
+        }),
+      },
+      { idempotencyKey },
+    );
 
     if (error) {
       logger.error("Failed to send verification revoked email", error, {
         domainName: domain.domainName,
         userId: domain.userId,
+        idempotencyKey,
       });
-      return false;
+      throw new Error(`Resend error: ${error.message}`);
     }
-
-    logger.info("Sent verification revoked notification", {
-      domainName: domain.domainName,
-      userId: domain.userId,
-      emailId: data?.id,
-    });
-
-    await createNotification({
-      trackedDomainId: domain.id,
-      type: "verification_revoked",
-    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -375,12 +392,20 @@ async function sendVerificationRevokedEmail(
       );
     }
 
+    logger.info("Sent verification revoked notification", {
+      domainName: domain.domainName,
+      userId: domain.userId,
+      emailId: data?.id,
+      idempotencyKey,
+    });
+
     return true;
   } catch (err) {
     logger.error("Error sending verification revoked email", err, {
       domainName: domain.domainName,
       userId: domain.userId,
+      idempotencyKey,
     });
-    return false;
+    throw err;
   }
 }
