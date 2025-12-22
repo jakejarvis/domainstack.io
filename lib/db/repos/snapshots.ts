@@ -189,37 +189,58 @@ export async function getSnapshotsForMonitoring(): Promise<
       ),
     );
 
-  return rows.map((row) => {
+  // Filter and validate rows, skipping any with invalid JSONB data
+  // This prevents one bad record from aborting the entire monitoring job
+  const validRows: SnapshotForMonitoring[] = [];
+  let skippedCount = 0;
+
+  for (const row of rows) {
     // Validate JSONB data to ensure it matches expected shape
     const registration = RegistrationSnapshotSchema.safeParse(row.registration);
     const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
 
     if (!registration.success) {
-      logger.error("Invalid registration snapshot data", registration.error, {
-        trackedDomainId: row.trackedDomainId,
-        domainName: row.domainName,
-      });
-      throw new Error(
-        `Invalid registration snapshot for ${row.domainName}: ${registration.error.message}`,
+      logger.error(
+        "Invalid registration snapshot data, skipping domain",
+        registration.error,
+        {
+          trackedDomainId: row.trackedDomainId,
+          domainName: row.domainName,
+        },
       );
+      skippedCount++;
+      continue;
     }
 
     if (!certificate.success) {
-      logger.error("Invalid certificate snapshot data", certificate.error, {
-        trackedDomainId: row.trackedDomainId,
-        domainName: row.domainName,
-      });
-      throw new Error(
-        `Invalid certificate snapshot for ${row.domainName}: ${certificate.error.message}`,
+      logger.error(
+        "Invalid certificate snapshot data, skipping domain",
+        certificate.error,
+        {
+          trackedDomainId: row.trackedDomainId,
+          domainName: row.domainName,
+        },
       );
+      skippedCount++;
+      continue;
     }
 
-    return {
+    validRows.push({
       ...row,
       registration: registration.data,
       certificate: certificate.data,
-    };
-  });
+    });
+  }
+
+  if (skippedCount > 0) {
+    logger.warn("Skipped domains with invalid snapshot data", {
+      skippedCount,
+      totalCount: rows.length,
+      validCount: validRows.length,
+    });
+  }
+
+  return validRows;
 }
 
 /**
