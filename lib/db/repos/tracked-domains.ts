@@ -771,15 +771,22 @@ export async function verifyTrackedDomain(
   // This is done in the background to avoid blocking the user
   if (updated[0]) {
     // Import dynamically to avoid circular dependencies
-    void import("@/lib/inngest/client").then(({ inngest }) => {
-      void inngest.send({
-        name: "snapshot/initialize",
-        data: {
+    import("@/lib/inngest/client")
+      .then(({ inngest }) => {
+        inngest.send({
+          name: "snapshot/initialize",
+          data: {
+            trackedDomainId: updated[0].id,
+            domainId: updated[0].domainId,
+          },
+        });
+      })
+      .catch((err) => {
+        logger.error("Failed to trigger snapshot initialization", err, {
           trackedDomainId: updated[0].id,
           domainId: updated[0].domainId,
-        },
+        });
       });
-    });
   }
 
   return updated[0] ?? null;
