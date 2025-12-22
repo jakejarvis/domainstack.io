@@ -6,7 +6,7 @@ import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-c
 import { Card } from "@/components/ui/card";
 import type { ResumeDomainData } from "@/hooks/use-domain-verification";
 import { useRouter } from "@/hooks/use-router";
-import type { VerificationMethod } from "@/lib/schemas";
+import { isValidVerificationMethod } from "@/lib/constants";
 
 export function AddDomainPageClient({
   prefillDomain,
@@ -28,7 +28,10 @@ export function AddDomainPageClient({
     const isResume = searchParams.get("resume") === "true";
     const id = searchParams.get("id");
     const domain = searchParams.get("domain");
-    const method = searchParams.get("method") as VerificationMethod | null;
+    const methodParam = searchParams.get("method");
+
+    // Validate verification method at runtime without Zod
+    const method = isValidVerificationMethod(methodParam) ? methodParam : null;
 
     if (isResume && id) {
       return {

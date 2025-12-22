@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
 import type { ResumeDomainData } from "@/hooks/use-domain-verification";
-import type { VerificationMethod } from "@/lib/schemas";
+import { useRouter } from "@/hooks/use-router";
+import { isValidVerificationMethod } from "@/lib/constants";
 
 export function AddDomainModalClient({
   prefillDomain,
@@ -22,7 +23,10 @@ export function AddDomainModalClient({
     const isResume = searchParams.get("resume") === "true";
     const id = searchParams.get("id");
     const domain = searchParams.get("domain");
-    const method = searchParams.get("method") as VerificationMethod | null;
+    const methodParam = searchParams.get("method");
+
+    // Validate verification method at runtime without Zod
+    const method = isValidVerificationMethod(methodParam) ? methodParam : null;
 
     if (isResume && id) {
       return {

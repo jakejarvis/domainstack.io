@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRouter } from "@/hooks/use-router";
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +98,7 @@ export function Modal({
   const router = useRouter();
 
   return (
-    <Dialog defaultOpen open onOpenChange={() => router.back()}>
+    <Dialog open={true} onOpenChange={() => router.back()}>
       <DialogContent
         className={cn(
           "flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0",

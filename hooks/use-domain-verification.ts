@@ -140,16 +140,12 @@ export function useDomainVerification({
   // prioritizing server data over resumeDomain props (except for id which is the key)
   useEffect(() => {
     if (instructionsQuery.data) {
-      setInstructions(instructionsQuery.data);
-      // The server response includes the domain name in the instructions object
-      // We cast it to a type that includes domain since it's present in the response
-      // but might not be in the strict Zod schema for instructions
-      const instructionsWithDomain =
-        instructionsQuery.data as VerificationInstructions & {
-          domain?: string;
-        };
-      if (instructionsWithDomain.domain) {
-        setDomain(instructionsWithDomain.domain);
+      // Extract domain and instructions separately (server response includes both)
+      const { domain: responseDomain, ...instructionsOnly } =
+        instructionsQuery.data;
+      setInstructions(instructionsOnly);
+      if (responseDomain) {
+        setDomain(responseDomain);
       }
     }
   }, [instructionsQuery.data]);

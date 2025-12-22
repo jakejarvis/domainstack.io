@@ -41,7 +41,7 @@ export function LoginContent({
         (searchParams.toString() ? `?${searchParams.toString()}` : ""));
 
   return (
-    <div className={cn("flex flex-col items-center p-6", className)}>
+    <div className={cn("flex flex-col items-center", className)}>
       <div className="mb-5 flex size-14 items-center justify-center rounded-xl bg-primary/5 text-primary">
         <ScanFace className="size-7" strokeWidth={2} />
       </div>

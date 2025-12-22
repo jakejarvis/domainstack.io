@@ -11,6 +11,7 @@ export default function InterceptedLoginPage() {
     <Modal
       title="Sign In"
       description="Sign in to track your domains and receive health alerts."
+      className="!max-w-md px-6"
     >
       <Suspense fallback={<LoginSkeleton />}>
         <AuthorizedLoginContent />

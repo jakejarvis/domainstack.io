@@ -15,21 +15,21 @@ export function SettingsTabsList({ className }: { className?: string }) {
         value="subscription"
         className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
-        <WalletMinimal className="size-4.5" aria-hidden="true" />
+        <WalletMinimal className="size-[18px]" aria-hidden="true" />
         <span className="text-[13px] leading-none">Subscription</span>
       </TabsTrigger>
       <TabsTrigger
         value="notifications"
         className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
-        <Bell className="size-4.5" aria-hidden="true" />
+        <Bell className="size-[18px]" aria-hidden="true" />
         <span className="text-[13px] leading-none">Notifications</span>
       </TabsTrigger>
       <TabsTrigger
         value="account"
         className="h-auto flex-col items-center gap-2 px-4 py-2.5"
       >
-        <User className="size-4.5" aria-hidden="true" />
+        <User className="size-[18px]" aria-hidden="true" />
         <span className="text-[13px] leading-none">Account</span>
       </TabsTrigger>
     </TabsList>
