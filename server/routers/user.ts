@@ -139,8 +139,14 @@ export const userRouter = createTRPCRouter({
       if (Object.hasOwn(overrides, "certificateExpiry")) {
         mergedOverrides.certificateExpiry = overrides.certificateExpiry;
       }
-      if (Object.hasOwn(overrides, "verificationStatus")) {
-        mergedOverrides.verificationStatus = overrides.verificationStatus;
+      if (Object.hasOwn(overrides, "registrationChanges")) {
+        mergedOverrides.registrationChanges = overrides.registrationChanges;
+      }
+      if (Object.hasOwn(overrides, "providerChanges")) {
+        mergedOverrides.providerChanges = overrides.providerChanges;
+      }
+      if (Object.hasOwn(overrides, "certificateChanges")) {
+        mergedOverrides.certificateChanges = overrides.certificateChanges;
       }
 
       // Update with merged overrides

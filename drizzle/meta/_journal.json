@@ -57,6 +57,13 @@
       "when": 1766342926456,
       "tag": "0007_sticky_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766437454393,
+      "tag": "0008_bouncy_loki",
+      "breakpoints": true
     }
   ]
 }

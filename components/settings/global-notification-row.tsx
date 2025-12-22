@@ -1,6 +1,12 @@
 "use client";
 
-import { BadgeAlert, CalendarDays, Info, ShieldAlert } from "lucide-react";
+import {
+  CalendarDays,
+  FileKey,
+  Info,
+  Network,
+  ShieldAlert,
+} from "lucide-react";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -26,7 +32,9 @@ const CATEGORY_ICONS: Record<
 > = {
   domainExpiry: CalendarDays,
   certificateExpiry: ShieldAlert,
-  verificationStatus: BadgeAlert,
+  registrationChanges: FileKey,
+  providerChanges: Network,
+  certificateChanges: ShieldAlert,
 };
 
 /**

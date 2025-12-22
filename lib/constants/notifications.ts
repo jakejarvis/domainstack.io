@@ -5,9 +5,11 @@
 
 // Notification categories for user preferences
 export const NOTIFICATION_CATEGORIES = [
+  "providerChanges",
   "domainExpiry",
+  "registrationChanges",
   "certificateExpiry",
-  "verificationStatus",
+  "certificateChanges",
 ] as const;
 
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
@@ -25,9 +27,18 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
     label: "Certificate Expiration",
     description: "Alerts at 14, 7, 3, and 1 day before expiration",
   },
-  verificationStatus: {
-    label: "Verification Status",
-    description: "Alerts when domain verification fails or is revoked",
+  registrationChanges: {
+    label: "Registration Changes",
+    description:
+      "Alerts when registrar, nameservers, transfer lock, or statuses change",
+  },
+  providerChanges: {
+    label: "Provider Changes",
+    description: "Alerts when DNS, hosting, or email providers change",
+  },
+  certificateChanges: {
+    label: "Certificate Changes",
+    description: "Alerts when SSL certificate issuer or CA changes",
   },
 };
 
@@ -47,7 +58,10 @@ export type NotificationType =
   | `domain_expiry_${DomainExpiryThreshold}d`
   | `certificate_expiry_${CertificateExpiryThreshold}d`
   | "verification_failing"
-  | "verification_revoked";
+  | "verification_revoked"
+  | "registration_change"
+  | "provider_change"
+  | "certificate_change";
 
 // Mapping from threshold to notification type
 export const DOMAIN_THRESHOLD_TO_TYPE: Record<
