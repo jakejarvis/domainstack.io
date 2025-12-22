@@ -68,6 +68,7 @@ export const monitorTrackedDomains = inngest.createFunction(
       providerChanges: 0,
       certificateChanges: 0,
       errors: 0,
+      failedDomains: [] as Array<{ domainName: string; error: string }>,
     };
 
     for (const snapshot of snapshots) {
@@ -314,11 +315,17 @@ export const monitorTrackedDomains = inngest.createFunction(
           }
         }
       } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
         logger.error("Error monitoring domain", err, {
           domainName: snapshot.domainName,
           trackedDomainId: snapshot.trackedDomainId,
         });
         results.errors++;
+        results.failedDomains.push({
+          domainName: snapshot.domainName,
+          error: errorMessage,
+        });
       }
     }
 
