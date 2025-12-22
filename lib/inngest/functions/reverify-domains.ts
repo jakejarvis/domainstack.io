@@ -279,12 +279,8 @@ async function sendVerificationFailingEmail(
   );
 
   try {
-    // Create notification record first for idempotency
-    await createNotification({
-      trackedDomainId: domain.id,
-      type: "verification_failing",
-    });
-
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: domain.userEmail,
@@ -307,6 +303,12 @@ async function sendVerificationFailingEmail(
       });
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId: domain.id,
+      type: "verification_failing",
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -356,12 +358,8 @@ async function sendVerificationRevokedEmail(
   );
 
   try {
-    // Create notification record first for idempotency
-    await createNotification({
-      trackedDomainId: domain.id,
-      type: "verification_revoked",
-    });
-
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: domain.userEmail,
@@ -382,6 +380,12 @@ async function sendVerificationRevokedEmail(
       });
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId: domain.id,
+      type: "verification_revoked",
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {

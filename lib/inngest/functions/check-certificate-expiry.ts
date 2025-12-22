@@ -186,19 +186,8 @@ async function sendCertificateExpiryNotification({
   );
 
   try {
-    // Create notification record first
-    const notificationRecord = await createNotification({
-      trackedDomainId,
-      type: notificationType,
-    });
-
-    if (!notificationRecord) {
-      logger.debug("Notification already recorded", {
-        trackedDomainId,
-        notificationType,
-      });
-    }
-
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -224,6 +213,12 @@ async function sendCertificateExpiryNotification({
       });
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: notificationType,
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {

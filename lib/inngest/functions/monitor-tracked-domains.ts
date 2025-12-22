@@ -380,13 +380,8 @@ async function handleRegistrationChange(
   );
 
   try {
-    // Create notification record first (acts as a lock)
-    await createNotification({
-      trackedDomainId,
-      type: "registration_change",
-    });
-
-    // Send email with idempotency key
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -424,6 +419,12 @@ async function handleRegistrationChange(
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: "registration_change",
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -498,13 +499,8 @@ async function handleProviderChange(
   );
 
   try {
-    // Create notification record first (acts as a lock)
-    await createNotification({
-      trackedDomainId,
-      type: "provider_change",
-    });
-
-    // Send email with idempotency key
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -529,6 +525,12 @@ async function handleProviderChange(
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: "provider_change",
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -605,13 +607,8 @@ async function handleCertificateChange(
   );
 
   try {
-    // Create notification record first (acts as a lock)
-    await createNotification({
-      trackedDomainId,
-      type: "certificate_change",
-    });
-
-    // Send email with idempotency key
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -637,6 +634,12 @@ async function handleCertificateChange(
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: "certificate_change",
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {

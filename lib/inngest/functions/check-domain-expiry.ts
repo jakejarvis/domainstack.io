@@ -185,31 +185,8 @@ async function sendExpiryNotification({
   );
 
   try {
-    // Create the notification record first (upsert with onConflictDoNothing)
-    // This acts as a lock - if we crash after this but before email sends,
-    // the next retry will still have this record, and hasNotificationBeenSent
-    // will return true (preventing re-entry to this function)
-    // However, if this step succeeds but email fails, Resend's idempotency
-    // key will prevent duplicate sends on retry
-    const notificationRecord = await createNotification({
-      trackedDomainId,
-      type: notificationType,
-    });
-
-    // If notification was already recorded (duplicate), skip sending
-    // This happens when the record exists from a previous partial run
-    if (!notificationRecord) {
-      logger.debug("Notification already recorded, checking if email sent", {
-        trackedDomainId,
-        notificationType,
-      });
-      // The notification exists - email may or may not have been sent
-      // Resend's idempotency key will handle deduplication if we proceed
-    }
-
-    // Send the email with idempotency key
-    // If this request fails and retries with the same idempotencyKey,
-    // Resend will return the original response without sending again
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -233,11 +210,14 @@ async function sendExpiryNotification({
         userId,
         idempotencyKey,
       });
-      // Don't return false here - the notification record is already created
-      // and idempotency key ensures no duplicates on retry
-      // Throwing will cause Inngest to retry the step
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: notificationType,
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
