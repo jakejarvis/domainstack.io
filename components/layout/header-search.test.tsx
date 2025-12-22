@@ -16,7 +16,7 @@ vi.mock("@/hooks/use-router", () => ({
 
 vi.mock("next/navigation", () => ({
   useParams: () => nav.params,
-  usePathname: () => "/x",
+  useSelectedLayoutSegment: () => "domain",
 }));
 
 describe("HeaderSearch", () => {

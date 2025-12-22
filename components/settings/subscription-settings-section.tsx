@@ -19,7 +19,13 @@ import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
 import { cn } from "@/lib/utils";
 
-export function SubscriptionSettingsSection() {
+interface SubscriptionSettingsSectionProps {
+  className?: string;
+}
+
+export function SubscriptionSettingsSection({
+  className,
+}: SubscriptionSettingsSectionProps) {
   // Subscription hooks
   const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
   const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
@@ -29,12 +35,12 @@ export function SubscriptionSettingsSection() {
   const { subscription, isPro, isLoading, isError } = useSubscription();
 
   if (isLoading) {
-    return <SubscriptionSkeleton showCard={false} />;
+    return <SubscriptionSkeleton className={className} />;
   }
 
   if (isError) {
     return (
-      <div>
+      <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Plan</CardTitle>
           <CardDescription className="text-destructive">
@@ -52,7 +58,7 @@ export function SubscriptionSettingsSection() {
   const proTierInfo = getProTierInfo(proMaxDomains);
 
   return (
-    <div>
+    <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle>Plan</CardTitle>
         <CardDescription>

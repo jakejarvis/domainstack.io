@@ -3,12 +3,11 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
-import { Card } from "@/components/ui/card";
 import type { ResumeDomainData } from "@/hooks/use-domain-verification";
 import { useRouter } from "@/hooks/use-router";
 import { isValidVerificationMethod } from "@/lib/constants";
 
-export function AddDomainPageClient({
+export function AddDomainModalClient({
   prefillDomain,
 }: {
   prefillDomain?: string;
@@ -17,11 +16,7 @@ export function AddDomainPageClient({
   const searchParams = useSearchParams();
 
   const handleClose = () => {
-    router.push("/dashboard", { scroll: false });
-  };
-
-  const handleSuccess = () => {
-    router.push("/dashboard", { scroll: false });
+    router.back();
   };
 
   const resumeDomain = useMemo<ResumeDomainData | null>(() => {
@@ -49,14 +44,11 @@ export function AddDomainPageClient({
   }, [searchParams]);
 
   return (
-    <Card className="w-full">
-      <AddDomainContent
-        className="px-6"
-        onClose={handleClose}
-        onSuccess={handleSuccess}
-        prefillDomain={prefillDomain}
-        resumeDomain={resumeDomain}
-      />
-    </Card>
+    <AddDomainContent
+      onClose={handleClose}
+      onSuccess={handleClose}
+      prefillDomain={prefillDomain}
+      resumeDomain={resumeDomain}
+    />
   );
 }

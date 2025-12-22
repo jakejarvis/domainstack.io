@@ -5,15 +5,12 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
-import { Card } from "@/components/ui/card";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
 interface LoginContentProps {
-  /** Whether to show the card wrapper (false for modal usage) */
-  showCard?: boolean;
-  /** Additional classes for the card wrapper */
+  /** Additional classes for the wrapper */
   className?: string;
   /** Callback when navigating away (e.g., to close modal) */
   onNavigate?: () => void;
@@ -22,7 +19,6 @@ interface LoginContentProps {
 }
 
 export function LoginContent({
-  showCard = true,
   className,
   onNavigate,
   callbackURL,
@@ -44,8 +40,8 @@ export function LoginContent({
       : pathname +
         (searchParams.toString() ? `?${searchParams.toString()}` : ""));
 
-  const content = (
-    <div className="flex flex-col items-center p-6">
+  return (
+    <div className={cn("flex flex-col items-center", className)}>
       <div className="mb-5 flex size-14 items-center justify-center rounded-xl bg-primary/5 text-primary">
         <ScanFace className="size-7" strokeWidth={2} />
       </div>
@@ -73,7 +69,6 @@ export function LoginContent({
         By signing in, you agree to our{" "}
         <Link
           href="/terms"
-          prefetch={false}
           onClick={onNavigate}
           className="underline underline-offset-2 hover:text-foreground"
         >
@@ -82,7 +77,6 @@ export function LoginContent({
         and{" "}
         <Link
           href="/privacy"
-          prefetch={false}
           onClick={onNavigate}
           className="underline underline-offset-2 hover:text-foreground"
         >
@@ -91,22 +85,5 @@ export function LoginContent({
         .
       </p>
     </div>
-  );
-
-  if (!showCard) {
-    return content;
-  }
-
-  return (
-    <Card
-      className={cn(
-        "w-full max-w-sm overflow-hidden rounded-3xl",
-        "border-black/10 bg-background/80 backdrop-blur-xl",
-        "supports-[backdrop-filter]:bg-background/80 dark:border-white/10",
-        className,
-      )}
-    >
-      {content}
-    </Card>
   );
 }

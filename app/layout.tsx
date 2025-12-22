@@ -37,8 +37,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode;
+  modal: React.ReactNode;
 }>) {
   return (
     <html
@@ -63,6 +65,7 @@ export default function RootLayout({
             <AppFooter />
           </div>
 
+          {modal}
           <Toaster />
           <Suspense fallback={null}>
             <CookiePromptGeofenced />

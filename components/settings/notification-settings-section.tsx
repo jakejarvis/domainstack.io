@@ -29,7 +29,15 @@ import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
-export function NotificationSettingsSection() {
+interface NotificationSettingsSectionProps {
+  className?: string;
+  dividerClassName?: string;
+}
+
+export function NotificationSettingsSection({
+  className,
+  dividerClassName,
+}: NotificationSettingsSectionProps) {
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -191,7 +199,7 @@ export function NotificationSettingsSection() {
   };
 
   if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
-    return <NotificationsSkeleton showCard={false} />;
+    return <NotificationsSkeleton />;
   }
 
   if (domainsQuery.isError || globalPrefsQuery.isError) {
@@ -238,7 +246,7 @@ export function NotificationSettingsSection() {
     resetDomainMutation.isPending;
 
   return (
-    <div>
+    <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle>Email Notifications</CardTitle>
         <CardDescription>
@@ -263,7 +271,7 @@ export function NotificationSettingsSection() {
         </div>
 
         {/* Divider */}
-        <Separator className="bg-border/50" />
+        <Separator className={cn("mt-2 mb-4 bg-border/50", dividerClassName)} />
 
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (

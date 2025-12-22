@@ -3,7 +3,6 @@
 import { Bookmark, LogIn, Menu, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { LoginDialog } from "@/components/auth/login-dialog";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,17 +20,7 @@ import { useTheme } from "@/hooks/use-theme-toggle";
  */
 export function MobileMenu() {
   const { theme, toggleTheme } = useTheme();
-  const [loginOpen, setLoginOpen] = useState(false);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
-
-  // Handle sign in click - open dialog for normal clicks, let link work for modified clicks
-  const handleSignInClick = (e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-      return;
-    }
-    e.preventDefault();
-    setLoginOpen(true);
-  };
 
   return (
     <>
@@ -68,13 +57,7 @@ export function MobileMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/login"
-                prefetch={false}
-                className="cursor-pointer"
-                onClick={handleSignInClick}
-                data-disable-progress={true}
-              >
+              <Link href="/login" scroll={false} className="cursor-pointer">
                 <LogIn className="size-4" />
                 Sign In
               </Link>
@@ -82,8 +65,6 @@ export function MobileMenu() {
           />
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
 
       {/* Bookmarklet Dialog - controlled externally */}
       <BookmarkletDialog

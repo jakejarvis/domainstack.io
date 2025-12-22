@@ -11,12 +11,18 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-export function DangerZoneSettingsSection() {
+interface DangerZoneSettingsSectionProps {
+  className?: string;
+}
+
+export function DangerZoneSettingsSection({
+  className,
+}: DangerZoneSettingsSectionProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
     <>
-      <Collapsible>
+      <Collapsible className={className}>
         <CollapsibleTrigger
           render={
             <button

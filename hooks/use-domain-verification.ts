@@ -136,10 +136,17 @@ export function useDomainVerification({
     }
   }, [resumeDomain, open, trackedDomainId]);
 
-  // When instructions are fetched (resume mode), set them
+  // When instructions are fetched (resume mode), set them and update local state
+  // prioritizing server data over resumeDomain props (except for id which is the key)
   useEffect(() => {
     if (instructionsQuery.data) {
-      setInstructions(instructionsQuery.data);
+      // Extract domain and instructions separately (server response includes both)
+      const { domain: responseDomain, ...instructionsOnly } =
+        instructionsQuery.data;
+      setInstructions(instructionsOnly);
+      if (responseDomain) {
+        setDomain(responseDomain);
+      }
     }
   }, [instructionsQuery.data]);
 

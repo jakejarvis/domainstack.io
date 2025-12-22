@@ -312,10 +312,13 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      return buildVerificationInstructions(
-        tracked.domainName,
-        tracked.verificationToken,
-      );
+      return {
+        ...buildVerificationInstructions(
+          tracked.domainName,
+          tracked.verificationToken,
+        ),
+        domain: tracked.domainName,
+      };
     }),
 
   /**

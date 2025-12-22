@@ -1,4 +1,8 @@
-import { SettingsSkeleton } from "@/components/settings/settings-skeleton";
+import {
+  SettingsSkeletonPanels,
+  SettingsSkeletonTabsList,
+} from "@/components/settings/settings-skeleton";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
@@ -11,7 +15,12 @@ export default function SettingsLoading() {
       </div>
 
       {/* Settings content skeleton */}
-      <SettingsSkeleton />
+      <Card className="overflow-hidden p-0">
+        <div className="w-full">
+          <SettingsSkeletonTabsList className="px-6 pt-6 pb-2" />
+          <SettingsSkeletonPanels className="px-6 pt-2 pb-4" />
+        </div>
+      </Card>
     </div>
   );
 }

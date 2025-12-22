@@ -31,7 +31,13 @@ import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
-export function LinkedAccountsSection() {
+interface LinkedAccountsSectionProps {
+  className?: string;
+}
+
+export function LinkedAccountsSection({
+  className,
+}: LinkedAccountsSectionProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
@@ -134,12 +140,12 @@ export function LinkedAccountsSection() {
     : null;
 
   if (linkedAccountsQuery.isLoading) {
-    return <LinkedAccountsSkeleton showCard={false} />;
+    return <LinkedAccountsSkeleton className={className} />;
   }
 
   if (linkedAccountsQuery.isError) {
     return (
-      <div>
+      <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Providers</CardTitle>
           <CardDescription className="text-destructive">
@@ -152,7 +158,7 @@ export function LinkedAccountsSection() {
 
   return (
     <>
-      <div>
+      <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle>Login Providers</CardTitle>
           <CardDescription>

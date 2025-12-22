@@ -27,7 +27,6 @@ type DashboardHeaderProps = {
   /** When a canceled subscription ends (null = active subscription) */
   subscriptionEndsAt?: Date | null;
   onViewModeChange: (mode: ViewMode) => void;
-  onAddDomain: () => void;
   /** Whether the dashboard has any domains (active or archived) */
   hasAnyDomains?: boolean;
 };
@@ -40,7 +39,6 @@ export function DashboardHeader({
   tier,
   subscriptionEndsAt,
   onViewModeChange,
-  onAddDomain,
   hasAnyDomains = false,
 }: DashboardHeaderProps) {
   return (
@@ -169,26 +167,7 @@ export function DashboardHeader({
           ) : (
             <Button
               nativeButton={false}
-              render={
-                <Link
-                  href="/dashboard/add-domain"
-                  prefetch={false}
-                  data-disable-progress={true}
-                  onClick={(e) => {
-                    // Allow modifier clicks to open in new tab/window
-                    if (
-                      e.metaKey ||
-                      e.ctrlKey ||
-                      e.shiftKey ||
-                      e.button === 1
-                    ) {
-                      return;
-                    }
-                    e.preventDefault();
-                    onAddDomain();
-                  }}
-                />
-              }
+              render={<Link href="/dashboard/add-domain" scroll={false} />}
             >
               <Plus className="size-4" />
               Add Domain
