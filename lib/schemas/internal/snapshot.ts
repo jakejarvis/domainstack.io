@@ -22,7 +22,7 @@ export type RegistrationSnapshotData = z.infer<
 export const CertificateSnapshotSchema = z.object({
   caProviderId: z.string().uuid().nullable(),
   issuer: z.string(),
-  validTo: z.string(), // ISO date string
+  validTo: z.iso.datetime(),
   fingerprint: z.string().nullable(),
 });
 
