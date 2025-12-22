@@ -29,8 +29,10 @@ export const CertificateSnapshotSchema = z.object({
 export type CertificateSnapshotData = z.infer<typeof CertificateSnapshotSchema>;
 
 /**
- * Schema for provider snapshot data (not stored in JSONB).
- * Tracks which providers are being used for DNS, hosting, and email.
+ * Schema for provider snapshot data.
+ * Unlike registration and certificate data, provider IDs are stored in separate
+ * database columns (dns_provider_id, hosting_provider_id, email_provider_id)
+ * rather than in JSONB, to support efficient querying and foreign key constraints.
  */
 export const ProviderSnapshotSchema = z.object({
   dnsProviderId: z.string().uuid().nullable(),
@@ -42,7 +44,8 @@ export type ProviderSnapshotData = z.infer<typeof ProviderSnapshotSchema>;
 
 /**
  * Schema for complete snapshot data.
- * Combines registration, certificate, and provider information.
+ * Combines registration (JSONB), certificate (JSONB), and provider IDs (separate columns).
+ * This is a logical grouping for application use, not a direct mapping to database storage.
  */
 export const SnapshotDataSchema = z.object({
   registration: RegistrationSnapshotSchema,
