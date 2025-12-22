@@ -2,14 +2,14 @@ import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import {
-  type CertificateSnapshotData,
-  createSnapshot,
-  type RegistrationSnapshotData,
-} from "@/lib/db/repos/snapshots";
+import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains, userTrackedDomains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
+import type {
+  CertificateSnapshotData,
+  RegistrationSnapshotData,
+} from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { getHosting } from "@/server/services/hosting";
 import { getRegistration } from "@/server/services/registration";

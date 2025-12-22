@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   domainSnapshots,
@@ -9,61 +9,15 @@ import {
   userTrackedDomains,
 } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
+import {
+  CertificateSnapshotSchema,
+  type CreateSnapshotParams,
+  RegistrationSnapshotSchema,
+  type SnapshotForMonitoring,
+  type UpdateSnapshotParams,
+} from "@/lib/schemas";
 
 const logger = createLogger({ source: "snapshots" });
-
-// Types for snapshot data
-export type RegistrationSnapshotData = {
-  registrarProviderId: string | null;
-  nameservers: Array<{ host: string }>;
-  transferLock: boolean | null;
-  statuses: string[];
-};
-
-export type CertificateSnapshotData = {
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string; // ISO date string
-  fingerprint: string | null;
-};
-
-export type ProviderSnapshotData = {
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
-};
-
-export type SnapshotData = {
-  registration: RegistrationSnapshotData;
-  certificate: CertificateSnapshotData;
-  providers: ProviderSnapshotData;
-};
-
-export type CreateSnapshotParams = {
-  trackedDomainId: string;
-  registration: RegistrationSnapshotData;
-  certificate: CertificateSnapshotData;
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
-};
-
-export type UpdateSnapshotParams = Partial<CreateSnapshotParams>;
-
-export type SnapshotForMonitoring = {
-  id: string;
-  trackedDomainId: string;
-  userId: string;
-  domainId: string;
-  domainName: string;
-  registration: RegistrationSnapshotData;
-  certificate: CertificateSnapshotData;
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
-  userEmail: string;
-  userName: string;
-};
 
 /**
  * Get or create a snapshot for a tracked domain.
@@ -232,16 +186,40 @@ export async function getSnapshotsForMonitoring(): Promise<
       and(
         eq(userTrackedDomains.verified, true),
         isNull(userTrackedDomains.archivedAt),
-        // Only include domains that have snapshots (not empty)
-        isNotNull(domainSnapshots.id),
       ),
     );
 
-  return rows.map((row) => ({
-    ...row,
-    registration: row.registration as RegistrationSnapshotData,
-    certificate: row.certificate as CertificateSnapshotData,
-  }));
+  return rows.map((row) => {
+    // Validate JSONB data to ensure it matches expected shape
+    const registration = RegistrationSnapshotSchema.safeParse(row.registration);
+    const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
+
+    if (!registration.success) {
+      logger.error("Invalid registration snapshot data", registration.error, {
+        trackedDomainId: row.trackedDomainId,
+        domainName: row.domainName,
+      });
+      throw new Error(
+        `Invalid registration snapshot for ${row.domainName}: ${registration.error.message}`,
+      );
+    }
+
+    if (!certificate.success) {
+      logger.error("Invalid certificate snapshot data", certificate.error, {
+        trackedDomainId: row.trackedDomainId,
+        domainName: row.domainName,
+      });
+      throw new Error(
+        `Invalid certificate snapshot for ${row.domainName}: ${certificate.error.message}`,
+      );
+    }
+
+    return {
+      ...row,
+      registration: registration.data,
+      certificate: certificate.data,
+    };
+  });
 }
 
 /**

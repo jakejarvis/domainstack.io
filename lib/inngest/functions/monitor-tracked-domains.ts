@@ -16,9 +16,7 @@ import {
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import {
-  type CertificateSnapshotData,
   getSnapshotsForMonitoring,
-  type RegistrationSnapshotData,
   updateSnapshot,
 } from "@/lib/db/repos/snapshots";
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
@@ -30,9 +28,11 @@ import { generateIdempotencyKey } from "@/lib/notifications";
 import { sendPrettyEmail } from "@/lib/resend";
 import type {
   CertificateChange,
+  CertificateSnapshotData,
   ProviderChange,
   RegistrationChange,
-} from "@/lib/schemas/internal/changes";
+  RegistrationSnapshotData,
+} from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { getHosting } from "@/server/services/hosting";
 import { getRegistration } from "@/server/services/registration";

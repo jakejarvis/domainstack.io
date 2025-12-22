@@ -1,15 +1,13 @@
 import "server-only";
 
 import type {
-  CertificateSnapshotData,
-  ProviderSnapshotData,
-  RegistrationSnapshotData,
-} from "@/lib/db/repos/snapshots";
-import type {
   CertificateChange,
+  CertificateSnapshotData,
   ProviderChange,
+  ProviderSnapshotData,
   RegistrationChange,
-} from "@/lib/schemas/internal/changes";
+  RegistrationSnapshotData,
+} from "@/lib/schemas";
 
 /**
  * Detect changes in registration data (registrar, nameservers, transfer lock, statuses).
