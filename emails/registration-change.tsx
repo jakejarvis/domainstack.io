@@ -143,13 +143,28 @@ export function RegistrationChangeEmail({
           </>
         )}
 
-      <EmailBox variant="danger">
-        <EmailBoxText variant="danger">
-          <strong>Action Required:</strong> If you didn&apos;t make these
-          changes, your domain may have been compromised. Contact your registrar
-          immediately.
-        </EmailBoxText>
-      </EmailBox>
+      {/* Show danger warning for high-risk changes (registrar or transfer lock) */}
+      {(changes.registrarChanged || changes.transferLockChanged) && (
+        <EmailBox variant="danger">
+          <EmailBoxText variant="danger">
+            <strong>Action Required:</strong> If you didn&apos;t make these
+            changes, your domain may have been compromised. Contact your
+            registrar immediately.
+          </EmailBoxText>
+        </EmailBox>
+      )}
+
+      {/* Show info notice for lower-risk changes (nameservers or statuses only) */}
+      {!changes.registrarChanged &&
+        !changes.transferLockChanged &&
+        (changes.nameserversChanged || changes.statusesChanged) && (
+          <EmailBox variant="info">
+            <EmailBoxText variant="info">
+              <strong>Note:</strong> If you didn&apos;t authorize these changes,
+              contact your registrar to investigate.
+            </EmailBoxText>
+          </EmailBox>
+        )}
 
       <EmailButton href={`${BASE_URL}/${domainName}`}>
         View Domain Details
