@@ -134,6 +134,7 @@ export const checkDomainExpiry = inngest.createFunction(
         return await sendExpiryNotification({
           trackedDomainId: domain.id,
           domainName: domain.domainName,
+          userId: domain.userId,
           userName: domain.userName,
           userEmail: domain.userEmail,
           expirationDate: expirationDateObj,
@@ -158,6 +159,7 @@ export const checkDomainExpiry = inngest.createFunction(
 async function sendExpiryNotification({
   trackedDomainId,
   domainName,
+  userId,
   userName,
   userEmail,
   expirationDate,
@@ -167,6 +169,7 @@ async function sendExpiryNotification({
 }: {
   trackedDomainId: string;
   domainName: string;
+  userId: string;
   userName: string;
   userEmail: string;
   expirationDate: Date;
@@ -227,7 +230,7 @@ async function sendExpiryNotification({
     if (error) {
       logger.error("Failed to send expiry email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       // Don't return false here - the notification record is already created
@@ -247,7 +250,7 @@ async function sendExpiryNotification({
 
     logger.info("Sent expiry notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       daysRemaining,
       idempotencyKey,
@@ -257,7 +260,7 @@ async function sendExpiryNotification({
   } catch (err) {
     logger.error("Error sending expiry notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     // Re-throw to trigger Inngest retry

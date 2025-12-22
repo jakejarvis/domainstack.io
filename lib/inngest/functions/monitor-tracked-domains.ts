@@ -411,7 +411,7 @@ async function handleRegistrationChange(
     if (error) {
       logger.error("Failed to send registration change email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
@@ -429,7 +429,7 @@ async function handleRegistrationChange(
 
     logger.info("Sent registration change notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       idempotencyKey,
     });
@@ -438,7 +438,7 @@ async function handleRegistrationChange(
   } catch (err) {
     logger.error("Error sending registration change notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     // Re-throw to trigger Inngest retry
@@ -516,7 +516,7 @@ async function handleProviderChange(
     if (error) {
       logger.error("Failed to send provider change email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
@@ -534,7 +534,7 @@ async function handleProviderChange(
 
     logger.info("Sent provider change notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       idempotencyKey,
     });
@@ -543,7 +543,7 @@ async function handleProviderChange(
   } catch (err) {
     logger.error("Error sending provider change notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     // Re-throw to trigger Inngest retry
@@ -624,7 +624,7 @@ async function handleCertificateChange(
     if (error) {
       logger.error("Failed to send certificate change email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       // Throw to trigger Inngest retry - idempotency key prevents duplicates
@@ -642,7 +642,7 @@ async function handleCertificateChange(
 
     logger.info("Sent certificate change notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       idempotencyKey,
     });
@@ -651,7 +651,7 @@ async function handleCertificateChange(
   } catch (err) {
     logger.error("Error sending certificate change notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     // Re-throw to trigger Inngest retry

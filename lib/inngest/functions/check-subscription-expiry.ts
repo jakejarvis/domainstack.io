@@ -237,7 +237,6 @@ async function sendSubscriptionExpiryNotification({
     if (error) {
       logger.error("Failed to send subscription expiry email", error, {
         userId,
-        userEmail,
         idempotencyKey,
       });
       // Don't throw - we don't want to retry and potentially spam users
@@ -246,7 +245,6 @@ async function sendSubscriptionExpiryNotification({
 
     logger.info("Sent subscription expiry notification", {
       userId,
-      userEmail,
       emailId: data?.id,
       daysRemaining,
       threshold,
@@ -257,7 +255,6 @@ async function sendSubscriptionExpiryNotification({
   } catch (err) {
     logger.error("Error sending subscription expiry notification", err, {
       userId,
-      userEmail,
       idempotencyKey,
     });
     return false;

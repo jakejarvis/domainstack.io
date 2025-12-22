@@ -136,6 +136,7 @@ export const checkCertificateExpiry = inngest.createFunction(
           return await sendCertificateExpiryNotification({
             trackedDomainId: cert.trackedDomainId,
             domainName: cert.domainName,
+            userId: cert.userId,
             userName: cert.userName,
             userEmail: cert.userEmail,
             validTo: validToDate,
@@ -161,6 +162,7 @@ export const checkCertificateExpiry = inngest.createFunction(
 async function sendCertificateExpiryNotification({
   trackedDomainId,
   domainName,
+  userId,
   userName,
   userEmail,
   validTo,
@@ -170,6 +172,7 @@ async function sendCertificateExpiryNotification({
 }: {
   trackedDomainId: string;
   domainName: string;
+  userId: string;
   userName: string;
   userEmail: string;
   validTo: Date;
@@ -216,7 +219,7 @@ async function sendCertificateExpiryNotification({
     if (error) {
       logger.error("Failed to send certificate expiry email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       throw new Error(`Resend error: ${error.message}`);
@@ -233,7 +236,7 @@ async function sendCertificateExpiryNotification({
 
     logger.info("Sent certificate expiry notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       daysRemaining,
       idempotencyKey,
@@ -243,7 +246,7 @@ async function sendCertificateExpiryNotification({
   } catch (err) {
     logger.error("Error sending certificate expiry notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     throw err;
