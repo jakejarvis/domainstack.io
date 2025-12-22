@@ -197,47 +197,42 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       const caProviderMap =
         await batchResolveOrCreateProviderIds(caProviderInputs);
 
-      // Update out array with resolved provider IDs
-      for (const cert of out) {
+      // Helper to resolve provider ID for a certificate
+      const resolveProviderId = (cert: (typeof out)[number]): string | null => {
         const hasValidProvider =
           cert.caProvider.domain &&
           cert.caProvider.name &&
           cert.caProvider.domain.trim() !== "" &&
           cert.caProvider.name.trim() !== "";
 
-        if (hasValidProvider) {
-          const caProviderId = caProviderMap.get(
+        if (!hasValidProvider) {
+          return null;
+        }
+
+        return (
+          caProviderMap.get(
             makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
-          );
-          if (caProviderId) {
-            cert.caProvider.id = caProviderId;
-          }
+          ) ?? null
+        );
+      };
+
+      // Update out array with resolved provider IDs
+      for (const cert of out) {
+        const caProviderId = resolveProviderId(cert);
+        if (caProviderId) {
+          cert.caProvider.id = caProviderId;
         }
       }
 
-      const chainWithIds = out.map((c) => {
-        // Only lookup provider ID if both domain and name are valid
-        const hasValidProvider =
-          c.caProvider.domain &&
-          c.caProvider.name &&
-          c.caProvider.domain.trim() !== "" &&
-          c.caProvider.name.trim() !== "";
-
-        const caProviderId = hasValidProvider
-          ? (caProviderMap.get(
-              makeProviderKey("ca", c.caProvider.domain, c.caProvider.name),
-            ) ?? null)
-          : null;
-
-        return {
-          issuer: c.issuer,
-          subject: c.subject,
-          altNames: c.altNames,
-          validFrom: new Date(c.validFrom),
-          validTo: new Date(c.validTo),
-          caProviderId,
-        };
-      });
+      // Build chain with provider IDs for database persistence
+      const chainWithIds = out.map((c) => ({
+        issuer: c.issuer,
+        subject: c.subject,
+        altNames: c.altNames,
+        validFrom: new Date(c.validFrom),
+        validTo: new Date(c.validTo),
+        caProviderId: resolveProviderId(c),
+      }));
 
       const nextDue = ttlForCertificates(now, earliestValidTo);
       await replaceCertificates({
