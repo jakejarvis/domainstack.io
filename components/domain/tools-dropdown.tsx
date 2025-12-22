@@ -14,6 +14,7 @@ import {
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type ToolsDropdownProps = {
   domain: string;
@@ -206,18 +207,25 @@ function ScrollableMenuContent({
 export function ToolsDropdown({ domain }: ToolsDropdownProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="outline"
-            aria-label="Open menu"
-            size="icon"
-            className="cursor-pointer"
-          >
-            <MoreHorizontal />
-          </Button>
-        }
-      />
+      <Tooltip>
+        <DropdownMenuTrigger
+          render={
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  aria-label="Open menu"
+                  size="icon"
+                  className="cursor-pointer"
+                >
+                  <MoreHorizontal />
+                </Button>
+              }
+            />
+          }
+        />
+        <TooltipContent>Third-party tools</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent
         align="end"
         className="flex flex-col overflow-hidden p-0"

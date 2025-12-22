@@ -118,7 +118,7 @@ export function ProviderTooltipContent({
       ) : providerType === "registrar" ? (
         // Registrar verification info (WHOIS/RDAP) and registrant details
         hasRegistrationInfo ? (
-          <div className="text-xs">
+          <div className="space-y-1.5 text-xs">
             {/* Registrant info */}
             {registrantInfo && (
               <div className="flex items-center gap-1.5">
@@ -136,42 +136,44 @@ export function ProviderTooltipContent({
             )}
 
             {/* Verification source */}
-            <p className="inline-flex items-center gap-1.5 pt-1.5">
-              <BadgeCheck className="!h-3.5 !w-3.5 text-green-300 dark:text-green-600" />
-              <span>
-                Verified by{" "}
-                <span className="font-medium">
-                  {serverUrl ? (
-                    <a
-                      href={serverUrl}
-                      target="_blank"
-                      rel="noopener"
-                      className="underline underline-offset-2"
-                    >
-                      {serverName}
-                    </a>
-                  ) : (
-                    serverName
-                  )}
-                </span>{" "}
-                <a
-                  href={learnUrl}
-                  target="_blank"
-                  rel="noopener"
-                  title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
-                  className=""
-                >
-                  <span className="text-muted/75">(</span>
-                  <span className="text-muted/90 underline decoration-dotted underline-offset-2">
-                    {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
-                  </span>
-                  <span className="text-muted/75">)</span>
-                </a>
-              </span>
-            </p>
+            {serverUrl && (
+              <div className="flex items-center gap-1.5">
+                <BadgeCheck className="size-3.5 text-green-300 dark:text-green-600" />
+                <span>
+                  Verified by{" "}
+                  <span className="font-medium">
+                    {serverUrl ? (
+                      <a
+                        href={serverUrl}
+                        target="_blank"
+                        rel="noopener"
+                        className="underline underline-offset-2"
+                      >
+                        {serverName}
+                      </a>
+                    ) : (
+                      serverName
+                    )}
+                  </span>{" "}
+                  <a
+                    href={learnUrl}
+                    target="_blank"
+                    rel="noopener"
+                    title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
+                    className=""
+                  >
+                    <span className="text-muted/75">(</span>
+                    <span className="text-muted/90 underline decoration-dotted underline-offset-2">
+                      {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
+                    </span>
+                    <span className="text-muted/75">)</span>
+                  </a>
+                </span>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="py-1 text-muted/80 text-xs">
+          <div className="text-muted/80 text-xs">
             No registration data available
           </div>
         )
@@ -182,7 +184,7 @@ export function ProviderTooltipContent({
             Expires on {format(certificateExpiryDate, "MMM d, yyyy")}
           </div>
         ) : (
-          <div className="py-1 text-muted/80 text-xs">
+          <div className="text-muted/80 text-xs">
             No certificate data available
           </div>
         )
@@ -198,9 +200,7 @@ export function ProviderTooltipContent({
           ))}
         </div>
       ) : (
-        <div className="py-1 text-muted/80 text-xs">
-          No DNS records available
-        </div>
+        <div className="text-muted/80 text-xs">No DNS records available</div>
       )}
     </div>
   );

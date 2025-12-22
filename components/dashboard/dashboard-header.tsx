@@ -152,17 +152,17 @@ export function DashboardHeader({
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 render={
-                  <span>
-                    <Button disabled className="pointer-events-none">
+                  <div className="cursor-not-allowed">
+                    <Button disabled>
                       <Plus className="size-4" />
                       Add Domain
                     </Button>
-                  </span>
+                  </div>
                 }
               />
               <ResponsiveTooltipContent>
                 {tier === "free"
-                  ? "Upgrade to Pro for more domains"
+                  ? "Upgrade to add more domains"
                   : "Domain limit reached"}
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>

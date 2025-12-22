@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type RowData,
   useReactTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -57,6 +58,14 @@ import type {
 import { formatDateTimeUtc } from "@/lib/format";
 import type { ProviderCategory, UserTier } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
+
+// Define custom column meta for styling
+declare module "@tanstack/react-table" {
+  // biome-ignore lint/correctness/noUnusedVariables: generic needs to match library definition
+  interface ColumnMeta<TData extends RowData, TValue> {
+    className?: string;
+  }
+}
 
 type TrackedDomainsTableProps = {
   domains: TrackedDomainWithDetails[];
@@ -226,6 +235,9 @@ export function TrackedDomainsTable({
         },
         size: 40,
         enableHiding: false, // Always show selection column
+        meta: {
+          className: "!pl-4.5 max-w-[40px] text-center",
+        },
       },
       {
         accessorKey: "domainName",
@@ -245,7 +257,6 @@ export function TrackedDomainsTable({
           </ScreenshotPopover>
         ),
         enableHiding: false, // Always show domain name
-        // No size - let it auto-size to content
       },
       {
         accessorKey: "verified",
@@ -487,6 +498,7 @@ export function TrackedDomainsTable({
                   </Link>
                 }
               />
+              <DropdownMenuSeparator />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={() =>
@@ -498,7 +510,6 @@ export function TrackedDomainsTable({
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
                   onRemove(row.original.id, row.original.domainName)
@@ -513,6 +524,9 @@ export function TrackedDomainsTable({
         ),
         size: 56,
         enableHiding: false, // Always show actions menu
+        meta: {
+          className: "!pr-4 text-right",
+        },
       },
     ],
     [selectedIds, onToggleSelect, onRemove, onArchive, onVerify],
@@ -560,11 +574,9 @@ export function TrackedDomainsTable({
               {table.getVisibleLeafColumns().map((column) => (
                 <col
                   key={column.id}
-                  style={
-                    column.columnDef.size
-                      ? { width: `${column.columnDef.size}px` }
-                      : { width: "auto" }
-                  }
+                  style={{
+                    width: column.getSize(),
+                  }}
                 />
               ))}
             </colgroup>
@@ -572,9 +584,9 @@ export function TrackedDomainsTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr
                   key={headerGroup.id}
-                  className="border-black/10 border-b bg-muted/30 dark:border-white/10"
+                  className="min-w-full border-black/10 border-b bg-muted/30 dark:border-white/10"
                 >
-                  {headerGroup.headers.map((header, index) => {
+                  {headerGroup.headers.map((header) => {
                     const isSelectColumn = header.column.id === "select";
                     const isDomainColumn = header.column.id === "domainName";
 
@@ -624,15 +636,11 @@ export function TrackedDomainsTable({
                       <th
                         key={header.id}
                         colSpan={isDomainColumn ? 2 : header.colSpan}
-                        style={
-                          header.column.columnDef.size
-                            ? { width: `${header.column.columnDef.size}px` }
-                            : undefined
-                        }
+                        style={{
+                          width: header.column.getSize(),
+                        }}
                         className={cn(
-                          "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs",
-                          isDomainColumn && "pl-4",
-                          index === headerGroup.headers.length - 1 && "pr-4",
+                          "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs first:pl-4 last:pr-4",
                         )}
                       >
                         {headerContent}
@@ -696,21 +704,20 @@ export function TrackedDomainsTable({
                           key={row.id}
                           {...rowMotionProps}
                           className={cn(
-                            "group transition-colors hover:bg-muted/30",
+                            "group min-w-full transition-colors hover:bg-muted/30",
                             isSelected && "bg-primary/5",
+                            "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
                           )}
                         >
                           {/* Checkbox column */}
                           {selectCell && (
                             <td
-                              style={
-                                selectCell.column.columnDef.size
-                                  ? {
-                                      width: `${selectCell.column.columnDef.size}px`,
-                                    }
-                                  : undefined
+                              style={{
+                                width: selectCell.column.getSize(),
+                              }}
+                              className={
+                                selectCell.column.columnDef.meta?.className
                               }
-                              className="h-11 pr-2.5 pl-4.5 align-middle"
                             >
                               {flexRender(
                                 selectCell.column.columnDef.cell,
@@ -720,7 +727,14 @@ export function TrackedDomainsTable({
                           )}
                           {/* Domain column */}
                           {domainCell && (
-                            <td className="h-11 px-2.5 align-middle">
+                            <td
+                              style={{
+                                width: domainCell.column.getSize(),
+                              }}
+                              className={
+                                domainCell.column.columnDef.meta?.className
+                              }
+                            >
                               {flexRender(
                                 domainCell.column.columnDef.cell,
                                 domainCell.getContext(),
@@ -730,14 +744,12 @@ export function TrackedDomainsTable({
                           {/* Status column */}
                           {statusCell && (
                             <td
-                              style={
-                                statusCell.column.columnDef.size
-                                  ? {
-                                      width: `${statusCell.column.columnDef.size}px`,
-                                    }
-                                  : undefined
+                              style={{
+                                width: statusCell.column.getSize(),
+                              }}
+                              className={
+                                statusCell.column.columnDef.meta?.className
                               }
-                              className="h-11 px-2.5 align-middle"
                             >
                               {flexRender(
                                 statusCell.column.columnDef.cell,
@@ -746,10 +758,7 @@ export function TrackedDomainsTable({
                             </td>
                           )}
                           {/* Span remaining detail columns with verify message */}
-                          <td
-                            colSpan={collapseCount}
-                            className="h-11 px-2.5 align-middle"
-                          >
+                          <td colSpan={collapseCount}>
                             <div className="flex items-center gap-2.5">
                               <span className="mr-2 text-muted-foreground text-xs">
                                 Verify ownership to see domain details
@@ -783,13 +792,11 @@ export function TrackedDomainsTable({
                           {actionsCell && (
                             <td
                               style={{
-                                ...(actionsCell.column.columnDef.size
-                                  ? {
-                                      width: `${actionsCell.column.columnDef.size}px`,
-                                    }
-                                  : {}),
+                                width: actionsCell.column.getSize(),
                               }}
-                              className="h-11 px-2.5 pr-4 align-middle"
+                              className={
+                                actionsCell.column.columnDef.meta?.className
+                              }
                             >
                               {flexRender(
                                 actionsCell.column.columnDef.cell,
@@ -807,24 +814,19 @@ export function TrackedDomainsTable({
                         key={row.id}
                         {...rowMotionProps}
                         className={cn(
-                          "group transition-colors hover:bg-muted/30",
+                          "group min-w-full transition-colors hover:bg-muted/30",
                           isSelected && "bg-primary/5",
+                          "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
                         )}
                       >
-                        {cells.map((cell, index) => {
+                        {cells.map((cell) => {
                           return (
                             <td
                               key={cell.id}
                               style={{
-                                ...(cell.column.columnDef.size
-                                  ? { width: `${cell.column.columnDef.size}px` }
-                                  : {}),
+                                width: cell.column.getSize(),
                               }}
-                              className={cn(
-                                "h-11 px-2.5 align-middle",
-                                index === 0 && "pl-4.5 text-center",
-                                index === cells.length - 1 && "pr-4",
-                              )}
+                              className={cell.column.columnDef.meta?.className}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,

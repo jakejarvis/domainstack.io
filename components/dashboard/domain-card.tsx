@@ -211,6 +211,7 @@ export function DomainCard({
                   </Link>
                 }
               />
+              <DropdownMenuSeparator />
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
@@ -220,7 +221,6 @@ export function DomainCard({
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onRemove}
                 className="cursor-pointer pr-4"
