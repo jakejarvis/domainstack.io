@@ -78,8 +78,8 @@ export function RegistrationChangeEmail({
                   <>
                     <strong>Previous:</strong>
                     <br />
-                    {changes.previousNameservers.map((ns) => (
-                      <span key={ns.host}>
+                    {changes.previousNameservers.map((ns, idx) => (
+                      <span key={`prev-${idx}-${ns.host}`}>
                         • {ns.host}
                         <br />
                       </span>
@@ -91,8 +91,8 @@ export function RegistrationChangeEmail({
                 <>
                   <strong>New:</strong>
                   <br />
-                  {changes.newNameservers.map((ns) => (
-                    <span key={ns.host}>
+                  {changes.newNameservers.map((ns, idx) => (
+                    <span key={`new-${idx}-${ns.host}`}>
                       • {ns.host}
                       <br />
                     </span>
