@@ -22,6 +22,7 @@ const logger = createLogger({ source: "snapshots" });
 /**
  * Get or create a snapshot for a tracked domain.
  * Returns the existing snapshot or creates an empty one.
+ * Uses onConflictDoNothing to handle concurrent creation gracefully.
  */
 export async function getOrCreateSnapshot(trackedDomainId: string) {
   // Try to get existing snapshot
@@ -60,6 +61,16 @@ export async function getOrCreateSnapshot(trackedDomainId: string) {
     .from(domainSnapshots)
     .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))
     .limit(1);
+
+  // Edge case: snapshot was deleted between conflict and re-fetch
+  // This should be extremely rare but possible if a domain is removed during creation
+  if (!snapshot) {
+    logger.warn("Snapshot disappeared after conflict, recreating", {
+      trackedDomainId,
+    });
+    // Recursively retry once - if this fails, let it throw
+    return getOrCreateSnapshot(trackedDomainId);
+  }
 
   return snapshot;
 }
