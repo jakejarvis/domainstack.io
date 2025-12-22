@@ -10,14 +10,6 @@ import { StepInstructionsError } from "@/components/dashboard/add-domain/step-in
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { type Step, Stepper } from "@/components/ui/stepper";
 import {
@@ -28,13 +20,10 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import { getProTierInfo } from "@/lib/polar/products";
-import { cn } from "@/lib/utils";
 
 export type { ResumeDomainData };
 
 export type AddDomainContentProps = {
-  /** Whether to show the card wrapper (false for modal usage) */
-  showCard?: boolean;
   /** Additional classes for the wrapper */
   className?: string;
   /** Handler when the flow should close (cancel, done, etc.) - optional for page usage */
@@ -54,7 +43,6 @@ const STEPS: Step[] = [
 ];
 
 export function AddDomainContent({
-  showCard = true,
   className,
   onClose,
   onSuccess,
@@ -132,42 +120,24 @@ export function AddDomainContent({
       </div>
     );
 
-    if (!showCard) {
-      return <div className={className}>{loadingContent}</div>;
-    }
-
-    return (
-      <Card className={cn("w-full max-w-lg", className)}>{loadingContent}</Card>
-    );
+    return <div className={className}>{loadingContent}</div>;
   }
 
   // Show error state if subscription check failed
   if (isSubscriptionError) {
     const errorContent = (
       <>
-        {showCard ? (
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-              <AlertCircle className="size-6 text-destructive" />
-            </div>
-            <CardTitle>Unable to Load Subscription</CardTitle>
-            <CardDescription>
-              We couldn&apos;t load your subscription details. Please try again.
-            </CardDescription>
-          </CardHeader>
-        ) : (
-          <div className="mb-4 flex flex-col items-center text-center">
-            <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-              <AlertCircle className="size-6 text-destructive" />
-            </div>
-            <h2 className="font-semibold text-lg leading-none tracking-tight">
-              Unable to Load Subscription
-            </h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              We couldn&apos;t load your subscription details. Please try again.
-            </p>
+        <div className="mb-4 flex flex-col items-center text-center">
+          <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertCircle className="size-6 text-destructive" />
           </div>
-        )}
+          <h2 className="font-semibold text-lg leading-none tracking-tight">
+            Unable to Load Subscription
+          </h2>
+          <p className="mt-1 text-muted-foreground text-sm">
+            We couldn&apos;t load your subscription details. Please try again.
+          </p>
+        </div>
 
         <div className="flex flex-col gap-2">
           <Button
@@ -185,16 +155,7 @@ export function AddDomainContent({
       </>
     );
 
-    if (!showCard) {
-      return <div className={className}>{errorContent}</div>;
-    }
-
-    return (
-      <Card className={cn("w-full max-w-lg", className)}>
-        {errorContent}
-        <CardContent />
-      </Card>
-    );
+    return <div className={className}>{errorContent}</div>;
   }
 
   // If at quota (and not resuming verification for an existing domain), show quota message
@@ -204,33 +165,20 @@ export function AddDomainContent({
 
     const quotaContent = (
       <>
-        {showCard ? (
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
-              <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <CardTitle>Domain Limit Reached</CardTitle>
-            <CardDescription>
-              You&apos;ve reached your limit of {maxDomains} tracked domain
-              {maxDomains !== 1 && "s"}.
-            </CardDescription>
-          </CardHeader>
-        ) : (
-          <div className="mb-4 flex flex-col items-center text-center">
-            <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
-              <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
-            </div>
-            <h2 className="font-semibold text-lg leading-none tracking-tight">
-              Domain Limit Reached
-            </h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              You&apos;ve reached your limit of {maxDomains} tracked domain
-              {maxDomains !== 1 && "s"}.
-            </p>
+        <div className="mb-4 flex flex-col items-center text-center">
+          <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
+            <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
           </div>
-        )}
+          <h2 className="font-semibold text-lg leading-none tracking-tight">
+            Domain Limit Reached
+          </h2>
+          <p className="mt-1 text-muted-foreground text-sm">
+            You&apos;ve reached your limit of {maxDomains} tracked domain
+            {maxDomains !== 1 && "s"}.
+          </p>
+        </div>
 
-        <div className={cn("space-y-6", showCard ? "" : "")}>
+        <div className="space-y-6">
           {/* Usage indicator */}
           <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
             <div>
@@ -311,7 +259,7 @@ export function AddDomainContent({
                     variant="outline"
                     className="w-full"
                     nativeButton={false}
-                    render={<Link href="/dashboard" prefetch={false} />}
+                    render={<Link href="/dashboard" />}
                   >
                     Back to Dashboard
                   </Button>
@@ -334,7 +282,7 @@ export function AddDomainContent({
                   variant="outline"
                   className="w-full"
                   nativeButton={false}
-                  render={<Link href="/dashboard" prefetch={false} />}
+                  render={<Link href="/dashboard" />}
                 >
                   Back to Dashboard
                 </Button>
@@ -345,45 +293,29 @@ export function AddDomainContent({
       </>
     );
 
-    if (!showCard) {
-      return <div className={className}>{quotaContent}</div>;
-    }
-
-    return (
-      <Card className={cn("w-full max-w-lg", className)}>
-        {quotaContent}
-        <CardContent />
-      </Card>
-    );
+    return <div className={className}>{quotaContent}</div>;
   }
 
   // Normal add domain flow
   const title = isResuming ? "Complete Verification" : "Add Domain";
   const description = isResuming
-    ? `Verify ownership of ${domain}`
+    ? domain
+      ? `Verify ownership of ${domain}`
+      : "Verify ownership"
     : "Track and monitor your domain";
 
   const headerContent = (
     <>
-      {showCard ? (
-        <>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </>
-      ) : (
-        <>
-          <h2 className="font-semibold text-lg leading-none tracking-tight">
-            {title}
-          </h2>
-          <p className="text-muted-foreground text-sm">{description}</p>
-        </>
-      )}
+      <h2 className="font-semibold text-lg leading-none tracking-tight">
+        {title}
+      </h2>
+      <p className="text-muted-foreground text-sm">{description}</p>
       <Stepper steps={STEPS} currentStep={step} className="mb-6 pt-4" />
     </>
   );
 
   const mainContent = (
-    <div className="min-h-[280px]">
+    <div className="min-h-[200px]">
       <AnimatePresence mode="wait">
         <motion.div
           key={`${step}-${hasFailed}`}
@@ -467,7 +399,7 @@ export function AddDomainContent({
   );
 
   const footerContent = showFooterButtons && (
-    <div className="mt-6 flex items-center justify-between gap-2">
+    <div className="mt-6 flex w-full items-center justify-between gap-2">
       {/* Left side: Share instructions button (only on step 2) */}
       <div className="flex-1">
         {step === 2 && instructions && trackedDomainId && (
@@ -503,25 +435,11 @@ export function AddDomainContent({
     </div>
   );
 
-  if (!showCard) {
-    return (
-      <div className={className}>
-        <div className="space-y-1.5">{headerContent}</div>
-        {mainContent}
-        {footerContent}
-      </div>
-    );
-  }
-
   return (
-    <Card className={cn("w-full max-w-lg", className)}>
-      <CardHeader>{headerContent}</CardHeader>
-      <CardContent>{mainContent}</CardContent>
-      {footerContent && (
-        <CardFooter className="justify-end border-t">
-          {footerContent}
-        </CardFooter>
-      )}
-    </Card>
+    <div className={className}>
+      <div className="space-y-1.5">{headerContent}</div>
+      {mainContent}
+      {footerContent}
+    </div>
   );
 }

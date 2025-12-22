@@ -30,7 +30,7 @@ type TrackedDomainsViewProps = {
   selection: SelectionState;
   tier: UserTier;
   proMaxDomains: number;
-  onAddDomain: () => void;
+  onAddDomain?: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
@@ -121,27 +121,20 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="relative">
-          <Button
-            size="lg"
-            render={
-              <Link
-                href="/dashboard/add-domain"
-                prefetch={false}
-                data-disable-progress={true}
-                onClick={(e) => {
-                  // Allow modifier clicks to open in new tab/window
-                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-                    return;
-                  }
-                  e.preventDefault();
-                  onAddDomain();
-                }}
-              />
-            }
-          >
-            <Plus className="size-4" />
-            Add Your First Domain
-          </Button>
+          {onAddDomain ? (
+            <Button size="lg" onClick={onAddDomain}>
+              <Plus className="size-4" />
+              Add Your First Domain
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              render={<Link href="/dashboard/add-domain" scroll={false} />}
+            >
+              <Plus className="size-4" />
+              Add Your First Domain
+            </Button>
+          )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
             <Timer className="size-4" />
             <span>Verification takes less than 2 minutes</span>

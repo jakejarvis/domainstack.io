@@ -2,12 +2,7 @@
 
 import { AlertCircle, BadgeCheck, BellPlus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { LoginDialog } from "@/components/auth/login-dialog";
-import {
-  AddDomainDialog,
-  type ResumeDomainData,
-} from "@/components/dashboard/add-domain/add-domain-dialog";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -15,7 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSubscription } from "@/hooks/use-subscription";
+import { useRouter } from "@/hooks/use-router";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 
@@ -25,25 +20,18 @@ type TrackDomainButtonProps = {
 
 export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   // Track mounted state to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Only query subscription and tracked domains when user is authenticated
+  // Only query tracked domains when user is authenticated
   const isAuthenticated = !!session?.user;
-  const { invalidate: invalidateSubscription } = useSubscription({
-    enabled: isAuthenticated,
-  });
-  const {
-    domains: trackedDomains,
-    isLoading: isLoadingDomains,
-    invalidate: invalidateTrackedDomains,
-  } = useTrackedDomains({ enabled: isAuthenticated });
+  const { domains: trackedDomains, isLoading: isLoadingDomains } =
+    useTrackedDomains({ enabled: isAuthenticated });
 
   // Find if this domain is already tracked
   const trackedDomain = trackedDomains?.find(
@@ -53,46 +41,31 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const isVerified = trackedDomain?.verified ?? false;
   const isPendingVerification = isTracked && !isVerified;
 
-  // Compute resumeDomain from the tracked domain when pending verification
-  // This is derived state, not stored in useState, to avoid stale state issues
-  const resumeDomain: ResumeDomainData | null = useMemo(() => {
-    if (isPendingVerification && trackedDomain) {
-      return {
-        id: trackedDomain.id,
-        domainName: trackedDomain.domainName,
-        verificationToken: trackedDomain.verificationToken,
-        verificationMethod: trackedDomain.verificationMethod,
-      };
+  const handleButtonClick = useCallback(() => {
+    if (session?.user) {
+      if (isPendingVerification && trackedDomain) {
+        // Navigate to add-domain with resume params (only ID is required)
+        const params = new URLSearchParams({
+          resume: "true",
+          id: trackedDomain.id,
+        });
+
+        if (trackedDomain.verificationMethod) {
+          params.set("method", trackedDomain.verificationMethod);
+        }
+
+        router.push(`/dashboard/add-domain?${params.toString()}`, {
+          scroll: false,
+        });
+      } else {
+        // Add new domain flow
+        router.push(
+          `/dashboard/add-domain?domain=${encodeURIComponent(domain)}`,
+          { scroll: false },
+        );
+      }
     }
-    return null;
-  }, [isPendingVerification, trackedDomain]);
-
-  // Handle success from add dialog - invalidate the tracked domains query
-  const handleAddSuccess = useCallback(() => {
-    invalidateTrackedDomains();
-    invalidateSubscription();
-  }, [invalidateTrackedDomains, invalidateSubscription]);
-
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    setAddDialogOpen(open);
-  }, []);
-
-  const handleButtonClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (session?.user) {
-        // Logged in - open add domain dialog
-        setAddDialogOpen(true);
-        return;
-      }
-      // Logged out - open login modal (unless modifier key pressed)
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-        return; // Let link work normally
-      }
-      e.preventDefault();
-      setLoginOpen(true);
-    },
-    [session?.user],
-  );
+  }, [session?.user, isPendingVerification, trackedDomain, domain, router]);
 
   // Show loading state during SSR, initial hydration, or while data is loading
   // This ensures consistent rendering between server and client
@@ -114,7 +87,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
               variant="outline"
               className="text-success-foreground"
               nativeButton={false}
-              render={<Link href="/dashboard" prefetch={false} />}
+              render={<Link href="/dashboard" />}
             >
               <BadgeCheck className="size-4" />
             </Button>
@@ -145,52 +118,32 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     : "Get alerts for this domain";
 
   return (
-    <>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            session?.user ? (
-              <Button
-                variant="outline"
-                onClick={handleButtonClick}
-                className="cursor-pointer"
-              >
-                {buttonContent}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                className="cursor-pointer"
-                nativeButton={false}
-                render={
-                  <Link
-                    href="/login"
-                    prefetch={false}
-                    onClick={handleButtonClick}
-                    data-disable-progress={true}
-                  />
-                }
-              >
-                {buttonContent}
-              </Button>
-            )
-          }
-        />
-        <TooltipContent>
-          <p>{tooltipText}</p>
-        </TooltipContent>
-      </Tooltip>
-
-      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
-
-      {/* Single dialog instance - uses resumeDomain when pending, prefillDomain otherwise */}
-      <AddDomainDialog
-        open={addDialogOpen}
-        onOpenChange={handleDialogOpenChange}
-        onSuccess={handleAddSuccess}
-        resumeDomain={resumeDomain}
-        prefillDomain={domain}
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          session?.user ? (
+            <Button
+              variant="outline"
+              onClick={handleButtonClick}
+              className="cursor-pointer"
+            >
+              {buttonContent}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              nativeButton={false}
+              render={<Link href="/login" scroll={false} />}
+            >
+              {buttonContent}
+            </Button>
+          )
+        }
       />
-    </>
+      <TooltipContent>
+        <p>{tooltipText}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }

@@ -310,7 +310,7 @@ export function ShareInstructionsDialog({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@example.com"
+                    placeholder={`admin@${domain}`}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={(e) => {

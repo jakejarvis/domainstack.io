@@ -5,10 +5,6 @@ import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  AddDomainDialog,
-  type ResumeDomainData,
-} from "@/components/dashboard/add-domain/add-domain-dialog";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
@@ -50,10 +46,6 @@ type ConfirmAction =
   | { type: "bulk-delete"; domainIds: string[]; count: number };
 
 export function DashboardContent() {
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [resumeDomain, setResumeDomain] = useState<ResumeDomainData | null>(
-    null,
-  );
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
     null,
   );
@@ -88,7 +80,6 @@ export function DashboardContent() {
     unarchiveMutation,
     bulkArchiveMutation,
     bulkDeleteMutation,
-    invalidateQueries,
   } = useDomainMutations({
     onUnarchiveSuccess: () => setActiveTab("active"),
   });
@@ -154,33 +145,29 @@ export function DashboardContent() {
   }, [router, searchParams]);
 
   const handleAddDomain = useCallback(() => {
-    setResumeDomain(null); // Clear any resume state
-    setAddDialogOpen(true);
-  }, []);
+    router.push("/dashboard/add-domain", { scroll: false });
+  }, [router]);
 
-  const handleAddSuccess = useCallback(() => {
-    setResumeDomain(null);
-    // Invalidate queries to refetch fresh data
-    invalidateQueries();
-  }, [invalidateQueries]);
+  const handleVerify = useCallback(
+    (domain: TrackedDomainWithDetails) => {
+      // Navigate to add-domain with resume params
+      // Only ID is strictly required for resumption;
+      // other params can be helpful hints but should be validated/fetched server-side
+      const params = new URLSearchParams({
+        resume: "true",
+        id: domain.id,
+      });
 
-  const handleVerify = useCallback((domain: TrackedDomainWithDetails) => {
-    // Open dialog in resume mode with the domain's verification info
-    setResumeDomain({
-      id: domain.id,
-      domainName: domain.domainName,
-      verificationToken: domain.verificationToken,
-      verificationMethod: domain.verificationMethod,
-    });
-    setAddDialogOpen(true);
-  }, []);
+      if (domain.verificationMethod) {
+        params.set("method", domain.verificationMethod);
+      }
 
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    setAddDialogOpen(open);
-    if (!open) {
-      setResumeDomain(null);
-    }
-  }, []);
+      router.push(`/dashboard/add-domain?${params.toString()}`, {
+        scroll: false,
+      });
+    },
+    [router],
+  );
 
   // Show confirmation dialog before removing
   const handleRemove = useCallback((id: string, domainName: string) => {
@@ -382,7 +369,6 @@ export function DashboardContent() {
         tier={tier}
         subscriptionEndsAt={subscriptionEndsAt}
         onViewModeChange={setViewMode}
-        onAddDomain={handleAddDomain}
         hasAnyDomains={hasAnyDomains}
       />
 
@@ -500,13 +486,6 @@ export function DashboardContent() {
           />
         </div>
       )}
-
-      <AddDomainDialog
-        open={addDialogOpen}
-        onOpenChange={handleDialogOpenChange}
-        onSuccess={handleAddSuccess}
-        resumeDomain={resumeDomain}
-      />
 
       {/* Confirmation dialog for destructive actions */}
       <AlertDialog

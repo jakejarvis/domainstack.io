@@ -1,33 +1,27 @@
 "use client";
 
-import { ChevronDown, Settings } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import {
-  SettingsTabsList,
-  SettingsTabsPanels,
-} from "@/components/settings/settings-content";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tabs } from "@/components/ui/tabs";
 import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { cn } from "@/lib/utils";
 
-interface SettingsDialogProps {
+interface ModalProps {
+  children: React.ReactNode;
   className?: string;
-  /** Controlled open state */
-  open?: boolean;
-  /** Callback when open state changes */
-  onOpenChange?: (open: boolean) => void;
+  title?: string;
+  description?: string;
+  showHeader?: boolean;
 }
 
-function ScrollableSettingsContent({
+function ScrollableContent({
   children,
   className,
 }: {
@@ -94,48 +88,32 @@ function ScrollableSettingsContent({
   );
 }
 
-export function SettingsDialog({
+export function Modal({
+  children,
   className,
-  open,
-  onOpenChange,
-}: SettingsDialogProps) {
-  // Controlled mode: open/onOpenChange are provided
-  const isControlled = open !== undefined;
+  title = "Modal",
+  description = "Modal content",
+  showHeader = false,
+}: ModalProps) {
+  const router = useRouter();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {!isControlled && (
-        <DialogTrigger
-          render={
-            <Button
-              aria-label="Open settings"
-              variant="ghost"
-              size="sm"
-              className={className}
-            >
-              <Settings />
-              <span className="sr-only">Open settings</span>
-            </Button>
-          }
-        />
-      )}
-
-      <DialogContent className="flex max-h-[85vh] max-w-lg flex-col overflow-hidden rounded-3xl border-black/10 p-0 dark:border-white/10">
-        <Tabs
-          defaultValue="subscription"
-          className="flex h-full flex-col overflow-hidden"
+    <Dialog defaultOpen open onOpenChange={() => router.back()}>
+      <DialogContent
+        className={cn(
+          "flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0",
+          className,
+        )}
+      >
+        <DialogHeader
+          className={cn(
+            showHeader ? "border-muted border-b px-6 pt-6 pb-4" : "sr-only",
+          )}
         >
-          <DialogHeader className="shrink-0 px-6 pt-6 pb-0 text-left">
-            <DialogTitle>Settings</DialogTitle>
-            <DialogDescription>
-              Manage your subscription, notifications, and account preferences.
-            </DialogDescription>
-            <SettingsTabsList className="mt-2" />
-          </DialogHeader>
-          <ScrollableSettingsContent className="max-h-full px-6 pt-2 pb-6">
-            <SettingsTabsPanels showCard={false} />
-          </ScrollableSettingsContent>
-        </Tabs>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+        <ScrollableContent className="py-6">{children}</ScrollableContent>
       </DialogContent>
     </Dialog>
   );

@@ -343,11 +343,7 @@ function createFaqSections(
               usage analytics. Domain data shown in reports is all publicly
               available information — we don&apos;t access anything private. See
               our{" "}
-              <Link
-                href="/privacy"
-                prefetch={false}
-                className="underline underline-offset-4"
-              >
+              <Link href="/privacy" className="underline underline-offset-4">
                 Privacy Policy
               </Link>{" "}
               for full details.
@@ -361,11 +357,7 @@ function createFaqSections(
               We never sell your personal information. We only share data with
               service providers necessary to operate Domainstack (hosting, email
               delivery, payment processing). See our{" "}
-              <Link
-                href="/privacy"
-                prefetch={false}
-                className="underline underline-offset-4"
-              >
+              <Link href="/privacy" className="underline underline-offset-4">
                 Privacy Policy
               </Link>{" "}
               for a complete list.
@@ -382,11 +374,7 @@ function createFaqSections(
           answer: (
             <>
               Click &quot;Sign in&quot; in the header (or{" "}
-              <Link
-                href="/login"
-                prefetch={false}
-                className="underline underline-offset-4"
-              >
+              <Link href="/login" className="underline underline-offset-4">
                 click here
               </Link>
               ) and authenticate with one of the supported services. We use

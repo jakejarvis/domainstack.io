@@ -1,4 +1,9 @@
-import { SettingsContent } from "@/components/settings/settings-content";
+import {
+  SettingsPanels,
+  SettingsTabsList,
+} from "@/components/settings/settings-content";
+import { Card } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
   return (
@@ -10,7 +15,15 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <SettingsContent />
+      <Card className="overflow-hidden p-0">
+        <Tabs defaultValue="subscription" className="w-full">
+          <div className="px-6 pt-6">
+            <SettingsTabsList />
+          </div>
+
+          <SettingsPanels className="px-6 pt-4 pb-6" dividerClassName="-mx-6" />
+        </Tabs>
+      </Card>
     </div>
   );
 }

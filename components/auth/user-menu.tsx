@@ -4,7 +4,6 @@ import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
-import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -24,7 +23,6 @@ export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
   const analytics = useAnalytics();
 
@@ -58,15 +56,6 @@ export function UserMenu() {
     } catch (err) {
       logger.error("Sign-out failed", err);
     }
-  };
-
-  // Handle settings click - open dialog for normal clicks, let link work for modified clicks
-  const handleSettingsClick = (e: React.MouseEvent) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-      return;
-    }
-    e.preventDefault();
-    setSettingsOpen(true);
   };
 
   return (
@@ -111,11 +100,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/dashboard"
-                prefetch={false}
-                className="cursor-pointer"
-              >
+              <Link href="/dashboard" className="cursor-pointer">
                 <Table2 className="size-4" />
                 Dashboard
               </Link>
@@ -124,13 +109,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/settings"
-                prefetch={false}
-                className="cursor-pointer"
-                onClick={handleSettingsClick}
-                data-disable-progress={true}
-              >
+              <Link href="/settings" scroll={false} className="cursor-pointer">
                 <Settings className="size-4" />
                 Settings
               </Link>
@@ -160,9 +139,6 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Settings Dialog - controlled externally */}
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       {/* Bookmarklet Dialog - controlled externally */}
       <BookmarkletDialog

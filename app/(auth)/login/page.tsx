@@ -7,14 +7,18 @@ export const metadata: Metadata = {
   description: "Sign in to track your domains and receive health alerts.",
 };
 
+import { Card } from "@/components/ui/card";
+
 export default function LoginPage() {
   return (
-    <LoginContent
+    <Card
       className={cn(
-        "max-w-md",
-        // Frosted glass in both light + dark mode (with a bit more presence in light mode).
+        "w-full max-w-sm overflow-hidden rounded-3xl",
         "border-black/15 bg-background/75 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 dark:border-white/8 dark:bg-background/65 dark:ring-white/5 dark:supports-[backdrop-filter]:bg-background/55",
+        "max-w-md", // Merged from original className
       )}
-    />
+    >
+      <LoginContent />
+    </Card>
   );
 }

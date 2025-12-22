@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { LoginDialog } from "@/components/auth/login-dialog";
 import { UserMenu } from "@/components/auth/user-menu";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { Button } from "@/components/ui/button";
@@ -12,7 +10,6 @@ import { useSession } from "@/lib/auth-client";
 export function AuthButton() {
   const { data: session, isPending } = useSession();
   const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
 
   // While loading, show a placeholder to prevent layout shift
   // Mobile: square (hamburger menu or avatar), Desktop: wider (Sign In button or avatar)
@@ -38,35 +35,14 @@ export function AuthButton() {
 
   // Logged out on desktop: show Sign In button with dialog
 
-  // Handle click - open dialog for normal clicks, let link work for modified clicks
-  const handleClick = (e: React.MouseEvent) => {
-    // Allow ctrl+click, cmd+click, middle-click, shift+click to open in new tab
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
-      return;
-    }
-    e.preventDefault();
-    setOpen(true);
-  };
-
   return (
-    <>
-      <Button
-        variant="ghost"
-        size="sm"
-        nativeButton={false}
-        render={
-          <Link
-            href="/login"
-            prefetch={false}
-            onClick={handleClick}
-            data-disable-progress={true}
-          />
-        }
-      >
-        Sign In
-      </Button>
-
-      <LoginDialog open={open} onOpenChange={setOpen} />
-    </>
+    <Button
+      variant="ghost"
+      size="sm"
+      nativeButton={false}
+      render={<Link href="/login" scroll={false} />}
+    >
+      Sign In
+    </Button>
   );
 }

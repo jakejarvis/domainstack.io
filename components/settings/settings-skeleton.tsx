@@ -1,24 +1,19 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-interface SettingsSkeletonProps {
-  /** Whether to show the card wrapper with visual styling */
-  showCard?: boolean;
-}
 
 /**
  * Skeleton for the subscription section.
  * Shows placeholders for plan info, usage progress, and upgrade/manage button.
  */
-export function SubscriptionSkeleton({ showCard }: { showCard?: boolean }) {
+export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
-    <div>
-      <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+    <div className={className}>
+      <CardHeader className="px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-28" />
         <Skeleton className="mt-1 h-4 w-64" />
       </CardHeader>
-      <CardContent className={showCard ? "space-y-4" : "space-y-4 px-0 pt-1"}>
+      <CardContent className="space-y-4 px-0 pt-1">
         {/* Current plan card */}
         <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div className="space-y-1.5">
@@ -62,9 +57,11 @@ export function SubscriptionSkeleton({ showCard }: { showCard?: boolean }) {
  * Skeleton for a single notification row.
  * Shows placeholder for icon, label, and toggle.
  */
-function NotificationRowSkeleton() {
+export function NotificationRowSkeleton({ className }: { className?: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl px-3 py-3">
+    <div
+      className={cn("flex items-center gap-3 rounded-xl px-3 py-3", className)}
+    >
       {/* Icon placeholder */}
       <Skeleton className="size-9 shrink-0 rounded-lg" />
 
@@ -84,19 +81,17 @@ function NotificationRowSkeleton() {
  * Skeleton for the notification settings section.
  * Shows placeholders for header, 3 notification rows, and collapsible trigger.
  */
-export function NotificationsSkeleton({ showCard }: { showCard?: boolean }) {
+export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
-    <div>
-      <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+    <div className={className}>
+      <CardHeader className="px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-40" />
         <div className="mt-1 flex items-center gap-1.5">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-28" />
         </div>
       </CardHeader>
-      <CardContent
-        className={showCard ? "space-y-5" : "space-y-5 px-0 pt-1 pb-0"}
-      >
+      <CardContent className="space-y-5 px-0 pt-1 pb-0">
         <div className="space-y-1">
           <NotificationRowSkeleton />
           <NotificationRowSkeleton />
@@ -117,9 +112,18 @@ export function NotificationsSkeleton({ showCard }: { showCard?: boolean }) {
  * Skeleton for a single linked account row.
  * Shows placeholder for provider icon, name, and action button.
  */
-function LinkedAccountRowSkeleton() {
+export function LinkedAccountRowSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]">
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]",
+        className,
+      )}
+    >
       <div className="flex items-center gap-2.5">
         <Skeleton className="size-4" />
         <Skeleton className="h-4 w-16" />
@@ -133,16 +137,14 @@ function LinkedAccountRowSkeleton() {
  * Skeleton for the linked accounts section.
  * Shows placeholders for header and 4 provider rows.
  */
-export function LinkedAccountsSkeleton({ showCard }: { showCard?: boolean }) {
+export function LinkedAccountsSkeleton({ className }: { className?: string }) {
   return (
-    <div>
-      <CardHeader className={showCard ? "pb-2" : "px-0 pt-0 pb-2"}>
+    <div className={className}>
+      <CardHeader className="px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="mt-1 h-4 w-72" />
       </CardHeader>
-      <CardContent
-        className={showCard ? "space-y-3" : "space-y-3 px-0 pt-1 pb-0"}
-      >
+      <CardContent className="space-y-3 px-0 pt-1 pb-0">
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
@@ -156,9 +158,14 @@ export function LinkedAccountsSkeleton({ showCard }: { showCard?: boolean }) {
  * Skeleton for the danger zone section.
  * Shows a collapsed danger zone trigger placeholder.
  */
-export function DangerZoneSkeleton() {
+export function DangerZoneSkeleton({ className }: { className?: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3",
+        className,
+      )}
+    >
       <div className="flex items-center gap-3">
         <Skeleton className="size-4 bg-destructive/20" />
         <div className="space-y-1">
@@ -175,9 +182,13 @@ export function DangerZoneSkeleton() {
  * Skeleton for the tabs navigation.
  * Shows placeholders for tab triggers.
  */
-function TabsSkeleton({ showCard }: { showCard?: boolean }) {
+export function SettingsSkeletonTabsList({
+  className,
+}: {
+  className?: string;
+}) {
   return (
-    <div className={cn("w-full", showCard && "px-6 pt-6 pb-2")}>
+    <div className={cn("w-full", className)}>
       <div className="flex h-auto w-full items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
         {/* Subscription Tab (Active) */}
         <div className="flex flex-1 flex-col items-center gap-2 rounded-md bg-background/60 px-4 py-2.5 shadow-sm ring-1 ring-black/5 dark:bg-white/5 dark:shadow-none dark:ring-white/10">
@@ -202,25 +213,13 @@ function TabsSkeleton({ showCard }: { showCard?: boolean }) {
 }
 
 /**
- * Loading skeleton for settings content.
- * Reflects the tabbed layout structure, defaulting to the notification settings view.
+ * Loading skeleton for settings content panels.
+ * Defaults to Subscription (first tab).
  */
-export function SettingsSkeleton({ showCard = true }: SettingsSkeletonProps) {
-  const content = (
-    <div className={cn("w-full")}>
-      {/* Tabs Skeleton */}
-      <TabsSkeleton showCard={showCard} />
-
-      {/* Tab Content Skeleton - Defaults to Subscription (first tab) */}
-      <div className={cn(showCard && "px-6 pt-2 pb-4")}>
-        <SubscriptionSkeleton showCard={false} />
-      </div>
+export function SettingsSkeletonPanels({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <SubscriptionSkeleton />
     </div>
   );
-
-  if (!showCard) {
-    return content;
-  }
-
-  return <Card className="overflow-hidden p-0">{content}</Card>;
 }
