@@ -22,8 +22,12 @@ export function detectRegistrationChanges(
     snapshot.registrarProviderId !== current.registrarProviderId;
 
   const nameserversChanged = !arraysEqual(
-    [...snapshot.nameservers].map((ns) => ns.host).sort((a, b) => a.localeCompare(b)),
-    [...current.nameservers].map((ns) => ns.host).sort((a, b) => a.localeCompare(b)),
+    [...snapshot.nameservers]
+      .map((ns) => ns.host)
+      .sort((a, b) => a.localeCompare(b)),
+    [...current.nameservers]
+      .map((ns) => ns.host)
+      .sort((a, b) => a.localeCompare(b)),
   );
 
   const transferLockChanged = snapshot.transferLock !== current.transferLock;

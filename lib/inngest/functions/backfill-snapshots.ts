@@ -7,7 +7,7 @@ import {
   createSnapshot,
   type RegistrationSnapshotData,
 } from "@/lib/db/repos/snapshots";
-import { domains, providers, userTrackedDomains } from "@/lib/db/schema";
+import { domains, userTrackedDomains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
 import { getCertificates } from "@/server/services/certificates";
@@ -87,8 +87,7 @@ export const backfillSnapshots = inngest.createFunction(
 
         if (registrationData.status === "registered") {
           registrationSnapshot = {
-            registrarProviderId:
-              registrationData.registrarProvider.name || null,
+            registrarProviderId: registrationData.registrarProvider.id ?? null,
             nameservers: registrationData.nameservers || [],
             transferLock: registrationData.transferLock ?? null,
             statuses: (registrationData.statuses || []).map((s) =>
@@ -108,70 +107,20 @@ export const backfillSnapshots = inngest.createFunction(
         if (certificatesData.length > 0) {
           const leafCert = certificatesData[0];
 
-          // Resolve CA provider ID from name
-          const caProviderId = await step.run(
-            `resolve-ca-id-${domainRecord.domainName}`,
-            async () => {
-              if (!leafCert.caProvider?.name) return null;
-
-              const providersData = await db
-                .select({ id: providers.id })
-                .from(providers)
-                .where(eq(providers.name, leafCert.caProvider.name))
-                .limit(1);
-
-              return providersData[0]?.id || null;
-            },
-          );
-
           certificateSnapshot = {
-            caProviderId,
+            caProviderId: leafCert.caProvider.id ?? null,
             issuer: leafCert.issuer,
             validTo: new Date(leafCert.validTo).toISOString(),
             fingerprint: null,
           };
         }
 
-        // Resolve provider IDs from hosting data
-        const providerIds = await step.run(
-          `resolve-provider-ids-${domainRecord.domainName}`,
-          async () => {
-            if (!hostingData) {
-              return { dns: null, hosting: null, email: null };
-            }
-
-            const names = [
-              hostingData.dnsProvider?.name,
-              hostingData.hostingProvider?.name,
-              hostingData.emailProvider?.name,
-            ].filter((n): n is string => n !== null);
-
-            if (names.length === 0) {
-              return { dns: null, hosting: null, email: null };
-            }
-
-            const providersData = await db
-              .select({ name: providers.name, id: providers.id })
-              .from(providers)
-              .where(eq(providers.name, names[0]));
-
-            const nameToId = Object.fromEntries(
-              providersData.map((p) => [p.name, p.id]),
-            );
-
-            return {
-              dns: hostingData.dnsProvider?.name
-                ? nameToId[hostingData.dnsProvider.name] || null
-                : null,
-              hosting: hostingData.hostingProvider?.name
-                ? nameToId[hostingData.hostingProvider.name] || null
-                : null,
-              email: hostingData.emailProvider?.name
-                ? nameToId[hostingData.emailProvider.name] || null
-                : null,
-            };
-          },
-        );
+        // Use provider IDs directly from hosting response
+        const providerIds = {
+          dns: hostingData?.dnsProvider?.id ?? null,
+          hosting: hostingData?.hostingProvider?.id ?? null,
+          email: hostingData?.emailProvider?.id ?? null,
+        };
 
         // Create the snapshot
         await step.run(

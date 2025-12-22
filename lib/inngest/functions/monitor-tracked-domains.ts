@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { CertificateChangeEmail } from "@/emails/certificate-change";
 import { ProviderChangeEmail } from "@/emails/provider-change";
 import { RegistrationChangeEmail } from "@/emails/registration-change";
@@ -83,8 +83,7 @@ export const monitorTrackedDomains = inngest.createFunction(
         // Check registration changes
         if (registrationData.status === "registered") {
           const currentRegistration: RegistrationSnapshotData = {
-            registrarProviderId:
-              registrationData.registrarProvider.name || null,
+            registrarProviderId: registrationData.registrarProvider.id ?? null,
             nameservers: registrationData.nameservers || [],
             transferLock: registrationData.transferLock ?? null,
             // Extract status strings from status objects
@@ -130,42 +129,12 @@ export const monitorTrackedDomains = inngest.createFunction(
 
         // Check provider changes
         if (hostingData) {
-          // Resolve provider IDs from names
-          const currentProviderIds = await step.run(
-            `resolve-provider-ids-${snapshot.domainName}`,
-            async () => {
-              const names = [
-                hostingData.dnsProvider?.name,
-                hostingData.hostingProvider?.name,
-                hostingData.emailProvider?.name,
-              ].filter((n): n is string => n !== null);
-
-              if (names.length === 0) {
-                return { dns: null, hosting: null, email: null };
-              }
-
-              const providersData = await db
-                .select({ name: providers.name, id: providers.id })
-                .from(providers)
-                .where(inArray(providers.name, names));
-
-              const nameToId = Object.fromEntries(
-                providersData.map((p) => [p.name, p.id]),
-              );
-
-              return {
-                dns: hostingData.dnsProvider?.name
-                  ? nameToId[hostingData.dnsProvider.name] || null
-                  : null,
-                hosting: hostingData.hostingProvider?.name
-                  ? nameToId[hostingData.hostingProvider.name] || null
-                  : null,
-                email: hostingData.emailProvider?.name
-                  ? nameToId[hostingData.emailProvider.name] || null
-                  : null,
-              };
-            },
-          );
+          // Use provider IDs directly from hosting response
+          const currentProviderIds = {
+            dns: hostingData.dnsProvider?.id ?? null,
+            hosting: hostingData.hostingProvider?.id ?? null,
+            email: hostingData.emailProvider?.id ?? null,
+          };
 
           const providerChange = detectProviderChanges(
             {
@@ -266,24 +235,8 @@ export const monitorTrackedDomains = inngest.createFunction(
         if (certificatesData.length > 0) {
           const leafCert = certificatesData[0]; // First cert is the leaf
 
-          // Resolve CA provider ID from name
-          const currentCAProviderId = await step.run(
-            `resolve-ca-id-${snapshot.domainName}`,
-            async () => {
-              if (!leafCert.caProvider?.name) return null;
-
-              const providersData = await db
-                .select({ id: providers.id })
-                .from(providers)
-                .where(eq(providers.name, leafCert.caProvider.name))
-                .limit(1);
-
-              return providersData[0]?.id || null;
-            },
-          );
-
           const currentCertificate: CertificateSnapshotData = {
-            caProviderId: currentCAProviderId,
+            caProviderId: leafCert.caProvider.id ?? null,
             issuer: leafCert.issuer,
             validTo: new Date(leafCert.validTo).toISOString(),
             fingerprint: null, // We don't store fingerprints currently

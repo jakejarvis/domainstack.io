@@ -54,10 +54,13 @@ export const getHosting = cache(async function getHosting(
     const dp = alias(providersTable, "dp");
     const existing = await db
       .select({
+        hostingProviderId: hp.id,
         hostingProviderName: hp.name,
         hostingProviderDomain: hp.domain,
+        emailProviderId: ep.id,
         emailProviderName: ep.name,
         emailProviderDomain: ep.domain,
+        dnsProviderId: dp.id,
         dnsProviderName: dp.name,
         dnsProviderDomain: dp.domain,
         geoCity: hostingTable.geoCity,
@@ -78,14 +81,17 @@ export const getHosting = cache(async function getHosting(
     if (row && (row.expiresAt?.getTime?.() ?? 0) > nowMs) {
       const info: HostingResponse = {
         hostingProvider: {
+          id: row.hostingProviderId ?? null,
           name: row.hostingProviderName ?? null,
           domain: row.hostingProviderDomain ?? null,
         },
         emailProvider: {
+          id: row.emailProviderId ?? null,
           name: row.emailProviderName ?? null,
           domain: row.emailProviderDomain ?? null,
         },
         dnsProvider: {
+          id: row.dnsProviderId ?? null,
           name: row.dnsProviderName ?? null,
           domain: row.dnsProviderDomain ?? null,
         },
@@ -202,9 +208,13 @@ export const getHosting = cache(async function getHosting(
   }
 
   const info: HostingResponse = {
-    hostingProvider: { name: hostingName, domain: hostingIconDomain },
-    emailProvider: { name: emailName, domain: emailIconDomain },
-    dnsProvider: { name: dnsName, domain: dnsIconDomain },
+    hostingProvider: {
+      id: null,
+      name: hostingName,
+      domain: hostingIconDomain,
+    },
+    emailProvider: { id: null, name: emailName, domain: emailIconDomain },
+    dnsProvider: { id: null, name: dnsName, domain: dnsIconDomain },
     geo,
   };
 
@@ -252,6 +262,11 @@ export const getHosting = cache(async function getHosting(
       ? (providerMap.get(makeProviderKey("dns", dnsIconDomain, dnsName)) ??
         null)
       : null;
+
+    // Update the info object with resolved IDs
+    info.hostingProvider.id = hostingProviderId;
+    info.emailProvider.id = emailProviderId;
+    info.dnsProvider.id = dnsProviderId;
 
     await upsertHosting({
       domainId: existingDomain.id,

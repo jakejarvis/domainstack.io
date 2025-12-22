@@ -49,6 +49,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           altNames: certTable.altNames,
           validFrom: certTable.validFrom,
           validTo: certTable.validTo,
+          caProviderId: providersTable.id,
           caProviderDomain: providersTable.domain,
           caProviderName: providersTable.name,
           expiresAt: certTable.expiresAt,
@@ -65,6 +66,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         altNames: unknown;
         validFrom: Date;
         validTo: Date;
+        caProviderId: string | null;
         caProviderDomain: string | null;
         caProviderName: string | null;
         expiresAt: Date | null;
@@ -83,8 +85,12 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         // Use cached provider data if available, otherwise detect
         caProvider:
           c.caProviderDomain && c.caProviderName
-            ? { domain: c.caProviderDomain, name: c.caProviderName }
-            : detectCertificateAuthority(c.issuer),
+            ? {
+                id: c.caProviderId ?? null,
+                domain: c.caProviderDomain,
+                name: c.caProviderName,
+              }
+            : { id: null, ...detectCertificateAuthority(c.issuer) },
       }));
 
       logger.info("cache hit", {
@@ -158,7 +164,10 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         ),
         validFrom: new Date(c.valid_from).toISOString(),
         validTo: new Date(c.valid_to).toISOString(),
-        caProvider: detectCertificateAuthority(issuerName),
+        caProvider: {
+          id: null,
+          ...detectCertificateAuthority(issuerName),
+        },
       };
     });
 
@@ -187,6 +196,24 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
 
       const caProviderMap =
         await batchResolveOrCreateProviderIds(caProviderInputs);
+
+      // Update out array with resolved provider IDs
+      for (const cert of out) {
+        const hasValidProvider =
+          cert.caProvider.domain &&
+          cert.caProvider.name &&
+          cert.caProvider.domain.trim() !== "" &&
+          cert.caProvider.name.trim() !== "";
+
+        if (hasValidProvider) {
+          const caProviderId = caProviderMap.get(
+            makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
+          );
+          if (caProviderId) {
+            cert.caProvider.id = caProviderId;
+          }
+        }
+      }
 
       const chainWithIds = out.map((c) => {
         // Only lookup provider ID if both domain and name are valid

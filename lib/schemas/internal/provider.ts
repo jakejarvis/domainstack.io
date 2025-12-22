@@ -126,6 +126,7 @@ export const ProviderSchema = z.object({
 export type Provider = z.infer<typeof ProviderSchema>;
 
 export const ProviderRefSchema = z.object({
+  id: z.string().uuid().nullable().optional(),
   name: z.string().nullable(),
   domain: z.string().nullable(),
 });
