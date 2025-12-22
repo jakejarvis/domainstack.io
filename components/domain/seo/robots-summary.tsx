@@ -407,7 +407,7 @@ function GroupsAccordion({
         value={`g-${idx}`}
         className="border-border/65"
       >
-        <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+        <AccordionTrigger className="group/accordion cursor-pointer px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
           <RobotsGroupHeader
             userAgents={g.userAgents}
             allowN={allowN}

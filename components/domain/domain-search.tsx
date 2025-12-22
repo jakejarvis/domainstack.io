@@ -184,7 +184,7 @@ export function DomainSearch({
                   {loading ? (
                     <Spinner />
                   ) : (
-                    <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+                    <Kbd className="mx-1 hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
                       {isFocused ? "Esc" : isMac ? "⌘ K" : "Ctrl+K"}
                     </Kbd>
                   )}
@@ -196,7 +196,7 @@ export function DomainSearch({
                   <InputGroupButton
                     type="submit"
                     disabled={loading}
-                    className="h-8"
+                    className="mx-1 h-8 cursor-pointer disabled:pointer-events-none"
                     variant="ghost"
                   >
                     {loading ? (
