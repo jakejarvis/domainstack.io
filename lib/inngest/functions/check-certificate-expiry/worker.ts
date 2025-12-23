@@ -43,7 +43,16 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
       return { skipped: true, reason: "not_found" };
     }
 
-    const daysRemaining = differenceInDays(cert.validTo, new Date());
+    const { daysRemaining, validTo } = await step.run(
+      "calculate-days-remaining",
+      async () => {
+        const now = new Date();
+        return {
+          daysRemaining: differenceInDays(cert.validTo, now),
+          validTo: cert.validTo,
+        };
+      },
+    );
     const MAX_THRESHOLD_DAYS = 14;
 
     if (daysRemaining > MAX_THRESHOLD_DAYS) {
@@ -82,7 +91,6 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
     }
 
     const sent = await step.run("send-email", async () => {
-      const validToDate = new Date(cert.validTo);
       return await sendCertificateExpiryNotification(
         {
           trackedDomainId,
@@ -90,7 +98,7 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
           userId: cert.userId,
           userName: cert.userName,
           userEmail: cert.userEmail,
-          validTo: validToDate,
+          validTo: new Date(validTo),
           issuer: cert.issuer,
           daysRemaining,
           notificationType,
