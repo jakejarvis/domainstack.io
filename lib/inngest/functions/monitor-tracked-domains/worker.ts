@@ -274,8 +274,6 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
 
       return results;
     } catch (err) {
-      const _errorMessage =
-        err instanceof Error ? err.message : "Unknown error";
       inngestLogger.error("Error monitoring domain", err, {
         domainName,
         trackedDomainId,
