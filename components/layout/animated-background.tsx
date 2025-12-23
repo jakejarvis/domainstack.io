@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { StaticBackground } from "./static-background";
 
 /**
  * Animated gradient background with organic, drifting motion.
@@ -31,8 +32,13 @@ export function AnimatedBackground() {
 
   if (!mounted) return null;
 
+  if (shouldReduceMotion) return <StaticBackground />;
+
   return createPortal(
-    <div className="pointer-events-none fixed top-0 left-0 -z-10 h-[100lvh] w-full overflow-hidden">
+    <div
+      data-slot="portal-background"
+      className="pointer-events-none fixed top-0 left-0 -z-10 h-[100lvh] w-full overflow-hidden"
+    >
       {/* Base gradient layer */}
       <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/10 via-transparent to-accent-purple/10 dark:from-accent-blue/5 dark:to-accent-purple/5" />
 
@@ -42,8 +48,8 @@ export function AnimatedBackground() {
           key={b.key}
           className={b.className}
           initial={b.initial}
-          animate={shouldReduceMotion ? b.reduced : b.motion}
-          transition={shouldReduceMotion ? undefined : b.transition}
+          animate={b.motion}
+          transition={b.transition}
         />
       )) ?? null}
     </div>,
@@ -55,7 +61,6 @@ type BlobParams = Readonly<{
   key: string;
   className: string;
   initial: MotionInitial;
-  reduced: MotionAnimate;
   motion: MotionAnimate;
   transition: MotionTransition;
 }>;
@@ -110,14 +115,6 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     const duration = randRange(rand, 18, 42) + idx * randRange(rand, 1, 4);
     const delay = randRange(rand, 0, 6);
 
-    const reduced = {
-      x: `${startX}vw`,
-      y: `${startY}vh`,
-      scale: 1,
-      rotate: 0,
-      opacity: opacityBase,
-    } satisfies MotionAnimate;
-
     const motionTarget = {
       x,
       y,
@@ -146,7 +143,6 @@ function generateBlobParams(rand: () => number, baseId: string): BlobParams[] {
     return {
       key: `${baseId}-${keySuffixes[idx] ?? idx}`,
       className: `absolute rounded-full will-change-transform ${layerClass}`,
-      reduced,
       motion: motionTarget,
       transition,
       initial,
