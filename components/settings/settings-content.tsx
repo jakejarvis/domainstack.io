@@ -30,7 +30,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
             </TabsTrigger>
           }
         />
-        <ResponsiveTooltipContent>Subscription</ResponsiveTooltipContent>
+        <ResponsiveTooltipContent className="sm:hidden">Subscription</ResponsiveTooltipContent>
       </ResponsiveTooltip>
 
       <ResponsiveTooltip>
@@ -47,7 +47,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
             </TabsTrigger>
           }
         />
-        <ResponsiveTooltipContent>Notifications</ResponsiveTooltipContent>
+        <ResponsiveTooltipContent className="sm:hidden">Notifications</ResponsiveTooltipContent>
       </ResponsiveTooltip>
 
       <ResponsiveTooltip>
@@ -64,7 +64,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
             </TabsTrigger>
           }
         />
-        <ResponsiveTooltipContent>Account</ResponsiveTooltipContent>
+        <ResponsiveTooltipContent className="sm:hidden">Account</ResponsiveTooltipContent>
       </ResponsiveTooltip>
     </TabsList>
   );
