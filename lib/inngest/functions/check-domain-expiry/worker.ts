@@ -154,10 +154,19 @@ async function sendExpiryNotification(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId,
       type: notificationType,
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId,
+        notificationType,
+        domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(
