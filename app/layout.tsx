@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s — Domainstack",
   },
   description:
-    "Unlock full domain intelligence in one tool. Instantly view registration history, DNS and SSL records, HTTP headers, hosting & email details, and live SEO signals — all in one clean, fast interface.",
+    "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.",
   metadataBase: new URL(BASE_URL),
   alternates: {
     canonical: "/",
