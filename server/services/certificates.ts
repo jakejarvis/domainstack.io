@@ -216,22 +216,24 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         );
       };
 
+      // Resolve provider IDs once and store them
+      const providerIds = out.map((cert) => resolveProviderId(cert));
+
       // Update out array with resolved provider IDs
-      for (const cert of out) {
-        const caProviderId = resolveProviderId(cert);
-        if (caProviderId) {
-          cert.caProvider.id = caProviderId;
+      for (let i = 0; i < out.length; i++) {
+        if (providerIds[i]) {
+          out[i].caProvider.id = providerIds[i];
         }
       }
 
       // Build chain with provider IDs for database persistence
-      const chainWithIds = out.map((c) => ({
+      const chainWithIds = out.map((c, i) => ({
         issuer: c.issuer,
         subject: c.subject,
         altNames: c.altNames,
         validFrom: new Date(c.validFrom),
         validTo: new Date(c.validTo),
-        caProviderId: resolveProviderId(c),
+        caProviderId: providerIds[i],
       }));
 
       const nextDue = ttlForCertificates(now, earliestValidTo);
