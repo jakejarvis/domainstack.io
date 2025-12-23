@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
@@ -372,4 +372,22 @@ export async function batchResolveOrCreateProviderIds(
   }
 
   return result;
+}
+
+/**
+ * Get provider names by IDs.
+ */
+export async function getProviderNames(
+  ids: string[],
+): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+
+  const uniqueIds = Array.from(new Set(ids));
+
+  const result = await db
+    .select({ id: providers.id, name: providers.name })
+    .from(providers)
+    .where(inArray(providers.id, uniqueIds));
+
+  return new Map(result.map((r) => [r.id, r.name]));
 }

@@ -122,12 +122,12 @@ export function detectCertificateChanges(
   return {
     caProviderChanged,
     issuerChanged,
-    previousCAProvider: null,
+    previousCaProvider: null,
     previousIssuer: snapshot.issuer,
-    newCAProvider: null,
+    newCaProvider: null,
     newIssuer: current.issuer,
-    previousCAProviderId: snapshot.caProviderId,
-    newCAProviderId: current.caProviderId,
+    previousCaProviderId: snapshot.caProviderId,
+    newCaProviderId: current.caProviderId,
   };
 }
 

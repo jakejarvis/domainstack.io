@@ -17,8 +17,8 @@ type CertificateChangeEmailProps = {
   changes: {
     caProviderChanged: boolean;
     issuerChanged: boolean;
-    previousCAProvider?: string | null;
-    newCAProvider?: string | null;
+    previousCaProvider?: string | null;
+    newCaProvider?: string | null;
     previousIssuer?: string | null;
     newIssuer?: string | null;
   };
@@ -64,9 +64,9 @@ export function CertificateChangeEmail({
           <EmailBox variant="info">
             <EmailBoxText variant="info">
               <strong>Previous CA:</strong>{" "}
-              {changes.previousCAProvider || "Unknown"}
+              {changes.previousCaProvider || "Unknown"}
               <br />
-              <strong>New CA:</strong> {changes.newCAProvider || "Unknown"}
+              <strong>New CA:</strong> {changes.newCaProvider || "Unknown"}
             </EmailBoxText>
           </EmailBox>
         </>
@@ -132,8 +132,8 @@ CertificateChangeEmail.PreviewProps = {
   changes: {
     caProviderChanged: true,
     issuerChanged: true,
-    previousCAProvider: "Let's Encrypt",
-    newCAProvider: "DigiCert",
+    previousCaProvider: "Let's Encrypt",
+    newCaProvider: "DigiCert",
     previousIssuer: "R3",
     newIssuer: "DigiCert TLS RSA SHA256 2020 CA1",
   },

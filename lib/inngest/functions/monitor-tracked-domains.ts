@@ -15,6 +15,7 @@ import {
   createNotification,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
+import { getProviderNames } from "@/lib/db/repos/providers";
 import {
   getSnapshotsForMonitoring,
   updateSnapshot,
@@ -253,8 +254,8 @@ export const monitorTrackedDomains = inngest.createFunction(
           if (certificateChange) {
             // Fetch CA provider names
             const caIds = [
-              certificateChange.previousCAProviderId,
-              certificateChange.newCAProviderId,
+              certificateChange.previousCaProviderId,
+              certificateChange.newCaProviderId,
             ].filter((id): id is string => id !== null);
 
             const caProviderNames = await step.run(
@@ -276,12 +277,12 @@ export const monitorTrackedDomains = inngest.createFunction(
             // Populate CA provider names
             const enrichedChange: CertificateChange = {
               ...certificateChange,
-              previousCAProvider: certificateChange.previousCAProviderId
-                ? caProviderNames[certificateChange.previousCAProviderId] ||
+              previousCaProvider: certificateChange.previousCaProviderId
+                ? caProviderNames[certificateChange.previousCaProviderId] ||
                   null
                 : null,
-              newCAProvider: certificateChange.newCAProviderId
-                ? caProviderNames[certificateChange.newCAProviderId] || null
+              newCaProvider: certificateChange.newCaProviderId
+                ? caProviderNames[certificateChange.newCaProviderId] || null
                 : null,
             };
 
@@ -362,6 +363,23 @@ async function handleRegistrationChange(
       userId,
     });
     return false;
+  }
+
+  // Resolve registrar names if changed (IDs are stored in change object)
+  if (change.registrarChanged) {
+    const ids = [change.previousRegistrar, change.newRegistrar].filter(
+      (id): id is string => !!id,
+    );
+    const names = await getProviderNames(ids);
+
+    if (change.previousRegistrar) {
+      change.previousRegistrar =
+        names.get(change.previousRegistrar) ?? change.previousRegistrar;
+    }
+    if (change.newRegistrar) {
+      change.newRegistrar =
+        names.get(change.newRegistrar) ?? change.newRegistrar;
+    }
   }
 
   // Generate a stable idempotency key BEFORE any operations
@@ -475,6 +493,45 @@ async function handleProviderChange(
     return false;
   }
 
+  // Resolve provider names if changed (IDs are stored in change object)
+  const ids = [
+    change.previousDnsProviderId,
+    change.newDnsProviderId,
+    change.previousHostingProviderId,
+    change.newHostingProviderId,
+    change.previousEmailProviderId,
+    change.newEmailProviderId,
+  ].filter((id): id is string => !!id);
+
+  if (ids.length > 0) {
+    const names = await getProviderNames(ids);
+
+    if (change.dnsProviderChanged) {
+      change.previousDnsProvider = change.previousDnsProviderId
+        ? (names.get(change.previousDnsProviderId) ?? null)
+        : null;
+      change.newDnsProvider = change.newDnsProviderId
+        ? (names.get(change.newDnsProviderId) ?? null)
+        : null;
+    }
+    if (change.hostingProviderChanged) {
+      change.previousHostingProvider = change.previousHostingProviderId
+        ? (names.get(change.previousHostingProviderId) ?? null)
+        : null;
+      change.newHostingProvider = change.newHostingProviderId
+        ? (names.get(change.newHostingProviderId) ?? null)
+        : null;
+    }
+    if (change.emailProviderChanged) {
+      change.previousEmailProvider = change.previousEmailProviderId
+        ? (names.get(change.previousEmailProviderId) ?? null)
+        : null;
+      change.newEmailProvider = change.newEmailProviderId
+        ? (names.get(change.newEmailProviderId) ?? null)
+        : null;
+    }
+  }
+
   // Generate a stable idempotency key BEFORE any operations
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
@@ -573,6 +630,22 @@ async function handleCertificateChange(
       userId,
     });
     return false;
+  }
+
+  // Resolve CA provider names if changed
+  if (change.caProviderChanged) {
+    const ids = [change.previousCaProviderId, change.newCaProviderId].filter(
+      (id): id is string => !!id,
+    );
+    const names = await getProviderNames(ids);
+
+    if (change.previousCaProviderId) {
+      change.previousCaProvider =
+        names.get(change.previousCaProviderId) ?? null;
+    }
+    if (change.newCaProviderId) {
+      change.newCaProvider = names.get(change.newCaProviderId) ?? null;
+    }
   }
 
   // Generate a stable idempotency key BEFORE any operations

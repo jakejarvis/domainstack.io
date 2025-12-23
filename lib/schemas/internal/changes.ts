@@ -67,16 +67,16 @@ export const CertificateChangeSchema = z.object({
   issuerChanged: z.boolean(),
 
   // Previous values
-  previousCAProvider: z.string().nullable(),
+  previousCaProvider: z.string().nullable(),
   previousIssuer: z.string().nullable(),
 
   // New values
-  newCAProvider: z.string().nullable(),
+  newCaProvider: z.string().nullable(),
   newIssuer: z.string().nullable(),
 
   // Provider IDs for reference
-  previousCAProviderId: z.string().nullable(),
-  newCAProviderId: z.string().nullable(),
+  previousCaProviderId: z.string().nullable(),
+  newCaProviderId: z.string().nullable(),
 });
 
 export type CertificateChange = z.infer<typeof CertificateChangeSchema>;
