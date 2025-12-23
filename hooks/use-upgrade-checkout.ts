@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 import { analytics } from "@/lib/analytics/client";
 import { checkout } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
+import { PolarEmbedCheckout } from "@polar-sh/checkout/embed";
 
 /**
  * Hook to handle Pro tier upgrade checkout flow.
@@ -14,6 +16,7 @@ import { PRO_TIER_INFO } from "@/lib/polar/products";
 export function useUpgradeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
   const isMountedRef = useRef(true);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     return () => {
@@ -26,12 +29,21 @@ export function useUpgradeCheckout() {
     setIsLoading(true);
     analytics.track("upgrade_clicked");
     try {
-      await checkout({
+      const result = await checkout({
         products: [
           PRO_TIER_INFO.monthly.productId,
           PRO_TIER_INFO.yearly.productId,
         ],
       });
+
+      const url = result?.url ?? (result as any)?.data?.url;
+
+      if (url) {
+        const theme = resolvedTheme === "dark" ? "dark" : "light";
+        await PolarEmbedCheckout.create(url, theme);
+      } else {
+        logger.warn("No checkout URL returned", { result });
+      }
     } catch (err) {
       logger.error("Failed to open checkout", err);
       toast.error("Failed to open checkout. Please try again.");

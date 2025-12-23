@@ -34,6 +34,7 @@
     "@bprogress/next": "^3.2.12",
     "@opentelemetry/api": "^1.9.0",
     "@polar-sh/better-auth": "^1.6.3",
+    "@polar-sh/checkout": "^0.1.14",
     "@polar-sh/sdk": "^0.42.1",
     "@posthog/nextjs-config": "^1.7.4",
     "@react-email/components": "^1.0.2",
