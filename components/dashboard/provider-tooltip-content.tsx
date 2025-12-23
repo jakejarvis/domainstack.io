@@ -136,41 +136,38 @@ export function ProviderTooltipContent({
             )}
 
             {/* Verification source */}
-            {serverUrl && (
-              <div className="flex items-center gap-1.5">
-                <BadgeCheck className="size-3.5 text-green-300 dark:text-green-600" />
-                <span>
-                  Verified by{" "}
-                  <span className="font-medium">
-                    {serverUrl ? (
-                      <a
-                        href={serverUrl}
-                        target="_blank"
-                        rel="noopener"
-                        className="underline underline-offset-2"
-                      >
-                        {serverName}
-                      </a>
-                    ) : (
-                      serverName
-                    )}
-                  </span>{" "}
-                  <a
-                    href={learnUrl}
-                    target="_blank"
-                    rel="noopener"
-                    title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
-                    className=""
-                  >
-                    <span className="text-muted/75">(</span>
-                    <span className="text-muted/90 underline decoration-dotted underline-offset-2">
-                      {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
-                    </span>
-                    <span className="text-muted/75">)</span>
-                  </a>
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <BadgeCheck className="size-3.5 text-green-300 dark:text-green-600" />
+              <span>
+                Verified by{" "}
+                <span className="font-medium">
+                  {serverUrl ? (
+                    <a
+                      href={serverUrl}
+                      target="_blank"
+                      rel="noopener"
+                      className="underline underline-offset-2"
+                    >
+                      {serverName}
+                    </a>
+                  ) : (
+                    serverName
+                  )}
+                </span>{" "}
+                <a
+                  href={learnUrl}
+                  target="_blank"
+                  rel="noopener"
+                  title={`Learn about ${registrationSource === "rdap" ? "RDAP" : "WHOIS"}`}
+                >
+                  <span className="text-muted/75">(</span>
+                  <span className="text-muted/90 underline decoration-dotted underline-offset-2">
+                    {registrationSource === "rdap" ? "RDAP" : "WHOIS"}
+                  </span>
+                  <span className="text-muted/75">)</span>
+                </a>
+              </span>
+            </div>
           </div>
         ) : (
           <div className="text-muted/80 text-xs">
