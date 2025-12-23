@@ -29,25 +29,13 @@ export function useUpgradeCheckout() {
     analytics.track("upgrade_clicked");
     try {
       const theme = resolvedTheme === "dark" ? "dark" : "light";
-      const embed = await checkoutEmbed({
+      await checkoutEmbed({
         products: [
           PRO_TIER_INFO.monthly.productId,
           PRO_TIER_INFO.yearly.productId,
         ],
         theme,
       });
-
-      embed.addEventListener("close", () => {
-        logger.info("Checkout closed");
-      });
-
-      embed.addEventListener("success", (event) => {
-        logger.info("Checkout success", {
-          successURL: event.detail.successURL,
-          redirect: event.detail.redirect,
-        });
-      });
-
     } catch (err) {
       logger.error("Failed to open checkout", err);
       toast.error("Failed to open checkout. Please try again.");
