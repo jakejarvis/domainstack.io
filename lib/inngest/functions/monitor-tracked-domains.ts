@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import { inArray } from "drizzle-orm";
 import { CertificateChangeEmail } from "@/emails/certificate-change";
 import { ProviderChangeEmail } from "@/emails/provider-change";
@@ -12,7 +13,6 @@ import {
 import { db } from "@/lib/db/client";
 import {
   createNotification,
-  hasNotificationBeenSent,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import {
@@ -364,19 +364,11 @@ async function handleRegistrationChange(
     return false;
   }
 
-  // Check if already notified
-  const alreadySent = await hasNotificationBeenSent(
-    trackedDomainId,
-    "registration_change",
-  );
-  if (alreadySent) {
-    return false;
-  }
-
   // Generate a stable idempotency key BEFORE any operations
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
     "registration_change",
+    generateChangeHash(change),
   );
 
   try {
@@ -483,19 +475,11 @@ async function handleProviderChange(
     return false;
   }
 
-  // Check if already notified
-  const alreadySent = await hasNotificationBeenSent(
-    trackedDomainId,
-    "provider_change",
-  );
-  if (alreadySent) {
-    return false;
-  }
-
   // Generate a stable idempotency key BEFORE any operations
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
     "provider_change",
+    generateChangeHash(change),
   );
 
   try {
@@ -591,19 +575,11 @@ async function handleCertificateChange(
     return false;
   }
 
-  // Check if already notified
-  const alreadySent = await hasNotificationBeenSent(
-    trackedDomainId,
-    "certificate_change",
-  );
-  if (alreadySent) {
-    return false;
-  }
-
   // Generate a stable idempotency key BEFORE any operations
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
     "certificate_change",
+    generateChangeHash(change),
   );
 
   try {
@@ -667,4 +643,17 @@ async function handleCertificateChange(
     // Re-throw to trigger Inngest retry
     throw err;
   }
+}
+
+/**
+ * Generate a hash of the changes to use as a discriminator for idempotency.
+ * This ensures that:
+ * 1. Resend's 24h idempotency works correctly (same change = same key)
+ * 2. Different changes (even within 24h) generate different keys and are sent
+ */
+function generateChangeHash(change: unknown): string {
+  return createHash("sha256")
+    .update(JSON.stringify(change))
+    .digest("hex")
+    .slice(0, 16); // Short hash is enough
 }

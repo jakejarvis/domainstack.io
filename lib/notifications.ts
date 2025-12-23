@@ -13,13 +13,10 @@ export type { NotificationType } from "@/lib/constants/notifications";
  * Generate a stable idempotency key for Resend.
  * This ensures that if a step retries, Resend won't send duplicate emails.
  *
- * Format: `{trackedDomainId}:{notificationType}`
+ * Format: `{trackedDomainId}:{notificationType}`, `{trackedDomainId}:{notificationType}:{discriminator}`, etc.
  */
-export function generateIdempotencyKey(
-  trackedDomainId: string,
-  notificationType: NotificationType,
-): string {
-  return `${trackedDomainId}:${notificationType}`;
+export function generateIdempotencyKey(...parts: string[]): string {
+  return parts.join(":");
 }
 
 /**
