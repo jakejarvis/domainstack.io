@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  CalendarDays,
-  FileKey,
-  Info,
-  Network,
-  ShieldAlert,
-} from "lucide-react";
+import { Info } from "lucide-react";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -26,17 +20,6 @@ interface GlobalNotificationRowProps {
   disabled: boolean;
 }
 
-const CATEGORY_ICONS: Record<
-  NotificationCategory,
-  React.ComponentType<{ className?: string }>
-> = {
-  domainExpiry: CalendarDays,
-  certificateExpiry: ShieldAlert,
-  registrationChanges: FileKey,
-  providerChanges: Network,
-  certificateChanges: ShieldAlert,
-};
-
 /**
  * A row for toggling global notification settings.
  * Clean, minimal design with subtle hover states and icon indicators.
@@ -48,7 +31,7 @@ export function GlobalNotificationRow({
   disabled,
 }: GlobalNotificationRowProps) {
   const info = NOTIFICATION_CATEGORY_INFO[category];
-  const Icon = CATEGORY_ICONS[category];
+  const Icon = info.icon;
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Don't toggle if clicking the info button or switch

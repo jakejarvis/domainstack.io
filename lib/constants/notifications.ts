@@ -1,3 +1,12 @@
+import {
+  CalendarDays,
+  EthernetPort,
+  FingerprintPattern,
+  IdCardLanyard,
+  type LucideIcon,
+  ShieldAlert,
+} from "lucide-react";
+
 /**
  * Notification system constants and types.
  * Defines notification categories, thresholds, and type strings.
@@ -17,28 +26,33 @@ export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 // Category metadata for UI display
 export const NOTIFICATION_CATEGORY_INFO: Record<
   NotificationCategory,
-  { label: string; description: string }
+  { label: string; description: string; icon: LucideIcon }
 > = {
+  providerChanges: {
+    label: "Provider Changes",
+    description: "Alerts when DNS, hosting, or email providers change",
+    icon: EthernetPort,
+  },
   domainExpiry: {
     label: "Domain Expiration",
     description: "Alerts at 30, 14, 7, and 1 day before expiration",
-  },
-  certificateExpiry: {
-    label: "Certificate Expiration",
-    description: "Alerts at 14, 7, 3, and 1 day before expiration",
+    icon: CalendarDays,
   },
   registrationChanges: {
     label: "Registration Changes",
     description:
       "Alerts when registrar, nameservers, transfer lock, or statuses change",
+    icon: IdCardLanyard,
   },
-  providerChanges: {
-    label: "Provider Changes",
-    description: "Alerts when DNS, hosting, or email providers change",
+  certificateExpiry: {
+    label: "Certificate Expiration",
+    description: "Alerts at 14, 7, 3, and 1 day before expiration",
+    icon: ShieldAlert,
   },
   certificateChanges: {
     label: "Certificate Changes",
     description: "Alerts when SSL certificate issuer or CA changes",
+    icon: FingerprintPattern,
   },
 };
 
