@@ -19,4 +19,5 @@ export const {
   // Provided by Polar client adapter:
   customer,
   checkout,
+  checkoutEmbed,
 } = authClient;

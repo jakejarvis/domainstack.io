@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { analytics } from "@/lib/analytics/client";
-import { checkout } from "@/lib/auth-client";
+import { checkoutEmbed } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
-import { PolarEmbedCheckout } from "@polar-sh/checkout/embed";
 
 /**
  * Hook to handle Pro tier upgrade checkout flow.
@@ -29,21 +28,26 @@ export function useUpgradeCheckout() {
     setIsLoading(true);
     analytics.track("upgrade_clicked");
     try {
-      const result = await checkout({
+      const theme = resolvedTheme === "dark" ? "dark" : "light";
+      const embed = await checkoutEmbed({
         products: [
           PRO_TIER_INFO.monthly.productId,
           PRO_TIER_INFO.yearly.productId,
         ],
+        theme,
       });
 
-      const url = result?.url ?? (result as any)?.data?.url;
+      embed.addEventListener("close", () => {
+        logger.info("Checkout closed");
+      });
 
-      if (url) {
-        const theme = resolvedTheme === "dark" ? "dark" : "light";
-        await PolarEmbedCheckout.create(url, theme);
-      } else {
-        logger.warn("No checkout URL returned", { result });
-      }
+      embed.addEventListener("success", (event) => {
+        logger.info("Checkout success", {
+          successURL: event.detail.successURL,
+          redirect: event.detail.redirect,
+        });
+      });
+
     } catch (err) {
       logger.error("Failed to open checkout", err);
       toast.error("Failed to open checkout. Please try again.");
