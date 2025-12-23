@@ -1,6 +1,5 @@
 import "server-only";
 
-import { z } from "zod";
 import {
   findTrackedDomainWithDomainName,
   verifyTrackedDomain,
@@ -8,18 +7,6 @@ import {
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { tryAllVerificationMethods } from "@/server/services/verification";
-
-/**
- * Event schema for triggering auto-verification of a pending domain.
- * The verification token is read fresh from the DB at each attempt to ensure
- * we use the current value even if it changed after the event was queued.
- */
-const eventSchema = z.object({
-  trackedDomainId: z.string().uuid(),
-  domainName: z.string().min(1),
-});
-
-export type AutoVerifyPendingDomainEvent = z.infer<typeof eventSchema>;
 
 /**
  * Retry schedule for auto-verification attempts.
@@ -63,7 +50,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
   },
   { event: INNGEST_EVENTS.AUTO_VERIFY_PENDING_DOMAIN },
   async ({ event, step, logger: inngestLogger }) => {
-    const { trackedDomainId, domainName } = eventSchema.parse(event.data);
+    const { trackedDomainId, domainName } = event.data;
 
     inngestLogger.info("Starting auto-verification schedule", {
       trackedDomainId,

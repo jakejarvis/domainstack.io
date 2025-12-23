@@ -59,6 +59,7 @@ export type SectionRevalidateEvent = {
 export type AutoVerifyPendingDomainEvent = {
   data: {
     trackedDomainId: string;
+    domainName: string;
   };
 };
 
