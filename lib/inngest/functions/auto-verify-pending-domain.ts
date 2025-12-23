@@ -6,6 +6,7 @@ import {
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { tryAllVerificationMethods } from "@/server/services/verification";
 
 /**
@@ -60,7 +61,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       key: "event.data.trackedDomainId",
     },
   },
-  { event: "tracked-domain/verify-pending" },
+  { event: INNGEST_EVENTS.AUTO_VERIFY_PENDING_DOMAIN },
   async ({ event, step, logger: inngestLogger }) => {
     const { trackedDomainId, domainName } = eventSchema.parse(event.data);
 

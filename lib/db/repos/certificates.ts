@@ -61,12 +61,67 @@ export type TrackedDomainCertificate = {
 };
 
 /**
+ * Get tracked domain IDs that have certificates.
+ * Used by the certificate expiry scheduler.
+ */
+export async function getVerifiedTrackedDomainIdsWithCertificates(): Promise<
+  string[]
+> {
+  const rows = await db
+    .selectDistinct({
+      trackedDomainId: userTrackedDomains.id,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(certificates, eq(domains.id, certificates.domainId))
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
+
+  return rows.map((r) => r.trackedDomainId);
+}
+
+/**
+ * Get the earliest expiring certificate for a tracked domain.
+ * Used by the certificate expiry worker.
+ */
+export async function getEarliestCertificate(
+  trackedDomainId: string,
+): Promise<TrackedDomainCertificate | null> {
+  const rows = await db
+    .select({
+      trackedDomainId: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainId: userTrackedDomains.domainId,
+      domainName: domains.name,
+      notificationOverrides: userTrackedDomains.notificationOverrides,
+      validTo: certificates.validTo,
+      issuer: certificates.issuer,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(certificates, eq(domains.id, certificates.domainId))
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .where(eq(userTrackedDomains.id, trackedDomainId))
+    .orderBy(asc(certificates.validTo))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+/**
  * Get all certificates for verified, non-archived tracked domains.
  * Archived domains are excluded since archiving pauses monitoring.
  * Returns the earliest expiring certificate for each tracked domain.
  *
  * Uses PostgreSQL DISTINCT ON to efficiently get one certificate per tracked domain,
  * ordered by validTo ASC (earliest expiring first), avoiding in-memory grouping.
+ * @deprecated Use getVerifiedTrackedDomainIdsWithCertificates and getEarliestCertificate in a fan-out pattern
  */
 export async function getVerifiedTrackedDomainsCertificates(): Promise<
   TrackedDomainCertificate[]

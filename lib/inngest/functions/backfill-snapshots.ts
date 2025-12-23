@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains, userTrackedDomains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
 import type {
   CertificateSnapshotData,
@@ -30,7 +31,7 @@ export const backfillSnapshots = inngest.createFunction(
       limit: 1, // Only one backfill job at a time
     },
   },
-  { event: "snapshot/backfill" },
+  { event: INNGEST_EVENTS.BACKFILL_SNAPSHOTS },
   async ({ step, logger: inngestLogger }) => {
     inngestLogger.info("Starting snapshot backfill for verified domains");
 

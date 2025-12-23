@@ -9,6 +9,7 @@ import {
   REVALIDATE_MIN_SEO,
 } from "@/lib/constants/ttl";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "schedule" });
@@ -123,7 +124,7 @@ export async function scheduleRevalidation(
   try {
     const eventId = `${normalizedDomain}:${section}`;
     await inngest.send({
-      name: "section/revalidate",
+      name: INNGEST_EVENTS.SECTION_REVALIDATE,
       data: {
         domain: normalizedDomain,
         section,

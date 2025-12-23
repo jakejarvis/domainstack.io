@@ -25,6 +25,7 @@ import {
   type verificationMethod,
   type verificationStatus,
 } from "@/lib/db/schema";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
 import type { DnsRecord, NotificationOverrides } from "@/lib/schemas";
 
@@ -774,7 +775,7 @@ export async function verifyTrackedDomain(
     import("@/lib/inngest/client")
       .then(({ inngest }) => {
         inngest.send({
-          name: "snapshot/initialize",
+          name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
           data: {
             trackedDomainId: updated[0].id,
             domainId: updated[0].domainId,
@@ -905,10 +906,130 @@ export type TrackedDomainForReverification = {
   userName: string;
 };
 
+export type PendingDomainForAutoVerification = {
+  id: string;
+  userId: string;
+  domainName: string;
+  verificationToken: string;
+  createdAt: Date;
+  userEmail: string;
+  userName: string;
+};
+
+/**
+ * Get verified tracked domain IDs.
+ * Used by the reverification scheduler.
+ */
+export async function getVerifiedTrackedDomainIds(): Promise<string[]> {
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+    })
+    .from(userTrackedDomains)
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
+
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Get pending tracked domain IDs.
+ * Used by the reverification scheduler.
+ */
+export async function getPendingTrackedDomainIds(): Promise<string[]> {
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+    })
+    .from(userTrackedDomains)
+    .where(
+      and(
+        eq(userTrackedDomains.verified, false),
+        isNull(userTrackedDomains.verifiedAt),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
+
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Get a single tracked domain for notification.
+ * Used by the domain expiry worker.
+ */
+export async function getTrackedDomainForNotification(
+  trackedDomainId: string,
+): Promise<TrackedDomainForNotification | null> {
+  const registrarProvider = alias(providers, "registrar_provider");
+
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainId: userTrackedDomains.domainId,
+      domainName: domains.name,
+      notificationOverrides: userTrackedDomains.notificationOverrides,
+      expirationDate: registrations.expirationDate,
+      registrar: registrarProvider.name,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(registrations, eq(domains.id, registrations.domainId))
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .leftJoin(
+      registrarProvider,
+      eq(registrations.registrarProviderId, registrarProvider.id),
+    )
+    .where(eq(userTrackedDomains.id, trackedDomainId))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+/**
+ * Get a single tracked domain for reverification.
+ * Used by the reverification worker.
+ */
+export async function getTrackedDomainForReverification(
+  trackedDomainId: string,
+): Promise<TrackedDomainForReverification | null> {
+  const rows = await db
+    .select({
+      id: userTrackedDomains.id,
+      userId: userTrackedDomains.userId,
+      domainName: domains.name,
+      verificationToken: userTrackedDomains.verificationToken,
+      verificationMethod: userTrackedDomains.verificationMethod,
+      verificationStatus: userTrackedDomains.verificationStatus,
+      verificationFailedAt: userTrackedDomains.verificationFailedAt,
+      notificationOverrides: userTrackedDomains.notificationOverrides,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(userTrackedDomains)
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .where(eq(userTrackedDomains.id, trackedDomainId))
+    .limit(1);
+
+  if (rows.length === 0 || !rows[0].verificationMethod) {
+    return null;
+  }
+
+  return rows[0] as TrackedDomainForReverification;
+}
+
 /**
  * Get all verified tracked domains with expiration dates for notification processing.
  * Returns all verified, non-archived domains - filtering by notification preferences happens at processing time.
  * Archived domains are excluded since archiving pauses monitoring.
+ * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForNotification in a fan-out pattern
  */
 export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
   TrackedDomainForNotification[]
@@ -949,6 +1070,7 @@ export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
  * Get all verified domains for re-verification.
  * Only returns domains with a verification method set.
  * Archived domains are excluded since archiving pauses monitoring.
+ * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForReverification in a fan-out pattern
  */
 export async function getVerifiedDomainsForReverification(): Promise<
   TrackedDomainForReverification[]
@@ -983,16 +1105,6 @@ export async function getVerifiedDomainsForReverification(): Promise<
   );
 }
 
-export type PendingDomainForAutoVerification = {
-  id: string;
-  userId: string;
-  domainName: string;
-  verificationToken: string;
-  createdAt: Date;
-  userEmail: string;
-  userName: string;
-};
-
 /**
  * Get all pending (unverified) domains that might have added verification.
  * These are domains where the user started the add flow but never clicked "Verify".
@@ -1001,6 +1113,7 @@ export type PendingDomainForAutoVerification = {
  * (those have verificationStatus = 'unverified' but may have had verificationFailedAt set).
  * We only want truly new pending domains that have never been verified.
  * Archived domains are excluded since archiving pauses monitoring.
+ * @deprecated Use getPendingTrackedDomainIds in a fan-out pattern
  */
 export async function getPendingDomainsForAutoVerification(): Promise<
   PendingDomainForAutoVerification[]

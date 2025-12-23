@@ -54,7 +54,7 @@ describe("schedule", () => {
 
       expect(scheduled).toBe(true);
       expect(mockInngestSend).toHaveBeenCalledWith({
-        name: "section/revalidate",
+        name: "domain/section.revalidate",
         data: {
           domain: "example.com",
           section: "dns",

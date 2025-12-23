@@ -2,6 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { type Section, SectionEnum } from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { getDnsRecords } from "@/server/services/dns";
@@ -61,7 +62,7 @@ export const sectionRevalidate = inngest.createFunction(
       key: "event.data.domain + ':' + event.data.section",
     },
   },
-  { event: "section/revalidate" },
+  { event: INNGEST_EVENTS.SECTION_REVALIDATE },
   async ({ event, step, logger: inngestLogger }) => {
     const { domain, section } = eventSchema.parse(event.data);
 

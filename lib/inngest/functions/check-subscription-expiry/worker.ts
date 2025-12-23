@@ -1,16 +1,15 @@
 import "server-only";
 
 import { differenceInDays, format } from "date-fns";
+import type { Logger } from "inngest";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import {
-  getUsersWithEndingSubscriptions,
+  getUserWithEndingSubscription,
   setLastExpiryNotification,
 } from "@/lib/db/repos/user-subscription";
 import { inngest } from "@/lib/inngest/client";
-import { createLogger } from "@/lib/logger/server";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { sendPrettyEmail } from "@/lib/resend";
-
-const logger = createLogger({ source: "check-subscription-expiry" });
 
 /**
  * Safely extract first name from a name string.
@@ -89,121 +88,97 @@ function shouldSendNotification(
 }
 
 /**
- * Cron job to check for ending Pro subscriptions and send reminder emails.
- * Runs daily at 9:30 AM UTC (after domain/certificate expiry checks).
- *
- * Sends reminders at 7, 3, and 1 day before subscription ends.
- * Tracks which notifications have been sent in the database to prevent duplicates.
- * Uses Resend idempotency keys as an additional safety layer.
+ * Worker to check a single user's subscription expiry.
+ * Triggered by the scheduler.
  */
-export const checkSubscriptionExpiry = inngest.createFunction(
+export const checkSubscriptionExpiryWorker = inngest.createFunction(
   {
-    id: "check-subscription-expiry",
+    id: "check-subscription-expiry-worker",
     retries: 3,
     concurrency: {
-      limit: 1,
+      limit: 20, // High concurrency is fine here (mostly DB/Email)
     },
   },
-  // Run every day at 9:30 AM UTC
-  { cron: "30 9 * * *" },
-  async ({ step, logger: inngestLogger }) => {
-    inngestLogger.info("Starting subscription expiry check");
+  { event: INNGEST_EVENTS.CHECK_SUBSCRIPTION_EXPIRY },
+  async ({ event, step, logger: inngestLogger }) => {
+    const { userId } = event.data;
 
-    // Get all users with ending subscriptions (endsAt set and in the future)
-    const usersWithEndingSubscriptions = await step.run(
-      "fetch-ending-subscriptions",
-      async () => {
-        return await getUsersWithEndingSubscriptions();
-      },
-    );
+    const user = await step.run("fetch-user", async () => {
+      return await getUserWithEndingSubscription(userId);
+    });
 
-    inngestLogger.info(
-      `Found ${usersWithEndingSubscriptions.length} users with ending subscriptions`,
-    );
+    if (!user) {
+      inngestLogger.warn("User not found or subscription not ending", {
+        userId,
+      });
+      return { skipped: true, reason: "not_found" };
+    }
 
-    const results = {
-      total: usersWithEndingSubscriptions.length,
-      notificationsSent: 0,
-      skipped: 0,
-      errors: 0,
-    };
-
-    // Max threshold is 7 days - if subscription ends later, skip
+    const daysRemaining = differenceInDays(user.endsAt, new Date());
     const MAX_THRESHOLD_DAYS = 7;
 
-    for (const user of usersWithEndingSubscriptions) {
-      const daysRemaining = differenceInDays(user.endsAt, new Date());
+    // Skip if beyond max threshold or already expired
+    if (daysRemaining > MAX_THRESHOLD_DAYS || daysRemaining < 0) {
+      return { skipped: true, reason: "out_of_range", daysRemaining };
+    }
 
-      // Skip if beyond max threshold
-      if (daysRemaining > MAX_THRESHOLD_DAYS) {
-        results.skipped++;
-        continue;
-      }
+    const threshold = getSubscriptionExpiryThreshold(daysRemaining);
+    if (!threshold) {
+      return { skipped: true, reason: "no_threshold_met", daysRemaining };
+    }
 
-      // Skip if already expired (should have been handled by revoked webhook)
-      if (daysRemaining < 0) {
-        results.skipped++;
-        continue;
-      }
+    // Check if we've already sent this threshold (or a more urgent one)
+    if (!shouldSendNotification(threshold, user.lastExpiryNotification)) {
+      return {
+        skipped: true,
+        reason: "already_sent",
+        lastSent: user.lastExpiryNotification,
+      };
+    }
 
-      const threshold = getSubscriptionExpiryThreshold(daysRemaining);
-      if (!threshold) {
-        results.skipped++;
-        continue;
-      }
-
-      // Check if we've already sent this threshold (or a more urgent one)
-      if (!shouldSendNotification(threshold, user.lastExpiryNotification)) {
-        results.skipped++;
-        continue;
-      }
-
-      // Send notification email and update tracking
-      const sent = await step.run(`send-email-${user.userId}`, async () => {
-        const success = await sendSubscriptionExpiryNotification({
+    // Send notification email
+    const sent = await step.run("send-email", async () => {
+      return await sendSubscriptionExpiryNotification(
+        {
           userId: user.userId,
           userName: user.userName,
           userEmail: user.userEmail,
           endsAt: new Date(user.endsAt),
           daysRemaining,
           threshold,
-        });
+        },
+        inngestLogger,
+      );
+    });
 
-        // Update tracking if email sent successfully
-        if (success) {
-          await setLastExpiryNotification(user.userId, threshold);
-        }
-
-        return success;
+    if (sent) {
+      await step.run("update-tracking", async () => {
+        return await setLastExpiryNotification(userId, threshold);
       });
-
-      if (sent) {
-        results.notificationsSent++;
-      } else {
-        results.errors++;
-      }
     }
 
-    inngestLogger.info("Subscription expiry check complete", results);
-    return results;
+    return { sent, threshold, daysRemaining };
   },
 );
 
-async function sendSubscriptionExpiryNotification({
-  userId,
-  userName,
-  userEmail,
-  endsAt,
-  daysRemaining,
-  threshold,
-}: {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  endsAt: Date;
-  daysRemaining: number;
-  threshold: SubscriptionExpiryThreshold;
-}): Promise<boolean> {
+async function sendSubscriptionExpiryNotification(
+  {
+    userId,
+    userName,
+    userEmail,
+    endsAt,
+    daysRemaining,
+    threshold,
+  }: {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    endsAt: Date;
+    daysRemaining: number;
+    threshold: SubscriptionExpiryThreshold;
+  },
+  logger: Logger,
+): Promise<boolean> {
   const idempotencyKey = generateSubscriptionIdempotencyKey(
     userId,
     threshold,

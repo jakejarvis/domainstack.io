@@ -187,8 +187,93 @@ export async function updateSnapshot(
 }
 
 /**
+ * Get all snapshot IDs for verified, non-archived tracked domains.
+ * Used by the monitoring scheduler.
+ */
+export async function getMonitoredSnapshotIds(): Promise<string[]> {
+  const rows = await db
+    .select({
+      trackedDomainId: domainSnapshots.trackedDomainId,
+    })
+    .from(domainSnapshots)
+    .innerJoin(
+      userTrackedDomains,
+      eq(domainSnapshots.trackedDomainId, userTrackedDomains.id),
+    )
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+      ),
+    );
+
+  return rows.map((r) => r.trackedDomainId);
+}
+
+/**
+ * Get full snapshot data for a single domain.
+ * Used by the monitoring worker.
+ */
+export async function getSnapshot(
+  trackedDomainId: string,
+): Promise<SnapshotForMonitoring | null> {
+  const rows = await db
+    .select({
+      id: domainSnapshots.id,
+      trackedDomainId: domainSnapshots.trackedDomainId,
+      userId: userTrackedDomains.userId,
+      domainId: userTrackedDomains.domainId,
+      domainName: domains.name,
+      registration: domainSnapshots.registration,
+      certificate: domainSnapshots.certificate,
+      dnsProviderId: domainSnapshots.dnsProviderId,
+      hostingProviderId: domainSnapshots.hostingProviderId,
+      emailProviderId: domainSnapshots.emailProviderId,
+      userEmail: users.email,
+      userName: users.name,
+    })
+    .from(domainSnapshots)
+    .innerJoin(
+      userTrackedDomains,
+      eq(domainSnapshots.trackedDomainId, userTrackedDomains.id),
+    )
+    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
+    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
+    .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))
+    .limit(1);
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const row = rows[0];
+
+  // Validate JSONB data
+  const registration = RegistrationSnapshotSchema.safeParse(row.registration);
+  const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
+
+  if (!registration.success || !certificate.success) {
+    logger.error(
+      "Invalid snapshot data",
+      registration.error || certificate.error,
+      {
+        trackedDomainId,
+      },
+    );
+    return null;
+  }
+
+  return {
+    ...row,
+    registration: registration.data,
+    certificate: certificate.data,
+  };
+}
+
+/**
  * Get all snapshots for verified, non-archived tracked domains.
  * Used by the monitoring job to check for changes.
+ * @deprecated Use getMonitoredSnapshotIds and getSnapshot in a fan-out pattern
  */
 export async function getSnapshotsForMonitoring(): Promise<
   SnapshotForMonitoring[]
