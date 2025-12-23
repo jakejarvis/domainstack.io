@@ -10,6 +10,10 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 export const checkCertificateExpiryScheduler = inngest.createFunction(
   {
     id: "check-certificate-expiry-scheduler",
+    retries: 3,
+    concurrency: {
+      limit: 1, // Only one scheduler instance at a time
+    },
   },
   { cron: "15 9 * * *" },
   async ({ step, logger }) => {

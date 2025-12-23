@@ -13,6 +13,10 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 export const reverifyDomainsScheduler = inngest.createFunction(
   {
     id: "reverify-domains-scheduler",
+    retries: 3,
+    concurrency: {
+      limit: 1, // Only one scheduler instance at a time
+    },
   },
   { cron: "0 4,16 * * *" },
   async ({ step, logger }) => {

@@ -10,6 +10,10 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 export const checkDomainExpiryScheduler = inngest.createFunction(
   {
     id: "check-domain-expiry-scheduler",
+    retries: 3,
+    concurrency: {
+      limit: 1, // Only one scheduler instance at a time
+    },
   },
   { cron: "0 9 * * *" },
   async ({ step, logger }) => {

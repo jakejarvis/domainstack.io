@@ -10,6 +10,10 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 export const checkSubscriptionExpiryScheduler = inngest.createFunction(
   {
     id: "check-subscription-expiry-scheduler",
+    retries: 3,
+    concurrency: {
+      limit: 1, // Only one scheduler instance at a time
+    },
   },
   { cron: "30 9 * * *" }, // Daily at 9:30 AM UTC
   async ({ step, logger }) => {
