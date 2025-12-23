@@ -20,7 +20,7 @@ const STALE_DOMAIN_DAYS = 30;
  */
 export const cleanupStaleDomains = inngest.createFunction(
   {
-    id: "domain/cleanup",
+    id: "cleanup-stale-domains",
     retries: 3,
     concurrency: {
       limit: 1,
