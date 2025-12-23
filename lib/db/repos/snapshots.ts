@@ -253,13 +253,13 @@ export async function getSnapshot(
   const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
 
   if (!registration.success || !certificate.success) {
-    logger.error(
-      "Invalid snapshot data",
-      registration.error || certificate.error,
-      {
-        trackedDomainId,
-      },
-    );
+    const errors: { registration?: unknown; certificate?: unknown } = {};
+    if (!registration.success) errors.registration = registration.error;
+    if (!certificate.success) errors.certificate = certificate.error;
+
+    logger.error("Invalid snapshot data", errors, {
+      trackedDomainId,
+    });
     return null;
   }
 
