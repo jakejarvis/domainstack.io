@@ -494,6 +494,10 @@ async function handleCertificateChange(
 
   if (!shouldNotify) return false;
 
+  // Resolve CA provider names without mutating the input
+  let previousCaProvider = change.previousCaProvider;
+  let newCaProvider = change.newCaProvider;
+
   if (change.caProviderChanged) {
     const ids = [change.previousCaProviderId, change.newCaProviderId].filter(
       (id): id is string => !!id,
@@ -501,11 +505,10 @@ async function handleCertificateChange(
     const names = await getProviderNames(ids);
 
     if (change.previousCaProviderId) {
-      change.previousCaProvider =
-        names.get(change.previousCaProviderId) ?? null;
+      previousCaProvider = names.get(change.previousCaProviderId) ?? null;
     }
     if (change.newCaProviderId) {
-      change.newCaProvider = names.get(change.newCaProviderId) ?? null;
+      newCaProvider = names.get(change.newCaProviderId) ?? null;
     }
   }
 
@@ -523,7 +526,11 @@ async function handleCertificateChange(
         react: CertificateChangeEmail({
           userName: userName.split(" ")[0] || "there",
           domainName,
-          changes: change,
+          changes: {
+            ...change,
+            previousCaProvider,
+            newCaProvider,
+          },
           newValidTo,
         }),
       },
