@@ -162,12 +162,12 @@ Key procedures:
 - `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 
 ### Inngest Background Jobs
-- `check-domain-expiry`: Daily at 9 AM UTC; sends domain expiration notifications.
-- `check-certificate-expiry`: Daily at 10 AM UTC; sends certificate expiration notifications.
-- `monitor-tracked-domains`: Every 4 hours; checks for registration, provider, and certificate changes.
+- `check-domain-expiry`: Daily at 9:00 AM UTC; sends domain expiration notifications.
+- `check-certificate-expiry`: Daily at 9:15 AM UTC; sends certificate expiration notifications.
 - `check-subscription-expiry`: Daily at 9:30 AM UTC; sends Pro subscription expiry reminders at 7, 3, and 1 days before end.
-- `reverify-domains`: Daily at 4 AM UTC; auto-verifies pending and re-verifies existing domains.
-- `cleanup-stale-domains`: Weekly on Sundays at 3 AM UTC; deletes unverified domains older than 30 days.
+- `monitor-tracked-domains`: Every 4 hours; checks for registration, provider, and certificate changes.
+- `reverify-domains`: Twice daily at 4:00 AM and 4:00 PM UTC; auto-verifies pending and re-verifies existing domains.
+- `cleanup-stale-domains`: Weekly on Sundays at 3:00 AM UTC; deletes unverified domains older than 30 days.
 - `auto-verify-pending-domain`: Event-driven; auto-verifies newly added domains with smart retry schedule (1m, 3m, 10m, 30m, 1hr).
 
 ## Email Notifications (Resend + React Email)
