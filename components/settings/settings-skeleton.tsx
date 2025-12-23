@@ -193,19 +193,19 @@ export function SettingsSkeletonTabsList({
         {/* Subscription Tab (Active) */}
         <div className="flex flex-1 flex-col items-center gap-2 rounded-md bg-background/60 px-4 py-2.5 shadow-sm ring-1 ring-black/5 dark:bg-white/5 dark:shadow-none dark:ring-white/10">
           <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="h-3 w-16" />
+          <Skeleton className="hidden h-3 w-16 sm:block" />
         </div>
 
         {/* Notifications Tab */}
         <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
           <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="h-3 w-16" />
+          <Skeleton className="hidden h-3 w-16 sm:block" />
         </div>
 
         {/* Account Tab */}
         <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
           <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="h-3 w-12" />
+          <Skeleton className="hidden h-3 w-12 sm:block" />
         </div>
       </div>
     </div>
