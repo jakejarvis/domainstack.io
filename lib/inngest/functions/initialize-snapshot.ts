@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
@@ -22,7 +23,7 @@ export const initializeSnapshot = inngest.createFunction(
     id: "initialize-snapshot",
     retries: 3,
   },
-  { event: "snapshot/initialize" },
+  { event: INNGEST_EVENTS.SNAPSHOT_INITIALIZE },
   async ({ event, step, logger: inngestLogger }) => {
     const { trackedDomainId, domainId } = event.data;
 

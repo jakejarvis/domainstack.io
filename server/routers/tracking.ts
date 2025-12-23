@@ -20,6 +20,7 @@ import {
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { inngest } from "@/lib/inngest/client";
+import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
 import { VerificationMethodSchema } from "@/lib/schemas";
@@ -202,7 +203,7 @@ export const trackingRouter = createTRPCRouter({
       // Trigger auto-verification schedule in the background
       // This will check at 1min, 3min, 10min, 30min, 1hr intervals
       await inngest.send({
-        name: "tracked-domain/verify-pending",
+        name: INNGEST_EVENTS.AUTO_VERIFY_PENDING_DOMAIN,
         data: {
           trackedDomainId: tracked.id,
           domainName: domain,

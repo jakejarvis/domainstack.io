@@ -171,9 +171,68 @@ export type UserWithEndingSubscription = {
 };
 
 /**
+ * Get user IDs with ending subscriptions (lightweight query for scheduler).
+ * Returns only IDs for dispatching to worker functions.
+ * Used by the check-subscription-expiry scheduler.
+ */
+export async function getUserIdsWithEndingSubscriptions(): Promise<string[]> {
+  const now = new Date();
+
+  const rows = await db
+    .select({
+      userId: userSubscriptions.userId,
+    })
+    .from(userSubscriptions)
+    .where(
+      and(
+        isNotNull(userSubscriptions.endsAt),
+        gt(userSubscriptions.endsAt, now),
+      ),
+    );
+
+  return rows.map((row) => row.userId);
+}
+
+/**
+ * Get user details with ending subscription.
+ * Used by the check-subscription-expiry worker to fetch details for a single user.
+ */
+export async function getUserWithEndingSubscription(
+  userId: string,
+): Promise<UserWithEndingSubscription | null> {
+  const now = new Date();
+
+  const [row] = await db
+    .select({
+      userId: userSubscriptions.userId,
+      userName: users.name,
+      userEmail: users.email,
+      endsAt: userSubscriptions.endsAt,
+      lastExpiryNotification: userSubscriptions.lastExpiryNotification,
+    })
+    .from(userSubscriptions)
+    .innerJoin(users, eq(userSubscriptions.userId, users.id))
+    .where(
+      and(
+        eq(userSubscriptions.userId, userId),
+        isNotNull(userSubscriptions.endsAt),
+        gt(userSubscriptions.endsAt, now),
+      ),
+    )
+    .limit(1);
+
+  if (!row || row.endsAt === null) {
+    return null;
+  }
+
+  return row as UserWithEndingSubscription;
+}
+
+/**
  * Get all users with ending subscriptions (canceled but still active).
  * Returns users where endsAt is set and in the future.
  * Used by the check-subscription-expiry cron job to send reminder emails.
+ * @deprecated Use getUserIdsWithEndingSubscriptions and getUserWithEndingSubscription in a fan-out pattern
  */
 export async function getUsersWithEndingSubscriptions(): Promise<
   UserWithEndingSubscription[]
