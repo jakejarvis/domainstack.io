@@ -19,6 +19,8 @@ export const checkDomainExpiryScheduler = inngest.createFunction(
       return await getVerifiedTrackedDomainIds();
     });
 
+    logger.info(`Found ${verifiedDomainIds.length} domains to check`);
+
     if (verifiedDomainIds.length === 0) {
       return { scheduled: 0 };
     }

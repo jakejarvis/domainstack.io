@@ -19,6 +19,10 @@ export const checkCertificateExpiryScheduler = inngest.createFunction(
       return await getVerifiedTrackedDomainIdsWithCertificates();
     });
 
+    logger.info(
+      `Found ${trackedDomainIds.length} domains with certificates to check`,
+    );
+
     if (trackedDomainIds.length === 0) {
       return { scheduled: 0 };
     }
