@@ -244,10 +244,19 @@ async function sendVerificationFailingEmail(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId: domain.id,
       type: "verification_failing",
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId: domain.id,
+        notificationType: "verification_failing",
+        domainName: domain.domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(
@@ -298,10 +307,19 @@ async function sendVerificationRevokedEmail(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId: domain.id,
       type: "verification_revoked",
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId: domain.id,
+        notificationType: "verification_revoked",
+        domainName: domain.domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(

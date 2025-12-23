@@ -363,10 +363,19 @@ async function handleRegistrationChange(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId,
       type: "registration_change",
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId,
+        notificationType: "registration_change",
+        domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(
@@ -428,10 +437,19 @@ async function handleProviderChange(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId,
       type: "provider_change",
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId,
+        notificationType: "provider_change",
+        domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(
@@ -511,10 +529,19 @@ async function handleCertificateChange(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    await createNotification({
+    const notification = await createNotification({
       trackedDomainId,
       type: "certificate_change",
     });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId,
+        notificationType: "certificate_change",
+        domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
 
     if (data?.id) {
       await updateNotificationResendId(
