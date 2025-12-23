@@ -18,9 +18,9 @@ import {
   type TrackedDomainForReverification,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
-import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { inngest } from "@/lib/inngest/client";
 import { createLogger } from "@/lib/logger/server";
+import { generateIdempotencyKey } from "@/lib/notifications";
 import { sendPrettyEmail } from "@/lib/resend";
 import {
   tryAllVerificationMethods,
@@ -34,24 +34,6 @@ type VerificationFailureAction =
   | "marked_failing"
   | "revoked"
   | "in_grace_period";
-
-/**
- * Check if verification status notifications should be sent for a domain.
- * Checks per-domain override first, then falls back to global user preference.
- */
-async function shouldNotifyVerificationStatus(
-  domain: TrackedDomainForReverification,
-): Promise<boolean> {
-  // Check per-domain override first
-  if (domain.notificationOverrides.verificationStatus !== undefined) {
-    return domain.notificationOverrides.verificationStatus;
-  }
-  // Fall back to global user preferences
-  const globalPrefs = await getOrCreateUserNotificationPreferences(
-    domain.userId,
-  );
-  return globalPrefs.verificationStatus;
-}
 
 /**
  * Cron job to verify domain ownership.
@@ -229,11 +211,7 @@ async function handleVerificationFailure(
   if (domain.verificationStatus === "verified") {
     // First failure - mark as failing and send warning
     await markVerificationFailing(domain.id);
-
-    const shouldNotify = await shouldNotifyVerificationStatus(domain);
-    if (shouldNotify) {
-      await sendVerificationFailingEmail(domain);
-    }
+    await sendVerificationFailingEmail(domain);
 
     logger.info("Marked domain as failing verification", {
       domainId: domain.id,
@@ -255,11 +233,7 @@ async function handleVerificationFailure(
     if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification
       await revokeVerification(domain.id);
-
-      const shouldNotify = await shouldNotifyVerificationStatus(domain);
-      if (shouldNotify) {
-        await sendVerificationRevokedEmail(domain);
-      }
+      await sendVerificationRevokedEmail(domain);
 
       logger.info("Revoked domain verification after grace period", {
         domainId: domain.id,
@@ -299,32 +273,38 @@ async function sendVerificationFailingEmail(
     return false;
   }
 
+  const idempotencyKey = generateIdempotencyKey(
+    domain.id,
+    "verification_failing",
+  );
+
   try {
-    const { data, error } = await sendPrettyEmail({
-      to: domain.userEmail,
-      subject: `⚠️ Verification failing for ${domain.domainName}`,
-      react: VerificationFailingEmail({
-        userName: domain.userName.split(" ")[0] || "there",
-        domainName: domain.domainName,
-        verificationMethod: domain.verificationMethod,
-        gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
-      }),
-    });
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
+    const { data, error } = await sendPrettyEmail(
+      {
+        to: domain.userEmail,
+        subject: `⚠️ Verification failing for ${domain.domainName}`,
+        react: VerificationFailingEmail({
+          userName: domain.userName.split(" ")[0] || "there",
+          domainName: domain.domainName,
+          verificationMethod: domain.verificationMethod,
+          gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+        }),
+      },
+      { idempotencyKey },
+    );
 
     if (error) {
       logger.error("Failed to send verification failing email", error, {
         domainName: domain.domainName,
         userId: domain.userId,
+        idempotencyKey,
       });
-      return false;
+      throw new Error(`Resend error: ${error.message}`);
     }
 
-    logger.info("Sent verification failing notification", {
-      domainName: domain.domainName,
-      userId: domain.userId,
-      emailId: data?.id,
-    });
-
+    // Only create notification record after successful send
     await createNotification({
       trackedDomainId: domain.id,
       type: "verification_failing",
@@ -339,13 +319,21 @@ async function sendVerificationFailingEmail(
       );
     }
 
+    logger.info("Sent verification failing notification", {
+      domainName: domain.domainName,
+      userId: domain.userId,
+      emailId: data?.id,
+      idempotencyKey,
+    });
+
     return true;
   } catch (err) {
     logger.error("Error sending verification failing email", err, {
       domainName: domain.domainName,
       userId: domain.userId,
+      idempotencyKey,
     });
-    return false;
+    throw err;
   }
 }
 
@@ -364,30 +352,36 @@ async function sendVerificationRevokedEmail(
     return false;
   }
 
+  const idempotencyKey = generateIdempotencyKey(
+    domain.id,
+    "verification_revoked",
+  );
+
   try {
-    const { data, error } = await sendPrettyEmail({
-      to: domain.userEmail,
-      subject: `❌ Verification revoked for ${domain.domainName}`,
-      react: VerificationRevokedEmail({
-        userName: domain.userName.split(" ")[0] || "there",
-        domainName: domain.domainName,
-      }),
-    });
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
+    const { data, error } = await sendPrettyEmail(
+      {
+        to: domain.userEmail,
+        subject: `❌ Verification revoked for ${domain.domainName}`,
+        react: VerificationRevokedEmail({
+          userName: domain.userName.split(" ")[0] || "there",
+          domainName: domain.domainName,
+        }),
+      },
+      { idempotencyKey },
+    );
 
     if (error) {
       logger.error("Failed to send verification revoked email", error, {
         domainName: domain.domainName,
         userId: domain.userId,
+        idempotencyKey,
       });
-      return false;
+      throw new Error(`Resend error: ${error.message}`);
     }
 
-    logger.info("Sent verification revoked notification", {
-      domainName: domain.domainName,
-      userId: domain.userId,
-      emailId: data?.id,
-    });
-
+    // Only create notification record after successful send
     await createNotification({
       trackedDomainId: domain.id,
       type: "verification_revoked",
@@ -402,12 +396,20 @@ async function sendVerificationRevokedEmail(
       );
     }
 
+    logger.info("Sent verification revoked notification", {
+      domainName: domain.domainName,
+      userId: domain.userId,
+      emailId: data?.id,
+      idempotencyKey,
+    });
+
     return true;
   } catch (err) {
     logger.error("Error sending verification revoked email", err, {
       domainName: domain.domainName,
       userId: domain.userId,
+      idempotencyKey,
     });
-    return false;
+    throw err;
   }
 }

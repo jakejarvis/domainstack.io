@@ -264,6 +264,11 @@ export const userNotificationPreferences = pgTable(
     domainExpiry: boolean("domain_expiry").notNull().default(true),
     certificateExpiry: boolean("certificate_expiry").notNull().default(true),
     verificationStatus: boolean("verification_status").notNull().default(true),
+    registrationChanges: boolean("registration_changes")
+      .notNull()
+      .default(true),
+    providerChanges: boolean("provider_changes").notNull().default(true),
+    certificateChanges: boolean("certificate_changes").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -555,3 +560,29 @@ export const screenshots = pgTable(
   },
   (t) => [index("i_screenshots_expires").on(t.expiresAt)],
 );
+
+// Domain snapshots (for change detection)
+export const domainSnapshots = pgTable("domain_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  trackedDomainId: uuid("tracked_domain_id")
+    .notNull()
+    .unique()
+    .references(() => userTrackedDomains.id, { onDelete: "cascade" }),
+  // Registration snapshot (JSONB for flexibility)
+  // Contains: { registrarProviderId, nameservers[], transferLock, statuses[] }
+  registration: jsonb("registration").notNull().default(sql`'{}'::jsonb`),
+  // Provider IDs snapshot (derived from hosting table)
+  // These detect when DNS, hosting, or email providers change
+  dnsProviderId: uuid("dns_provider_id").references(() => providers.id),
+  hostingProviderId: uuid("hosting_provider_id").references(() => providers.id),
+  emailProviderId: uuid("email_provider_id").references(() => providers.id),
+  // Certificate snapshot (JSONB for flexibility)
+  // Contains: { caProviderId, issuer, validTo, fingerprint }
+  certificate: jsonb("certificate").notNull().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

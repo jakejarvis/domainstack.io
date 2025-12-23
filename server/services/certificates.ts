@@ -49,6 +49,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
           altNames: certTable.altNames,
           validFrom: certTable.validFrom,
           validTo: certTable.validTo,
+          caProviderId: providersTable.id,
           caProviderDomain: providersTable.domain,
           caProviderName: providersTable.name,
           expiresAt: certTable.expiresAt,
@@ -65,6 +66,7 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         altNames: unknown;
         validFrom: Date;
         validTo: Date;
+        caProviderId: string | null;
         caProviderDomain: string | null;
         caProviderName: string | null;
         expiresAt: Date | null;
@@ -83,8 +85,12 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         // Use cached provider data if available, otherwise detect
         caProvider:
           c.caProviderDomain && c.caProviderName
-            ? { domain: c.caProviderDomain, name: c.caProviderName }
-            : detectCertificateAuthority(c.issuer),
+            ? {
+                id: c.caProviderId ?? null,
+                domain: c.caProviderDomain,
+                name: c.caProviderName,
+              }
+            : { id: null, ...detectCertificateAuthority(c.issuer) },
       }));
 
       logger.info("cache hit", {
@@ -158,7 +164,10 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         ),
         validFrom: new Date(c.valid_from).toISOString(),
         validTo: new Date(c.valid_to).toISOString(),
-        caProvider: detectCertificateAuthority(issuerName),
+        caProvider: {
+          id: null,
+          ...detectCertificateAuthority(issuerName),
+        },
       };
     });
 
@@ -188,29 +197,44 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
       const caProviderMap =
         await batchResolveOrCreateProviderIds(caProviderInputs);
 
-      const chainWithIds = out.map((c) => {
-        // Only lookup provider ID if both domain and name are valid
+      // Helper to resolve provider ID for a certificate
+      const resolveProviderId = (cert: (typeof out)[number]): string | null => {
         const hasValidProvider =
-          c.caProvider.domain &&
-          c.caProvider.name &&
-          c.caProvider.domain.trim() !== "" &&
-          c.caProvider.name.trim() !== "";
+          cert.caProvider.domain &&
+          cert.caProvider.name &&
+          cert.caProvider.domain.trim() !== "" &&
+          cert.caProvider.name.trim() !== "";
 
-        const caProviderId = hasValidProvider
-          ? (caProviderMap.get(
-              makeProviderKey("ca", c.caProvider.domain, c.caProvider.name),
-            ) ?? null)
-          : null;
+        if (!hasValidProvider) {
+          return null;
+        }
 
-        return {
-          issuer: c.issuer,
-          subject: c.subject,
-          altNames: c.altNames,
-          validFrom: new Date(c.validFrom),
-          validTo: new Date(c.validTo),
-          caProviderId,
-        };
-      });
+        return (
+          caProviderMap.get(
+            makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
+          ) ?? null
+        );
+      };
+
+      // Resolve provider IDs once and store them
+      const providerIds = out.map((cert) => resolveProviderId(cert));
+
+      // Update out array with resolved provider IDs
+      for (let i = 0; i < out.length; i++) {
+        if (providerIds[i]) {
+          out[i].caProvider.id = providerIds[i];
+        }
+      }
+
+      // Build chain with provider IDs for database persistence
+      const chainWithIds = out.map((c, i) => ({
+        issuer: c.issuer,
+        subject: c.subject,
+        altNames: c.altNames,
+        validFrom: new Date(c.validFrom),
+        validTo: new Date(c.validTo),
+        caProviderId: providerIds[i],
+      }));
 
       const nextDue = ttlForCertificates(now, earliestValidTo);
       await replaceCertificates({

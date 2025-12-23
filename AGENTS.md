@@ -138,7 +138,7 @@ Verification service: `server/services/verification.ts` with `tryAllVerification
 - Sends `verification_failing` email on first failure, `verification_revoked` on revocation.
 
 ### Notification System
-- **Categories:** `domainExpiry`, `certificateExpiry`, `verificationStatus` (defined in `lib/constants/notifications.ts`).
+- **Categories:** `domainExpiry`, `certificateExpiry`, `verificationStatus`, `registrationChanges`, `providerChanges`, `certificateChanges` (defined in `lib/constants/notifications.ts`).
 - **Thresholds:** Domain expiry: 30, 14, 7, 1 days. Certificate expiry: 14, 7, 3, 1 days.
 - **Per-domain overrides:** `notificationOverrides` JSONB column; `undefined` = inherit from global, explicit `true/false` = override.
 - **Idempotency:** Notification records created before email send; Resend idempotency keys prevent duplicates on retry.
@@ -164,6 +164,7 @@ Key procedures:
 ### Inngest Background Jobs
 - `check-domain-expiry`: Daily at 9 AM UTC; sends domain expiration notifications.
 - `check-certificate-expiry`: Daily at 10 AM UTC; sends certificate expiration notifications.
+- `monitor-tracked-domains`: Every 4 hours; checks for registration, provider, and certificate changes.
 - `check-subscription-expiry`: Daily at 9:30 AM UTC; sends Pro subscription expiry reminders at 7, 3, and 1 days before end.
 - `reverify-domains`: Daily at 4 AM UTC; auto-verifies pending and re-verifies existing domains.
 - `cleanup-stale-domains`: Weekly on Sundays at 3 AM UTC; deletes unverified domains older than 30 days.
@@ -174,6 +175,9 @@ Key procedures:
 - **Templates:** `emails/` directory with React Email components:
   - `domain-expiry.tsx` - Domain expiration reminders (30, 14, 7, 1 days before)
   - `certificate-expiry.tsx` - SSL certificate expiration alerts (14, 7, 3, 1 days before)
+  - `certificate-change.tsx` - Notifications for SSL certificate changes
+  - `provider-change.tsx` - Notifications for DNS/Hosting/Email provider changes
+  - `registration-change.tsx` - Notifications for registrar/nameserver/status changes
   - `verification-failing.tsx` - Domain verification started failing (7-day grace period begins)
   - `verification-revoked.tsx` - Domain verification revoked (grace period expired)
   - `pro-upgrade-success.tsx` - Welcome email when Pro subscription becomes active

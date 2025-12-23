@@ -27,7 +27,9 @@ export async function getOrCreateUserNotificationPreferences(
     return {
       domainExpiry: existing[0].domainExpiry,
       certificateExpiry: existing[0].certificateExpiry,
-      verificationStatus: existing[0].verificationStatus,
+      registrationChanges: existing[0].registrationChanges,
+      providerChanges: existing[0].providerChanges,
+      certificateChanges: existing[0].certificateChanges,
     };
   }
 
@@ -38,7 +40,10 @@ export async function getOrCreateUserNotificationPreferences(
       userId,
       domainExpiry: true,
       certificateExpiry: true,
-      verificationStatus: true,
+      verificationStatus: true, // Always true, not exposed in UI
+      registrationChanges: true,
+      providerChanges: true,
+      certificateChanges: true,
     })
     .returning();
 
@@ -47,7 +52,9 @@ export async function getOrCreateUserNotificationPreferences(
   return {
     domainExpiry: inserted[0].domainExpiry,
     certificateExpiry: inserted[0].certificateExpiry,
-    verificationStatus: inserted[0].verificationStatus,
+    registrationChanges: inserted[0].registrationChanges,
+    providerChanges: inserted[0].providerChanges,
+    certificateChanges: inserted[0].certificateChanges,
   };
 }
 
@@ -75,7 +82,9 @@ export async function updateUserNotificationPreferences(
   return {
     domainExpiry: updated[0].domainExpiry,
     certificateExpiry: updated[0].certificateExpiry,
-    verificationStatus: updated[0].verificationStatus,
+    registrationChanges: updated[0].registrationChanges,
+    providerChanges: updated[0].providerChanges,
+    certificateChanges: updated[0].certificateChanges,
   };
 }
 
@@ -98,6 +107,8 @@ export async function getUserNotificationPreferences(
   return {
     domainExpiry: rows[0].domainExpiry,
     certificateExpiry: rows[0].certificateExpiry,
-    verificationStatus: rows[0].verificationStatus,
+    registrationChanges: rows[0].registrationChanges,
+    providerChanges: rows[0].providerChanges,
+    certificateChanges: rows[0].certificateChanges,
   };
 }

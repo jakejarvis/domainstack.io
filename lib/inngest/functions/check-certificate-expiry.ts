@@ -136,6 +136,7 @@ export const checkCertificateExpiry = inngest.createFunction(
           return await sendCertificateExpiryNotification({
             trackedDomainId: cert.trackedDomainId,
             domainName: cert.domainName,
+            userId: cert.userId,
             userName: cert.userName,
             userEmail: cert.userEmail,
             validTo: validToDate,
@@ -161,6 +162,7 @@ export const checkCertificateExpiry = inngest.createFunction(
 async function sendCertificateExpiryNotification({
   trackedDomainId,
   domainName,
+  userId,
   userName,
   userEmail,
   validTo,
@@ -170,6 +172,7 @@ async function sendCertificateExpiryNotification({
 }: {
   trackedDomainId: string;
   domainName: string;
+  userId: string;
   userName: string;
   userEmail: string;
   validTo: Date;
@@ -183,19 +186,8 @@ async function sendCertificateExpiryNotification({
   );
 
   try {
-    // Create notification record first
-    const notificationRecord = await createNotification({
-      trackedDomainId,
-      type: notificationType,
-    });
-
-    if (!notificationRecord) {
-      logger.debug("Notification already recorded", {
-        trackedDomainId,
-        notificationType,
-      });
-    }
-
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -216,11 +208,17 @@ async function sendCertificateExpiryNotification({
     if (error) {
       logger.error("Failed to send certificate expiry email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: notificationType,
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -233,7 +231,7 @@ async function sendCertificateExpiryNotification({
 
     logger.info("Sent certificate expiry notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       daysRemaining,
       idempotencyKey,
@@ -243,7 +241,7 @@ async function sendCertificateExpiryNotification({
   } catch (err) {
     logger.error("Error sending certificate expiry notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     throw err;

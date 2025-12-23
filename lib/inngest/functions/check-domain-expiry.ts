@@ -134,6 +134,7 @@ export const checkDomainExpiry = inngest.createFunction(
         return await sendExpiryNotification({
           trackedDomainId: domain.id,
           domainName: domain.domainName,
+          userId: domain.userId,
           userName: domain.userName,
           userEmail: domain.userEmail,
           expirationDate: expirationDateObj,
@@ -158,6 +159,7 @@ export const checkDomainExpiry = inngest.createFunction(
 async function sendExpiryNotification({
   trackedDomainId,
   domainName,
+  userId,
   userName,
   userEmail,
   expirationDate,
@@ -167,6 +169,7 @@ async function sendExpiryNotification({
 }: {
   trackedDomainId: string;
   domainName: string;
+  userId: string;
   userName: string;
   userEmail: string;
   expirationDate: Date;
@@ -182,31 +185,8 @@ async function sendExpiryNotification({
   );
 
   try {
-    // Create the notification record first (upsert with onConflictDoNothing)
-    // This acts as a lock - if we crash after this but before email sends,
-    // the next retry will still have this record, and hasNotificationBeenSent
-    // will return true (preventing re-entry to this function)
-    // However, if this step succeeds but email fails, Resend's idempotency
-    // key will prevent duplicate sends on retry
-    const notificationRecord = await createNotification({
-      trackedDomainId,
-      type: notificationType,
-    });
-
-    // If notification was already recorded (duplicate), skip sending
-    // This happens when the record exists from a previous partial run
-    if (!notificationRecord) {
-      logger.debug("Notification already recorded, checking if email sent", {
-        trackedDomainId,
-        notificationType,
-      });
-      // The notification exists - email may or may not have been sent
-      // Resend's idempotency key will handle deduplication if we proceed
-    }
-
-    // Send the email with idempotency key
-    // If this request fails and retries with the same idempotencyKey,
-    // Resend will return the original response without sending again
+    // Send email first with idempotency key
+    // Resend will dedupe retries, so we only create the notification record after success
     const { data, error } = await sendPrettyEmail(
       {
         to: userEmail,
@@ -227,14 +207,17 @@ async function sendExpiryNotification({
     if (error) {
       logger.error("Failed to send expiry email", error, {
         domainName,
-        userEmail,
+        userId,
         idempotencyKey,
       });
-      // Don't return false here - the notification record is already created
-      // and idempotency key ensures no duplicates on retry
-      // Throwing will cause Inngest to retry the step
       throw new Error(`Resend error: ${error.message}`);
     }
+
+    // Only create notification record after successful send
+    await createNotification({
+      trackedDomainId,
+      type: notificationType,
+    });
 
     // Store Resend ID for troubleshooting
     if (data?.id) {
@@ -247,7 +230,7 @@ async function sendExpiryNotification({
 
     logger.info("Sent expiry notification", {
       domainName,
-      userEmail,
+      userId,
       emailId: data?.id,
       daysRemaining,
       idempotencyKey,
@@ -257,7 +240,7 @@ async function sendExpiryNotification({
   } catch (err) {
     logger.error("Error sending expiry notification", err, {
       domainName,
-      userEmail,
+      userId,
       idempotencyKey,
     });
     // Re-throw to trigger Inngest retry

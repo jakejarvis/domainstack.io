@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Info } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CategoryLabel } from "@/components/settings/category-label";
 import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
@@ -296,19 +295,6 @@ export function NotificationSettingsSection({
             />
             <CollapsibleContent className="mt-4">
               <div className="space-y-2">
-                {/* Column Headers */}
-                <div className="hidden gap-2 px-3 text-[10px] text-muted-foreground uppercase tracking-wider sm:grid sm:grid-cols-[1fr_repeat(3,72px)_36px]">
-                  <div>Domain</div>
-                  {NOTIFICATION_CATEGORIES.map((category) => (
-                    <div
-                      key={category}
-                      className="flex items-center justify-center"
-                    >
-                      <CategoryLabel category={category} compact />
-                    </div>
-                  ))}
-                </div>
-
                 {/* Domain Rows */}
                 {verifiedDomains.map((domain) => (
                   <DomainNotificationRow

@@ -44,7 +44,9 @@ function createFaqSections(
               Domainstack is a domain intelligence platform that lets you look
               up detailed information about any domain and track domains you
               own. Enter any domain name to instantly see registration details,
-              DNS records, SSL certificates, hosting information, and more.
+              DNS records, SSL certificates, hosting information, and more. Sign
+              up for free to begin receiving notifications about critical
+              changes and upcoming expirations for your domains.
             </>
           ),
         },
@@ -149,8 +151,9 @@ function createFaqSections(
               From your dashboard, click &quot;Add Domain&quot; and enter the
               domain name you want to track. You&apos;ll need to verify
               ownership before tracking becomes active. Once verified,
-              we&apos;ll monitor the domain and send you notifications before it
-              or its certificate expires.
+              we&apos;ll monitor the domain and send you notifications about
+              critical changes (like DNS updates) and before it or its
+              certificate expires.
             </>
           ),
         },
@@ -242,6 +245,10 @@ function createFaqSections(
                   before your SSL certificate expires
                 </li>
                 <li>
+                  <strong>Change detection</strong> — Updates to registration
+                  details, DNS providers, hosting, or email providers
+                </li>
+                <li>
                   <strong>Verification status</strong> — When verification
                   starts failing or is revoked
                 </li>
@@ -256,7 +263,7 @@ function createFaqSections(
               Yes! Each tracked domain has its own notification settings. You
               can override global preferences on a per-domain basis — for
               example, disable certificate alerts for a domain that handles its
-              own renewal while keeping domain expiry alerts enabled.
+              own renewal while keeping domain expiry and change alerts enabled.
             </>
           ),
         },

@@ -57,7 +57,9 @@ describe("getOrCreateUserNotificationPreferences", () => {
     // Returns only the preference booleans, not the full DB record
     expect(result.domainExpiry).toBe(true);
     expect(result.certificateExpiry).toBe(true);
-    expect(result.verificationStatus).toBe(true);
+    expect(result.registrationChanges).toBe(true);
+    expect(result.providerChanges).toBe(true);
+    expect(result.certificateChanges).toBe(true);
   });
 
   it("returns existing preferences without creating new ones", async () => {
@@ -66,14 +68,19 @@ describe("getOrCreateUserNotificationPreferences", () => {
       userId: testUserId,
       domainExpiry: false,
       certificateExpiry: true,
-      verificationStatus: false,
+      verificationStatus: true, // DB still has this field
+      registrationChanges: false,
+      providerChanges: true,
+      certificateChanges: false,
     });
 
     const result = await getOrCreateUserNotificationPreferences(testUserId);
 
     expect(result.domainExpiry).toBe(false);
     expect(result.certificateExpiry).toBe(true);
-    expect(result.verificationStatus).toBe(false);
+    expect(result.registrationChanges).toBe(false);
+    expect(result.providerChanges).toBe(true);
+    expect(result.certificateChanges).toBe(false);
   });
 
   it("returns consistent values on multiple calls", async () => {
@@ -82,7 +89,9 @@ describe("getOrCreateUserNotificationPreferences", () => {
 
     expect(first.domainExpiry).toBe(second.domainExpiry);
     expect(first.certificateExpiry).toBe(second.certificateExpiry);
-    expect(first.verificationStatus).toBe(second.verificationStatus);
+    expect(first.registrationChanges).toBe(second.registrationChanges);
+    expect(first.providerChanges).toBe(second.providerChanges);
+    expect(first.certificateChanges).toBe(second.certificateChanges);
   });
 });
 
@@ -97,7 +106,10 @@ describe("getUserNotificationPreferences", () => {
       userId: testUserId,
       domainExpiry: true,
       certificateExpiry: false,
-      verificationStatus: true,
+      verificationStatus: true, // DB still has this field
+      registrationChanges: true,
+      providerChanges: false,
+      certificateChanges: true,
     });
 
     const result = await getUserNotificationPreferences(testUserId);
@@ -105,7 +117,9 @@ describe("getUserNotificationPreferences", () => {
     expect(result).not.toBeNull();
     expect(result?.domainExpiry).toBe(true);
     expect(result?.certificateExpiry).toBe(false);
-    expect(result?.verificationStatus).toBe(true);
+    expect(result?.registrationChanges).toBe(true);
+    expect(result?.providerChanges).toBe(false);
+    expect(result?.certificateChanges).toBe(true);
   });
 });
 
@@ -119,7 +133,7 @@ describe("updateUserNotificationPreferences", () => {
 
     expect(result?.domainExpiry).toBe(false);
     expect(result?.certificateExpiry).toBe(true); // Unchanged
-    expect(result?.verificationStatus).toBe(true); // Unchanged
+    expect(result?.registrationChanges).toBe(true); // Unchanged
   });
 
   it("updates multiple preferences", async () => {
@@ -132,7 +146,7 @@ describe("updateUserNotificationPreferences", () => {
 
     expect(result?.domainExpiry).toBe(false);
     expect(result?.certificateExpiry).toBe(false);
-    expect(result?.verificationStatus).toBe(true); // Unchanged
+    expect(result?.registrationChanges).toBe(true); // Unchanged
   });
 
   it("updates all preferences", async () => {
@@ -141,12 +155,16 @@ describe("updateUserNotificationPreferences", () => {
     const result = await updateUserNotificationPreferences(testUserId, {
       domainExpiry: false,
       certificateExpiry: false,
-      verificationStatus: false,
+      registrationChanges: false,
+      providerChanges: false,
+      certificateChanges: false,
     });
 
     expect(result?.domainExpiry).toBe(false);
     expect(result?.certificateExpiry).toBe(false);
-    expect(result?.verificationStatus).toBe(false);
+    expect(result?.registrationChanges).toBe(false);
+    expect(result?.providerChanges).toBe(false);
+    expect(result?.certificateChanges).toBe(false);
   });
 
   it("creates preferences if they do not exist", async () => {
@@ -157,7 +175,7 @@ describe("updateUserNotificationPreferences", () => {
 
     expect(result.domainExpiry).toBe(false);
     expect(result.certificateExpiry).toBe(true); // Default
-    expect(result.verificationStatus).toBe(true); // Default
+    expect(result.registrationChanges).toBe(true); // Default
   });
 
   it("persists changes to database", async () => {

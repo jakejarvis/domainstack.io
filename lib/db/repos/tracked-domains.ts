@@ -767,6 +767,28 @@ export async function verifyTrackedDomain(
     .where(eq(userTrackedDomains.id, id))
     .returning();
 
+  // After verification, initialize snapshot for change detection
+  // This is done in the background to avoid blocking the user
+  if (updated[0]) {
+    // Import dynamically to avoid circular dependencies
+    import("@/lib/inngest/client")
+      .then(({ inngest }) => {
+        inngest.send({
+          name: "snapshot/initialize",
+          data: {
+            trackedDomainId: updated[0].id,
+            domainId: updated[0].domainId,
+          },
+        });
+      })
+      .catch((err) => {
+        logger.error("Failed to trigger snapshot initialization", err, {
+          trackedDomainId: updated[0].id,
+          domainId: updated[0].domainId,
+        });
+      });
+  }
+
   return updated[0] ?? null;
 }
 
@@ -800,8 +822,14 @@ export async function updateNotificationOverrides(
   if (overrides.certificateExpiry !== undefined) {
     mergedOverrides.certificateExpiry = overrides.certificateExpiry;
   }
-  if (overrides.verificationStatus !== undefined) {
-    mergedOverrides.verificationStatus = overrides.verificationStatus;
+  if (overrides.registrationChanges !== undefined) {
+    mergedOverrides.registrationChanges = overrides.registrationChanges;
+  }
+  if (overrides.providerChanges !== undefined) {
+    mergedOverrides.providerChanges = overrides.providerChanges;
+  }
+  if (overrides.certificateChanges !== undefined) {
+    mergedOverrides.certificateChanges = overrides.certificateChanges;
   }
 
   const updated = await db

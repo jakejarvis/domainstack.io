@@ -40,8 +40,8 @@ export default async function HelpPage() {
         <p>
           Domainstack helps you understand and monitor your domains. Look up any
           domain to see registration details, DNS records, SSL certificates, and
-          more — all in one place. Track domains you own to get notified before
-          they expire.
+          more — all in one place. Track domains you own to get notified about
+          critical changes and get a heads up before they're due to expire.
         </p>
       </section>
 

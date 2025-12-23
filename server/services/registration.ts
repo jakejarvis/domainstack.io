@@ -74,6 +74,7 @@ export async function getRegistration(
         domainUnicodeName: domains.unicodeName,
         domainLastAccessedAt: domains.lastAccessedAt,
         registration: registrations,
+        providerId: providers.id,
         providerName: providers.name,
         providerDomain: providers.domain,
       })
@@ -87,8 +88,16 @@ export async function getRegistration(
       const row = existing[0];
 
       const registrarProvider = row.providerName
-        ? { name: row.providerName, domain: row.providerDomain ?? null }
-        : { name: null as string | null, domain: null as string | null };
+        ? {
+            id: row.providerId ?? null,
+            name: row.providerName,
+            domain: row.providerDomain ?? null,
+          }
+        : {
+            id: null,
+            name: null as string | null,
+            domain: null as string | null,
+          };
 
       const contactsArray: RegistrationContacts =
         row.registration.contacts ?? [];
@@ -257,7 +266,11 @@ export async function getRegistration(
     rdapServers: record.rdapServers,
     source: record.source,
     warnings: record.warnings,
-    registrarProvider,
+    registrarProvider: {
+      id: null,
+      name: registrarProvider.name,
+      domain: registrarProvider.domain,
+    },
   };
 
   // Attempt to persist to Postgres and schedule revalidation
@@ -277,6 +290,9 @@ export async function getRegistration(
         name: registrarProvider.name,
       }),
     ]);
+
+    // Update response with resolved provider ID
+    withProvider.registrarProvider.id = registrarProviderId;
 
     const expiresAt = ttlForRegistration(
       now,
