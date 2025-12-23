@@ -23,6 +23,8 @@ export const reverifyDomainsScheduler = inngest.createFunction(
       return await getPendingTrackedDomainIds();
     });
 
+    logger.info(`Found ${pendingDomainIds.length} pending domains to verify`);
+
     if (pendingDomainIds.length > 0) {
       const pendingEvents = pendingDomainIds.map((id) => ({
         name: INNGEST_EVENTS.VERIFY_PENDING_CRON,
@@ -41,6 +43,10 @@ export const reverifyDomainsScheduler = inngest.createFunction(
     const verifiedDomainIds = await step.run("fetch-verified-ids", async () => {
       return await getVerifiedTrackedDomainIds();
     });
+
+    logger.info(
+      `Found ${verifiedDomainIds.length} verified domains to re-verify`,
+    );
 
     if (verifiedDomainIds.length > 0) {
       const verifiedEvents = verifiedDomainIds.map((id) => ({
