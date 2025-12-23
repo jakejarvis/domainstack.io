@@ -408,44 +408,6 @@ async function handleProviderChange(
 
   if (!shouldNotify) return false;
 
-  const ids = [
-    change.previousDnsProviderId,
-    change.newDnsProviderId,
-    change.previousHostingProviderId,
-    change.newHostingProviderId,
-    change.previousEmailProviderId,
-    change.newEmailProviderId,
-  ].filter((id): id is string => !!id);
-
-  if (ids.length > 0) {
-    const names = await getProviderNames(ids);
-
-    if (change.dnsProviderChanged) {
-      change.previousDnsProvider = change.previousDnsProviderId
-        ? (names.get(change.previousDnsProviderId) ?? null)
-        : null;
-      change.newDnsProvider = change.newDnsProviderId
-        ? (names.get(change.newDnsProviderId) ?? null)
-        : null;
-    }
-    if (change.hostingProviderChanged) {
-      change.previousHostingProvider = change.previousHostingProviderId
-        ? (names.get(change.previousHostingProviderId) ?? null)
-        : null;
-      change.newHostingProvider = change.newHostingProviderId
-        ? (names.get(change.newHostingProviderId) ?? null)
-        : null;
-    }
-    if (change.emailProviderChanged) {
-      change.previousEmailProvider = change.previousEmailProviderId
-        ? (names.get(change.previousEmailProviderId) ?? null)
-        : null;
-      change.newEmailProvider = change.newEmailProviderId
-        ? (names.get(change.newEmailProviderId) ?? null)
-        : null;
-    }
-  }
-
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
     "provider_change",
