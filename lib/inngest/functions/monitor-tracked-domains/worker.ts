@@ -85,7 +85,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       // Check registration changes
       if (registrationData.status === "registered") {
         const currentRegistration: RegistrationSnapshotData = {
-          registrarProviderId: registrationData.registrarProvider.id ?? null,
+          registrarProviderId: registrationData.registrarProvider?.id ?? null,
           nameservers: registrationData.nameservers || [],
           transferLock: registrationData.transferLock ?? null,
           statuses: (registrationData.statuses || []).map((s) =>
@@ -215,7 +215,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
         const leafCert = certificatesData[0]; // First cert is the leaf
 
         const currentCertificate: CertificateSnapshotData = {
-          caProviderId: leafCert.caProvider.id ?? null,
+          caProviderId: leafCert.caProvider?.id ?? null,
           issuer: leafCert.issuer,
           validTo: new Date(leafCert.validTo).toISOString(),
           fingerprint: null,
@@ -312,6 +312,10 @@ async function handleRegistrationChange(
 
   if (!shouldNotify) return false;
 
+  // Resolve provider names without mutating the input
+  let previousRegistrar = change.previousRegistrar;
+  let newRegistrar = change.newRegistrar;
+
   if (change.registrarChanged) {
     const ids = [change.previousRegistrar, change.newRegistrar].filter(
       (id): id is string => !!id,
@@ -319,12 +323,11 @@ async function handleRegistrationChange(
     const names = await getProviderNames(ids);
 
     if (change.previousRegistrar) {
-      change.previousRegistrar =
+      previousRegistrar =
         names.get(change.previousRegistrar) ?? change.previousRegistrar;
     }
     if (change.newRegistrar) {
-      change.newRegistrar =
-        names.get(change.newRegistrar) ?? change.newRegistrar;
+      newRegistrar = names.get(change.newRegistrar) ?? change.newRegistrar;
     }
   }
 
@@ -347,8 +350,8 @@ async function handleRegistrationChange(
             nameserversChanged: change.nameserversChanged,
             transferLockChanged: change.transferLockChanged,
             statusesChanged: change.statusesChanged,
-            previousRegistrar: change.previousRegistrar || undefined,
-            newRegistrar: change.newRegistrar || undefined,
+            previousRegistrar: previousRegistrar || undefined,
+            newRegistrar: newRegistrar || undefined,
             previousNameservers: change.previousNameservers,
             newNameservers: change.newNameservers,
             previousTransferLock: change.previousTransferLock || undefined,
