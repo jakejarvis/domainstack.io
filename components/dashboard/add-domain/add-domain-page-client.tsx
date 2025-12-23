@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import type { ResumeDomainData } from "@/hooks/use-domain-verification";
 import { useRouter } from "@/hooks/use-router";
 import { isValidVerificationMethod } from "@/lib/constants";
+import { useTRPC } from "@/lib/trpc/client";
 
 export function AddDomainPageClient({
   prefillDomain,
@@ -15,12 +17,17 @@ export function AddDomainPageClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const handleClose = () => {
-    router.push("/dashboard", { scroll: false });
-  };
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const handleSuccess = () => {
+    // Invalidate queries to refresh the list and subscription status
+    void queryClient.invalidateQueries({
+      queryKey: trpc.tracking.listDomains.queryKey(),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: trpc.user.getSubscription.queryKey(),
+    });
     router.push("/dashboard", { scroll: false });
   };
 
@@ -49,10 +56,8 @@ export function AddDomainPageClient({
   }, [searchParams]);
 
   return (
-    <Card className="w-full">
+    <Card className="w-full px-6">
       <AddDomainContent
-        className="px-6"
-        onClose={handleClose}
         onSuccess={handleSuccess}
         prefillDomain={prefillDomain}
         resumeDomain={resumeDomain}

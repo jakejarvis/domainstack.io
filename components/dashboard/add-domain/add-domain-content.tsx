@@ -2,7 +2,6 @@
 
 import { AlertCircle, Check, Gauge, ShoppingCart } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
@@ -147,7 +146,11 @@ export function AddDomainContent({
             Retry
           </Button>
           {onClose && (
-            <Button variant="outline" onClick={onClose} className="w-full">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="w-full cursor-pointer"
+            >
               Close
             </Button>
           )}
@@ -246,22 +249,13 @@ export function AddDomainContent({
                   )}
                   {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
                 </Button>
-                {onClose ? (
+                {onClose && (
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="w-full"
+                    className="w-full cursor-pointer"
                   >
                     Close
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    nativeButton={false}
-                    render={<Link href="/dashboard" />}
-                  >
-                    Back to Dashboard
                   </Button>
                 )}
               </div>
@@ -273,18 +267,13 @@ export function AddDomainContent({
                 You can archive unused domains to make room for new ones, or
                 remove domains you no longer need to track.
               </p>
-              {onClose ? (
-                <Button variant="outline" onClick={onClose} className="w-full">
-                  Close
-                </Button>
-              ) : (
+              {onClose && (
                 <Button
                   variant="outline"
-                  className="w-full"
-                  nativeButton={false}
-                  render={<Link href="/dashboard" />}
+                  onClick={onClose}
+                  className="w-full cursor-pointer"
                 >
-                  Back to Dashboard
+                  Close
                 </Button>
               )}
             </>
