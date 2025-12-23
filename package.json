@@ -76,7 +76,7 @@
     "nuqs": "^2.8.5",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
-    "posthog-js": "^1.309.1",
+    "posthog-js": "^1.310.1",
     "posthog-node": "^5.17.4",
     "prettier": "^3.7.4",
     "puppeteer-core": "24.32.0",
