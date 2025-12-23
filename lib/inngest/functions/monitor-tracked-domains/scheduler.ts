@@ -16,11 +16,14 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
   async ({ step, logger }) => {
     logger.info("Starting tracked domain monitoring scheduler");
 
-    // Fetch all snapshot IDs for verified, non-archived domains
+    // Fetch all tracked domain IDs for verified, non-archived domains
     // This is a lightweight query that just returns UUIDs
-    const trackedDomainIds = await step.run("fetch-snapshot-ids", async () => {
-      return await getMonitoredSnapshotIds();
-    });
+    const trackedDomainIds = await step.run(
+      "fetch-tracked-domain-ids",
+      async () => {
+        return await getMonitoredSnapshotIds();
+      },
+    );
 
     logger.info(`Found ${trackedDomainIds.length} tracked domains to monitor`);
 
