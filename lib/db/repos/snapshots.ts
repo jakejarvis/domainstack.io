@@ -127,6 +127,13 @@ export async function createSnapshot(params: CreateSnapshotParams) {
     })
     .returning();
 
+  if (!inserted || inserted.length === 0) {
+    logger.error("failed to create snapshot - no row returned", {
+      trackedDomainId,
+    });
+    throw new Error("Failed to create snapshot");
+  }
+
   logger.info("created snapshot", {
     trackedDomainId,
     hasRegistrar: !!registration.registrarProviderId,
