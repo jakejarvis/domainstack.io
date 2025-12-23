@@ -24,7 +24,10 @@ const logger = createLogger({ source: "snapshots" });
  * Returns the existing snapshot or creates an empty one.
  * Uses onConflictDoNothing to handle concurrent creation gracefully.
  */
-export async function getOrCreateSnapshot(trackedDomainId: string) {
+export async function getOrCreateSnapshot(
+  trackedDomainId: string,
+  retryCount = 0,
+) {
   // Try to get existing snapshot
   const existing = await db
     .select()
@@ -65,11 +68,23 @@ export async function getOrCreateSnapshot(trackedDomainId: string) {
   // Edge case: snapshot was deleted between conflict and re-fetch
   // This should be extremely rare but possible if a domain is removed during creation
   if (!snapshot) {
+    if (retryCount >= 1) {
+      const error = new Error(
+        `Failed to create snapshot for tracked domain ${trackedDomainId} after retry`,
+      );
+      logger.error("Snapshot creation failed after retry", error, {
+        trackedDomainId,
+        retryCount,
+      });
+      throw error;
+    }
+
     logger.warn("Snapshot disappeared after conflict, recreating", {
       trackedDomainId,
+      retryCount,
     });
     // Recursively retry once - if this fails, let it throw
-    return getOrCreateSnapshot(trackedDomainId);
+    return getOrCreateSnapshot(trackedDomainId, retryCount + 1);
   }
 
   return snapshot;
