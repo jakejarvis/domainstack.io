@@ -13,6 +13,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
 import type {
   GeneralMeta,
   Header,
@@ -275,6 +276,11 @@ export const notifications = pgTable(
     index("idx_notifications_user_read").on(t.userId, t.readAt),
     // Index for channels filtering
     index("idx_notifications_channels").using("gin", t.channels),
+    // Ensure channels only contains valid values
+    check(
+      "ck_notifications_channels",
+      sql`${t.channels} <@ ${sql.raw(`'${JSON.stringify(NOTIFICATION_CHANNELS)}'::jsonb`)}`,
+    ),
   ],
 );
 
