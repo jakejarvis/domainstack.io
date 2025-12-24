@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  type InfiniteData,
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import type { inferProcedureOutput } from "@trpc/server";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, CheckCheck, Inbox, Loader2 } from "lucide-react";
@@ -21,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { AppRouter } from "@/server/routers/_app";
@@ -29,24 +24,12 @@ type NotificationList = inferProcedureOutput<
   AppRouter["notifications"]["list"]
 >;
 type Notification = NotificationList["items"][number];
-type InfiniteNotificationData = InfiniteData<NotificationList>;
-
-type MutationContext = {
-  previousData?: InfiniteNotificationData;
-  previousCount?: number;
-};
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
-
-  // Query keys
-  const infiniteQueryKey = trpc.notifications.list.infiniteQueryKey({
-    limit: 20,
-  });
-  const countQueryKey = trpc.notifications.unreadCount.queryKey();
+  const { markRead, markAllRead } = useNotificationMutations();
 
   const { data: unreadCount = 0 } = useQuery({
     ...trpc.notifications.unreadCount.queryOptions(),
@@ -79,106 +62,6 @@ export default function NotificationsPage() {
 
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  const markRead = useMutation({
-    mutationFn: trpc.notifications.markRead.mutationOptions().mutationFn,
-    onMutate: async ({ id }): Promise<MutationContext> => {
-      await queryClient.cancelQueries({
-        queryKey: trpc.notifications.list.queryKey(),
-      });
-      const previousData =
-        queryClient.getQueryData<InfiniteNotificationData>(infiniteQueryKey);
-
-      queryClient.setQueryData<InfiniteNotificationData>(
-        infiniteQueryKey,
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) =>
-                n.id === id ? { ...n, readAt: new Date() } : n,
-              ),
-            })),
-          };
-        },
-      );
-
-      await queryClient.cancelQueries({ queryKey: countQueryKey });
-      const previousCount = queryClient.getQueryData<number>(countQueryKey);
-      queryClient.setQueryData<number>(countQueryKey, (old) =>
-        old ? Math.max(0, old - 1) : 0,
-      );
-
-      return { previousData, previousCount };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData<InfiniteNotificationData>(
-          infiniteQueryKey,
-          context.previousData,
-        );
-      }
-      if (context?.previousCount !== undefined) {
-        queryClient.setQueryData<number>(countQueryKey, context.previousCount);
-      }
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: trpc.notifications.list.queryKey(),
-      });
-      await queryClient.invalidateQueries({ queryKey: countQueryKey });
-    },
-  });
-
-  const markAllRead = useMutation({
-    mutationFn: trpc.notifications.markAllRead.mutationOptions().mutationFn,
-    onMutate: async (): Promise<MutationContext> => {
-      await queryClient.cancelQueries({
-        queryKey: trpc.notifications.list.queryKey(),
-      });
-      const previousData =
-        queryClient.getQueryData<InfiniteNotificationData>(infiniteQueryKey);
-
-      queryClient.setQueryData<InfiniteNotificationData>(
-        infiniteQueryKey,
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) => ({ ...n, readAt: new Date() })),
-            })),
-          };
-        },
-      );
-
-      await queryClient.cancelQueries({ queryKey: countQueryKey });
-      const previousCount = queryClient.getQueryData<number>(countQueryKey);
-      queryClient.setQueryData<number>(countQueryKey, 0);
-
-      return { previousData, previousCount };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData<InfiniteNotificationData>(
-          infiniteQueryKey,
-          context.previousData,
-        );
-      }
-      if (context?.previousCount !== undefined) {
-        queryClient.setQueryData<number>(countQueryKey, context.previousCount);
-      }
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: trpc.notifications.list.queryKey(),
-      });
-      await queryClient.invalidateQueries({ queryKey: countQueryKey });
-    },
-  });
 
   const filteredNotifications =
     filter === "unread"
