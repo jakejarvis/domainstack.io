@@ -96,7 +96,10 @@ export function DashboardHeader({
             <div className="relative inline-flex overflow-hidden rounded-md border border-muted-foreground/30">
               <motion.span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 left-0 z-0 w-10 rounded-md bg-primary"
+                className={cn(
+                  "pointer-events-none absolute inset-y-0 left-0 z-0 w-10 bg-primary",
+                  viewMode === "grid" ? "rounded-l-md" : "rounded-r-md",
+                )}
                 animate={{ x: viewMode === "grid" ? 0 : 40 }}
                 transition={{ type: "spring", stiffness: 550, damping: 45 }}
                 initial={false}
