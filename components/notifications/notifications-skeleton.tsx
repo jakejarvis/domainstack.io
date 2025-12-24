@@ -21,9 +21,9 @@ export function NotificationsSkeleton() {
       {/* Tabs skeleton */}
       <div className="space-y-4">
         {/* Tab list */}
-        <div className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1">
-          <Skeleton className="h-8 w-20 rounded-sm" />
-          <Skeleton className="h-8 w-20 rounded-sm" />
+        <div className="inline-flex h-10 w-full items-center gap-1 rounded-md bg-muted p-1">
+          <Skeleton className="h-8 flex-1 rounded-sm" />
+          <Skeleton className="h-8 flex-1 rounded-sm" />
         </div>
 
         {/* Loading state card */}

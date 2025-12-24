@@ -24,9 +24,13 @@ export function AuthButton() {
   // Logged in: show NotificationBell + UserMenu (handles both mobile and desktop)
   if (session?.user) {
     return (
-      <div className="mr-1 ml-2 flex h-8 items-center gap-1">
+      <div className="flex h-8 items-center gap-2">
         <NotificationBell />
-        <Separator aria-hidden="true" orientation="vertical" className="!h-4" />
+        <Separator
+          aria-hidden="true"
+          orientation="vertical"
+          className="!h-4 mr-2"
+        />
         <UserMenu />
       </div>
     );

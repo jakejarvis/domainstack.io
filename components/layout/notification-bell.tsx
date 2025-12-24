@@ -12,6 +12,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -54,24 +59,33 @@ export function NotificationBell() {
 
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative"
-            aria-label={`Notifications${count > 0 ? ` (${count} unread)` : ""}`}
-          />
-        }
-      >
-        <Bell className="size-5" />
-        {count > 0 && (
-          <span
-            className="absolute top-2 right-2 size-2 rounded-full bg-destructive ring-2 ring-background"
-            aria-hidden="true"
-          />
-        )}
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative"
+                  aria-label={`Notifications${count > 0 ? ` (${count} unread)` : ""}`}
+                />
+              }
+            >
+              <Bell />
+              {count > 0 && (
+                <span
+                  className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
+                  aria-hidden="true"
+                />
+              )}
+            </PopoverTrigger>
+          }
+        />
+        <TooltipContent>
+          {count > 0 ? `Notifications (${count})` : "Notifications"}
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="font-semibold text-sm">Notifications</h4>

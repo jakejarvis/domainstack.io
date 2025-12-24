@@ -78,10 +78,11 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-semibold text-3xl tracking-tight">
+          <h1 className="flex items-center gap-2 font-semibold text-xl">
+            <Bell className="size-5" />
             Notifications
           </h1>
-          <p className="text-muted-foreground">
+          <p className="mt-2 text-muted-foreground">
             Stay updated on your tracked domains
           </p>
         </div>

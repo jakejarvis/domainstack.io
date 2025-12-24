@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { StaticBackground } from "@/components/layout/static-background";
 import { NotificationsSkeleton } from "@/components/notifications/notifications-skeleton";
 import { auth } from "@/lib/auth";
 
@@ -37,10 +38,15 @@ export default function NotificationsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <Suspense fallback={<NotificationsSkeleton />}>
-        <ProtectedNotificationsLayout>{children}</ProtectedNotificationsLayout>
-      </Suspense>
-    </div>
+    <>
+      <StaticBackground />
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <Suspense fallback={<NotificationsSkeleton />}>
+          <ProtectedNotificationsLayout>
+            {children}
+          </ProtectedNotificationsLayout>
+        </Suspense>
+      </div>
+    </>
   );
 }
