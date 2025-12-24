@@ -189,51 +189,54 @@ describe("getUserNotifications", () => {
 
   it("handles pagination with identical timestamps", async () => {
     const fixedDate = new Date("2024-01-01T12:00:00Z");
-    
+
     // Insert 5 notifications with the exact same timestamp
     // Since IDs are random UUIDs, their sort order will be deterministic but random relative to insertion order
     // We'll rely on the returned list to get the cursor
     const createdIds: string[] = [];
-    
+
     for (let i = 0; i < 5; i++) {
-      const [n] = await db.insert(notifications).values({
-        userId: testUserId,
-        type: "domain_expiry_30d",
-        title: `Notification ${i}`,
-        message: `Message ${i}`,
-        sentAt: fixedDate,
-        channels: ["in-app"],
-        data: {},
-      }).returning();
+      const [n] = await db
+        .insert(notifications)
+        .values({
+          userId: testUserId,
+          type: "domain_expiry_30d",
+          title: `Notification ${i}`,
+          message: `Message ${i}`,
+          sentAt: fixedDate,
+          channels: ["in-app"],
+          data: {},
+        })
+        .returning();
       createdIds.push(n.id);
     }
 
     // Get first page (limit 3)
     const page1 = await getUserNotifications(testUserId, 3);
     expect(page1).toHaveLength(3);
-    
+
     // Get second page using last item of page 1 as cursor
     const cursor = page1[page1.length - 1].id;
     const page2 = await getUserNotifications(testUserId, 3, cursor);
-    
+
     expect(page2).toHaveLength(2);
-    
+
     // Ensure no overlap or gaps
-    const allIds = [...page1.map(n => n.id), ...page2.map(n => n.id)];
+    const allIds = [...page1.map((n) => n.id), ...page2.map((n) => n.id)];
     expect(new Set(allIds).size).toBe(5);
-    
+
     // Verify sorting (should be by ID desc since timestamps are equal)
     // Note: UUIDs are not ordered by insertion, so we just check consistency
-    const sortedIds = [...allIds].sort().reverse(); 
-    // This assertion assumes UUID v4, which aren't time-ordered. 
+    const _sortedIds = [...allIds].sort().reverse();
+    // This assertion assumes UUID v4, which aren't time-ordered.
     // The query sorts by sentAt DESC, id DESC.
     // So the result should strictly follow that order.
-    
+
     for (let i = 0; i < allIds.length - 1; i++) {
-       const curr = allIds[i];
-       const next = allIds[i+1];
-       // Check that we are correctly sorted by ID (desc) since timestamps are equal
-       expect(curr > next).toBe(true); // String comparison of UUIDs
+      const curr = allIds[i];
+      const next = allIds[i + 1];
+      // Check that we are correctly sorted by ID (desc) since timestamps are equal
+      expect(curr > next).toBe(true); // String comparison of UUIDs
     }
   });
 });
