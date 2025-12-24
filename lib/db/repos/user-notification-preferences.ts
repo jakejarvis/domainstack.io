@@ -26,10 +26,17 @@ export async function getOrCreateUserNotificationPreferences(
   if (existing.length > 0) {
     return {
       domainExpiry: existing[0].domainExpiry,
+      domainExpiryInApp: existing[0].domainExpiryInApp,
       certificateExpiry: existing[0].certificateExpiry,
+      certificateExpiryInApp: existing[0].certificateExpiryInApp,
+      verificationStatus: existing[0].verificationStatus,
+      verificationStatusInApp: existing[0].verificationStatusInApp,
       registrationChanges: existing[0].registrationChanges,
+      registrationChangesInApp: existing[0].registrationChangesInApp,
       providerChanges: existing[0].providerChanges,
+      providerChangesInApp: existing[0].providerChangesInApp,
       certificateChanges: existing[0].certificateChanges,
+      certificateChangesInApp: existing[0].certificateChangesInApp,
     };
   }
 
@@ -39,11 +46,17 @@ export async function getOrCreateUserNotificationPreferences(
     .values({
       userId,
       domainExpiry: true,
+      domainExpiryInApp: true,
       certificateExpiry: true,
+      certificateExpiryInApp: true,
       verificationStatus: true, // Always true, not exposed in UI
+      verificationStatusInApp: true,
       registrationChanges: true,
+      registrationChangesInApp: true,
       providerChanges: true,
+      providerChangesInApp: true,
       certificateChanges: true,
+      certificateChangesInApp: true,
     })
     .returning();
 
@@ -51,10 +64,17 @@ export async function getOrCreateUserNotificationPreferences(
 
   return {
     domainExpiry: inserted[0].domainExpiry,
+    domainExpiryInApp: inserted[0].domainExpiryInApp,
     certificateExpiry: inserted[0].certificateExpiry,
+    certificateExpiryInApp: inserted[0].certificateExpiryInApp,
+    verificationStatus: inserted[0].verificationStatus,
+    verificationStatusInApp: inserted[0].verificationStatusInApp,
     registrationChanges: inserted[0].registrationChanges,
+    registrationChangesInApp: inserted[0].registrationChangesInApp,
     providerChanges: inserted[0].providerChanges,
+    providerChangesInApp: inserted[0].providerChangesInApp,
     certificateChanges: inserted[0].certificateChanges,
+    certificateChangesInApp: inserted[0].certificateChangesInApp,
   };
 }
 
@@ -81,10 +101,17 @@ export async function updateUserNotificationPreferences(
 
   return {
     domainExpiry: updated[0].domainExpiry,
+    domainExpiryInApp: updated[0].domainExpiryInApp,
     certificateExpiry: updated[0].certificateExpiry,
+    certificateExpiryInApp: updated[0].certificateExpiryInApp,
+    verificationStatus: updated[0].verificationStatus,
+    verificationStatusInApp: updated[0].verificationStatusInApp,
     registrationChanges: updated[0].registrationChanges,
+    registrationChangesInApp: updated[0].registrationChangesInApp,
     providerChanges: updated[0].providerChanges,
+    providerChangesInApp: updated[0].providerChangesInApp,
     certificateChanges: updated[0].certificateChanges,
+    certificateChangesInApp: updated[0].certificateChangesInApp,
   };
 }
 
@@ -106,9 +133,16 @@ export async function getUserNotificationPreferences(
 
   return {
     domainExpiry: rows[0].domainExpiry,
+    domainExpiryInApp: rows[0].domainExpiryInApp,
     certificateExpiry: rows[0].certificateExpiry,
+    certificateExpiryInApp: rows[0].certificateExpiryInApp,
+    verificationStatus: rows[0].verificationStatus,
+    verificationStatusInApp: rows[0].verificationStatusInApp,
     registrationChanges: rows[0].registrationChanges,
+    registrationChangesInApp: rows[0].registrationChangesInApp,
     providerChanges: rows[0].providerChanges,
+    providerChangesInApp: rows[0].providerChangesInApp,
     certificateChanges: rows[0].certificateChanges,
+    certificateChangesInApp: rows[0].certificateChangesInApp,
   };
 }

@@ -191,9 +191,10 @@ async function sendSubscriptionExpiryNotification(
 
     // Determine urgency for subject line
     const isUrgent = daysRemaining <= 3;
-    const subject = isUrgent
-      ? `⚠️ Your Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
-      : `Your Pro subscription ends on ${endDate}`;
+    const title = isUrgent
+      ? `Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
+      : `Pro subscription ends on ${endDate}`;
+    const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
 
     const { data, error } = await sendPrettyEmail(
       {

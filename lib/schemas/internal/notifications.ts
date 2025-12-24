@@ -6,10 +6,17 @@ import { z } from "zod";
  */
 export const UserNotificationPreferencesSchema = z.object({
   domainExpiry: z.boolean(),
+  domainExpiryInApp: z.boolean(),
   certificateExpiry: z.boolean(),
+  certificateExpiryInApp: z.boolean(),
+  verificationStatus: z.boolean(),
+  verificationStatusInApp: z.boolean(),
   registrationChanges: z.boolean(),
+  registrationChangesInApp: z.boolean(),
   providerChanges: z.boolean(),
+  providerChangesInApp: z.boolean(),
   certificateChanges: z.boolean(),
+  certificateChangesInApp: z.boolean(),
 });
 
 export type UserNotificationPreferences = z.infer<
@@ -23,10 +30,15 @@ export type UserNotificationPreferences = z.infer<
  */
 export const NotificationOverridesSchema = z.object({
   domainExpiry: z.boolean().optional(),
+  domainExpiryInApp: z.boolean().optional(),
   certificateExpiry: z.boolean().optional(),
+  certificateExpiryInApp: z.boolean().optional(),
   registrationChanges: z.boolean().optional(),
+  registrationChangesInApp: z.boolean().optional(),
   providerChanges: z.boolean().optional(),
+  providerChangesInApp: z.boolean().optional(),
   certificateChanges: z.boolean().optional(),
+  certificateChangesInApp: z.boolean().optional(),
 });
 
 export type NotificationOverrides = z.infer<typeof NotificationOverridesSchema>;

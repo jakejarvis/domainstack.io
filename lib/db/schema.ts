@@ -237,20 +237,38 @@ export const userTrackedDomains = pgTable(
   ],
 );
 
-// Notification history (prevent duplicate emails)
+// In-app notifications (also logs sent emails)
 export const notifications = pgTable(
   "notifications",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    trackedDomainId: uuid("tracked_domain_id")
+    // Direct link to user for inbox queries
+    userId: text("user_id")
       .notNull()
-      .references(() => userTrackedDomains.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Optional: link to domain if notification is domain-specific
+    trackedDomainId: uuid("tracked_domain_id").references(
+      () => userTrackedDomains.id,
+      { onDelete: "cascade" },
+    ),
     type: text("type").notNull(),
+    // UI display fields
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    // Metadata for actionable links (e.g. { url: "/dashboard/domain/..." })
+    data: jsonb("data"),
+    // Status
+    readAt: timestamp("read_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
     // Resend email ID for troubleshooting delivery issues
     resendId: text("resend_id"),
   },
-  (t) => [unique("u_notification_unique").on(t.trackedDomainId, t.type)],
+  (t) => [
+    // Index for fast fetching of user's notifications
+    index("idx_notifications_user_sent").on(t.userId, t.sentAt),
+    // Index for unread count queries
+    index("idx_notifications_user_read").on(t.userId, t.readAt),
+  ],
 );
 
 // User notification preferences (global defaults for all domains)
@@ -262,13 +280,29 @@ export const userNotificationPreferences = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     // Global toggles (defaults for all domains)
     domainExpiry: boolean("domain_expiry").notNull().default(true),
+    domainExpiryInApp: boolean("domain_expiry_in_app").notNull().default(true),
     certificateExpiry: boolean("certificate_expiry").notNull().default(true),
+    certificateExpiryInApp: boolean("certificate_expiry_in_app")
+      .notNull()
+      .default(true),
     verificationStatus: boolean("verification_status").notNull().default(true),
+    verificationStatusInApp: boolean("verification_status_in_app")
+      .notNull()
+      .default(true),
     registrationChanges: boolean("registration_changes")
       .notNull()
       .default(true),
+    registrationChangesInApp: boolean("registration_changes_in_app")
+      .notNull()
+      .default(true),
     providerChanges: boolean("provider_changes").notNull().default(true),
+    providerChangesInApp: boolean("provider_changes_in_app")
+      .notNull()
+      .default(true),
     certificateChanges: boolean("certificate_changes").notNull().default(true),
+    certificateChangesInApp: boolean("certificate_changes_in_app")
+      .notNull()
+      .default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

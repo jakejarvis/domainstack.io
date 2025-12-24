@@ -21,6 +21,7 @@ interface DomainNotificationRowProps {
   globalPrefs: UserNotificationPreferences;
   onToggle: (
     category: NotificationCategory,
+    type: "email" | "inApp",
     value: boolean | undefined,
   ) => void;
   onReset: () => void;
@@ -71,10 +72,18 @@ export function DomainNotificationRow({
       </div>
       <div className="mt-3 space-y-2">
         {NOTIFICATION_CATEGORIES.map((category) => {
-          const override = overrides[category];
-          const globalValue = globalPrefs[category];
-          const isInherited = override === undefined;
-          const effectiveValue = override ?? globalValue;
+          // Email values
+          const emailOverride = overrides[category];
+          const emailGlobal = globalPrefs[category];
+          const emailIsInherited = emailOverride === undefined;
+          const emailEffective = emailOverride ?? emailGlobal;
+
+          // In-App values
+          const inAppKey = `${category}InApp` as keyof NotificationOverrides;
+          const inAppOverride = overrides[inAppKey];
+          const inAppGlobal = globalPrefs[inAppKey] as boolean;
+          const inAppIsInherited = inAppOverride === undefined;
+          const inAppEffective = inAppOverride ?? inAppGlobal;
 
           return (
             <div
@@ -84,30 +93,60 @@ export function DomainNotificationRow({
               <span
                 className={cn(
                   "text-xs",
-                  isInherited ? "text-muted-foreground" : "text-foreground",
+                  emailIsInherited && inAppIsInherited
+                    ? "text-muted-foreground"
+                    : "text-foreground",
                 )}
               >
                 {NOTIFICATION_CATEGORY_INFO[category].label}
               </span>
-              <div className="flex items-center gap-2">
-                {!isInherited && (
-                  <span className="text-[10px] text-muted-foreground">
-                    Override
-                  </span>
-                )}
-                <Switch
-                  checked={effectiveValue}
-                  onCheckedChange={(checked) => {
-                    // If clicking would make it match global, clear override (inherit)
-                    // Otherwise, set explicit override
-                    onToggle(
-                      category,
-                      checked === globalValue ? undefined : checked,
-                    );
-                  }}
-                  disabled={disabled}
-                  className={cn("cursor-pointer", isInherited && "opacity-60")}
-                />
+
+              <div className="flex items-center gap-2 sm:gap-6">
+                {/* In-App Switch */}
+                <div className="flex w-12 items-center justify-center gap-2 sm:w-16">
+                  {!inAppIsInherited && (
+                    <span className="sr-only">Override</span>
+                  )}
+                  <Switch
+                    checked={inAppEffective}
+                    onCheckedChange={(checked) => {
+                      onToggle(
+                        category,
+                        "inApp",
+                        checked === inAppGlobal ? undefined : checked,
+                      );
+                    }}
+                    disabled={disabled}
+                    className={cn(
+                      "cursor-pointer",
+                      inAppIsInherited && "opacity-60",
+                    )}
+                    aria-label={`Toggle in-app notifications for ${category}`}
+                  />
+                </div>
+
+                {/* Email Switch */}
+                <div className="flex w-12 items-center justify-center gap-2 sm:w-16">
+                  {!emailIsInherited && (
+                    <span className="sr-only">Override</span>
+                  )}
+                  <Switch
+                    checked={emailEffective}
+                    onCheckedChange={(checked) => {
+                      onToggle(
+                        category,
+                        "email",
+                        checked === emailGlobal ? undefined : checked,
+                      );
+                    }}
+                    disabled={disabled}
+                    className={cn(
+                      "cursor-pointer",
+                      emailIsInherited && "opacity-60",
+                    )}
+                    aria-label={`Toggle email notifications for ${category}`}
+                  />
+                </div>
               </div>
             </div>
           );

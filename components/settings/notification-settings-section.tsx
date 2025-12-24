@@ -25,6 +25,7 @@ import {
   type NotificationCategory,
 } from "@/lib/constants/notifications";
 import { logger } from "@/lib/logger/client";
+import type { UserNotificationPreferences } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -46,9 +47,6 @@ export function NotificationSettingsSection({
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
 
-  // Type for global preferences - derived from notification constants
-  type GlobalPrefs = Record<NotificationCategory, boolean>;
-
   // Queries
   const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
   const globalPrefsQuery = useQuery(
@@ -61,18 +59,21 @@ export function NotificationSettingsSection({
     onMutate: async (newPrefs) => {
       await queryClient.cancelQueries({ queryKey: globalPrefsQueryKey });
       const previousPrefs =
-        queryClient.getQueryData<GlobalPrefs>(globalPrefsQueryKey);
+        queryClient.getQueryData<UserNotificationPreferences>(
+          globalPrefsQueryKey,
+        );
 
       // Optimistically update
-      queryClient.setQueryData<GlobalPrefs>(globalPrefsQueryKey, (old) =>
-        old ? { ...old, ...newPrefs } : old,
+      queryClient.setQueryData<UserNotificationPreferences>(
+        globalPrefsQueryKey,
+        (old) => (old ? { ...old, ...newPrefs } : old),
       );
 
       return { previousPrefs };
     },
     onError: (err, _variables, context) => {
       if (context?.previousPrefs) {
-        queryClient.setQueryData<GlobalPrefs>(
+        queryClient.setQueryData<UserNotificationPreferences>(
           globalPrefsQueryKey,
           context.previousPrefs,
         );
@@ -174,22 +175,25 @@ export function NotificationSettingsSection({
     },
   });
 
-  // Simplified handlers - no try/catch needed, mutations handle errors
   const handleGlobalToggle = (
     category: NotificationCategory,
+    type: "email" | "inApp",
     enabled: boolean,
   ) => {
-    updateGlobalMutation.mutate({ [category]: enabled });
+    const key = type === "email" ? category : `${category}InApp`;
+    updateGlobalMutation.mutate({ [key]: enabled });
   };
 
   const handleDomainToggle = (
     trackedDomainId: string,
     category: NotificationCategory,
+    type: "email" | "inApp",
     value: boolean | undefined, // undefined = inherit
   ) => {
+    const key = type === "email" ? category : `${category}InApp`;
     updateDomainMutation.mutate({
       trackedDomainId,
-      overrides: { [category]: value },
+      overrides: { [key]: value },
     });
   };
 
@@ -219,7 +223,7 @@ export function NotificationSettingsSection({
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Email Notifications</CardTitle>
+          <CardTitle>Notification Preferences</CardTitle>
           <CardDescription className="text-destructive">
             Failed to load notification settings
           </CardDescription>
@@ -233,9 +237,12 @@ export function NotificationSettingsSection({
     .filter((d) => d.verified)
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
 
-  const defaultGlobalPrefs: GlobalPrefs = Object.fromEntries(
-    NOTIFICATION_CATEGORIES.map((category) => [category, true]),
-  ) as GlobalPrefs;
+  const defaultGlobalPrefs: UserNotificationPreferences = {
+    ...Object.fromEntries(NOTIFICATION_CATEGORIES.map((c) => [c, true])),
+    ...Object.fromEntries(
+      NOTIFICATION_CATEGORIES.map((c) => [`${c}InApp`, true]),
+    ),
+  } as UserNotificationPreferences;
 
   const globalPrefs = globalPrefsQuery.data ?? defaultGlobalPrefs;
 
@@ -247,7 +254,7 @@ export function NotificationSettingsSection({
   return (
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Email Notifications</CardTitle>
+        <CardTitle>Notification Preferences</CardTitle>
         <CardDescription>
           Alerts will be sent to{" "}
           <span className="font-medium text-foreground">
@@ -256,14 +263,23 @@ export function NotificationSettingsSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2.5 px-0 pt-1">
+        {/* Headers */}
+        <div className="flex items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:gap-6">
+          <div className="w-12 text-center sm:w-16">In-App</div>
+          <div className="w-12 text-center sm:w-16">Email</div>
+        </div>
+
         {/* Global Notifications */}
         <div className="space-y-1">
           {NOTIFICATION_CATEGORIES.map((category) => (
             <GlobalNotificationRow
               key={category}
               category={category}
-              enabled={globalPrefs[category]}
-              onToggle={(enabled) => handleGlobalToggle(category, enabled)}
+              emailEnabled={globalPrefs[category]}
+              inAppEnabled={globalPrefs[`${category}InApp`] as boolean}
+              onToggle={(type, enabled) =>
+                handleGlobalToggle(category, type, enabled)
+              }
               disabled={isPending}
             />
           ))}
@@ -295,6 +311,12 @@ export function NotificationSettingsSection({
             />
             <CollapsibleContent className="mt-4">
               <div className="space-y-2">
+                {/* Headers for domain section */}
+                <div className="flex items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:gap-6">
+                  <div className="w-12 text-center sm:w-16">In-App</div>
+                  <div className="w-12 text-center sm:w-16">Email</div>
+                </div>
+
                 {/* Domain Rows */}
                 {verifiedDomains.map((domain) => (
                   <DomainNotificationRow
@@ -302,8 +324,8 @@ export function NotificationSettingsSection({
                     domainName={domain.domainName}
                     overrides={domain.notificationOverrides}
                     globalPrefs={globalPrefs}
-                    onToggle={(category, value) =>
-                      handleDomainToggle(domain.id, category, value)
+                    onToggle={(category, type, value) =>
+                      handleDomainToggle(domain.id, category, type, value)
                     }
                     onReset={() => handleResetDomain(domain.id)}
                     disabled={isPending}

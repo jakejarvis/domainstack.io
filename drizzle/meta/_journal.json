@@ -64,6 +64,20 @@
       "when": 1766437454393,
       "tag": "0008_bouncy_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1766589966878,
+      "tag": "0009_short_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1766592347808,
+      "tag": "0010_illegal_silver_fox",
+      "breakpoints": true
     }
   ]
 }

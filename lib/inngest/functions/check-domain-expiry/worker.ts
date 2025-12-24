@@ -6,7 +6,7 @@ import { DomainExpiryEmail } from "@/emails/domain-expiry";
 import {
   clearDomainExpiryNotifications,
   createNotification,
-  hasNotificationBeenSent,
+  hasRecentNotification,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getTrackedDomainForNotification } from "@/lib/db/repos/tracked-domains";
@@ -75,22 +75,37 @@ export const checkDomainExpiryWorker = inngest.createFunction(
     }
 
     // Check preferences
-    const shouldNotify = await step.run("check-prefs", async () => {
-      if (domain.notificationOverrides.domainExpiry !== undefined) {
-        return domain.notificationOverrides.domainExpiry;
-      }
-      const globalPrefs = await getOrCreateUserNotificationPreferences(
-        domain.userId,
-      );
-      return globalPrefs.domainExpiry;
-    });
+    const { shouldSendEmail, shouldSendInApp } = await step.run(
+      "check-prefs",
+      async () => {
+        const globalPrefs = await getOrCreateUserNotificationPreferences(
+          domain.userId,
+        );
 
-    if (!shouldNotify) {
+        // Check email preference
+        const emailOverride = domain.notificationOverrides.domainExpiry;
+        const shouldSendEmail =
+          emailOverride !== undefined
+            ? emailOverride
+            : globalPrefs.domainExpiry;
+
+        // Check in-app preference
+        const inAppOverride = domain.notificationOverrides.domainExpiryInApp;
+        const shouldSendInApp =
+          inAppOverride !== undefined
+            ? inAppOverride
+            : globalPrefs.domainExpiryInApp;
+
+        return { shouldSendEmail, shouldSendInApp };
+      },
+    );
+
+    if (!shouldSendEmail && !shouldSendInApp) {
       return { skipped: true, reason: "notifications_disabled" };
     }
 
     const alreadySent = await step.run("check-sent", async () => {
-      return await hasNotificationBeenSent(trackedDomainId, notificationType);
+      return await hasRecentNotification(trackedDomainId, notificationType);
     });
 
     if (alreadySent) {
@@ -109,6 +124,8 @@ export const checkDomainExpiryWorker = inngest.createFunction(
           daysRemaining,
           registrar: domain.registrar ?? undefined,
           notificationType,
+          shouldSendEmail,
+          shouldSendInApp,
         },
         inngestLogger,
       );
@@ -129,6 +146,8 @@ async function sendExpiryNotification(
     daysRemaining,
     registrar,
     notificationType,
+    shouldSendEmail,
+    shouldSendInApp,
   }: {
     trackedDomainId: string;
     domainName: string;
@@ -139,6 +158,8 @@ async function sendExpiryNotification(
     daysRemaining: number;
     registrar?: string;
     notificationType: NotificationType;
+    shouldSendEmail: boolean;
+    shouldSendInApp: boolean;
   },
   logger: Logger,
 ): Promise<boolean> {
@@ -147,27 +168,24 @@ async function sendExpiryNotification(
     notificationType,
   );
 
+  const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
+  const message = `Your domain ${domainName} will expire on ${format(expirationDate, "MMMM d, yyyy")}${registrar ? ` (registered with ${registrar})` : ""}.`;
+
+  const channels: string[] = [];
+  if (shouldSendEmail) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject: `${daysRemaining <= 7 ? "⚠️ " : ""}${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-        react: DomainExpiryEmail({
-          userName: userName.split(" ")[0] || "there",
-          domainName,
-          expirationDate: format(expirationDate, "MMMM d, yyyy"),
-          daysRemaining,
-          registrar,
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create notification record (logs the event and handles in-app display)
     const notification = await createNotification({
+      userId,
       trackedDomainId,
       type: notificationType,
+      title,
+      message,
+      data: { domainName },
+      channels,
     });
 
     if (!notification) {
@@ -179,12 +197,29 @@ async function sendExpiryNotification(
       throw new Error("Failed to create notification record in database");
     }
 
-    if (data?.id) {
-      await updateNotificationResendId(
-        trackedDomainId,
-        notificationType,
-        data.id,
+    // Send email notification if enabled
+    if (shouldSendEmail) {
+      const { data, error } = await sendPrettyEmail(
+        {
+          to: userEmail,
+          subject,
+          react: DomainExpiryEmail({
+            userName: userName.split(" ")[0] || "there",
+            domainName,
+            expirationDate: format(expirationDate, "MMMM d, yyyy"),
+            daysRemaining,
+            registrar,
+          }),
+        },
+        { idempotencyKey },
       );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
     }
 
     return true;

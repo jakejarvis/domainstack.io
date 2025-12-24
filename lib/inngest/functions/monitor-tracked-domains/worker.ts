@@ -305,13 +305,24 @@ async function handleRegistrationChange(
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) return false;
 
-  const shouldNotify =
-    trackedDomain.notificationOverrides.registrationChanges !== undefined
-      ? trackedDomain.notificationOverrides.registrationChanges
-      : (await getOrCreateUserNotificationPreferences(userId))
-          .registrationChanges;
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  if (!shouldNotify) return false;
+  // Check email preference
+  const emailOverride = trackedDomain.notificationOverrides.registrationChanges;
+  const shouldSendEmail =
+    emailOverride !== undefined
+      ? emailOverride
+      : globalPrefs.registrationChanges;
+
+  // Check in-app preference
+  const inAppOverride =
+    trackedDomain.notificationOverrides.registrationChangesInApp;
+  const shouldSendInApp =
+    inAppOverride !== undefined
+      ? inAppOverride
+      : globalPrefs.registrationChangesInApp;
+
+  if (!shouldSendEmail && !shouldSendInApp) return false;
 
   // Resolve provider names without mutating the input
   let previousRegistrar = change.previousRegistrar;
@@ -338,38 +349,32 @@ async function handleRegistrationChange(
     generateChangeHash(change),
   );
 
+  const title = `Registration changes detected for ${domainName}`;
+  const subject = `⚠️ ${title}`;
+  const changesList = [
+    change.registrarChanged && "registrar",
+    change.nameserversChanged && "nameservers",
+    change.transferLockChanged && "transfer lock",
+    change.statusesChanged && "statuses",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const message = `Your domain ${domainName} has registration changes: ${changesList}.`;
+
+  const channels: string[] = [];
+  if (shouldSendEmail) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject: `⚠️ Registration changes detected for ${domainName}`,
-        react: RegistrationChangeEmail({
-          userName: userName.split(" ")[0] || "there",
-          domainName,
-          changes: {
-            registrarChanged: change.registrarChanged,
-            nameserversChanged: change.nameserversChanged,
-            transferLockChanged: change.transferLockChanged,
-            statusesChanged: change.statusesChanged,
-            previousRegistrar: previousRegistrar || undefined,
-            newRegistrar: newRegistrar || undefined,
-            previousNameservers: change.previousNameservers,
-            newNameservers: change.newNameservers,
-            previousTransferLock: change.previousTransferLock || undefined,
-            newTransferLock: change.newTransferLock || undefined,
-            previousStatuses: change.previousStatuses,
-            newStatuses: change.newStatuses,
-          },
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create notification record
     const notification = await createNotification({
+      userId,
       trackedDomainId,
       type: "registration_change",
+      title,
+      message,
+      data: { domainName },
+      channels,
     });
 
     if (!notification) {
@@ -381,12 +386,40 @@ async function handleRegistrationChange(
       throw new Error("Failed to create notification record in database");
     }
 
-    if (data?.id) {
-      await updateNotificationResendId(
-        trackedDomainId,
-        "registration_change",
-        data.id,
+    // Send email notification if enabled
+    if (shouldSendEmail) {
+      const { data, error } = await sendPrettyEmail(
+        {
+          to: userEmail,
+          subject,
+          react: RegistrationChangeEmail({
+            userName: userName.split(" ")[0] || "there",
+            domainName,
+            changes: {
+              registrarChanged: change.registrarChanged,
+              nameserversChanged: change.nameserversChanged,
+              transferLockChanged: change.transferLockChanged,
+              statusesChanged: change.statusesChanged,
+              previousRegistrar: previousRegistrar || undefined,
+              newRegistrar: newRegistrar || undefined,
+              previousNameservers: change.previousNameservers,
+              newNameservers: change.newNameservers,
+              previousTransferLock: change.previousTransferLock || undefined,
+              newTransferLock: change.newTransferLock || undefined,
+              previousStatuses: change.previousStatuses,
+              newStatuses: change.newStatuses,
+            },
+          }),
+        },
+        { idempotencyKey },
       );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
     }
 
     return true;
@@ -412,12 +445,22 @@ async function handleProviderChange(
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) return false;
 
-  const shouldNotify =
-    trackedDomain.notificationOverrides.providerChanges !== undefined
-      ? trackedDomain.notificationOverrides.providerChanges
-      : (await getOrCreateUserNotificationPreferences(userId)).providerChanges;
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  if (!shouldNotify) return false;
+  // Check email preference
+  const emailOverride = trackedDomain.notificationOverrides.providerChanges;
+  const shouldSendEmail =
+    emailOverride !== undefined ? emailOverride : globalPrefs.providerChanges;
+
+  // Check in-app preference
+  const inAppOverride =
+    trackedDomain.notificationOverrides.providerChangesInApp;
+  const shouldSendInApp =
+    inAppOverride !== undefined
+      ? inAppOverride
+      : globalPrefs.providerChangesInApp;
+
+  if (!shouldSendEmail && !shouldSendInApp) return false;
 
   const idempotencyKey = generateIdempotencyKey(
     trackedDomainId,
@@ -425,25 +468,31 @@ async function handleProviderChange(
     generateChangeHash(change),
   );
 
+  const title = `Provider changes detected for ${domainName}`;
+  const subject = `🔄 ${title}`;
+  const changesList = [
+    change.dnsProviderChanged && "DNS",
+    change.hostingProviderChanged && "hosting",
+    change.emailProviderChanged && "email",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const message = `Your domain ${domainName} has provider changes: ${changesList}.`;
+
+  const channels: string[] = [];
+  if (shouldSendEmail) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject: `🔄 Provider changes detected for ${domainName}`,
-        react: ProviderChangeEmail({
-          userName: userName.split(" ")[0] || "there",
-          domainName,
-          changes: change,
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create notification record
     const notification = await createNotification({
+      userId,
       trackedDomainId,
       type: "provider_change",
+      title,
+      message,
+      data: { domainName },
+      channels,
     });
 
     if (!notification) {
@@ -455,12 +504,27 @@ async function handleProviderChange(
       throw new Error("Failed to create notification record in database");
     }
 
-    if (data?.id) {
-      await updateNotificationResendId(
-        trackedDomainId,
-        "provider_change",
-        data.id,
+    // Send email notification if enabled
+    if (shouldSendEmail) {
+      const { data, error } = await sendPrettyEmail(
+        {
+          to: userEmail,
+          subject,
+          react: ProviderChangeEmail({
+            userName: userName.split(" ")[0] || "there",
+            domainName,
+            changes: change,
+          }),
+        },
+        { idempotencyKey },
       );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
     }
 
     return true;
@@ -487,13 +551,24 @@ async function handleCertificateChange(
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) return false;
 
-  const shouldNotify =
-    trackedDomain.notificationOverrides.certificateChanges !== undefined
-      ? trackedDomain.notificationOverrides.certificateChanges
-      : (await getOrCreateUserNotificationPreferences(userId))
-          .certificateChanges;
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  if (!shouldNotify) return false;
+  // Check email preference
+  const emailOverride = trackedDomain.notificationOverrides.certificateChanges;
+  const shouldSendEmail =
+    emailOverride !== undefined
+      ? emailOverride
+      : globalPrefs.certificateChanges;
+
+  // Check in-app preference
+  const inAppOverride =
+    trackedDomain.notificationOverrides.certificateChangesInApp;
+  const shouldSendInApp =
+    inAppOverride !== undefined
+      ? inAppOverride
+      : globalPrefs.certificateChangesInApp;
+
+  if (!shouldSendEmail && !shouldSendInApp) return false;
 
   // Resolve CA provider names without mutating the input
   let previousCaProvider = change.previousCaProvider;
@@ -519,30 +594,30 @@ async function handleCertificateChange(
     generateChangeHash(change),
   );
 
+  const title = `Certificate changes detected for ${domainName}`;
+  const subject = `🔒 ${title}`;
+  const changesList = [
+    change.issuerChanged && "issuer",
+    change.caProviderChanged && "CA provider",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const message = `The SSL certificate for ${domainName} has changed: ${changesList}. Valid until ${newValidTo}.`;
+
+  const channels: string[] = [];
+  if (shouldSendEmail) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject: `🔒 Certificate changes detected for ${domainName}`,
-        react: CertificateChangeEmail({
-          userName: userName.split(" ")[0] || "there",
-          domainName,
-          changes: {
-            ...change,
-            previousCaProvider,
-            newCaProvider,
-          },
-          newValidTo,
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create notification record
     const notification = await createNotification({
+      userId,
       trackedDomainId,
       type: "certificate_change",
+      title,
+      message,
+      data: { domainName },
+      channels,
     });
 
     if (!notification) {
@@ -554,12 +629,32 @@ async function handleCertificateChange(
       throw new Error("Failed to create notification record in database");
     }
 
-    if (data?.id) {
-      await updateNotificationResendId(
-        trackedDomainId,
-        "certificate_change",
-        data.id,
+    // Send email notification if enabled
+    if (shouldSendEmail) {
+      const { data, error } = await sendPrettyEmail(
+        {
+          to: userEmail,
+          subject,
+          react: CertificateChangeEmail({
+            userName: userName.split(" ")[0] || "there",
+            domainName,
+            changes: {
+              ...change,
+              previousCaProvider,
+              newCaProvider,
+            },
+            newValidTo,
+          }),
+        },
+        { idempotencyKey },
       );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
     }
 
     return true;
