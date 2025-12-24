@@ -19,12 +19,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import { useLogger } from "@/hooks/use-logger";
 import { useSession } from "@/lib/auth-client";
 import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
-import { logger } from "@/lib/logger/client";
 import type { UserNotificationPreferences } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,7 @@ export function NotificationSettingsSection({
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const logger = useLogger({ component: "NotificationSettingsSection" });
   const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
 
   // Query keys for cache manipulation
@@ -276,7 +277,7 @@ export function NotificationSettingsSection({
               key={category}
               category={category}
               emailEnabled={globalPrefs[category]}
-              inAppEnabled={globalPrefs[`${category}InApp`] as boolean}
+              inAppEnabled={globalPrefs[`${category}InApp`] ?? false}
               onToggle={(type, enabled) =>
                 handleGlobalToggle(category, type, enabled)
               }

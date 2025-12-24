@@ -1,6 +1,17 @@
 import "server-only";
 
-import { and, count, desc, eq, gt, isNull, like, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  gt,
+  isNull,
+  like,
+  lt,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { NotificationType } from "@/lib/constants/notifications";
 import { db } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
