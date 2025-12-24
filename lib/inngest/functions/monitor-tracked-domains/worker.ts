@@ -352,7 +352,6 @@ async function handleRegistrationChange(
     {
       userId,
       userEmail,
-      userName,
       trackedDomainId,
       domainName,
       notificationType: "registration_change",
@@ -427,7 +426,6 @@ async function handleProviderChange(
     {
       userId,
       userEmail,
-      userName,
       trackedDomainId,
       domainName,
       notificationType: "provider_change",
@@ -507,7 +505,6 @@ async function handleCertificateChange(
     {
       userId,
       userEmail,
-      userName,
       trackedDomainId,
       domainName,
       notificationType: "certificate_change",

@@ -20,7 +20,6 @@ import type {
 export interface SendNotificationOptions {
   userId: string;
   userEmail: string;
-  userName: string;
   trackedDomainId: string;
   domainName: string;
   notificationType: NotificationType;
@@ -57,16 +56,12 @@ export async function determineNotificationChannels(
   const emailOverride = trackedDomain.notificationOverrides[category];
   // Cast to boolean explicitly for safety, though schema ensures boolean
   const shouldSendEmail =
-    emailOverride !== undefined
-      ? (emailOverride as boolean)
-      : (globalPrefs[globalEmailPref] as boolean);
+    emailOverride !== undefined ? emailOverride : globalPrefs[globalEmailPref];
 
   // Check in-app preference
   const inAppOverride = trackedDomain.notificationOverrides[inAppCategory];
   const shouldSendInApp =
-    inAppOverride !== undefined
-      ? (inAppOverride as boolean)
-      : (globalPrefs[globalInAppPref] as boolean);
+    inAppOverride !== undefined ? inAppOverride : globalPrefs[globalInAppPref];
 
   return { shouldSendEmail, shouldSendInApp };
 }
