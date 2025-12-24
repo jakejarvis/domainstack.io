@@ -26,6 +26,10 @@ import { ttlForDnsRecord } from "@/lib/ttl";
 
 const logger = createLogger({ source: "dns" });
 
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
 // ============================================================================
 // DNS resolution
 // ============================================================================
@@ -39,6 +43,7 @@ const logger = createLogger({ source: "dns" });
  */
 export const getDnsRecords = cache(async function getDnsRecords(
   domain: string,
+  options: ServiceOptions = {},
 ): Promise<DnsRecordsResponse> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
@@ -250,27 +255,27 @@ export const getDnsRecords = cache(async function getDnsRecords(
             fetchedAt: now,
             recordsByType: recordsByTypeToPersist,
           });
-          after(() => {
-            const times = Object.values(recordsByTypeToPersist)
-              .flat()
-              .map((r) => r.expiresAt?.getTime?.())
-              .filter(
-                (t): t is number => typeof t === "number" && Number.isFinite(t),
-              );
-            // Always schedule: use the soonest expiry if available, otherwise schedule immediately
-            const soonest = times.length > 0 ? Math.min(...times) : Date.now();
-            scheduleRevalidation(
-              domain,
-              "dns",
-              soonest,
-              existingDomain.lastAccessedAt ?? null,
-            ).catch((err) => {
-              logger.error("schedule failed partial", err, {
+
+          if (!options.skipScheduling) {
+            after(() => {
+              const times = Object.values(recordsByTypeToPersist)
+                .flat()
+                .map((r) => r.expiresAt?.getTime?.())
+                .filter(
+                  (t): t is number =>
+                    typeof t === "number" && Number.isFinite(t),
+                );
+              // Always schedule: use the soonest expiry if available, otherwise schedule immediately
+              const soonest =
+                times.length > 0 ? Math.min(...times) : Date.now();
+              return scheduleRevalidation(
                 domain,
-                type: "partial",
-              });
+                "dns",
+                soonest,
+                existingDomain.lastAccessedAt ?? null,
+              );
             });
-          });
+          }
         }
 
         // Merge cached fresh + newly fetched stale
@@ -385,26 +390,24 @@ export const getDnsRecords = cache(async function getDnsRecords(
           recordsByType: recordsByTypeToPersist,
         });
 
-        after(() => {
-          const times = Object.values(recordsByTypeToPersist)
-            .flat()
-            .map((r) => r.expiresAt?.getTime?.())
-            .filter(
-              (t): t is number => typeof t === "number" && Number.isFinite(t),
-            );
-          const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
-          scheduleRevalidation(
-            domain,
-            "dns",
-            soonest,
-            existingDomain.lastAccessedAt ?? null,
-          ).catch((err) => {
-            logger.error("schedule failed full", err, {
+        if (!options.skipScheduling) {
+          after(() => {
+            const times = Object.values(recordsByTypeToPersist)
+              .flat()
+              .map((r) => r.expiresAt?.getTime?.())
+              .filter(
+                (t): t is number => typeof t === "number" && Number.isFinite(t),
+              );
+            const soonest =
+              times.length > 0 ? Math.min(...times) : now.getTime();
+            return scheduleRevalidation(
               domain,
-              type: "full",
-            });
+              "dns",
+              soonest,
+              existingDomain.lastAccessedAt ?? null,
+            );
           });
-        });
+        }
       }
       logger.info("done", {
         domain,

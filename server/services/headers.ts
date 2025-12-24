@@ -15,6 +15,10 @@ import { ttlForHeaders } from "@/lib/ttl";
 
 const logger = createLogger({ source: "headers" });
 
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
 /**
  * Probe HTTP headers for a domain with Postgres caching.
  *
@@ -24,6 +28,7 @@ const logger = createLogger({ source: "headers" });
  */
 export const getHeaders = cache(async function getHeaders(
   domain: string,
+  options: ServiceOptions = {},
 ): Promise<HeadersResponse> {
   // Input domain is already normalized to registrable domain by router schema
   const url = `https://${domain}/`;
@@ -88,7 +93,6 @@ export const getHeaders = cache(async function getHeaders(
 
     // Persist to Postgres only if domain exists (i.e., is registered)
     const expiresAt = ttlForHeaders(now);
-    const dueAtMs = expiresAt.getTime();
 
     if (existingDomain) {
       await replaceHeaders({
@@ -99,18 +103,16 @@ export const getHeaders = cache(async function getHeaders(
         expiresAt,
       });
 
-      after(() => {
-        scheduleRevalidation(
-          domain,
-          "headers",
-          dueAtMs,
-          existingDomain.lastAccessedAt ?? null,
-        ).catch((err) => {
-          logger.error("schedule failed", err, {
+      if (!options.skipScheduling) {
+        after(() =>
+          scheduleRevalidation(
             domain,
-          });
-        });
-      });
+            "headers",
+            expiresAt.getTime(),
+            existingDomain.lastAccessedAt ?? null,
+          ),
+        );
+      }
     }
 
     logger.info("done", {

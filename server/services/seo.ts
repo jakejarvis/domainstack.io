@@ -26,7 +26,14 @@ const SOCIAL_WIDTH = 1200;
 const SOCIAL_HEIGHT = 630;
 const MAX_REMOTE_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
-export async function getSeo(domain: string): Promise<SeoResponse> {
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
+export async function getSeo(
+  domain: string,
+  options: ServiceOptions = {},
+): Promise<SeoResponse> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
 
@@ -249,7 +256,6 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
 
   // Persist to Postgres only if domain exists (i.e., is registered)
   const expiresAt = ttlForSeo(now);
-  const dueAtMs = expiresAt.getTime();
 
   if (existingDomain) {
     await upsertSeo({
@@ -271,18 +277,16 @@ export async function getSeo(domain: string): Promise<SeoResponse> {
       expiresAt,
     });
 
-    after(() => {
-      scheduleRevalidation(
-        domain,
-        "seo",
-        dueAtMs,
-        existingDomain.lastAccessedAt ?? null,
-      ).catch((err) => {
-        logger.error("schedule failed", err, {
+    if (!options.skipScheduling) {
+      after(() =>
+        scheduleRevalidation(
           domain,
-        });
-      });
-    });
+          "seo",
+          expiresAt.getTime(),
+          existingDomain.lastAccessedAt ?? null,
+        ),
+      );
+    }
   }
 
   logger.info("done", {

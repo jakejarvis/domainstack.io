@@ -50,11 +50,16 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
   };
 }
 
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
 /**
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
  */
 export async function getRegistration(
   domain: string,
+  options: ServiceOptions = {},
 ): Promise<RegistrationResponse> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
@@ -129,18 +134,16 @@ export async function getRegistration(
       };
 
       // Schedule background revalidation using actual last access time
-      after(() => {
-        scheduleRevalidation(
-          domain,
-          "registration",
-          row.registration.expiresAt.getTime(),
-          row.domainLastAccessedAt ?? null,
-        ).catch((err) => {
-          logger.error("schedule failed", err, {
+      if (!options.skipScheduling) {
+        after(() =>
+          scheduleRevalidation(
             domain,
-          });
-        });
-      });
+            "registration",
+            row.registration.expiresAt.getTime(),
+            row.domainLastAccessedAt ?? null,
+          ),
+        );
+      }
 
       logger.info("cache hit", { domain });
 
@@ -328,18 +331,16 @@ export async function getRegistration(
     });
 
     // Schedule background revalidation
-    after(() => {
-      scheduleRevalidation(
-        domain,
-        "registration",
-        expiresAt.getTime(),
-        domainRecord.lastAccessedAt ?? null,
-      ).catch((err) => {
-        logger.error("schedule failed", err, {
+    if (!options.skipScheduling) {
+      after(() =>
+        scheduleRevalidation(
           domain,
-        });
-      });
-    });
+          "registration",
+          expiresAt.getTime(),
+          domainRecord.lastAccessedAt ?? null,
+        ),
+      );
+    }
 
     logger.info("done", { domain });
   } catch (err) {

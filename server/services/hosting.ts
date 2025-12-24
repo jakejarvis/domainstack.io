@@ -29,6 +29,10 @@ import { lookupIpMeta } from "@/server/services/ip";
 
 const logger = createLogger({ source: "hosting" });
 
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
 /**
  * Detect hosting, email, and DNS providers for a domain with Postgres caching.
  *
@@ -38,6 +42,7 @@ const logger = createLogger({ source: "hosting" });
  */
 export const getHosting = cache(async function getHosting(
   domain: string,
+  options: ServiceOptions = {},
 ): Promise<HostingResponse> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
@@ -220,7 +225,6 @@ export const getHosting = cache(async function getHosting(
 
   // Persist to Postgres only if domain exists (i.e., is registered)
   const expiresAt = ttlForHosting(now);
-  const dueAtMs = expiresAt.getTime();
 
   if (existingDomain) {
     // Batch resolve all providers in one query
@@ -283,18 +287,16 @@ export const getHosting = cache(async function getHosting(
       expiresAt,
     });
 
-    after(() => {
-      scheduleRevalidation(
-        domain,
-        "hosting",
-        dueAtMs,
-        existingDomain.lastAccessedAt ?? null,
-      ).catch((err) => {
-        logger.error("schedule failed", err, {
+    if (!options.skipScheduling) {
+      after(() =>
+        scheduleRevalidation(
           domain,
-        });
-      });
-    });
+          "hosting",
+          expiresAt.getTime(),
+          existingDomain.lastAccessedAt ?? null,
+        ),
+      );
+    }
   }
 
   logger.info("done", {

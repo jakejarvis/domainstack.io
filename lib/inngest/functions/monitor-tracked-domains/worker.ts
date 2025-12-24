@@ -68,10 +68,11 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       const [registrationData, hostingData, certificatesData] = await step.run(
         "fetch-live-data",
         async () => {
+          const opts = { skipScheduling: true };
           return await Promise.all([
-            getRegistration(domainName),
-            getHosting(domainName),
-            getCertificates(domainName),
+            getRegistration(domainName, opts),
+            getHosting(domainName, opts),
+            getCertificates(domainName, opts),
           ]);
         },
       );

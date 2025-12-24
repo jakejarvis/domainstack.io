@@ -20,6 +20,10 @@ import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
 
+export type ServiceOptions = {
+  skipScheduling?: boolean;
+};
+
 /**
  * Safely coerce altNames from DB to string array.
  * Guards against non-array values that could slip through serialization.
@@ -31,7 +35,10 @@ function safeAltNamesArray(value: unknown): string[] {
   return [];
 }
 
-export async function getCertificates(domain: string): Promise<Certificate[]> {
+export async function getCertificates(
+  domain: string,
+  options: ServiceOptions = {},
+): Promise<Certificate[]> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
 
@@ -244,19 +251,16 @@ export async function getCertificates(domain: string): Promise<Certificate[]> {
         expiresAt: nextDue,
       });
 
-      after(() => {
-        const dueAtMs = nextDue.getTime();
-        scheduleRevalidation(
-          domain,
-          "certificates",
-          dueAtMs,
-          existingDomain.lastAccessedAt ?? null,
-        ).catch((err) => {
-          logger.error("schedule failed", err, {
+      if (!options.skipScheduling) {
+        after(() =>
+          scheduleRevalidation(
             domain,
-          });
-        });
-      });
+            "certificates",
+            nextDue.getTime(),
+            existingDomain.lastAccessedAt ?? null,
+          ),
+        );
+      }
     }
 
     logger.info("done", {
