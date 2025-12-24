@@ -181,8 +181,16 @@ export function NotificationSettingsSection({
     type: "email" | "inApp",
     enabled: boolean,
   ) => {
-    const key = type === "email" ? category : `${category}InApp`;
-    updateGlobalMutation.mutate({ [key]: enabled });
+    // Get current category preferences
+    const currentPref = globalPrefs[category];
+    
+    // Update only the specific channel
+    const updatedPref = {
+      ...currentPref,
+      [type === "email" ? "email" : "inApp"]: enabled,
+    };
+    
+    updateGlobalMutation.mutate({ [category]: updatedPref });
   };
 
   const handleDomainToggle = (
@@ -191,11 +199,31 @@ export function NotificationSettingsSection({
     type: "email" | "inApp",
     value: boolean | undefined, // undefined = inherit
   ) => {
-    const key = type === "email" ? category : `${category}InApp`;
-    updateDomainMutation.mutate({
-      trackedDomainId,
-      overrides: { [key]: value },
-    });
+    // Find the current domain
+    const domain = domains.find((d) => d.id === trackedDomainId);
+    if (!domain) return;
+    
+    // Get current override for this category
+    const currentOverride = domain.notificationOverrides[category];
+    
+    if (value === undefined) {
+      // Clear the entire override for this category
+      updateDomainMutation.mutate({
+        trackedDomainId,
+        overrides: { [category]: undefined },
+      });
+    } else {
+      // Set or update the override
+      const updatedOverride = {
+        email: type === "email" ? value : (currentOverride?.email ?? globalPrefs[category].email),
+        inApp: type === "inApp" ? value : (currentOverride?.inApp ?? globalPrefs[category].inApp),
+      };
+      
+      updateDomainMutation.mutate({
+        trackedDomainId,
+        overrides: { [category]: updatedOverride },
+      });
+    }
   };
 
   const handleResetDomain = (trackedDomainId: string) => {
@@ -239,18 +267,12 @@ export function NotificationSettingsSection({
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
 
   const defaultGlobalPrefs: UserNotificationPreferences = {
-    domainExpiry: true,
-    domainExpiryInApp: true,
-    certificateExpiry: true,
-    certificateExpiryInApp: true,
-    verificationStatus: true,
-    verificationStatusInApp: true,
-    registrationChanges: true,
-    registrationChangesInApp: true,
-    providerChanges: true,
-    providerChangesInApp: true,
-    certificateChanges: true,
-    certificateChangesInApp: true,
+    domainExpiry: { inApp: true, email: true },
+    certificateExpiry: { inApp: true, email: true },
+    verificationStatus: { inApp: true, email: true },
+    registrationChanges: { inApp: true, email: true },
+    providerChanges: { inApp: true, email: true },
+    certificateChanges: { inApp: true, email: true },
   };
 
   // Merge defaults with saved preferences to ensure new fields are always present
@@ -288,8 +310,8 @@ export function NotificationSettingsSection({
             <GlobalNotificationRow
               key={category}
               category={category}
-              emailEnabled={globalPrefs[category]}
-              inAppEnabled={globalPrefs[`${category}InApp`]}
+              emailEnabled={globalPrefs[category].email}
+              inAppEnabled={globalPrefs[category].inApp}
               onToggle={(type, enabled) =>
                 handleGlobalToggle(category, type, enabled)
               }

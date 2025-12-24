@@ -54,44 +54,44 @@ describe("getOrCreateUserNotificationPreferences", () => {
   it("creates new preferences with defaults when none exist", async () => {
     const result = await getOrCreateUserNotificationPreferences(testUserId);
 
-    // Returns only the preference booleans, not the full DB record
-    expect(result.domainExpiry).toBe(true);
-    expect(result.certificateExpiry).toBe(true);
-    expect(result.registrationChanges).toBe(true);
-    expect(result.providerChanges).toBe(true);
-    expect(result.certificateChanges).toBe(true);
+    // Returns objects with channel booleans
+    expect(result.domainExpiry).toEqual({ inApp: true, email: true });
+    expect(result.certificateExpiry).toEqual({ inApp: true, email: true });
+    expect(result.registrationChanges).toEqual({ inApp: true, email: true });
+    expect(result.providerChanges).toEqual({ inApp: true, email: true });
+    expect(result.certificateChanges).toEqual({ inApp: true, email: true });
   });
 
   it("returns existing preferences without creating new ones", async () => {
     // Create custom preferences first
     await db.insert(userNotificationPreferences).values({
       userId: testUserId,
-      domainExpiry: false,
-      certificateExpiry: true,
-      verificationStatus: true, // DB still has this field
-      registrationChanges: false,
-      providerChanges: true,
-      certificateChanges: false,
+      domainExpiry: { inApp: false, email: false },
+      certificateExpiry: { inApp: true, email: true },
+      verificationStatus: { inApp: true, email: true }, // DB still has this field
+      registrationChanges: { inApp: false, email: true },
+      providerChanges: { inApp: true, email: false },
+      certificateChanges: { inApp: false, email: false },
     });
 
     const result = await getOrCreateUserNotificationPreferences(testUserId);
 
-    expect(result.domainExpiry).toBe(false);
-    expect(result.certificateExpiry).toBe(true);
-    expect(result.registrationChanges).toBe(false);
-    expect(result.providerChanges).toBe(true);
-    expect(result.certificateChanges).toBe(false);
+    expect(result.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(result.certificateExpiry).toEqual({ inApp: true, email: true });
+    expect(result.registrationChanges).toEqual({ inApp: false, email: true });
+    expect(result.providerChanges).toEqual({ inApp: true, email: false });
+    expect(result.certificateChanges).toEqual({ inApp: false, email: false });
   });
 
   it("returns consistent values on multiple calls", async () => {
     const first = await getOrCreateUserNotificationPreferences(testUserId);
     const second = await getOrCreateUserNotificationPreferences(testUserId);
 
-    expect(first.domainExpiry).toBe(second.domainExpiry);
-    expect(first.certificateExpiry).toBe(second.certificateExpiry);
-    expect(first.registrationChanges).toBe(second.registrationChanges);
-    expect(first.providerChanges).toBe(second.providerChanges);
-    expect(first.certificateChanges).toBe(second.certificateChanges);
+    expect(first.domainExpiry).toEqual(second.domainExpiry);
+    expect(first.certificateExpiry).toEqual(second.certificateExpiry);
+    expect(first.registrationChanges).toEqual(second.registrationChanges);
+    expect(first.providerChanges).toEqual(second.providerChanges);
+    expect(first.certificateChanges).toEqual(second.certificateChanges);
   });
 });
 
@@ -104,22 +104,22 @@ describe("getUserNotificationPreferences", () => {
   it("returns existing preferences", async () => {
     await db.insert(userNotificationPreferences).values({
       userId: testUserId,
-      domainExpiry: true,
-      certificateExpiry: false,
-      verificationStatus: true, // DB still has this field
-      registrationChanges: true,
-      providerChanges: false,
-      certificateChanges: true,
+      domainExpiry: { inApp: true, email: true },
+      certificateExpiry: { inApp: false, email: true },
+      verificationStatus: { inApp: true, email: true }, // DB still has this field
+      registrationChanges: { inApp: true, email: false },
+      providerChanges: { inApp: false, email: false },
+      certificateChanges: { inApp: true, email: false },
     });
 
     const result = await getUserNotificationPreferences(testUserId);
 
     expect(result).not.toBeNull();
-    expect(result?.domainExpiry).toBe(true);
-    expect(result?.certificateExpiry).toBe(false);
-    expect(result?.registrationChanges).toBe(true);
-    expect(result?.providerChanges).toBe(false);
-    expect(result?.certificateChanges).toBe(true);
+    expect(result?.domainExpiry).toEqual({ inApp: true, email: true });
+    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result?.registrationChanges).toEqual({ inApp: true, email: false });
+    expect(result?.providerChanges).toEqual({ inApp: false, email: false });
+    expect(result?.certificateChanges).toEqual({ inApp: true, email: false });
   });
 });
 
@@ -128,65 +128,65 @@ describe("updateUserNotificationPreferences", () => {
     await getOrCreateUserNotificationPreferences(testUserId);
 
     const result = await updateUserNotificationPreferences(testUserId, {
-      domainExpiry: false,
+      domainExpiry: { inApp: false, email: true },
     });
 
-    expect(result?.domainExpiry).toBe(false);
-    expect(result?.certificateExpiry).toBe(true); // Unchanged
-    expect(result?.registrationChanges).toBe(true); // Unchanged
+    expect(result?.domainExpiry).toEqual({ inApp: false, email: true });
+    expect(result?.certificateExpiry).toEqual({ inApp: true, email: true }); // Unchanged
+    expect(result?.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
   });
 
   it("updates multiple preferences", async () => {
     await getOrCreateUserNotificationPreferences(testUserId);
 
     const result = await updateUserNotificationPreferences(testUserId, {
-      domainExpiry: false,
-      certificateExpiry: false,
+      domainExpiry: { inApp: false, email: false },
+      certificateExpiry: { inApp: false, email: true },
     });
 
-    expect(result?.domainExpiry).toBe(false);
-    expect(result?.certificateExpiry).toBe(false);
-    expect(result?.registrationChanges).toBe(true); // Unchanged
+    expect(result?.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result?.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
   });
 
   it("updates all preferences", async () => {
     await getOrCreateUserNotificationPreferences(testUserId);
 
     const result = await updateUserNotificationPreferences(testUserId, {
-      domainExpiry: false,
-      certificateExpiry: false,
-      registrationChanges: false,
-      providerChanges: false,
-      certificateChanges: false,
+      domainExpiry: { inApp: false, email: false },
+      certificateExpiry: { inApp: false, email: true },
+      registrationChanges: { inApp: false, email: false },
+      providerChanges: { inApp: false, email: true },
+      certificateChanges: { inApp: false, email: false },
     });
 
-    expect(result?.domainExpiry).toBe(false);
-    expect(result?.certificateExpiry).toBe(false);
-    expect(result?.registrationChanges).toBe(false);
-    expect(result?.providerChanges).toBe(false);
-    expect(result?.certificateChanges).toBe(false);
+    expect(result?.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result?.registrationChanges).toEqual({ inApp: false, email: false });
+    expect(result?.providerChanges).toEqual({ inApp: false, email: true });
+    expect(result?.certificateChanges).toEqual({ inApp: false, email: false });
   });
 
   it("creates preferences if they do not exist", async () => {
     // Don't create preferences first
     const result = await updateUserNotificationPreferences(testUserId, {
-      domainExpiry: false,
+      domainExpiry: { inApp: false, email: true },
     });
 
-    expect(result.domainExpiry).toBe(false);
-    expect(result.certificateExpiry).toBe(true); // Default
-    expect(result.registrationChanges).toBe(true); // Default
+    expect(result.domainExpiry).toEqual({ inApp: false, email: true });
+    expect(result.certificateExpiry).toEqual({ inApp: true, email: true }); // Default
+    expect(result.registrationChanges).toEqual({ inApp: true, email: true }); // Default
   });
 
   it("persists changes to database", async () => {
     await getOrCreateUserNotificationPreferences(testUserId);
 
     await updateUserNotificationPreferences(testUserId, {
-      domainExpiry: false,
+      domainExpiry: { inApp: false, email: false },
     });
 
     // Verify via direct query
     const stored = await getUserNotificationPreferences(testUserId);
-    expect(stored?.domainExpiry).toBe(false);
+    expect(stored?.domainExpiry).toEqual({ inApp: false, email: false });
   });
 });

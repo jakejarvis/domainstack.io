@@ -304,9 +304,6 @@ async function handleRegistrationChange(
       userId,
       trackedDomainId,
       "registrationChanges",
-      "registrationChangesInApp",
-      "registrationChanges",
-      "registrationChangesInApp",
     );
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
@@ -398,9 +395,6 @@ async function handleProviderChange(
       userId,
       trackedDomainId,
       "providerChanges",
-      "providerChangesInApp",
-      "providerChanges",
-      "providerChangesInApp",
     );
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
@@ -460,9 +454,6 @@ async function handleCertificateChange(
       userId,
       trackedDomainId,
       "certificateChanges",
-      "certificateChangesInApp",
-      "certificateChanges",
-      "certificateChangesInApp",
     );
 
   if (!shouldSendEmail && !shouldSendInApp) return false;

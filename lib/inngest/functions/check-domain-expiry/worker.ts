@@ -82,21 +82,20 @@ export const checkDomainExpiryWorker = inngest.createFunction(
           domain.userId,
         );
 
-        // Check email preference
-        const emailOverride = domain.notificationOverrides.domainExpiry;
-        const shouldSendEmail =
-          emailOverride !== undefined
-            ? emailOverride
-            : globalPrefs.domainExpiry;
+        // Check for domain-specific override
+        const override = domain.notificationOverrides.domainExpiry;
+        if (override !== undefined) {
+          return {
+            shouldSendEmail: override.email,
+            shouldSendInApp: override.inApp,
+          };
+        }
 
-        // Check in-app preference
-        const inAppOverride = domain.notificationOverrides.domainExpiryInApp;
-        const shouldSendInApp =
-          inAppOverride !== undefined
-            ? inAppOverride
-            : globalPrefs.domainExpiryInApp;
-
-        return { shouldSendEmail, shouldSendInApp };
+        // Fall back to global preferences
+        return {
+          shouldSendEmail: globalPrefs.domainExpiry.email,
+          shouldSendInApp: globalPrefs.domainExpiry.inApp,
+        };
       },
     );
 

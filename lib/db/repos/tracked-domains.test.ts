@@ -497,11 +497,13 @@ describe("updateNotificationOverrides", () => {
     const createdId = created!.id;
 
     const result = await updateNotificationOverrides(createdId, {
-      domainExpiry: false,
+      domainExpiry: { inApp: false, email: true },
     });
 
     expect(result).not.toBeNull();
-    expect(result?.notificationOverrides).toEqual({ domainExpiry: false });
+    expect(result?.notificationOverrides).toEqual({ 
+      domainExpiry: { inApp: false, email: true }
+    });
   });
 
   it("merges overrides with existing values", async () => {
@@ -516,24 +518,24 @@ describe("updateNotificationOverrides", () => {
 
     // Set first override
     await updateNotificationOverrides(createdId, {
-      domainExpiry: false,
+      domainExpiry: { inApp: false, email: false },
     });
 
     // Set second override
     const result = await updateNotificationOverrides(createdId, {
-      certificateExpiry: true,
+      certificateExpiry: { inApp: true, email: true },
     });
 
     expect(result?.notificationOverrides).toEqual({
-      domainExpiry: false,
-      certificateExpiry: true,
+      domainExpiry: { inApp: false, email: false },
+      certificateExpiry: { inApp: true, email: true },
     });
   });
 
   it("returns null for non-existent domain", async () => {
     const result = await updateNotificationOverrides(
       "00000000-0000-0000-0000-000000000000",
-      { domainExpiry: false },
+      { domainExpiry: { inApp: false, email: true } },
     );
     expect(result).toBeNull();
   });
@@ -552,8 +554,8 @@ describe("resetNotificationOverrides", () => {
 
     // Set some overrides first
     await updateNotificationOverrides(createdId, {
-      domainExpiry: false,
-      certificateExpiry: true,
+      domainExpiry: { inApp: false, email: false },
+      certificateExpiry: { inApp: true, email: true },
     });
 
     // Reset

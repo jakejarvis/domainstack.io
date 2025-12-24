@@ -72,18 +72,17 @@ export function DomainNotificationRow({
       </div>
       <div className="mt-3 space-y-2">
         {NOTIFICATION_CATEGORIES.map((category) => {
-          // Email values
-          const emailOverride = overrides[category];
-          const emailGlobal = globalPrefs[category];
-          const emailIsInherited = emailOverride === undefined;
-          const emailEffective = emailOverride ?? emailGlobal;
-
-          // In-App values
-          const inAppKey = `${category}InApp` as keyof NotificationOverrides;
-          const inAppOverride = overrides[inAppKey];
-          const inAppGlobal = globalPrefs[inAppKey] as boolean;
-          const inAppIsInherited = inAppOverride === undefined;
-          const inAppEffective = inAppOverride ?? inAppGlobal;
+          // Get override and global preference objects
+          const override = overrides[category];
+          const globalPref = globalPrefs[category];
+          
+          // Determine effective values
+          const emailEffective = override?.email ?? globalPref.email;
+          const inAppEffective = override?.inApp ?? globalPref.inApp;
+          
+          // Check if inherited
+          const emailIsInherited = override === undefined || override.email === undefined;
+          const inAppIsInherited = override === undefined || override.inApp === undefined;
 
           return (
             <div
@@ -113,7 +112,7 @@ export function DomainNotificationRow({
                       onToggle(
                         category,
                         "inApp",
-                        checked === inAppGlobal ? undefined : checked,
+                        checked === globalPref.inApp ? undefined : checked,
                       );
                     }}
                     disabled={disabled}
@@ -136,7 +135,7 @@ export function DomainNotificationRow({
                       onToggle(
                         category,
                         "email",
-                        checked === emailGlobal ? undefined : checked,
+                        checked === globalPref.email ? undefined : checked,
                       );
                     }}
                     disabled={disabled}

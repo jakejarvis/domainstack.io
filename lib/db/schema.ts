@@ -291,31 +291,31 @@ export const userNotificationPreferences = pgTable(
     userId: text("user_id")
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),
-    // Global toggles (defaults for all domains)
-    domainExpiry: boolean("domain_expiry").notNull().default(true),
-    domainExpiryInApp: boolean("domain_expiry_in_app").notNull().default(true),
-    certificateExpiry: boolean("certificate_expiry").notNull().default(true),
-    certificateExpiryInApp: boolean("certificate_expiry_in_app")
+    // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
+    domainExpiry: jsonb("domain_expiry")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    verificationStatus: boolean("verification_status").notNull().default(true),
-    verificationStatusInApp: boolean("verification_status_in_app")
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    certificateExpiry: jsonb("certificate_expiry")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    registrationChanges: boolean("registration_changes")
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    verificationStatus: jsonb("verification_status")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    registrationChangesInApp: boolean("registration_changes_in_app")
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    registrationChanges: jsonb("registration_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    providerChanges: boolean("provider_changes").notNull().default(true),
-    providerChangesInApp: boolean("provider_changes_in_app")
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    providerChanges: jsonb("provider_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    certificateChanges: boolean("certificate_changes").notNull().default(true),
-    certificateChangesInApp: boolean("certificate_changes_in_app")
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    certificateChanges: jsonb("certificate_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

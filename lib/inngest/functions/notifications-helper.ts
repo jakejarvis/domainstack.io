@@ -41,9 +41,6 @@ export async function determineNotificationChannels(
   userId: string,
   trackedDomainId: string,
   category: keyof NotificationOverrides,
-  inAppCategory: keyof NotificationOverrides,
-  globalEmailPref: keyof UserNotificationPreferences,
-  globalInAppPref: keyof UserNotificationPreferences,
 ): Promise<{ shouldSendEmail: boolean; shouldSendInApp: boolean }> {
   const trackedDomain = await findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
@@ -52,18 +49,23 @@ export async function determineNotificationChannels(
 
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  // Check email preference
-  const emailOverride = trackedDomain.notificationOverrides[category];
-  // Cast to boolean explicitly for safety, though schema ensures boolean
-  const shouldSendEmail =
-    emailOverride !== undefined ? emailOverride : globalPrefs[globalEmailPref];
+  // Check for per-domain overrides first
+  const override = trackedDomain.notificationOverrides[category];
+  
+  if (override !== undefined) {
+    // Use domain-specific override
+    return {
+      shouldSendEmail: override.email,
+      shouldSendInApp: override.inApp,
+    };
+  }
 
-  // Check in-app preference
-  const inAppOverride = trackedDomain.notificationOverrides[inAppCategory];
-  const shouldSendInApp =
-    inAppOverride !== undefined ? inAppOverride : globalPrefs[globalInAppPref];
-
-  return { shouldSendEmail, shouldSendInApp };
+  // Fall back to global preferences
+  const globalPref = globalPrefs[category];
+  return {
+    shouldSendEmail: globalPref.email,
+    shouldSendInApp: globalPref.inApp,
+  };
 }
 
 /**

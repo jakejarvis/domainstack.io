@@ -76,21 +76,20 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
           cert.userId,
         );
 
-        // Check email preference
-        const emailOverride = cert.notificationOverrides.certificateExpiry;
-        const shouldSendEmail =
-          emailOverride !== undefined
-            ? emailOverride
-            : globalPrefs.certificateExpiry;
+        // Check for domain-specific override
+        const override = cert.notificationOverrides.certificateExpiry;
+        if (override !== undefined) {
+          return {
+            shouldSendEmail: override.email,
+            shouldSendInApp: override.inApp,
+          };
+        }
 
-        // Check in-app preference
-        const inAppOverride = cert.notificationOverrides.certificateExpiryInApp;
-        const shouldSendInApp =
-          inAppOverride !== undefined
-            ? inAppOverride
-            : globalPrefs.certificateExpiryInApp;
-
-        return { shouldSendEmail, shouldSendInApp };
+        // Fall back to global preferences
+        return {
+          shouldSendEmail: globalPrefs.certificateExpiry.email,
+          shouldSendInApp: globalPrefs.certificateExpiry.inApp,
+        };
       },
     );
 

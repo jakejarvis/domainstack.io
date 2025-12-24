@@ -16,17 +16,11 @@ function mapPreferences(
 ): UserNotificationPreferencesData {
   return {
     domainExpiry: row.domainExpiry,
-    domainExpiryInApp: row.domainExpiryInApp,
     certificateExpiry: row.certificateExpiry,
-    certificateExpiryInApp: row.certificateExpiryInApp,
     verificationStatus: row.verificationStatus,
-    verificationStatusInApp: row.verificationStatusInApp,
     registrationChanges: row.registrationChanges,
-    registrationChangesInApp: row.registrationChangesInApp,
     providerChanges: row.providerChanges,
-    providerChangesInApp: row.providerChangesInApp,
     certificateChanges: row.certificateChanges,
-    certificateChangesInApp: row.certificateChangesInApp,
   };
 }
 
@@ -51,18 +45,12 @@ export async function getOrCreateUserNotificationPreferences(
     .insert(userNotificationPreferences)
     .values({
       userId,
-      domainExpiry: true,
-      domainExpiryInApp: true,
-      certificateExpiry: true,
-      certificateExpiryInApp: true,
-      verificationStatus: true, // Always true, not exposed in UI
-      verificationStatusInApp: true,
-      registrationChanges: true,
-      registrationChangesInApp: true,
-      providerChanges: true,
-      providerChangesInApp: true,
-      certificateChanges: true,
-      certificateChangesInApp: true,
+      domainExpiry: { inApp: true, email: true },
+      certificateExpiry: { inApp: true, email: true },
+      verificationStatus: { inApp: true, email: true }, // Always true, not exposed in UI
+      registrationChanges: { inApp: true, email: true },
+      providerChanges: { inApp: true, email: true },
+      certificateChanges: { inApp: true, email: true },
     })
     .returning();
 
