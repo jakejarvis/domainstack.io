@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, gt, isNull, like, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, like, lt, or, sql } from "drizzle-orm";
 import type { NotificationType } from "@/lib/constants/notifications";
 import { db } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
@@ -94,7 +94,7 @@ export async function getUserNotifications(
           sql`${notifications.channels} @> '["in-app"]'`,
         ),
       )
-      .orderBy(desc(notifications.sentAt))
+      .orderBy(desc(notifications.sentAt), desc(notifications.id))
       .limit(limit);
   }
 
@@ -111,18 +111,25 @@ export async function getUserNotifications(
   }
 
   // Fetch notifications sent before the cursor (older notifications)
+  // Use compound cursor (sentAt, id) to handle duplicate timestamps
   return db
     .select()
     .from(notifications)
     .where(
       and(
         eq(notifications.userId, userId),
-        lt(notifications.sentAt, cursorNotif.sentAt),
+        or(
+          lt(notifications.sentAt, cursorNotif.sentAt),
+          and(
+            eq(notifications.sentAt, cursorNotif.sentAt),
+            lt(notifications.id, cursorNotif.id),
+          ),
+        ),
         // Only show notifications that include 'in-app' channel
         sql`${notifications.channels} @> '["in-app"]'`,
       ),
     )
-    .orderBy(desc(notifications.sentAt))
+    .orderBy(desc(notifications.sentAt), desc(notifications.id))
     .limit(limit);
 }
 
