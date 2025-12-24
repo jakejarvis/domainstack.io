@@ -253,7 +253,11 @@ export function NotificationSettingsSection({
     certificateChangesInApp: true,
   };
 
-  const globalPrefs = globalPrefsQuery.data ?? defaultGlobalPrefs;
+  // Merge defaults with saved preferences to ensure new fields are always present
+  const globalPrefs: UserNotificationPreferences = {
+    ...defaultGlobalPrefs,
+    ...globalPrefsQuery.data,
+  };
 
   const isPending =
     updateGlobalMutation.isPending ||
@@ -285,7 +289,7 @@ export function NotificationSettingsSection({
               key={category}
               category={category}
               emailEnabled={globalPrefs[category]}
-              inAppEnabled={globalPrefs[`${category}InApp`] ?? false}
+              inAppEnabled={globalPrefs[`${category}InApp`]}
               onToggle={(type, enabled) =>
                 handleGlobalToggle(category, type, enabled)
               }
