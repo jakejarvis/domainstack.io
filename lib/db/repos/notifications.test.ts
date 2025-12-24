@@ -141,8 +141,8 @@ describe("createNotification", () => {
     expect(result?.data).toEqual({
       domainName: "notif-test.com",
       url: "/dashboard",
-      channels: ["in-app", "email"],
     });
+    expect(result?.channels).toEqual(["in-app", "email"]);
   });
 });
 

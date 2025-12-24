@@ -257,6 +257,11 @@ export const notifications = pgTable(
     message: text("message").notNull(),
     // Metadata for actionable links (e.g. { url: "/dashboard/domain/..." })
     data: jsonb("data"),
+    // Channels (e.g. ["in-app", "email"]) - moved to top level for querying
+    channels: jsonb("channels")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'["in-app", "email"]'::jsonb`),
     // Status
     readAt: timestamp("read_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
@@ -268,6 +273,8 @@ export const notifications = pgTable(
     index("idx_notifications_user_sent").on(t.userId, t.sentAt),
     // Index for unread count queries
     index("idx_notifications_user_read").on(t.userId, t.readAt),
+    // Index for channels filtering
+    index("idx_notifications_channels").using("gin", t.channels),
   ],
 );
 

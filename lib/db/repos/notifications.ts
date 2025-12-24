@@ -30,11 +30,6 @@ export async function createNotification(params: CreateNotificationParams) {
     params;
 
   try {
-    const notificationData = {
-      ...(data ?? {}),
-      channels: channels ?? ["in-app", "email"], // Default to both if not specified
-    };
-
     const [notification] = await db
       .insert(notifications)
       .values({
@@ -43,7 +38,8 @@ export async function createNotification(params: CreateNotificationParams) {
         type,
         title,
         message,
-        data: notificationData,
+        data: data ?? {},
+        channels: channels ?? ["in-app", "email"], // Default to both if not specified
         sentAt: new Date(),
       })
       .returning();
@@ -94,8 +90,8 @@ export async function getUserNotifications(
       .where(
         and(
           eq(notifications.userId, userId),
-          // Show if channels is missing (legacy) or contains 'in-app'
-          sql`((${notifications.data}->'channels') IS NULL OR (${notifications.data}->'channels') @> '["in-app"]')`,
+          // Only show notifications that include 'in-app' channel
+          sql`${notifications.channels} @> '["in-app"]'`,
         ),
       )
       .orderBy(desc(notifications.sentAt))
@@ -122,8 +118,8 @@ export async function getUserNotifications(
       and(
         eq(notifications.userId, userId),
         lt(notifications.sentAt, cursorNotif.sentAt),
-        // Show if channels is missing (legacy) or contains 'in-app'
-        sql`((${notifications.data}->'channels') IS NULL OR (${notifications.data}->'channels') @> '["in-app"]')`,
+        // Only show notifications that include 'in-app' channel
+        sql`${notifications.channels} @> '["in-app"]'`,
       ),
     )
     .orderBy(desc(notifications.sentAt))
@@ -142,7 +138,7 @@ export async function getUnreadCount(userId: string): Promise<number> {
         eq(notifications.userId, userId),
         isNull(notifications.readAt),
         // Only count in-app notifications
-        sql`((${notifications.data}->'channels') IS NULL OR (${notifications.data}->'channels') @> '["in-app"]')`,
+        sql`${notifications.channels} @> '["in-app"]'`,
       ),
     );
 
