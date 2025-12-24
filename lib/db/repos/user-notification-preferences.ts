@@ -11,6 +11,25 @@ const logger = createLogger({ source: "user-notification-preferences" });
 // Re-export for convenience
 export type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
 
+function mapPreferences(
+  row: typeof userNotificationPreferences.$inferSelect,
+): UserNotificationPreferencesData {
+  return {
+    domainExpiry: row.domainExpiry,
+    domainExpiryInApp: row.domainExpiryInApp,
+    certificateExpiry: row.certificateExpiry,
+    certificateExpiryInApp: row.certificateExpiryInApp,
+    verificationStatus: row.verificationStatus,
+    verificationStatusInApp: row.verificationStatusInApp,
+    registrationChanges: row.registrationChanges,
+    registrationChangesInApp: row.registrationChangesInApp,
+    providerChanges: row.providerChanges,
+    providerChangesInApp: row.providerChangesInApp,
+    certificateChanges: row.certificateChanges,
+    certificateChangesInApp: row.certificateChangesInApp,
+  };
+}
+
 /**
  * Get user notification preferences, creating default preferences if they don't exist.
  */
@@ -24,20 +43,7 @@ export async function getOrCreateUserNotificationPreferences(
     .limit(1);
 
   if (existing.length > 0) {
-    return {
-      domainExpiry: existing[0].domainExpiry,
-      domainExpiryInApp: existing[0].domainExpiryInApp,
-      certificateExpiry: existing[0].certificateExpiry,
-      certificateExpiryInApp: existing[0].certificateExpiryInApp,
-      verificationStatus: existing[0].verificationStatus,
-      verificationStatusInApp: existing[0].verificationStatusInApp,
-      registrationChanges: existing[0].registrationChanges,
-      registrationChangesInApp: existing[0].registrationChangesInApp,
-      providerChanges: existing[0].providerChanges,
-      providerChangesInApp: existing[0].providerChangesInApp,
-      certificateChanges: existing[0].certificateChanges,
-      certificateChangesInApp: existing[0].certificateChangesInApp,
-    };
+    return mapPreferences(existing[0]);
   }
 
   // Create default preferences
@@ -62,20 +68,7 @@ export async function getOrCreateUserNotificationPreferences(
 
   logger.info("created default notification preferences", { userId });
 
-  return {
-    domainExpiry: inserted[0].domainExpiry,
-    domainExpiryInApp: inserted[0].domainExpiryInApp,
-    certificateExpiry: inserted[0].certificateExpiry,
-    certificateExpiryInApp: inserted[0].certificateExpiryInApp,
-    verificationStatus: inserted[0].verificationStatus,
-    verificationStatusInApp: inserted[0].verificationStatusInApp,
-    registrationChanges: inserted[0].registrationChanges,
-    registrationChangesInApp: inserted[0].registrationChangesInApp,
-    providerChanges: inserted[0].providerChanges,
-    providerChangesInApp: inserted[0].providerChangesInApp,
-    certificateChanges: inserted[0].certificateChanges,
-    certificateChangesInApp: inserted[0].certificateChangesInApp,
-  };
+  return mapPreferences(inserted[0]);
 }
 
 /**
@@ -99,20 +92,7 @@ export async function updateUserNotificationPreferences(
 
   logger.info("updated notification preferences", { userId, preferences });
 
-  return {
-    domainExpiry: updated[0].domainExpiry,
-    domainExpiryInApp: updated[0].domainExpiryInApp,
-    certificateExpiry: updated[0].certificateExpiry,
-    certificateExpiryInApp: updated[0].certificateExpiryInApp,
-    verificationStatus: updated[0].verificationStatus,
-    verificationStatusInApp: updated[0].verificationStatusInApp,
-    registrationChanges: updated[0].registrationChanges,
-    registrationChangesInApp: updated[0].registrationChangesInApp,
-    providerChanges: updated[0].providerChanges,
-    providerChangesInApp: updated[0].providerChangesInApp,
-    certificateChanges: updated[0].certificateChanges,
-    certificateChangesInApp: updated[0].certificateChangesInApp,
-  };
+  return mapPreferences(updated[0]);
 }
 
 /**
@@ -131,18 +111,5 @@ export async function getUserNotificationPreferences(
     return null;
   }
 
-  return {
-    domainExpiry: rows[0].domainExpiry,
-    domainExpiryInApp: rows[0].domainExpiryInApp,
-    certificateExpiry: rows[0].certificateExpiry,
-    certificateExpiryInApp: rows[0].certificateExpiryInApp,
-    verificationStatus: rows[0].verificationStatus,
-    verificationStatusInApp: rows[0].verificationStatusInApp,
-    registrationChanges: rows[0].registrationChanges,
-    registrationChangesInApp: rows[0].registrationChangesInApp,
-    providerChanges: rows[0].providerChanges,
-    providerChangesInApp: rows[0].providerChangesInApp,
-    certificateChanges: rows[0].certificateChanges,
-    certificateChangesInApp: rows[0].certificateChangesInApp,
-  };
+  return mapPreferences(rows[0]);
 }
