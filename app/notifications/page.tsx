@@ -217,14 +217,7 @@ export default function NotificationsPage() {
 
       <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
         <TabsList className="mb-4">
-          <TabsTrigger value="all">
-            All
-            {notifications.length > 0 && (
-              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
-                {notifications.length}
-              </span>
-            )}
-          </TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="unread">
             Unread
             {unreadCount > 0 && (
