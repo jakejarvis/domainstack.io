@@ -25,7 +25,7 @@ export const checkDomainExpiryWorker = inngest.createFunction(
     id: "check-domain-expiry-worker",
     retries: 3,
     concurrency: {
-      limit: 20, // High concurrency is fine here (mostly DB/Email)
+      limit: 5,
     },
   },
   { event: INNGEST_EVENTS.CHECK_DOMAIN_EXPIRY },

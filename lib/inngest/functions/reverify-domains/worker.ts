@@ -41,7 +41,7 @@ export const verifyPendingDomainCronWorker = inngest.createFunction(
     id: "verify-pending-domain-cron-worker",
     retries: 3,
     concurrency: {
-      limit: 10,
+      limit: 5,
     },
   },
   { event: INNGEST_EVENTS.VERIFY_PENDING_CRON },
@@ -99,7 +99,7 @@ export const reverifyOwnershipWorker = inngest.createFunction(
     id: "reverify-ownership-worker",
     retries: 3,
     concurrency: {
-      limit: 10,
+      limit: 5,
     },
   },
   { event: INNGEST_EVENTS.REVERIFY_OWNERSHIP },

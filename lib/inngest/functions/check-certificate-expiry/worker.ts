@@ -25,7 +25,7 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
     id: "check-certificate-expiry-worker",
     retries: 3,
     concurrency: {
-      limit: 20,
+      limit: 5,
     },
   },
   { event: INNGEST_EVENTS.CHECK_CERTIFICATE_EXPIRY },

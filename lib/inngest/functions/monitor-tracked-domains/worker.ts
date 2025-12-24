@@ -42,7 +42,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
     id: "monitor-tracked-domains-worker",
     retries: 3,
     concurrency: {
-      limit: 10, // Process 10 domains in parallel to respect external API limits
+      limit: 5, // Process 5 domains in parallel to respect external API limits
     },
   },
   { event: INNGEST_EVENTS.MONITOR_CHANGES },

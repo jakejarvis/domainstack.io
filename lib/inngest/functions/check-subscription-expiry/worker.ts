@@ -96,7 +96,7 @@ export const checkSubscriptionExpiryWorker = inngest.createFunction(
     id: "check-subscription-expiry-worker",
     retries: 3,
     concurrency: {
-      limit: 20, // High concurrency is fine here (mostly DB/Email)
+      limit: 5,
     },
   },
   { event: INNGEST_EVENTS.CHECK_SUBSCRIPTION_EXPIRY },
