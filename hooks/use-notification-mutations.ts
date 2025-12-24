@@ -40,10 +40,41 @@ export function useNotificationMutations() {
       // Snapshot previous state
       const previousCount = queryClient.getQueryData<number>(countQueryKey);
 
-      // Optimistically update count
-      queryClient.setQueryData<number>(countQueryKey, (old) =>
-        old ? Math.max(0, old - 1) : 0,
-      );
+      // Check if notification is already read in any cached list to avoid double-decrement
+      let isAlreadyRead = false;
+      const queries = queryClient.getQueriesData<
+        InfiniteNotificationData | NotificationList
+      >({
+        queryKey: listQueryKey,
+      });
+
+      for (const [, data] of queries) {
+        if (!data) continue;
+
+        if ("pages" in data) {
+          for (const page of data.pages) {
+            const notification = page.items.find((n) => n.id === id);
+            if (notification?.readAt) {
+              isAlreadyRead = true;
+              break;
+            }
+          }
+        } else {
+          const notification = data.items.find((n) => n.id === id);
+          if (notification?.readAt) {
+            isAlreadyRead = true;
+            break;
+          }
+        }
+        if (isAlreadyRead) break;
+      }
+
+      // Optimistically update count only if not already read
+      if (!isAlreadyRead) {
+        queryClient.setQueryData<number>(countQueryKey, (old) =>
+          old ? Math.max(0, old - 1) : 0,
+        );
+      }
 
       // Optimistically update all list queries
       queryClient.setQueriesData<InfiniteNotificationData | NotificationList>(
