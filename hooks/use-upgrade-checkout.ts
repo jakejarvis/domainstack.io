@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
-import { checkout } from "@/lib/auth-client";
+import { checkoutEmbed } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
@@ -13,20 +13,15 @@ import { PRO_TIER_INFO } from "@/lib/polar/products";
  */
 export function useUpgradeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
-  const isMountedRef = useRef(true);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   const handleUpgrade = async () => {
     if (isLoading) return;
     setIsLoading(true);
+
     analytics.track("upgrade_clicked");
+
     try {
-      await checkout({
+      await checkoutEmbed({
         products: [
           PRO_TIER_INFO.monthly.productId,
           PRO_TIER_INFO.yearly.productId,
@@ -36,9 +31,7 @@ export function useUpgradeCheckout() {
       logger.error("Failed to open checkout", err);
       toast.error("Failed to open checkout. Please try again.");
     } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 

@@ -18,5 +18,5 @@ export const {
   deleteUser,
   // Provided by Polar client adapter:
   customer,
-  checkout,
+  checkoutEmbed,
 } = authClient;

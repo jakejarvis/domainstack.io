@@ -7,7 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useTheme } from "@/hooks/use-theme-toggle";
+import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 
 interface ThemeToggleProps {

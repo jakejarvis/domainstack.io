@@ -238,6 +238,7 @@ export const auth = betterAuth({
               successUrl:
                 process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
               authenticatedUsersOnly: true,
+              theme: "dark",
             }),
             portal(),
             webhooks({

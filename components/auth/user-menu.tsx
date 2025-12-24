@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "@/hooks/use-router";
-import { useTheme } from "@/hooks/use-theme-toggle";
+import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";

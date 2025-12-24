@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/hooks/use-theme-toggle";
+import { useTheme } from "@/hooks/use-theme";
 
 /**
  * Mobile menu for logged-out users.
