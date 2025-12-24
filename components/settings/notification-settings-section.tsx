@@ -239,11 +239,19 @@ export function NotificationSettingsSection({
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
 
   const defaultGlobalPrefs: UserNotificationPreferences = {
-    ...Object.fromEntries(NOTIFICATION_CATEGORIES.map((c) => [c, true])),
-    ...Object.fromEntries(
-      NOTIFICATION_CATEGORIES.map((c) => [`${c}InApp`, true]),
-    ),
-  } as UserNotificationPreferences;
+    domainExpiry: true,
+    domainExpiryInApp: true,
+    certificateExpiry: true,
+    certificateExpiryInApp: true,
+    verificationStatus: true,
+    verificationStatusInApp: true,
+    registrationChanges: true,
+    registrationChangesInApp: true,
+    providerChanges: true,
+    providerChangesInApp: true,
+    certificateChanges: true,
+    certificateChangesInApp: true,
+  };
 
   const globalPrefs = globalPrefsQuery.data ?? defaultGlobalPrefs;
 
