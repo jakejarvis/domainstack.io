@@ -83,7 +83,7 @@ export function UpgradePrompt() {
           ) : (
             <ShoppingCart className="size-4" />
           )}
-          {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
+          {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
         </Button>
       </CardHeader>
     </Card>

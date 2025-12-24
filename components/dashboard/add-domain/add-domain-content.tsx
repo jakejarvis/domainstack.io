@@ -247,7 +247,7 @@ export function AddDomainContent({
                   ) : (
                     <ShoppingCart className="size-4" />
                   )}
-                  {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
+                  {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
                 </Button>
                 {onClose && (
                   <Button

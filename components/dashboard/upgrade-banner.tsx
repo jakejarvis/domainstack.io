@@ -55,7 +55,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
           className="w-full shrink-0 cursor-pointer md:w-auto"
         >
           {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
-          {isLoading ? "Opening..." : "Get Pro"}
+          {isLoading ? "Loading..." : "Get Pro"}
         </Button>
       </div>
     </div>

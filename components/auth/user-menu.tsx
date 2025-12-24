@@ -2,8 +2,6 @@
 
 import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,7 +21,6 @@ export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-  const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
   const analytics = useAnalytics();
 
   if (!session?.user) {
@@ -59,92 +56,86 @@ export function UserMenu() {
   };
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+            aria-label="User menu"
+          >
+            <Avatar className="size-8">
+              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex items-center gap-2.5">
+            <Avatar className="size-8">
+              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col space-y-1">
+              <p className="font-medium text-sm leading-none">
+                {user.name || "User"}
+              </p>
+              <p className="text-muted-foreground text-xs leading-none">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          nativeButton={false}
           render={
-            <button
-              type="button"
-              className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
-              aria-label="User menu"
-            >
-              <Avatar className="size-8">
-                <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
-                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </button>
+            <Link href="/dashboard" className="cursor-pointer">
+              <Table2 className="size-4" />
+              Dashboard
+            </Link>
           }
         />
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex items-center gap-2.5">
-              <Avatar className="size-8">
-                <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
-                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col space-y-1">
-                <p className="font-medium text-sm leading-none">
-                  {user.name || "User"}
-                </p>
-                <p className="text-muted-foreground text-xs leading-none">
-                  {user.email}
-                </p>
-              </div>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            nativeButton={false}
-            render={
-              <Link href="/dashboard" className="cursor-pointer">
-                <Table2 className="size-4" />
-                Dashboard
-              </Link>
-            }
-          />
-          <DropdownMenuItem
-            nativeButton={false}
-            render={
-              <Link href="/settings" scroll={false} className="cursor-pointer">
-                <Settings className="size-4" />
-                Settings
-              </Link>
-            }
-          />
-          <DropdownMenuSeparator />
-          {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
-          <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-            {theme === "dark" ? (
-              <Sun className="size-4" />
-            ) : (
-              <Moon className="size-4" />
-            )}
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => setBookmarkletOpen(true)}
-          >
-            <Bookmark className="size-4" />
-            Bookmarklet
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-            <LogOut className="size-4 text-danger-foreground" />
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Bookmarklet Dialog - controlled externally */}
-      <BookmarkletDialog
-        open={bookmarkletOpen}
-        onOpenChange={setBookmarkletOpen}
-      />
-    </>
+        <DropdownMenuItem
+          nativeButton={false}
+          render={
+            <Link href="/settings" scroll={false} className="cursor-pointer">
+              <Settings className="size-4" />
+              Settings
+            </Link>
+          }
+        />
+        <DropdownMenuSeparator />
+        {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
+        <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
+          {theme === "dark" ? (
+            <Sun className="size-4" />
+          ) : (
+            <Moon className="size-4" />
+          )}
+          {theme === "dark" ? "Light mode" : "Dark mode"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          nativeButton={false}
+          render={
+            <Link href="/bookmarklet" scroll={false} className="cursor-pointer">
+              <Bookmark className="size-4" />
+              Bookmarklet
+            </Link>
+          }
+        />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
+          <LogOut className="size-4 text-danger-foreground" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

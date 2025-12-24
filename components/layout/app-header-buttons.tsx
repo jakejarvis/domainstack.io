@@ -1,9 +1,16 @@
 "use client";
 
-import { BookmarkletDialog } from "@/components/layout/bookmarklet-dialog";
+import { Bookmark } from "lucide-react";
+import Link from "next/link";
 import { DashboardButton } from "@/components/layout/dashboard-button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSession } from "@/lib/auth-client";
 
 /**
@@ -53,7 +60,23 @@ export function AppHeaderButtons() {
         orientation="vertical"
         className="!h-4 hidden md:block"
       />
-      <BookmarkletDialog className="hidden md:flex" />
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden cursor-pointer md:flex"
+              nativeButton={false}
+              render={<Link href="/bookmarklet" scroll={false} />}
+            >
+              <Bookmark />
+              <span className="sr-only">Open bookmarklet info</span>
+            </Button>
+          }
+        />
+        <TooltipContent>Bookmarklet</TooltipContent>
+      </Tooltip>
       <Separator
         aria-hidden="true"
         orientation="vertical"

@@ -24,7 +24,7 @@ export function ExportButton({ disabled, onExport }: ExportButtonProps) {
             onClick={onExport}
             disabled={disabled}
           >
-            <Download />
+            <Download className="sm:text-muted-foreground" />
             <span className="hidden sm:inline-block">Export</span>
           </Button>
         }

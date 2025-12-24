@@ -61,7 +61,7 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
           className="w-full cursor-pointer"
         >
           {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
-          {isLoading ? "Opening..." : "Get Pro"}
+          {isLoading ? "Loading..." : "Get Pro"}
         </Button>
       </CardContent>
     </Card>

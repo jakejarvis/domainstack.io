@@ -115,7 +115,7 @@ export function SubscriptionSettingsSection({
               ) : (
                 <ExternalLink className="size-4" />
               )}
-              {isPortalLoading ? "Opening..." : "Manage Subscription"}
+              {isPortalLoading ? "Loading..." : "Manage Subscription"}
             </Button>
             {subscriptionEndsAt && (
               <p className="text-center text-muted-foreground text-xs">
@@ -165,7 +165,7 @@ export function SubscriptionSettingsSection({
                 ) : (
                   <ShoppingCart className="size-4" />
                 )}
-                {isCheckoutLoading ? "Opening..." : "Upgrade to Pro"}
+                {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
               </Button>
             </div>
           </div>
