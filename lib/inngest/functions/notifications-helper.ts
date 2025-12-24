@@ -97,7 +97,7 @@ export async function sendNotification(
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
   const channels: string[] = [];
-  if (shouldSendEmail) channels.push("email");
+  if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
   try {
