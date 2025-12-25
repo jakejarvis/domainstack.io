@@ -51,6 +51,18 @@ export function OAuthButton({
     onLoadingChange?.(true);
     analytics.track("sign_in_clicked", { provider: provider.id });
 
+    // Reset loading state if user returns to page (e.g., via back button)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        onLoadingChange?.(false);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange,
+        );
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     try {
       await signIn.social({
         provider: provider.id,
@@ -58,15 +70,18 @@ export function OAuthButton({
         // On OAuth errors, redirect to login page where errors are displayed
         errorCallbackURL: "/login",
       });
+      // Don't reset loading here - let it persist during navigation
+      // It will be reset if user returns via back button
     } catch (err) {
+      // Only reset on actual error
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      onLoadingChange?.(false);
       logger.error(`${provider.name} sign-in failed`, err, {
         provider: provider.id,
       });
       toast.error(`Failed to sign in with ${provider.name}.`, {
         description: "Please try again or choose a different provider.",
       });
-    } finally {
-      onLoadingChange?.(false);
     }
   };
 

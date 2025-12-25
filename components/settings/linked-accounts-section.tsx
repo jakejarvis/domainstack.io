@@ -66,19 +66,34 @@ export function LinkedAccountsSection({
   const handleLink = async (provider: OAuthProviderConfig) => {
     setLinkingProvider(provider.id);
 
+    // Reset loading state if user returns to page (e.g., via back button)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setLinkingProvider(null);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange,
+        );
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     try {
       await linkSocial({
         provider: provider.id,
         // On error, better-auth appends ?error=... to the callback URL
         callbackURL: "/settings",
       });
-      // The page will redirect to the OAuth provider, so no need to handle success here
+      // Don't reset loading here - let it persist during navigation
+      // It will be reset if user returns via back button
     } catch (err) {
+      // Only reset on actual error
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      setLinkingProvider(null);
       logger.error(`Failed to link ${provider.name}`, err, {
         provider: provider.id,
       });
       toast.error(`Failed to link ${provider.name}. Please try again.`);
-      setLinkingProvider(null);
     }
   };
 
