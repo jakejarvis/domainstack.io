@@ -113,7 +113,7 @@ The domain tracking feature allows authenticated users to track domains they own
 ### Core Tables
 - `tracked_domains`: Links users to domains with verification status, token, per-domain notification overrides, and `archivedAt` for soft-archiving.
 - `user_subscriptions`: User tier (free/pro), `endsAt` for canceled-but-active subscriptions, and `lastExpiryNotification` for tracking sent reminders.
-- `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, verificationStatus).
+- `user_notification_preferences`: Global notification toggles (domainExpiry, certificateExpiry, registrationChanges, providerChanges, certificateChanges). Note: Verification notifications are always sent and cannot be disabled.
 - `notifications`: History of sent notifications with Resend email ID for troubleshooting.
 
 ### Subscription Repository (`lib/db/repos/user-subscription.ts`)
@@ -138,7 +138,8 @@ Verification service: `server/services/verification.ts` with `tryAllVerification
 - Sends `verification_failing` email on first failure, `verification_revoked` on revocation.
 
 ### Notification System
-- **Categories:** `domainExpiry`, `certificateExpiry`, `verificationStatus`, `registrationChanges`, `providerChanges`, `certificateChanges` (defined in `lib/constants/notifications.ts`).
+- **Categories:** `domainExpiry`, `certificateExpiry`, `registrationChanges`, `providerChanges`, `certificateChanges` (defined in `lib/constants/notifications.ts`).
+- **Important:** Verification status notifications (`verification_failing`, `verification_revoked`) are always sent and cannot be disabled via preferences.
 - **Thresholds:** Domain expiry: 30, 14, 7, 1 days. Certificate expiry: 14, 7, 3, 1 days.
 - **Per-domain overrides:** `notificationOverrides` JSONB column; `undefined` = inherit from global, explicit `true/false` = override.
 - **Idempotency:** Notification records created before email send; Resend idempotency keys prevent duplicates on retry.

@@ -68,7 +68,6 @@ describe("getOrCreateUserNotificationPreferences", () => {
       userId: testUserId,
       domainExpiry: { inApp: false, email: false },
       certificateExpiry: { inApp: true, email: true },
-      verificationStatus: { inApp: true, email: true }, // DB still has this field
       registrationChanges: { inApp: false, email: true },
       providerChanges: { inApp: true, email: false },
       certificateChanges: { inApp: false, email: false },
@@ -106,7 +105,6 @@ describe("getUserNotificationPreferences", () => {
       userId: testUserId,
       domainExpiry: { inApp: true, email: true },
       certificateExpiry: { inApp: false, email: true },
-      verificationStatus: { inApp: true, email: true }, // DB still has this field
       registrationChanges: { inApp: true, email: false },
       providerChanges: { inApp: false, email: false },
       certificateChanges: { inApp: true, email: false },

@@ -17,7 +17,6 @@ function mapPreferences(
   return {
     domainExpiry: row.domainExpiry,
     certificateExpiry: row.certificateExpiry,
-    verificationStatus: row.verificationStatus,
     registrationChanges: row.registrationChanges,
     providerChanges: row.providerChanges,
     certificateChanges: row.certificateChanges,
@@ -47,7 +46,6 @@ export async function getOrCreateUserNotificationPreferences(
       userId,
       domainExpiry: { inApp: true, email: true },
       certificateExpiry: { inApp: true, email: true },
-      verificationStatus: { inApp: true, email: true }, // Always true, not exposed in UI
       registrationChanges: { inApp: true, email: true },
       providerChanges: { inApp: true, email: true },
       certificateChanges: { inApp: true, email: true },

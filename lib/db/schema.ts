@@ -285,6 +285,7 @@ export const notifications = pgTable(
 );
 
 // User notification preferences (global defaults for all domains)
+// Note: Verification status notifications are always sent and not stored in preferences
 export const userNotificationPreferences = pgTable(
   "user_notification_preferences",
   {
@@ -297,10 +298,6 @@ export const userNotificationPreferences = pgTable(
       .notNull()
       .default(sql`'{"inApp": true, "email": true}'::jsonb`),
     certificateExpiry: jsonb("certificate_expiry")
-      .$type<{ inApp: boolean; email: boolean }>()
-      .notNull()
-      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
-    verificationStatus: jsonb("verification_status")
       .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
       .default(sql`'{"inApp": true, "email": true}'::jsonb`),

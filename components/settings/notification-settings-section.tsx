@@ -275,7 +275,6 @@ export function NotificationSettingsSection({
   const defaultGlobalPrefs: UserNotificationPreferences = {
     domainExpiry: { inApp: true, email: true },
     certificateExpiry: { inApp: true, email: true },
-    verificationStatus: { inApp: true, email: true },
     registrationChanges: { inApp: true, email: true },
     providerChanges: { inApp: true, email: true },
     certificateChanges: { inApp: true, email: true },

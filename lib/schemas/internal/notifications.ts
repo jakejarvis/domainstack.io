@@ -13,11 +13,11 @@ export type NotificationChannels = z.infer<typeof NotificationChannelsSchema>;
 /**
  * User's global notification preferences.
  * All fields are required objects with channel booleans representing the default for all domains.
+ * Note: Verification notifications are always sent and cannot be disabled.
  */
 export const UserNotificationPreferencesSchema = z.object({
   domainExpiry: NotificationChannelsSchema,
   certificateExpiry: NotificationChannelsSchema,
-  verificationStatus: NotificationChannelsSchema,
   registrationChanges: NotificationChannelsSchema,
   providerChanges: NotificationChannelsSchema,
   certificateChanges: NotificationChannelsSchema,
