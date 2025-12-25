@@ -31,12 +31,6 @@ export function NotificationBell() {
   const trpc = useTRPC();
   const { markRead, markAllRead } = useNotificationMutations();
 
-  // Query keys
-  // Note: These query keys are used inside useQuery but we don't need to define them here if we pass the query options directly
-  // However, keeping them for clarity on what's being fetched
-  // const listQueryKey = trpc.notifications.list.queryKey({ limit: 10 });
-  // const countQueryKey = trpc.notifications.unreadCount.queryKey();
-
   // Get unread count
   const { data: count = 0 } = useQuery({
     ...trpc.notifications.unreadCount.queryOptions(),
@@ -45,7 +39,7 @@ export function NotificationBell() {
   });
 
   // Get recent notifications (just first page)
-  const { data: notifications } = useQuery({
+  const { data: notifications, isError: isNotificationsError } = useQuery({
     ...trpc.notifications.list.queryOptions({ limit: 10 }),
     refetchOnWindowFocus: true,
     select: (data) => data.items,
@@ -102,7 +96,11 @@ export function NotificationBell() {
           )}
         </div>
         <ScrollArea className="max-h-[400px]">
-          {!notifications || notifications.length === 0 ? (
+          {isNotificationsError ? (
+            <div className="p-8 text-center text-destructive text-sm">
+              Failed to load notifications
+            </div>
+          ) : !notifications || notifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               No notifications yet
             </div>
