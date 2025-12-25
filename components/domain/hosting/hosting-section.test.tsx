@@ -17,7 +17,7 @@ vi.mock("@/components/domain/provider-logo", () => ({
     providerId: _providerId,
     providerDomain,
   }: {
-    providerId: string;
+    providerId: string | null | undefined;
     providerDomain: string | null;
   }) => <div>logo:{providerDomain}</div>,
 }));
