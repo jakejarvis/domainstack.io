@@ -17,14 +17,21 @@ export const notificationsRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(), // notification ID to start from
+        unreadOnly: z.boolean().optional().default(false),
       }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit;
       const cursor = input.cursor;
+      const unreadOnly = input.unreadOnly;
 
       // Fetch one extra to determine if there's a next page
-      const items = await getUserNotifications(ctx.user.id, limit + 1, cursor);
+      const items = await getUserNotifications(
+        ctx.user.id,
+        limit + 1,
+        cursor,
+        unreadOnly,
+      );
 
       let nextCursor: string | undefined;
       if (items.length > limit) {

@@ -92,19 +92,24 @@ export async function getUserNotifications(
   userId: string,
   limit = 50,
   cursor?: string,
+  unreadOnly = false,
 ) {
   if (!cursor) {
     // First page - no cursor
+    const conditions = [
+      eq(notifications.userId, userId),
+      // Only show notifications that include 'in-app' channel
+      sql`${notifications.channels} @> '["in-app"]'`,
+    ];
+
+    if (unreadOnly) {
+      conditions.push(isNull(notifications.readAt));
+    }
+
     return db
       .select()
       .from(notifications)
-      .where(
-        and(
-          eq(notifications.userId, userId),
-          // Only show notifications that include 'in-app' channel
-          sql`${notifications.channels} @> '["in-app"]'`,
-        ),
-      )
+      .where(and(...conditions))
       .orderBy(desc(notifications.sentAt), desc(notifications.id))
       .limit(limit);
   }
@@ -123,23 +128,27 @@ export async function getUserNotifications(
 
   // Fetch notifications sent before the cursor (older notifications)
   // Use compound cursor (sentAt, id) to handle duplicate timestamps
+  const conditions = [
+    eq(notifications.userId, userId),
+    or(
+      lt(notifications.sentAt, cursorNotif.sentAt),
+      and(
+        eq(notifications.sentAt, cursorNotif.sentAt),
+        lt(notifications.id, cursorNotif.id),
+      ),
+    ),
+    // Only show notifications that include 'in-app' channel
+    sql`${notifications.channels} @> '["in-app"]'`,
+  ];
+
+  if (unreadOnly) {
+    conditions.push(isNull(notifications.readAt));
+  }
+
   return db
     .select()
     .from(notifications)
-    .where(
-      and(
-        eq(notifications.userId, userId),
-        or(
-          lt(notifications.sentAt, cursorNotif.sentAt),
-          and(
-            eq(notifications.sentAt, cursorNotif.sentAt),
-            lt(notifications.id, cursorNotif.id),
-          ),
-        ),
-        // Only show notifications that include 'in-app' channel
-        sql`${notifications.channels} @> '["in-app"]'`,
-      ),
-    )
+    .where(and(...conditions))
     .orderBy(desc(notifications.sentAt), desc(notifications.id))
     .limit(limit);
 }

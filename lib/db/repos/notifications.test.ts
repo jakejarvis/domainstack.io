@@ -239,6 +239,97 @@ describe("getUserNotifications", () => {
       expect(curr > next).toBe(true); // String comparison of UUIDs
     }
   });
+
+  it("filters unread notifications when unreadOnly is true", async () => {
+    // Create mix of read and unread notifications
+    const unread1 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+      title: "Unread 1",
+      message: "Message 1",
+    });
+
+    const read1 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_14d",
+      title: "Read 1",
+      message: "Message 2",
+    });
+
+    const unread2 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_14d",
+      title: "Unread 2",
+      message: "Message 3",
+    });
+
+    // Mark one as read
+    if (read1) {
+      await markAsRead(read1.id, testUserId);
+    }
+
+    // Get all notifications (default behavior)
+    const allNotifications = await getUserNotifications(testUserId, 50);
+    expect(allNotifications).toHaveLength(3);
+
+    // Get only unread notifications
+    const unreadNotifications = await getUserNotifications(
+      testUserId,
+      50,
+      undefined,
+      true,
+    );
+    expect(unreadNotifications).toHaveLength(2);
+    expect(unreadNotifications.map((n) => n.id).sort()).toEqual(
+      [unread1?.id, unread2?.id].sort(),
+    );
+  });
+
+  it("filters unread notifications with cursor pagination", async () => {
+    // Create multiple unread and read notifications
+    const notifs = [];
+    for (let i = 0; i < 5; i++) {
+      const notif = await createNotification({
+        userId: testUserId,
+        trackedDomainId: testTrackedDomainId,
+        type: "domain_expiry_30d",
+        title: `Notification ${i}`,
+        message: `Message ${i}`,
+      });
+      notifs.push(notif);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    // Mark alternating notifications as read (0, 2, 4)
+    for (let i = 0; i < 5; i += 2) {
+      const notif = notifs[i];
+      if (notif) {
+        await markAsRead(notif.id, testUserId);
+      }
+    }
+
+    // Get first page of unread notifications (limit 1)
+    const page1 = await getUserNotifications(testUserId, 1, undefined, true);
+    expect(page1).toHaveLength(1);
+    expect(page1[0].readAt).toBeNull();
+
+    // Get second page using cursor
+    const cursor = page1[0].id;
+    const page2 = await getUserNotifications(testUserId, 2, cursor, true);
+    expect(page2).toHaveLength(1); // Only 1 more unread notification
+    expect(page2[0].readAt).toBeNull();
+
+    // Verify we got exactly 2 unread notifications
+    // Since notifications are ordered by sentAt DESC, the most recent unread should be first
+    const allUnreadIds = [...page1, ...page2].map((n) => n.id);
+    const expectedUnreadIds = [notifs[3]?.id, notifs[1]?.id]; // Unread notifications in DESC order (3, 1)
+
+    // Sort both arrays for comparison since UUID ordering might differ
+    expect(allUnreadIds.sort()).toEqual(expectedUnreadIds.sort());
+  });
 });
 
 describe("getUnreadCount", () => {

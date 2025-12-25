@@ -36,9 +36,14 @@ export default function NotificationsPage() {
     refetchOnWindowFocus: true,
   });
 
+  const unreadOnly = filter === "unread";
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
-      ...trpc.notifications.list.infiniteQueryOptions({ limit: 20 }),
+      ...trpc.notifications.list.infiniteQueryOptions({
+        limit: 20,
+        unreadOnly,
+      }),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       refetchOnWindowFocus: true,
     });
@@ -62,11 +67,6 @@ export default function NotificationsPage() {
 
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  const filteredNotifications =
-    filter === "unread"
-      ? notifications.filter((n) => !n.readAt)
-      : notifications;
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.readAt) {
@@ -115,7 +115,7 @@ export default function NotificationsPage() {
         <TabsContent value={filter} className="mt-0">
           {isLoading ? (
             <NotificationsListSkeleton />
-          ) : filteredNotifications.length === 0 ? (
+          ) : notifications.length === 0 ? (
             <Card>
               <CardContent className="p-12">
                 <div className="flex flex-col items-center justify-center text-center">
@@ -139,7 +139,7 @@ export default function NotificationsPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {filteredNotifications.map((notification) => (
+              {notifications.map((notification) => (
                 <Card
                   key={notification.id}
                   className={cn(
