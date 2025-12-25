@@ -207,13 +207,15 @@ export function NotificationSettingsSection({
     const currentOverride = domain.notificationOverrides[category];
 
     if (value === undefined) {
-      // Clear the entire override for this category
+      // Clear the entire override for this category (inherit from global)
       updateDomainMutation.mutate({
         trackedDomainId,
         overrides: { [category]: undefined },
       });
     } else {
       // Set or update the override
+      // Schema requires BOTH channels to be defined (no partial overrides allowed)
+      // When updating one channel, we must preserve the other channel's effective value
       const updatedOverride = {
         email:
           type === "email"
