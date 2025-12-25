@@ -89,11 +89,9 @@ export function useNotificationMutations() {
       if (context?.previousCount !== undefined) {
         queryClient.setQueryData<number>(countQueryKey, context.previousCount);
       }
-      // Invalidate to ensure consistency
-      void queryClient.invalidateQueries({ queryKey: listQueryKey });
     },
-    onSuccess: () => {
-      // Invalidate to trigger refetch and ensure server sync
+    onSettled: () => {
+      // Invalidate to ensure consistency
       void queryClient.invalidateQueries({ queryKey: listQueryKey });
       void queryClient.invalidateQueries({ queryKey: countQueryKey });
     },
@@ -132,9 +130,8 @@ export function useNotificationMutations() {
       if (context?.previousCount !== undefined) {
         queryClient.setQueryData<number>(countQueryKey, context.previousCount);
       }
-      void queryClient.invalidateQueries({ queryKey: listQueryKey });
     },
-    onSuccess: () => {
+    onSettled: () => {
       // Invalidate to trigger refetch and ensure server sync
       void queryClient.invalidateQueries({ queryKey: listQueryKey });
       void queryClient.invalidateQueries({ queryKey: countQueryKey });
