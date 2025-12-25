@@ -183,13 +183,13 @@ export function NotificationSettingsSection({
   ) => {
     // Get current category preferences
     const currentPref = globalPrefs[category];
-    
+
     // Update only the specific channel
     const updatedPref = {
       ...currentPref,
       [type === "email" ? "email" : "inApp"]: enabled,
     };
-    
+
     updateGlobalMutation.mutate({ [category]: updatedPref });
   };
 
@@ -202,10 +202,10 @@ export function NotificationSettingsSection({
     // Find the current domain
     const domain = domains.find((d) => d.id === trackedDomainId);
     if (!domain) return;
-    
+
     // Get current override for this category
     const currentOverride = domain.notificationOverrides[category];
-    
+
     if (value === undefined) {
       // Clear the entire override for this category
       updateDomainMutation.mutate({
@@ -215,10 +215,16 @@ export function NotificationSettingsSection({
     } else {
       // Set or update the override
       const updatedOverride = {
-        email: type === "email" ? value : (currentOverride?.email ?? globalPrefs[category].email),
-        inApp: type === "inApp" ? value : (currentOverride?.inApp ?? globalPrefs[category].inApp),
+        email:
+          type === "email"
+            ? value
+            : (currentOverride?.email ?? globalPrefs[category].email),
+        inApp:
+          type === "inApp"
+            ? value
+            : (currentOverride?.inApp ?? globalPrefs[category].inApp),
       };
-      
+
       updateDomainMutation.mutate({
         trackedDomainId,
         overrides: { [category]: updatedOverride },

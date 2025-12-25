@@ -75,14 +75,16 @@ export function DomainNotificationRow({
           // Get override and global preference objects
           const override = overrides[category];
           const globalPref = globalPrefs[category];
-          
+
           // Determine effective values
           const emailEffective = override?.email ?? globalPref.email;
           const inAppEffective = override?.inApp ?? globalPref.inApp;
-          
+
           // Check if inherited
-          const emailIsInherited = override === undefined || override.email === undefined;
-          const inAppIsInherited = override === undefined || override.inApp === undefined;
+          const emailIsInherited =
+            override === undefined || override.email === undefined;
+          const inAppIsInherited =
+            override === undefined || override.inApp === undefined;
 
           return (
             <div

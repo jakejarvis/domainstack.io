@@ -9,10 +9,7 @@ import {
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { sendPrettyEmail } from "@/lib/resend";
-import type {
-  NotificationOverrides,
-  UserNotificationPreferences,
-} from "@/lib/schemas";
+import type { NotificationOverrides } from "@/lib/schemas";
 
 /**
  * Common configuration for sending notifications.
@@ -51,7 +48,7 @@ export async function determineNotificationChannels(
 
   // Check for per-domain overrides first
   const override = trackedDomain.notificationOverrides[category];
-  
+
   if (override !== undefined) {
     // Use domain-specific override
     return {

@@ -501,8 +501,8 @@ describe("updateNotificationOverrides", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.notificationOverrides).toEqual({ 
-      domainExpiry: { inApp: false, email: true }
+    expect(result?.notificationOverrides).toEqual({
+      domainExpiry: { inApp: false, email: true },
     });
   });
 
