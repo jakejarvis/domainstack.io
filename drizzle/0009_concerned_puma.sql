@@ -1,14 +1,19 @@
 ALTER TABLE "notifications" DROP CONSTRAINT "u_notification_unique";--> statement-breakpoint
 ALTER TABLE "notifications" ALTER COLUMN "tracked_domain_id" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "user_notification_preferences" ALTER COLUMN "domain_expiry" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "domain_expiry" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "domain_expiry" SET DATA TYPE jsonb USING CASE WHEN "domain_expiry" THEN '{"inApp": true, "email": true}'::jsonb ELSE '{"inApp": false, "email": false}'::jsonb END;--> statement-breakpoint
 ALTER TABLE "user_notification_preferences" ALTER COLUMN "domain_expiry" SET DEFAULT '{"inApp": true, "email": true}'::jsonb;--> statement-breakpoint
-ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_expiry" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_expiry" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_expiry" SET DATA TYPE jsonb USING CASE WHEN "certificate_expiry" THEN '{"inApp": true, "email": true}'::jsonb ELSE '{"inApp": false, "email": false}'::jsonb END;--> statement-breakpoint
 ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_expiry" SET DEFAULT '{"inApp": true, "email": true}'::jsonb;--> statement-breakpoint
-ALTER TABLE "user_notification_preferences" ALTER COLUMN "registration_changes" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "registration_changes" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "registration_changes" SET DATA TYPE jsonb USING CASE WHEN "registration_changes" THEN '{"inApp": true, "email": true}'::jsonb ELSE '{"inApp": false, "email": false}'::jsonb END;--> statement-breakpoint
 ALTER TABLE "user_notification_preferences" ALTER COLUMN "registration_changes" SET DEFAULT '{"inApp": true, "email": true}'::jsonb;--> statement-breakpoint
-ALTER TABLE "user_notification_preferences" ALTER COLUMN "provider_changes" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "provider_changes" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "provider_changes" SET DATA TYPE jsonb USING CASE WHEN "provider_changes" THEN '{"inApp": true, "email": true}'::jsonb ELSE '{"inApp": false, "email": false}'::jsonb END;--> statement-breakpoint
 ALTER TABLE "user_notification_preferences" ALTER COLUMN "provider_changes" SET DEFAULT '{"inApp": true, "email": true}'::jsonb;--> statement-breakpoint
-ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_changes" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_changes" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_changes" SET DATA TYPE jsonb USING CASE WHEN "certificate_changes" THEN '{"inApp": true, "email": true}'::jsonb ELSE '{"inApp": false, "email": false}'::jsonb END;--> statement-breakpoint
 ALTER TABLE "user_notification_preferences" ALTER COLUMN "certificate_changes" SET DEFAULT '{"inApp": true, "email": true}'::jsonb;--> statement-breakpoint
 ALTER TABLE "notifications" ADD COLUMN "user_id" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "notifications" ADD COLUMN "title" text NOT NULL;--> statement-breakpoint

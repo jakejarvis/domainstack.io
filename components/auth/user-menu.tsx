@@ -1,18 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import {
-  Bell,
-  Bookmark,
-  LogOut,
-  Moon,
-  Settings,
-  Sun,
-  Table2,
-} from "lucide-react";
+import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,20 +16,12 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
-import { useTRPC } from "@/lib/trpc/client";
 
 export function UserMenu() {
   const { data: session } = useSession();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const analytics = useAnalytics();
-  const trpc = useTRPC();
-
-  // Get unread notification count
-  const { data: unreadCount = 0 } = useQuery({
-    ...trpc.notifications.unreadCount.queryOptions(),
-    enabled: !!session?.user,
-  });
 
   if (!session?.user) {
     return null;
@@ -117,20 +99,6 @@ export function UserMenu() {
             <Link href="/dashboard" className="cursor-pointer">
               <Table2 className="size-4" />
               Dashboard
-            </Link>
-          }
-        />
-        <DropdownMenuItem
-          nativeButton={false}
-          render={
-            <Link href="/notifications" className="cursor-pointer">
-              <Bell className="size-4" />
-              Notifications
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="ml-auto">
-                  {unreadCount}
-                </Badge>
-              )}
             </Link>
           }
         />
