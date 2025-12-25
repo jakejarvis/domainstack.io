@@ -9,6 +9,7 @@ const ONE_WEEK = ONE_DAY * 7;
 export const TTL_FAVICON = ONE_WEEK; // 1 week
 export const TTL_SCREENSHOT = 2 * ONE_WEEK; // 2 weeks
 export const TTL_OPENGRAPH_IMAGE = ONE_WEEK; // 1 week
+export const TTL_PROVIDER_LOGO = ONE_WEEK; // 1 week (company logos change infrequently)
 
 // ===== Avatar Proxy Cache TTLs =====
 // CDN cache duration for proxied user avatars from OAuth providers

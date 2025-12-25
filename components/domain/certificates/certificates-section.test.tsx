@@ -5,9 +5,20 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
-vi.mock("@/components/domain/favicon", () => ({
-  Favicon: ({ domain }: { domain: string }) => (
-    <div data-testid="favicon" data-slot="favicon" data-domain={domain} />
+vi.mock("@/components/domain/provider-logo", () => ({
+  ProviderLogo: ({
+    providerId,
+    providerDomain,
+  }: {
+    providerId: string;
+    providerDomain: string | null;
+  }) => (
+    <div
+      data-testid="provider-logo"
+      data-slot="provider-logo"
+      data-provider-id={providerId}
+      data-provider-domain={providerDomain}
+    />
   ),
 }));
 
@@ -40,7 +51,11 @@ describe("CertificatesSection", () => {
         altNames: ["*.example.com", "example.com"],
         validFrom: "2024-01-01T00:00:00.000Z",
         validTo: "2025-01-01T00:00:00.000Z",
-        caProvider: { name: "Let's Encrypt", domain: "letsencrypt.org" },
+        caProvider: {
+          id: "ca-letsencrypt",
+          name: "Let's Encrypt",
+          domain: "letsencrypt.org",
+        },
       },
     ];
     render(<CertificatesSection data={data} />);
@@ -62,9 +77,13 @@ describe("CertificatesSection", () => {
     await user.click(screen.getByRole("button", { name: /\+1/i }));
     expect(await screen.findByText("*.example.com")).toBeInTheDocument();
 
-    // Assert CA provider favicon with correct domain
-    const favicon = screen.getByTestId("favicon");
-    expect(favicon).toHaveAttribute("data-domain", "letsencrypt.org");
+    // Assert CA provider logo with correct domain
+    const providerLogo = screen.getByTestId("provider-logo");
+    expect(providerLogo).toHaveAttribute("data-provider-id", "ca-letsencrypt");
+    expect(providerLogo).toHaveAttribute(
+      "data-provider-domain",
+      "letsencrypt.org",
+    );
 
     // Assert CA provider name displayed as annotation
     const caProviderName = screen

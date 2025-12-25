@@ -6,9 +6,9 @@ import {
   GraduationCap,
   HatGlasses,
 } from "lucide-react";
-import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
@@ -126,9 +126,11 @@ export function RegistrationSection({
             label="Registrar"
             value={data.registrarProvider?.name || "Unknown"}
             leading={
-              data.registrarProvider?.domain ? (
-                <Favicon
-                  domain={data.registrarProvider.domain}
+              data.registrarProvider?.id ? (
+                <ProviderLogo
+                  providerId={data.registrarProvider.id}
+                  providerName={data.registrarProvider.name}
+                  providerDomain={data.registrarProvider.domain}
                   size={16}
                   className="rounded"
                 />

@@ -71,6 +71,13 @@
       "when": 1766634741802,
       "tag": "0009_concerned_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1766679456416,
+      "tag": "0010_yielding_warlock",
+      "breakpoints": true
     }
   ]
 }

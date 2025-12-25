@@ -2,10 +2,10 @@
 
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
-import { Favicon } from "@/components/domain/favicon";
 import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { Section } from "@/components/domain/section";
 import {
   Empty,
@@ -44,9 +44,11 @@ export function HostingSection({
               label="DNS"
               value={dnsProvider?.name ?? "Not configured"}
               leading={
-                dnsProvider?.domain ? (
-                  <Favicon
-                    domain={dnsProvider.domain}
+                dnsProvider?.id ? (
+                  <ProviderLogo
+                    providerId={dnsProvider.id}
+                    providerName={dnsProvider.name}
+                    providerDomain={dnsProvider.domain}
                     size={16}
                     className="rounded"
                   />
@@ -57,9 +59,11 @@ export function HostingSection({
               label="Hosting"
               value={hostingProvider?.name ?? "Not configured"}
               leading={
-                hostingProvider?.domain ? (
-                  <Favicon
-                    domain={hostingProvider.domain}
+                hostingProvider?.id ? (
+                  <ProviderLogo
+                    providerId={hostingProvider.id}
+                    providerName={hostingProvider.name}
+                    providerDomain={hostingProvider.domain}
                     size={16}
                     className="rounded"
                   />
@@ -70,9 +74,11 @@ export function HostingSection({
               label="Email"
               value={emailProvider?.name ?? "Not configured"}
               leading={
-                emailProvider?.domain ? (
-                  <Favicon
-                    domain={emailProvider.domain}
+                emailProvider?.id ? (
+                  <ProviderLogo
+                    providerId={emailProvider.id}
+                    providerName={emailProvider.name}
+                    providerDomain={emailProvider.domain}
                     size={16}
                     className="rounded"
                   />

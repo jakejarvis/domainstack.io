@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-export const BlobKindSchema = z.enum(["favicon", "screenshot", "opengraph"]);
+export const BlobKindSchema = z.enum([
+  "favicon",
+  "screenshot",
+  "opengraph",
+  "provider-logo",
+]);
 export const BlobUrlResponseSchema = z.object({
   url: z.string().url().nullable(),
 });

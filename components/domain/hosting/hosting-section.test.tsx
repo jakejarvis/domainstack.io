@@ -12,16 +12,34 @@ vi.mock("next/dynamic", () => ({
   },
 }));
 
-vi.mock("@/components/domain/favicon", () => ({
-  Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
+vi.mock("@/components/domain/provider-logo", () => ({
+  ProviderLogo: ({
+    providerId: _providerId,
+    providerDomain,
+  }: {
+    providerId: string;
+    providerDomain: string | null;
+  }) => <div>logo:{providerDomain}</div>,
 }));
 
 describe("HostingSection", () => {
   it("renders provider names and icons", () => {
     const data = {
-      dnsProvider: { name: "Cloudflare", domain: "cloudflare.com" },
-      hostingProvider: { name: "Vercel", domain: "vercel.com" },
-      emailProvider: { name: "Google Workspace", domain: "google.com" },
+      dnsProvider: {
+        id: "provider-cloudflare",
+        name: "Cloudflare",
+        domain: "cloudflare.com",
+      },
+      hostingProvider: {
+        id: "provider-vercel",
+        name: "Vercel",
+        domain: "vercel.com",
+      },
+      emailProvider: {
+        id: "provider-google",
+        name: "Google Workspace",
+        domain: "google.com",
+      },
       geo: {
         city: "",
         region: "",
@@ -33,7 +51,7 @@ describe("HostingSection", () => {
     } as unknown as import("@/lib/schemas").HostingResponse;
     render(<HostingSection data={data} />);
     expect(screen.getByText("Cloudflare")).toBeInTheDocument();
-    expect(screen.getByText(/icon:cloudflare.com/)).toBeInTheDocument();
+    expect(screen.getByText(/logo:cloudflare.com/)).toBeInTheDocument();
     expect(screen.getByText("Vercel")).toBeInTheDocument();
     expect(screen.getByText("Google Workspace")).toBeInTheDocument();
   });

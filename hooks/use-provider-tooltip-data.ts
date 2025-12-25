@@ -18,6 +18,7 @@ type ProviderTooltipData = {
   setIsOpen: (open: boolean) => void;
   shouldShowTooltip: boolean;
   isLoading: boolean;
+  providerId?: string | null;
   records?: DnsRecordForTooltip[];
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
@@ -135,6 +136,7 @@ export function useProviderTooltipData({
     setIsOpen,
     shouldShowTooltip,
     isLoading,
+    providerId: provider.id,
     records: displayRecords,
     certificateExpiryDate: displayCertificateExpiry,
     whoisServer: displayWhoisServer,

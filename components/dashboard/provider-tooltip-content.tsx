@@ -1,12 +1,13 @@
 import { format } from "date-fns";
 import { BadgeCheck, HatGlasses } from "lucide-react";
-import { Favicon } from "@/components/domain/favicon";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { Spinner } from "@/components/ui/spinner";
 import type { DnsRecordForTooltip } from "@/lib/db/repos/tracked-domains";
 import type { ProviderCategory, RegistrationContacts } from "@/lib/schemas";
 
 type ProviderTooltipContentProps = {
+  providerId?: string | null;
   providerName: string;
   providerDomain: string | null;
   providerType?: ProviderCategory;
@@ -45,6 +46,7 @@ function extractDomain(input: string | undefined | null): string | undefined {
  * or loading/empty states.
  */
 export function ProviderTooltipContent({
+  providerId,
   providerName,
   providerDomain,
   providerType,
@@ -99,9 +101,11 @@ export function ProviderTooltipContent({
     <div className="space-y-2 py-1">
       {/* Provider info */}
       <div className="flex items-center gap-2 border-border/20 border-b pb-2">
-        {providerDomain && (
-          <Favicon
-            domain={providerDomain}
+        {providerId && (
+          <ProviderLogo
+            providerId={providerId}
+            providerName={providerName}
+            providerDomain={providerDomain}
             size={16}
             className="shrink-0 rounded"
           />
