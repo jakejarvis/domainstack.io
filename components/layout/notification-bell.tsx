@@ -255,32 +255,6 @@ export function NotificationBell() {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  // Scroll position tracking for gradient indicators
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we need to trigger this when the list changes
-  useEffect(() => {
-    const scrollArea = scrollAreaRef.current;
-    if (!scrollArea) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollArea;
-      setShowTopIndicator(scrollTop > 20);
-      setShowBottomIndicator(scrollTop < scrollHeight - clientHeight - 20);
-    };
-
-    // Initial check
-    handleScroll();
-
-    scrollArea.addEventListener("scroll", handleScroll);
-
-    // Also check when notifications change (after render)
-    const timeoutId = setTimeout(handleScroll, 100);
-
-    return () => {
-      scrollArea.removeEventListener("scroll", handleScroll);
-      clearTimeout(timeoutId);
-    };
-  }, [notifications.length]);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
