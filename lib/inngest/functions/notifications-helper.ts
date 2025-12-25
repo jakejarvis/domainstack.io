@@ -68,6 +68,34 @@ export async function determineNotificationChannels(
 /**
  * Consolidated logic for creating a notification record and optionally sending an email.
  * Used by all domain monitoring functions to ensure consistent behavior.
+ *
+ * ## Idempotency Strategy
+ *
+ * This function uses a two-layer idempotency approach to handle Inngest retries gracefully:
+ *
+ * 1. **Database-level deduplication**: Callers typically check `hasRecentNotification()` before
+ *    calling this function, preventing duplicate notifications within a time window (usually 30 days).
+ *    This protects against multiple Inngest job runs for the same event.
+ *
+ * 2. **Email-level idempotency**: Resend's idempotency key (format: `{trackedDomainId}:{notificationType}`)
+ *    prevents duplicate emails if this function is retried within Resend's idempotency window (~24-48 hours).
+ *    This protects against transient failures during email sending.
+ *
+ * ## Retry Behavior
+ *
+ * If email sending fails after the notification record is created:
+ * - The notification record will show "email" in its channels array
+ * - Inngest will retry the entire function
+ * - On retry, `hasRecentNotification()` will return true, preventing the caller from invoking this again
+ * - If somehow invoked again, Resend's idempotency key prevents duplicate emails
+ *
+ * This means a notification record might claim an email was sent (in the channels array) even if
+ * the send failed. However:
+ * - The `resendId` field will be null, indicating the send didn't complete
+ * - The user won't receive duplicate emails thanks to the idempotency layers
+ * - The in-app notification will still be visible to the user
+ *
+ * @throws {Error} If notification record creation fails or email sending fails
  */
 export async function sendNotification(
   options: SendNotificationOptions,
