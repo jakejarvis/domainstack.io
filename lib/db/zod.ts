@@ -7,6 +7,7 @@ import {
   favicons,
   hosting,
   httpHeaders,
+  providerLogos,
   providers,
   registrations,
   screenshots,
@@ -61,6 +62,11 @@ export const SeoRowUpdate = zWrite.createUpdateSchema(seo);
 export const FaviconSelect = zRead.createSelectSchema(favicons);
 export const FaviconInsert = zWrite.createInsertSchema(favicons);
 export const FaviconUpdate = zWrite.createUpdateSchema(favicons);
+
+// Provider Logos
+export const ProviderLogoSelect = zRead.createSelectSchema(providerLogos);
+export const ProviderLogoInsert = zWrite.createInsertSchema(providerLogos);
+export const ProviderLogoUpdate = zWrite.createUpdateSchema(providerLogos);
 
 // Screenshots
 export const ScreenshotSelect = zRead.createSelectSchema(screenshots);

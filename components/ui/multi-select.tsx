@@ -14,8 +14,6 @@ export type MultiSelectOption<T extends string> = {
   label: string;
   /** Optional search keywords to match against (in addition to value and label) */
   keywords?: string[];
-  /** Optional domain for favicon rendering */
-  domain?: string | null;
 };
 
 export type MultiSelectSection<T extends string> = {

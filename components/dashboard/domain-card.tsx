@@ -19,6 +19,7 @@ import {
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
@@ -425,9 +426,11 @@ function InfoRow({
 
   const providerContent = (
     <span className="flex min-w-0 items-center gap-1.5">
-      {provider?.domain && (
-        <Favicon
-          domain={provider.domain}
+      {provider?.id && (
+        <ProviderLogo
+          providerId={provider.id}
+          providerName={provider.name}
+          providerDomain={provider.domain}
           size={14}
           className="shrink-0 rounded"
         />
@@ -454,6 +457,7 @@ function InfoRow({
                 <ResponsiveTooltipTrigger render={providerContent} />
                 <ResponsiveTooltipContent>
                   <ProviderTooltipContent
+                    providerId={tooltipData.providerId}
                     providerName={provider.name}
                     providerDomain={provider.domain}
                     providerType={providerType}

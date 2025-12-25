@@ -15,7 +15,8 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
-import { Favicon } from "@/components/domain/favicon";
+import { ProviderMultiSelect } from "@/components/dashboard/provider-multi-select";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -125,6 +126,7 @@ export function DomainFilters({
           value: p.id,
           label: p.name,
           domain: p.domain,
+          id: p.id,
           keywords: [p.name],
         })),
       });
@@ -137,6 +139,7 @@ export function DomainFilters({
           value: p.id,
           label: p.name,
           domain: p.domain,
+          id: p.id,
           keywords: [p.name],
         })),
       });
@@ -149,6 +152,7 @@ export function DomainFilters({
           value: p.id,
           label: p.name,
           domain: p.domain,
+          id: p.id,
           keywords: [p.name],
         })),
       });
@@ -161,6 +165,7 @@ export function DomainFilters({
           value: p.id,
           label: p.name,
           domain: p.domain,
+          id: p.id,
           keywords: [p.name],
         })),
       });
@@ -173,6 +178,7 @@ export function DomainFilters({
           value: p.id,
           label: p.name,
           domain: p.domain,
+          id: p.id,
           keywords: [p.name],
         })),
       });
@@ -211,9 +217,11 @@ export function DomainFilters({
         map.set(provider.id, {
           name: provider.name,
           category: categoryLabel,
-          icon: provider.domain ? (
-            <Favicon
-              domain={provider.domain}
+          icon: provider.id ? (
+            <ProviderLogo
+              providerId={provider.id}
+              providerName={provider.name}
+              providerDomain={provider.domain}
               size={12}
               className="shrink-0 rounded"
             />
@@ -368,24 +376,12 @@ export function DomainFilters({
             />
           )}
           {providerSections.length > 0 && (
-            <MultiSelect
+            <ProviderMultiSelect
               label="Providers"
               icon={EthernetPort}
               sections={providerSections}
               selected={providers}
               onSelectionChange={onProvidersChange}
-              renderOption={(option) => (
-                <div className="flex items-center gap-2 truncate">
-                  {option.domain && (
-                    <Favicon
-                      domain={option.domain}
-                      size={14}
-                      className="shrink-0 rounded"
-                    />
-                  )}
-                  <span className="truncate">{option.label}</span>
-                </div>
-              )}
               searchable
               popoverWidth="w-72"
               className="cursor-pointer"

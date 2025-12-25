@@ -1,4 +1,5 @@
 import "server-only";
+
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
@@ -25,6 +26,18 @@ export function makeProviderKey(
   const domainNorm = domain ? domain.trim().toLowerCase() : "";
   const nameNorm = name ? name.trim().toLowerCase() : "";
   return `${category}|${domainNorm}|${nameNorm}`;
+}
+
+/**
+ * Get provider by ID
+ */
+export async function getProviderById(providerId: string) {
+  const rows = await db
+    .select()
+    .from(providers)
+    .where(eq(providers.id, providerId))
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 /**

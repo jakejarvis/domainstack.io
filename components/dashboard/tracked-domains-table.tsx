@@ -30,6 +30,7 @@ import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { Favicon } from "@/components/domain/favicon";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,9 +105,11 @@ function ProviderCell({
 
   const providerContent = (
     <span className="flex min-w-0 items-center gap-1.5">
-      {provider.domain && (
-        <Favicon
-          domain={provider.domain}
+      {provider.id && (
+        <ProviderLogo
+          providerId={provider.id}
+          providerName={provider.name}
+          providerDomain={provider.domain}
           size={13}
           className="shrink-0 rounded"
         />
@@ -129,6 +132,7 @@ function ProviderCell({
         />
         <ResponsiveTooltipContent>
           <ProviderTooltipContent
+            providerId={tooltipData.providerId}
             providerName={provider.name}
             providerDomain={provider.domain}
             providerType={providerType}

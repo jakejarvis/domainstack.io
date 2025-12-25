@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useState } from "react";
-import { Favicon } from "@/components/domain/favicon";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
@@ -55,9 +55,11 @@ export function CertificatesSection({
                   label="Issuer"
                   value={firstCert.issuer}
                   leading={
-                    firstCert.caProvider?.domain ? (
-                      <Favicon
-                        domain={firstCert.caProvider.domain}
+                    firstCert.caProvider?.id ? (
+                      <ProviderLogo
+                        providerId={firstCert.caProvider.id}
+                        providerName={firstCert.caProvider.name}
+                        providerDomain={firstCert.caProvider.domain}
                         size={16}
                         className="rounded"
                       />
@@ -172,9 +174,11 @@ export function CertificatesSection({
                             label="Issuer"
                             value={c.issuer}
                             leading={
-                              c.caProvider?.domain ? (
-                                <Favicon
-                                  domain={c.caProvider.domain}
+                              c.caProvider?.id ? (
+                                <ProviderLogo
+                                  providerId={c.caProvider.id}
+                                  providerName={c.caProvider.name}
+                                  providerDomain={c.caProvider.domain}
                                   size={16}
                                   className="rounded"
                                 />
