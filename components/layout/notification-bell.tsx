@@ -389,7 +389,13 @@ export function NotificationBell() {
                         data-notification-id={notification.id}
                         onClick={() => {
                           setOpen(false);
-                          if (!notification.readAt) {
+                          if (
+                            !notification.readAt &&
+                            !markedAsReadIds.has(notification.id)
+                          ) {
+                            setMarkedAsReadIds((prev) =>
+                              new Set(prev).add(notification.id),
+                            );
                             markRead.mutate({ id: notification.id });
                           }
                         }}
