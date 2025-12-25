@@ -1,1 +1,0 @@
-ALTER TABLE "notifications" ADD CONSTRAINT "ck_notifications_channels" CHECK ("notifications"."channels" <@ '["in-app","email"]'::jsonb);

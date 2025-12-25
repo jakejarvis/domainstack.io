@@ -1,5 +1,5 @@
 {
-  "id": "5f6259a8-d41b-415c-a24f-01986ecef934",
+  "id": "5f480fa3-6873-4fe0-992c-3a296e272b2f",
   "prevId": "3e212a3d-7b9b-4480-992d-d732c3b124d5",
   "version": "7",
   "dialect": "postgresql",
@@ -1084,6 +1084,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "channels": {
+          "name": "channels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[\"in-app\", \"email\"]'::jsonb"
+        },
         "read_at": {
           "name": "read_at",
           "type": "timestamp with time zone",
@@ -1145,6 +1152,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "idx_notifications_channels": {
+          "name": "idx_notifications_channels",
+          "columns": [
+            {
+              "expression": "channels",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1178,7 +1200,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "ck_notifications_channels": {
+          "name": "ck_notifications_channels",
+          "value": "\"notifications\".\"channels\" <@ '[\"in-app\",\"email\"]'::jsonb"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.providers": {
@@ -1842,45 +1869,38 @@
         },
         "domain_expiry": {
           "name": "domain_expiry",
-          "type": "boolean",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": "'{\"inApp\": true, \"email\": true}'::jsonb"
         },
         "certificate_expiry": {
           "name": "certificate_expiry",
-          "type": "boolean",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
-        },
-        "verification_status": {
-          "name": "verification_status",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
+          "default": "'{\"inApp\": true, \"email\": true}'::jsonb"
         },
         "registration_changes": {
           "name": "registration_changes",
-          "type": "boolean",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": "'{\"inApp\": true, \"email\": true}'::jsonb"
         },
         "provider_changes": {
           "name": "provider_changes",
-          "type": "boolean",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": "'{\"inApp\": true, \"email\": true}'::jsonb"
         },
         "certificate_changes": {
           "name": "certificate_changes",
-          "type": "boolean",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": "'{\"inApp\": true, \"email\": true}'::jsonb"
         },
         "created_at": {
           "name": "created_at",

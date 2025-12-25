@@ -1,1 +1,0 @@
-ALTER TABLE "user_notification_preferences" DROP COLUMN "verification_status";

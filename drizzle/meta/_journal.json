@@ -68,43 +68,8 @@
     {
       "idx": 9,
       "version": "7",
-      "when": 1766589966878,
-      "tag": "0009_short_ultimatum",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1766592347808,
-      "tag": "0010_illegal_silver_fox",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1766594553290,
-      "tag": "0011_material_titania",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1766595771238,
-      "tag": "0012_nervous_azazel",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1766605255303,
-      "tag": "0013_sudden_johnny_blaze",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1766633264567,
-      "tag": "0014_lonely_shape",
+      "when": 1766634741802,
+      "tag": "0009_concerned_puma",
       "breakpoints": true
     }
   ]

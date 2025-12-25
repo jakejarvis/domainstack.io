@@ -1,2 +1,0 @@
-ALTER TABLE "notifications" ADD COLUMN "channels" jsonb DEFAULT '["in-app", "email"]'::jsonb NOT NULL;--> statement-breakpoint
-CREATE INDEX "idx_notifications_channels" ON "notifications" USING gin ("channels");
