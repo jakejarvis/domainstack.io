@@ -53,7 +53,7 @@ export function DomainNotificationRow({
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex h-7 items-center gap-2">
           <Favicon domain={domainName} size={18} />
           <span className="font-medium text-sm">{domainName}</span>
         </div>

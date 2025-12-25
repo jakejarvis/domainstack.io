@@ -307,7 +307,7 @@ export function NotificationSettingsSection({
       <CardContent className="space-y-2.5 px-0 pt-1">
         {/* Headers */}
         <div className="flex items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:gap-6">
-          <div className="w-12 text-center sm:w-16">In-App</div>
+          <div className="w-12 text-center sm:w-16">Web</div>
           <div className="w-12 text-center sm:w-16">Email</div>
         </div>
 
@@ -354,8 +354,8 @@ export function NotificationSettingsSection({
             <CollapsibleContent className="mt-4">
               <div className="space-y-2">
                 {/* Headers for domain section */}
-                <div className="flex items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:gap-6">
-                  <div className="w-12 text-center sm:w-16">In-App</div>
+                <div className="flex items-center justify-end gap-2 px-5 font-medium text-muted-foreground text-xs sm:gap-6">
+                  <div className="w-12 text-center sm:w-16">Web</div>
                   <div className="w-12 text-center sm:w-16">Email</div>
                 </div>
 
