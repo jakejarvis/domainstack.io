@@ -13,6 +13,7 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
 import type {
   GeneralMeta,
   Header,
@@ -237,38 +238,81 @@ export const userTrackedDomains = pgTable(
   ],
 );
 
-// Notification history (prevent duplicate emails)
+// In-app notifications (also logs sent emails)
 export const notifications = pgTable(
   "notifications",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    trackedDomainId: uuid("tracked_domain_id")
+    // Direct link to user for inbox queries
+    userId: text("user_id")
       .notNull()
-      .references(() => userTrackedDomains.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Optional: link to domain if notification is domain-specific
+    trackedDomainId: uuid("tracked_domain_id").references(
+      () => userTrackedDomains.id,
+      { onDelete: "cascade" },
+    ),
     type: text("type").notNull(),
+    // UI display fields
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    // Metadata for actionable links (e.g. { url: "/dashboard/domain/..." })
+    data: jsonb("data"),
+    // Channels (e.g. ["in-app", "email"]) - moved to top level for querying
+    channels: jsonb("channels")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'["in-app", "email"]'::jsonb`),
+    // Status
+    readAt: timestamp("read_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull(),
     // Resend email ID for troubleshooting delivery issues
     resendId: text("resend_id"),
   },
-  (t) => [unique("u_notification_unique").on(t.trackedDomainId, t.type)],
+  (t) => [
+    // Index for fast fetching of user's notifications
+    index("idx_notifications_user_sent").on(t.userId, t.sentAt),
+    // Index for unread count queries
+    index("idx_notifications_user_read").on(t.userId, t.readAt),
+    // Index for channels filtering
+    index("idx_notifications_channels").using("gin", t.channels),
+    // Ensure channels only contains valid values
+    check(
+      "ck_notifications_channels",
+      sql`${t.channels} <@ ${sql.raw(`'${JSON.stringify(NOTIFICATION_CHANNELS)}'::jsonb`)}`,
+    ),
+  ],
 );
 
 // User notification preferences (global defaults for all domains)
+// Note: Verification status notifications are always sent and not stored in preferences
 export const userNotificationPreferences = pgTable(
   "user_notification_preferences",
   {
     userId: text("user_id")
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),
-    // Global toggles (defaults for all domains)
-    domainExpiry: boolean("domain_expiry").notNull().default(true),
-    certificateExpiry: boolean("certificate_expiry").notNull().default(true),
-    verificationStatus: boolean("verification_status").notNull().default(true),
-    registrationChanges: boolean("registration_changes")
+    // Global toggles (defaults for all domains) - stored as JSONB with { inApp: boolean, email: boolean }
+    domainExpiry: jsonb("domain_expiry")
+      .$type<{ inApp: boolean; email: boolean }>()
       .notNull()
-      .default(true),
-    providerChanges: boolean("provider_changes").notNull().default(true),
-    certificateChanges: boolean("certificate_changes").notNull().default(true),
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    certificateExpiry: jsonb("certificate_expiry")
+      .$type<{ inApp: boolean; email: boolean }>()
+      .notNull()
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    registrationChanges: jsonb("registration_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
+      .notNull()
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    providerChanges: jsonb("provider_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
+      .notNull()
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
+    certificateChanges: jsonb("certificate_changes")
+      .$type<{ inApp: boolean; email: boolean }>()
+      .notNull()
+      .default(sql`'{"inApp": true, "email": true}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

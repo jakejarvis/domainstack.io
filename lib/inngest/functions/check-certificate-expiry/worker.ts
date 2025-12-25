@@ -7,7 +7,7 @@ import { getEarliestCertificate } from "@/lib/db/repos/certificates";
 import {
   clearCertificateExpiryNotifications,
   createNotification,
-  hasNotificationBeenSent,
+  hasRecentNotification,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
@@ -68,22 +68,37 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
       return { skipped: true, reason: "no_threshold_met" };
     }
 
-    const shouldNotify = await step.run("check-prefs", async () => {
-      if (cert.notificationOverrides.certificateExpiry !== undefined) {
-        return cert.notificationOverrides.certificateExpiry;
-      }
-      const globalPrefs = await getOrCreateUserNotificationPreferences(
-        cert.userId,
-      );
-      return globalPrefs.certificateExpiry;
-    });
+    // Check preferences
+    const { shouldSendEmail, shouldSendInApp } = await step.run(
+      "check-prefs",
+      async () => {
+        const globalPrefs = await getOrCreateUserNotificationPreferences(
+          cert.userId,
+        );
 
-    if (!shouldNotify) {
+        // Check for domain-specific override
+        const override = cert.notificationOverrides.certificateExpiry;
+        if (override !== undefined) {
+          return {
+            shouldSendEmail: override.email,
+            shouldSendInApp: override.inApp,
+          };
+        }
+
+        // Fall back to global preferences
+        return {
+          shouldSendEmail: globalPrefs.certificateExpiry.email,
+          shouldSendInApp: globalPrefs.certificateExpiry.inApp,
+        };
+      },
+    );
+
+    if (!shouldSendEmail && !shouldSendInApp) {
       return { skipped: true, reason: "notifications_disabled" };
     }
 
     const alreadySent = await step.run("check-sent", async () => {
-      return await hasNotificationBeenSent(trackedDomainId, notificationType);
+      return await hasRecentNotification(trackedDomainId, notificationType);
     });
 
     if (alreadySent) {
@@ -102,6 +117,8 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
           issuer: cert.issuer,
           daysRemaining,
           notificationType,
+          shouldSendEmail,
+          shouldSendInApp,
         },
         inngestLogger,
       );
@@ -122,6 +139,8 @@ async function sendCertificateExpiryNotification(
     issuer,
     daysRemaining,
     notificationType,
+    shouldSendEmail,
+    shouldSendInApp,
   }: {
     trackedDomainId: string;
     domainName: string;
@@ -132,6 +151,8 @@ async function sendCertificateExpiryNotification(
     issuer: string;
     daysRemaining: number;
     notificationType: NotificationType;
+    shouldSendEmail: boolean;
+    shouldSendInApp: boolean;
   },
   logger: Logger,
 ): Promise<boolean> {
@@ -140,27 +161,24 @@ async function sendCertificateExpiryNotification(
     notificationType,
   );
 
+  const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
+  const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
+  const message = `The SSL certificate for ${domainName} (issued by ${issuer}) will expire on ${format(validTo, "MMMM d, yyyy")}.`;
+
+  const channels: string[] = [];
+  if (shouldSendEmail) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject: `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`,
-        react: CertificateExpiryEmail({
-          userName: userName.split(" ")[0] || "there",
-          domainName,
-          expirationDate: format(validTo, "MMMM d, yyyy"),
-          daysRemaining,
-          issuer,
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create in-app notification first
     const notification = await createNotification({
+      userId,
       trackedDomainId,
       type: notificationType,
+      title,
+      message,
+      data: { domainName },
+      channels,
     });
 
     if (!notification) {
@@ -172,12 +190,29 @@ async function sendCertificateExpiryNotification(
       throw new Error("Failed to create notification record in database");
     }
 
-    if (data?.id) {
-      await updateNotificationResendId(
-        trackedDomainId,
-        notificationType,
-        data.id,
+    // Send email notification if enabled
+    if (shouldSendEmail) {
+      const { data, error } = await sendPrettyEmail(
+        {
+          to: userEmail,
+          subject,
+          react: CertificateExpiryEmail({
+            userName: userName.split(" ")[0] || "there",
+            domainName,
+            expirationDate: format(validTo, "MMMM d, yyyy"),
+            daysRemaining,
+            issuer,
+          }),
+        },
+        { idempotencyKey },
       );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
     }
 
     return true;

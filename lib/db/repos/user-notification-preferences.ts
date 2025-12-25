@@ -11,6 +11,18 @@ const logger = createLogger({ source: "user-notification-preferences" });
 // Re-export for convenience
 export type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
 
+function mapPreferences(
+  row: typeof userNotificationPreferences.$inferSelect,
+): UserNotificationPreferencesData {
+  return {
+    domainExpiry: row.domainExpiry,
+    certificateExpiry: row.certificateExpiry,
+    registrationChanges: row.registrationChanges,
+    providerChanges: row.providerChanges,
+    certificateChanges: row.certificateChanges,
+  };
+}
+
 /**
  * Get user notification preferences, creating default preferences if they don't exist.
  */
@@ -24,13 +36,7 @@ export async function getOrCreateUserNotificationPreferences(
     .limit(1);
 
   if (existing.length > 0) {
-    return {
-      domainExpiry: existing[0].domainExpiry,
-      certificateExpiry: existing[0].certificateExpiry,
-      registrationChanges: existing[0].registrationChanges,
-      providerChanges: existing[0].providerChanges,
-      certificateChanges: existing[0].certificateChanges,
-    };
+    return mapPreferences(existing[0]);
   }
 
   // Create default preferences
@@ -38,24 +44,17 @@ export async function getOrCreateUserNotificationPreferences(
     .insert(userNotificationPreferences)
     .values({
       userId,
-      domainExpiry: true,
-      certificateExpiry: true,
-      verificationStatus: true, // Always true, not exposed in UI
-      registrationChanges: true,
-      providerChanges: true,
-      certificateChanges: true,
+      domainExpiry: { inApp: true, email: true },
+      certificateExpiry: { inApp: true, email: true },
+      registrationChanges: { inApp: true, email: true },
+      providerChanges: { inApp: true, email: true },
+      certificateChanges: { inApp: true, email: true },
     })
     .returning();
 
   logger.info("created default notification preferences", { userId });
 
-  return {
-    domainExpiry: inserted[0].domainExpiry,
-    certificateExpiry: inserted[0].certificateExpiry,
-    registrationChanges: inserted[0].registrationChanges,
-    providerChanges: inserted[0].providerChanges,
-    certificateChanges: inserted[0].certificateChanges,
-  };
+  return mapPreferences(inserted[0]);
 }
 
 /**
@@ -79,13 +78,7 @@ export async function updateUserNotificationPreferences(
 
   logger.info("updated notification preferences", { userId, preferences });
 
-  return {
-    domainExpiry: updated[0].domainExpiry,
-    certificateExpiry: updated[0].certificateExpiry,
-    registrationChanges: updated[0].registrationChanges,
-    providerChanges: updated[0].providerChanges,
-    certificateChanges: updated[0].certificateChanges,
-  };
+  return mapPreferences(updated[0]);
 }
 
 /**
@@ -104,11 +97,5 @@ export async function getUserNotificationPreferences(
     return null;
   }
 
-  return {
-    domainExpiry: rows[0].domainExpiry,
-    certificateExpiry: rows[0].certificateExpiry,
-    registrationChanges: rows[0].registrationChanges,
-    providerChanges: rows[0].providerChanges,
-    certificateChanges: rows[0].certificateChanges,
-  };
+  return mapPreferences(rows[0]);
 }

@@ -1,15 +1,26 @@
 import { z } from "zod";
 
 /**
+ * Notification channels schema - each notification category has separate toggles for in-app and email.
+ */
+export const NotificationChannelsSchema = z.object({
+  inApp: z.boolean(),
+  email: z.boolean(),
+});
+
+export type NotificationChannels = z.infer<typeof NotificationChannelsSchema>;
+
+/**
  * User's global notification preferences.
- * All fields are required booleans representing the default for all domains.
+ * All fields are required objects with channel booleans representing the default for all domains.
+ * Note: Verification notifications are always sent and cannot be disabled.
  */
 export const UserNotificationPreferencesSchema = z.object({
-  domainExpiry: z.boolean(),
-  certificateExpiry: z.boolean(),
-  registrationChanges: z.boolean(),
-  providerChanges: z.boolean(),
-  certificateChanges: z.boolean(),
+  domainExpiry: NotificationChannelsSchema,
+  certificateExpiry: NotificationChannelsSchema,
+  registrationChanges: NotificationChannelsSchema,
+  providerChanges: NotificationChannelsSchema,
+  certificateChanges: NotificationChannelsSchema,
 });
 
 export type UserNotificationPreferences = z.infer<
@@ -19,14 +30,14 @@ export type UserNotificationPreferences = z.infer<
 /**
  * Per-domain notification overrides.
  * All fields are optional - undefined means "inherit from global preferences".
- * Setting to true/false explicitly overrides the global setting for that domain.
+ * Setting to an object with channel booleans explicitly overrides the global setting for that domain.
  */
 export const NotificationOverridesSchema = z.object({
-  domainExpiry: z.boolean().optional(),
-  certificateExpiry: z.boolean().optional(),
-  registrationChanges: z.boolean().optional(),
-  providerChanges: z.boolean().optional(),
-  certificateChanges: z.boolean().optional(),
+  domainExpiry: NotificationChannelsSchema.optional(),
+  certificateExpiry: NotificationChannelsSchema.optional(),
+  registrationChanges: NotificationChannelsSchema.optional(),
+  providerChanges: NotificationChannelsSchema.optional(),
+  certificateChanges: NotificationChannelsSchema.optional(),
 });
 
 export type NotificationOverrides = z.infer<typeof NotificationOverridesSchema>;

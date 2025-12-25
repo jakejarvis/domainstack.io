@@ -15,8 +15,9 @@ import { cn } from "@/lib/utils";
 
 interface GlobalNotificationRowProps {
   category: NotificationCategory;
-  enabled: boolean;
-  onToggle: (enabled: boolean) => void;
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  onToggle: (type: "email" | "inApp", enabled: boolean) => void;
   disabled: boolean;
 }
 
@@ -26,84 +27,88 @@ interface GlobalNotificationRowProps {
  */
 export function GlobalNotificationRow({
   category,
-  enabled,
+  emailEnabled,
+  inAppEnabled,
   onToggle,
   disabled,
 }: GlobalNotificationRowProps) {
   const info = NOTIFICATION_CATEGORY_INFO[category];
   const Icon = info.icon;
 
-  const handleRowClick = (e: React.MouseEvent) => {
-    // Don't toggle if clicking the info button or switch
-    if ((e.target as HTMLElement).closest("button, [role=switch]")) {
-      return;
-    }
-    if (!disabled) {
-      onToggle(!enabled);
-    }
-  };
+  const anyEnabled = emailEnabled || inAppEnabled;
 
   return (
     <div
-      role="button"
-      tabIndex={disabled ? -1 : 0}
-      onClick={handleRowClick}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !disabled) {
-          e.preventDefault();
-          onToggle(!enabled);
-        }
-      }}
       className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
+        "group flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition-colors",
         "hover:bg-muted/50",
-        disabled ? "pointer-events-none opacity-60" : "cursor-pointer",
+        disabled && "pointer-events-none opacity-60",
       )}
     >
-      {/* Icon indicator */}
-      <div
-        className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
-          enabled
-            ? "bg-primary/10 text-primary"
-            : "bg-muted text-muted-foreground",
-        )}
-      >
-        <Icon className="size-4" />
-      </div>
-
-      {/* Label with info tooltip */}
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span
+      {/* Icon + Label */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* Icon indicator */}
+        <div
           className={cn(
-            "font-medium text-sm",
-            enabled ? "text-foreground" : "text-foreground/70",
+            "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+            anyEnabled
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground",
           )}
         >
-          {info.label}
-        </span>
-        <ResponsiveTooltip>
-          <ResponsiveTooltipTrigger
-            nativeButton={false}
-            render={
-              <span className="inline-flex text-foreground/70">
-                <Info className="size-3.5" />
-              </span>
-            }
-          />
-          <ResponsiveTooltipContent className="max-w-xs">
-            {info.description}
-          </ResponsiveTooltipContent>
-        </ResponsiveTooltip>
+          <Icon className="size-4" />
+        </div>
+
+        {/* Label with info tooltip */}
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span
+            className={cn(
+              "font-medium text-sm",
+              anyEnabled ? "text-foreground" : "text-foreground/70",
+            )}
+          >
+            {info.label}
+          </span>
+          <ResponsiveTooltip>
+            <ResponsiveTooltipTrigger
+              nativeButton={false}
+              render={
+                <span className="inline-flex text-foreground/70">
+                  <Info className="size-3.5" />
+                </span>
+              }
+            />
+            <ResponsiveTooltipContent className="max-w-xs">
+              {info.description}
+            </ResponsiveTooltipContent>
+          </ResponsiveTooltip>
+        </div>
       </div>
 
-      {/* Toggle */}
-      <Switch
-        checked={enabled}
-        onCheckedChange={onToggle}
-        disabled={disabled}
-        className="shrink-0 cursor-pointer"
-      />
+      {/* Switches */}
+      <div className="flex items-center gap-2 sm:gap-6">
+        {/* In-App Switch */}
+        <div className="flex w-12 justify-center sm:w-16">
+          <Switch
+            checked={inAppEnabled}
+            onCheckedChange={(v) => onToggle("inApp", v)}
+            disabled={disabled}
+            className="cursor-pointer"
+            aria-label={`Toggle in-app notifications for ${info.label}`}
+          />
+        </div>
+
+        {/* Email Switch */}
+        <div className="flex w-12 justify-center sm:w-16">
+          <Switch
+            checked={emailEnabled}
+            onCheckedChange={(v) => onToggle("email", v)}
+            disabled={disabled}
+            className="cursor-pointer"
+            aria-label={`Toggle email notifications for ${info.label}`}
+          />
+        </div>
+      </div>
     </div>
   );
 }

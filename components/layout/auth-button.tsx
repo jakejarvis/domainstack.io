@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { UserMenu } from "@/components/auth/user-menu";
 import { MobileMenu } from "@/components/layout/mobile-menu";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@/lib/auth-client";
 
@@ -19,10 +21,16 @@ export function AuthButton() {
     );
   }
 
-  // Logged in: show UserMenu (handles both mobile and desktop)
+  // Logged in: show NotificationBell + UserMenu (handles both mobile and desktop)
   if (session?.user) {
     return (
-      <div className="mr-1 ml-2 h-8">
+      <div className="flex h-8 items-center gap-2">
+        <NotificationBell />
+        <Separator
+          aria-hidden="true"
+          orientation="vertical"
+          className="!h-4 mr-2"
+        />
         <UserMenu />
       </div>
     );

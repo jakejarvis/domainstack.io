@@ -7,7 +7,7 @@ import { VerificationRevokedEmail } from "@/emails/verification-revoked";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@/lib/constants/verification";
 import {
   createNotification,
-  hasNotificationBeenSent,
+  hasRecentNotification,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import {
@@ -216,7 +216,7 @@ async function sendVerificationFailingEmail(
   domain: TrackedDomainForReverification,
   logger: Logger,
 ): Promise<boolean> {
-  const alreadySent = await hasNotificationBeenSent(
+  const alreadySent = await hasRecentNotification(
     domain.id,
     "verification_failing",
   );
@@ -227,11 +227,35 @@ async function sendVerificationFailingEmail(
     "verification_failing",
   );
 
+  const title = `Verification failing for ${domain.domainName}`;
+  const subject = `⚠️ ${title}`;
+  const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
+
   try {
+    // Create in-app notification first
+    const notification = await createNotification({
+      userId: domain.userId,
+      trackedDomainId: domain.id,
+      type: "verification_failing",
+      title,
+      message,
+      data: { domainName: domain.domainName },
+    });
+
+    if (!notification) {
+      logger.error("Failed to create notification record", {
+        trackedDomainId: domain.id,
+        notificationType: "verification_failing",
+        domainName: domain.domainName,
+      });
+      throw new Error("Failed to create notification record in database");
+    }
+
+    // Send email notification
     const { data, error } = await sendPrettyEmail(
       {
         to: domain.userEmail,
-        subject: `⚠️ Verification failing for ${domain.domainName}`,
+        subject,
         react: VerificationFailingEmail({
           userName: domain.userName.split(" ")[0] || "there",
           domainName: domain.domainName,
@@ -244,26 +268,9 @@ async function sendVerificationFailingEmail(
 
     if (error) throw new Error(`Resend error: ${error.message}`);
 
-    const notification = await createNotification({
-      trackedDomainId: domain.id,
-      type: "verification_failing",
-    });
-
-    if (!notification) {
-      logger.error("Failed to create notification record", {
-        trackedDomainId: domain.id,
-        notificationType: "verification_failing",
-        domainName: domain.domainName,
-      });
-      throw new Error("Failed to create notification record in database");
-    }
-
+    // Update notification with email ID
     if (data?.id) {
-      await updateNotificationResendId(
-        domain.id,
-        "verification_failing",
-        data.id,
-      );
+      await updateNotificationResendId(notification.id, data.id);
     }
 
     return true;
@@ -281,7 +288,7 @@ async function sendVerificationRevokedEmail(
   domain: TrackedDomainForReverification,
   logger: Logger,
 ): Promise<boolean> {
-  const alreadySent = await hasNotificationBeenSent(
+  const alreadySent = await hasRecentNotification(
     domain.id,
     "verification_revoked",
   );
@@ -292,24 +299,19 @@ async function sendVerificationRevokedEmail(
     "verification_revoked",
   );
 
+  const title = `Verification revoked for ${domain.domainName}`;
+  const subject = `❌ ${title}`;
+  const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
+
   try {
-    const { data, error } = await sendPrettyEmail(
-      {
-        to: domain.userEmail,
-        subject: `❌ Verification revoked for ${domain.domainName}`,
-        react: VerificationRevokedEmail({
-          userName: domain.userName.split(" ")[0] || "there",
-          domainName: domain.domainName,
-        }),
-      },
-      { idempotencyKey },
-    );
-
-    if (error) throw new Error(`Resend error: ${error.message}`);
-
+    // Create in-app notification first
     const notification = await createNotification({
+      userId: domain.userId,
       trackedDomainId: domain.id,
       type: "verification_revoked",
+      title,
+      message,
+      data: { domainName: domain.domainName },
     });
 
     if (!notification) {
@@ -321,12 +323,24 @@ async function sendVerificationRevokedEmail(
       throw new Error("Failed to create notification record in database");
     }
 
+    // Send email notification
+    const { data, error } = await sendPrettyEmail(
+      {
+        to: domain.userEmail,
+        subject,
+        react: VerificationRevokedEmail({
+          userName: domain.userName.split(" ")[0] || "there",
+          domainName: domain.domainName,
+        }),
+      },
+      { idempotencyKey },
+    );
+
+    if (error) throw new Error(`Resend error: ${error.message}`);
+
+    // Update notification with email ID
     if (data?.id) {
-      await updateNotificationResendId(
-        domain.id,
-        "verification_revoked",
-        data.id,
-      );
+      await updateNotificationResendId(notification.id, data.id);
     }
 
     return true;
