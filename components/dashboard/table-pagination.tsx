@@ -46,7 +46,7 @@ export function TablePagination({
           value={String(pageSize)}
           onValueChange={(value) => onPageSizeChange(Number(value) as PageSize)}
         >
-          <SelectTrigger className="!h-8 gap-1.5 px-2 text-xs">
+          <SelectTrigger className="!h-8 cursor-pointer gap-1.5 px-2 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

@@ -268,7 +268,7 @@ export function CertificatesSection({
                       size="sm"
                       aria-expanded={true}
                       onClick={() => setShowAll(false)}
-                      className="text-[13px]"
+                      className="cursor-pointer text-[13px]"
                     >
                       <ChevronUp className="h-4 w-4" aria-hidden />
                       <span>Hide Chain</span>

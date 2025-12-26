@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { TablePagination } from "@/components/dashboard/table-pagination";
@@ -46,10 +46,10 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
-import { useScrollIndicators } from "@/hooks/use-scroll-indicators";
 import { useTablePagination } from "@/hooks/use-table-pagination";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -190,8 +190,6 @@ export function TrackedDomainsTable({
   "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
   // See: https://github.com/TanStack/table/issues/5567
 
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
   const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
     useTablePagination();
   const { sorting, setSorting } = useTableSortPreference({
@@ -199,11 +197,6 @@ export function TrackedDomainsTable({
   });
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
-
-  const { showStart, showEnd, update } = useScrollIndicators({
-    containerRef: scrollContainerRef,
-    direction: "horizontal",
-  });
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
@@ -557,262 +550,138 @@ export function TrackedDomainsTable({
     onTableReady?.(table);
   }, [table, onTableReady]);
 
-  // Re-check gradients when column visibility/data changes (table width can change)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-check when table layout changes (column visibility / row count) even though we only call the updater
-  useEffect(() => {
-    update();
-  }, [columnVisibility, domains.length]);
-
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
-      <div className="relative">
-        <div
-          ref={scrollContainerRef}
-          className="overflow-x-auto overscroll-x-none"
-        >
-          <table
-            className="w-full text-[13px]"
-            style={{ tableLayout: "fixed" }}
-          >
-            <colgroup>
-              {table.getVisibleLeafColumns().map((column) => (
-                <col
-                  key={column.id}
-                  style={{
-                    width: column.getSize(),
-                  }}
-                />
-              ))}
-            </colgroup>
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr
-                  key={headerGroup.id}
-                  className="min-w-full border-black/10 border-b bg-muted/30 dark:border-white/10"
-                >
-                  {headerGroup.headers.map((header) => {
-                    const isSelectColumn = header.column.id === "select";
-                    const isDomainColumn = header.column.id === "domainName";
+      <ScrollArea orientation="horizontal" gradient className="w-full">
+        <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            {table.getVisibleLeafColumns().map((column) => (
+              <col
+                key={column.id}
+                style={{
+                  width: column.getSize(),
+                }}
+              />
+            ))}
+          </colgroup>
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr
+                key={headerGroup.id}
+                className="min-w-full border-black/10 border-b bg-muted/30 dark:border-white/10"
+              >
+                {headerGroup.headers.map((header) => {
+                  const isSelectColumn = header.column.id === "select";
+                  const isDomainColumn = header.column.id === "domainName";
 
-                    // The "Domain" header spans both the selection column (favicon/checkbox)
-                    // and the domain name column, so we don't render a separate header cell
-                    // for the selection column.
-                    if (isSelectColumn) {
-                      return null;
-                    }
+                  // The "Domain" header spans both the selection column (favicon/checkbox)
+                  // and the domain name column, so we don't render a separate header cell
+                  // for the selection column.
+                  if (isSelectColumn) {
+                    return null;
+                  }
 
-                    const canSort = header.column.getCanSort();
-                    // Get sort state directly from our state instead of table API
-                    // (header.column.getIsSorted() can return stale values)
-                    const sortEntry = sorting.find(
-                      (s) => s.id === header.column.id,
-                    );
-                    const isSorted = sortEntry
-                      ? sortEntry.desc
-                        ? "desc"
-                        : "asc"
-                      : false;
+                  const canSort = header.column.getCanSort();
+                  // Get sort state directly from our state instead of table API
+                  // (header.column.getIsSorted() can return stale values)
+                  const sortEntry = sorting.find(
+                    (s) => s.id === header.column.id,
+                  );
+                  const isSorted = sortEntry
+                    ? sortEntry.desc
+                      ? "desc"
+                      : "asc"
+                    : false;
 
-                    const headerContent =
-                      header.isPlaceholder ? null : canSort ? (
-                        <button
-                          type="button"
-                          className={cn(
-                            "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs leading-none transition-colors hover:bg-accent hover:text-foreground",
-                            isSorted && "text-foreground",
-                          )}
-                          onClick={header.column.getToggleSortingHandler()}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          <SortIndicator isSorted={isSorted} />
-                        </button>
-                      ) : (
-                        flexRender(
+                  const headerContent =
+                    header.isPlaceholder ? null : canSort ? (
+                      <button
+                        type="button"
+                        className={cn(
+                          "-ml-1.5 inline-flex h-6 cursor-pointer select-none items-center gap-1 rounded px-1.5 text-xs leading-none transition-colors hover:bg-accent hover:text-foreground",
+                          isSorted && "text-foreground",
+                        )}
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
                           header.column.columnDef.header,
                           header.getContext(),
-                        )
-                      );
-
-                    return (
-                      <th
-                        key={header.id}
-                        colSpan={isDomainColumn ? 2 : header.colSpan}
-                        style={{
-                          width: header.column.getSize(),
-                        }}
-                        className={cn(
-                          "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs first:pl-4 last:pr-4",
                         )}
-                      >
-                        {headerContent}
-                      </th>
+                        <SortIndicator isSorted={isSorted} />
+                      </button>
+                    ) : (
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )
                     );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-black/5 dark:divide-white/5">
-              {table.getRowModel().rows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="h-16 text-center text-muted-foreground text-sm"
-                  >
-                    No domains tracked yet.
-                  </td>
-                </tr>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {table.getRowModel().rows.map((row) => {
-                    const isUnverified = !row.original.verified;
-                    const isSelected = selectedIds.has(row.original.id);
-                    const cells = row.getVisibleCells();
 
-                    const rowMotionProps = {
-                      layout: "position" as const,
-                      initial: { opacity: 0, y: 6 },
-                      animate: { opacity: 1, y: 0 },
-                      exit: { opacity: 0, y: -6 },
-                      transition: {
-                        duration: 0.16,
-                        ease: [0.22, 1, 0.36, 1] as const,
-                      },
-                    };
+                  return (
+                    <th
+                      key={header.id}
+                      colSpan={isDomainColumn ? 2 : header.colSpan}
+                      style={{
+                        width: header.column.getSize(),
+                      }}
+                      className={cn(
+                        "h-9 px-2.5 text-left align-middle font-medium text-muted-foreground text-xs first:pl-4 last:pr-4",
+                      )}
+                    >
+                      {headerContent}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-black/5 dark:divide-white/5">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="h-16 text-center text-muted-foreground text-sm"
+                >
+                  No domains tracked yet.
+                </td>
+              </tr>
+            ) : (
+              <AnimatePresence initial={false}>
+                {table.getRowModel().rows.map((row) => {
+                  const isUnverified = !row.original.verified;
+                  const isSelected = selectedIds.has(row.original.id);
+                  const cells = row.getVisibleCells();
 
-                    // For unverified domains, show simplified row with verify CTA
-                    if (isUnverified) {
-                      // Find cells by column ID for maintainability
-                      const cellMap = new Map(
-                        cells.map((cell) => [cell.column.id, cell]),
-                      );
-                      const selectCell = cellMap.get("select");
-                      const domainCell = cellMap.get("domainName");
-                      const statusCell = cellMap.get("verified");
-                      const actionsCell = cellMap.get("actions");
+                  const rowMotionProps = {
+                    layout: "position" as const,
+                    initial: { opacity: 0, y: 6 },
+                    animate: { opacity: 1, y: 0 },
+                    exit: { opacity: 0, y: -6 },
+                    transition: {
+                      duration: 0.16,
+                      ease: [0.22, 1, 0.36, 1] as const,
+                    },
+                  };
 
-                      // Calculate colspan: total cells minus the 4 we render explicitly
-                      const explicitColumns = [
-                        "select",
-                        "domainName",
-                        "verified",
-                        "actions",
-                      ];
-                      const collapseCount =
-                        cells.length - explicitColumns.length;
+                  // For unverified domains, show simplified row with verify CTA
+                  if (isUnverified) {
+                    // Find cells by column ID for maintainability
+                    const cellMap = new Map(
+                      cells.map((cell) => [cell.column.id, cell]),
+                    );
+                    const selectCell = cellMap.get("select");
+                    const domainCell = cellMap.get("domainName");
+                    const statusCell = cellMap.get("verified");
+                    const actionsCell = cellMap.get("actions");
 
-                      return (
-                        <motion.tr
-                          key={row.id}
-                          {...rowMotionProps}
-                          className={cn(
-                            "group min-w-full transition-colors hover:bg-muted/30",
-                            isSelected && "bg-primary/5",
-                            "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
-                          )}
-                        >
-                          {/* Checkbox column */}
-                          {selectCell && (
-                            <td
-                              style={{
-                                width: selectCell.column.getSize(),
-                              }}
-                              className={
-                                selectCell.column.columnDef.meta?.className
-                              }
-                            >
-                              {flexRender(
-                                selectCell.column.columnDef.cell,
-                                selectCell.getContext(),
-                              )}
-                            </td>
-                          )}
-                          {/* Domain column */}
-                          {domainCell && (
-                            <td
-                              style={{
-                                width: domainCell.column.getSize(),
-                              }}
-                              className={
-                                domainCell.column.columnDef.meta?.className
-                              }
-                            >
-                              {flexRender(
-                                domainCell.column.columnDef.cell,
-                                domainCell.getContext(),
-                              )}
-                            </td>
-                          )}
-                          {/* Status column */}
-                          {statusCell && (
-                            <td
-                              style={{
-                                width: statusCell.column.getSize(),
-                              }}
-                              className={
-                                statusCell.column.columnDef.meta?.className
-                              }
-                            >
-                              {flexRender(
-                                statusCell.column.columnDef.cell,
-                                statusCell.getContext(),
-                              )}
-                            </td>
-                          )}
-                          {/* Span remaining detail columns with verify message */}
-                          <td colSpan={collapseCount}>
-                            <div className="flex items-center gap-2.5">
-                              <span className="mr-2 text-muted-foreground text-xs">
-                                Verify ownership to see domain details
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onVerify(row.original)}
-                                className="cursor-pointer px-2 text-[13px]"
-                              >
-                                <Play className="size-3.5 text-accent-green" />
-                                Continue
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  onRemove(
-                                    row.original.id,
-                                    row.original.domainName,
-                                  )
-                                }
-                                className="cursor-pointer px-2 text-[13px]"
-                              >
-                                <Trash2 className="size-3.5 text-danger-foreground" />
-                                Remove
-                              </Button>
-                            </div>
-                          </td>
-                          {/* Actions column */}
-                          {actionsCell && (
-                            <td
-                              style={{
-                                width: actionsCell.column.getSize(),
-                              }}
-                              className={
-                                actionsCell.column.columnDef.meta?.className
-                              }
-                            >
-                              {flexRender(
-                                actionsCell.column.columnDef.cell,
-                                actionsCell.getContext(),
-                              )}
-                            </td>
-                          )}
-                        </motion.tr>
-                      );
-                    }
+                    // Calculate colspan: total cells minus the 4 we render explicitly
+                    const explicitColumns = [
+                      "select",
+                      "domainName",
+                      "verified",
+                      "actions",
+                    ];
+                    const collapseCount = cells.length - explicitColumns.length;
 
-                    // Verified domains show full row
                     return (
                       <motion.tr
                         key={row.id}
@@ -823,47 +692,140 @@ export function TrackedDomainsTable({
                           "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
                         )}
                       >
-                        {cells.map((cell) => {
-                          return (
-                            <td
-                              key={cell.id}
-                              style={{
-                                width: cell.column.getSize(),
-                              }}
-                              className={cell.column.columnDef.meta?.className}
+                        {/* Checkbox column */}
+                        {selectCell && (
+                          <td
+                            style={{
+                              width: selectCell.column.getSize(),
+                            }}
+                            className={
+                              selectCell.column.columnDef.meta?.className
+                            }
+                          >
+                            {flexRender(
+                              selectCell.column.columnDef.cell,
+                              selectCell.getContext(),
+                            )}
+                          </td>
+                        )}
+                        {/* Domain column */}
+                        {domainCell && (
+                          <td
+                            style={{
+                              width: domainCell.column.getSize(),
+                            }}
+                            className={
+                              domainCell.column.columnDef.meta?.className
+                            }
+                          >
+                            {flexRender(
+                              domainCell.column.columnDef.cell,
+                              domainCell.getContext(),
+                            )}
+                          </td>
+                        )}
+                        {/* Status column */}
+                        {statusCell && (
+                          <td
+                            style={{
+                              width: statusCell.column.getSize(),
+                            }}
+                            className={
+                              statusCell.column.columnDef.meta?.className
+                            }
+                          >
+                            {flexRender(
+                              statusCell.column.columnDef.cell,
+                              statusCell.getContext(),
+                            )}
+                          </td>
+                        )}
+                        {/* Span remaining detail columns with verify message */}
+                        <td colSpan={collapseCount}>
+                          <div className="flex items-center gap-2.5">
+                            <span className="mr-2 text-muted-foreground text-xs">
+                              Verify ownership to see domain details
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onVerify(row.original)}
+                              className="cursor-pointer px-2 text-[13px]"
                             >
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )}
-                            </td>
-                          );
-                        })}
+                              <Play className="size-3.5 text-accent-green" />
+                              Continue
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                onRemove(
+                                  row.original.id,
+                                  row.original.domainName,
+                                )
+                              }
+                              className="cursor-pointer px-2 text-[13px]"
+                            >
+                              <Trash2 className="size-3.5 text-danger-foreground" />
+                              Remove
+                            </Button>
+                          </div>
+                        </td>
+                        {/* Actions column */}
+                        {actionsCell && (
+                          <td
+                            style={{
+                              width: actionsCell.column.getSize(),
+                            }}
+                            className={
+                              actionsCell.column.columnDef.meta?.className
+                            }
+                          >
+                            {flexRender(
+                              actionsCell.column.columnDef.cell,
+                              actionsCell.getContext(),
+                            )}
+                          </td>
+                        )}
                       </motion.tr>
                     );
-                  })}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  }
 
-        {/* Left gradient - shown when scrolled right from start */}
-        {showStart && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-background/60 to-transparent"
-          />
-        )}
-
-        {/* Right gradient - shown when more content available */}
-        {showEnd && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-background/60 to-transparent"
-          />
-        )}
-      </div>
+                  // Verified domains show full row
+                  return (
+                    <motion.tr
+                      key={row.id}
+                      {...rowMotionProps}
+                      className={cn(
+                        "group min-w-full transition-colors hover:bg-muted/30",
+                        isSelected && "bg-primary/5",
+                        "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
+                      )}
+                    >
+                      {cells.map((cell) => {
+                        return (
+                          <td
+                            key={cell.id}
+                            style={{
+                              width: cell.column.getSize(),
+                            }}
+                            className={cell.column.columnDef.meta?.className}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </td>
+                        );
+                      })}
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            )}
+          </tbody>
+        </table>
+      </ScrollArea>
 
       {/* Pagination controls - only show if there are domains */}
       {domains.length > 0 && (
