@@ -275,8 +275,8 @@ importers:
         specifier: ^0.31.8
         version: 0.31.8
       jsdom:
-        specifier: ^27.3.0
-        version: 27.3.0(bufferutil@4.1.0)
+        specifier: ^27.4.0
+        version: 27.4.0(bufferutil@4.1.0)
       puppeteer:
         specifier: 24.32.0
         version: 24.32.0(bufferutil@4.1.0)(typescript@5.9.3)
@@ -300,7 +300,7 @@ importers:
         version: 6.0.3(typescript@5.9.3)(vite@7.3.0(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0))
       vitest:
         specifier: ^4.0.16
-        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
+        version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.4.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
 
 packages:
 
@@ -1029,6 +1029,15 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@exodus/bytes@1.6.0':
+    resolution: {integrity: sha512-y32mI9627q5LR/L8fLc4YyDRJQOi+jK0D9okzLilAdiU3F9we3zC7Y7CFrR/8vAvUyv7FgBAYcNHtvbmhKCFcw==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@exodus/crypto': ^1.0.0-rc.4
+    peerDependenciesMeta:
+      '@exodus/crypto':
+        optional: true
 
   '@fastify/busboy@2.1.1':
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
@@ -4355,9 +4364,9 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  html-encoding-sniffer@4.0.0:
-    resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
-    engines: {node: '>=18'}
+  html-encoding-sniffer@6.0.0:
+    resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
@@ -4578,8 +4587,8 @@ packages:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
 
-  jsdom@27.3.0:
-    resolution: {integrity: sha512-GtldT42B8+jefDUC4yUKAvsaOrH7PDHmZxZXNgF2xMmymjUbRYJvpAybZAKEmXDGTM0mCsz8duOa4vTm5AY2Kg==}
+  jsdom@27.4.0:
+    resolution: {integrity: sha512-mjzqwWRD9Y1J1KUi7W97Gja1bwOOM5Ug0EZ6UDK3xS7j7mndrkwozHtSblfomlzyB4NepioNt+B2sOSzczVgtQ==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
     peerDependencies:
       canvas: ^3.0.0
@@ -6659,6 +6668,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.2':
     optional: true
+
+  '@exodus/bytes@1.6.0': {}
 
   '@fastify/busboy@2.1.1': {}
 
@@ -8954,7 +8965,7 @@ snapshots:
       obug: 2.1.1
       std-env: 3.10.0
       tinyrainbow: 3.0.3
-      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
+      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.4.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -9001,7 +9012,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
+      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.4.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
 
   '@vitest/utils@4.0.16':
     dependencies:
@@ -9268,7 +9279,7 @@ snapshots:
       pg: 8.16.3
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
-      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
+      vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.4.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0)
 
   better-call@1.1.7(zod@4.2.1):
     dependencies:
@@ -10129,9 +10140,11 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  html-encoding-sniffer@4.0.0:
+  html-encoding-sniffer@6.0.0:
     dependencies:
-      whatwg-encoding: 3.1.1
+      '@exodus/bytes': 1.6.0
+    transitivePeerDependencies:
+      - '@exodus/crypto'
 
   html-escaper@2.0.2: {}
 
@@ -10345,14 +10358,15 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@27.3.0(bufferutil@4.1.0):
+  jsdom@27.4.0(bufferutil@4.1.0):
     dependencies:
       '@acemir/cssom': 0.9.30
       '@asamuzakjp/dom-selector': 6.7.6
+      '@exodus/bytes': 1.6.0
       cssstyle: 5.3.5
       data-urls: 6.0.0
       decimal.js: 10.6.0
-      html-encoding-sniffer: 4.0.0
+      html-encoding-sniffer: 6.0.0
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       is-potential-custom-element-name: 1.0.1
@@ -10362,12 +10376,12 @@ snapshots:
       tough-cookie: 6.0.0
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.0
-      whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 15.1.0
       ws: 8.18.3(bufferutil@4.1.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
+      - '@exodus/crypto'
       - bufferutil
       - supports-color
       - utf-8-validate
@@ -11775,7 +11789,7 @@ snapshots:
       terser: 5.44.1
       tsx: 4.21.0
 
-  vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0):
+  vitest@4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.4.0(bufferutil@4.1.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0):
     dependencies:
       '@vitest/expect': 4.0.16
       '@vitest/mocker': 4.0.16(vite@7.3.0(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.21.0))
@@ -11801,7 +11815,7 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@types/node': 25.0.3
       '@vitest/ui': 4.0.16(vitest@4.0.16)
-      jsdom: 27.3.0(bufferutil@4.1.0)
+      jsdom: 27.4.0(bufferutil@4.1.0)
     transitivePeerDependencies:
       - jiti
       - less

@@ -118,7 +118,7 @@
     "bufferutil": "^4.1.0",
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.8",
-    "jsdom": "^27.3.0",
+    "jsdom": "^27.4.0",
     "puppeteer": "24.32.0",
     "react-email": "5.1.0",
     "tailwindcss": "^4.1.18",
