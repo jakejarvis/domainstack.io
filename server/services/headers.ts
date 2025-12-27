@@ -84,6 +84,7 @@ export const getHeaders = cache(async function getHeaders(
       allowedHosts,
       method: "HEAD", // only need headers, not body
       fallbackToGetOnHeadFailure: true, // retry with GET if HEAD is not allowed
+      allowNonOkResponse: true, // capture headers even for 403, 404, etc.
     });
 
     const headers: Header[] = Object.entries(final.headers).map(

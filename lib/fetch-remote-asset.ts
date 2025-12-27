@@ -56,6 +56,8 @@ type BaseFetchRemoteAssetOptions = FetchOptions & {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
+  /** If true, return response data even for non-2xx status codes instead of throwing. Useful for headers probing. */
+  allowNonOkResponse?: boolean;
 };
 
 type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
@@ -101,6 +103,7 @@ export async function fetchRemoteAsset(
   const backoffMs = opts.backoffMs ?? DEFAULT_BACKOFF_MS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
+  const allowNonOkResponse = opts.allowNonOkResponse ?? false;
   const fallbackToGetOnHeadFailure =
     opts.method === "HEAD" ? (opts.fallbackToGetOnHeadFailure ?? false) : false;
   const allowedHosts =
@@ -164,7 +167,7 @@ export async function fetchRemoteAsset(
       continue;
     }
 
-    if (!response.ok) {
+    if (!response.ok && !allowNonOkResponse) {
       const error = new RemoteAssetError(
         "response_error",
         `Remote asset request failed with ${response.status}`,

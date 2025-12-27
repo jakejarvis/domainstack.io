@@ -214,7 +214,79 @@ describe("getHeaders", () => {
       expect.objectContaining({
         method: "HEAD",
         fallbackToGetOnHeadFailure: true,
+        allowNonOkResponse: true,
       }),
     );
+  });
+
+  it("captures headers and status for non-2xx responses (e.g., 403 Forbidden)", async () => {
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://protected.example/",
+      status: 403,
+      headers: {
+        server: "nginx",
+        "x-frame-options": "DENY",
+        "content-type": "text/html",
+      },
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("protected.example");
+
+    // Should return headers and status even for 403
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(403);
+    expect(out.statusMessage).toBe("Forbidden");
+
+    // Verify headers are present
+    const serverHeader = out.headers.find((h) => h.name === "server");
+    expect(serverHeader?.value).toBe("nginx");
+    const xFrameHeader = out.headers.find((h) => h.name === "x-frame-options");
+    expect(xFrameHeader?.value).toBe("DENY");
+  });
+
+  it("captures headers and status for 404 Not Found responses", async () => {
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://notfound.example/",
+      status: 404,
+      headers: {
+        server: "cloudflare",
+        "cf-ray": "abc123",
+      },
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("notfound.example");
+
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(404);
+    expect(out.statusMessage).toBe("Not Found");
+
+    const serverHeader = out.headers.find((h) => h.name === "server");
+    expect(serverHeader?.value).toBe("cloudflare");
+  });
+
+  it("captures headers and status for 500 Internal Server Error responses", async () => {
+    fetchRemoteAssetMock.mockResolvedValueOnce({
+      buffer: Buffer.from(""),
+      contentType: "text/html",
+      finalUrl: "https://error.example/",
+      status: 500,
+      headers: {
+        server: "Apache",
+        "retry-after": "3600",
+      },
+    });
+
+    const { getHeaders } = await import("./headers");
+    const out = await getHeaders("error.example");
+
+    expect(out.headers.length).toBeGreaterThan(0);
+    expect(out.status).toBe(500);
+    expect(out.statusMessage).toBe("Internal Server Error");
   });
 });

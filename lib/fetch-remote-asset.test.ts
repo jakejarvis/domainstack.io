@@ -402,4 +402,121 @@ describe("fetchRemoteAsset", () => {
     // Should only make 2 requests: HEAD (405) -> GET (405) -> throw
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it("returns response data for non-2xx status when allowNonOkResponse is true", async () => {
+    const body = new Uint8Array([1, 2, 3]);
+    fetchMock.mockResolvedValueOnce(
+      new Response(body, {
+        status: 403,
+        headers: {
+          "content-type": "text/html",
+          server: "nginx",
+          "x-frame-options": "DENY",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/protected",
+      allowNonOkResponse: true,
+    });
+
+    expect(result.status).toBe(403);
+    expect(result.headers).toEqual({
+      "content-type": "text/html",
+      server: "nginx",
+      "x-frame-options": "DENY",
+    });
+    expect(Buffer.isBuffer(result.buffer)).toBe(true);
+    expect(result.buffer.length).toBe(3);
+  });
+
+  it("throws error for non-2xx status when allowNonOkResponse is false (default)", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 403,
+        headers: { server: "nginx" },
+      }),
+    );
+
+    await expect(
+      fetchRemoteAsset({
+        url: "https://example.com/protected",
+      }),
+    ).rejects.toMatchObject({
+      code: "response_error",
+      status: 403,
+    } satisfies Partial<RemoteAssetError>);
+  });
+
+  it("returns response data for 404 status when allowNonOkResponse is true", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Uint8Array([]), {
+        status: 404,
+        headers: {
+          "content-type": "text/html",
+          server: "cloudflare",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/not-found",
+      allowNonOkResponse: true,
+    });
+
+    expect(result.status).toBe(404);
+    expect(result.headers).toEqual({
+      "content-type": "text/html",
+      server: "cloudflare",
+    });
+  });
+
+  it("returns response data for 500 status when allowNonOkResponse is true", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Uint8Array([]), {
+        status: 500,
+        headers: {
+          "content-type": "text/html",
+          "retry-after": "3600",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/error",
+      allowNonOkResponse: true,
+    });
+
+    expect(result.status).toBe(500);
+    expect(result.headers).toEqual({
+      "content-type": "text/html",
+      "retry-after": "3600",
+    });
+  });
+
+  it("allows non-OK response with HEAD method and fallback disabled", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 403,
+        headers: {
+          server: "nginx",
+          "x-powered-by": "Express",
+        },
+      }),
+    );
+
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "HEAD",
+      allowNonOkResponse: true,
+    });
+
+    expect(result.status).toBe(403);
+    expect(result.headers).toEqual({
+      server: "nginx",
+      "x-powered-by": "Express",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
