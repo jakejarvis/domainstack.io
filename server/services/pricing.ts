@@ -1,4 +1,3 @@
-import { getDomainTld } from "rdapper";
 import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 import type { PricingResponse } from "@/lib/schemas";
@@ -295,23 +294,21 @@ const providers: PricingProvider[] = [
 // ============================================================================
 
 /**
- * Fetch domain pricing for the given domain's TLD from all providers.
+ * Fetch domain pricing for the given TLD from all providers.
  * Returns pricing from all providers that have data for this TLD.
  */
-export async function getPricing(domain: string): Promise<PricingResponse> {
-  const input = (domain ?? "").trim().toLowerCase();
-  // Ignore single-label hosts like "localhost" or invalid inputs
-  if (!input.includes(".")) return { tld: null, providers: [] };
+export async function getPricing(tld: string): Promise<PricingResponse> {
+  // Normalize TLD (remove leading dot if present, lowercase)
+  const normalizedTld = (tld ?? "").trim().toLowerCase().replace(/^\./, "");
 
-  const tld = getDomainTld(input)?.toLowerCase() ?? "";
-  if (!tld) return { tld: null, providers: [] };
+  if (!normalizedTld) return { tld: null, providers: [] };
 
   // Fetch pricing from all providers in parallel
   const providerResults = await Promise.allSettled(
     providers.map(async (provider) => {
       const payload = await fetchProviderPricing(provider);
       if (payload) {
-        const price = payload?.[tld]?.registration ?? null;
+        const price = payload?.[normalizedTld]?.registration ?? null;
         if (price) {
           return { provider: provider.name, price };
         }
@@ -336,5 +333,5 @@ export async function getPricing(domain: string): Promise<PricingResponse> {
         result !== null,
     );
 
-  return { tld, providers: availableProviders };
+  return { tld: normalizedTld, providers: availableProviders };
 }

@@ -12,6 +12,7 @@ import {
   certificates as certTable,
   providers as providersTable,
 } from "@/lib/db/schema";
+import { isExpectedDnsError } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -269,6 +270,11 @@ export async function getCertificates(
     });
     return out;
   } catch (err) {
+    if (isExpectedDnsError(err)) {
+      logger.debug("no certificates found (DNS lookup failed)", { domain });
+      return [];
+    }
+
     logger.error("probe failed", err, { domain });
 
     // Rethrow to let callers distinguish between:

@@ -7,6 +7,7 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
+import { isExpectedDnsError } from "@/lib/dns-utils";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -161,30 +162,4 @@ function normalize(h: Header[]): Header[] {
   );
 }
 
-/**
- * Check if an error is an expected DNS resolution failure.
- * These occur when a domain has no A/AAAA records (i.e., no web hosting).
- */
-function isExpectedDnsError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-
-  // Check for ENOTFOUND (getaddrinfo failure)
-  const cause = (err as Error & { cause?: Error }).cause;
-  if (cause && "code" in cause && cause.code === "ENOTFOUND") {
-    return true;
-  }
-
-  // Check for other DNS-related error codes
-  const errorWithCode = err as Error & { code?: string };
-  if (errorWithCode.code === "ENOTFOUND") {
-    return true;
-  }
-
-  // Check error message patterns
-  const message = err.message.toLowerCase();
-  return (
-    message.includes("enotfound") ||
-    message.includes("getaddrinfo") ||
-    message.includes("dns lookup failed")
-  );
-}
+// NOTE: isExpectedDnsError logic moved to @/lib/dns-utils.ts

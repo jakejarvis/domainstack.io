@@ -184,3 +184,32 @@ export function filterAnswersByType(
 ): DnsAnswer[] {
   return answers.filter((a) => a.type === expectedType);
 }
+
+/**
+ * Check if an error is an expected DNS resolution failure.
+ * These occur when a domain has no A/AAAA records (i.e., no web hosting)
+ * or simply does not exist.
+ */
+export function isExpectedDnsError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+
+  // Check for ENOTFOUND (getaddrinfo failure)
+  const cause = (err as Error & { cause?: Error }).cause;
+  if (cause && "code" in cause && cause.code === "ENOTFOUND") {
+    return true;
+  }
+
+  // Check for other DNS-related error codes
+  const errorWithCode = err as Error & { code?: string };
+  if (errorWithCode.code === "ENOTFOUND") {
+    return true;
+  }
+
+  // Check error message patterns
+  const message = err.message.toLowerCase();
+  return (
+    message.includes("enotfound") ||
+    message.includes("getaddrinfo") ||
+    message.includes("dns lookup failed")
+  );
+}

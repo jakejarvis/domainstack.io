@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
+import { isExpectedDnsError } from "@/lib/dns-utils";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
@@ -169,8 +170,17 @@ export async function getSeo(
     }
   } catch (err) {
     // Infrastructure errors (DNS, private IP, etc.) are still thrown
-    htmlError = String(err);
-    logger.error("html fetch failed", err, { domain, url: finalUrl });
+    const isDnsError = isExpectedDnsError(err);
+    htmlError = isDnsError ? "DNS lookup failed" : String(err);
+
+    if (isDnsError) {
+      logger.debug("html fetch failed (DNS lookup failed)", {
+        domain,
+        url: finalUrl,
+      });
+    } else {
+      logger.error("html fetch failed", err, { domain, url: finalUrl });
+    }
   }
 
   // robots.txt fetch - also allow any host redirects
