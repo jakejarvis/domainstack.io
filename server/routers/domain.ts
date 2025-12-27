@@ -1,6 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
-import { getProviderById } from "@/lib/db/repos/providers";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   BlobUrlResponseSchema,
@@ -18,7 +17,6 @@ import { getFavicon } from "@/server/services/favicon";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
 import { getPricing } from "@/server/services/pricing";
-import { getProviderLogo } from "@/server/services/provider-logo";
 import { getRegistration } from "@/server/services/registration";
 import { getScreenshot } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
@@ -78,17 +76,4 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .output(PricingResponseSchema)
     .query(({ input }) => getPricing(input.domain)),
-  getProviderLogo: publicProcedure
-    .input(z.object({ providerId: z.string().uuid() }))
-    .output(BlobUrlResponseSchema)
-    .query(async ({ input }) => {
-      const provider = await getProviderById(input.providerId);
-      if (!provider?.domain) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Provider not found or has no domain",
-        });
-      }
-      return getProviderLogo(input.providerId, provider.domain);
-    }),
 });

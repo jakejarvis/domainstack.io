@@ -23,7 +23,7 @@ export function ProviderLogo({
 
   return (
     <RemoteIcon
-      queryOptions={trpc.domain.getProviderLogo.queryOptions(
+      queryOptions={trpc.provider.getProviderLogo.queryOptions(
         { providerId: providerId ?? "" },
         {
           // Keep in cache indefinitely during session
