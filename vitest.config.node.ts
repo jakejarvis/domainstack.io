@@ -5,7 +5,7 @@ import { coverageConfigDefaults, defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
-    setupFiles: ["./vitest.setup.ts"],
+    setupFiles: ["./vitest.setup.node.ts"],
     globals: true,
     silent: "passed-only",
     exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
