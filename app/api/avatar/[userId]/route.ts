@@ -49,6 +49,15 @@ export async function GET(
       timeoutMs: REQUEST_TIMEOUT_MS,
     });
 
+    // Check for non-OK responses
+    if (asset.status < 200 || asset.status >= 300) {
+      logger.warn("upstream returned error status", {
+        userId,
+        status: asset.status,
+      });
+      return new NextResponse("Upstream error", { status: 502 });
+    }
+
     // Validate content type is a safe image format (block SVGs which can contain scripts)
     const contentType = asset.contentType;
     if (!contentType?.startsWith("image/") || contentType === "image/svg+xml") {
@@ -86,11 +95,11 @@ export async function GET(
       },
     });
   } catch (err) {
+    // Only infrastructure errors (DNS, private IP, size limits, etc.) are thrown
     if (err instanceof RemoteAssetError) {
       logger.warn("avatar fetch failed", {
         userId,
         code: err.code,
-        status: err.status,
       });
 
       switch (err.code) {
@@ -100,8 +109,6 @@ export async function GET(
           return new NextResponse("Avatar host not allowed", { status: 403 });
         case "size_exceeded":
           return new NextResponse("Avatar too large", { status: 413 });
-        case "response_error":
-          return new NextResponse("Upstream error", { status: 502 });
         default:
           return new NextResponse("Failed to fetch avatar", { status: 502 });
       }

@@ -263,6 +263,11 @@ async function verifyHtmlFileImpl(
         maxRedirects: 3,
       });
 
+      // Skip non-OK responses (404, etc.) - try next URL
+      if (result.status < 200 || result.status >= 300) {
+        continue;
+      }
+
       // File must contain "domainstack-verify: TOKEN" (trimmed)
       const content = result.buffer.toString("utf-8").trim();
       if (content === expectedContent) {
@@ -272,7 +277,7 @@ async function verifyHtmlFileImpl(
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
-      // Log SSRF blocks as warnings, other errors as debug
+      // Log SSRF blocks as warnings, infrastructure errors are caught here
       if (err instanceof RemoteAssetError) {
         if (err.code === "private_ip" || err.code === "host_blocked") {
           logger.warn("HTML file verification blocked (SSRF protection)", {
@@ -281,7 +286,7 @@ async function verifyHtmlFileImpl(
             reason: err.code,
           });
         }
-        // Other errors (404, etc.) are expected - try next URL
+        // Other infrastructure errors - try next URL
       }
     }
   }
@@ -296,6 +301,11 @@ async function verifyHtmlFileImpl(
         maxBytes: 1024,
         maxRedirects: 3,
       });
+
+      // Skip non-OK responses (404, etc.) - try next URL
+      if (result.status < 200 || result.status >= 300) {
+        continue;
+      }
 
       // Legacy method: same content format "domainstack-verify: TOKEN"
       if (result.buffer.toString("utf-8").trim() === expectedContent) {
@@ -353,6 +363,11 @@ async function verifyMetaTagImpl(
         maxRedirects: 5, // Homepages often have multiple redirects
       });
 
+      // Skip non-OK responses - try next URL
+      if (result.status < 200 || result.status >= 300) {
+        continue;
+      }
+
       const html = result.buffer.toString("utf-8");
 
       // Use cheerio for robust HTML parsing
@@ -397,13 +412,8 @@ async function verifyMetaTagImpl(
             url: urlStr,
             reason: err.code,
           });
-        } else {
-          logger.debug("Meta tag fetch error", {
-            domain,
-            url: urlStr,
-            code: err.code,
-          });
         }
+        // Other infrastructure errors - try next URL
       } else {
         logger.debug("Meta tag fetch error", {
           error: err,

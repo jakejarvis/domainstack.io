@@ -8,7 +8,6 @@ import {
   it,
   vi,
 } from "vitest";
-import { RemoteAssetError } from "@/lib/fetch-remote-asset";
 
 const storageMock = vi.hoisted(() => ({
   storeImage: vi.fn(async () => ({
@@ -110,24 +109,33 @@ describe("getFavicon", () => {
     expect(storageMock.storeImage).toHaveBeenCalled();
   }, 10000); // 10s timeout for network + image processing
 
-  it("returns null when all sources fail", async () => {
-    fetchRemoteAssetMock.mockRejectedValue(
-      new RemoteAssetError("response_error", "Not found", 404),
-    );
+  it("returns null when all sources fail with 404", async () => {
+    // Now fetchRemoteAsset returns 404 responses instead of throwing
+    fetchRemoteAssetMock.mockResolvedValue({
+      buffer: Buffer.from([]),
+      contentType: "text/html",
+      finalUrl: "https://example.com/favicon.ico",
+      status: 404,
+    });
     const out = await getFavicon("nope.invalid");
     expect(out.url).toBeNull();
     expect(fetchRemoteAssetMock).toHaveBeenCalled();
   }, 10000); // 10s timeout for multiple fetch attempts
 
-  it("negative-caches failures to avoid repeat fetch", async () => {
-    const mkError = () =>
-      new RemoteAssetError("response_error", "Not found", 404);
-    // First invocation will try up to four sources; force each one to fail exactly once.
+  it("negative-caches 404 failures to avoid repeat fetch", async () => {
+    // Now fetchRemoteAsset returns 404 responses instead of throwing
+    const mk404Response = () => ({
+      buffer: Buffer.from([]),
+      contentType: "text/html",
+      finalUrl: "https://example.com/favicon.ico",
+      status: 404,
+    });
+    // First invocation will try up to four sources; force each one to return 404.
     fetchRemoteAssetMock
-      .mockRejectedValueOnce(mkError())
-      .mockRejectedValueOnce(mkError())
-      .mockRejectedValueOnce(mkError())
-      .mockRejectedValueOnce(mkError());
+      .mockResolvedValueOnce(mk404Response())
+      .mockResolvedValueOnce(mk404Response())
+      .mockResolvedValueOnce(mk404Response())
+      .mockResolvedValueOnce(mk404Response());
 
     // First call: miss -> fetch attempts -> negative cache
     const first = await getFavicon("negcache.example");

@@ -25,7 +25,7 @@ export type RemoteAssetErrorCode =
   | "dns_error"
   | "private_ip"
   | "redirect_limit"
-  | "response_error"
+  | "invalid_response"
   | "size_exceeded";
 
 export class RemoteAssetError extends Error {
@@ -137,7 +137,7 @@ export async function fetchRemoteAsset(
       const location = response.headers.get("location");
       if (!location) {
         throw new RemoteAssetError(
-          "response_error",
+          "invalid_response",
           "Redirect response missing Location header",
         );
       }
@@ -164,18 +164,8 @@ export async function fetchRemoteAsset(
       continue;
     }
 
-    if (!response.ok) {
-      const error = new RemoteAssetError(
-        "response_error",
-        `Remote asset request failed with ${response.status}`,
-        response.status,
-      );
-      logger.warn("response error", {
-        url: currentUrl.toString(),
-        reason: error.message,
-      });
-      throw error;
-    }
+    // Non-2xx responses are valid HTTP responses - return them for caller to handle.
+    // Only infrastructure errors (DNS, private IP, etc.) throw exceptions.
 
     // Check Content-Length header (skip pre-check if we'll truncate anyway)
     const declaredLength = response.headers.get("content-length");
