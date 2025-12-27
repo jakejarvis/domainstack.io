@@ -58,22 +58,32 @@
 
 ## Testing Guidelines
 - Use **Vitest** with React Testing Library; config in `vitest.config.ts`.
-- Uses `threads` pool for compatibility with sandboxed environments (e.g., Cursor agent commands).
-- Global setup in `vitest.setup.ts`:
+- **Projects architecture** (Vitest 4.x):
+  - `node` project: Server tests (`server/**/*.test.ts`, `lib/**/*.test.ts`) run in Node.js
+  - `browser` project: Component tests (`components/**/*.test.tsx`) run in real Chromium via Playwright
+  - Setup files: `vitest.setup.node.ts` (Node tests) and `vitest.setup.browser.ts` (browser tests)
+- Uses `threads` pool for Node tests for compatibility with sandboxed environments.
+- Global setup (both environments):
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
-- UI tests:
+- UI tests (browser project):
   - Do not add direct tests for `components/ui/*` (shadcn).
   - Mock tRPC/React Query for components like `Favicon` and `Screenshot`.
-- Server tests:
+  - Tests run in real browser - no need to mock `ResizeObserver`, `getAnimations()`, etc.
+- Server tests (node project):
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).
   - Screenshot service (`server/services/screenshot.ts`) uses hoisted mocks for `puppeteer`/`puppeteer-core` and `@sparticuz/chromium`.
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
-- Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
-- Commands: `pnpm test`, `pnpm test:run`, `pnpm test:ui`, `pnpm test:coverage`.
+- Commands:
+  - `pnpm test` — run all tests in watch mode
+  - `pnpm test:run` — run all tests once
+  - `pnpm test:node` — run only Node tests
+  - `pnpm test:browser` — run only browser tests
+  - `pnpm test:ui` — open Vitest UI
+  - `pnpm test:coverage` — run tests with coverage report
 
 ## Commit & Pull Request Guidelines
 - Commits: single-focus, imperative, sentence case (e.g., "Add RDAP caching layer").
