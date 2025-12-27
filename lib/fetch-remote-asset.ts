@@ -278,8 +278,11 @@ async function ensureUrlAllowed(
     const result = await dnsLookupViaHttps(hostname, { all: true });
     records = Array.isArray(result) ? result : [result];
   } catch (err) {
-    logger.error("unexpected lookup error", err, {
+    // DNS failures are expected for non-existent domains - log at warn level
+    // since the caller will gracefully fall back to a placeholder
+    logger.warn("dns lookup failed", {
       url: url.toString(),
+      reason: err instanceof Error ? err.message : "unknown",
     });
     throw new RemoteAssetError(
       "dns_error",

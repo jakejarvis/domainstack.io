@@ -70,7 +70,11 @@ export function RemoteIcon({
     setMounted(true);
   }, []);
 
-  const { data, isPending } = useQuery(queryOptions);
+  const { data, isPending, isError } = useQuery({
+    ...queryOptions,
+    // Prevent React Query from throwing/logging errors - we handle them gracefully
+    throwOnError: false,
+  });
 
   const url = (data as { url: string | null } | undefined)?.url ?? null;
 
@@ -95,8 +99,8 @@ export function RemoteIcon({
     );
   }
 
-  // Query completed: show letter avatar if no icon found or failed to load
-  if (!url || failedUrl === url) {
+  // Query completed: show letter avatar if error, no icon found, or failed to load
+  if (isError || !url || failedUrl === url) {
     const { letter, backgroundColor } = getEmptyPlaceholder(fallbackIdentifier);
     const fontSize = Math.max(9, Math.floor(size * 0.55)); // ~55% of container size
 
