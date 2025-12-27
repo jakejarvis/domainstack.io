@@ -1,5 +1,23 @@
+// Polyfill process for happy-dom environment (must be before other imports)
+// Next.js code uses process.env.* which may not exist
+if (typeof globalThis.process === "undefined") {
+  globalThis.process = {
+    env: {
+      NODE_ENV: "test",
+      NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL: "",
+      EXTERNAL_USER_AGENT: "",
+    },
+  } as unknown as NodeJS.Process;
+}
+
 import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
+
+// Clean up DOM after each test
+afterEach(() => {
+  cleanup();
+});
 
 // Global mocks for analytics to avoid network/log noise in tests
 vi.mock("@/lib/analytics/server", () => ({
@@ -73,8 +91,22 @@ vi.mock("next/cache", async () => {
   };
 });
 
-// Browser Mode: No jsdom polyfills needed!
-// Real browsers have native support for:
+// Happy-dom provides native support for:
 // - ResizeObserver
 // - Element.getAnimations()
 // - All Web APIs
+// So we don't need polyfills like jsdom did.
+
+// However, happy-dom may still need some polyfills for specific APIs
+// that aren't fully implemented. Add them here as needed.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
+if (typeof Element.prototype.getAnimations === "undefined") {
+  Element.prototype.getAnimations = () => [];
+}
