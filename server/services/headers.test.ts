@@ -214,7 +214,6 @@ describe("getHeaders", () => {
       expect.objectContaining({
         method: "HEAD",
         fallbackToGetOnHeadFailure: true,
-        allowNonOkResponse: true,
       }),
     );
   });

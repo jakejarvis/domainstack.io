@@ -1,7 +1,7 @@
 import "server-only";
 
 import { USER_AGENT } from "@/lib/constants/app";
-import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
+import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import { storeImage } from "@/lib/storage";
@@ -137,6 +137,16 @@ async function fetchIcon(
         maxRedirects: 2,
         allowHttp: source.allowHttp ?? false,
       });
+
+      // Handle non-OK responses
+      if (asset.status < 200 || asset.status >= 300) {
+        // 404 is still considered a true "not found", other errors are not
+        if (asset.status !== 404) {
+          allNotFound = false;
+        }
+        continue; // Try next source
+      }
+
       allNotFound = false;
       const buf = asset.buffer;
 
@@ -178,18 +188,10 @@ async function fetchIcon(
       }
 
       return { url };
-    } catch (err) {
-      if (
-        err instanceof RemoteAssetError &&
-        err.code === "response_error" &&
-        err.status === 404
-      ) {
-        // still considered a true "not found"
-      } else {
-        allNotFound = false;
-      }
-      // Network error, timeout, etc. - not a true "not found"
-      // try next source
+    } catch {
+      // Infrastructure errors (DNS, private IP, etc.) - not a true "not found"
+      allNotFound = false;
+      // Try next source
     }
   }
 

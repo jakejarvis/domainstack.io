@@ -25,7 +25,7 @@ export type RemoteAssetErrorCode =
   | "dns_error"
   | "private_ip"
   | "redirect_limit"
-  | "response_error"
+  | "invalid_response"
   | "size_exceeded";
 
 export class RemoteAssetError extends Error {
@@ -56,8 +56,6 @@ type BaseFetchRemoteAssetOptions = FetchOptions & {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
-  /** If true, return response data even for non-2xx status codes instead of throwing. Useful for headers probing. */
-  allowNonOkResponse?: boolean;
 };
 
 type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
@@ -103,7 +101,6 @@ export async function fetchRemoteAsset(
   const backoffMs = opts.backoffMs ?? DEFAULT_BACKOFF_MS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
-  const allowNonOkResponse = opts.allowNonOkResponse ?? false;
   const fallbackToGetOnHeadFailure =
     opts.method === "HEAD" ? (opts.fallbackToGetOnHeadFailure ?? false) : false;
   const allowedHosts =
@@ -140,7 +137,7 @@ export async function fetchRemoteAsset(
       const location = response.headers.get("location");
       if (!location) {
         throw new RemoteAssetError(
-          "response_error",
+          "invalid_response",
           "Redirect response missing Location header",
         );
       }
@@ -167,18 +164,8 @@ export async function fetchRemoteAsset(
       continue;
     }
 
-    if (!response.ok && !allowNonOkResponse) {
-      const error = new RemoteAssetError(
-        "response_error",
-        `Remote asset request failed with ${response.status}`,
-        response.status,
-      );
-      logger.warn("response error", {
-        url: currentUrl.toString(),
-        reason: error.message,
-      });
-      throw error;
-    }
+    // Non-2xx responses are valid HTTP responses - return them for caller to handle.
+    // Only infrastructure errors (DNS, private IP, etc.) throw exceptions.
 
     // Check Content-Length header (skip pre-check if we'll truncate anyway)
     const declaredLength = response.headers.get("content-length");

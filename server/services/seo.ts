@@ -155,14 +155,20 @@ export async function getSeo(
     status = htmlResult.status;
     finalUrl = htmlResult.finalUrl;
 
-    const contentType = htmlResult.contentType ?? "";
-    if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(contentType)) {
-      htmlError = `Non-HTML content-type: ${contentType}`;
+    // Check for non-OK status codes
+    if (htmlResult.status < 200 || htmlResult.status >= 300) {
+      htmlError = `HTTP ${htmlResult.status}`;
     } else {
-      const html = htmlResult.buffer.toString("utf-8");
-      meta = parseHtmlMeta(html, finalUrl);
+      const contentType = htmlResult.contentType ?? "";
+      if (!/^(text\/html|application\/xhtml\+xml)\b/i.test(contentType)) {
+        htmlError = `Non-HTML content-type: ${contentType}`;
+      } else {
+        const html = htmlResult.buffer.toString("utf-8");
+        meta = parseHtmlMeta(html, finalUrl);
+      }
     }
   } catch (err) {
+    // Infrastructure errors (DNS, private IP, etc.) are still thrown
     htmlError = String(err);
     logger.error("html fetch failed", err, { domain, url: finalUrl });
   }
@@ -213,6 +219,10 @@ export async function getSeo(
         timeoutMs: 8000,
         maxRedirects: 3,
       });
+      // Skip processing if the image fetch returned non-OK status
+      if (asset.status < 200 || asset.status >= 300) {
+        throw new Error(`Image fetch returned HTTP ${asset.status}`);
+      }
       const optimized = await optimizeImageCover(
         asset.buffer,
         SOCIAL_WIDTH,

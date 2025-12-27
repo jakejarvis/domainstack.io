@@ -295,46 +295,41 @@ describe("fetchRemoteAsset", () => {
     });
   });
 
-  it("throws 405 error when HEAD returns 405 and fallbackToGetOnHeadFailure is disabled", async () => {
+  it("returns 405 response when HEAD returns 405 and fallbackToGetOnHeadFailure is disabled", async () => {
     const headResponse = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
+      headers: { server: "nginx" },
     });
 
     fetchMock.mockResolvedValueOnce(headResponse);
 
-    await expect(
-      fetchRemoteAsset({
-        url: "https://example.com/",
-        method: "HEAD",
-        fallbackToGetOnHeadFailure: false,
-      }),
-    ).rejects.toMatchObject({
-      code: "response_error",
-      status: 405,
-    } satisfies Partial<RemoteAssetError>);
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "HEAD",
+      fallbackToGetOnHeadFailure: false,
+    });
 
+    expect(result.status).toBe(405);
+    expect(result.headers).toEqual({ server: "nginx" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("does not retry with GET if initial method is already GET", async () => {
+  it("returns 405 response when initial method is already GET", async () => {
     const getResponse = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
+      headers: { server: "nginx" },
     });
 
     fetchMock.mockResolvedValueOnce(getResponse);
 
-    await expect(
-      fetchRemoteAsset({
-        url: "https://example.com/",
-        method: "GET",
-      }),
-    ).rejects.toMatchObject({
-      code: "response_error",
-      status: 405,
-    } satisfies Partial<RemoteAssetError>);
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "GET",
+    });
 
+    expect(result.status).toBe(405);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -374,36 +369,35 @@ describe("fetchRemoteAsset", () => {
     expect(result.finalUrl).toBe("https://cdn.example.com/page");
   });
 
-  it("only retries once on 405 to prevent infinite loops", async () => {
+  it("only retries once on 405 and returns the second 405 response", async () => {
     const head405Response = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
+      headers: { server: "nginx" },
     });
     const get405Response = new Response(null, {
       status: 405,
       statusText: "Method Not Allowed",
+      headers: { server: "apache" },
     });
 
     fetchMock
       .mockResolvedValueOnce(head405Response)
       .mockResolvedValueOnce(get405Response);
 
-    await expect(
-      fetchRemoteAsset({
-        url: "https://example.com/",
-        method: "HEAD",
-        fallbackToGetOnHeadFailure: true,
-      }),
-    ).rejects.toMatchObject({
-      code: "response_error",
-      status: 405,
-    } satisfies Partial<RemoteAssetError>);
+    const result = await fetchRemoteAsset({
+      url: "https://example.com/",
+      method: "HEAD",
+      fallbackToGetOnHeadFailure: true,
+    });
 
-    // Should only make 2 requests: HEAD (405) -> GET (405) -> throw
+    // Should only make 2 requests: HEAD (405) -> GET (405) -> return
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.status).toBe(405);
+    expect(result.headers).toEqual({ server: "apache" });
   });
 
-  it("returns response data for non-2xx status when allowNonOkResponse is true", async () => {
+  it("returns response data for 403 Forbidden status", async () => {
     const body = new Uint8Array([1, 2, 3]);
     fetchMock.mockResolvedValueOnce(
       new Response(body, {
@@ -418,7 +412,6 @@ describe("fetchRemoteAsset", () => {
 
     const result = await fetchRemoteAsset({
       url: "https://example.com/protected",
-      allowNonOkResponse: true,
     });
 
     expect(result.status).toBe(403);
@@ -431,25 +424,7 @@ describe("fetchRemoteAsset", () => {
     expect(result.buffer.length).toBe(3);
   });
 
-  it("throws error for non-2xx status when allowNonOkResponse is false (default)", async () => {
-    fetchMock.mockResolvedValueOnce(
-      new Response(null, {
-        status: 403,
-        headers: { server: "nginx" },
-      }),
-    );
-
-    await expect(
-      fetchRemoteAsset({
-        url: "https://example.com/protected",
-      }),
-    ).rejects.toMatchObject({
-      code: "response_error",
-      status: 403,
-    } satisfies Partial<RemoteAssetError>);
-  });
-
-  it("returns response data for 404 status when allowNonOkResponse is true", async () => {
+  it("returns response data for 404 Not Found status", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(new Uint8Array([]), {
         status: 404,
@@ -462,7 +437,6 @@ describe("fetchRemoteAsset", () => {
 
     const result = await fetchRemoteAsset({
       url: "https://example.com/not-found",
-      allowNonOkResponse: true,
     });
 
     expect(result.status).toBe(404);
@@ -472,7 +446,7 @@ describe("fetchRemoteAsset", () => {
     });
   });
 
-  it("returns response data for 500 status when allowNonOkResponse is true", async () => {
+  it("returns response data for 500 Internal Server Error status", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(new Uint8Array([]), {
         status: 500,
@@ -485,7 +459,6 @@ describe("fetchRemoteAsset", () => {
 
     const result = await fetchRemoteAsset({
       url: "https://example.com/error",
-      allowNonOkResponse: true,
     });
 
     expect(result.status).toBe(500);
@@ -495,7 +468,7 @@ describe("fetchRemoteAsset", () => {
     });
   });
 
-  it("allows non-OK response with HEAD method and fallback disabled", async () => {
+  it("returns non-OK response with HEAD method", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(null, {
         status: 403,
@@ -509,7 +482,6 @@ describe("fetchRemoteAsset", () => {
     const result = await fetchRemoteAsset({
       url: "https://example.com/",
       method: "HEAD",
-      allowNonOkResponse: true,
     });
 
     expect(result.status).toBe(403);
