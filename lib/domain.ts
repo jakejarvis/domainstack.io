@@ -91,3 +91,26 @@ export function isValidDomain(value: string): boolean {
     v.toLowerCase(),
   );
 }
+
+/**
+ * Client-side utility to extract the TLD from a domain name.
+ * This is a simple implementation that doesn't rely on rdapper (which is server-only).
+ * For a full domain like "example.com", returns "com".
+ * For a subdomain like "blog.example.com", returns "com".
+ */
+export function extractTldClient(domain: string): string | null {
+  const input = (domain ?? "").trim().toLowerCase();
+
+  // Ignore single-label hosts like "localhost" or invalid inputs
+  if (!input.includes(".")) return null;
+
+  // Split by dots and take everything after the first dot
+  // For "example.com" -> ["example", "com"] -> "com"
+  // For "blog.example.com" -> ["blog", "example", "com"] -> "example.com"
+  const parts = input.split(".");
+  if (parts.length < 2) return null;
+
+  // Return everything after the first label joined with dots
+  // This handles multi-part TLDs like "co.uk" correctly
+  return parts.slice(1).join(".");
+}

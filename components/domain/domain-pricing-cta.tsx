@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/lib/analytics/client";
 import { PRICING_PROVIDERS } from "@/lib/constants/pricing-providers";
+import { extractTldClient } from "@/lib/domain";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -56,12 +57,17 @@ export function DomainPricingCTA({
   const trpc = useTRPC();
   const analytics = useAnalytics();
 
+  // Extract TLD from the domain on the client side
+  const tld = extractTldClient(domain);
+
   const { data, isLoading } = useQuery(
-    trpc.domain.getPricing.queryOptions(
-      { domain },
+    trpc.registrar.getPricing.queryOptions(
+      { tld: tld ?? "" },
       {
         // Keep in cache indefinitely during session
         staleTime: Number.POSITIVE_INFINITY,
+        // Don't fetch if no TLD
+        enabled: !!tld,
       },
     ),
   );

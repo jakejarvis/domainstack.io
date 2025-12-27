@@ -7,7 +7,6 @@ import {
   DnsRecordsResponseSchema,
   HeadersResponseSchema,
   HostingResponseSchema,
-  PricingResponseSchema,
   RegistrationResponseSchema,
   SeoResponseSchema,
 } from "@/lib/schemas";
@@ -16,7 +15,6 @@ import { getDnsRecords } from "@/server/services/dns";
 import { getFavicon } from "@/server/services/favicon";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
-import { getPricing } from "@/server/services/pricing";
 import { getRegistration } from "@/server/services/registration";
 import { getScreenshot } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";
@@ -72,8 +70,4 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .output(BlobUrlResponseSchema)
     .query(({ input }) => getScreenshot(input.domain)),
-  getPricing: publicProcedure
-    .input(DomainInputSchema)
-    .output(PricingResponseSchema)
-    .query(({ input }) => getPricing(input.domain)),
 });

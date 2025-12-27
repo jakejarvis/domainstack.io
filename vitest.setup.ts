@@ -79,3 +79,9 @@ global.ResizeObserver = class ResizeObserver {
   unobserve = vi.fn();
   disconnect = vi.fn();
 };
+
+// Mock Web Animations API for jsdom environment
+// Required by @base-ui/react ScrollArea component
+if (typeof Element !== "undefined") {
+  Element.prototype.getAnimations = vi.fn(() => []);
+}
