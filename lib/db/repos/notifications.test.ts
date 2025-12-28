@@ -49,7 +49,7 @@ beforeAll(async () => {
     .values({
       id: "test-notif-user-123",
       name: "Test Notif User",
-      email: "notif@example.com",
+      email: "notif@example.test",
       emailVerified: true,
     })
     .returning();
@@ -59,9 +59,9 @@ beforeAll(async () => {
   const insertedDomain = await db
     .insert(domains)
     .values({
-      name: "notif-test.com",
-      tld: "com",
-      unicodeName: "notif-test.com",
+      name: "notif.test",
+      tld: "test",
+      unicodeName: "notif.test",
     })
     .returning();
   testDomainId = insertedDomain[0].id;
@@ -135,11 +135,11 @@ describe("createNotification", () => {
       type: "domain_expiry_30d",
       title: "Domain expiring soon",
       message: "Your domain expires in 30 days",
-      data: { domainName: "notif-test.com", url: "/dashboard" },
+      data: { domainName: "notif.test", url: "/dashboard" },
     });
 
     expect(result?.data).toEqual({
-      domainName: "notif-test.com",
+      domainName: "notif.test",
       url: "/dashboard",
     });
     expect(result?.channels).toEqual(["in-app", "email"]);

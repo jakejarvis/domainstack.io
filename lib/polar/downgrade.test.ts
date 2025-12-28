@@ -42,7 +42,7 @@ beforeAll(async () => {
     .values({
       id: "downgrade-test-user",
       name: "Test User",
-      email: "downgrade-test@example.com",
+      email: "downgrade-test@example.test",
       emailVerified: true,
     })
     .returning();
@@ -60,7 +60,7 @@ beforeAll(async () => {
       .insert(domains)
       .values({
         name: `downgrade-test-${i}.com`,
-        tld: "com",
+        tld: "test",
         unicodeName: `downgrade-test-${i}.com`,
       })
       .returning();
@@ -211,7 +211,7 @@ describe("handleDowngrade", () => {
       .values({
         id: "new-user-no-sub",
         name: "New User",
-        email: "newuser@example.com",
+        email: "newuser@example.test",
         emailVerified: true,
       })
       .returning();

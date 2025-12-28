@@ -33,7 +33,7 @@ beforeAll(async () => {
     .values({
       id: "test-notif-prefs-user-123",
       name: "Test Notif Prefs User",
-      email: "notifprefs@example.com",
+      email: "notifprefs@example.test",
       emailVerified: true,
     })
     .returning();

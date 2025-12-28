@@ -1,6 +1,6 @@
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@/lib/test-utils";
+import { render, screen, within } from "@/mocks/react";
 import { SocialPreviewTabs } from "./social-preview-tabs";
 
 describe("SocialPreviewTabs", () => {

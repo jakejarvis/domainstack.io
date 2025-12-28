@@ -86,7 +86,7 @@ describe("getScreenshot", () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
     const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
 
-    const domainRecord = await ensureDomainRecord("example.com");
+    const domainRecord = await ensureDomainRecord("verified-dns.test");
     await upsertScreenshot({
       domainId: domainRecord.id,
       url: "blob://existing",
@@ -99,13 +99,13 @@ describe("getScreenshot", () => {
       expiresAt: new Date(Date.now() + 1000000),
     });
 
-    const out = await getScreenshot("example.com");
+    const out = await getScreenshot("verified-dns.test");
     expect(out.url).toBe("blob://existing");
     expect(storageMock.storeImage).not.toHaveBeenCalled();
   });
 
   it("captures, uploads and returns url when not cached", async () => {
-    const out = await getScreenshot("example.com");
+    const out = await getScreenshot("verified-dns.test");
     expect(out.url).toMatch(
       /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/1200x630\.webp$/,
     );
@@ -120,7 +120,7 @@ describe("getScreenshot", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0; // no jitter for determinism
-    const out = await getScreenshot("example.com", {
+    const out = await getScreenshot("verified-dns.test", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -142,7 +142,7 @@ describe("getScreenshot", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getScreenshot("example.com", {
+    const out = await getScreenshot("verified-dns.test", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -160,7 +160,7 @@ describe("getScreenshot", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getScreenshot("example.com", {
+    const out = await getScreenshot("verified-dns.test", {
       attempts: 2,
       backoffBaseMs: 1,
       backoffMaxMs: 2,
@@ -178,7 +178,7 @@ describe("getScreenshot", () => {
     });
     const originalRandom = Math.random;
     Math.random = () => 0;
-    const out = await getScreenshot("example.com", {
+    const out = await getScreenshot("verified-dns.test", {
       attempts: 3,
       backoffBaseMs: 1,
       backoffMaxMs: 2,

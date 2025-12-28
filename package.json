@@ -118,6 +118,7 @@
     "bufferutil": "^4.1.0",
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.8",
+    "msw": "^2.12.7",
     "playwright": "^1.57.0",
     "puppeteer": "24.32.0",
     "react-email": "5.1.0",
@@ -139,6 +140,7 @@
       "bufferutil",
       "core-js",
       "esbuild",
+      "msw",
       "protobufjs",
       "puppeteer",
       "sharp"

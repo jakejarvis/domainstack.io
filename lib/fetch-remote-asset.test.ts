@@ -33,13 +33,13 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/image.png",
+      url: "https://example.test/image.png",
       maxBytes: 1024,
     });
 
     expect(Buffer.isBuffer(result.buffer)).toBe(true);
     expect(result.contentType).toBe("image/png");
-    expect(result.finalUrl).toBe("https://example.com/image.png");
+    expect(result.finalUrl).toBe("https://example.test/image.png");
     expect(result.headers).toEqual({
       "content-type": "image/png",
     });
@@ -47,7 +47,7 @@ describe("fetchRemoteAsset", () => {
 
   it("rejects http URLs when allowHttp not set", async () => {
     await expect(
-      fetchRemoteAsset({ url: "http://example.com/file.png" }),
+      fetchRemoteAsset({ url: "http://example.test/file.png" }),
     ).rejects.toMatchObject({
       code: "protocol_not_allowed",
     } satisfies Partial<RemoteAssetError>);
@@ -58,10 +58,10 @@ describe("fetchRemoteAsset", () => {
       new Response(new Uint8Array([1]), { status: 200 }),
     );
     const result = await fetchRemoteAsset({
-      url: "http://example.com/icon.png",
+      url: "http://example.test/icon.png",
       allowHttp: true,
     });
-    expect(result.finalUrl).toBe("http://example.com/icon.png");
+    expect(result.finalUrl).toBe("http://example.test/icon.png");
   });
 
   it("blocks hosts that resolve to private IPs", async () => {
@@ -77,7 +77,7 @@ describe("fetchRemoteAsset", () => {
   it("follows redirects up to limit", async () => {
     const redirectResponse = new Response(null, {
       status: 302,
-      headers: { location: "https://cdn.example.com/img.png" },
+      headers: { location: "https://cdn.example.test/img.png" },
     });
     const finalResponse = new Response(new Uint8Array([1, 2, 3]), {
       status: 200,
@@ -92,10 +92,10 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]);
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/img.png",
+      url: "https://example.test/img.png",
       maxRedirects: 2,
     });
-    expect(result.finalUrl).toBe("https://cdn.example.com/img.png");
+    expect(result.finalUrl).toBe("https://cdn.example.test/img.png");
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -110,7 +110,7 @@ describe("fetchRemoteAsset", () => {
 
     await expect(
       fetchRemoteAsset({
-        url: "https://example.com/large.png",
+        url: "https://example.test/large.png",
         maxBytes: 10,
       }),
     ).rejects.toMatchObject({
@@ -128,7 +128,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/large.html",
+      url: "https://example.test/large.html",
       maxBytes: 100,
       truncateOnLimit: true,
     });
@@ -148,7 +148,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/small.html",
+      url: "https://example.test/small.html",
       maxBytes: 100,
       truncateOnLimit: true,
     });
@@ -171,7 +171,7 @@ describe("fetchRemoteAsset", () => {
 
     // With truncateOnLimit, should not throw based on content-length header
     const result = await fetchRemoteAsset({
-      url: "https://example.com/page.html",
+      url: "https://example.test/page.html",
       maxBytes: 100,
       truncateOnLimit: true,
     });
@@ -191,12 +191,12 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/image.png",
+      url: "https://example.test/image.png",
       method: "HEAD",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://example.com/image.png",
+      "https://example.test/image.png",
       expect.objectContaining({
         method: "HEAD",
       }),
@@ -217,12 +217,12 @@ describe("fetchRemoteAsset", () => {
     );
 
     await fetchRemoteAsset({
-      url: "https://example.com/image.png",
+      url: "https://example.test/image.png",
       maxBytes: 1024,
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://example.com/image.png",
+      "https://example.test/image.png",
       expect.objectContaining({
         method: "GET",
       }),
@@ -243,7 +243,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/image.png",
+      url: "https://example.test/image.png",
       maxBytes: 1024,
     });
 
@@ -272,7 +272,7 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(getResponse);
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
     });
@@ -280,12 +280,12 @@ describe("fetchRemoteAsset", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "https://example.com/",
+      "https://example.test/",
       expect.objectContaining({ method: "HEAD" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "https://example.com/",
+      "https://example.test/",
       expect.objectContaining({ method: "GET" }),
     );
     expect(result.status).toBe(200);
@@ -305,7 +305,7 @@ describe("fetchRemoteAsset", () => {
     fetchMock.mockResolvedValueOnce(headResponse);
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: false,
     });
@@ -325,7 +325,7 @@ describe("fetchRemoteAsset", () => {
     fetchMock.mockResolvedValueOnce(getResponse);
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "GET",
     });
 
@@ -340,7 +340,7 @@ describe("fetchRemoteAsset", () => {
     });
     const redirectResponse = new Response(null, {
       status: 302,
-      headers: { location: "https://cdn.example.com/page" },
+      headers: { location: "https://cdn.example.test/page" },
     });
     const finalResponse = new Response(new Uint8Array([1, 2, 3]), {
       status: 200,
@@ -353,12 +353,12 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(finalResponse); // GET after redirect -> 200
 
     dnsLookupMock
-      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.com for HEAD
-      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.com for GET retry
-      .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]); // cdn.example.com for redirect
+      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.test for HEAD
+      .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.test for GET retry
+      .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]); // cdn.example.test for redirect
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
       maxRedirects: 5,
@@ -366,7 +366,7 @@ describe("fetchRemoteAsset", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(result.status).toBe(200);
-    expect(result.finalUrl).toBe("https://cdn.example.com/page");
+    expect(result.finalUrl).toBe("https://cdn.example.test/page");
   });
 
   it("only retries once on 405 and returns the second 405 response", async () => {
@@ -386,7 +386,7 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(get405Response);
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
     });
@@ -411,7 +411,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/protected",
+      url: "https://example.test/protected",
     });
 
     expect(result.status).toBe(403);
@@ -436,7 +436,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/not-found",
+      url: "https://example.test/not-found",
     });
 
     expect(result.status).toBe(404);
@@ -458,7 +458,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/error",
+      url: "https://example.test/error",
     });
 
     expect(result.status).toBe(500);
@@ -480,7 +480,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     const result = await fetchRemoteAsset({
-      url: "https://example.com/",
+      url: "https://example.test/",
       method: "HEAD",
     });
 

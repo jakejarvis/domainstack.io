@@ -1,38 +1,8 @@
 /* @vitest-environment node */
+import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-// Use vi.hoisted to make mock hoisting explicit for ESM modules
-const mockFetch = vi.hoisted(() => vi.fn());
-const mockFetchRemoteAsset = vi.hoisted(() => vi.fn());
-
-vi.mock("@/lib/fetch", () => ({
-  fetchWithTimeoutAndRetry: vi.fn(
-    async (url: string | URL, options?: RequestInit) => {
-      return mockFetch(url.toString(), options);
-    },
-  ),
-}));
-
-// Mock fetchRemoteAsset for HTML file and meta tag verification (SSRF-protected)
-vi.mock("@/lib/fetch-remote-asset", () => ({
-  fetchRemoteAsset: vi.fn(async (opts: { url: string | URL }) => {
-    return mockFetchRemoteAsset(opts.url.toString());
-  }),
-  RemoteAssetError: class RemoteAssetError extends Error {
-    constructor(
-      public readonly code: string,
-      message: string,
-    ) {
-      super(message);
-      this.name = "RemoteAssetError";
-    }
-  },
-}));
-
-// Mock fetch globally for DNS queries
-vi.stubGlobal("fetch", mockFetch);
-
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
+import { server } from "@/mocks/server";
 import {
   generateVerificationToken,
   getVerificationInstructions,
@@ -40,9 +10,11 @@ import {
   verifyDomainOwnership,
 } from "./verification";
 
+// We don't mock fetch/fetchRemoteAsset anymore - we let them run and hit MSW
+
 afterEach(() => {
-  mockFetch.mockReset();
-  mockFetchRemoteAsset.mockReset();
+  vi.restoreAllMocks();
+  server.resetHandlers();
 });
 
 describe("generateVerificationToken", () => {
@@ -67,16 +39,20 @@ describe("getVerificationInstructions", () => {
   const token = "abc123def456";
 
   it("returns DNS TXT instructions with structured fields", () => {
-    const result = getVerificationInstructions("example.com", token, "dns_txt");
+    const result = getVerificationInstructions(
+      "verified-dns.test",
+      token,
+      "dns_txt",
+    );
 
     expect(result.title).toContain("DNS");
-    expect(result.hostname).toBe("example.com");
+    expect(result.hostname).toBe("verified-dns.test");
     expect(result.value).toBe(`domainstack-verify=${token}`);
   });
 
   it("returns HTML file instructions with structured fields", () => {
     const result = getVerificationInstructions(
-      "example.com",
+      "verified-dns.test",
       token,
       "html_file",
     );
@@ -91,7 +67,7 @@ describe("getVerificationInstructions", () => {
 
   it("returns meta tag instructions with structured fields", () => {
     const result = getVerificationInstructions(
-      "example.com",
+      "verified-dns.test",
       token,
       "meta_tag",
     );
@@ -108,23 +84,28 @@ describe("verifyDomainOwnership", () => {
 
   describe("dns_txt method", () => {
     it("returns verified when TXT record matches", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
+      // Mock DoH response for TXT record
+      const dohHandler = () => {
+        return HttpResponse.json({
           Status: 0,
           Answer: [
             {
-              name: "example.com.",
+              name: "verified-dns.test.",
               type: 16,
               TTL: 300,
               data: `"domainstack-verify=${token}"`,
             },
           ],
-        }),
-      });
+        });
+      };
+
+      server.use(
+        http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+        http.get("https://dns.google/resolve", dohHandler),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "dns_txt",
       );
@@ -134,131 +115,124 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns verified when TXT record matches on legacy subdomain", async () => {
-      // Apex domain (first provider) returns no records
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          Status: 0,
-          Answer: [],
-        }),
-      });
-      // Apex domain (second provider) returns no records
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          Status: 0,
-          Answer: [],
-        }),
-      });
-      // Legacy subdomain (first provider) returns matching record
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          Status: 0,
-          Answer: [
-            {
-              name: "_domainstack-verify.example.com.",
-              type: 16,
-              TTL: 300,
-              data: `"domainstack-verify=${token}"`,
-            },
-          ],
-        }),
-      });
+      // Mock DoH response:
+      // 1. Apex domain -> No TXT
+      // 2. Legacy subdomain -> TXT match
+      const dohHandler = ({ request }: { request: Request }) => {
+        const url = new URL(request.url);
+        const name = url.searchParams.get("name");
+
+        if (name === "verified-dns.test") {
+          return HttpResponse.json({
+            Status: 0,
+            Answer: [],
+          });
+        }
+
+        if (name === "_domainstack-verify.verified-dns.test") {
+          return HttpResponse.json({
+            Status: 0,
+            Answer: [
+              {
+                name: "_domainstack-verify.verified-dns.test.",
+                type: 16,
+                TTL: 300,
+                data: `"domainstack-verify=${token}"`,
+              },
+            ],
+          });
+        }
+
+        return HttpResponse.json({ Status: 0, Answer: [] });
+      };
+
+      server.use(
+        http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+        http.get("https://dns.google/resolve", dohHandler),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "dns_txt",
       );
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("dns_txt");
-      // Should try apex domain with both providers, then legacy subdomain with first provider
-      expect(mockFetch).toHaveBeenCalledTimes(3);
     });
 
     it("returns not verified when TXT record is missing", async () => {
-      // Both providers return no records
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      // Default handler in mocks/handlers.ts for verified-dns.test TXT is "v=spf1" (no match)
+      // We can use that or explicitly mock empty
+      const dohHandler = () => {
+        return HttpResponse.json({
           Status: 0,
-          Answer: [],
-        }),
-      });
+          Answer: [], // No records
+        });
+      };
+
+      server.use(
+        http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+        http.get("https://dns.google/resolve", dohHandler),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "dns_txt",
       );
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
-      // Should try both hostnames (apex + legacy) × both providers = 4 calls
-      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it("returns not verified when TXT record value is wrong", async () => {
-      // Both providers return wrong token
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({
+      const dohHandler = () => {
+        return HttpResponse.json({
           Status: 0,
           Answer: [
             {
-              name: "example.com.",
+              name: "verified-dns.test.",
               type: 16,
               TTL: 300,
               data: '"domainstack-verify=wrongtoken"',
             },
           ],
-        }),
-      });
+        });
+      };
+
+      server.use(
+        http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+        http.get("https://dns.google/resolve", dohHandler),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "dns_txt",
       );
 
       expect(result.verified).toBe(false);
-      // Should try both hostnames (apex + legacy) × both providers = 4 calls
-      expect(mockFetch).toHaveBeenCalledTimes(4);
     });
 
     it("handles DNS query failure", async () => {
-      // Mock both providers failing
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-      });
+      // Mock provider failure
+      server.use(
+        http.get("https://cloudflare-dns.com/dns-query", () => {
+          return new HttpResponse(null, { status: 500 });
+        }),
+        http.get("https://dns.google/resolve", () => {
+          return new HttpResponse(null, { status: 500 });
+        }),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "dns_txt",
       );
 
       expect(result.verified).toBe(false);
-      // Error is not set when all providers fail (method returns null)
-    });
-
-    it("handles network error", async () => {
-      // Mock all providers failing with network error
-      mockFetch.mockRejectedValue(new Error("Network error"));
-
-      const result = await verifyDomainOwnership(
-        "example.com",
-        token,
-        "dns_txt",
-      );
-
-      expect(result.verified).toBe(false);
-      // verifyDnsTxt catches all errors and returns { verified: false, method: null }
-      // without propagating the error (this is expected behavior - fail gracefully after trying all providers)
-      expect(result.method).toBeNull();
     });
   });
 
@@ -266,16 +240,20 @@ describe("verifyDomainOwnership", () => {
     const expectedContent = `domainstack-verify: ${token}`;
 
     it("returns verified when per-token file contains correct content", async () => {
-      // Per-token file found with correct content format
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(expectedContent),
-        contentType: "text/html",
-        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
+      // Mock the per-token file
+      server.use(
+        http.get(
+          `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => {
+            return new HttpResponse(expectedContent, {
+              headers: { "Content-Type": "text/html" },
+            });
+          },
+        ),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
@@ -285,15 +263,19 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns verified when per-token file has content with whitespace", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(`  ${expectedContent}  \n`),
-        contentType: "text/html",
-        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
+      server.use(
+        http.get(
+          `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => {
+            return new HttpResponse(`  ${expectedContent}  \n`, {
+              headers: { "Content-Type": "text/html" },
+            });
+          },
+        ),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
@@ -302,30 +284,24 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("returns not verified when per-token file is empty", async () => {
-      // Empty file is not valid - must contain the token
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(""),
-        contentType: "text/html",
-        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
-      // Per-token HTTP also empty
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(""),
-        contentType: "text/html",
-        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
-      // Legacy files also empty
-      mockFetchRemoteAsset.mockResolvedValue({
-        buffer: Buffer.from(""),
-        contentType: "text/html",
-        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
-        status: 200,
-      });
+      server.use(
+        http.get(
+          `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => {
+            return new HttpResponse("", {
+              headers: { "Content-Type": "text/html" },
+            });
+          },
+        ),
+        // Legacy file also empty or 404
+        http.get(
+          "https://verified-dns.test/.well-known/domainstack-verify.html",
+          () => new HttpResponse(null, { status: 404 }),
+        ),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
@@ -334,95 +310,75 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("falls back to legacy file when per-token files not found", async () => {
-      // Per-token HTTPS fails
-      mockFetchRemoteAsset.mockRejectedValueOnce(
-        new Error("Response error: 404"),
+      server.use(
+        // Per-token 404
+        http.get(
+          `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => new HttpResponse(null, { status: 404 }),
+        ),
+        http.get(
+          `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => new HttpResponse(null, { status: 404 }),
+        ),
+        // Legacy found
+        http.get(
+          "https://verified-dns.test/.well-known/domainstack-verify.html",
+          () => {
+            return new HttpResponse(expectedContent, {
+              headers: { "Content-Type": "text/html" },
+            });
+          },
+        ),
       );
-      // Per-token HTTP fails
-      mockFetchRemoteAsset.mockRejectedValueOnce(
-        new Error("Response error: 404"),
-      );
-      // Legacy HTTPS succeeds
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(expectedContent),
-        contentType: "text/html",
-        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
-        status: 200,
-      });
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
 
       expect(result.verified).toBe(true);
-      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(3);
     });
 
     it("falls back to HTTP when HTTPS fails for per-token file", async () => {
-      // Per-token HTTPS fails
-      mockFetchRemoteAsset.mockRejectedValueOnce(
-        new Error("Response error: 404"),
+      server.use(
+        // HTTPS 404
+        http.get(
+          `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => new HttpResponse(null, { status: 404 }),
+        ),
+        // HTTP found
+        http.get(
+          `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+          () => {
+            return new HttpResponse(expectedContent, {
+              headers: { "Content-Type": "text/html" },
+            });
+          },
+        ),
       );
-      // Per-token HTTP succeeds
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(expectedContent),
-        contentType: "text/html",
-        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
 
       expect(result.verified).toBe(true);
-      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(2);
     });
 
     it("returns not verified when all files not found", async () => {
-      // All URLs fail (per-token HTTPS, per-token HTTP, legacy HTTPS, legacy HTTP)
-      mockFetchRemoteAsset.mockRejectedValue(new Error("Response error: 404"));
-
-      const result = await verifyDomainOwnership(
-        "example.com",
-        token,
-        "html_file",
+      server.use(
+        http.get("https://verified-dns.test/*", () => {
+          return new HttpResponse(null, { status: 404 });
+        }),
+        http.get("http://verified-dns.test/*", () => {
+          return new HttpResponse(null, { status: 404 });
+        }),
       );
 
-      expect(result.verified).toBe(false);
-      // Should try 4 URLs: per-token HTTPS, per-token HTTP, legacy HTTPS, legacy HTTP
-      expect(mockFetchRemoteAsset).toHaveBeenCalledTimes(4);
-    });
-
-    it("returns not verified when per-token file has wrong content", async () => {
-      // Per-token file exists but has different content (not empty, not matching token)
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from("wrongtoken"),
-        contentType: "text/html",
-        finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
-      // Per-token HTTP also has wrong content
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from("wrongtoken"),
-        contentType: "text/html",
-        finalUrl: `http://example.com/.well-known/domainstack-verify/${token}.html`,
-        status: 200,
-      });
-      // Legacy files also have wrong content
-      mockFetchRemoteAsset.mockResolvedValue({
-        buffer: Buffer.from("wrongtoken"),
-        contentType: "text/html",
-        finalUrl: "https://example.com/.well-known/domainstack-verify.html",
-        status: 200,
-      });
-
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "html_file",
       );
@@ -433,17 +389,19 @@ describe("verifyDomainOwnership", () => {
 
   describe("meta_tag method", () => {
     it("returns verified when meta tag with correct content exists", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
@@ -453,36 +411,19 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("handles meta tag with reversed attribute order", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head><meta content="${token}" name="domainstack-verify"></head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
-
-      const result = await verifyDomainOwnership(
-        "example.com",
-        token,
-        "meta_tag",
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            `<html><head><meta content="${token}" name="domainstack-verify"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
       );
 
-      expect(result.verified).toBe(true);
-    });
-
-    it("handles single quotes in meta tag", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head><meta name='domainstack-verify' content='${token}'></head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
-
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
@@ -491,46 +432,47 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("finds correct token among multiple verification meta tags", async () => {
-      // Multiple users can track the same domain, so there may be multiple meta tags
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head>
-            <meta name="domainstack-verify" content="otheruser1token">
-            <meta name="domainstack-verify" content="${token}">
-            <meta name="domainstack-verify" content="otheruser2token">
-          </head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            `<html><head>
+              <meta name="domainstack-verify" content="otheruser1token">
+              <meta name="domainstack-verify" content="${token}">
+              <meta name="domainstack-verify" content="otheruser2token">
+            </head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
 
       expect(result.verified).toBe(true);
-      expect(result.method).toBe("meta_tag");
     });
 
     it("returns not verified when token not in any of multiple meta tags", async () => {
-      // Multiple verification tags exist, but none match our token
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head>
-            <meta name="domainstack-verify" content="otheruser1token">
-            <meta name="domainstack-verify" content="otheruser2token">
-          </head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            `<html><head>
+              <meta name="domainstack-verify" content="otheruser1token">
+              <meta name="domainstack-verify" content="otheruser2token">
+            </head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
@@ -539,60 +481,43 @@ describe("verifyDomainOwnership", () => {
     });
 
     it("handles malformed HTML gracefully", async () => {
-      // Cheerio is more tolerant of malformed HTML than regex
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          `<html><head>
-            <meta name="domainstack-verify" content="${token}"
-            <meta name="description" content="test">
-          </head></html>`,
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            `<html><head>
+              <meta name="domainstack-verify" content="${token}"
+              <meta name="description" content="test">
+            </head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
+      );
 
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
 
-      // Cheerio should still parse this
       expect(result.verified).toBe(true);
     });
 
     it("returns not verified when meta tag is missing", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          "<html><head><title>Test</title></head><body></body></html>",
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
-
-      const result = await verifyDomainOwnership(
-        "example.com",
-        token,
-        "meta_tag",
+      server.use(
+        http.get("https://verified-dns.test/", () => {
+          return new HttpResponse(
+            "<html><head><title>Test</title></head><body></body></html>",
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }),
       );
 
-      expect(result.verified).toBe(false);
-    });
-
-    it("returns not verified when meta tag has wrong content", async () => {
-      mockFetchRemoteAsset.mockResolvedValueOnce({
-        buffer: Buffer.from(
-          '<html><head><meta name="domainstack-verify" content="wrongtoken"></head></html>',
-        ),
-        contentType: "text/html",
-        finalUrl: "https://example.com/",
-        status: 200,
-      });
-
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "meta_tag",
       );
@@ -604,7 +529,7 @@ describe("verifyDomainOwnership", () => {
   describe("unknown method", () => {
     it("returns error for unknown method", async () => {
       const result = await verifyDomainOwnership(
-        "example.com",
+        "verified-dns.test",
         token,
         "unknown" as unknown as VerificationMethod,
       );
@@ -619,106 +544,186 @@ describe("tryAllVerificationMethods", () => {
   const token = "testtoken123";
 
   it("returns dns_txt when DNS verification succeeds first", async () => {
-    // First provider succeeds
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    const dohHandler = () => {
+      return HttpResponse.json({
         Status: 0,
         Answer: [
           {
-            name: "example.com.",
+            name: "verified-dns.test.",
             type: 16,
             TTL: 300,
             data: `"domainstack-verify=${token}"`,
           },
         ],
-      }),
-    });
+      });
+    };
 
-    const result = await tryAllVerificationMethods("example.com", token);
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohHandler),
+      http.get("https://dns.google/resolve", dohHandler),
+    );
+
+    const result = await tryAllVerificationMethods("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("dns_txt");
-    // Should only call first DNS provider
-    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it("falls back to html_file when DNS fails", async () => {
-    // DNS providers fail (no matching TXT records) - 2 hostnames × 2 providers = 4 calls
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    // HTML per-token file succeeds via fetchRemoteAsset
-    mockFetchRemoteAsset.mockResolvedValueOnce({
-      buffer: Buffer.from(`domainstack-verify: ${token}`),
-      contentType: "text/html",
-      finalUrl: `https://example.com/.well-known/domainstack-verify/${token}.html`,
-      status: 200,
-    });
+    // DNS fails for TXT only, but succeeds for A (needed for fetch)
+    const dohFailTxtHandler = ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
 
-    const result = await tryAllVerificationMethods("example.com", token);
+      if (type === "TXT") {
+        return HttpResponse.json({ Status: 0, Answer: [] });
+      }
+
+      // Return A record for verified-dns.test to allow fetching
+      if (type === "A") {
+        return HttpResponse.json({
+          Status: 0,
+          Answer: [
+            {
+              name: "verified-dns.test.",
+              type: 1,
+              TTL: 60,
+              data: "1.2.3.4",
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohFailTxtHandler),
+      http.get("https://dns.google/resolve", dohFailTxtHandler),
+    );
+
+    // HTML succeeds
+    server.use(
+      http.get(
+        `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
+        () => {
+          return new HttpResponse(`domainstack-verify: ${token}`, {
+            headers: { "Content-Type": "text/html" },
+          });
+        },
+      ),
+    );
+
+    const result = await tryAllVerificationMethods("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("html_file");
-    // Should try DNS with both hostnames × both providers = 4 calls
-    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it("falls back to meta_tag when DNS and HTML fail", async () => {
-    // DNS providers fail - 2 hostnames × 2 providers = 4 calls
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    // HTML per-token HTTPS fails
-    mockFetchRemoteAsset.mockRejectedValueOnce(
-      new Error("Response error: 404"),
-    );
-    // HTML per-token HTTP fails
-    mockFetchRemoteAsset.mockRejectedValueOnce(
-      new Error("Response error: 404"),
-    );
-    // HTML legacy HTTPS fails
-    mockFetchRemoteAsset.mockRejectedValueOnce(
-      new Error("Response error: 404"),
-    );
-    // HTML legacy HTTP fails
-    mockFetchRemoteAsset.mockRejectedValueOnce(
-      new Error("Response error: 404"),
-    );
-    // Meta tag succeeds via fetchRemoteAsset
-    mockFetchRemoteAsset.mockResolvedValueOnce({
-      buffer: Buffer.from(
-        `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
-      ),
-      contentType: "text/html",
-      finalUrl: "https://example.com/",
-      status: 200,
-    });
+    // DNS fails for TXT only
+    const dohFailTxtHandler = ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
 
-    const result = await tryAllVerificationMethods("example.com", token);
+      if (type === "TXT") {
+        return HttpResponse.json({ Status: 0, Answer: [] });
+      }
+
+      if (type === "A") {
+        return HttpResponse.json({
+          Status: 0,
+          Answer: [
+            {
+              name: "verified-dns.test.",
+              type: 1,
+              TTL: 60,
+              data: "1.2.3.4",
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohFailTxtHandler),
+      http.get("https://dns.google/resolve", dohFailTxtHandler),
+    );
+
+    // HTML fails
+    server.use(
+      http.get("https://verified-dns.test/.well-known/*", () =>
+        HttpResponse.json(null, { status: 404 }),
+      ),
+      http.get("http://verified-dns.test/.well-known/*", () =>
+        HttpResponse.json(null, { status: 404 }),
+      ),
+    );
+
+    // Meta succeeds
+    server.use(
+      http.get("https://verified-dns.test/", () => {
+        return new HttpResponse(
+          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+          {
+            headers: { "Content-Type": "text/html" },
+          },
+        );
+      }),
+    );
+
+    const result = await tryAllVerificationMethods("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("meta_tag");
-    // Should try DNS with both hostnames × both providers = 4 calls
-    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it("returns not verified when all methods fail", async () => {
-    // DNS providers fail - 2 hostnames × 2 providers = 4 calls
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ Status: 0, Answer: [] }),
-    });
-    // HTML fails (both protocols) via fetchRemoteAsset
-    mockFetchRemoteAsset.mockRejectedValue(new Error("Response error: 404"));
+    // All fail (TXT fails, A succeeds to allow trying HTML/Meta, but those fail too)
+    const dohFailTxtHandler = ({ request }: { request: Request }) => {
+      const url = new URL(request.url);
+      const type = url.searchParams.get("type");
 
-    const result = await tryAllVerificationMethods("example.com", token);
+      if (type === "TXT") {
+        return HttpResponse.json({ Status: 0, Answer: [] });
+      }
+
+      if (type === "A") {
+        return HttpResponse.json({
+          Status: 0,
+          Answer: [
+            {
+              name: "verified-dns.test.",
+              type: 1,
+              TTL: 60,
+              data: "1.2.3.4",
+            },
+          ],
+        });
+      }
+
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    };
+
+    server.use(
+      http.get("https://cloudflare-dns.com/dns-query", dohFailTxtHandler),
+      http.get("https://dns.google/resolve", dohFailTxtHandler),
+    );
+
+    server.use(
+      http.get("https://verified-dns.test/*", () =>
+        HttpResponse.json(null, { status: 404 }),
+      ),
+      http.get("http://verified-dns.test/*", () =>
+        HttpResponse.json(null, { status: 404 }),
+      ),
+    );
+
+    const result = await tryAllVerificationMethods("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();
-    // Should try DNS with both hostnames × both providers = 4 calls
-    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 });

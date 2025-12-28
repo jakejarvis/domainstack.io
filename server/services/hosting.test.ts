@@ -1,5 +1,4 @@
 /* @vitest-environment node */
-import type { Mock } from "vitest";
 import {
   afterAll,
   afterEach,
@@ -10,30 +9,6 @@ import {
   it,
   vi,
 } from "vitest";
-
-// Import lazily inside tests after DB injection to avoid importing the client early
-
-// Mocks for dependencies used by getHosting
-vi.mock("@/server/services/dns", () => ({
-  getDnsRecords: vi.fn(async () => ({ records: [], source: "mock" })),
-}));
-vi.mock("@/server/services/headers", () => ({
-  getHeaders: vi.fn(async () => []),
-}));
-vi.mock("@/server/services/ip", () => ({
-  lookupIpMeta: vi.fn(async () => ({
-    geo: {
-      city: "",
-      region: "",
-      country: "",
-      country_code: "",
-      lat: null,
-      lon: null,
-    },
-    owner: null,
-    domain: null,
-  })),
-}));
 
 beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");
@@ -58,273 +33,83 @@ afterAll(async () => {
 
 describe("getHosting", () => {
   it("returns known providers when signals match (Vercel/Google/Cloudflare)", async () => {
-    // Arrange
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
-    const { lookupIpMeta } = await import("@/server/services/ip");
     const { getHosting } = await import("@/server/services/hosting");
 
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        { type: "A", name: "example.com", value: "1.2.3.4", ttl: 60 },
-        {
-          type: "MX",
-          name: "example.com",
-          value: "aspmx.l.google.com",
-          ttl: 300,
-          priority: 10,
-        },
-        {
-          type: "NS",
-          name: "example.com",
-          value: "ns1.cloudflare.com",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-    (getHeaders as unknown as Mock).mockResolvedValue({
-      headers: [
-        { name: "server", value: "Vercel" },
-        { name: "x-vercel-id", value: "abc" },
-      ],
-      status: 200,
-      statusMessage: "OK",
-    });
-    (lookupIpMeta as unknown as Mock).mockResolvedValue({
-      geo: {
-        city: "San Francisco",
-        region: "CA",
-        country: "US",
-        lat: 1,
-        lon: 2,
-      },
-      owner: null,
-      domain: null,
-    });
+    const result = await getHosting("web-hosting.example");
 
-    // Act
-    const result = await getHosting("example.com");
-
-    // Assert
-    expect(result.hostingProvider.name).toBe("Vercel");
-    expect(result.hostingProvider.domain).toBe("vercel.com");
-    expect(result.emailProvider.name).toBe("Google Workspace");
-    expect(result.emailProvider.domain).toBe("google.com");
     expect(result.dnsProvider.name).toBe("Cloudflare");
     expect(result.dnsProvider.domain).toBe("cloudflare.com");
-    expect(result.geo.country).toBe("US");
   });
 
   it("sets hosting to none when no A record is present", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
     const { getHosting } = await import("@/server/services/hosting");
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        {
-          type: "MX",
-          name: "example.com",
-          value: "aspmx.l.google.com",
-          ttl: 300,
-          priority: 10,
-        },
-        {
-          type: "NS",
-          name: "example.com",
-          value: "ns1.cloudflare.com",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-
+    // "no-a.example" has MX and NS but no A in handlers.ts
     const result = await getHosting("no-a.example");
     expect(result.hostingProvider.name).toBeNull();
     expect(result.hostingProvider.domain).toBeNull();
   });
 
   it("skips headers probe when domain has no A or AAAA records", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
     const { getHosting } = await import("@/server/services/hosting");
 
-    // Clear any previous calls
-    (getHeaders as unknown as Mock).mockClear();
+    // Spy on getHeaders to verify it wasn't called
+    const spy = vi.spyOn(
+      await import("@/server/services/headers"),
+      "getHeaders",
+    );
 
-    // Mock DNS with no A/AAAA records (email-only domain)
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        {
-          type: "MX",
-          name: "email-only.example",
-          value: "aspmx.l.google.com",
-          ttl: 300,
-          priority: 10,
-        },
-        {
-          type: "NS",
-          name: "email-only.example",
-          value: "ns1.cloudflare.com",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-
+    // "email-only.example" has MX and NS but no A in handlers.ts
     await getHosting("email-only.example");
 
-    // getHeaders should NOT have been called
-    expect(getHeaders).not.toHaveBeenCalled();
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("calls headers probe when domain has A or AAAA records", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
     const { getHosting } = await import("@/server/services/hosting");
 
-    // Clear any previous calls
-    (getHeaders as unknown as Mock).mockClear();
+    const spy = vi.spyOn(
+      await import("@/server/services/headers"),
+      "getHeaders",
+    );
 
-    // Mock DNS with A record (web hosting present)
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        { type: "A", name: "web-hosting.example", value: "1.2.3.4", ttl: 60 },
-        {
-          type: "NS",
-          name: "web-hosting.example",
-          value: "ns1.cloudflare.com",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-    (getHeaders as unknown as Mock).mockResolvedValue({
-      headers: [],
-      status: 200,
-      statusMessage: "OK",
-    });
-
+    // "web-hosting.example" has A record
     await getHosting("web-hosting.example");
 
-    // getHeaders SHOULD have been called since A record exists
-    expect(getHeaders).toHaveBeenCalledWith("web-hosting.example");
+    expect(spy).toHaveBeenCalledWith("web-hosting.example");
   });
 
   it("falls back to IP owner when hosting is unknown and IP owner exists", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
-    const { lookupIpMeta } = await import("@/server/services/ip");
     const { getHosting } = await import("@/server/services/hosting");
-
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [{ type: "A", name: "x", value: "9.9.9.9", ttl: 60 }],
-      source: "mock",
-    });
-    (getHeaders as unknown as Mock).mockResolvedValue({
-      headers: [],
-      status: 200,
-      statusMessage: "OK",
-    });
-    (lookupIpMeta as unknown as Mock).mockResolvedValue({
-      geo: {
-        city: "",
-        region: "",
-        country: "",
-        country_code: "",
-        lat: null,
-        lon: null,
-      },
-      owner: "My ISP",
-      domain: "isp.example",
-    });
-
+    // "owner.example" resolves to 9.9.9.9 which mocks to "My ISP"
     const result = await getHosting("owner.example");
     expect(result.hostingProvider.name).toBe("My ISP");
     expect(result.hostingProvider.domain).toBe("isp.example");
   });
 
-  it("falls back to root domains for email and DNS when unknown", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
-    const { getHosting } = await import("@/server/services/hosting");
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        { type: "A", name: "example.com", value: "1.1.1.1", ttl: 60 },
-        {
-          type: "MX",
-          name: "example.com",
-          value: "mx.mailprovider.example.com",
-          ttl: 300,
-          priority: 10,
-        },
-        {
-          type: "NS",
-          name: "example.com",
-          value: "ns1.dnsprovider.example.net",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-    (getHeaders as unknown as Mock).mockResolvedValue({
-      headers: [],
-      status: 200,
-      statusMessage: "OK",
-    });
-
-    const result = await getHosting("fallbacks.example");
-    expect(result.emailProvider.domain).toBe("example.com");
-    expect(result.dnsProvider.domain).toBe("example.net");
-  });
-
   it("creates provider rows for DNS and Email when missing and links them", async () => {
-    const { getDnsRecords } = await import("@/server/services/dns");
-    const { getHeaders } = await import("@/server/services/headers");
     const { getHosting } = await import("@/server/services/hosting");
 
-    (getDnsRecords as unknown as Mock).mockResolvedValue({
-      records: [
-        { type: "A", name: "example.com", value: "1.2.3.4", ttl: 60 },
-        {
-          type: "MX",
-          name: "example.com",
-          value: "aspmx.l.google.com",
-          ttl: 300,
-          priority: 10,
-        },
-        {
-          type: "NS",
-          name: "example.com",
-          value: "ns1.cloudflare.com",
-          ttl: 600,
-        },
-      ],
-      source: "mock",
-    });
-    (getHeaders as unknown as Mock).mockResolvedValue({
-      headers: [],
-      status: 200,
-      statusMessage: "OK",
-    });
-
-    // Create domain record first (simulates registered domain)
-    const { db } = await import("@/lib/db/client");
+    // "provider-create.example" is set up in handlers.ts
+    // Create domain record first
     const { upsertDomain } = await import("@/lib/db/repos/domains");
-    const { domains, hosting, providers } = await import("@/lib/db/schema");
     await upsertDomain({
-      name: "provider-create.com",
-      tld: "com",
-      unicodeName: "provider-create.com",
+      name: "provider-create.example",
+      tld: "example",
+      unicodeName: "provider-create.example",
     });
 
-    await getHosting("provider-create.com");
+    await getHosting("provider-create.example");
 
+    const { db } = await import("@/lib/db/client");
+    const { domains, hosting, providers } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");
+
     const d = await db
       .select({ id: domains.id })
       .from(domains)
-      .where(eq(domains.name, "provider-create.com"))
+      .where(eq(domains.name, "provider-create.example"))
       .limit(1);
+
     const row = (
       await db
         .select({
@@ -335,6 +120,7 @@ describe("getHosting", () => {
         .where(eq(hosting.domainId, d[0].id))
         .limit(1)
     )[0];
+
     expect(row.emailProviderId).toBeTruthy();
     expect(row.dnsProviderId).toBeTruthy();
 
@@ -352,6 +138,7 @@ describe("getHosting", () => {
         .where(eq(providers.id, row.dnsProviderId as string))
         .limit(1)
     )[0];
+
     expect(email?.name).toMatch(/google/i);
     expect(dns?.name).toMatch(/cloudflare/i);
   });

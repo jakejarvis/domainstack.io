@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
 vi.mock("@/components/domain/provider-logo", () => ({

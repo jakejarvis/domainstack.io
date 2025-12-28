@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSuggestionsClient } from "@/components/domain/domain-suggestions-client";
 import { HomeSearchProvider } from "@/components/layout/home-search-context";
-import { render, screen, waitFor } from "@/lib/test-utils";
+import { render, screen, waitFor } from "@/mocks/react";
 
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: vi.fn() }),

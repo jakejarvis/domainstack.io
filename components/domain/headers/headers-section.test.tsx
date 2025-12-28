@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { HeadersSection } from "./headers-section";
 
 // Keep TooltipContent empty in unit tests to avoid text duplication issues.

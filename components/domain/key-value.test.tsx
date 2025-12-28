@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { KeyValue } from "./key-value";
 
 // Mock CopyButton - we're testing KeyValue, not clipboard functionality

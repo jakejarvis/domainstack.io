@@ -1,29 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { server } from "@/mocks/server";
 import { getPricing } from "./pricing";
 
-// Mock the logger
-vi.mock("@/lib/logger/server", () => ({
-  createLogger: () => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  }),
-}));
+afterEach(() => {
+  server.resetHandlers();
+  vi.unstubAllEnvs();
+});
 
 describe("pricing service", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("getPricing", () => {
-    // Default mock for fetch to prevent network calls
-    beforeEach(() => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      });
-    });
-
     it("should return null for invalid domains", async () => {
       const result = await getPricing("localhost");
       // "localhost" is treated as a TLD if passed directly
@@ -36,90 +22,68 @@ describe("pricing service", () => {
     });
 
     it("should extract TLD correctly", async () => {
-      // Mock fetch to return successful Porkbun response
-      const mockPorkbunResponse = {
-        status: "SUCCESS",
-        pricing: {
-          com: { registration: "10.99", renewal: "12.99" },
-        },
-      };
-
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => mockPorkbunResponse,
-      });
-
+      // Handled by generic handlers in mocks/handlers.ts
       const result = await getPricing("com");
       expect(result.tld).toBe("com");
     });
 
     it("should fetch from multiple providers in parallel", async () => {
-      const mockPorkbunResponse = {
-        status: "SUCCESS",
-        pricing: {
-          com: { registration: "10.99" },
-        },
-      };
+      // Stub env var for consistent behavior
+      vi.stubEnv("DYNADOT_API_KEY", "mock-key");
 
-      const mockCloudflareResponse = {
-        com: { registration: 10.44, renewal: 10.44 },
-      };
-
-      // Mock fetch to return appropriate response based on URL
-      global.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes("porkbun")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => mockPorkbunResponse,
-          });
-        }
-        if (url.includes("cfdomainpricing")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => mockCloudflareResponse,
-          });
-        }
-        return Promise.reject(new Error("Unknown URL"));
-      });
-
+      // Handled by generic handlers in mocks/handlers.ts
       const result = await getPricing("com");
-      expect(result.providers).toHaveLength(2);
       expect(result.providers).toContainEqual({
         provider: "porkbun",
-        price: "10.99",
+        price: "10.00", // Updated to match handlers.ts mock
       });
       expect(result.providers).toContainEqual({
         provider: "cloudflare",
-        price: "10.44",
+        price: "9.15", // Updated to match handlers.ts mock
+      });
+
+      expect(result.providers).toContainEqual({
+        provider: "dynadot",
+        price: "10.99",
       });
     });
 
     it("should handle provider failures gracefully", async () => {
-      // Mock fetch to fail for the first provider but succeed for the second
-      let callCount = 0;
-      global.fetch = vi.fn().mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.reject(new Error("Network error"));
-        }
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({
-            com: { registration: 10.44 },
-          }),
-        });
-      });
+      // Force Porkbun and Dynadot to fail, let Cloudflare succeed
+      server.use(
+        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () => {
+          return HttpResponse.error();
+        }),
+        http.get(
+          "https://api.dynadot.com/restful/v1/domains/get_tld_price",
+          () => {
+            return HttpResponse.error();
+          },
+        ),
+      );
 
       const result = await getPricing("com");
       expect(result.providers).toHaveLength(1);
       expect(result.providers[0].provider).toBe("cloudflare");
+      expect(result.providers[0].price).toBe("9.15");
     });
 
     it("should return empty providers array when no providers have pricing", async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ pricing: {} }),
-      });
+      // Mock all providers to return no pricing or fail
+      server.use(
+        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () => {
+          return HttpResponse.json({ status: "SUCCESS", pricing: {} });
+        }),
+        http.get("https://cfdomainpricing.com/prices.json", () => {
+          return HttpResponse.json({});
+        }),
+        http.get(
+          "https://api.dynadot.com/restful/v1/domains/get_tld_price",
+          () => {
+            return HttpResponse.json({ code: 200, data: { tldPriceList: [] } });
+          },
+        ),
+      );
 
       const result = await getPricing("xyz");
       expect(result.tld).toBe("xyz");

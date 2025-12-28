@@ -38,6 +38,11 @@ vi.mock("@/lib/rdap-bootstrap", () => ({
   }),
 }));
 
+// Mock scheduleRevalidation to avoid Inngest API calls in tests
+vi.mock("@/lib/schedule", () => ({
+  scheduleRevalidation: vi.fn().mockResolvedValue(true),
+}));
+
 describe("getRegistration", () => {
   // Setup DB mock once for all tests (expensive operations)
   beforeAll(async () => {
@@ -70,9 +75,9 @@ describe("getRegistration", () => {
     spy.mockClear();
 
     const d = await upsertDomain({
-      name: "example.com",
-      tld: "com",
-      unicodeName: "example.com",
+      name: "example.test",
+      tld: "test",
+      unicodeName: "example.test",
     });
     await upsertRegistration({
       domainId: d.id,
@@ -96,7 +101,7 @@ describe("getRegistration", () => {
     });
 
     const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("example.com");
+    const rec = await getRegistration("example.test");
     expect(rec.isRegistered).toBe(true);
     expect(rec.status).toBe("registered");
     expect(rec.unavailableReason).toBeUndefined();
@@ -105,7 +110,7 @@ describe("getRegistration", () => {
 
   it("loads via rdapper, creates registrar provider when missing, and caches", async () => {
     const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("example.com");
+    const rec = await getRegistration("example.test");
     expect(rec.isRegistered).toBe(true);
     expect(rec.status).toBe("registered");
     expect(rec.registrarProvider?.name).toBe("GoDaddy");
@@ -119,7 +124,7 @@ describe("getRegistration", () => {
     const d = await db
       .select({ id: domains.id })
       .from(domains)
-      .where(eq(domains.name, "example.com"))
+      .where(eq(domains.name, "example.test"))
       .limit(1);
     const row = (
       await db
@@ -224,9 +229,6 @@ describe("getRegistration", () => {
     expect(rec.source).toBeNull();
     expect(rec.registrarProvider.name).toBeNull();
     expect(rec.registrarProvider.domain).toBeNull();
-
-    // Note: Logger calls are tested by integration - the service calls logger.info()
-    // which is mocked in vitest.setup.ts to not actually log anything
   });
 
   it("handles TLDs with unresponsive WHOIS servers gracefully (timeout)", async () => {
@@ -249,9 +251,6 @@ describe("getRegistration", () => {
     expect(rec.status).toBe("unknown"); // Explicit status
     expect(rec.unavailableReason).toBe("timeout");
     expect(rec.source).toBeNull();
-
-    // Note: Logger calls are tested by integration - the service calls logger.info()
-    // which is mocked in vitest.setup.ts to not actually log anything
   });
 
   it("logs actual registration errors as errors (timeout, network failure)", async () => {
@@ -270,8 +269,5 @@ describe("getRegistration", () => {
     await expect(getRegistration("timeout.test")).rejects.toThrow(
       "Registration lookup failed for timeout.test: Connection timeout after 5000ms",
     );
-
-    // Note: Logger calls are tested by integration - the service calls logger.error()
-    // which is mocked in vitest.setup.ts to not actually log anything
   });
 });

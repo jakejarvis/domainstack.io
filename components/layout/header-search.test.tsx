@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@/lib/test-utils";
+import { render, screen, waitFor } from "@/mocks/react";
 import { HeaderSearch } from "./header-search";
 import { HeaderSearchProvider } from "./header-search-context";
 

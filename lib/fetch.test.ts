@@ -9,7 +9,7 @@ function createResponse(init: Partial<Response> = {}): Response {
   return {
     ok: init.ok ?? true,
     status: init.status ?? 200,
-    url: init.url ?? "https://example.com/",
+    url: init.url ?? "https://example.test/",
     headers: init.headers ?? new Headers(),
     arrayBuffer: async () => new ArrayBuffer(0),
     blob: async () => new Blob([]),
@@ -45,7 +45,7 @@ describe("lib/fetch", () => {
     ) as unknown as typeof fetch;
 
     const out = await fetchWithTimeoutAndRetry(
-      "https://example.com",
+      "https://example.test",
       {},
       { timeoutMs: 50 },
     );

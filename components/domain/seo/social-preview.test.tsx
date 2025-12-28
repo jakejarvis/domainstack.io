@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { SocialPreview } from "./social-preview";
 
 // Mock next/image with a plain img for JSDOM
