@@ -40,6 +40,26 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
 }));
 
+vi.mock("@/components/ui/responsive-tooltip", () => ({
+  ResponsiveTooltip: ({ children }: { children: React.ReactNode }) => (
+    <div data-slot="responsive-tooltip">{children}</div>
+  ),
+  ResponsiveTooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
+    <button type="button" data-slot="responsive-tooltip-trigger">
+      {render ?? children}
+    </button>
+  ),
+  ResponsiveTooltipContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-slot="responsive-tooltip-content">{children}</div>
+  ),
+}));
+
 describe("CertificatesSection", () => {
   it("renders certificate fields and SAN count", async () => {
     const data = {

@@ -6,6 +6,14 @@ globalThis.process = {
 };
 
 import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
+
+// Mock fetch to prevent network requests
+globalThis.fetch = vi.fn(() => {
+  throw new Error(
+    "Network requests are not allowed in tests. Please mock fetch.",
+  );
+});
 
 vi.mock("@/lib/analytics/client", () => ({
   analytics: {

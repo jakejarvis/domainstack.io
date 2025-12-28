@@ -26,7 +26,6 @@
     "db:seed": "tsx scripts/db/seed.ts",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
@@ -115,7 +114,6 @@
     "@vitest/browser": "^4.0.16",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "bufferutil": "^4.1.0",
     "concurrently": "^9.2.1",

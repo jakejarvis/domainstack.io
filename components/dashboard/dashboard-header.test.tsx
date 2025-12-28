@@ -21,6 +21,84 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Mock motion
+vi.mock("motion/react-client", () => ({
+  span: ({
+    children,
+    initial: _initial,
+    animate: _animate,
+    transition: _transition,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    initial?: unknown;
+    animate?: unknown;
+    transition?: unknown;
+  } & React.HTMLAttributes<HTMLSpanElement>) => (
+    <span {...props}>{children}</span>
+  ),
+  div: ({
+    children,
+    initial: _initial,
+    animate: _animate,
+    transition: _transition,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    initial?: unknown;
+    animate?: unknown;
+    transition?: unknown;
+  } & React.HTMLAttributes<HTMLDivElement>) => <div {...props}>{children}</div>,
+}));
+
+// Mock UI components
+vi.mock("@/components/ui/button", () => ({
+  Button: ({
+    children,
+    nativeButton: _nativeButton,
+    render: _render,
+    ...props
+  }: {
+    children?: React.ReactNode;
+    nativeButton?: boolean;
+    render?: React.ReactNode;
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+
+vi.mock("@/components/ui/tooltip", () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => <div data-testid="tooltip-trigger">{render ?? children}</div>,
+  TooltipContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="tooltip-content">{children}</div>
+  ),
+}));
+
+vi.mock("@/components/ui/responsive-tooltip", () => ({
+  ResponsiveTooltip: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  ResponsiveTooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
+    <div data-testid="responsive-tooltip-trigger">{render ?? children}</div>
+  ),
+  ResponsiveTooltipContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="responsive-tooltip-content">{children}</div>
+  ),
+}));
+
 describe("DashboardHeader", () => {
   const defaultProps = {
     userName: "Test User",
