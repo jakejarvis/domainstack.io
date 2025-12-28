@@ -56,8 +56,8 @@ export function exportDomainData(
   }
 
   let cleanedCertificates = null;
-  if (certificates) {
-    cleanedCertificates = certificates.map((c) => {
+  if (certificates?.certificates) {
+    cleanedCertificates = certificates.certificates.map((c) => {
       // omit caProvider
       const { caProvider: _cp, ...rest } = c;
       return rest;

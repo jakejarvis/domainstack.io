@@ -6,6 +6,7 @@ import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
 import { isExpectedDnsError } from "@/lib/dns-utils";
+import { isExpectedTlsError } from "@/lib/fetch";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
@@ -171,12 +172,24 @@ export async function getSeo(
   } catch (err) {
     // Infrastructure errors (DNS, private IP, etc.) are still thrown
     const isDnsError = isExpectedDnsError(err);
-    htmlError = isDnsError ? "DNS lookup failed" : String(err);
+    const isTlsError = isExpectedTlsError(err);
+
+    htmlError = isTlsError
+      ? "Invalid SSL certificate"
+      : isDnsError
+        ? "DNS lookup failed"
+        : String(err);
 
     if (isDnsError) {
       logger.debug("html fetch failed (DNS lookup failed)", {
         domain,
         url: finalUrl,
+      });
+    } else if (isTlsError) {
+      logger.debug("html fetch failed (TLS error)", {
+        domain,
+        url: finalUrl,
+        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
       });
     } else {
       logger.error("html fetch failed", err, { domain, url: finalUrl });
@@ -206,7 +219,12 @@ export async function getSeo(
       robotsError = `HTTP ${robotsResult.status}`;
     }
   } catch (err) {
-    robotsError = String(err);
+    const isTlsError = isExpectedTlsError(err);
+    if (isTlsError) {
+      robotsError = "Invalid SSL certificate";
+    } else {
+      robotsError = String(err);
+    }
   }
 
   const preview = meta ? selectPreview(meta, finalUrl) : null;

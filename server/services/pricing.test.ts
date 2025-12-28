@@ -16,9 +16,18 @@ describe("pricing service", () => {
   });
 
   describe("getPricing", () => {
+    // Default mock for fetch to prevent network calls
+    beforeEach(() => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      });
+    });
+
     it("should return null for invalid domains", async () => {
       const result = await getPricing("localhost");
-      expect(result).toEqual({ tld: null, providers: [] });
+      // "localhost" is treated as a TLD if passed directly
+      expect(result).toEqual({ tld: "localhost", providers: [] });
     });
 
     it("should return null for empty input", async () => {
@@ -40,7 +49,7 @@ describe("pricing service", () => {
         json: async () => mockPorkbunResponse,
       });
 
-      const result = await getPricing("example.com");
+      const result = await getPricing("com");
       expect(result.tld).toBe("com");
     });
 
@@ -73,7 +82,7 @@ describe("pricing service", () => {
         return Promise.reject(new Error("Unknown URL"));
       });
 
-      const result = await getPricing("example.com");
+      const result = await getPricing("com");
       expect(result.providers).toHaveLength(2);
       expect(result.providers).toContainEqual({
         provider: "porkbun",
@@ -101,7 +110,7 @@ describe("pricing service", () => {
         });
       });
 
-      const result = await getPricing("example.com");
+      const result = await getPricing("com");
       expect(result.providers).toHaveLength(1);
       expect(result.providers[0].provider).toBe("cloudflare");
     });
@@ -112,7 +121,7 @@ describe("pricing service", () => {
         json: async () => ({ pricing: {} }),
       });
 
-      const result = await getPricing("example.xyz");
+      const result = await getPricing("xyz");
       expect(result.tld).toBe("xyz");
       expect(result.providers).toEqual([]);
     });

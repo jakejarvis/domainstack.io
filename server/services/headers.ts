@@ -8,6 +8,7 @@ import { findDomainByName } from "@/lib/db/repos/domains";
 import { replaceHeaders } from "@/lib/db/repos/headers";
 import { httpHeaders } from "@/lib/db/schema";
 import { isExpectedDnsError } from "@/lib/dns-utils";
+import { isExpectedTlsError } from "@/lib/fetch";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
 import { scheduleRevalidation } from "@/lib/schedule";
@@ -135,11 +136,22 @@ export const getHeaders = cache(async function getHeaders(
   } catch (err) {
     // Classify error: DNS resolution failures are expected for domains without A/AAAA records
     const isDnsError = isExpectedDnsError(err);
+    const isTlsError = isExpectedTlsError(err);
 
     if (isDnsError) {
       logger.debug("no web hosting (no A/AAAA records)", {
         domain,
       });
+    } else if (isTlsError) {
+      logger.debug("probe failed (TLS error)", {
+        domain,
+        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
+      });
+      return {
+        headers: [],
+        status: 0,
+        statusMessage: "Invalid SSL certificate",
+      };
     } else {
       logger.error("probe failed", err, { domain });
     }

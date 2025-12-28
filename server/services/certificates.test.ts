@@ -129,7 +129,7 @@ describe("getCertificates", () => {
 
     const { getCertificates } = await import("./certificates");
     const out = await getCertificates("example.com");
-    expect(out.length).toBeGreaterThan(0);
+    expect(out.certificates.length).toBeGreaterThan(0);
 
     // Verify DB persistence and CA provider creation
     const { eq } = await import("drizzle-orm");
@@ -155,7 +155,7 @@ describe("getCertificates", () => {
     const prevCalls = (tlsMock.socketMock.getPeerCertificate as unknown as Mock)
       .mock.calls.length;
     const out2 = await getCertificates("example.com");
-    expect(out2.length).toBeGreaterThan(0);
+    expect(out2.certificates.length).toBeGreaterThan(0);
     const nextCalls = (tlsMock.socketMock.getPeerCertificate as unknown as Mock)
       .mock.calls.length;
     expect(nextCalls).toBe(prevCalls);
@@ -192,7 +192,10 @@ describe("getCertificates", () => {
     setTimeout(() => timeoutCb?.(), 0);
 
     // After refactor: errors are rethrown instead of returning []
-    await expect(pending).rejects.toThrow("TLS timeout");
+    await expect(pending).resolves.toEqual({
+      certificates: [],
+      error: "Invalid SSL certificate",
+    });
   });
 });
 
