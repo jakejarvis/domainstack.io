@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

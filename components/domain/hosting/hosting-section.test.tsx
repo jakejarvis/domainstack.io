@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { HostingSection } from "./hosting-section";

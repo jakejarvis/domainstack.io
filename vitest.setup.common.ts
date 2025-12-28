@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 
 // Global mocks for analytics to avoid network/log noise in tests
@@ -72,16 +71,3 @@ vi.mock("next/cache", async () => {
     cacheTag: vi.fn(),
   };
 });
-
-// Mock ResizeObserver for jsdom environment
-global.ResizeObserver = class ResizeObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
-  disconnect = vi.fn();
-};
-
-// Mock Web Animations API for jsdom environment
-// Required by @base-ui/react ScrollArea component
-if (typeof Element !== "undefined") {
-  Element.prototype.getAnimations = vi.fn(() => []);
-}

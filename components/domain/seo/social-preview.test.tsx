@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";

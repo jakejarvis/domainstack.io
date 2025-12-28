@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+
 import { describe, expect, it, vi } from "vitest";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
 import { render, screen } from "@/lib/test-utils";

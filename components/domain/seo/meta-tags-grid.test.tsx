@@ -1,4 +1,4 @@
-/* @vitest-environment jsdom */
+
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { MetaTagsGrid } from "./meta-tags-grid";
