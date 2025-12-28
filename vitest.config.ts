@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { coverageConfigDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [tsconfigPaths(), react()],
   test: {
     globals: true,
     silent: "passed-only",
@@ -25,7 +25,6 @@ export default defineConfig({
         },
       },
       {
-        // will inherit options from this config like plugins and pool
         extends: true,
         test: {
           name: "browser",
