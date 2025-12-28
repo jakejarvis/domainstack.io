@@ -215,7 +215,7 @@ describe("RobotsSummary", () => {
       render(<RobotsSummary domain="example.com" robots={robots} />);
       // Get all buttons and find the filter buttons specifically
       const buttons = screen.getAllByRole("button");
-      const allButton = buttons.find((btn) => btn.textContent === "All");
+      const allButton = buttons.find((btn) => btn.textContent?.includes("All"));
       const allowButton = buttons.find((btn) =>
         btn.textContent?.includes("Allow"),
       );

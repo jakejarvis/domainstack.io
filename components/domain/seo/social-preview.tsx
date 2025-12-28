@@ -46,7 +46,8 @@ export function SocialPreview({
                   alt="Preview image"
                   width={240}
                   height={240}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full select-none object-cover"
+                  draggable={false}
                   loading="lazy"
                   unoptimized
                 />
@@ -86,7 +87,8 @@ export function SocialPreview({
                   alt="Preview image"
                   width={1200}
                   height={675}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full select-none object-cover"
+                  draggable={false}
                   loading="lazy"
                   unoptimized
                 />
@@ -127,7 +129,7 @@ export function SocialPreview({
                 alt="Preview image"
                 width={1200}
                 height={628}
-                className="h-full w-full object-cover"
+                className="h-full w-full select-none object-cover"
                 loading="lazy"
                 unoptimized
               />
@@ -167,7 +169,8 @@ export function SocialPreview({
                 alt="Preview image"
                 width={1200}
                 height={627}
-                className="h-full w-full object-cover"
+                className="h-full w-full select-none object-cover"
+                draggable={false}
                 loading="lazy"
                 unoptimized
               />
@@ -215,7 +218,8 @@ export function SocialPreview({
                 alt="Preview image"
                 width={1200}
                 height={675}
-                className="h-full w-full object-cover"
+                className="h-full w-full select-none object-cover"
+                draggable={false}
                 loading="lazy"
                 unoptimized
               />
@@ -254,7 +258,8 @@ export function SocialPreview({
                 alt="Preview image"
                 width={1200}
                 height={628}
-                className="h-full w-full object-cover"
+                className="h-full w-full select-none object-cover"
+                draggable={false}
                 loading="lazy"
                 unoptimized
               />
@@ -279,7 +284,7 @@ export function SocialPreview({
       data-slot="social-preview"
       data-provider={provider}
       data-variant={variant}
-      className="w-full"
+      className="w-full font-[system-ui]"
     >
       {card}
     </a>

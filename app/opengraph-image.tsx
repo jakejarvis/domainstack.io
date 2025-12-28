@@ -1,13 +1,16 @@
 import { ImageResponse } from "next/og";
 import { LogoSimple } from "@/components/logo";
-import { BRAND, CHIPS, hexToRGBA, loadFontsForOG } from "@/lib/opengraph-image";
+import { BRAND, CHIPS, hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
 
 export const alt = "Domainstack — Domain Intelligence Made Easy";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function OGImage() {
-  const fonts = await loadFontsForOG();
+  const [geistRegularFont, geistSemiBoldFont] = await Promise.all([
+    loadGoogleFont("Geist", 400),
+    loadGoogleFont("Geist", 600),
+  ]);
 
   return new ImageResponse(
     <div
@@ -142,7 +145,20 @@ export default async function OGImage() {
     </div>,
     {
       ...size,
-      fonts,
+      fonts: [
+        {
+          name: "Geist",
+          data: geistRegularFont,
+          style: "normal",
+          weight: 400,
+        },
+        {
+          name: "Geist",
+          data: geistSemiBoldFont,
+          style: "normal",
+          weight: 600,
+        },
+      ],
       headers: {
         "Cache-Control": "public, max-age=604800, stale-while-revalidate=3600",
         "Vercel-CDN-Cache-Control":

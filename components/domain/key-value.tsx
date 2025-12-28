@@ -33,10 +33,10 @@ export function KeyValue({
   return (
     <div
       className={cn(
-        "flex h-16 min-w-0 items-center justify-between gap-4 rounded-2xl border bg-background/40 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg",
+        "flex h-16 min-w-0 items-center justify-between gap-4 rounded-2xl border bg-background/40 px-4 py-3 backdrop-blur-lg",
         highlight
-          ? "border-purple-500/20 bg-purple-500/5 shadow-[inset_0_1px_0_rgba(168,85,247,0.18)] dark:border-purple-500/20"
-          : "border-black/10 dark:border-white/10",
+          ? "border-accent-purple/20 bg-accent-purple/5 dark:border-accent-purple/12"
+          : "border-border/65 dark:border-border/50",
       )}
     >
       <div className="flex min-w-0 flex-col space-y-1.5">
@@ -45,7 +45,7 @@ export function KeyValue({
             className={cn(
               "pt-1 text-[10px] uppercase leading-none tracking-[0.08em]",
               highlight
-                ? "text-purple-700/80 dark:text-purple-300/85"
+                ? "text-accent-purple"
                 : "text-foreground/75 dark:text-foreground/80",
             )}
           >

@@ -126,9 +126,9 @@ function ToggleGroup({
       data-variant={variant}
       data-size={size}
       className={cn(
-        "group/toggle-group flex w-fit items-stretch rounded-md data-[variant=outline]:shadow-xs",
+        "group/toggle-group flex w-fit items-stretch gap-1 rounded-md data-[variant=outline]:shadow-xs",
         withActiveIndicator &&
-          "relative overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 backdrop-blur-sm dark:border-white/10 [&>*:not([data-slot=toggle-group-indicator])]:relative [&>*:not([data-slot=toggle-group-indicator])]:z-10",
+          "relative overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm dark:border-white/10 [&>*:not([data-slot=toggle-group-indicator])]:relative [&>*:not([data-slot=toggle-group-indicator])]:z-10",
         className,
       )}
       ref={groupRef}

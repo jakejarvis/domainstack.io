@@ -2,6 +2,7 @@ import {
   Ban,
   ChevronRight,
   CircleCheck,
+  CircleDot,
   ClockFading,
   EllipsisVertical,
   ExternalLink,
@@ -225,23 +226,25 @@ export function RobotsSummary({
                   <ToggleGroupItem
                     value="all"
                     variant="ghost"
-                    className={cn(
-                      "h-[calc(100%-1px)] cursor-pointer px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
-                    )}
+                    className="h-[calc(100%-1px)] cursor-pointer"
                   >
+                    <CircleDot
+                      className="size-3.5 text-accent-blue"
+                      aria-hidden="true"
+                    />
                     All
+                    <SubheadCount
+                      count={(counts.allows + counts.disallows) as number}
+                      color="slate"
+                    />
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="allow"
                     variant="ghost"
-                    className={cn(
-                      "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
-                    )}
+                    className="h-[calc(100%-1px)] cursor-pointer"
                   >
                     <CircleCheck
-                      className="size-3.5 text-emerald-500"
+                      className="size-3.5 text-accent-green"
                       aria-hidden="true"
                     />
                     <span>Allow</span>
@@ -250,13 +253,10 @@ export function RobotsSummary({
                   <ToggleGroupItem
                     value="disallow"
                     variant="ghost"
-                    className={cn(
-                      "h-[calc(100%-1px)] cursor-pointer gap-2 px-3 text-[13px] text-muted-foreground hover:bg-transparent dark:hover:bg-transparent",
-                      "[&[data-pressed]]:cursor-default [&[data-pressed]]:text-foreground",
-                    )}
+                    className="h-[calc(100%-1px)] cursor-pointer"
                   >
                     <Ban
-                      className="size-3.5 text-rose-500"
+                      className="size-3.5 text-destructive"
                       aria-hidden="true"
                     />
                     <span>Disallow</span>
@@ -353,7 +353,7 @@ function RobotsGroupHeader({
                 : "bg-muted",
             )}
           >
-            {ua === "*" ? "All" : ua}
+            {ua === "*" ? "Everyone" : ua}
           </span>
         ))}
       </div>
@@ -588,22 +588,22 @@ function RuleTypeDot({
           : "Content signal";
   const colorClass =
     type === "allow"
-      ? "text-emerald-500"
+      ? "text-accent-green"
       : type === "disallow"
-        ? "text-rose-500"
+        ? "text-destructive"
         : type === "crawlDelay"
-          ? "text-amber-500"
-          : "text-purple-500";
+          ? "text-accent-orange"
+          : "text-accent-purple";
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <div className="flex h-4 w-4 items-center justify-center">
-            <Icon className={cn("size-3.5", colorClass)} aria-hidden />
-          </div>
-        }
-      />
-      <TooltipContent side="left">{label}</TooltipContent>
+        render={<div className="flex h-4 w-4 items-center justify-center" />}
+      >
+        <Icon className={cn("size-3.5", colorClass)} aria-hidden />
+      </TooltipTrigger>
+      <TooltipContent side="left" sideOffset={8}>
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 }

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { LogoSimple } from "@/components/logo";
 import { normalizeDomainInput } from "@/lib/domain";
-import { BRAND, CHIPS, hexToRGBA, loadFontsForOG } from "@/lib/opengraph-image";
+import { BRAND, CHIPS, hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
 
 export const alt = "Domainstack — Domain Report";
 export const size = { width: 1200, height: 630 };
@@ -16,7 +16,10 @@ export default async function OGImage({
   const decoded = decodeURIComponent(domain);
   const normalized = normalizeDomainInput(decoded);
 
-  const fonts = await loadFontsForOG();
+  const [geistRegularFont, geistSemiBoldFont] = await Promise.all([
+    loadGoogleFont("Geist", 400),
+    loadGoogleFont("Geist", 600),
+  ]);
 
   return new ImageResponse(
     <div
@@ -95,7 +98,7 @@ export default async function OGImage({
             style={{
               fontSize: 84,
               lineHeight: 1.05,
-              fontWeight: 700,
+              fontWeight: 600,
               color: BRAND.fg,
               letterSpacing: -1.2,
               textShadow: "0 2px 16px rgba(0,0,0,0.35)",
@@ -172,7 +175,20 @@ export default async function OGImage({
     </div>,
     {
       ...size,
-      fonts,
+      fonts: [
+        {
+          name: "Geist",
+          data: geistRegularFont,
+          style: "normal",
+          weight: 400,
+        },
+        {
+          name: "Geist",
+          data: geistSemiBoldFont,
+          style: "normal",
+          weight: 600,
+        },
+      ],
       headers: {
         "Cache-Control": "public, max-age=604800, stale-while-revalidate=3600",
         "Vercel-CDN-Cache-Control":
