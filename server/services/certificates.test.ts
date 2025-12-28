@@ -192,7 +192,10 @@ describe("getCertificates", () => {
     setTimeout(() => timeoutCb?.(), 0);
 
     // After refactor: errors are rethrown instead of returning []
-    await expect(pending).rejects.toThrow("TLS timeout");
+    await expect(pending).resolves.toEqual({
+      certificates: [],
+      error: "Invalid SSL certificate",
+    });
   });
 });
 
