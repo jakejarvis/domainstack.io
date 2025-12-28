@@ -27,9 +27,9 @@ beforeAll(async () => {
   // Create a test domain
   const { upsertDomain } = await import("./domains");
   const domain = await upsertDomain({
-    name: "test-screenshot.com",
-    tld: "com",
-    unicodeName: "test-screenshot.com",
+    name: "screenshot.test",
+    tld: "test",
+    unicodeName: "screenshot.test",
   });
   testDomainId = domain.id;
 });
@@ -52,7 +52,7 @@ describe("upsertScreenshot", () => {
 
     await upsertScreenshot({
       domainId: testDomainId,
-      url: "https://example.com/screenshot.webp",
+      url: "https://example.test/screenshot.webp",
       pathname: "abc123/1200x630.webp",
       width: 1200,
       height: 630,
@@ -64,7 +64,7 @@ describe("upsertScreenshot", () => {
 
     const rows = await db.select().from(screenshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.com/screenshot.webp");
+    expect(rows[0]?.url).toBe("https://example.test/screenshot.webp");
     expect(rows[0]?.width).toBe(1200);
     expect(rows[0]?.height).toBe(630);
   });
@@ -76,7 +76,7 @@ describe("upsertScreenshot", () => {
     // Insert first
     await upsertScreenshot({
       domainId: testDomainId,
-      url: "https://example.com/screenshot-old.webp",
+      url: "https://example.test/screenshot-old.webp",
       pathname: "old123/1200x630.webp",
       width: 1200,
       height: 630,
@@ -90,7 +90,7 @@ describe("upsertScreenshot", () => {
     const laterDate = new Date(now.getTime() + 1000);
     await upsertScreenshot({
       domainId: testDomainId,
-      url: "https://example.com/screenshot-new.webp",
+      url: "https://example.test/screenshot-new.webp",
       pathname: "new123/1200x630.webp",
       width: 1200,
       height: 630,
@@ -102,7 +102,7 @@ describe("upsertScreenshot", () => {
 
     const rows = await db.select().from(screenshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.com/screenshot-new.webp");
+    expect(rows[0]?.url).toBe("https://example.test/screenshot-new.webp");
     expect(rows[0]?.source).toBe("direct_https");
   });
 
@@ -141,7 +141,7 @@ describe("getScreenshotByDomainId", () => {
 
     await upsertScreenshot({
       domainId: testDomainId,
-      url: "https://example.com/screenshot.webp",
+      url: "https://example.test/screenshot.webp",
       pathname: "abc123/1200x630.webp",
       width: 1200,
       height: 630,
@@ -153,7 +153,7 @@ describe("getScreenshotByDomainId", () => {
 
     const result = await getScreenshotByDomainId(testDomainId);
     expect(result).not.toBeNull();
-    expect(result?.url).toBe("https://example.com/screenshot.webp");
+    expect(result?.url).toBe("https://example.test/screenshot.webp");
   });
 
   it("returns null when screenshot is expired", async () => {
@@ -162,7 +162,7 @@ describe("getScreenshotByDomainId", () => {
 
     await upsertScreenshot({
       domainId: testDomainId,
-      url: "https://example.com/screenshot.webp",
+      url: "https://example.test/screenshot.webp",
       pathname: "abc123/1200x630.webp",
       width: 1200,
       height: 630,

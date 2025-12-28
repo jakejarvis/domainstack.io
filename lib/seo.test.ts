@@ -29,28 +29,28 @@ describe("seo html/meta parsing", () => {
       <meta name="twitter:image" content="/tw.jpg" />
     </head><body></body></html>`;
 
-    const meta = parseHtmlMeta(html, "https://example.com/page");
+    const meta = parseHtmlMeta(html, "https://example.test/page");
     expect(meta.general.title).toBe("My Site");
     expect(meta.general.description).toBe("desc");
-    expect(meta.general.canonical).toBe("https://example.com/about");
+    expect(meta.general.canonical).toBe("https://example.test/about");
     expect(meta.general.robots).toBe("index, follow");
 
     expect(meta.openGraph.title).toBe("OG Title");
     expect(meta.openGraph.description).toBe("OG Desc");
-    expect(meta.openGraph.url).toBe("https://example.com/about");
+    expect(meta.openGraph.url).toBe("https://example.test/about");
     expect(meta.openGraph.siteName).toBe("Site");
-    expect(meta.openGraph.images?.[0]).toBe("https://example.com/img.png");
+    expect(meta.openGraph.images?.[0]).toBe("https://example.test/img.png");
 
     expect(meta.twitter.card).toBe("summary_large_image");
     expect(meta.twitter.title).toBe("TW Title");
     expect(meta.twitter.description).toBe("TW Desc");
-    expect(meta.twitter.image).toBe("https://example.com/tw.jpg");
+    expect(meta.twitter.image).toBe("https://example.test/tw.jpg");
 
     const preview = selectPreview(meta, "https://fallback.test/");
     expect(preview.title).toBe("OG Title");
     expect(preview.description).toBe("OG Desc");
-    expect(preview.image).toBe("https://example.com/img.png");
-    expect(preview.canonicalUrl).toBe("https://example.com/about");
+    expect(preview.image).toBe("https://example.test/img.png");
+    expect(preview.canonicalUrl).toBe("https://example.test/about");
   });
 
   it("falls back in selectPreview and baseUrl when fields are missing", () => {
@@ -74,14 +74,14 @@ describe("seo helpers", () => {
   });
 
   it("resolveUrlMaybe returns absolute URLs and null for invalid schemes", () => {
-    expect(resolveUrlMaybe("/rel", "https://e.com/base")).toBe(
-      "https://e.com/rel",
+    expect(resolveUrlMaybe("/rel", "https://e.test/base")).toBe(
+      "https://e.test/rel",
     );
-    expect(resolveUrlMaybe("https://x.com/a", "https://e.com")).toBe(
-      "https://x.com/a",
+    expect(resolveUrlMaybe("https://x.test/a", "https://e.test")).toBe(
+      "https://x.test/a",
     );
-    expect(resolveUrlMaybe("mailto:hi@e.com", "https://e.com")).toBeNull();
-    expect(resolveUrlMaybe(undefined, "https://e.com")).toBeNull();
+    expect(resolveUrlMaybe("mailto:hi@e.test", "https://e.test")).toBeNull();
+    expect(resolveUrlMaybe(undefined, "https://e.test")).toBeNull();
   });
 });
 
@@ -92,7 +92,7 @@ describe("robots.txt parsing", () => {
       "Allow: /",
       "Disallow: /admin",
       "Crawl-Delay: 10",
-      "Sitemap: https://example.com/sitemap.xml",
+      "Sitemap: https://example.test/sitemap.xml",
       "# comment",
       "User-agent: Googlebot",
       "Disallow: /private",
@@ -100,7 +100,7 @@ describe("robots.txt parsing", () => {
 
     const robots = parseRobotsTxt(text);
     expect(robots.fetched).toBe(true);
-    expect(robots.sitemaps[0]).toBe("https://example.com/sitemap.xml");
+    expect(robots.sitemaps[0]).toBe("https://example.test/sitemap.xml");
     expect(robots.groups.length).toBe(2);
     const any = robots.groups[0];
     expect(any.userAgents).toContain("*");
@@ -159,7 +159,7 @@ describe("robots.txt parsing", () => {
       "User-Agent: *",
       "Allow: /",
       "Disallow: /admin",
-      "Content-Signal: https://example.com/content-signal.json",
+      "Content-Signal: https://example.test/content-signal.json",
       "User-agent: Googlebot",
       "content-signal: no-ai-training",
     ].join("\n");
@@ -170,7 +170,7 @@ describe("robots.txt parsing", () => {
     const any = robots.groups[0];
     expect(any.userAgents).toContain("*");
     expect(any.rules.find((r) => r.type === "contentSignal")?.value).toBe(
-      "https://example.com/content-signal.json",
+      "https://example.test/content-signal.json",
     );
 
     const google = robots.groups[1];
@@ -224,7 +224,7 @@ describe("robots.txt parsing", () => {
     const text = [
       "Sitemap: /sitemap.xml",
       "Sitemap: /sitemap.xml", // duplicate
-      "Sitemap: ftp://example.com/ignored.xml", // non-http(s), ignored
+      "Sitemap: ftp://example.test/ignored.xml", // non-http(s), ignored
       "User-agent:*",
       "Disallow: /x",
     ].join("\n");
@@ -251,13 +251,13 @@ describe("robots.txt parsing", () => {
   it("collects Sitemap inside group globally (not scoped to group)", () => {
     const text = [
       "User-agent: a",
-      "Sitemap: https://example.com/x.xml",
+      "Sitemap: https://example.test/x.xml",
       "Disallow: /a",
       "User-agent: b",
       "Disallow: /b",
     ].join("\n");
     const robots = parseRobotsTxt(text);
-    expect(robots.sitemaps).toEqual(["https://example.com/x.xml"]);
+    expect(robots.sitemaps).toEqual(["https://example.test/x.xml"]);
     expect(robots.groups.length).toBe(2);
   });
 
@@ -324,7 +324,7 @@ describe("robots.txt parsing", () => {
   it("parses last group without trailing newline at EOF", () => {
     const text = "User-agent:*\nAllow:/public\nDisallow:/private"; // no trailing NL
     const robots = parseRobotsTxt(text, {
-      baseUrl: "https://e.com/robots.txt",
+      baseUrl: "https://e.test/robots.txt",
     });
     expect(robots.groups.length).toBe(1);
     const g = robots.groups[0];
@@ -419,14 +419,14 @@ describe("robots.txt parsing", () => {
       "Disallow: /api/",
       "Disallow: /oauth",
       "",
-      "Sitemap: https://vercel.com/sitemap.xml",
+      "Sitemap: https://vercel.test/sitemap.xml",
     ].join("\n");
 
     const robots = parseRobotsTxt(text, {
-      baseUrl: "https://vercel.com/robots.txt",
+      baseUrl: "https://vercel.test/robots.txt",
     });
     expect(robots.fetched).toBe(true);
-    expect(robots.sitemaps).toContain("https://vercel.com/sitemap.xml");
+    expect(robots.sitemaps).toContain("https://vercel.test/sitemap.xml");
     expect(robots.groups.length).toBe(1);
     const any = robots.groups[0];
     expect(any.userAgents).toEqual(["*"]);

@@ -27,9 +27,9 @@ beforeAll(async () => {
   // Create a test domain
   const { upsertDomain } = await import("./domains");
   const domain = await upsertDomain({
-    name: "test-favicon.com",
-    tld: "com",
-    unicodeName: "test-favicon.com",
+    name: "favicon.test",
+    tld: "test",
+    unicodeName: "favicon.test",
   });
   testDomainId = domain.id;
 });
@@ -52,7 +52,7 @@ describe("upsertFavicon", () => {
 
     await upsertFavicon({
       domainId: testDomainId,
-      url: "https://example.com/favicon.webp",
+      url: "https://example.test/favicon.webp",
       pathname: "abc123/32x32.webp",
       size: 32,
       source: "duckduckgo",
@@ -65,7 +65,7 @@ describe("upsertFavicon", () => {
 
     const rows = await db.select().from(favicons);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.com/favicon.webp");
+    expect(rows[0]?.url).toBe("https://example.test/favicon.webp");
     expect(rows[0]?.source).toBe("duckduckgo");
   });
 
@@ -76,7 +76,7 @@ describe("upsertFavicon", () => {
     // Insert first
     await upsertFavicon({
       domainId: testDomainId,
-      url: "https://example.com/favicon-old.webp",
+      url: "https://example.test/favicon-old.webp",
       pathname: "old123/32x32.webp",
       size: 32,
       source: "google",
@@ -91,7 +91,7 @@ describe("upsertFavicon", () => {
     const laterDate = new Date(now.getTime() + 1000);
     await upsertFavicon({
       domainId: testDomainId,
-      url: "https://example.com/favicon-new.webp",
+      url: "https://example.test/favicon-new.webp",
       pathname: "new123/32x32.webp",
       size: 32,
       source: "duckduckgo",
@@ -104,7 +104,7 @@ describe("upsertFavicon", () => {
 
     const rows = await db.select().from(favicons);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.com/favicon-new.webp");
+    expect(rows[0]?.url).toBe("https://example.test/favicon-new.webp");
     expect(rows[0]?.source).toBe("duckduckgo");
   });
 
@@ -144,7 +144,7 @@ describe("getFaviconByDomainId", () => {
 
     await upsertFavicon({
       domainId: testDomainId,
-      url: "https://example.com/favicon.webp",
+      url: "https://example.test/favicon.webp",
       pathname: "abc123/32x32.webp",
       size: 32,
       source: "duckduckgo",
@@ -157,7 +157,7 @@ describe("getFaviconByDomainId", () => {
 
     const result = await getFaviconByDomainId(testDomainId);
     expect(result).not.toBeNull();
-    expect(result?.url).toBe("https://example.com/favicon.webp");
+    expect(result?.url).toBe("https://example.test/favicon.webp");
   });
 
   it("returns null when favicon is expired", async () => {
@@ -166,7 +166,7 @@ describe("getFaviconByDomainId", () => {
 
     await upsertFavicon({
       domainId: testDomainId,
-      url: "https://example.com/favicon.webp",
+      url: "https://example.test/favicon.webp",
       pathname: "abc123/32x32.webp",
       size: 32,
       source: "duckduckgo",

@@ -45,7 +45,7 @@ describe("storage uploads", () => {
   it("storeImage (favicon) returns Vercel Blob public URL and pathname", async () => {
     const res = await storeImage({
       kind: "favicon",
-      domain: "example.com",
+      domain: "example.test",
       buffer: Buffer.from([1, 2, 3]),
       width: 32,
       height: 32,
@@ -60,7 +60,7 @@ describe("storage uploads", () => {
   it("storeImage (screenshot) returns Vercel Blob public URL and pathname", async () => {
     const res = await storeImage({
       kind: "screenshot",
-      domain: "example.com",
+      domain: "example.test",
       buffer: Buffer.from([4, 5, 6]),
       width: 1200,
       height: 630,
@@ -84,7 +84,7 @@ describe("storage uploads", () => {
 
     const res = await storeImage({
       kind: "favicon",
-      domain: "retry.com",
+      domain: "retry.test",
       buffer: Buffer.from([1, 2, 3]),
       width: 32,
       height: 32,
@@ -107,7 +107,7 @@ describe("storage uploads", () => {
 
     const res = await storeImage({
       kind: "favicon",
-      domain: "retry.com",
+      domain: "retry.test",
       buffer: Buffer.from([1, 2, 3]),
       width: 32,
       height: 32,
@@ -124,7 +124,7 @@ describe("storage uploads", () => {
     await expect(
       storeImage({
         kind: "favicon",
-        domain: "fail.com",
+        domain: "fail.test",
         buffer: Buffer.from([1, 2, 3]),
         width: 32,
         height: 32,
@@ -146,7 +146,7 @@ describe("storage uploads", () => {
 
     const res = await storeImage({
       kind: "favicon",
-      domain: "error.com",
+      domain: "error.test",
       buffer: Buffer.from([1, 2, 3]),
       width: 32,
       height: 32,

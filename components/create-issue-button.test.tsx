@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 
 describe("CreateIssueButton", () => {
   it("renders with icon and label", () => {

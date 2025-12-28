@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { HostingSection } from "./hosting-section";
 
 vi.mock("next/dynamic", () => ({

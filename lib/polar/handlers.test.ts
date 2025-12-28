@@ -75,7 +75,7 @@ function createSubscriptionData(overrides: {
     customer: {
       id: "polar-cust-abc",
       externalId,
-      email: "user@example.com",
+      email: "user@example.test",
       name: "Test User",
     },
     product: {

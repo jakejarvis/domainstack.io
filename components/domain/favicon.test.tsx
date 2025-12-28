@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@/lib/test-utils";
+import { render, screen, waitFor } from "@/mocks/react";
 import { Favicon } from "./favicon";
 
 vi.mock("next/image", () => ({

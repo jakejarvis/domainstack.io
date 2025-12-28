@@ -1,7 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSearch } from "@/components/domain/domain-search";
-import { render, screen, waitFor } from "@/lib/test-utils";
+import { render, screen, waitFor } from "@/mocks/react";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn(),

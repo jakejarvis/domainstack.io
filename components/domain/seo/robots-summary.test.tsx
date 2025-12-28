@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SeoResponse } from "@/lib/schemas";
-import { render, screen } from "@/lib/test-utils";
+import { render, screen } from "@/mocks/react";
 import { RobotsSummary } from "./robots-summary";
 
 vi.mock("@/components/ui/tooltip", () => ({

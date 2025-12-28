@@ -1,4 +1,10 @@
-import { vi } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { server } from "@/mocks/server";
+
+// Start MSW server to intercept requests
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 // Global mocks for analytics to avoid network/log noise in tests
 vi.mock("@/lib/analytics/server", () => ({
@@ -23,6 +29,18 @@ const createMockLogger = () => ({
 vi.mock("@/lib/logger/server", () => ({
   logger: createMockLogger(),
   createLogger: vi.fn(() => createMockLogger()),
+}));
+
+// Mock Inngest client to prevent network calls
+vi.mock("@/lib/inngest/client", () => ({
+  inngest: {
+    send: vi.fn(),
+    createFunction: vi.fn((config, trigger, handler) => ({
+      config,
+      trigger,
+      handler,
+    })),
+  },
 }));
 
 // Mock Next.js after() to execute callbacks immediately in tests

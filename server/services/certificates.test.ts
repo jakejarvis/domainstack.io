@@ -63,7 +63,9 @@ function makePeer(
   partial: Partial<tls.DetailedPeerCertificate>,
 ): tls.DetailedPeerCertificate {
   return {
-    subject: { CN: "example.com" } as unknown as tls.PeerCertificate["subject"],
+    subject: {
+      CN: "example.test",
+    } as unknown as tls.PeerCertificate["subject"],
     issuer: { O: "Let's Encrypt" } as unknown as tls.PeerCertificate["issuer"],
     valid_from: "Jan 1 00:00:00 2024 GMT",
     valid_to: "Jan 8 00:00:00 2024 GMT",
@@ -76,7 +78,7 @@ describe("getCertificates", () => {
     tlsMock.callListener = true;
     const leaf = makePeer({
       subject: {
-        CN: "example.com",
+        CN: "example.test",
       } as unknown as tls.PeerCertificate["subject"],
       issuer: {
         O: "Google Trust Services",
@@ -122,13 +124,13 @@ describe("getCertificates", () => {
       "@/lib/db/schema"
     );
     await upsertDomain({
-      name: "example.com",
-      tld: "com",
-      unicodeName: "example.com",
+      name: "example.test",
+      tld: "test",
+      unicodeName: "example.test",
     });
 
     const { getCertificates } = await import("./certificates");
-    const out = await getCertificates("example.com");
+    const out = await getCertificates("example.test");
     expect(out.certificates.length).toBeGreaterThan(0);
 
     // Verify DB persistence and CA provider creation
@@ -136,7 +138,7 @@ describe("getCertificates", () => {
     const d = await db
       .select({ id: domains.id })
       .from(domains)
-      .where(eq(domains.name, "example.com"))
+      .where(eq(domains.name, "example.test"))
       .limit(1);
     const rows = await db
       .select()
@@ -154,7 +156,7 @@ describe("getCertificates", () => {
     // Next call should use DB fast-path: no TLS listener invocation
     const prevCalls = (tlsMock.socketMock.getPeerCertificate as unknown as Mock)
       .mock.calls.length;
-    const out2 = await getCertificates("example.com");
+    const out2 = await getCertificates("example.test");
     expect(out2.certificates.length).toBeGreaterThan(0);
     const nextCalls = (tlsMock.socketMock.getPeerCertificate as unknown as Mock)
       .mock.calls.length;
@@ -201,9 +203,9 @@ describe("getCertificates", () => {
 
 describe("tls helper parsing", () => {
   it("parseAltNames extracts DNS/IP values and ignores others", async () => {
-    const input = "DNS:example.com, IP Address:1.2.3.4, URI:http://x";
+    const input = "DNS:example.test, IP Address:1.2.3.4, URI:http://x";
     const { parseAltNames } = await import("./certificates");
-    expect(parseAltNames(input)).toEqual(["example.com", "1.2.3.4"]);
+    expect(parseAltNames(input)).toEqual(["example.test", "1.2.3.4"]);
   });
 
   it("parseAltNames handles empty/missing", async () => {

@@ -5,29 +5,29 @@ import { DOH_PROVIDERS, providerOrderForLookup } from "@/lib/dns-utils";
 describe("lib/dns-utils", () => {
   describe("providerOrderForLookup", () => {
     it("returns all providers", () => {
-      const result = providerOrderForLookup("example.com");
+      const result = providerOrderForLookup("example.test");
       expect(result).toHaveLength(DOH_PROVIDERS.length);
     });
 
     it("is deterministic for same domain", () => {
-      const domain = "example.com";
+      const domain = "example.test";
       const result1 = providerOrderForLookup(domain);
       const result2 = providerOrderForLookup(domain);
       expect(result1).toEqual(result2);
     });
 
     it("is case-insensitive (RFC 1035)", () => {
-      const lower = providerOrderForLookup("example.com");
-      const upper = providerOrderForLookup("EXAMPLE.COM");
-      const mixed = providerOrderForLookup("Example.Com");
+      const lower = providerOrderForLookup("example.test");
+      const upper = providerOrderForLookup("EXAMPLE.TEST");
+      const mixed = providerOrderForLookup("Example.Test");
 
       expect(lower).toEqual(upper);
       expect(lower).toEqual(mixed);
     });
 
     it("produces different orders for different domains", () => {
-      const order1 = providerOrderForLookup("example.com");
-      const order2 = providerOrderForLookup("google.com");
+      const order1 = providerOrderForLookup("example.test");
+      const order2 = providerOrderForLookup("google.test");
 
       // Different domains should likely produce different orders
       // (not guaranteed, but statistically likely with good hash function)

@@ -1,4 +1,5 @@
 /* @vitest-environment node */
+import { HttpResponse, http } from "msw";
 import {
   afterAll,
   afterEach,
@@ -8,6 +9,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { server } from "@/mocks/server";
 
 const storageMock = vi.hoisted(() => ({
   storeImage: vi.fn(async () => ({
@@ -17,26 +19,10 @@ const storageMock = vi.hoisted(() => ({
   getFaviconTtlSeconds: vi.fn(() => 60),
 }));
 
-const fetchRemoteAssetMock = vi.hoisted(() =>
-  // Shared stub so we can flip between success + failure scenarios quickly.
-  vi.fn(async () => ({
-    buffer: Buffer.from([1, 2, 3, 4]),
-    contentType: "image/png",
-    finalUrl: "https://example.com/favicon.ico",
-    status: 200,
-  })),
-);
+// We rely on MSW for DNS lookups now (via handlers.ts)
+// No need to mock @/lib/dns-lookup unless we want to force specific behavior not covered by MSW handlers
 
 vi.mock("@/lib/storage", () => storageMock);
-vi.mock("@/lib/fetch-remote-asset", async () => {
-  const actual = await vi.importActual<
-    typeof import("@/lib/fetch-remote-asset")
-  >("@/lib/fetch-remote-asset");
-  return {
-    ...actual,
-    fetchRemoteAsset: fetchRemoteAssetMock,
-  };
-});
 vi.stubEnv("BLOB_READ_WRITE_TOKEN", "test-token");
 
 // Mock sharp to return a pipeline that resolves a buffer (now using webp)
@@ -64,8 +50,8 @@ beforeAll(async () => {
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  server.resetHandlers();
   storageMock.storeImage.mockReset();
-  fetchRemoteAssetMock.mockReset();
   const { resetPGliteDb } = await import("@/lib/db/pglite");
   await resetPGliteDb();
 });
@@ -81,7 +67,7 @@ describe("getFavicon", () => {
     const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
     const { upsertFavicon } = await import("@/lib/db/repos/favicons");
 
-    const domainRecord = await ensureDomainRecord("example.com");
+    const domainRecord = await ensureDomainRecord("verified-dns.test");
     await upsertFavicon({
       domainId: domainRecord.id,
       url: "blob://existing-url",
@@ -95,57 +81,82 @@ describe("getFavicon", () => {
       expiresAt: new Date(Date.now() + 1000000),
     });
 
-    const out = await getFavicon("example.com");
+    const out = await getFavicon("verified-dns.test");
     expect(out.url).toBe("blob://existing-url");
     expect(storageMock.storeImage).not.toHaveBeenCalled();
   });
 
   it("fetches, converts, stores, and returns url when not cached", async () => {
-    const out = await getFavicon("example.com");
+    // verified-dns.test resolves via MSW handlers.ts
+    const out = await getFavicon("verified-dns.test");
     expect(out.url).toMatch(
-      /^https:\/\/.*\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/32x32\.webp$/,
+      /^https:\/\/test-store\.public\.blob\.vercel-storage\.com\/[a-f0-9]{32}\/32x32\.webp$/,
     );
-    expect(fetchRemoteAssetMock).toHaveBeenCalled();
     expect(storageMock.storeImage).toHaveBeenCalled();
-  }, 10000); // 10s timeout for network + image processing
+  }, 10000);
 
   it("returns null when all sources fail with 404", async () => {
-    // Now fetchRemoteAsset returns 404 responses instead of throwing
-    fetchRemoteAssetMock.mockResolvedValue({
-      buffer: Buffer.from([]),
-      contentType: "text/html",
-      finalUrl: "https://example.com/favicon.ico",
-      status: 404,
-    });
-    const out = await getFavicon("nope.invalid");
+    // nxdomain.test is now in handlers.ts for DNS
+    // We override the HTTP responses to return 404
+    server.use(
+      http.get("http://nxdomain.test/*", () =>
+        HttpResponse.json({}, { status: 404 }),
+      ),
+      http.get("https://nxdomain.test/*", () =>
+        HttpResponse.json({}, { status: 404 }),
+      ),
+      // Also fail fallbacks
+      http.get("https://icons.duckduckgo.com/ip3/nxdomain.test.ico", () => {
+        return HttpResponse.json({}, { status: 404 });
+      }),
+      http.get("https://www.google.com/s2/favicons", ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get("domain") === "nxdomain.test") {
+          return HttpResponse.json({}, { status: 404 });
+        }
+        return HttpResponse.json({}, { status: 200 });
+      }),
+    );
+
+    const out = await getFavicon("nxdomain.test");
     expect(out.url).toBeNull();
-    expect(fetchRemoteAssetMock).toHaveBeenCalled();
-  }, 10000); // 10s timeout for multiple fetch attempts
+  }, 10000);
 
   it("negative-caches 404 failures to avoid repeat fetch", async () => {
-    // Now fetchRemoteAsset returns 404 responses instead of throwing
-    const mk404Response = () => ({
-      buffer: Buffer.from([]),
-      contentType: "text/html",
-      finalUrl: "https://example.com/favicon.ico",
-      status: 404,
-    });
-    // First invocation will try up to four sources; force each one to return 404.
-    fetchRemoteAssetMock
-      .mockResolvedValueOnce(mk404Response())
-      .mockResolvedValueOnce(mk404Response())
-      .mockResolvedValueOnce(mk404Response())
-      .mockResolvedValueOnce(mk404Response());
+    // negcache.test is now in handlers.ts for DNS
+    // Force 404 for negcache.test and fallback providers
+    let callCount = 0;
+    server.use(
+      http.get("http://negcache.test/*", () => {
+        callCount++;
+        return HttpResponse.json({}, { status: 404 });
+      }),
+      http.get("https://negcache.test/*", () => {
+        callCount++;
+        return HttpResponse.json({}, { status: 404 });
+      }),
+      http.get("https://icons.duckduckgo.com/ip3/negcache.test.ico", () => {
+        return HttpResponse.json({}, { status: 404 });
+      }),
+      http.get("https://www.google.com/s2/favicons", ({ request }) => {
+        const url = new URL(request.url);
+        if (url.searchParams.get("domain") === "negcache.test") {
+          return HttpResponse.json({}, { status: 404 });
+        }
+        return HttpResponse.json({}, { status: 200 }); // Default for others
+      }),
+    );
 
     // First call: miss -> fetch attempts -> negative cache
-    const first = await getFavicon("negcache.example");
+    const first = await getFavicon("negcache.test");
     expect(first.url).toBeNull();
-    expect(fetchRemoteAssetMock).toHaveBeenCalled();
+    // It should have tried multiple URLs
+    expect(callCount).toBeGreaterThan(0);
+    const callsAfterFirst = callCount;
 
     // Second call: should hit negative cache and not fetch again
-    fetchRemoteAssetMock.mockClear();
-    const second = await getFavicon("negcache.example");
+    const second = await getFavicon("negcache.test");
     expect(second.url).toBeNull();
-    expect(fetchRemoteAssetMock).not.toHaveBeenCalled();
-  }, 10000); // 10s timeout for multiple fetch attempts
+    expect(callCount).toBe(callsAfterFirst); // No new network calls
+  }, 10000);
 });

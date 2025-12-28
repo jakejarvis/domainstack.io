@@ -60,7 +60,7 @@ beforeAll(async () => {
     .values({
       id: "test-user-123",
       name: "Test User",
-      email: "test@example.com",
+      email: "test@example.test",
       emailVerified: true,
     })
     .returning();
@@ -70,9 +70,9 @@ beforeAll(async () => {
   const insertedDomain = await db
     .insert(domains)
     .values({
-      name: "example.com",
-      tld: "com",
-      unicodeName: "example.com",
+      name: "example.test",
+      tld: "test",
+      unicodeName: "example.test",
     })
     .returning();
   testDomainId = insertedDomain[0].id;
@@ -289,9 +289,9 @@ describe("countTrackedDomainsForUser", () => {
     const domain2 = await db
       .insert(domains)
       .values({
-        name: "test2.com",
-        tld: "com",
-        unicodeName: "test2.com",
+        name: "test2.test",
+        tld: "test",
+        unicodeName: "test2.test",
       })
       .returning();
 
@@ -356,7 +356,7 @@ describe("getTrackedDomainsForUser", () => {
     expect(result[0]).toMatchObject({
       userId: testUserId,
       domainId: testDomainId,
-      domainName: "example.com",
+      domainName: "example.test",
       verified: false,
       verificationToken: "test-token",
       verificationStatus: "unverified",
@@ -415,7 +415,7 @@ describe("getVerifiedDomainsForReverification", () => {
     expect(result[0]).toMatchObject({
       id: createdId,
       userId: testUserId,
-      domainName: "example.com",
+      domainName: "example.test",
       verificationToken: "test-token",
       verificationMethod: "dns_txt",
       verificationStatus: "verified",
@@ -436,7 +436,7 @@ describe("getPendingDomainsForAutoVerification", () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       userId: testUserId,
-      domainName: "example.com",
+      domainName: "example.test",
       verificationToken: "test-token",
     });
   });
@@ -480,7 +480,7 @@ describe("findTrackedDomainWithDomainName", () => {
     expect(result).not.toBeNull();
     expect(result?.id).toBe(createdId);
     expect(result?.userId).toBe(testUserId);
-    expect(result?.domainName).toBe("example.com");
+    expect(result?.domainName).toBe("example.test");
     expect(result?.verificationToken).toBe("test-token");
   });
 });
@@ -639,10 +639,10 @@ describe("getVerifiedTrackedDomainsWithExpiry", () => {
       id: createdId,
       userId: testUserId,
       domainId: testDomainId,
-      domainName: "example.com",
+      domainName: "example.test",
       notificationOverrides: {},
       registrar: "Test Registrar Inc",
-      userEmail: "test@example.com",
+      userEmail: "test@example.test",
       userName: "Test User",
     });
     // Check expiration date separately due to Date comparison
@@ -747,9 +747,9 @@ describe("countActiveTrackedDomainsForUser", () => {
     const domain2 = await db
       .insert(domains)
       .values({
-        name: "test-archive.com",
-        tld: "com",
-        unicodeName: "test-archive.com",
+        name: "archive.test",
+        tld: "test",
+        unicodeName: "archive.test",
       })
       .returning();
 
@@ -790,9 +790,9 @@ describe("countArchivedTrackedDomainsForUser", () => {
     const domain2 = await db
       .insert(domains)
       .values({
-        name: "test-archive2.com",
-        tld: "com",
-        unicodeName: "test-archive2.com",
+        name: "archive2.test",
+        tld: "test",
+        unicodeName: "archive2.test",
       })
       .returning();
 
@@ -835,18 +835,18 @@ describe("archiveOldestActiveDomains", () => {
     const domain2 = await db
       .insert(domains)
       .values({
-        name: "oldest.com",
-        tld: "com",
-        unicodeName: "oldest.com",
+        name: "oldest.test",
+        tld: "test",
+        unicodeName: "oldest.test",
       })
       .returning();
 
     const domain3 = await db
       .insert(domains)
       .values({
-        name: "newest.com",
-        tld: "com",
-        unicodeName: "newest.com",
+        name: "newest.test",
+        tld: "test",
+        unicodeName: "newest.test",
       })
       .returning();
 
@@ -926,7 +926,7 @@ describe("getArchivedDomainsForUser", () => {
     expect(result[0]).toMatchObject({
       id: createdId,
       userId: testUserId,
-      domainName: "example.com",
+      domainName: "example.test",
       verified: false,
       verificationToken: "test-token",
     });

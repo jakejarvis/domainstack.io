@@ -47,7 +47,7 @@ describe("schedule", () => {
       const dueAtMs = now + 5000;
 
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "dns",
         dueAtMs,
       );
@@ -56,11 +56,11 @@ describe("schedule", () => {
       expect(mockInngestSend).toHaveBeenCalledWith({
         name: "domain/section.revalidate",
         data: {
-          domain: "example.com",
+          domain: "example.test",
           section: "dns",
         },
         ts: expect.any(Number),
-        id: "example.com:dns",
+        id: "example.test:dns",
       });
     });
 
@@ -68,19 +68,23 @@ describe("schedule", () => {
       const now = Date.now();
       const dueAtMs = now + 5000;
 
-      await scheduleRevalidation("EXAMPLE.COM", "dns", dueAtMs);
+      await scheduleRevalidation("EXAMPLE.TEST", "dns", dueAtMs);
 
       expect(mockInngestSend).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            domain: "example.com",
+            domain: "example.test",
           }),
         }),
       );
     });
 
     it("rejects invalid dueAtMs (negative)", async () => {
-      const scheduled = await scheduleRevalidation("example.com", "dns", -1000);
+      const scheduled = await scheduleRevalidation(
+        "example.test",
+        "dns",
+        -1000,
+      );
 
       expect(scheduled).toBe(false);
       expect(mockInngestSend).not.toHaveBeenCalled();
@@ -88,7 +92,7 @@ describe("schedule", () => {
 
     it("rejects invalid dueAtMs (non-finite)", async () => {
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "dns",
         Number.POSITIVE_INFINITY,
       );
@@ -102,7 +106,7 @@ describe("schedule", () => {
       const pastTimestamp = now - 5000; // 5 seconds ago
 
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "headers",
         pastTimestamp,
       );
@@ -120,7 +124,7 @@ describe("schedule", () => {
     it("adjusts timestamp when dueAtMs equals current time (edge case)", async () => {
       const now = Date.now();
 
-      const scheduled = await scheduleRevalidation("example.com", "dns", now);
+      const scheduled = await scheduleRevalidation("example.test", "dns", now);
 
       expect(scheduled).toBe(true);
       expect(mockInngestSend).toHaveBeenCalled();
@@ -136,7 +140,7 @@ describe("schedule", () => {
       const now = Date.now();
       const tooSoon = now + 100; // Much less than dns min TTL of 1 hour
 
-      await scheduleRevalidation("example.com", "dns", tooSoon);
+      await scheduleRevalidation("example.test", "dns", tooSoon);
 
       expect(mockInngestSend).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -154,7 +158,7 @@ describe("schedule", () => {
       mockInngestSend.mockRejectedValue(new Error("Network error"));
 
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "dns",
         now + 5000,
       );
@@ -170,7 +174,7 @@ describe("schedule", () => {
       const fiveDaysAgo = new Date(now - 5 * msPerDay);
       const baseDueMs = now + 60 * 60 * 1000; // 1 hour from now
 
-      await scheduleRevalidation("example.com", "dns", baseDueMs, fiveDaysAgo);
+      await scheduleRevalidation("example.test", "dns", baseDueMs, fiveDaysAgo);
 
       expect(mockInngestSend).toHaveBeenCalled();
       const callArgs = mockInngestSend.mock.calls[0][0];
@@ -188,7 +192,7 @@ describe("schedule", () => {
       const baseDueMs = now + 24 * 60 * 60 * 1000; // 24 hours from now
 
       await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "registration",
         baseDueMs,
         seventyFiveDaysAgo,
@@ -208,7 +212,7 @@ describe("schedule", () => {
       const twoHundredDaysAgo = new Date(now - 200 * msPerDay);
 
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "dns",
         now + 60 * 60 * 1000,
         twoHundredDaysAgo,
@@ -224,7 +228,7 @@ describe("schedule", () => {
       const oneHundredDaysAgo = new Date(now - 100 * msPerDay);
 
       const scheduled = await scheduleRevalidation(
-        "example.com",
+        "example.test",
         "registration",
         now + 24 * 60 * 60 * 1000,
         oneHundredDaysAgo,
@@ -238,7 +242,7 @@ describe("schedule", () => {
       const now = Date.now();
       const baseDueMs = now + 60 * 60 * 1000; // 1 hour from now
 
-      await scheduleRevalidation("example.com", "dns", baseDueMs, null);
+      await scheduleRevalidation("example.test", "dns", baseDueMs, null);
 
       expect(mockInngestSend).toHaveBeenCalled();
       const callArgs = mockInngestSend.mock.calls[0][0];
