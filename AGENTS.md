@@ -3,6 +3,8 @@
 ## Project Structure & Module Organization
 - `app/` Next.js App Router. Default to server components; keep `app/page.tsx` and `app/api/*` thin and delegate to `server/` or `lib/`.
 - `app/dashboard/` Protected dashboard for domain tracking with Active/Archived tabs.
+- `app/bookmarklet/` Bookmarklet installation and standalone pages.
+- `app/@modal/` Intercepting routes for modal dialogs (`(.)login`, `(.)dashboard`, `(.)settings`, `(.)bookmarklet`).
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
 - `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view, bulk actions toolbar, domain filters, health summary).
@@ -13,9 +15,9 @@
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
 - `lib/constants/` modular constants organized by domain (app, decay, domain-filters, domain-validation, notifications, pricing-providers, sections, tier-limits, headers, ttl).
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
-- `lib/inngest/` Inngest client and functions for background jobs (section revalidation, expiry checks, domain re-verification).
+- `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, registrations, screenshots, seo, tracked-domains, user-notification-preferences, user-subscription, users).
+- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, tracked-domains, domain-snapshots, user-notification-preferences, user-subscription, users).
 - `lib/logger/` unified structured logging system with console-based JSON logging for both server and client.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
@@ -57,9 +59,11 @@
   - Reference: drizzle-zod docs [drizzle-zod](https://orm.drizzle.team/docs/zod)
 
 ## Testing Guidelines
-- Use **Vitest** with React Testing Library; config in `vitest.config.ts`.
+- Use **Vitest** with **Browser Mode** (Playwright) for component testing; config in `vitest.config.ts`.
 - Uses `threads` pool for compatibility with sandboxed environments (e.g., Cursor agent commands).
-- Global setup in `vitest.setup.ts`:
+- Global setup:
+  - `vitest.setup.node.ts` for Node environment tests (services, utils).
+  - `vitest.setup.browser.ts` for Browser environment tests (components).
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
   - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
   - Mocks `server-only` module.
@@ -105,7 +109,7 @@
   - User creation: Parses name into firstName/lastName and creates Resend contact.
   - User deletion: Removes contact from Resend.
   - All operations are graceful (won't block auth flows if Resend fails).
-- **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITLAB_CLIENT_ID`, `GITLAB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`.
+- **Environment variables:** `BETTER_AUTH_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITLAB_CLIENT_ID`, `GITLAB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`, `LOGO_DEV_PUBLISHABLE_KEY`.
 
 ## Domain Tracking System
 The domain tracking feature allows authenticated users to track domains they own, receive expiration notifications, and manage notification preferences.
@@ -139,11 +143,14 @@ Verification service: `server/services/verification.ts` with `tryAllVerification
 
 ### Notification System
 - **Categories:** `domainExpiry`, `certificateExpiry`, `registrationChanges`, `providerChanges`, `certificateChanges` (defined in `lib/constants/notifications.ts`).
+- **Channels:** In-app notifications (via `notifications` table) and Email (via Resend).
 - **Important:** Verification status notifications (`verification_failing`, `verification_revoked`) are always sent and cannot be disabled via preferences.
 - **Thresholds:** Domain expiry: 30, 14, 7, 1 days. Certificate expiry: 14, 7, 3, 1 days.
 - **Per-domain overrides:** `notificationOverrides` JSONB column; `undefined` = inherit from global, explicit `true/false` = override.
+- **Global Preferences:** Stored in `user_notification_preferences` as JSONB objects `{ inApp: boolean, email: boolean }` for each category.
 - **Idempotency:** Notification records created before email send; Resend idempotency keys prevent duplicates on retry.
 - **Troubleshooting:** `resendId` column stores Resend email ID for delivery debugging.
+- **Change Detection:** `domain_snapshots` table tracks historical state of registration, DNS, hosting, email, and certificates to detect and notify on changes.
 
 ### tRPC Routers
 
