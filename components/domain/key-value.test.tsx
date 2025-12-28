@@ -1,5 +1,3 @@
-/* @vitest-environment jsdom */
-
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
@@ -30,18 +28,40 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
 }));
 
+vi.mock("@/components/ui/responsive-tooltip", () => ({
+  ResponsiveTooltip: ({ children }: { children: React.ReactNode }) => (
+    <div data-slot="responsive-tooltip">{children}</div>
+  ),
+  ResponsiveTooltipTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => (
+    <button type="button" data-slot="responsive-tooltip-trigger">
+      {render ?? children}
+    </button>
+  ),
+  ResponsiveTooltipContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-slot="responsive-tooltip-content">{children}</div>
+  ),
+}));
+
 describe("KeyValue", () => {
   it("renders label/value and shows copy button when copyable", () => {
     render(<KeyValue label="Registrar" value="Namecheap" copyable />);
     expect(screen.getByText("Registrar")).toBeInTheDocument();
-    expect(screen.getByText("Namecheap")).toBeInTheDocument();
+    // Value appears in both tooltip trigger and content
+    expect(screen.getAllByText("Namecheap")[0]).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copy/i })).toBeInTheDocument();
   });
 
   it("renders without copy button when not copyable", () => {
     render(<KeyValue label="Registrar" value="NameCheap" />);
     expect(screen.getByText("Registrar")).toBeInTheDocument();
-    expect(screen.getByText("NameCheap")).toBeInTheDocument();
+    // Value appears in both tooltip trigger and content
+    expect(screen.getAllByText("NameCheap")[0]).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
   });
 });

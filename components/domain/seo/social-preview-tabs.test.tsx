@@ -1,4 +1,3 @@
-/* @vitest-environment jsdom */
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@/lib/test-utils";

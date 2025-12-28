@@ -14,7 +14,11 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "types": ["@testing-library/jest-dom", "vitest/globals"],
+    "types": [
+      "@testing-library/jest-dom",
+      "vitest/globals",
+      "vitest-browser-react"
+    ],
     "plugins": [
       {
         "name": "next"
