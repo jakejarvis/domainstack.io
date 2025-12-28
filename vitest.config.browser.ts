@@ -1,6 +1,6 @@
+import { playwright } from "@vitest/browser-playwright";
 import { defineProject, mergeConfig } from "vitest/config";
 import sharedConfig from "./vitest.shared";
-import { playwright } from "@vitest/browser-playwright";
 
 export default mergeConfig(
   sharedConfig,
@@ -20,5 +20,5 @@ export default mergeConfig(
       },
       setupFiles: ["./vitest.setup.browser.ts"],
     },
-  })
+  }),
 );

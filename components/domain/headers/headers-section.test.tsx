@@ -1,4 +1,3 @@
-
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/lib/test-utils";
 import { HeadersSection } from "./headers-section";

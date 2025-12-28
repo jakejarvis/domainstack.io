@@ -1,4 +1,3 @@
-
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainSearch } from "@/components/domain/domain-search";

@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from "vitest";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { render, screen } from "@/lib/test-utils";

@@ -1,6 +1,5 @@
-import { vi } from "vitest";
 // Shim process for Next.js components
-// @ts-ignore
+// @ts-expect-error
 globalThis.process = {
   env: { NODE_ENV: "test" },
   cwd: () => "/",

@@ -1,4 +1,3 @@
-
 import { describe, expect, it, vi } from "vitest";
 import type { SeoResponse } from "@/lib/schemas";
 import { render, screen } from "@/lib/test-utils";
