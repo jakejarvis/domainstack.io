@@ -209,8 +209,8 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       }
 
       // Check certificate changes
-      if (certificatesData.length > 0) {
-        const leafCert = certificatesData[0]; // First cert is the leaf
+      if (certificatesData.certificates.length > 0) {
+        const leafCert = certificatesData.certificates[0]; // First cert is the leaf
 
         const currentCertificate: CertificateSnapshotData = {
           caProviderId: leafCert.caProvider?.id ?? null,

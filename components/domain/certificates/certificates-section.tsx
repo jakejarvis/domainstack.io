@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useState } from "react";
+import { CertificateAlert } from "@/components/domain/certificate-alert";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ProviderLogo } from "@/components/domain/provider-logo";
@@ -30,21 +31,26 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { Certificate } from "@/lib/schemas";
+import type { CertificatesResponse } from "@/lib/schemas";
 
 export function CertificatesSection({
   data,
 }: {
   domain?: string;
-  data?: Certificate[] | null;
+  data?: CertificatesResponse | null;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const firstCert = data && data.length > 0 ? data[0] : null;
-  const remainingCerts = data && data.length > 1 ? data.slice(1) : [];
+  const certificates = data?.certificates ?? [];
+  const error = data?.error;
+
+  const firstCert = certificates.length > 0 ? certificates[0] : null;
+  const remainingCerts = certificates.length > 1 ? certificates.slice(1) : [];
 
   return (
     <Section {...sections.certificates}>
-      {firstCert ? (
+      {error ? (
+        <CertificateAlert error={error} />
+      ) : firstCert ? (
         <>
           <Fragment
             key={`cert-${firstCert.subject}-${firstCert.validFrom}-${firstCert.validTo}`}

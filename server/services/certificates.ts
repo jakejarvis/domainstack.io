@@ -13,10 +13,11 @@ import {
   providers as providersTable,
 } from "@/lib/db/schema";
 import { isExpectedDnsError } from "@/lib/dns-utils";
+import { isExpectedTlsError } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { Certificate } from "@/lib/schemas";
+import type { Certificate, CertificatesResponse } from "@/lib/schemas";
 import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
@@ -39,7 +40,7 @@ function safeAltNamesArray(value: unknown): string[] {
 export async function getCertificates(
   domain: string,
   options: ServiceOptions = {},
-): Promise<Certificate[]> {
+): Promise<CertificatesResponse> {
   // Input domain is already normalized to registrable domain by router schema
   logger.debug("start", { domain });
 
@@ -106,7 +107,7 @@ export async function getCertificates(
         count: out.length,
         cached: true,
       });
-      return out;
+      return { certificates: out };
     }
   }
 
@@ -268,11 +269,22 @@ export async function getCertificates(
       domain,
       chainLength: out.length,
     });
-    return out;
+    return { certificates: out };
   } catch (err) {
     if (isExpectedDnsError(err)) {
       logger.debug("no certificates found (DNS lookup failed)", { domain });
-      return [];
+      return { certificates: [] };
+    }
+
+    if (isExpectedTlsError(err)) {
+      logger.debug("probe failed (TLS error)", {
+        domain,
+        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
+      });
+      return {
+        certificates: [],
+        error: "Invalid SSL certificate",
+      };
     }
 
     logger.error("probe failed", err, { domain });

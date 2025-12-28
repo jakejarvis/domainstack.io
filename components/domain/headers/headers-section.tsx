@@ -43,6 +43,10 @@ export function HeadersSection({
   const status = data?.status;
   const statusMessage = data?.statusMessage;
 
+  if (status === 0 && statusMessage === "Invalid SSL certificate") {
+    return null;
+  }
+
   return (
     <Section {...sections.headers}>
       {headers && headers.length > 0 ? (
@@ -106,18 +110,26 @@ export function HeadersSection({
           </KeyValueGrid>
         </div>
       ) : (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Logs />
-            </EmptyMedia>
-            <EmptyTitle>No HTTP headers detected</EmptyTitle>
-            <EmptyDescription>
-              We couldn&apos;t fetch any HTTP response headers for this site. It
-              may be offline or blocking requests.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+        <div className="space-y-4">
+          {status === 0 && statusMessage ? (
+            <Alert variant="destructive">
+              <Info className="h-4 w-4" />
+              <AlertDescription>{statusMessage}</AlertDescription>
+            </Alert>
+          ) : null}
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Logs />
+              </EmptyMedia>
+              <EmptyTitle>No HTTP headers detected</EmptyTitle>
+              <EmptyDescription>
+                We couldn&apos;t fetch any HTTP response headers for this site.
+                It may be offline or blocking requests.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
       )}
     </Section>
   );

@@ -47,6 +47,10 @@ export function SeoSection({
           ? "large"
           : "compact";
 
+  if (data?.errors?.html) {
+    return null;
+  }
+
   return (
     <Section {...sections.seo}>
       {hasAnySeoMeta ? (

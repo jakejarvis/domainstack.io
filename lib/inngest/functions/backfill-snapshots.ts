@@ -105,8 +105,8 @@ export const backfillSnapshots = inngest.createFunction(
           fingerprint: null,
         };
 
-        if (certificatesData.length > 0) {
-          const leafCert = certificatesData[0];
+        if (certificatesData.certificates.length > 0) {
+          const leafCert = certificatesData.certificates[0];
 
           certificateSnapshot = {
             caProviderId: leafCert.caProvider.id ?? null,
