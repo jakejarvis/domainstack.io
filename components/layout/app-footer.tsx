@@ -27,17 +27,15 @@ export function AppFooter() {
         </a>{" "}
         (CC BY 3.0).
       </p>
-      <p className="mt-2 flex flex-wrap items-center justify-center">
+      <p className="mt-2 flex flex-wrap items-center justify-center space-x-[1.5em]">
         <Link href="/help">
           <LifeBuoy className="text-muted-foreground" />
           Help
         </Link>
-        <span className="mx-1.5 select-none text-muted-foreground">•</span>
         <Link href="/terms">
           <Handshake className="text-muted-foreground" />
           Terms
         </Link>
-        <span className="mx-1.5 select-none text-muted-foreground">•</span>
         <Link href="/privacy">
           <HatGlasses className="text-muted-foreground" />
           Privacy

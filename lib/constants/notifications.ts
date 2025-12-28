@@ -55,7 +55,7 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
   },
   certificateChanges: {
     label: "Certificate Changes",
-    description: "Alerts when SSL certificate issuer or CA changes",
+    description: "Alerts when SSL certificate issuer or subject changes",
     icon: FingerprintPattern,
   },
 };

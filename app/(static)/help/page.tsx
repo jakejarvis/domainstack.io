@@ -49,7 +49,7 @@ export default async function HelpPage() {
         <FaqAccordion tierLimits={tierLimits} pricing={pricing} />
       </section>
 
-      <section>
+      <section id="contact">
         <h2>Still have questions?</h2>
         <p>
           If you couldn&apos;t find what you&apos;re looking for, reach out to{" "}

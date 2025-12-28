@@ -360,7 +360,7 @@ export function DashboardContent() {
   const hasAnyDomains = activeCount > 0 || archivedCount > 0;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       <DashboardHeader
         userName={userName}
         trackedCount={activeCount}

@@ -60,28 +60,28 @@ export function GlobalNotificationRow({
         </div>
 
         {/* Label with info tooltip */}
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span
-            className={cn(
-              "font-medium text-sm",
-              anyEnabled ? "text-foreground" : "text-foreground/70",
-            )}
-          >
-            {info.label}
+        <div className="flex min-w-0 flex-1">
+          <span>
+            <span
+              className={cn(
+                "font-medium text-sm",
+                anyEnabled ? "text-foreground" : "text-foreground/70",
+              )}
+            >
+              {info.label}
+            </span>
+            <ResponsiveTooltip>
+              <ResponsiveTooltipTrigger
+                nativeButton={false}
+                render={<span className="px-[7px] text-foreground/70" />}
+              >
+                <Info className="inline-block size-3.5" />
+              </ResponsiveTooltipTrigger>
+              <ResponsiveTooltipContent className="max-w-sm">
+                {info.description}
+              </ResponsiveTooltipContent>
+            </ResponsiveTooltip>
           </span>
-          <ResponsiveTooltip>
-            <ResponsiveTooltipTrigger
-              nativeButton={false}
-              render={
-                <span className="inline-flex text-foreground/70">
-                  <Info className="size-3.5" />
-                </span>
-              }
-            />
-            <ResponsiveTooltipContent className="max-w-xs">
-              {info.description}
-            </ResponsiveTooltipContent>
-          </ResponsiveTooltip>
         </div>
       </div>
 

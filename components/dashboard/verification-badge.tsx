@@ -71,10 +71,7 @@ export function VerificationBadge({
 
     return (
       <ResponsiveTooltip>
-        <ResponsiveTooltipTrigger
-          nativeButton={false}
-          render={<span>{badge}</span>}
-        />
+        <ResponsiveTooltipTrigger nativeButton={false} render={badge} />
         <ResponsiveTooltipContent>
           {daysRemaining > 0 ? (
             <>

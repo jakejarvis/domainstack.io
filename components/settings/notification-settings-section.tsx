@@ -18,6 +18,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
 import { useLogger } from "@/hooks/use-logger";
 import { useSession } from "@/lib/auth-client";
@@ -31,12 +36,10 @@ import { cn } from "@/lib/utils";
 
 interface NotificationSettingsSectionProps {
   className?: string;
-  dividerClassName?: string;
 }
 
 export function NotificationSettingsSection({
   className,
-  dividerClassName,
 }: NotificationSettingsSectionProps) {
   const { data: session } = useSession();
   const trpc = useTRPC();
@@ -296,11 +299,46 @@ export function NotificationSettingsSection({
   return (
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Notification Preferences</CardTitle>
+        <CardTitle>Global Preferences</CardTitle>
         <CardDescription>
           Alerts will be sent to{" "}
-          <span className="font-medium text-foreground">
+          <span className="whitespace-nowrap rounded-sm border bg-card px-1.5 py-1 font-medium text-foreground">
             {session?.user?.email}
+          </span>
+          .{" "}
+          <span className="text-muted-foreground">
+            (
+            <ResponsiveTooltip>
+              <ResponsiveTooltipTrigger
+                render={
+                  <span className="cursor-help underline decoration-dotted underline-offset-3" />
+                }
+              >
+                Why can&rsquo;t I change this?
+              </ResponsiveTooltipTrigger>
+              <ResponsiveTooltipContent>
+                <div className="space-y-2">
+                  <p>
+                    This is the email address that was verified with the linked
+                    account provider you chose at sign up.
+                  </p>
+                  <p>
+                    To change it, you can either sign in again with a different
+                    external account, or{" "}
+                    <a
+                      href="/help#contact"
+                      className="underline underline-offset-3"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      contact support
+                    </a>
+                    .
+                  </p>
+                </div>
+              </ResponsiveTooltipContent>
+            </ResponsiveTooltip>
+            )
           </span>
         </CardDescription>
       </CardHeader>
@@ -328,7 +366,7 @@ export function NotificationSettingsSection({
         </div>
 
         {/* Divider */}
-        <Separator className={cn("mt-2 mb-4 bg-border/50", dividerClassName)} />
+        <Separator className={"mt-2 mb-4"} />
 
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (

@@ -16,12 +16,12 @@ export default function BookmarkletPage() {
       <StaticBackground />
 
       <div className="container mx-auto flex max-w-lg flex-col py-20">
-        <div className="mb-8">
+        <div className="mb-8 space-y-1">
           <h1 className="flex items-center gap-2 font-bold text-xl">
             <MousePointerClick className="size-6" />
             Bookmarklet
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="text-muted-foreground">
             Use these shortcuts to investigate domains from anywhere.
           </p>
         </div>

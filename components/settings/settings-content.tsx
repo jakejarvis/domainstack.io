@@ -10,6 +10,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { Separator } from "@/components/ui/separator";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -76,13 +77,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
   );
 }
 
-export function SettingsPanels({
-  className,
-  dividerClassName,
-}: {
-  className?: string;
-  dividerClassName?: string;
-}) {
+export function SettingsPanels({ className }: { className?: string }) {
   return (
     <>
       <TabsContent value="subscription" className={className}>
@@ -90,7 +85,7 @@ export function SettingsPanels({
       </TabsContent>
 
       <TabsContent value="notifications" className={className}>
-        <NotificationSettingsSection dividerClassName={dividerClassName} />
+        <NotificationSettingsSection />
       </TabsContent>
 
       <TabsContent value="account" className={className}>
@@ -98,7 +93,7 @@ export function SettingsPanels({
           <LinkedAccountsSection />
 
           {/* Divider */}
-          <div className={cn("h-px bg-border/50", dividerClassName)} />
+          <Separator />
 
           <DangerZoneSettingsSection />
         </div>

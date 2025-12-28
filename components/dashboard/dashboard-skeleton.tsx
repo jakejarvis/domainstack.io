@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function DashboardSkeleton() {
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       {/* Header skeleton - matches DashboardHeader */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
