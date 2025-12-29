@@ -37,7 +37,6 @@ import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import { cn } from "@/lib/utils";
 
 type ConfirmAction =
   | { type: "remove"; domainId: string; domainName: string }
@@ -507,11 +506,8 @@ export function DashboardContent() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              className={cn(
-                confirmDialogContent.variant === "destructive" &&
-                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-                "cursor-pointer disabled:cursor-not-allowed",
-              )}
+              variant={confirmDialogContent.variant}
+              className="cursor-pointer"
             >
               {confirmDialogContent.confirmLabel}
             </AlertDialogAction>

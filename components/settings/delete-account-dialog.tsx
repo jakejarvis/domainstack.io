@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, HeartCrack, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, HeartCrack } from "lucide-react";
 import { useState } from "react";
 import {
   AlertDialog,
@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
@@ -140,11 +141,16 @@ export function DeleteAccountDialog({
                 className="cursor-pointer leading-none"
               >
                 {state === "loading" ? (
-                  <Loader2 className="size-4 animate-spin" />
+                  <>
+                    <Spinner />
+                    Loading...
+                  </>
                 ) : (
-                  <HeartCrack className="size-4" />
+                  <>
+                    <HeartCrack />
+                    I'm sure.
+                  </>
                 )}
-                {state === "loading" ? "Loading..." : "I'm Sure"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </>

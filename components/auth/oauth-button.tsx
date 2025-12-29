@@ -7,6 +7,7 @@ import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
 import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
 import { logger } from "@/lib/logger/client";
+import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {
   /** Provider configuration */
@@ -89,7 +90,7 @@ export function OAuthButton({
     <Button
       size="lg"
       variant="outline"
-      className={`w-full cursor-pointer gap-3 transition-transform active:scale-[0.98] ${className ?? ""}`}
+      className={cn("w-full cursor-pointer gap-3 leading-none", className)}
       onClick={handleSignIn}
       disabled={isAnyLoading}
     >

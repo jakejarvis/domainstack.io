@@ -1,8 +1,8 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import type { RefObject } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Spinner } from "@/components/ui/spinner";
 import { NotificationCard, type NotificationData } from "./notification-card";
 import { NotificationEmptyState } from "./notification-empty-state";
 
@@ -38,7 +38,7 @@ export function NotificationList({
     >
       {isLoading ? (
         <div className="flex items-center justify-center p-12">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          <Spinner className="size-6 text-muted-foreground" />
         </div>
       ) : isError ? (
         <div className="p-12 text-center text-destructive text-sm">
@@ -60,7 +60,7 @@ export function NotificationList({
           {hasNextPage && (
             <div ref={loadMoreRef} className="flex justify-center py-4">
               {isFetchingNextPage && (
-                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                <Spinner className="size-5 text-muted-foreground" />
               )}
             </div>
           )}

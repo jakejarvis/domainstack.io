@@ -29,7 +29,6 @@ import {
 } from "@/lib/constants/oauth-providers";
 import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
 interface LinkedAccountsSectionProps {
   className?: string;
@@ -221,13 +220,11 @@ export function LinkedAccountsSection({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={() =>
                 unlinkingProvider && handleUnlink(unlinkingProvider)
               }
-              className={cn(
-                "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-                "cursor-pointer disabled:cursor-not-allowed",
-              )}
+              className="cursor-pointer"
             >
               Unlink
             </AlertDialogAction>

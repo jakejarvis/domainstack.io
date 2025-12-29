@@ -1,7 +1,9 @@
 "use client";
 
 import type { SortingState } from "@tanstack/react-table";
+import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 /**
@@ -141,9 +143,24 @@ export function useGridSortPreference(): [
     }),
   );
 
+  // Preserve state when navigating to intercepting routes (e.g. /dashboard/add-domain)
+  const pathname = usePathname();
+  const isDashboardPage = pathname === "/dashboard";
+  const [cachedSortOption, setCachedSortOption] = useState(sortOption);
+
+  useEffect(() => {
+    if (isDashboardPage) {
+      setCachedSortOption(sortOption);
+    }
+  }, [sortOption, isDashboardPage]);
+
+  const activeSortOption = isDashboardPage ? sortOption : cachedSortOption;
+
   // Validate that the sort option is in SORT_OPTIONS (grid-compatible)
-  const validSortOption = SORT_OPTIONS.some((opt) => opt.value === sortOption)
-    ? (sortOption as SortOption)
+  const validSortOption = SORT_OPTIONS.some(
+    (opt) => opt.value === activeSortOption,
+  )
+    ? (activeSortOption as SortOption)
     : DEFAULT_SORT;
 
   return [validSortOption, setSortOption];
@@ -171,7 +188,20 @@ export function useTableSortPreference(options?: {
     }),
   );
 
-  const sorting = parseSortParam(sortParam as string);
+  // Preserve state when navigating to intercepting routes
+  const pathname = usePathname();
+  const isDashboardPage = pathname === "/dashboard";
+  const [cachedSortParam, setCachedSortParam] = useState(sortParam);
+
+  useEffect(() => {
+    if (isDashboardPage) {
+      setCachedSortParam(sortParam);
+    }
+  }, [sortParam, isDashboardPage]);
+
+  const activeSortParam = isDashboardPage ? sortParam : cachedSortParam;
+
+  const sorting = parseSortParam(activeSortParam as string);
 
   const setSorting = (
     updater: SortingState | ((old: SortingState) => SortingState),

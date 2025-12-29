@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants";
@@ -69,6 +70,19 @@ export function useDashboardFilters(
       clearOnDefault: true, // Keep URL clean
     },
   );
+
+  // Preserve state when navigating to intercepting routes (e.g. /dashboard/add-domain)
+  const pathname = usePathname();
+  const isDashboardPage = pathname === "/dashboard";
+  const [cachedFilters, setCachedFilters] = useState(filters);
+
+  useEffect(() => {
+    if (isDashboardPage) {
+      setCachedFilters(filters);
+    }
+  }, [filters, isDashboardPage]);
+
+  const activeFilters = isDashboardPage ? filters : cachedFilters;
 
   // Extract unique TLDs from domains for the dropdown
   // Note: TLDs are stored in database and URL state without leading dot (e.g., "com")
@@ -194,11 +208,11 @@ export function useDashboardFilters(
 
   // Check if any filters are active
   const hasActiveFilters =
-    filters.search.length > 0 ||
-    filters.status.length > 0 ||
-    filters.health.length > 0 ||
-    filters.tlds.length > 0 ||
-    filters.providers.length > 0;
+    activeFilters.search.length > 0 ||
+    activeFilters.status.length > 0 ||
+    activeFilters.health.length > 0 ||
+    activeFilters.tlds.length > 0 ||
+    activeFilters.providers.length > 0;
 
   // Filter domains based on current filters
   const filteredDomains = useMemo(() => {
@@ -207,44 +221,44 @@ export function useDashboardFilters(
 
     return domains.filter((domain) => {
       // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+      if (activeFilters.search) {
+        const searchLower = activeFilters.search.toLowerCase();
         if (!domain.domainName.toLowerCase().includes(searchLower)) {
           return false;
         }
       }
 
       // Status filter
-      if (filters.status.length > 0) {
+      if (activeFilters.status.length > 0) {
         const domainStatus = domain.verified ? "verified" : "pending";
-        if (!filters.status.includes(domainStatus)) {
+        if (!activeFilters.status.includes(domainStatus)) {
           return false;
         }
       }
 
       // Health filter
-      if (filters.health.length > 0) {
+      if (activeFilters.health.length > 0) {
         const healthStatus = getHealthStatus(
           domain.expirationDate,
           domain.verified,
           now,
         );
         // If domain has no health status (unverified), only show if no health filter
-        if (!healthStatus || !filters.health.includes(healthStatus)) {
+        if (!healthStatus || !activeFilters.health.includes(healthStatus)) {
           return false;
         }
       }
 
       // TLD filter
-      if (filters.tlds.length > 0) {
-        if (!filters.tlds.includes(domain.tld)) {
+      if (activeFilters.tlds.length > 0) {
+        if (!activeFilters.tlds.includes(domain.tld)) {
           return false;
         }
       }
 
       // Provider filter - match if ANY provider matches
       // Only consider valid provider IDs (from verified, non-archived domains)
-      if (filters.providers.length > 0) {
+      if (activeFilters.providers.length > 0) {
         // Provider filter only applies to verified domains
         // (since availableProviders is built from verified domains only)
         if (!domain.verified) {
@@ -252,7 +266,7 @@ export function useDashboardFilters(
         }
 
         // Filter to only valid provider IDs
-        const validSelectedProviders = filters.providers.filter((id) =>
+        const validSelectedProviders = activeFilters.providers.filter((id) =>
           validProviderIds.has(id),
         );
 
@@ -286,7 +300,7 @@ export function useDashboardFilters(
 
       return true;
     });
-  }, [domains, filters, now, validProviderIds]);
+  }, [domains, activeFilters, now, validProviderIds]);
 
   // Compute stats for health summary
   const stats = useMemo(() => {
@@ -366,11 +380,11 @@ export function useDashboardFilters(
 
   return {
     // Current filter values
-    search: filters.search,
-    status: filters.status as StatusFilter[],
-    health: filters.health as HealthFilter[],
-    tlds: filters.tlds,
-    providers: filters.providers,
+    search: activeFilters.search,
+    status: activeFilters.status as StatusFilter[],
+    health: activeFilters.health as HealthFilter[],
+    tlds: activeFilters.tlds,
+    providers: activeFilters.providers,
 
     // Setters
     setSearch,
