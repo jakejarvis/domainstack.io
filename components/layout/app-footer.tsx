@@ -6,7 +6,7 @@ export function AppFooter() {
   return (
     <footer className="px-4 pt-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-muted-foreground text-xs leading-relaxed sm:px-6 [&_a]:inline-flex [&_a]:items-center [&_a]:gap-1 [&_a]:text-foreground/85 [&_a]:hover:text-foreground/60 [&_a]:hover:no-underline [&_svg]:inline-block [&_svg]:size-4 [&_svg]:px-[1px]">
       <p>
-        Made with <HeartAnimated className="align-text-bottom" /> by{" "}
+        Made with <HeartAnimated className="translate-y-[-2px]" /> by{" "}
         <a href="https://jarv.is/" target="_blank" rel="noopener">
           @jakejarvis
         </a>

@@ -53,7 +53,7 @@ export function AnnouncementPill() {
             <button
               type="button"
               onClick={handleDismiss}
-              className="rounded-full p-1.5 pr-2.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+              className="cursor-pointer rounded-full p-1.5 pr-2.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
               aria-label="Dismiss announcement"
             >
               <X className="size-3.5" />

@@ -179,12 +179,12 @@ export function DomainCard({
                   size="icon-sm"
                   className="cursor-pointer"
                 >
-                  <MoreVertical className="size-4" />
+                  <MoreVertical />
                   <span className="sr-only">Actions</span>
                 </Button>
               }
             />
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-36">
               <DropdownMenuItem
                 nativeButton={false}
                 render={
@@ -192,9 +192,9 @@ export function DomainCard({
                     href={`https://${domainName}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cursor-pointer pr-4"
+                    className="cursor-pointer"
                   >
-                    <ExternalLink className="size-4" />
+                    <ExternalLink />
                     Open
                   </a>
                 }
@@ -205,9 +205,9 @@ export function DomainCard({
                   <Link
                     href={`/${encodeURIComponent(domainName)}`}
                     prefetch={false}
-                    className="cursor-pointer pr-4"
+                    className="cursor-pointer"
                   >
-                    <BookMarked className="size-4" />
+                    <BookMarked />
                     View Report
                   </Link>
                 }
@@ -216,17 +216,14 @@ export function DomainCard({
               {onArchive && (
                 <DropdownMenuItem
                   onClick={onArchive}
-                  className="cursor-pointer pr-4"
+                  className="cursor-pointer"
                 >
-                  <Archive className="size-4" />
+                  <Archive />
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                onClick={onRemove}
-                className="cursor-pointer pr-4"
-              >
-                <Trash2 className="size-3.5 text-danger-foreground" />
+              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+                <Trash2 className="text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -240,27 +237,18 @@ export function DomainCard({
             {/* Expires */}
             <InfoRow label="Expires">
               {expirationDate ? (
-                <>
-                  <ResponsiveTooltip>
-                    <ResponsiveTooltipTrigger
-                      render={
-                        <span className="truncate">
-                          {format(expirationDate, "MMM d, yyyy")}
-                        </span>
-                      }
-                    />
-                    <ResponsiveTooltipContent>
-                      {formatDateTimeUtc(expirationDate.toISOString())}
-                    </ResponsiveTooltipContent>
-                  </ResponsiveTooltip>
-                  <span className="shrink-0 text-[11px] text-muted-foreground leading-none">
-                    <RelativeExpiryString
-                      to={expirationDate}
-                      dangerDays={30}
-                      warnDays={45}
-                    />
-                  </span>
-                </>
+                <ResponsiveTooltip>
+                  <ResponsiveTooltipTrigger
+                    render={
+                      <span className="truncate">
+                        {format(expirationDate, "MMM d, yyyy")}
+                      </span>
+                    }
+                  />
+                  <ResponsiveTooltipContent>
+                    {formatDateTimeUtc(expirationDate.toISOString())}
+                  </ResponsiveTooltipContent>
+                </ResponsiveTooltip>
               ) : (
                 <span className="text-muted-foreground">Unknown</span>
               )}
@@ -381,7 +369,7 @@ export function DomainCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="mt-3 w-full cursor-pointer">
-              <Wrench className="size-4" />
+              <Wrench />
               Fix Verification
             </Button>
           </>
@@ -393,7 +381,7 @@ export function DomainCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="w-full cursor-pointer">
-              <AlertCircle className="size-4" />
+              <AlertCircle />
               Complete Verification
             </Button>
           </div>
@@ -442,7 +430,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-black/15 bg-background/60 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/15">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/65 bg-background/40 px-3 py-2 backdrop-blur-lg dark:border-border/50">
       <span className="flex shrink-0 items-center text-[10px] text-foreground/75 uppercase leading-[1.2] tracking-[0.08em] dark:text-foreground/80">
         {label}
       </span>

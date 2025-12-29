@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { ExternalLink, ShoppingCart } from "lucide-react";
+import { CreditCard, ShoppingCart } from "lucide-react";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
@@ -108,14 +108,19 @@ export function SubscriptionSettingsSection({
               variant="outline"
               onClick={handleManageSubscription}
               disabled={isPortalLoading}
-              className="w-full"
+              className="w-full cursor-pointer leading-none"
             >
               {isPortalLoading ? (
-                <Spinner />
+                <>
+                  <Spinner />
+                  Loading...
+                </>
               ) : (
-                <ExternalLink className="size-4" />
+                <>
+                  <CreditCard />
+                  Manage Subscription
+                </>
               )}
-              {isPortalLoading ? "Loading..." : "Manage Subscription"}
             </Button>
             {subscriptionEndsAt && (
               <p className="text-center text-muted-foreground text-xs">
@@ -158,14 +163,19 @@ export function SubscriptionSettingsSection({
               <Button
                 onClick={handleUpgrade}
                 disabled={isCheckoutLoading}
-                className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
+                className="w-full cursor-pointer leading-none"
               >
                 {isCheckoutLoading ? (
-                  <Spinner />
+                  <>
+                    <Spinner />
+                    Loading...
+                  </>
                 ) : (
-                  <ShoppingCart className="size-4" />
+                  <>
+                    <ShoppingCart />
+                    Upgrade to Pro
+                  </>
                 )}
-                {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
               </Button>
             </div>
           </div>

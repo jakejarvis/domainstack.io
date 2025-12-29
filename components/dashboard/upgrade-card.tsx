@@ -58,10 +58,19 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
           onClick={handleUpgrade}
           disabled={isLoading}
           variant="outline"
-          className="w-full cursor-pointer"
+          className="w-full cursor-pointer leading-none"
         >
-          {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
-          {isLoading ? "Loading..." : "Get Pro"}
+          {isLoading ? (
+            <>
+              <Spinner />
+              Loading...
+            </>
+          ) : (
+            <>
+              <ShoppingCart />
+              Get Pro
+            </>
+          )}
         </Button>
       </CardContent>
     </Card>

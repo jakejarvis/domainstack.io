@@ -58,11 +58,11 @@ export function LinkedAccountRow({
                 onClick={canUnlink ? onUnlink : undefined}
                 disabled={isLoading}
                 className={cn(
-                  "cursor-pointer gap-2",
+                  "cursor-pointer",
                   !canUnlink && "cursor-default opacity-50",
                 )}
               >
-                {isUnlinking && <Loader2 className="size-4 animate-spin" />}
+                {isUnlinking && <Loader2 className="animate-spin" />}
                 Unlink
               </Button>
             }
@@ -79,9 +79,9 @@ export function LinkedAccountRow({
           size="sm"
           onClick={onLink}
           disabled={isLoading}
-          className="cursor-pointer gap-2"
+          className="cursor-pointer"
         >
-          {isLinking && <Loader2 className="size-4 animate-spin" />}
+          {isLinking && <Loader2 className="animate-spin" />}
           Link
         </Button>
       )}

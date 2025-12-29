@@ -25,28 +25,24 @@ export function MobileMenu() {
         render={
           <Button
             variant="ghost"
-            size="sm"
+            size="icon-sm"
             aria-label="Menu"
             className="cursor-pointer"
           >
-            <Menu className="size-5" />
+            <Menu />
           </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-          {theme === "dark" ? (
-            <Sun className="size-4" />
-          ) : (
-            <Moon className="size-4" />
-          )}
+          {theme === "dark" ? <Sun /> : <Moon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuItem
           nativeButton={false}
           render={
             <Link href="/bookmarklet" scroll={false} className="cursor-pointer">
-              <Bookmark className="size-4" />
+              <Bookmark />
               Bookmarklet
             </Link>
           }
@@ -56,7 +52,7 @@ export function MobileMenu() {
           nativeButton={false}
           render={
             <Link href="/login" scroll={false} className="cursor-pointer">
-              <LogIn className="size-4" />
+              <LogIn />
               Sign In
             </Link>
           }

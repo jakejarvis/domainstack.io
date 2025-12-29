@@ -120,6 +120,7 @@ export function DashboardHeader({
                       )}
                     >
                       <LayoutGrid className="size-4" />
+                      <span className="sr-only">Grid view</span>
                     </button>
                   }
                 />
@@ -141,6 +142,7 @@ export function DashboardHeader({
                       )}
                     >
                       <TableIcon className="size-4" />
+                      <span className="sr-only">Table view</span>
                     </button>
                   }
                 />
@@ -154,8 +156,8 @@ export function DashboardHeader({
               <ResponsiveTooltipTrigger
                 render={
                   <div className="cursor-not-allowed">
-                    <Button disabled>
-                      <Plus className="size-4" />
+                    <Button disabled className="leading-none">
+                      <Plus />
                       Add Domain
                     </Button>
                   </div>
@@ -170,11 +172,17 @@ export function DashboardHeader({
           ) : (
             <Button
               nativeButton={false}
-              render={<Link href="/dashboard/add-domain" scroll={false} />}
-            >
-              <Plus className="size-4" />
-              Add Domain
-            </Button>
+              render={
+                <Link
+                  href="/dashboard/add-domain"
+                  scroll={false}
+                  className="cursor-pointer leading-none"
+                >
+                  <Plus />
+                  Add Domain
+                </Link>
+              }
+            />
           )}
         </div>
       </div>

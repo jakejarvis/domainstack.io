@@ -22,11 +22,13 @@ export function DashboardButton() {
             variant="ghost"
             size="sm"
             nativeButton={false}
-            render={<Link href="/dashboard" className="cursor-pointer" />}
-          >
-            <Table2 />
-            <span className="sr-only">Dashboard</span>
-          </Button>
+            render={
+              <Link href="/dashboard" className="cursor-pointer">
+                <Table2 />
+                <span className="sr-only">Dashboard</span>
+              </Link>
+            }
+          />
         }
       />
       <TooltipContent>Dashboard</TooltipContent>

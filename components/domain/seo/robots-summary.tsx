@@ -597,10 +597,12 @@ function RuleTypeDot({
   return (
     <Tooltip>
       <TooltipTrigger
-        render={<div className="flex h-4 w-4 items-center justify-center" />}
-      >
-        <Icon className={cn("size-3.5", colorClass)} aria-hidden />
-      </TooltipTrigger>
+        render={
+          <div className="flex h-4 w-4 items-center justify-center">
+            <Icon className={cn("size-3.5", colorClass)} aria-hidden />
+          </div>
+        }
+      />
       <TooltipContent side="left" sideOffset={8}>
         {label}
       </TooltipContent>

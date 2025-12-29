@@ -50,14 +50,10 @@ function VerificationBadge({
     <ResponsiveTooltip>
       <ResponsiveTooltipTrigger
         nativeButton={false}
-        render={
-          <span>
-            <BadgeCheck className="!h-3.5 !w-3.5 stroke-muted-foreground/80" />
-          </span>
-        }
+        render={<BadgeCheck className="!size-3.5 stroke-muted-foreground/80" />}
       />
       <ResponsiveTooltipContent>
-        <p className="inline-flex items-center gap-[5px]">
+        <div className="flex items-center gap-[5px]">
           <span>
             Verified by{" "}
             <span className="font-medium">
@@ -84,7 +80,7 @@ function VerificationBadge({
           >
             <GraduationCap className="size-3" />
           </a>
-        </p>
+        </div>
       </ResponsiveTooltipContent>
     </ResponsiveTooltip>
   );

@@ -1,14 +1,15 @@
 "use client";
 
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
-import { Activity, AlertTriangle, CircleHelp, Siren } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+  Activity,
+  AlertTriangle,
+  CircleHelp,
+  type LucideIcon,
+  Siren,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { cn } from "@/lib/utils";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
@@ -45,28 +46,13 @@ export function DomainHealthBadge({
     return `${isExpired ? "Expired" : "Expires"} ${relativeTime}`;
   }, [expirationDate, now]);
 
-  const badge = (
-    <Badge
-      className={cn(
-        "select-none gap-1 py-1 font-semibold",
-        colorClass,
-        className,
-      )}
-    >
-      {icon}
-      {label}
-    </Badge>
-  );
-
-  if (!tooltipText) {
-    return badge;
-  }
-
   return (
-    <ResponsiveTooltip>
-      <ResponsiveTooltipTrigger render={badge} />
-      <ResponsiveTooltipContent>{tooltipText}</ResponsiveTooltipContent>
-    </ResponsiveTooltip>
+    <BadgeWithTooltip
+      icon={icon}
+      label={label}
+      className={cn(colorClass, className)}
+      tooltipContent={tooltipText ?? undefined}
+    />
   );
 }
 
@@ -93,7 +79,7 @@ function getHealthStatus(
 function getStatusConfig(status: HealthStatus): {
   label: string;
   colorClass: string;
-  icon: React.ReactNode;
+  icon: LucideIcon;
 } {
   switch (status) {
     case "healthy":
@@ -101,26 +87,26 @@ function getStatusConfig(status: HealthStatus): {
         label: "Healthy",
         colorClass:
           "border-success-border bg-success/20 text-success-foreground",
-        icon: <Activity className="size-3" />,
+        icon: Activity,
       };
     case "warning":
       return {
         label: "Needs Attention",
         colorClass:
           "border-warning-border bg-warning/20 text-warning-foreground",
-        icon: <AlertTriangle className="size-3" />,
+        icon: AlertTriangle,
       };
     case "critical":
       return {
         label: "Needs Attention",
         colorClass: "border-danger-border bg-danger/20 text-danger-foreground",
-        icon: <Siren className="size-3" />,
+        icon: Siren,
       };
     default:
       return {
         label: "Unknown",
         colorClass: "border-muted-border bg-muted/20 text-muted-foreground",
-        icon: <CircleHelp className="size-3" />,
+        icon: CircleHelp,
       };
   }
 }

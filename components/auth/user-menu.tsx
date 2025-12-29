@@ -3,6 +3,7 @@
 import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@/lib/analytics/client";
@@ -56,85 +58,108 @@ export function UserMenu() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         render={
-          <button
-            type="button"
-            className="cursor-pointer rounded-full ring-offset-background transition-[transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-pointer rounded-full px-0 py-0 hover:bg-transparent active:scale-95 dark:hover:bg-transparent"
             aria-label="User menu"
           >
             <Avatar className="size-8">
-              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
+              <AvatarImage src={avatarUrl} alt={user.name} size={32} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {initials}
               </AvatarFallback>
             </Avatar>
-          </button>
+          </Button>
         }
       />
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex items-center gap-2.5">
-            <Avatar className="size-8">
-              <AvatarImage src={avatarUrl} alt={user.name || "User avatar"} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col space-y-1">
-              <p className="font-medium text-sm leading-none">
-                {user.name || "User"}
-              </p>
-              <p className="text-muted-foreground text-xs leading-none">
-                {user.email}
-              </p>
+      <DropdownMenuContent
+        align="end"
+        className="flex min-w-56 flex-col overflow-hidden p-0"
+      >
+        <ScrollArea
+          className="h-auto min-h-0 flex-1 py-1"
+          gradient
+          gradientContext="popover"
+        >
+          <DropdownMenuLabel className="px-2.5 py-1.5 font-normal">
+            <div className="flex items-center gap-2">
+              <Avatar className="size-8">
+                <AvatarImage src={avatarUrl} alt={user.name} size={32} />
+                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-1">
+                <p className="font-medium text-sm leading-none">
+                  {user.name || "User"}
+                </p>
+                <p className="text-muted-foreground text-xs leading-none">
+                  {user.email}
+                </p>
+              </div>
             </div>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          nativeButton={false}
-          render={
-            <Link href="/dashboard" className="cursor-pointer">
-              <Table2 className="size-4" />
-              Dashboard
-            </Link>
-          }
-        />
-        <DropdownMenuItem
-          nativeButton={false}
-          render={
-            <Link href="/settings" scroll={false} className="cursor-pointer">
-              <Settings className="size-4" />
-              Settings
-            </Link>
-          }
-        />
-        <DropdownMenuSeparator />
-        {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
-        <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-          {theme === "dark" ? (
-            <Sun className="size-4" />
-          ) : (
-            <Moon className="size-4" />
-          )}
-          {theme === "dark" ? "Light mode" : "Dark mode"}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          nativeButton={false}
-          render={
-            <Link href="/bookmarklet" scroll={false} className="cursor-pointer">
-              <Bookmark className="size-4" />
-              Bookmarklet
-            </Link>
-          }
-        />
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          <LogOut className="size-4 text-danger-foreground" />
-          Sign out
-        </DropdownMenuItem>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/dashboard"
+                className="mx-1 cursor-pointer py-2 leading-none"
+              >
+                <Table2 />
+                Dashboard
+              </Link>
+            }
+          />
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/settings"
+                scroll={false}
+                className="mx-1 cursor-pointer py-2 leading-none"
+              >
+                <Settings />
+                Settings
+              </Link>
+            }
+          />
+          <DropdownMenuSeparator />
+          {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
+          <DropdownMenuItem
+            className="mx-1 cursor-pointer py-2 leading-none"
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun /> : <Moon />}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            nativeButton={false}
+            render={
+              <Link
+                href="/bookmarklet"
+                scroll={false}
+                className="mx-1 cursor-pointer py-2 leading-none"
+              >
+                <Bookmark />
+                Bookmarklet
+              </Link>
+            }
+          />
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="mx-1 cursor-pointer py-2 leading-none"
+            onClick={handleSignOut}
+          >
+            <LogOut className="text-danger-foreground" />
+            Sign out
+          </DropdownMenuItem>
+        </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
   );

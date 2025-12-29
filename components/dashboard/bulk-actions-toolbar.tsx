@@ -4,6 +4,7 @@ import { Archive, Trash2, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type BulkActionsToolbarProps = {
@@ -66,17 +67,18 @@ export function BulkActionsToolbar({
                   }
                   className="cursor-pointer"
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="link"
+                  size="sm"
                   onClick={onToggleAll}
                   disabled={isLoading}
-                  className="cursor-pointer text-sm hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cursor-pointer pr-0 pl-0.5 text-sm leading-none"
                 >
-                  Select all ({totalCount})
-                </button>
+                  Select All ({totalCount})
+                </Button>
               </div>
 
-              <div className="h-4 w-px bg-border" aria-hidden />
+              <Separator orientation="vertical" className="!h-6" />
 
               <span
                 className="font-medium text-sm tabular-nums"
@@ -93,9 +95,9 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onArchive}
                 disabled={isLoading}
-                className="cursor-pointer"
+                className="cursor-pointer leading-none"
               >
-                <Archive className="size-3.5" />
+                <Archive />
                 Archive
               </Button>
 
@@ -104,9 +106,9 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onDelete}
                 disabled={isLoading}
-                className="cursor-pointer"
+                className="cursor-pointer leading-none"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 />
                 Delete
               </Button>
 
@@ -115,10 +117,10 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onCancel}
                 disabled={isLoading}
-                className="cursor-pointer"
+                className="cursor-pointer leading-none"
               >
-                <X className="size-3.5" />
-                <span className="hidden sm:inline">Cancel</span>
+                <X />
+                Cancel
               </Button>
             </div>
           </div>

@@ -72,7 +72,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   if (!mounted || isSessionPending || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled>
-        <Spinner className="size-4" />
+        <Spinner />
       </Button>
     );
   }
@@ -85,12 +85,14 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
           render={
             <Button
               variant="outline"
-              className="text-success-foreground"
               nativeButton={false}
-              render={<Link href="/dashboard" />}
-            >
-              <BadgeCheck className="size-4" />
-            </Button>
+              render={
+                <Link href="/dashboard" className="cursor-pointer">
+                  <BadgeCheck className="text-success-foreground" />
+                  <span className="hidden">View in dashboard</span>
+                </Link>
+              }
+            />
           }
         />
         <TooltipContent>
@@ -103,12 +105,12 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <AlertCircle className="size-4 text-accent-orange" />
+      <AlertCircle className="text-accent-orange" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (
     <>
-      <BellPlus className="size-4 text-accent-gold" />
+      <BellPlus className="text-accent-gold" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
@@ -132,12 +134,13 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
           ) : (
             <Button
               variant="outline"
-              className="cursor-pointer"
               nativeButton={false}
-              render={<Link href="/login" scroll={false} />}
-            >
-              {buttonContent}
-            </Button>
+              render={
+                <Link href="/login" scroll={false} className="cursor-pointer">
+                  {buttonContent}
+                </Link>
+              }
+            />
           )
         }
       />

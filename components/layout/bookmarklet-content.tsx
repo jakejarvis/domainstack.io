@@ -93,12 +93,13 @@ export function BookmarkletContent({ className }: { className?: string }) {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       target="_blank"
                       rel="noopener"
-                    />
+                      className="cursor-pointer"
+                    >
+                      <Layers2 />
+                      <span>Add Shortcut</span>
+                    </a>
                   }
-                >
-                  <Layers2 />
-                  <span>Add Shortcut</span>
-                </Button>
+                />
 
                 <Dialog>
                   <DialogTrigger
@@ -192,12 +193,12 @@ export function BookmarkletContent({ className }: { className?: string }) {
                         icon: "magnifying-glass-16",
                       }),
                     )}`}
-                  />
+                  >
+                    <RaycastIcon className="h-4 w-4" />
+                    <span>Add to Raycast</span>
+                  </a>
                 }
-              >
-                <RaycastIcon className="h-4 w-4" />
-                <span>Add to Raycast</span>
-              </Button>
+              />
             </div>
           </AccordionContent>
         </AccordionItem>

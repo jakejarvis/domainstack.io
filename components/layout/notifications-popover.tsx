@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Archive, Bell, Inbox } from "lucide-react";
+import { Archive, Bell, CheckCheck, Inbox, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { NotificationData } from "@/components/notifications";
 import { NotificationList } from "@/components/notifications";
@@ -20,7 +20,7 @@ import {
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useTRPC } from "@/lib/trpc/client";
 
-export function NotificationBell() {
+export function NotificationsPopover() {
   const trpc = useTRPC();
   const { markRead, markAllRead } = useNotificationMutations();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -56,49 +56,6 @@ export function NotificationBell() {
   });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
-
-  // Auto-mark notifications as read when they become visible
-  useEffect(() => {
-    // Only auto-mark on inbox tab
-    if (view !== "inbox") return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const notificationId = entry.target.getAttribute(
-              "data-notification-id",
-            );
-            if (notificationId && !markedAsReadIds.has(notificationId)) {
-              const notification = notifications.find(
-                (n) => n.id === notificationId,
-              );
-              if (notification && !notification.readAt) {
-                // Mark locally to prevent duplicate requests
-                setMarkedAsReadIds((prev) => new Set(prev).add(notificationId));
-                // Mark as read on server
-                markRead.mutate({ id: notificationId });
-              }
-            }
-          }
-        }
-      },
-      {
-        threshold: 0.5, // Trigger when 50% of notification is visible
-        root: scrollAreaRef.current,
-      },
-    );
-
-    // Observe all notification elements
-    const notificationElements = document.querySelectorAll(
-      "[data-notification-id]",
-    );
-    for (const element of notificationElements) {
-      observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-  }, [notifications, view, markedAsReadIds, markRead]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -138,17 +95,17 @@ export function NotificationBell() {
                   size="sm"
                   className="relative cursor-pointer"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
-                />
+                >
+                  <Bell />
+                  {count > 0 && (
+                    <span
+                      className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
+                      aria-hidden="true"
+                    />
+                  )}
+                </Button>
               }
-            >
-              <Bell />
-              {count > 0 && (
-                <span
-                  className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
-                  aria-hidden="true"
-                />
-              )}
-            </PopoverTrigger>
+            />
           }
         />
         <TooltipContent>
@@ -168,23 +125,37 @@ export function NotificationBell() {
                 <Bell className="size-4" />
                 Notifications
               </h4>
-              {view === "inbox" && count > 0 && (
+              <div className="flex items-center gap-1.5">
+                {view === "inbox" && count > 0 && (
+                  <Button
+                    variant="ghost"
+                    className="!p-2.5 h-6 w-fit cursor-pointer gap-1.5 text-[13px] leading-none"
+                    onClick={() => markAllRead.mutate()}
+                    disabled={markAllRead.isPending}
+                    aria-label="Clear All"
+                  >
+                    <CheckCheck className="size-3.5" />
+                    Clear All
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-auto cursor-pointer py-1 text-[13px]"
-                  onClick={() => markAllRead.mutate()}
-                  disabled={markAllRead.isPending}
+                  className="!p-2.5 size-6 cursor-pointer"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close"
                 >
-                  <Archive className="mr-1 size-3" />
-                  Archive All
+                  <X />
+                  <span className="sr-only">Close</span>
                 </Button>
-              )}
+              </div>
             </div>
             <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="inbox" className="text-[13px]">
-                  <Inbox className="mr-1.5 size-3.5" />
+                <TabsTrigger
+                  value="inbox"
+                  className="gap-2 text-[13px] leading-none"
+                >
+                  <Inbox />
                   Inbox
                   {count > 0 && (
                     <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
@@ -192,8 +163,11 @@ export function NotificationBell() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="archive" className="text-[13px]">
-                  <Archive className="mr-1.5 size-3.5" />
+                <TabsTrigger
+                  value="archive"
+                  className="gap-2 text-[13px] leading-none"
+                >
+                  <Archive />
                   Archive
                 </TabsTrigger>
               </TabsList>

@@ -147,7 +147,13 @@ export function DashboardBanner({
   };
 
   return (
-    <div className={cn(bannerVariants({ variant }), className)}>
+    <div
+      className={cn(
+        bannerVariants({ variant }),
+        className,
+        "group/dashboard-banner",
+      )}
+    >
       {/* Decorative golden glows for gold variant */}
       {variant === "gold" && (
         <>
@@ -188,7 +194,7 @@ export function DashboardBanner({
               size="sm"
               onClick={handleSecondaryActionClick}
               disabled={secondaryAction.loading || secondaryAction.disabled}
-              className="text-muted-foreground hover:text-foreground"
+              className="cursor-pointer text-muted-foreground leading-none hover:text-foreground"
             >
               {secondaryAction.loading ? (
                 <>
@@ -205,7 +211,10 @@ export function DashboardBanner({
               size="sm"
               onClick={handleActionClick}
               disabled={action.loading || action.disabled}
-              className={bannerButtonVariants({ variant })}
+              className={cn(
+                bannerButtonVariants({ variant }),
+                "cursor-pointer leading-none",
+              )}
             >
               {action.loading ? (
                 <>
@@ -222,14 +231,16 @@ export function DashboardBanner({
 
       {/* Dismiss button */}
       {dismissible && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleDismiss}
-          className="absolute top-2 right-2 rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-black/5 hover:text-muted-foreground dark:hover:bg-white/10"
+          className="invisible absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible"
           aria-label="Dismiss"
         >
-          <X className="size-4" />
-        </button>
+          <X />
+          <span className="sr-only">Dismiss</span>
+        </Button>
       )}
     </div>
   );

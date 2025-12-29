@@ -90,8 +90,7 @@ export function DomainSuggestionsClient({
               variant="secondary"
               size="sm"
               className={cn(
-                "shrink-0 gap-2 bg-muted/15 px-2.5 ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
-
+                "shrink-0 gap-2 bg-muted/15 px-2.5 leading-none ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
                 isHistoryLoaded ? "visible" : "invisible",
               )}
               onClick={(e) => {
@@ -99,15 +98,17 @@ export function DomainSuggestionsClient({
                 handleClick(domain);
               }}
               nativeButton={false}
-              render={<Link href={`/${domain}`} prefetch={false} />}
-            >
-              <Favicon
-                domain={domain}
-                size={faviconSize}
-                className="pointer-events-none size-4 shrink-0 rounded-sm"
-              />
-              {domain}
-            </Button>
+              render={
+                <Link href={`/${encodeURIComponent(domain)}`} prefetch={false}>
+                  <Favicon
+                    domain={domain}
+                    size={faviconSize}
+                    className="pointer-events-none size-4 shrink-0 rounded-sm"
+                  />
+                  {domain}
+                </Link>
+              }
+            />
           ),
         )}
         {isHistoryLoaded && history.length > 0 ? (
@@ -118,10 +119,11 @@ export function DomainSuggestionsClient({
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleClearHistory}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 cursor-pointer"
                   aria-label="Clear history"
                 >
                   <X />
+                  <span className="sr-only">Clear history</span>
                 </Button>
               }
             />

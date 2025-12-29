@@ -47,9 +47,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                   </div>
                 }
               />
-              <TooltipContent>
-                <span>{step.title}</span>
-              </TooltipContent>
+              <TooltipContent sideOffset={8}>{step.title}</TooltipContent>
             </Tooltip>
 
             {/* Line */}

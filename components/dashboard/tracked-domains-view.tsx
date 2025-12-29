@@ -122,18 +122,21 @@ export function TrackedDomainsView({
         </EmptyHeader>
         <EmptyContent className="relative">
           {onAddDomain ? (
-            <Button size="lg" onClick={onAddDomain}>
-              <Plus className="size-4" />
+            <Button size="lg" onClick={onAddDomain} className="leading-none">
+              <Plus />
               Add Your First Domain
             </Button>
           ) : (
             <Button
               size="lg"
-              render={<Link href="/dashboard/add-domain" scroll={false} />}
-            >
-              <Plus className="size-4" />
-              Add Your First Domain
-            </Button>
+              className="leading-none"
+              render={
+                <Link href="/dashboard/add-domain" scroll={false}>
+                  <Plus />
+                  Add Your First Domain
+                </Link>
+              }
+            />
           )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
             <Timer className="size-4" />

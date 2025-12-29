@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
+import { Button } from "@/components/ui/button";
 import {
   CardContent,
   CardDescription,
@@ -373,20 +374,20 @@ export function NotificationSettingsSection({
           <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
             <CollapsibleTrigger
               render={
-                <button
-                  type="button"
-                  className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-2 text-left transition-colors hover:bg-muted/50"
+                <Button
+                  variant="ghost"
+                  className="flex w-full cursor-pointer items-center justify-between"
                 >
-                  <span className="font-medium text-[13px] text-foreground/85">
+                  <span className="font-medium text-[13px] text-foreground/85 leading-none">
                     Per-domain overrides
                   </span>
                   <ChevronDown
                     className={cn(
-                      "size-4 text-muted-foreground transition-transform duration-200",
+                      "text-muted-foreground transition-transform duration-200",
                       isPerDomainOpen && "rotate-180",
                     )}
                   />
-                </button>
+                </Button>
               }
             />
             <CollapsibleContent className="mt-4">

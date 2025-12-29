@@ -15,7 +15,6 @@ import {
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
 import { logger } from "@/lib/logger/client";
-import { cn } from "@/lib/utils";
 
 type DeleteAccountDialogProps = {
   open: boolean;
@@ -86,7 +85,7 @@ export function DeleteAccountDialog({
             <AlertDialogFooter className="sm:justify-center">
               <AlertDialogCancel
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
+                className="cursor-pointer leading-none"
               >
                 Close
               </AlertDialogCancel>
@@ -130,17 +129,15 @@ export function DeleteAccountDialog({
             <AlertDialogFooter>
               <AlertDialogCancel
                 disabled={state === "loading"}
-                className={cn(state !== "loading" && "cursor-pointer")}
+                className="cursor-pointer leading-none"
               >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
+                variant="destructive"
                 onClick={handleDelete}
                 disabled={state === "loading"}
-                className={cn(
-                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-                  state !== "loading" && "cursor-pointer",
-                )}
+                className="cursor-pointer leading-none"
               >
                 {state === "loading" ? (
                   <Loader2 className="size-4 animate-spin" />

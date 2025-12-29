@@ -65,14 +65,14 @@ export function ColumnVisibilityMenu<TData>({
                 : "Toggle columns"
             }
           >
-            <Columns3Cog className="size-4" />
+            <Columns3Cog />
             <span className="sr-only">Toggle columns</span>
           </Button>
         }
       />
       <DropdownMenuContent
         align="end"
-        className="flex w-48 flex-col overflow-hidden p-0"
+        className="flex min-w-44 flex-col overflow-hidden p-0"
       >
         <ScrollArea
           className="h-auto min-h-0 flex-1"
@@ -111,7 +111,7 @@ export function ColumnVisibilityMenu<TData>({
                   onClick={showAllColumns}
                   className="cursor-pointer text-muted-foreground"
                 >
-                  <Eye className="size-4" />
+                  <Eye />
                   Show all columns
                 </DropdownMenuItem>
               </>

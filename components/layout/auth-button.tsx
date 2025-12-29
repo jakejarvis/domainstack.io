@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { UserMenu } from "@/components/auth/user-menu";
 import { MobileMenu } from "@/components/layout/mobile-menu";
-import { NotificationBell } from "@/components/layout/notification-bell";
+import { NotificationsPopover } from "@/components/layout/notifications-popover";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,15 +24,15 @@ export function AuthButton() {
   // Logged in: show NotificationBell + UserMenu (handles both mobile and desktop)
   if (session?.user) {
     return (
-      <div className="flex h-8 items-center gap-2">
-        <NotificationBell />
+      <>
+        <NotificationsPopover />
         <Separator
           aria-hidden="true"
           orientation="vertical"
-          className="!h-4 mr-2"
+          className="!h-4 mr-1.5"
         />
         <UserMenu />
-      </div>
+      </>
     );
   }
 
@@ -48,9 +48,11 @@ export function AuthButton() {
       variant="ghost"
       size="sm"
       nativeButton={false}
-      render={<Link href="/login" scroll={false} />}
-    >
-      Sign In
-    </Button>
+      render={
+        <Link href="/login" scroll={false}>
+          Sign In
+        </Link>
+      }
+    />
   );
 }

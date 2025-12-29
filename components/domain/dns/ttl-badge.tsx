@@ -17,12 +17,10 @@ export function TtlBadge({ ttl }: { ttl: number }) {
         render={
           <Badge
             variant="outline"
-            className="cursor-default py-1 text-[11px] text-muted-foreground"
+            className="cursor-default py-1 text-[11px] text-muted-foreground leading-none"
           >
             <ClockFading />
-            <span className="leading-none" suppressHydrationWarning>
-              {ms(ttl * 1000)}
-            </span>
+            <span suppressHydrationWarning>{ms(ttl * 1000)}</span>
           </Badge>
         }
       />

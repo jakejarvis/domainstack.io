@@ -85,12 +85,12 @@ export function HtmlFileVerificationInstructions({
             render={
               <Button
                 variant="outline"
-                className="w-full cursor-pointer"
+                className="w-full cursor-pointer leading-none"
                 onClick={handleDownload}
                 type="button"
               >
-                <Download className="size-4" />
-                Download file
+                <Download />
+                Download File
               </Button>
             }
           />

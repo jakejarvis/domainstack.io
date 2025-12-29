@@ -65,12 +65,36 @@ export function useNotificationMutations() {
       }
 
       // Optimistically update all list queries (infinite queries)
-      queryClient.setQueriesData<InfiniteNotificationData>(
-        { queryKey: listQueryKey },
-        (old) => {
-          if (!old?.pages) return old;
+      // Reusing 'queries' from above
+      for (const [key, old] of queries) {
+        if (!old?.pages) continue;
 
-          return {
+        // Check if this query is for "Inbox" (unreadOnly: true)
+        // tRPC query keys: [path, { input: { unreadOnly: boolean, ... }, ... }]
+        // We look for the input object in the key
+        let isInbox = false;
+        const inputObj = key.find(
+          (k) =>
+            typeof k === "object" &&
+            k !== null &&
+            "input" in k &&
+            (k as { input: { unreadOnly?: boolean } }).input?.unreadOnly ===
+              true,
+        );
+        if (inputObj) isInbox = true;
+
+        if (isInbox) {
+          // Remove notification from inbox
+          queryClient.setQueryData<InfiniteNotificationData>(key, {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((n) => n.id !== id),
+            })),
+          });
+        } else {
+          // Update notification status in archive/all
+          queryClient.setQueryData<InfiniteNotificationData>(key, {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
@@ -78,9 +102,9 @@ export function useNotificationMutations() {
                 n.id === id ? { ...n, readAt: new Date() } : n,
               ),
             })),
-          };
-        },
-      );
+          });
+        }
+      }
 
       return { previousCount };
     },
@@ -109,20 +133,45 @@ export function useNotificationMutations() {
       queryClient.setQueryData<number>(countQueryKey, 0);
 
       // Optimistically update all list queries (infinite queries)
-      queryClient.setQueriesData<InfiniteNotificationData>(
-        { queryKey: listQueryKey },
-        (old) => {
-          if (!old?.pages) return old;
+      const queries = queryClient.getQueriesData<InfiniteNotificationData>({
+        queryKey: listQueryKey,
+      });
 
-          return {
+      for (const [key, old] of queries) {
+        if (!old?.pages) continue;
+
+        // Check if this query is for "Inbox" (unreadOnly: true)
+        let isInbox = false;
+        const inputObj = key.find(
+          (k) =>
+            typeof k === "object" &&
+            k !== null &&
+            "input" in k &&
+            (k as { input: { unreadOnly?: boolean } }).input?.unreadOnly ===
+              true,
+        );
+        if (inputObj) isInbox = true;
+
+        if (isInbox) {
+          // Clear inbox
+          queryClient.setQueryData<InfiniteNotificationData>(key, {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: [],
+            })),
+          });
+        } else {
+          // Mark all as read in archive/all
+          queryClient.setQueryData<InfiniteNotificationData>(key, {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
               items: page.items.map((n) => ({ ...n, readAt: new Date() })),
             })),
-          };
-        },
-      );
+          });
+        }
+      }
 
       return { previousCount };
     },

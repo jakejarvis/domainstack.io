@@ -74,6 +74,8 @@ export function RemoteIcon({
     ...queryOptions,
     // Prevent React Query from throwing/logging errors - we handle them gracefully
     throwOnError: false,
+    retry: false,
+    retryOnMount: false,
   });
 
   const url = (data as { url: string | null } | undefined)?.url ?? null;

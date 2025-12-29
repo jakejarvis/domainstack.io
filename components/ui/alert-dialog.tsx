@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import type { VariantProps } from "class-variance-authority";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -126,14 +127,17 @@ function AlertDialogDescription({
 }
 
 function AlertDialogAction({
+  variant = "default",
+  size = "default",
   className,
   closeOnClick = true,
   onClick,
   ...props
-}: AlertDialogPrimitive.Close.Props & {
-  /** Prevent the dialog from closing when this button is clicked. */
-  closeOnClick?: boolean;
-}) {
+}: AlertDialogPrimitive.Close.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Prevent the dialog from closing when this button is clicked. */
+    closeOnClick?: boolean;
+  }) {
   /**
    * Base UI AlertDialog doesn’t have separate Action/Cancel parts; it only exposes `Close`.
    * We keep the shadcn-style names for ergonomics, but note:
@@ -153,7 +157,7 @@ function AlertDialogAction({
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
       onClick={handleClick}
-      className={cn(buttonVariants(), className)}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   );

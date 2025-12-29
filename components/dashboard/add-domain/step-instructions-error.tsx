@@ -26,13 +26,23 @@ export function StepInstructionsError({
           {error || "Something went wrong. Please try again."}
         </p>
       </div>
-      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        disabled={isRetrying}
+        className="cursor-pointer leading-none"
+      >
         {isRetrying ? (
-          <Spinner className="size-4" />
+          <>
+            <Spinner />
+            <span className="hidden sm:inline">Retrying...</span>
+          </>
         ) : (
-          <RefreshCw className="size-4" />
+          <>
+            <RefreshCw />
+            <span className="hidden sm:inline">Retry</span>
+          </>
         )}
-        {isRetrying ? "Retrying..." : "Retry"}
       </Button>
     </div>
   );

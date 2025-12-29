@@ -21,7 +21,7 @@ export function DashboardError({ onRetry }: DashboardErrorProps) {
         </p>
       </div>
       <Button onClick={onRetry} variant="outline" className="gap-2">
-        <RefreshCw className="size-4" />
+        <RefreshCw />
         Try Again
       </Button>
     </div>

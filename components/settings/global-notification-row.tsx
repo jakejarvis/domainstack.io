@@ -73,10 +73,12 @@ export function GlobalNotificationRow({
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
-                render={<span className="px-[7px] text-foreground/70" />}
-              >
-                <Info className="inline-block size-3.5" />
-              </ResponsiveTooltipTrigger>
+                render={
+                  <span className="px-[7px] text-foreground/70">
+                    <Info className="inline-block size-3.5" />
+                  </span>
+                }
+              />
               <ResponsiveTooltipContent className="max-w-sm">
                 {info.description}
               </ResponsiveTooltipContent>

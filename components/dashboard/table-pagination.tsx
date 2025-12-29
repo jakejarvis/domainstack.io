@@ -51,7 +51,11 @@ export function TablePagination({
           </SelectTrigger>
           <SelectContent>
             {PAGE_SIZE_OPTIONS.map((size) => (
-              <SelectItem key={size} value={String(size)}>
+              <SelectItem
+                key={size}
+                value={String(size)}
+                className="cursor-pointer text-[13px]"
+              >
                 {size}
               </SelectItem>
             ))}
@@ -70,25 +74,27 @@ export function TablePagination({
         {/* Previous page */}
         <Button
           variant="outline"
-          size="icon-sm"
-          className="size-6"
+          size="icon-xs"
+          className="cursor-pointer"
           onClick={() => onPageChange(pageIndex - 1)}
           disabled={!canPreviousPage}
           aria-label="Go to previous page"
         >
-          <ChevronLeft className="size-3" />
+          <ChevronLeft />
+          <span className="sr-only">Previous page</span>
         </Button>
 
         {/* Next page */}
         <Button
           variant="outline"
-          size="icon-sm"
-          className="size-6"
+          size="icon-xs"
+          className="cursor-pointer"
           onClick={() => onPageChange(pageIndex + 1)}
           disabled={!canNextPage}
           aria-label="Go to next page"
         >
-          <ChevronRight className="size-3" />
+          <ChevronRight />
+          <span className="sr-only">Next page</span>
         </Button>
       </div>
     </div>

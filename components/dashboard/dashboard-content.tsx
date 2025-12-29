@@ -455,7 +455,7 @@ export function DashboardContent() {
                 onClick={() => setActiveTab("archived")}
                 className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
               >
-                <Archive className="size-4" />
+                <Archive />
                 View {archivedCount} archived domain{archivedCount !== 1 && "s"}
               </Button>
             </div>
@@ -473,7 +473,7 @@ export function DashboardContent() {
             className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
             type="button"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft />
             Back to domains
           </Button>
 

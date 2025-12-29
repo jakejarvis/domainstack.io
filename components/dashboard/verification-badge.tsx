@@ -3,12 +3,7 @@
 import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import {
   VERIFICATION_GRACE_PERIOD_DAYS,
   VERIFICATION_METHOD_LABELS,
@@ -42,7 +37,7 @@ export function VerificationBadge({
     setNow(new Date());
   }, []);
 
-  // Show failing state if verified but verification is failing
+  // Failing state: verified but verification is failing
   if (verified && verificationStatus === "failing") {
     const daysRemaining =
       verificationFailedAt && now
@@ -53,100 +48,55 @@ export function VerificationBadge({
           )
         : VERIFICATION_GRACE_PERIOD_DAYS;
 
-    const badge = (
-      <Badge
-        className={cn(
-          "select-none gap-1 border-danger-border bg-danger/20 py-1 font-semibold text-danger-foreground",
-          onClick && "cursor-pointer transition-opacity hover:opacity-95",
-          className,
-        )}
-        render={
-          onClick ? <button type="button" onClick={onClick} /> : undefined
-        }
-      >
-        <AlertTriangle className="size-3" />
-        Failing
-      </Badge>
-    );
+    const tooltipText =
+      daysRemaining > 0
+        ? `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} to fix verification`
+        : "Verification will be revoked soon";
 
     return (
-      <ResponsiveTooltip>
-        <ResponsiveTooltipTrigger nativeButton={false} render={badge} />
-        <ResponsiveTooltipContent>
-          {daysRemaining > 0 ? (
-            <>
-              {daysRemaining} {daysRemaining === 1 ? "day" : "days"} to fix
-              verification
-            </>
-          ) : (
-            <>Verification will be revoked soon</>
-          )}
-        </ResponsiveTooltipContent>
-      </ResponsiveTooltip>
-    );
-  }
-
-  if (verified) {
-    const badge = (
-      <Badge
+      <BadgeWithTooltip
+        icon={AlertTriangle}
+        label="Failing"
         className={cn(
-          "select-none gap-1 border-success-border bg-success/20 py-1 font-semibold text-success-foreground",
+          "border-danger-border bg-danger/20 text-danger-foreground",
           className,
         )}
-      >
-        <BadgeCheck className="size-3" />
-        Verified
-      </Badge>
+        tooltipContent={tooltipText}
+        onClick={onClick}
+      />
     );
-
-    // Show tooltip with verification method if available
-    if (verificationMethod) {
-      return (
-        <ResponsiveTooltip>
-          <ResponsiveTooltipTrigger
-            nativeButton={false}
-            render={<span className="cursor-default">{badge}</span>}
-          />
-          <ResponsiveTooltipContent>
-            Using {VERIFICATION_METHOD_LABELS[verificationMethod]}
-          </ResponsiveTooltipContent>
-        </ResponsiveTooltip>
-      );
-    }
-
-    return badge;
   }
 
-  // Pending verification state
-  const pendingBadge = (
-    <Badge
-      variant="outline"
+  // Verified state
+  if (verified) {
+    return (
+      <BadgeWithTooltip
+        icon={BadgeCheck}
+        label="Verified"
+        className={cn(
+          "border-success-border bg-success/20 text-success-foreground",
+          className,
+        )}
+        tooltipContent={
+          verificationMethod
+            ? `Using ${VERIFICATION_METHOD_LABELS[verificationMethod]}`
+            : undefined
+        }
+      />
+    );
+  }
+
+  // Pending state
+  return (
+    <BadgeWithTooltip
+      icon={ClockFading}
+      label="Pending"
       className={cn(
-        "select-none gap-1 border-warning-border bg-warning/20 py-1 font-semibold text-warning-foreground",
-        onClick && "cursor-pointer transition-opacity hover:opacity-95",
+        "border-warning-border bg-warning/20 text-warning-foreground",
         className,
       )}
-      render={onClick ? <button type="button" onClick={onClick} /> : undefined}
-    >
-      <ClockFading className="size-3" />
-      Pending
-    </Badge>
+      tooltipContent={onClick ? "Complete verification" : undefined}
+      onClick={onClick}
+    />
   );
-
-  // Show tooltip when clickable
-  if (onClick) {
-    return (
-      <ResponsiveTooltip>
-        <ResponsiveTooltipTrigger
-          nativeButton={false}
-          render={<span>{pendingBadge}</span>}
-        />
-        <ResponsiveTooltipContent>
-          Complete verification
-        </ResponsiveTooltipContent>
-      </ResponsiveTooltip>
-    );
-  }
-
-  return pendingBadge;
 }

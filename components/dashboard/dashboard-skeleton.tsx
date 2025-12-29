@@ -38,15 +38,11 @@ export function DashboardSkeleton() {
         {/* Desktop: full filter row */}
         <div className="hidden md:flex md:flex-wrap md:items-center md:gap-3">
           {/* Search input */}
-          <Skeleton className="h-10 w-48 rounded-md lg:w-64" />
+          <Skeleton className="h-9 w-48 rounded-md lg:w-[300px]" />
           {/* Filter dropdowns */}
+          <Skeleton className="h-9 w-22 rounded-md" />
+          <Skeleton className="h-9 w-22 rounded-md" />
           <Skeleton className="h-9 w-24 rounded-md" />
-          <Skeleton className="h-9 w-24 rounded-md" />
-          <Skeleton className="h-9 w-20 rounded-md" />
-          {/* Sort dropdown or Column visibility */}
-          <Skeleton className="h-9 w-32 rounded-md" />
-          {/* Column visibility menu (table view) or extra space */}
-          <Skeleton className="h-9 w-9 rounded-md" />
         </div>
       </div>
 

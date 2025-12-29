@@ -34,15 +34,16 @@ export function UpgradePrompt() {
   if (!nearLimit || !isVisible) return null;
 
   return (
-    <Card className="relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+    <Card className="group/upgrade-prompt relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
       {/* Dismiss button */}
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground"
+        className="invisible absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible"
         onClick={() => setIsVisible(false)}
+        aria-label="Dismiss"
       >
-        <X className="size-4" />
+        <X />
         <span className="sr-only">Dismiss</span>
       </Button>
 
@@ -76,14 +77,19 @@ export function UpgradePrompt() {
         <Button
           onClick={handleUpgrade}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 cursor-pointer bg-foreground text-background hover:bg-foreground/90 md:w-auto"
+          className="w-full shrink-0 cursor-pointer leading-none md:w-auto"
         >
           {isCheckoutLoading ? (
-            <Spinner />
+            <>
+              <Spinner />
+              Loading...
+            </>
           ) : (
-            <ShoppingCart className="size-4" />
+            <>
+              <ShoppingCart />
+              Upgrade to Pro
+            </>
           )}
-          {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
         </Button>
       </CardHeader>
     </Card>

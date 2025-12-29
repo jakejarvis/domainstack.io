@@ -105,7 +105,7 @@ export function DomainPricingCTA({
             <Button
               key={providerPricing.provider}
               variant="outline"
-              className="w-full min-w-[250px]"
+              className="flex w-full min-w-[250px] items-center gap-2.5"
               nativeButton={false}
               render={
                 <a
@@ -119,31 +119,34 @@ export function DomainPricingCTA({
                       provider: providerPricing.provider,
                     })
                   }
-                />
+                >
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <span
+                          className={cn(
+                            "rounded-full",
+                            config.transparentIcon
+                              ? "bg-transparent"
+                              : "bg-white",
+                          )}
+                        >
+                          <Icon className="size-5" />
+                        </span>
+                      }
+                    />
+                    <TooltipContent>{config.name}</TooltipContent>
+                  </Tooltip>
+                  <span>
+                    <span className="text-foreground/85">
+                      .{tldSuffix} from
+                    </span>{" "}
+                    <span className="font-semibold">{price}</span>
+                    <span className="text-muted-foreground text-xs">/year</span>
+                  </span>
+                </a>
               }
-            >
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <span
-                      className={cn(
-                        "rounded-full",
-                        config.transparentIcon ? "bg-transparent" : "bg-white",
-                      )}
-                    >
-                      <Icon className="size-5" />
-                    </span>
-                  }
-                />
-                <TooltipContent>{config.name}</TooltipContent>
-              </Tooltip>
-
-              <span>
-                <span className="text-foreground/85">.{tldSuffix} from</span>{" "}
-                <span className="font-semibold">{price}</span>
-                <span className="text-muted-foreground text-xs">/year</span>
-              </span>
-            </Button>
+            />
           );
         })}
       </div>

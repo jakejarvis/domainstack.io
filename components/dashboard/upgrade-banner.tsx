@@ -52,10 +52,19 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
           size="lg"
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="w-full shrink-0 cursor-pointer md:w-auto"
+          className="w-full shrink-0 cursor-pointer leading-none md:w-auto"
         >
-          {isLoading ? <Spinner /> : <ShoppingCart className="size-4" />}
-          {isLoading ? "Loading..." : "Get Pro"}
+          {isLoading ? (
+            <>
+              <Spinner />
+              Loading...
+            </>
+          ) : (
+            <>
+              <ShoppingCart />
+              Get Pro
+            </>
+          )}
         </Button>
       </div>
     </div>

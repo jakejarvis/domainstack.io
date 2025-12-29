@@ -240,20 +240,25 @@ export function AddDomainContent({
                 <Button
                   onClick={handleUpgrade}
                   disabled={isCheckoutLoading}
-                  className="w-full cursor-pointer bg-foreground text-background hover:bg-foreground/90"
+                  className="w-full cursor-pointer leading-none"
                 >
                   {isCheckoutLoading ? (
-                    <Spinner />
+                    <>
+                      <Spinner />
+                      Loading...
+                    </>
                   ) : (
-                    <ShoppingCart className="size-4" />
+                    <>
+                      <ShoppingCart />
+                      Upgrade to Pro
+                    </>
                   )}
-                  {isCheckoutLoading ? "Loading..." : "Upgrade to Pro"}
                 </Button>
                 {onClose && (
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="w-full cursor-pointer"
+                    className="w-full cursor-pointer leading-none"
                   >
                     Close
                   </Button>
@@ -271,7 +276,7 @@ export function AddDomainContent({
                 <Button
                   variant="outline"
                   onClick={onClose}
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer leading-none"
                 >
                   Close
                 </Button>
@@ -359,7 +364,7 @@ export function AddDomainContent({
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="cursor-pointer"
+                    className="cursor-pointer leading-none"
                   >
                     Close
                   </Button>
@@ -406,12 +411,12 @@ export function AddDomainContent({
         disabled={
           !canProceed() || isLoadingInstructions || isMissingInstructions
         }
-        className="cursor-pointer"
+        className="cursor-pointer leading-none"
       >
         {isAddingDomain || isVerifying ? (
-          <Spinner className="size-4" />
+          <Spinner />
         ) : step === 2 ? (
-          <Check className="size-4" />
+          <Check />
         ) : null}
         {step === 2
           ? isVerifying

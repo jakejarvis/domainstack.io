@@ -68,11 +68,13 @@ export function AppHeaderButtons() {
               size="sm"
               className="hidden cursor-pointer md:flex"
               nativeButton={false}
-              render={<Link href="/bookmarklet" scroll={false} />}
-            >
-              <Bookmark />
-              <span className="sr-only">Open bookmarklet info</span>
-            </Button>
+              render={
+                <Link href="/bookmarklet" scroll={false}>
+                  <Bookmark />
+                  <span className="sr-only">Open bookmarklet info</span>
+                </Link>
+              }
+            />
           }
         />
         <TooltipContent>Bookmarklet</TooltipContent>

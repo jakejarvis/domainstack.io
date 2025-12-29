@@ -11,8 +11,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type ToolsDropdownProps = {
   domain: string;
@@ -161,7 +165,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
       </Tooltip>
       <DropdownMenuContent
         align="end"
-        className="flex flex-col overflow-hidden p-0"
+        className="flex min-w-52 flex-col overflow-hidden p-0"
       >
         <ScrollArea
           className="h-auto max-h-[65vh] min-h-0 flex-1"

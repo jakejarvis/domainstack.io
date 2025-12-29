@@ -224,8 +224,8 @@ export function ShareInstructionsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="cursor-pointer gap-1.5">
-            <Share2 className="size-4" />
+          <Button variant="outline" className="cursor-pointer leading-none">
+            <Share2 />
             Share
           </Button>
         }
@@ -254,13 +254,9 @@ export function ShareInstructionsDialog({
             <Button
               variant="outline"
               onClick={handleCopy}
-              className="shrink-0 cursor-pointer"
+              className="shrink-0 cursor-pointer leading-none"
             >
-              {copied ? (
-                <Check className="size-4 text-green-600" />
-              ) : (
-                <Copy className="size-4" />
-              )}
+              {copied ? <Check className="text-green-600" /> : <Copy />}
               <span className="hidden sm:inline">
                 {copied ? "Copied" : "Copy"}
               </span>
@@ -281,9 +277,9 @@ export function ShareInstructionsDialog({
             <Button
               variant="outline"
               onClick={handleDownload}
-              className="shrink-0 cursor-pointer"
+              className="shrink-0 cursor-pointer leading-none"
             >
-              <Download className="size-4" />
+              <Download />
               <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
@@ -327,22 +323,24 @@ export function ShareInstructionsDialog({
                   disabled={
                     !isValidEmail || sendEmailMutation.isPending || emailSent
                   }
-                  className="shrink-0 cursor-pointer"
+                  className="shrink-0 cursor-pointer leading-none"
                 >
                   {sendEmailMutation.isPending ? (
-                    <Spinner className="size-4" />
+                    <>
+                      <Spinner />
+                      <span className="hidden sm:inline">Sending...</span>
+                    </>
                   ) : emailSent ? (
-                    <Check className="size-4" />
+                    <>
+                      <Check />
+                      <span className="hidden sm:inline">Sent!</span>
+                    </>
                   ) : (
-                    <Mail className="size-4" />
+                    <>
+                      <Mail />
+                      <span className="hidden sm:inline">Send</span>
+                    </>
                   )}
-                  <span className="hidden sm:inline">
-                    {sendEmailMutation.isPending
-                      ? "Sending..."
-                      : emailSent
-                        ? "Sent!"
-                        : "Send"}
-                  </span>
                 </Button>
               </div>
             </Field>
