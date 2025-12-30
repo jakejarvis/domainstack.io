@@ -47,7 +47,7 @@ export const SORT_OPTIONS: SortOptionConfig[] = [
   {
     value: "createdAt.desc",
     label: "Recently added",
-    shortLabel: "Recent",
+    shortLabel: "Added",
     direction: "desc",
   },
 ];

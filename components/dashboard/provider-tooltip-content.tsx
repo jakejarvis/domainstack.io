@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { BadgeCheck, HatGlasses } from "lucide-react";
+import { BadgeCheck, HatGlasses, Lock, LockOpen } from "lucide-react";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -17,6 +17,7 @@ type ProviderTooltipContentProps = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
     contacts: unknown;
@@ -56,6 +57,7 @@ export function ProviderTooltipContent({
   whoisServer,
   rdapServers,
   registrationSource,
+  transferLock,
   registrantInfo,
 }: ProviderTooltipContentProps) {
   const hasRecords = records && records.length > 0;
@@ -135,6 +137,27 @@ export function ProviderTooltipContent({
                   <span className="text-background/90">
                     {formatRegistrant(registrant)}
                   </span>
+                )}
+              </div>
+            )}
+
+            {/* Transfer Lock */}
+            {transferLock !== null && transferLock !== undefined && (
+              <div className="flex items-center gap-1.5">
+                {transferLock ? (
+                  <>
+                    <Lock className="size-3.5 text-muted" />
+                    <span className="text-background/90">
+                      Transfer lock is on
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <LockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
+                    <span className="text-background/90">
+                      Transfer lock is off
+                    </span>
+                  </>
                 )}
               </div>
             )}

@@ -24,6 +24,7 @@ type ProviderTooltipData = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
     contacts: unknown;
@@ -92,6 +93,7 @@ export function useProviderTooltipData({
   let lazyLoadedWhoisServer: string | null | undefined;
   let lazyLoadedRdapServers: string[] | null | undefined;
   let lazyLoadedRegistrationSource: "rdap" | "whois" | null | undefined;
+  let lazyLoadedTransferLock: boolean | null | undefined;
   let lazyLoadedRegistrantInfo:
     | { privacyEnabled: boolean | null; contacts: unknown }
     | undefined;
@@ -104,6 +106,7 @@ export function useProviderTooltipData({
       lazyLoadedRdapServers = domainDetails.registrar?.rdapServers;
       lazyLoadedRegistrationSource =
         domainDetails.registrar?.registrationSource;
+      lazyLoadedTransferLock = domainDetails.registrar?.transferLock;
       lazyLoadedRegistrantInfo = domainDetails.registrar?.registrantInfo;
     } else {
       lazyLoadedRecords = domainDetails[providerType]?.records;
@@ -117,6 +120,7 @@ export function useProviderTooltipData({
   const displayRdapServers = provider.rdapServers ?? lazyLoadedRdapServers;
   const displayRegistrationSource =
     provider.registrationSource ?? lazyLoadedRegistrationSource;
+  const displayTransferLock = provider.transferLock ?? lazyLoadedTransferLock;
   const displayRegistrantInfo =
     provider.registrantInfo ?? lazyLoadedRegistrantInfo;
 
@@ -142,6 +146,7 @@ export function useProviderTooltipData({
     whoisServer: displayWhoisServer,
     rdapServers: displayRdapServers,
     registrationSource: displayRegistrationSource,
+    transferLock: displayTransferLock,
     registrantInfo: displayRegistrantInfo,
   };
 }

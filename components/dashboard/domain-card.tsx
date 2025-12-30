@@ -451,6 +451,7 @@ function InfoRow({
                     whoisServer={tooltipData.whoisServer}
                     rdapServers={tooltipData.rdapServers}
                     registrationSource={tooltipData.registrationSource}
+                    transferLock={tooltipData.transferLock}
                     registrantInfo={tooltipData.registrantInfo}
                   />
                 </ResponsiveTooltipContent>

@@ -420,16 +420,17 @@ export function DomainFilters({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" className="h-9 gap-2 px-3">
+                <Button
+                  variant="outline"
+                  className="inline-flex h-9 items-center gap-1.5 px-3"
+                >
                   <span className="text-muted-foreground">Sort:</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    {currentSort?.shortLabel ?? "Select"}
-                    {currentSort?.direction && (
-                      <span className="text-muted-foreground">
-                        {currentSort.direction === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </span>
+                  {currentSort?.shortLabel ?? "Select"}
+                  {currentSort?.direction && (
+                    <span className="text-muted-foreground">
+                      {currentSort.direction === "asc" ? "↑" : "↓"}
+                    </span>
+                  )}
                 </Button>
               }
             />
@@ -438,7 +439,7 @@ export function DomainFilters({
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => onSortChange(option.value)}
-                  className="gap-2"
+                  className="cursor-pointer gap-2"
                 >
                   <Check
                     className={cn(

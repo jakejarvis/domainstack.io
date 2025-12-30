@@ -53,6 +53,7 @@ export type ProviderInfo = {
   whoisServer?: string | null;
   rdapServers?: string[] | null;
   registrationSource?: "rdap" | "whois" | null;
+  transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
     contacts: unknown;
@@ -276,6 +277,7 @@ type TrackedDomainRow = {
   registrationWhoisServer: string | null;
   registrationRdapServers: string[] | null;
   registrationSource: "rdap" | "whois" | null;
+  registrationTransferLock: boolean | null;
   registrationPrivacyEnabled: boolean | null;
   registrationContacts: unknown;
 };
@@ -311,6 +313,7 @@ function transformToTrackedDomainWithDetails(
       whoisServer: row.registrationWhoisServer,
       rdapServers: row.registrationRdapServers,
       registrationSource: row.registrationSource,
+      transferLock: row.registrationTransferLock,
       registrantInfo: {
         privacyEnabled: row.registrationPrivacyEnabled,
         contacts: row.registrationContacts,
@@ -550,6 +553,7 @@ async function queryTrackedDomainsWithDetails(
       registrationWhoisServer: registrations.whoisServer,
       registrationRdapServers: registrations.rdapServers,
       registrationSource: registrations.source,
+      registrationTransferLock: registrations.transferLock,
       registrationPrivacyEnabled: registrations.privacyEnabled,
       registrationContacts: registrations.contacts,
     })
