@@ -80,8 +80,6 @@ export async function GET(
       `stale-while-revalidate=${TTL_AVATAR_STALE}`,
     ].join(", ");
 
-    logger.debug("serving avatar", { userId, contentType });
-
     return new NextResponse(new Uint8Array(asset.buffer), {
       status: 200,
       headers: {

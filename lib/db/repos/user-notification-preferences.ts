@@ -6,7 +6,7 @@ import { userNotificationPreferences } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
 
-const logger = createLogger({ source: "user-notification-preferences" });
+const _logger = createLogger({ source: "user-notification-preferences" });
 
 // Re-export for convenience
 export type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
@@ -52,8 +52,6 @@ export async function getOrCreateUserNotificationPreferences(
     })
     .returning();
 
-  logger.info("created default notification preferences", { userId });
-
   return mapPreferences(inserted[0]);
 }
 
@@ -75,8 +73,6 @@ export async function updateUserNotificationPreferences(
     })
     .where(eq(userNotificationPreferences.userId, userId))
     .returning();
-
-  logger.info("updated notification preferences", { userId, preferences });
 
   return mapPreferences(updated[0]);
 }

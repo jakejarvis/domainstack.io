@@ -44,9 +44,6 @@ export const getHosting = cache(async function getHosting(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<HostingResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  logger.debug("start", { domain });
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
@@ -109,14 +106,6 @@ export const getHosting = cache(async function getHosting(
           lon: row.geoLon ?? null,
         },
       };
-
-      logger.debug("cache hit", {
-        domain,
-        hosting: info.hostingProvider.name,
-        email: info.emailProvider.name,
-        dns: info.dnsProvider.name,
-        cached: true,
-      });
 
       return info;
     }
@@ -298,13 +287,6 @@ export const getHosting = cache(async function getHosting(
       );
     }
   }
-
-  logger.info("done", {
-    domain,
-    hosting: hostingName,
-    email: emailName,
-    dns: dnsName,
-  });
 
   return info;
 });

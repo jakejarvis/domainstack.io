@@ -17,9 +17,7 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
     },
   },
   { cron: "0 */4 * * *" }, // Every 4 hours
-  async ({ step, logger }) => {
-    logger.info("Starting tracked domain monitoring scheduler");
-
+  async ({ step }) => {
     // Fetch all tracked domain IDs for verified, non-archived domains
     // This is a lightweight query that just returns UUIDs
     const trackedDomainIds = await step.run(
@@ -28,8 +26,6 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
         return await getMonitoredSnapshotIds();
       },
     );
-
-    logger.info(`Found ${trackedDomainIds.length} tracked domains to monitor`);
 
     if (trackedDomainIds.length === 0) {
       return { scheduled: 0 };
@@ -45,8 +41,6 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
     }));
 
     await step.sendEvent("dispatch-monitoring-events", events);
-
-    logger.info(`Scheduled monitoring for ${events.length} domains`);
 
     return { scheduled: events.length };
   },

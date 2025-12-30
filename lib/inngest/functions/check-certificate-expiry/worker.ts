@@ -37,9 +37,6 @@ export const checkCertificateExpiryWorker = inngest.createFunction(
     });
 
     if (!cert) {
-      inngestLogger.warn("Certificate not found, skipping", {
-        trackedDomainId,
-      });
       return { skipped: true, reason: "not_found" };
     }
 

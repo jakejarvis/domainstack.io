@@ -16,16 +16,10 @@ export const checkSubscriptionExpiryScheduler = inngest.createFunction(
     },
   },
   { cron: "30 9 * * *" }, // Daily at 9:30 AM UTC
-  async ({ step, logger }) => {
-    logger.info("Starting subscription expiry check scheduler");
-
+  async ({ step }) => {
     const userIds = await step.run("fetch-user-ids", async () => {
       return await getUserIdsWithEndingSubscriptions();
     });
-
-    logger.info(
-      `Found ${userIds.length} users with ending subscriptions to check`,
-    );
 
     if (userIds.length === 0) {
       return { scheduled: 0 };
@@ -39,10 +33,6 @@ export const checkSubscriptionExpiryScheduler = inngest.createFunction(
     }));
 
     await step.sendEvent("dispatch-subscription-expiry-events", events);
-
-    logger.info(
-      `Scheduled subscription expiry checks for ${events.length} users`,
-    );
 
     return { scheduled: events.length };
   },

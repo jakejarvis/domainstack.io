@@ -44,10 +44,6 @@ export const initializeSnapshot = inngest.createFunction(
     }
 
     const domainName = domainRecord.name;
-    inngestLogger.info("Initializing snapshot", {
-      domainName,
-      trackedDomainId,
-    });
 
     // Fetch fresh data for this domain
     const [registrationData, hostingData, certificatesData] = await step.run(
@@ -116,12 +112,6 @@ export const initializeSnapshot = inngest.createFunction(
         hostingProviderId: providerIds.hosting,
         emailProviderId: providerIds.email,
       });
-    });
-
-    inngestLogger.info("Snapshot initialized", {
-      domainName,
-      trackedDomainId,
-      snapshotId: snapshot.id,
     });
 
     return { success: true, snapshotId: snapshot.id };

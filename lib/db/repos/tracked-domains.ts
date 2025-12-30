@@ -105,10 +105,6 @@ export async function createTrackedDomain(params: CreateTrackedDomainParams) {
     .returning();
 
   if (inserted.length === 0) {
-    logger.debug("tracked domain already exists, skipping insert", {
-      userId,
-      domainId,
-    });
     return null;
   }
 
@@ -153,11 +149,6 @@ export async function createTrackedDomainWithLimitCheck(
 
     // Check if adding would exceed limit
     if (currentCount >= maxDomains) {
-      logger.debug("domain limit would be exceeded", {
-        userId,
-        currentCount,
-        maxDomains,
-      });
       return { success: false, reason: "limit_exceeded" } as const;
     }
 
@@ -174,16 +165,8 @@ export async function createTrackedDomainWithLimitCheck(
       .returning();
 
     if (inserted.length === 0) {
-      logger.debug("tracked domain already exists", { userId, domainId });
       return { success: false, reason: "already_exists" } as const;
     }
-
-    logger.info("created tracked domain with limit check", {
-      userId,
-      domainId,
-      currentCount: currentCount + 1,
-      maxDomains,
-    });
 
     return { success: true, trackedDomain: inserted[0] } as const;
   });
@@ -839,11 +822,6 @@ export async function updateNotificationOverrides(
     .where(eq(userTrackedDomains.id, id))
     .returning();
 
-  logger.info("updated notification overrides", {
-    trackedDomainId: id,
-    overrides: mergedOverrides,
-  });
-
   return updated[0] ?? null;
 }
 
@@ -862,8 +840,6 @@ export async function resetNotificationOverrides(id: string) {
   if (updated.length === 0) {
     return null;
   }
-
-  logger.info("reset notification overrides", { trackedDomainId: id });
 
   return updated[0];
 }
@@ -1206,7 +1182,6 @@ export async function revokeVerification(id: string) {
     return null;
   }
 
-  logger.info("verification revoked", { trackedDomainId: id });
   return updated[0];
 }
 
@@ -1230,7 +1205,6 @@ export async function archiveTrackedDomain(id: string) {
     return null;
   }
 
-  logger.info("tracked domain archived", { trackedDomainId: id });
   return updated[0];
 }
 
@@ -1252,7 +1226,6 @@ export async function unarchiveTrackedDomain(id: string) {
     return null;
   }
 
-  logger.info("tracked domain unarchived", { trackedDomainId: id });
   return updated[0];
 }
 
@@ -1315,11 +1288,6 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 
     // Check if unarchiving would exceed limit
     if (currentCount >= maxDomains) {
-      logger.debug("domain limit would be exceeded on unarchive", {
-        userId,
-        currentCount,
-        maxDomains,
-      });
       return { success: false, reason: "limit_exceeded" } as const;
     }
 
@@ -1329,13 +1297,6 @@ export async function unarchiveTrackedDomainWithLimitCheck(
       .set({ archivedAt: null })
       .where(eq(userTrackedDomains.id, id))
       .returning();
-
-    logger.info("unarchived tracked domain with limit check", {
-      userId,
-      trackedDomainId: id,
-      currentCount: currentCount + 1,
-      maxDomains,
-    });
 
     return { success: true, trackedDomain: updated } as const;
   });
@@ -1379,12 +1340,6 @@ export async function archiveOldestActiveDomains(
     .returning({ id: userTrackedDomains.id });
 
   const archivedCount = result.length;
-
-  logger.info("archived oldest active domains", {
-    userId,
-    requested: countToArchive,
-    archived: archivedCount,
-  });
 
   return archivedCount;
 }
@@ -1453,15 +1408,6 @@ export async function bulkArchiveTrackedDomains(
 
   const succeeded = archived.map((d) => d.id);
 
-  logger.info("bulk archived tracked domains", {
-    userId,
-    requested: trackedDomainIds.length,
-    succeeded: succeeded.length,
-    alreadyArchived: alreadyProcessed.length,
-    notFound: notFound.length,
-    notOwned: notOwned.length,
-  });
-
   return { succeeded, alreadyProcessed, notFound, notOwned };
 }
 
@@ -1516,14 +1462,6 @@ export async function bulkRemoveTrackedDomains(
     .returning({ id: userTrackedDomains.id });
 
   const succeeded = deleted.map((d) => d.id);
-
-  logger.info("bulk removed tracked domains", {
-    userId,
-    requested: trackedDomainIds.length,
-    succeeded: succeeded.length,
-    notFound: notFound.length,
-    notOwned: notOwned.length,
-  });
 
   return { succeeded, notFound, notOwned };
 }
@@ -1583,11 +1521,6 @@ export async function deleteStaleUnverifiedDomains(
     .delete(userTrackedDomains)
     .where(inArray(userTrackedDomains.id, ids))
     .returning({ id: userTrackedDomains.id });
-
-  logger.info("deleted stale unverified domains", {
-    requested: ids.length,
-    deleted: deleted.length,
-  });
 
   return deleted.length;
 }

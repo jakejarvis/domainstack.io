@@ -54,7 +54,6 @@ export async function getOrCreateSnapshot(
     .returning();
 
   if (inserted.length > 0) {
-    logger.info("created initial snapshot", { trackedDomainId });
     return inserted[0];
   }
 
@@ -134,12 +133,6 @@ export async function createSnapshot(params: CreateSnapshotParams) {
     throw new Error("Failed to create snapshot");
   }
 
-  logger.info("created snapshot", {
-    trackedDomainId,
-    hasRegistrar: !!registration.registrarProviderId,
-    hasCA: !!certificate.caProviderId,
-  });
-
   return inserted[0];
 }
 
@@ -182,7 +175,6 @@ export async function updateSnapshot(
     return null;
   }
 
-  logger.debug("updated snapshot", { trackedDomainId });
   return updated[0];
 }
 
@@ -370,7 +362,7 @@ export async function deleteSnapshot(trackedDomainId: string) {
     await db
       .delete(domainSnapshots)
       .where(eq(domainSnapshots.trackedDomainId, trackedDomainId));
-    logger.debug("deleted snapshot", { trackedDomainId });
+
     return true;
   } catch (err) {
     logger.error("failed to delete snapshot", err, { trackedDomainId });

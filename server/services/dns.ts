@@ -45,9 +45,6 @@ export const getDnsRecords = cache(async function getDnsRecords(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<DnsRecordsResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  logger.debug("start", { domain });
-
   const providers = providerOrderForLookup(domain);
   const durationByProvider: Record<string, number> = {};
   let lastError: unknown = null;
@@ -137,11 +134,6 @@ export const getDnsRecords = cache(async function getDnsRecords(
     const deduplicated = deduplicateDnsRecords(assembled);
     const sorted = sortDnsRecordsByType(deduplicated, types);
     if (allFreshAcrossTypes) {
-      logger.info("cache hit", {
-        domain,
-        types: freshTypes.join(","),
-        cached: true,
-      });
       return { records: sorted, resolver: resolverHint };
     }
 
@@ -303,7 +295,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
 
-        logger.info("partial refresh done", {
+        logger.debug("partial refresh done", {
           domain,
           counts,
           resolver: pinnedProvider.key,
@@ -336,7 +328,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       const flat = results.flat();
       durationByProvider[provider.key] = Date.now() - attemptStart;
 
-      const counts = types.reduce(
+      const _counts = types.reduce(
         (acc, t) => {
           acc[t] = flat.filter((r) => r.type === t).length;
           return acc;
@@ -409,12 +401,6 @@ export const getDnsRecords = cache(async function getDnsRecords(
           });
         }
       }
-      logger.info("done", {
-        domain,
-        counts,
-        resolver: resolverUsed,
-        durationByProvider,
-      });
 
       // Deduplicate records before returning (same logic as replaceDns uses for DB persistence)
       const deduplicated = deduplicateDnsRecords(flat);

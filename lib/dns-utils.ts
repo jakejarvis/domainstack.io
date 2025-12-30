@@ -122,12 +122,6 @@ export async function queryDohProvider(
   const retries = options.retries ?? 1;
   const backoffMs = options.backoffMs ?? 150;
 
-  logger.debug("doh query start", {
-    provider: provider.key,
-    domain,
-    type,
-  });
-
   const res = await fetchWithTimeoutAndRetry(
     url,
     {
@@ -163,13 +157,6 @@ export async function queryDohProvider(
       `DoH invalid response: ${provider.key} (Answer is not an array)`,
     );
   }
-
-  logger.debug("doh query success", {
-    provider: provider.key,
-    domain,
-    type,
-    count: json.Answer.length,
-  });
 
   return json.Answer;
 }

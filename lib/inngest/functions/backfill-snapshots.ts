@@ -33,8 +33,6 @@ export const backfillSnapshots = inngest.createFunction(
   },
   { event: INNGEST_EVENTS.BACKFILL_SNAPSHOTS },
   async ({ step, logger: inngestLogger }) => {
-    inngestLogger.info("Starting snapshot backfill for verified domains");
-
     // Fetch all verified, non-archived domains that don't have snapshots yet
     const verifiedDomains = await step.run("fetch-domains", async () => {
       return await db
@@ -66,8 +64,6 @@ export const backfillSnapshots = inngest.createFunction(
 
     for (const domainRecord of verifiedDomains) {
       try {
-        inngestLogger.info(`Processing ${domainRecord.domainName}`);
-
         // Fetch fresh data for this domain
         const [registrationData, hostingData, certificatesData] =
           await step.run(`fetch-data-${domainRecord.domainName}`, async () => {
@@ -139,9 +135,6 @@ export const backfillSnapshots = inngest.createFunction(
         );
 
         results.success++;
-        inngestLogger.info(
-          `Successfully created snapshot for ${domainRecord.domainName}`,
-        );
       } catch (err) {
         results.failed++;
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -156,7 +149,6 @@ export const backfillSnapshots = inngest.createFunction(
       }
     }
 
-    inngestLogger.info("Snapshot backfill complete", results);
     return results;
   },
 );

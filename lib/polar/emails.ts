@@ -68,7 +68,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
-    const { data, error } = await sendPrettyEmail(
+    const { error } = await sendPrettyEmail(
       {
         to: user.email,
         subject: "🎉 Welcome to Domainstack Pro!",
@@ -89,12 +89,6 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
       });
       return false;
     }
-
-    logger.info("Sent Pro upgrade email", {
-      userId,
-      emailId: data?.id,
-      idempotencyKey,
-    });
 
     // Also send the welcome/tips email (best-effort, non-critical)
     try {
@@ -131,7 +125,7 @@ async function sendProWelcomeEmail(
   try {
     const firstName = getFirstName(userName);
 
-    const { data, error } = await sendPrettyEmail(
+    const { error } = await sendPrettyEmail(
       {
         to: userEmail,
         subject: "Getting the most out of Domainstack Pro",
@@ -152,12 +146,6 @@ async function sendProWelcomeEmail(
       });
       return false;
     }
-
-    logger.info("Sent Pro welcome email", {
-      userId,
-      emailId: data?.id,
-      idempotencyKey,
-    });
 
     return true;
   } catch (err) {
@@ -206,7 +194,7 @@ export async function sendSubscriptionCancelingEmail(
     const firstName = getFirstName(user.name);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
-    const { data, error } = await sendPrettyEmail(
+    const { error } = await sendPrettyEmail(
       {
         to: user.email,
         subject: `Your Pro subscription ends on ${endDate}`,
@@ -227,13 +215,6 @@ export async function sendSubscriptionCancelingEmail(
       });
       return false;
     }
-
-    logger.info("Sent subscription canceling email", {
-      userId,
-      emailId: data?.id,
-      endsAt: endsAt.toISOString(),
-      idempotencyKey,
-    });
 
     return true;
   } catch (err) {
@@ -279,7 +260,7 @@ export async function sendSubscriptionExpiredEmail(
     const firstName = getFirstName(user.name);
     const tierLimits = await getTierLimits();
 
-    const { data, error } = await sendPrettyEmail(
+    const { error } = await sendPrettyEmail(
       {
         to: user.email,
         subject: "Your Pro subscription has ended",
@@ -302,13 +283,6 @@ export async function sendSubscriptionExpiredEmail(
       });
       return false;
     }
-
-    logger.info("Sent subscription expired email", {
-      userId,
-      emailId: data?.id,
-      archivedCount,
-      idempotencyKey,
-    });
 
     return true;
   } catch (err) {

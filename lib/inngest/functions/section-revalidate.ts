@@ -57,21 +57,11 @@ export const sectionRevalidate = inngest.createFunction(
     },
   },
   { event: INNGEST_EVENTS.SECTION_REVALIDATE },
-  async ({ event, step, logger: inngestLogger }) => {
+  async ({ event, step }) => {
     const { domain, section } = event.data;
-
-    inngestLogger.info("Starting section revalidation", {
-      domainName: domain,
-      section,
-    });
 
     await step.run("revalidate", async () => {
       return await runSingleSection(domain, section);
-    });
-
-    inngestLogger.info("Section revalidation complete", {
-      domainName: domain,
-      section,
     });
   },
 );

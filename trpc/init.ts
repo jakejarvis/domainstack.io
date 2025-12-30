@@ -76,19 +76,12 @@ export const createCallerFactory = t.createCallerFactory;
 const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
-  // Log procedure start
-  logger.info("procedure start", {
-    source: "trpc",
-    path,
-    type,
-  });
-
   try {
     const result = await next();
     const durationMs = Math.round(performance.now() - start);
 
     // Log successful completion
-    logger.info("procedure ok", {
+    logger.debug("procedure ok", {
       source: "trpc",
       path,
       type,
@@ -117,35 +110,14 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
 
-    // Normalize error for consistent logging
-    // If a non-Error is thrown (string, object, etc.), wrap it in an Error
-    const normalizedError = err instanceof Error ? err : new Error(String(err));
-
-    // Build sanitized context for non-Error throws
-    const errorContext: Record<string, unknown> = {
+    logger.error("procedure error", err, {
       source: "trpc",
       path,
       type,
       durationMs,
-    };
+    });
 
-    // If original value was not an Error, include sanitized preview
-    if (err !== normalizedError) {
-      errorContext.wrappedError = true;
-      errorContext.originalType = typeof err;
-      // Truncate to prevent logging huge objects
-      const stringValue = String(err);
-      errorContext.originalPreview =
-        stringValue.length > 200
-          ? `${stringValue.slice(0, 200)}...`
-          : stringValue;
-    }
-
-    // Log error with sanitized details
-    logger.error("procedure error", normalizedError, errorContext);
-
-    // Always rethrow normalized Error for proper stack traces
-    throw normalizedError;
+    throw err;
   }
 });
 

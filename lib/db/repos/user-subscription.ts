@@ -76,11 +76,8 @@ export async function updateUserTier(
 
     await db.insert(userSubscriptions).values({ userId, tier });
 
-    logger.info("created missing subscription with tier", { userId, tier });
     return;
   }
-
-  logger.info("updated user tier", { userId, tier });
 }
 
 /**
@@ -110,11 +107,6 @@ export async function setSubscriptionEndsAt(
   if (updated.length === 0) {
     throw new Error(`Subscription not found for user: ${userId}`);
   }
-
-  logger.info("set subscription end date", {
-    userId,
-    endsAt: endsAt.toISOString(),
-  });
 }
 
 /**
@@ -136,8 +128,6 @@ export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
     logger.warn("subscription not found when clearing end date", { userId });
     return;
   }
-
-  logger.info("cleared subscription end date", { userId });
 }
 
 /**
@@ -153,8 +143,6 @@ export async function createSubscription(userId: string): Promise<void> {
       .insert(userSubscriptions)
       .values({ userId })
       .onConflictDoNothing({ target: userSubscriptions.userId });
-
-    logger.debug("created subscription for new user", { userId });
   } catch (err) {
     // Log but don't rethrow - user signup should not fail due to subscription creation
     logger.error("failed to create subscription for new user", err, { userId });
@@ -288,6 +276,4 @@ export async function setLastExpiryNotification(
     });
     return;
   }
-
-  logger.debug("set last expiry notification", { userId, threshold });
 }

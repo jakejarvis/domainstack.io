@@ -196,7 +196,7 @@ async function sendSubscriptionExpiryNotification(
       : `Pro subscription ends on ${endDate}`;
     const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
 
-    const { data, error } = await sendPrettyEmail(
+    const { error } = await sendPrettyEmail(
       {
         to: userEmail,
         subject,
@@ -218,14 +218,6 @@ async function sendSubscriptionExpiryNotification(
       // Don't throw - we don't want to retry and potentially spam users
       return false;
     }
-
-    logger.info("Sent subscription expiry notification", {
-      userId,
-      emailId: data?.id,
-      daysRemaining,
-      threshold,
-      idempotencyKey,
-    });
 
     return true;
   } catch (err) {

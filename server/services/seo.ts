@@ -36,9 +36,6 @@ export async function getSeo(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<SeoResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  logger.debug("start", { domain });
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
@@ -117,7 +114,7 @@ export async function getSeo(
 
     // Log if cached data has errors (helps debug issues)
     if (response.errors?.html || response.errors?.robots) {
-      logger.warn("returning cached seo with errors", {
+      logger.debug("returning cached seo with errors", {
         domain,
         htmlError: response.errors.html,
         robotsError: response.errors.robots,
@@ -183,13 +180,12 @@ export async function getSeo(
     if (isDnsError) {
       logger.debug("html fetch failed (DNS lookup failed)", {
         domain,
-        url: finalUrl,
+        error: err instanceof Error ? err.message : String(err),
       });
     } else if (isTlsError) {
       logger.debug("html fetch failed (TLS error)", {
         domain,
-        url: finalUrl,
-        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
+        error: err instanceof Error ? err.message : String(err),
       });
     } else {
       logger.error("html fetch failed", err, { domain, url: finalUrl });
@@ -269,10 +265,7 @@ export async function getSeo(
       uploadedImageUrl = url;
       preview.imageUploaded = url;
     } catch (err) {
-      logger.warn("OG image processing failed", err, {
-        domain,
-        image: preview.image,
-      });
+      logger.warn("OG image processing failed", err, { domain });
       preview.imageUploaded = null;
     }
   }
@@ -326,14 +319,6 @@ export async function getSeo(
       );
     }
   }
-
-  logger.info("done", {
-    domain,
-    status: status ?? -1,
-    has_meta: !!meta,
-    has_robots: !!robots,
-    has_errors: !!(htmlError || robotsError),
-  });
 
   return response;
 }

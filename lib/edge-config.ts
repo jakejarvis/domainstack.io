@@ -46,7 +46,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
 
     if (isPrerenderError) {
       // This is expected during static generation when accessing dynamic data
-      logger.info("skipping domain suggestions during prerender");
+      logger.debug("skipping domain suggestions during prerender");
     } else {
       // Log unexpected errors but still fail gracefully
       logger.error("failed to fetch domain suggestions", err);
@@ -95,7 +95,7 @@ export async function getTierLimits(): Promise<TierLimits> {
       err instanceof Error && err.message.includes("During prerendering");
 
     if (isPrerenderError) {
-      logger.info("skipping tier limits during prerender");
+      logger.debug("skipping tier limits during prerender");
     } else {
       logger.error("failed to fetch tier limits", err);
     }

@@ -29,8 +29,6 @@ export const cleanupStaleDomains = inngest.createFunction(
   // Run every Sunday at 3:00 AM UTC
   { cron: "0 3 * * 0" },
   async ({ step, logger: inngestLogger }) => {
-    inngestLogger.info("Starting stale domain cleanup");
-
     // Calculate cutoff date (domains created before this are considered stale)
     const cutoffDate = subDays(new Date(), STALE_DOMAIN_DAYS);
 
@@ -49,25 +47,10 @@ export const cleanupStaleDomains = inngest.createFunction(
       };
     }
 
-    // Log details for debugging
-    for (const domain of staleDomains) {
-      inngestLogger.debug("stale domain found", {
-        trackedDomainId: domain.id,
-        userId: domain.userId,
-        domainName: domain.domainName,
-        createdAt: new Date(domain.createdAt).toISOString(),
-      });
-    }
-
     // Delete all stale domains in one batch
     const deletedCount = await step.run("delete-stale-domains", async () => {
       const ids = staleDomains.map((d) => d.id);
       return await deleteStaleUnverifiedDomains(ids);
-    });
-
-    inngestLogger.info("Stale domain cleanup complete", {
-      total: staleDomains.length,
-      deleted: deletedCount,
     });
 
     return {

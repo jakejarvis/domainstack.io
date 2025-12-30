@@ -25,8 +25,6 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
   owner: string | null;
   domain: string | null;
 }> {
-  logger.debug("start", { ip });
-
   try {
     // Add timeout to prevent hanging requests to upstream IP service
     const controller = new AbortController();
@@ -102,12 +100,6 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
         lat: typeof data.latitude === "number" ? data.latitude : null,
         lon: typeof data.longitude === "number" ? data.longitude : null,
       };
-
-      logger.info("done", {
-        ip,
-        owner: owner || "none",
-        domain: domain || "none",
-      });
 
       return { geo, owner, domain };
     } catch (fetchErr) {

@@ -131,7 +131,7 @@ async function generateScreenshot(
           screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
         if (isDefinitiveResult) {
-          logger.debug("db cache hit", { domain, cached: true });
+          logger.debug("db cache hit", { domain });
           return { url: screenshotRecord.url };
         }
       }
@@ -280,7 +280,7 @@ async function generateScreenshot(
     // Only mark as permanently failed if ALL candidate URLs returned permanent signals
     if (permanentFailureUrls.size === tryUrls.length && tryUrls.length > 0) {
       isPermanentFailure = true;
-      logger.info("screenshot permanently unavailable (all urls failed)", {
+      logger.debug("screenshot permanently unavailable (all urls failed)", {
         domain,
         failedUrls: Array.from(permanentFailureUrls),
       });
@@ -317,8 +317,9 @@ async function generateScreenshot(
         logger.error("db persist error (null)", err, { domain });
       }
     }
-  } finally {
-    // Browser is now managed as a singleton; don't close it here
+  } catch (err) {
+    logger.error("screenshot generation failed", err, { domain });
   }
+
   return { url: resultUrl };
 }

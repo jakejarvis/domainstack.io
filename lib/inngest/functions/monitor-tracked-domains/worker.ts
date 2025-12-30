@@ -58,8 +58,6 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
 
     const { domainName, userId, userName, userEmail } = snapshot;
 
-    inngestLogger.info(`Monitoring domain: ${domainName}`, { trackedDomainId });
-
     try {
       // Fetch fresh data for this domain
       const [registrationData, hostingData, certificatesData] = await step.run(

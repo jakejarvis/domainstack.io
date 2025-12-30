@@ -32,10 +32,6 @@ export const getHeaders = cache(async function getHeaders(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<HeadersResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  const url = `https://${domain}/`;
-  logger.debug("start", { domain });
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
@@ -66,12 +62,6 @@ export const getHeaders = cache(async function getHeaders(
       statusMessage = undefined;
     }
 
-    logger.debug("cache hit", {
-      domain,
-      status: row.status,
-      count: normalized.length,
-      cached: true,
-    });
     return { headers: normalized, status: row.status, statusMessage };
   }
 
@@ -79,7 +69,7 @@ export const getHeaders = cache(async function getHeaders(
   const allowedHosts = [domain, `www.${domain}`];
   try {
     const final = await fetchRemoteAsset({
-      url,
+      url: `https://${domain}/`,
       allowHttp: true, // allow http fallback but still enforce IP allow list
       timeoutMs: REQUEST_TIMEOUT_MS,
       maxRedirects: 5,
@@ -117,12 +107,6 @@ export const getHeaders = cache(async function getHeaders(
       }
     }
 
-    logger.info("done", {
-      domain,
-      status: final.status,
-      count: normalized.length,
-    });
-
     // Get status message
     let statusMessage: string | undefined;
     try {
@@ -141,11 +125,12 @@ export const getHeaders = cache(async function getHeaders(
     if (isDnsError) {
       logger.debug("no web hosting (no A/AAAA records)", {
         domain,
+        error: err instanceof Error ? err.message : String(err),
       });
     } else if (isTlsError) {
       logger.debug("probe failed (TLS error)", {
         domain,
-        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
+        error: err instanceof Error ? err.message : String(err),
       });
       return {
         headers: [],
@@ -153,7 +138,7 @@ export const getHeaders = cache(async function getHeaders(
         statusMessage: "Invalid SSL certificate",
       };
     } else {
-      logger.error("probe failed", err, { domain });
+      logger.error("probe failed (unexpected error)", err, { domain });
     }
 
     // Return empty on failure without caching to avoid long-lived negatives

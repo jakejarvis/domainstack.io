@@ -42,8 +42,6 @@ async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
 
   const data = await res.json();
 
-  logger.info("IP ranges fetched");
-
   return {
     ipv4Cidrs: data.result?.ipv4_cidrs || [],
     ipv6Cidrs: data.result?.ipv6_cidrs || [],

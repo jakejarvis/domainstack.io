@@ -16,14 +16,10 @@ export const checkDomainExpiryScheduler = inngest.createFunction(
     },
   },
   { cron: "0 9 * * *" },
-  async ({ step, logger }) => {
-    logger.info("Starting domain expiry check scheduler");
-
+  async ({ step }) => {
     const verifiedDomainIds = await step.run("fetch-verified-ids", async () => {
       return await getVerifiedTrackedDomainIds();
     });
-
-    logger.info(`Found ${verifiedDomainIds.length} domains to check`);
 
     if (verifiedDomainIds.length === 0) {
       return { scheduled: 0 };
@@ -37,8 +33,6 @@ export const checkDomainExpiryScheduler = inngest.createFunction(
     }));
 
     await step.sendEvent("dispatch-expiry-events", events);
-
-    logger.info(`Scheduled expiry checks for ${events.length} domains`);
 
     return { scheduled: events.length };
   },

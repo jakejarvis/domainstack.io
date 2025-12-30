@@ -142,7 +142,7 @@ export async function closeBrowser(): Promise<void> {
 
 if (process.env.NODE_ENV !== "test") {
   const handleShutdown = async (signal: string) => {
-    logger.info(`received ${signal}, closing browser`);
+    logger.debug(`received ${signal}, closing browser`);
     await closeBrowser();
     process.exit(0);
   };

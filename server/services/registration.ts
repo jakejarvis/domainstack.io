@@ -61,9 +61,6 @@ export async function getRegistration(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<RegistrationResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  logger.debug("start", { domain });
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
 
@@ -145,8 +142,6 @@ export async function getRegistration(
         );
       }
 
-      logger.info("cache hit", { domain });
-
       return response;
     }
   } catch (err) {
@@ -207,8 +202,6 @@ export async function getRegistration(
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
-    logger.info("unregistered (not persisted)", { domain });
-
     const registrarProvider = normalizeRegistrar(record.registrar ?? {});
     // Explicitly construct Registration object to avoid leaking rdapper internals
     return {
@@ -341,8 +334,6 @@ export async function getRegistration(
         ),
       );
     }
-
-    logger.info("done", { domain });
   } catch (err) {
     // Persistence or scheduling failed, but we still have valid rdapper data
     // Log the error and return the response anyway

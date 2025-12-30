@@ -22,11 +22,6 @@ export async function putBlob(options: {
       allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
     });
 
-    logger.debug("put ok", {
-      url: blob.url,
-      pathname: options.pathname,
-    });
-
     return {
       url: blob.url,
       pathname: options.pathname,
@@ -56,7 +51,6 @@ export async function deleteBlobs(urls: string[]): Promise<DeleteResult> {
   for (const url of urls) {
     try {
       await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
-      logger.debug("delete ok", { url });
       results.push({ url, deleted: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";

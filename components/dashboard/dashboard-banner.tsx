@@ -6,7 +6,6 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useLogger } from "@/hooks/use-logger";
 import { cn } from "@/lib/utils";
 
 const bannerVariants = cva(
@@ -118,31 +117,19 @@ export function DashboardBanner({
   className,
 }: DashboardBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false);
-  const logger = useLogger({ component: "DashboardBanner" });
 
   if (isDismissed) return null;
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    logger.debug("banner dismissed", { variant, title });
     onDismiss?.();
   };
 
   const handleActionClick = () => {
-    logger.debug("banner action clicked", {
-      variant,
-      title,
-      label: action?.label,
-    });
     action?.onClick();
   };
 
   const handleSecondaryActionClick = () => {
-    logger.debug("banner secondary action clicked", {
-      variant,
-      title,
-      label: secondaryAction?.label,
-    });
     secondaryAction?.onClick();
   };
 

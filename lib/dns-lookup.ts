@@ -26,8 +26,6 @@ export async function dnsLookupViaHttps(
 ): Promise<DnsLookupResult | DnsLookupResult[]> {
   const all = options?.all ?? false;
 
-  logger.debug("dns lookup start", { hostname, all });
-
   // Try DoH providers in order
   const providers = providerOrderForLookup(hostname);
   let lastError: unknown = null;
@@ -36,11 +34,6 @@ export async function dnsLookupViaHttps(
     try {
       const records = await resolveWithProvider(hostname, provider.key);
       if (records.length > 0) {
-        logger.debug("dns lookup success", {
-          hostname,
-          provider: provider.key,
-          count: records.length,
-        });
         return all ? records : records[0];
       }
     } catch (err) {
@@ -54,7 +47,7 @@ export async function dnsLookupViaHttps(
   }
 
   // All providers failed
-  logger.warn("all DoH providers failed for hostname", {
+  logger.debug("all DoH providers failed for hostname", {
     hostname,
     lastError:
       lastError instanceof Error ? lastError.message : String(lastError),

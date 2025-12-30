@@ -58,9 +58,6 @@ export const verifyPendingDomainCronWorker = inngest.createFunction(
     }
 
     if (domain.verified) {
-      inngestLogger.info("Domain already verified, skipping", {
-        trackedDomainId,
-      });
       return { skipped: true, reason: "already_verified" };
     }
 
@@ -77,7 +74,6 @@ export const verifyPendingDomainCronWorker = inngest.createFunction(
         await step.run("mark-verified", async () => {
           return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
-        inngestLogger.info("Domain verified successfully", { trackedDomainId });
         return { verified: true, method: verifiedMethod };
       }
 
@@ -168,7 +164,7 @@ async function handleVerificationFailure(
     await markVerificationFailing(domain.id);
     await sendVerificationFailingEmail(domain, logger);
 
-    logger.info("Marked domain as failing verification", {
+    logger.debug("Marked domain as failing verification", {
       domainId: domain.id,
       domainName: domain.domainName,
     });
@@ -190,7 +186,7 @@ async function handleVerificationFailure(
       await revokeVerification(domain.id);
       await sendVerificationRevokedEmail(domain, logger);
 
-      logger.info("Revoked domain verification after grace period", {
+      logger.debug("Revoked domain verification after grace period", {
         domainId: domain.id,
         domainName: domain.domainName,
         daysFailing,

@@ -110,12 +110,12 @@ async function fetchIcon(
         cachedRecord.url !== null || cachedRecord.notFound === true;
 
       if (isDefinitiveResult) {
-        logger.debug("db cache hit", { ...logContext, cached: true });
+        logger.debug("db cache hit", { ...logContext });
         return { url: cachedRecord.url };
       }
     }
   } catch (err) {
-    logger.error("db read failed", err, logContext);
+    logger.error("db read failed", err, { ...logContext });
   }
 
   // Generate icon (cache missed)
@@ -184,7 +184,7 @@ async function fetchIcon(
           expiresAt,
         });
       } catch (err) {
-        logger.error("db persist error", err, logContext);
+        logger.error("db persist error", err, { ...logContext });
       }
 
       return { url };
@@ -212,7 +212,7 @@ async function fetchIcon(
       expiresAt,
     });
   } catch (err) {
-    logger.error("db persist error (null)", err, logContext);
+    logger.error("db persist error (null)", err, { ...logContext });
   }
 
   return { url: null };
@@ -228,7 +228,7 @@ async function fetchIconPromise(
 
   // Check for in-flight request
   if (iconPromises.has(identifier)) {
-    logger.debug("in-flight request hit", logContext);
+    logger.debug("in-flight request hit", { ...logContext });
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return iconPromises.get(identifier)!;
   }

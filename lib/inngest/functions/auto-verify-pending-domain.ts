@@ -52,11 +52,6 @@ export const autoVerifyPendingDomain = inngest.createFunction(
   async ({ event, step, logger: inngestLogger }) => {
     const { trackedDomainId, domainName } = event.data;
 
-    inngestLogger.info("Starting auto-verification schedule", {
-      trackedDomainId,
-      domainName,
-    });
-
     for (let attempt = 0; attempt < RETRY_DELAYS.length; attempt++) {
       const delay = RETRY_DELAYS[attempt];
 
@@ -129,13 +124,6 @@ export const autoVerifyPendingDomain = inngest.createFunction(
           return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
 
-        inngestLogger.info("Auto-verified pending domain", {
-          trackedDomainId,
-          domainName: currentDomainName,
-          method: result.method,
-          attempt: attempt + 1,
-        });
-
         return {
           result: "verified",
           domainName: currentDomainName,
@@ -143,7 +131,7 @@ export const autoVerifyPendingDomain = inngest.createFunction(
           attempt: attempt + 1,
         };
       } else {
-        inngestLogger.debug("Verification attempt failed, will retry", {
+        inngestLogger.info("Verification attempt failed, will retry", {
           domainName: currentDomainName,
           verifiedMethod: result.method,
           attempt: attempt + 1,

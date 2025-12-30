@@ -297,13 +297,6 @@ export async function clearDomainExpiryNotifications(
       )
       .returning();
 
-    if (deleted.length > 0) {
-      logger.info("cleared domain expiry notifications for renewal", {
-        trackedDomainId,
-        count: deleted.length,
-      });
-    }
-
     return deleted.length;
   } catch (err) {
     logger.error("failed to clear domain expiry notifications", err, {
@@ -331,13 +324,6 @@ export async function clearCertificateExpiryNotifications(
         ),
       )
       .returning();
-
-    if (deleted.length > 0) {
-      logger.info("cleared certificate expiry notifications for renewal", {
-        trackedDomainId,
-        count: deleted.length,
-      });
-    }
 
     return deleted.length;
   } catch (err) {

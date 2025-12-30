@@ -99,7 +99,7 @@ export function createFetchWithTimeout(
       return res;
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        logger.error(`upstream timeout ${providerName}`, err, {
+        logger.error("upstream timeout", err, {
           provider: providerName,
         });
         throw new Error(`${providerName} API request timed out`);
@@ -146,13 +146,11 @@ async function fetchProviderPricing(
 ): Promise<RegistrarPricingResponse | null> {
   // Skip disabled providers
   if (!provider.config.enabled) {
-    logger.debug("provider disabled", { provider: provider.name });
     return null;
   }
 
   try {
     const payload = await provider.fetchPricing();
-    logger.info("fetch ok", { provider: provider.name });
     return payload;
   } catch (err) {
     logger.error("fetch error", err, { provider: provider.name });
@@ -226,7 +224,6 @@ const dynadotProvider = createPricingProvider("dynadot", {
     const apiKey = process.env.DYNADOT_API_KEY;
 
     if (!apiKey) {
-      logger.warn("DYNADOT_API_KEY not set", { provider: "dynadot" });
       throw new Error("Dynadot API key not configured");
     }
 

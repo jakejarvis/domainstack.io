@@ -55,7 +55,7 @@ export const checkDomainExpiryWorker = inngest.createFunction(
     // Note: In rare cases of temporary data issues, this may clear notifications prematurely,
     // but they will be re-sent when the domain approaches the next threshold (30d, 14d, 7d, 1d).
     if (daysRemaining > MAX_THRESHOLD_DAYS) {
-      inngestLogger.info("Domain renewed or expiration extended", {
+      inngestLogger.debug("Domain renewed or expiration extended", {
         trackedDomainId,
         domainName: domain.domainName,
         daysRemaining,

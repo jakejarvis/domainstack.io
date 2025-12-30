@@ -16,16 +16,10 @@ export const checkCertificateExpiryScheduler = inngest.createFunction(
     },
   },
   { cron: "15 9 * * *" },
-  async ({ step, logger }) => {
-    logger.info("Starting certificate expiry check scheduler");
-
+  async ({ step }) => {
     const trackedDomainIds = await step.run("fetch-ids", async () => {
       return await getVerifiedTrackedDomainIdsWithCertificates();
     });
-
-    logger.info(
-      `Found ${trackedDomainIds.length} domains with certificates to check`,
-    );
 
     if (trackedDomainIds.length === 0) {
       return { scheduled: 0 };
@@ -39,10 +33,6 @@ export const checkCertificateExpiryScheduler = inngest.createFunction(
     }));
 
     await step.sendEvent("dispatch-cert-expiry-events", events);
-
-    logger.info(
-      `Scheduled certificate expiry checks for ${events.length} domains`,
-    );
 
     return { scheduled: events.length };
   },

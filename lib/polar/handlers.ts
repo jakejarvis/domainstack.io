@@ -50,7 +50,7 @@ export async function handleSubscriptionCreated(
   const { customer, product } = payload.data;
 
   // Log for observability, but don't upgrade tier yet
-  logger.info("subscription created (pending payment)", {
+  logger.debug("subscription created (pending payment)", {
     polarCustomerId: customer.id,
     userId: customer.externalId,
     productId: product.id,
@@ -80,7 +80,7 @@ export async function handleSubscriptionActive(
   const { customer, product } = payload.data;
   const userId = customer.externalId;
 
-  logger.info("subscription active (payment confirmed)", {
+  logger.debug("subscription active (payment confirmed)", {
     polarCustomerId: customer.id,
     userId,
     productId: product.id,
@@ -109,7 +109,7 @@ export async function handleSubscriptionActive(
     // Upgrade tier and clear any pending cancellation (e.g., user re-subscribed)
     await updateUserTier(userId, tier);
     await clearSubscriptionEndsAt(userId);
-    logger.info("upgraded user tier", { userId, tier });
+    logger.debug("upgraded user tier", { userId, tier });
 
     analytics.track("subscription_activated", { tier }, userId);
 
@@ -134,7 +134,7 @@ export async function handleSubscriptionCanceled(
   const { customer, currentPeriodEnd, canceledAt } = payload.data;
   const userId = customer.externalId;
 
-  logger.info("subscription canceled (still active until period end)", {
+  logger.debug("subscription canceled (still active until period end)", {
     polarCustomerId: customer.id,
     userId,
     subscriptionId: payload.data.id,
@@ -188,7 +188,7 @@ export async function handleSubscriptionRevoked(
   const { customer } = payload.data;
   const userId = customer.externalId;
 
-  logger.info("subscription revoked (access ended)", {
+  logger.debug("subscription revoked (access ended)", {
     polarCustomerId: customer.id,
     userId,
     subscriptionId: payload.data.id,
@@ -204,7 +204,7 @@ export async function handleSubscriptionRevoked(
   try {
     const archivedCount = await handleDowngrade(userId);
     await clearSubscriptionEndsAt(userId);
-    logger.info("downgraded user", { userId, archivedCount });
+    logger.debug("downgraded user", { userId, archivedCount });
 
     analytics.track("subscription_revoked", { archivedCount }, userId);
 

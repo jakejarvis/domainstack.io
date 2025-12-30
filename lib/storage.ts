@@ -58,10 +58,6 @@ async function uploadWithRetry(
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      logger.info(`upload attempt ${attempt + 1}/${maxAttempts}`, {
-        pathname,
-      });
-
       const result = await putBlob({
         pathname,
         body: buffer,
@@ -69,18 +65,12 @@ async function uploadWithRetry(
         cacheControlMaxAge,
       });
 
-      logger.info("upload ok", {
-        pathname,
-        attempts: attempt + 1,
-      });
-
       return result;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      logger.warn(`upload attempt failed ${attempt + 1}/${maxAttempts}`, {
+      logger.warn(`upload attempt failed ${attempt + 1}/${maxAttempts}`, err, {
         pathname,
-        attempts: attempt + 1,
       });
 
       // Don't sleep on last attempt
@@ -90,9 +80,8 @@ async function uploadWithRetry(
           UPLOAD_BACKOFF_BASE_MS,
           UPLOAD_BACKOFF_MAX_MS,
         );
-        logger.warn(`retrying after ${delay}ms delay`, {
+        logger.warn(`retrying after ${delay}ms delay`, err, {
           pathname,
-          durationMs: delay,
         });
         await sleep(delay);
       }

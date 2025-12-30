@@ -41,9 +41,6 @@ export async function getCertificates(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<CertificatesResponse> {
-  // Input domain is already normalized to registrable domain by router schema
-  logger.debug("start", { domain });
-
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
   const nowMs = now.getTime();
@@ -102,11 +99,6 @@ export async function getCertificates(
             : { id: null, ...detectCertificateAuthority(c.issuer) },
       }));
 
-      logger.info("cache hit", {
-        domain,
-        count: out.length,
-        cached: true,
-      });
       return { certificates: out };
     }
   }
@@ -265,21 +257,20 @@ export async function getCertificates(
       }
     }
 
-    logger.info("done", {
-      domain,
-      chainLength: out.length,
-    });
     return { certificates: out };
   } catch (err) {
     if (isExpectedDnsError(err)) {
-      logger.debug("no certificates found (DNS lookup failed)", { domain });
+      logger.debug("no certificates found (DNS lookup failed)", {
+        domain,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return { certificates: [] };
     }
 
     if (isExpectedTlsError(err)) {
       logger.debug("probe failed (TLS error)", {
         domain,
-        code: (err as unknown as { cause?: { code?: string } })?.cause?.code,
+        error: err instanceof Error ? err.message : String(err),
       });
       return {
         certificates: [],
@@ -287,7 +278,7 @@ export async function getCertificates(
       };
     }
 
-    logger.error("probe failed", err, { domain });
+    logger.error("probe failed (unexpected error)", err, { domain });
 
     // Rethrow to let callers distinguish between:
     // - Empty array: domain has no certificates (legitimately empty)

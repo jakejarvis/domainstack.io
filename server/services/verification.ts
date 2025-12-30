@@ -44,8 +44,6 @@ export async function verifyDomainOwnership(
   token: string,
   method: VerificationMethod,
 ): Promise<VerificationResult> {
-  logger.debug("verifying domain ownership", { domain, method });
-
   try {
     switch (method) {
       case "dns_txt":
@@ -59,7 +57,6 @@ export async function verifyDomainOwnership(
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    logger.error("verification failed", err, { domain, method });
     return {
       verified: false,
       method: null,
@@ -77,8 +74,6 @@ export async function tryAllVerificationMethods(
   domain: string,
   token: string,
 ): Promise<VerificationResult> {
-  logger.debug("trying all verification methods", { domain });
-
   // Try DNS TXT first (most common/reliable)
   try {
     const dnsResult = await verifyDnsTxtImpl(domain, token);
@@ -142,8 +137,6 @@ async function verifyDnsTxtImpl(
 
   // Try each hostname with all providers
   for (const hostname of hostsToCheck) {
-    let lastError: unknown = null;
-
     // Try providers in sequence for this hostname
     for (const provider of providers) {
       try {
@@ -159,12 +152,6 @@ async function verifyDnsTxtImpl(
           { timeoutMs: 5000, retries: 1, backoffMs: 200 },
         );
         if (!res.ok) {
-          logger.warn("DNS query failed", {
-            domain,
-            hostname,
-            provider: provider.key,
-            status: res.status,
-          });
           continue;
         }
 
@@ -178,13 +165,6 @@ async function verifyDnsTxtImpl(
             // Remove surrounding quotes from TXT record value
             const value = answer.data.replace(/^"|"$/g, "").trim();
             if (value === expectedValue) {
-              const isLegacy = hostname !== domain;
-              logger.info("DNS TXT verification successful", {
-                domain,
-                hostname,
-                provider: provider.key,
-                legacy: isLegacy,
-              });
               return { verified: true, method: "dns_txt" };
             }
           }
@@ -195,30 +175,9 @@ async function verifyDnsTxtImpl(
           hostname,
           provider: provider.key,
         });
-        lastError = err;
       }
     }
-
-    logger.debug("DNS TXT record not found for hostname", {
-      domain,
-      hostname,
-    });
-    if (lastError) {
-      logger.debug("DNS TXT last error for hostname", {
-        domain,
-        hostname,
-        error: lastError,
-      });
-    }
   }
-
-  logger.debug(
-    "DNS TXT record not found or mismatched after checking all hostnames",
-    {
-      domain,
-      hostsChecked: hostsToCheck,
-    },
-  );
 
   return { verified: false, method: null };
 }
@@ -271,19 +230,14 @@ async function verifyHtmlFileImpl(
       // File must contain "domainstack-verify: TOKEN" (trimmed)
       const content = result.buffer.toString("utf-8").trim();
       if (content === expectedContent) {
-        logger.info("HTML file verification successful (per-token file)", {
-          domain,
-        });
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
       // Log SSRF blocks as warnings, infrastructure errors are caught here
       if (err instanceof RemoteAssetError) {
         if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn("HTML file verification blocked (SSRF protection)", {
+          logger.warn("HTML file verification blocked (SSRF protection)", err, {
             domain,
-            url: urlStr,
-            reason: err.code,
           });
         }
         // Other infrastructure errors - try next URL
@@ -309,25 +263,19 @@ async function verifyHtmlFileImpl(
 
       // Legacy method: same content format "domainstack-verify: TOKEN"
       if (result.buffer.toString("utf-8").trim() === expectedContent) {
-        logger.info("HTML file verification successful (legacy file)", {
-          domain,
-        });
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
       if (err instanceof RemoteAssetError) {
         if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn("HTML file verification blocked (SSRF protection)", {
+          logger.warn("HTML file verification blocked (SSRF protection)", err, {
             domain,
-            url: urlStr,
-            reason: err.code,
           });
         }
       }
     }
   }
 
-  logger.debug("HTML file verification failed", { domain });
   return { verified: false, method: null };
 }
 
@@ -389,42 +337,21 @@ async function verifyMetaTagImpl(
       });
 
       if (foundMatch) {
-        logger.info("Meta tag verification successful", {
-          domain,
-          totalMetaTags: metaTags.length,
-        });
         return { verified: true, method: "meta_tag" };
-      }
-
-      // Log if we found meta tags but none matched (helps debugging)
-      if (metaTags.length > 0) {
-        logger.debug("Meta tags found but no match", {
-          domain,
-          metaTagCount: metaTags.length,
-        });
       }
     } catch (err) {
       // Log SSRF blocks as warnings (potential attack attempts)
       if (err instanceof RemoteAssetError) {
         if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn("Meta tag verification blocked (SSRF protection)", {
+          logger.warn("Meta tag verification blocked (SSRF protection)", err, {
             domain,
-            url: urlStr,
-            reason: err.code,
           });
         }
         // Other infrastructure errors - try next URL
-      } else {
-        logger.debug("Meta tag fetch error", {
-          error: err,
-          domain,
-          url: urlStr,
-        });
       }
     }
   }
 
-  logger.debug("Meta tag verification failed", { domain });
   return { verified: false, method: null };
 }
 
