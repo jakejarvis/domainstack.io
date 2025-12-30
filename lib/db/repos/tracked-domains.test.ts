@@ -369,6 +369,7 @@ describe("getTrackedDomainsForUser", () => {
       whoisServer: null,
       rdapServers: null,
       registrationSource: null,
+      transferLock: null,
       registrantInfo: {
         privacyEnabled: null,
         contacts: null,

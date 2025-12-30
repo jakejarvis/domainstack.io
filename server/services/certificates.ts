@@ -177,56 +177,56 @@ export async function getCertificates(
         ? new Date(Math.min(...out.map((c) => new Date(c.validTo).getTime())))
         : new Date(Date.now() + 3600_000);
 
-    // Persist to Postgres only if domain exists (i.e., is registered)
-    if (existingDomain) {
-      // Batch resolve all CA providers in one query
-      // Filter out entries with null/empty domain or name to avoid creating bogus providers
-      const caProviderInputs = out
-        .filter(
-          (c) =>
-            c.caProvider.domain &&
-            c.caProvider.name &&
-            c.caProvider.domain.trim() !== "" &&
-            c.caProvider.name.trim() !== "",
-        )
-        .map((c) => ({
-          category: "ca" as const,
-          domain: c.caProvider.domain,
-          name: c.caProvider.name,
-        }));
+    // Batch resolve all CA providers in one query
+    // Filter out entries with null/empty domain or name to avoid creating bogus providers
+    const caProviderInputs = out
+      .filter(
+        (c) =>
+          c.caProvider.domain &&
+          c.caProvider.name &&
+          c.caProvider.domain.trim() !== "" &&
+          c.caProvider.name.trim() !== "",
+      )
+      .map((c) => ({
+        category: "ca" as const,
+        domain: c.caProvider.domain,
+        name: c.caProvider.name,
+      }));
 
-      const caProviderMap =
-        await batchResolveOrCreateProviderIds(caProviderInputs);
+    const caProviderMap =
+      await batchResolveOrCreateProviderIds(caProviderInputs);
 
-      // Helper to resolve provider ID for a certificate
-      const resolveProviderId = (cert: (typeof out)[number]): string | null => {
-        const hasValidProvider =
-          cert.caProvider.domain &&
-          cert.caProvider.name &&
-          cert.caProvider.domain.trim() !== "" &&
-          cert.caProvider.name.trim() !== "";
+    // Helper to resolve provider ID for a certificate
+    const resolveProviderId = (cert: (typeof out)[number]): string | null => {
+      const hasValidProvider =
+        cert.caProvider.domain &&
+        cert.caProvider.name &&
+        cert.caProvider.domain.trim() !== "" &&
+        cert.caProvider.name.trim() !== "";
 
-        if (!hasValidProvider) {
-          return null;
-        }
-
-        return (
-          caProviderMap.get(
-            makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
-          ) ?? null
-        );
-      };
-
-      // Resolve provider IDs once and store them
-      const providerIds = out.map((cert) => resolveProviderId(cert));
-
-      // Update out array with resolved provider IDs
-      for (let i = 0; i < out.length; i++) {
-        if (providerIds[i]) {
-          out[i].caProvider.id = providerIds[i];
-        }
+      if (!hasValidProvider) {
+        return null;
       }
 
+      return (
+        caProviderMap.get(
+          makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
+        ) ?? null
+      );
+    };
+
+    // Resolve provider IDs once and store them
+    const providerIds = out.map((cert) => resolveProviderId(cert));
+
+    // Update out array with resolved provider IDs
+    for (let i = 0; i < out.length; i++) {
+      if (providerIds[i]) {
+        out[i].caProvider.id = providerIds[i];
+      }
+    }
+
+    // Persist to Postgres only if domain exists (i.e., is registered)
+    if (existingDomain) {
       // Build chain with provider IDs for database persistence
       const chainWithIds = out.map((c, i) => ({
         issuer: c.issuer,

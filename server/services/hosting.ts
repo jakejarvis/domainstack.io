@@ -212,55 +212,55 @@ export const getHosting = cache(async function getHosting(
     geo,
   };
 
+  // Batch resolve all providers in one query
+  // We do this before checking existingDomain to ensure we return IDs (and thus icons)
+  // even if the domain hasn't been persisted to the DB yet (race condition with registration service)
+  const providerInputs = [
+    hostingName
+      ? {
+          category: "hosting" as const,
+          domain: hostingIconDomain,
+          name: hostingName,
+        }
+      : null,
+    emailName
+      ? {
+          category: "email" as const,
+          domain: emailIconDomain,
+          name: emailName,
+        }
+      : null,
+    dnsName
+      ? { category: "dns" as const, domain: dnsIconDomain, name: dnsName }
+      : null,
+  ].filter((p): p is NonNullable<typeof p> => p !== null);
+
+  const providerMap = await batchResolveOrCreateProviderIds(providerInputs);
+
+  const hostingProviderId = hostingName
+    ? (providerMap.get(
+        makeProviderKey("hosting", hostingIconDomain, hostingName),
+      ) ?? null)
+    : null;
+
+  const emailProviderId = emailName
+    ? (providerMap.get(makeProviderKey("email", emailIconDomain, emailName)) ??
+      null)
+    : null;
+
+  const dnsProviderId = dnsName
+    ? (providerMap.get(makeProviderKey("dns", dnsIconDomain, dnsName)) ?? null)
+    : null;
+
+  // Update the info object with resolved IDs
+  info.hostingProvider.id = hostingProviderId;
+  info.emailProvider.id = emailProviderId;
+  info.dnsProvider.id = dnsProviderId;
+
   // Persist to Postgres only if domain exists (i.e., is registered)
   const expiresAt = ttlForHosting(now);
 
   if (existingDomain) {
-    // Batch resolve all providers in one query
-    const providerInputs = [
-      hostingName
-        ? {
-            category: "hosting" as const,
-            domain: hostingIconDomain,
-            name: hostingName,
-          }
-        : null,
-      emailName
-        ? {
-            category: "email" as const,
-            domain: emailIconDomain,
-            name: emailName,
-          }
-        : null,
-      dnsName
-        ? { category: "dns" as const, domain: dnsIconDomain, name: dnsName }
-        : null,
-    ].filter((p): p is NonNullable<typeof p> => p !== null);
-
-    const providerMap = await batchResolveOrCreateProviderIds(providerInputs);
-
-    const hostingProviderId = hostingName
-      ? (providerMap.get(
-          makeProviderKey("hosting", hostingIconDomain, hostingName),
-        ) ?? null)
-      : null;
-
-    const emailProviderId = emailName
-      ? (providerMap.get(
-          makeProviderKey("email", emailIconDomain, emailName),
-        ) ?? null)
-      : null;
-
-    const dnsProviderId = dnsName
-      ? (providerMap.get(makeProviderKey("dns", dnsIconDomain, dnsName)) ??
-        null)
-      : null;
-
-    // Update the info object with resolved IDs
-    info.hostingProvider.id = hostingProviderId;
-    info.emailProvider.id = emailProviderId;
-    info.dnsProvider.id = dnsProviderId;
-
     await upsertHosting({
       domainId: existingDomain.id,
       hostingProviderId,
