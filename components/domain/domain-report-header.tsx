@@ -1,12 +1,9 @@
-"use client";
-
 import { ExternalLink } from "lucide-react";
 import { ExportButton } from "@/components/domain/export-button";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { Favicon } from "@/components/icons/favicon";
-import { useAnalytics } from "@/lib/analytics/client";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -23,8 +20,6 @@ export function DomainReportHeader({
   onExport,
   exportDisabled,
 }: DomainReportHeaderProps) {
-  const analytics = useAnalytics();
-
   return (
     <div className="flex min-w-0 items-center justify-between gap-4">
       <ScreenshotPopover domain={domain}>
@@ -33,9 +28,6 @@ export function DomainReportHeader({
           target="_blank"
           rel="noopener"
           className="flex min-w-0 items-center gap-2"
-          onClick={() =>
-            analytics.track("external_domain_link_clicked", { domain })
-          }
         >
           <Favicon
             domain={domain}

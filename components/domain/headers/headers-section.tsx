@@ -1,5 +1,3 @@
-"use client";
-
 import { ExternalLink, Info, Logs, Search } from "lucide-react";
 import Link from "next/link";
 import { KeyValue } from "@/components/domain/key-value";

@@ -1,8 +1,5 @@
-"use client";
-
 import { Menu } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({ ...props }: Menu.Root.Props) {

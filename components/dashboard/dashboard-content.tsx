@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
-import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
+import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
@@ -373,7 +373,7 @@ export function DashboardContent() {
 
       {/* Pro upgrade success banner */}
       {showUpgradedBanner && (
-        <DashboardBanner
+        <DashboardBannerDismissable
           variant="gold"
           icon={HeartHandshake}
           title="Welcome to Pro!"

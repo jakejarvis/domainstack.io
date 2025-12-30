@@ -1,5 +1,3 @@
-"use client";
-
 import { MoreHorizontal, Plus } from "lucide-react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";

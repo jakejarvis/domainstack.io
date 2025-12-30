@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { Archive, CircleFadingArrowUp, RotateCcw, Trash2 } from "lucide-react";
-import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
+import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,7 +59,7 @@ export function ArchivedDomainsView({
     <div className="space-y-4">
       {/* Info banner when at limit */}
       {!canUnarchive && !isPro && (
-        <DashboardBanner
+        <DashboardBannerDismissable
           variant="warning"
           icon={CircleFadingArrowUp}
           title="Upgrade to Reactivate"

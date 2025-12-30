@@ -1,9 +1,6 @@
-"use client";
-
 import { Menu } from "@base-ui/react/menu";
 import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar";
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {

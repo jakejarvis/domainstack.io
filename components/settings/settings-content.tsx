@@ -1,5 +1,3 @@
-"use client";
-
 import { Bell, User, WalletMinimal } from "lucide-react";
 import { DangerZoneSettingsSection } from "@/components/settings/danger-zone-settings-section";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts-section";

@@ -1,5 +1,3 @@
-"use client";
-
 import { FileQuestionMark } from "lucide-react";
 import { Section } from "@/components/domain/section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";

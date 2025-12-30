@@ -1,5 +1,3 @@
-"use client";
-
 import { Toast } from "@base-ui/react/toast";
 import { cva } from "class-variance-authority";
 import { X } from "lucide-react";

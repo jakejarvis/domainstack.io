@@ -3,7 +3,6 @@
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { motion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-
 import { cn } from "@/lib/utils";
 
 function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {

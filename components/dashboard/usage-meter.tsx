@@ -1,5 +1,3 @@
-"use client";
-
 import { Meter } from "@/components/ui/meter";
 import { cn } from "@/lib/utils";
 

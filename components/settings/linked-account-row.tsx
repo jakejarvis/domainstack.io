@@ -1,5 +1,3 @@
-"use client";
-
 import type { UseMutationResult } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +55,7 @@ export function LinkedAccountRow({
                 size="sm"
                 onClick={canUnlink ? onUnlink : undefined}
                 disabled={isLoading}
-                className={cn(!canUnlink && "cursor-default opacity-50")}
+                className={cn(!canUnlink && "cursor-not-allowed opacity-50")}
               >
                 {isUnlinking && <Spinner />}
                 Unlink

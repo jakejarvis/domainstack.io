@@ -3,7 +3,7 @@
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
+import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
@@ -48,7 +48,7 @@ export function SubscriptionEndingBanner() {
   const isUrgent = daysRemaining <= 3;
 
   return (
-    <DashboardBanner
+    <DashboardBannerDismissable
       variant={isUrgent ? "warning" : "info"}
       icon={CalendarClock}
       title={

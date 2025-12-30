@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {

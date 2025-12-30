@@ -1,5 +1,3 @@
-"use client";
-
 import { ProviderIcon } from "@/components/icons/provider-icon";
 
 export function ProviderValue({

@@ -1,9 +1,6 @@
-"use client";
-
 import { cva, type VariantProps } from "class-variance-authority";
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -116,12 +113,7 @@ export function DashboardBanner({
   onDismiss,
   className,
 }: DashboardBannerProps) {
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  if (isDismissed) return null;
-
   const handleDismiss = () => {
-    setIsDismissed(true);
     onDismiss?.();
   };
 

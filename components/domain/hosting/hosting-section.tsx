@@ -1,5 +1,3 @@
-"use client";
-
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
 import { HostingMap } from "@/components/domain/hosting/hosting-map";

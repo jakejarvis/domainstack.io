@@ -1,5 +1,3 @@
-"use client";
-
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { DnsVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/dns-instructions";
 import { HtmlFileVerificationInstructions } from "@/components/dashboard/add-domain/verification-instructions/html-file-instructions";

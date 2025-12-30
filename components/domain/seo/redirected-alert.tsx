@@ -1,5 +1,3 @@
-"use client";
-
 import { Milestone, Search } from "lucide-react";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";

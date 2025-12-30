@@ -1,5 +1,3 @@
-"use client";
-
 import { DomainPricingCTA } from "@/components/domain/domain-pricing-cta";
 import { NONPUBLIC_TLDS } from "@/lib/constants/domain-validation";
 

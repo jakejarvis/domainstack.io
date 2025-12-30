@@ -1,16 +1,18 @@
-"use client";
-
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { VariantProps } from "class-variance-authority";
 import { motion } from "motion/react";
-import * as React from "react";
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { toggleVariants } from "@/components/ui/toggle";
 import { cn } from "@/lib/utils";
 
-const ToggleGroupContext = React.createContext<
-  VariantProps<typeof toggleVariants>
->({
+const ToggleGroupContext = createContext<VariantProps<typeof toggleVariants>>({
   size: "default",
   variant: "default",
 });
@@ -37,15 +39,15 @@ function ToggleGroup({
     /** Optional classes for the animated pill */
     indicatorClassName?: string;
   }) {
-  const groupRef = React.useRef<HTMLDivElement | null>(null);
-  const [indicatorRect, setIndicatorRect] = React.useState<{
+  const groupRef = useRef<HTMLDivElement | null>(null);
+  const [indicatorRect, setIndicatorRect] = useState<{
     x: number;
     y: number;
     width: number;
     height: number;
   } | null>(null);
 
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!withActiveIndicator) return;
     const group = groupRef.current;
     if (!group) return;
@@ -176,7 +178,7 @@ function ToggleGroupItem({
   size,
   ...props
 }: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
-  const context = React.useContext(ToggleGroupContext);
+  const context = useContext(ToggleGroupContext);
 
   return (
     <TogglePrimitive
