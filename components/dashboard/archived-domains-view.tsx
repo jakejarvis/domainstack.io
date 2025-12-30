@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { Archive, CircleFadingArrowUp, RotateCcw, Trash2 } from "lucide-react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
-import { Favicon } from "@/components/domain/favicon";
+import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {

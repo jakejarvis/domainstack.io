@@ -11,8 +11,8 @@ vi.mock("next/dynamic", () => ({
   },
 }));
 
-vi.mock("@/components/domain/provider-logo", () => ({
-  ProviderLogo: ({
+vi.mock("@/components/icons/provider-icon", () => ({
+  ProviderIcon: ({
     providerId: _providerId,
     providerDomain,
   }: {

@@ -7,7 +7,7 @@ import {
   TTL_FAVICON,
   TTL_HEADERS,
   TTL_HOSTING,
-  TTL_PROVIDER_LOGO,
+  TTL_PROVIDER_ICON,
   TTL_REGISTRATION_EXPIRY_THRESHOLD,
   TTL_REGISTRATION_NEAR_EXPIRY,
   TTL_REGISTRATION_REGISTERED,
@@ -93,6 +93,6 @@ export function ttlForScreenshot(now: Date): Date {
   return addSeconds(now, TTL_SCREENSHOT);
 }
 
-export function ttlForProviderLogo(now: Date): Date {
-  return addSeconds(now, TTL_PROVIDER_LOGO);
+export function ttlForProviderIcon(now: Date): Date {
+  return addSeconds(now, TTL_PROVIDER_ICON);
 }

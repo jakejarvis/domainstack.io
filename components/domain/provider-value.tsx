@@ -1,6 +1,6 @@
 "use client";
 
-import { ProviderLogo } from "@/components/domain/provider-logo";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 
 export function ProviderValue({
   id,
@@ -14,7 +14,7 @@ export function ProviderValue({
   return (
     <div className="inline-flex items-center gap-2">
       {id ? (
-        <ProviderLogo
+        <ProviderIcon
           providerId={id}
           providerName={name}
           providerDomain={domain}

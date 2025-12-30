@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
-import { Favicon } from "@/components/domain/favicon";
+import { Favicon } from "@/components/icons/favicon";
 import { useHomeSearch } from "@/components/layout/home-search-context";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";

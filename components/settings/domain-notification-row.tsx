@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { Favicon } from "@/components/domain/favicon";
+import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {

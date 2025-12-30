@@ -5,8 +5,8 @@ import { MailQuestionMark } from "lucide-react";
 import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { ProviderLogo } from "@/components/domain/provider-logo";
 import { Section } from "@/components/domain/section";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import {
   Empty,
   EmptyDescription,
@@ -45,7 +45,7 @@ export function HostingSection({
               value={dnsProvider?.name ?? "Not configured"}
               leading={
                 dnsProvider?.id ? (
-                  <ProviderLogo
+                  <ProviderIcon
                     providerId={dnsProvider.id}
                     providerName={dnsProvider.name}
                     providerDomain={dnsProvider.domain}
@@ -60,7 +60,7 @@ export function HostingSection({
               value={hostingProvider?.name ?? "Not configured"}
               leading={
                 hostingProvider?.id ? (
-                  <ProviderLogo
+                  <ProviderIcon
                     providerId={hostingProvider.id}
                     providerName={hostingProvider.name}
                     providerDomain={hostingProvider.domain}
@@ -75,7 +75,7 @@ export function HostingSection({
               value={emailProvider?.name ?? "Not configured"}
               leading={
                 emailProvider?.id ? (
-                  <ProviderLogo
+                  <ProviderIcon
                     providerId={emailProvider.id}
                     providerName={emailProvider.name}
                     providerDomain={emailProvider.domain}

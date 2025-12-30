@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/mocks/react";
 import { RegistrationSection } from "./registration-section";
 
-vi.mock("@/components/domain/favicon", () => ({
+vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => (
     <div data-slot="favicon" data-domain={domain} />
   ),

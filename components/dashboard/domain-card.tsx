@@ -18,10 +18,10 @@ import {
 } from "@/components/dashboard/domain-health-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { VerificationBadge } from "@/components/dashboard/verification-badge";
-import { Favicon } from "@/components/domain/favicon";
-import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
+import { Favicon } from "@/components/icons/favicon";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -411,7 +411,7 @@ function InfoRow({
   const providerContent = (
     <span className="flex min-w-0 items-center gap-1.5">
       {provider?.id && (
-        <ProviderLogo
+        <ProviderIcon
           providerId={provider.id}
           providerName={provider.name}
           providerDomain={provider.domain}

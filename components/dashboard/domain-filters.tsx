@@ -16,7 +16,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
 import { ProviderMultiSelect } from "@/components/dashboard/provider-multi-select";
-import { ProviderLogo } from "@/components/domain/provider-logo";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -218,7 +218,7 @@ export function DomainFilters({
           name: provider.name,
           category: categoryLabel,
           icon: provider.id ? (
-            <ProviderLogo
+            <ProviderIcon
               providerId={provider.id}
               providerName={provider.name}
               providerDomain={provider.domain}

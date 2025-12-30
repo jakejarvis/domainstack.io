@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/mocks/react";
 import { ProviderValue } from "./provider-value";
 
-vi.mock("@/components/domain/provider-logo", () => ({
-  ProviderLogo: ({
+vi.mock("@/components/icons/provider-icon", () => ({
+  ProviderIcon: ({
     providerId,
     providerName,
   }: {

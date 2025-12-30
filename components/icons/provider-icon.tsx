@@ -1,9 +1,9 @@
 "use client";
 
-import { RemoteIcon } from "@/components/remote-icon";
+import { RemoteIcon } from "@/components/icons/remote-icon";
 import { useTRPC } from "@/lib/trpc/client";
 
-export function ProviderLogo({
+export function ProviderIcon({
   providerId,
   providerName,
   providerDomain,
@@ -23,7 +23,7 @@ export function ProviderLogo({
 
   return (
     <RemoteIcon
-      queryOptions={trpc.provider.getProviderLogo.queryOptions(
+      queryOptions={trpc.provider.getProviderIcon.queryOptions(
         { providerId: providerId ?? "" },
         {
           // Keep in cache indefinitely during session
@@ -36,8 +36,8 @@ export function ProviderLogo({
       size={size}
       className={className}
       style={style}
-      alt={`${providerName || fallbackIdentifier} logo`}
-      dataAttribute="data-provider-logo"
+      alt={`${providerName || fallbackIdentifier} icon`}
+      dataAttribute="data-provider-icon"
     />
   );
 }

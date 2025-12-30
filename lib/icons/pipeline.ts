@@ -4,9 +4,10 @@ import { USER_AGENT } from "@/lib/constants/app";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
+import type { FetchIconConfig } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
 
-const logger = createLogger({ source: "fetch-remote-icon" });
+const logger = createLogger({ source: "icon-pipeline" });
 
 // In-memory lock to prevent concurrent icon generation
 const iconPromises = new Map<string, Promise<{ url: string | null }>>();
@@ -18,72 +19,10 @@ const DEFAULT_SIZE = 32;
 const REQUEST_TIMEOUT_MS = 1500;
 const MAX_ICON_BYTES = 1 * 1024 * 1024; // 1MB
 
-export type IconSource = {
-  url: string;
-  /** Source identifier for logging (e.g., "duckduckgo", "logo_dev") */
-  name: string;
-  /** Optional custom headers for this source */
-  headers?: Record<string, string>;
-  /** Allow HTTP (default: false) */
-  allowHttp?: boolean;
-};
-
-export type CachedIconRecord = {
-  url: string | null;
-  notFound?: boolean;
-};
-
-export type IconPersistData = {
-  url: string;
-  pathname: string | null;
-  size: number;
-  source: string;
-  notFound: boolean;
-  upstreamStatus?: number | null;
-  upstreamContentType?: string | null;
-  fetchedAt: Date;
-  expiresAt: Date;
-};
-
-export type FetchIconConfig = {
-  /** Unique identifier for deduplication (e.g., domain, providerId) */
-  identifier: string;
-  /** Kind of blob for storage (e.g., "favicon", "provider-logo") */
-  blobKind: "favicon" | "provider-logo";
-  /** Domain for blob storage path */
-  blobDomain: string;
-  /** Sources to try in order (first success wins) */
-  sources: IconSource[];
-  /** Function to check cache */
-  getCachedRecord: () => Promise<CachedIconRecord | null>;
-  /** Function to persist to database */
-  persistRecord: (data: {
-    url: string | null;
-    pathname: string | null;
-    size: number;
-    source: string | null;
-    notFound: boolean;
-    upstreamStatus?: number | null;
-    upstreamContentType?: string | null;
-    fetchedAt: Date;
-    expiresAt: Date;
-  }) => Promise<void>;
-  /** TTL calculator */
-  ttlFn: (now: Date) => Date;
-  /** Additional context for logging */
-  logContext?: Record<string, unknown>;
-  /** Icon size in pixels (default: 32) */
-  size?: number;
-  /** Request timeout per source in ms (default: 1500) */
-  timeoutMs?: number;
-  /** Max icon size in bytes (default: 1MB) */
-  maxBytes?: number;
-};
-
 /**
  * Core icon fetching logic (separated for cleaner promise management)
  */
-async function fetchIcon(
+async function processIconImpl(
   config: FetchIconConfig,
 ): Promise<{ url: string | null }> {
   const {
@@ -219,9 +158,10 @@ async function fetchIcon(
 }
 
 /**
- * Internal function with promise deduplication
+ * Fetch a remote icon with caching, fallback sources, and deduplication.
+ * Handles the complete flow: cache check → fetch → convert → store → persist.
  */
-async function fetchIconPromise(
+export async function processIcon(
   config: FetchIconConfig,
 ): Promise<{ url: string | null }> {
   const { identifier, logContext = {} } = config;
@@ -236,7 +176,7 @@ async function fetchIconPromise(
   // Create promise with guaranteed cleanup
   const promise = (async () => {
     try {
-      return await fetchIcon(config);
+      return await processIconImpl(config);
     } finally {
       iconPromises.delete(identifier);
     }
@@ -260,14 +200,4 @@ async function fetchIconPromise(
   void promise.finally(() => clearTimeout(timeoutId));
 
   return promise;
-}
-
-/**
- * Fetch a remote icon with caching, fallback sources, and deduplication.
- * Handles the complete flow: cache check → fetch → convert → store → persist.
- */
-export async function fetchRemoteIcon(
-  config: FetchIconConfig,
-): Promise<{ url: string | null }> {
-  return fetchIconPromise(config);
 }

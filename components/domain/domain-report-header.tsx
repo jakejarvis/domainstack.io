@@ -2,10 +2,10 @@
 
 import { ExternalLink } from "lucide-react";
 import { ExportButton } from "@/components/domain/export-button";
-import { Favicon } from "@/components/domain/favicon";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
+import { Favicon } from "@/components/icons/favicon";
 import { useAnalytics } from "@/lib/analytics/client";
 
 interface DomainReportHeaderProps {

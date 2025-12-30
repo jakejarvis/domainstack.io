@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
 import { render, screen } from "@/mocks/react";
 
-vi.mock("@/components/domain/favicon", () => ({
+vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) => <div>icon:{domain}</div>,
 }));
 

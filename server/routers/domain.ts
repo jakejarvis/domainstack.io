@@ -12,9 +12,9 @@ import {
 } from "@/lib/schemas";
 import { getCertificates } from "@/server/services/certificates";
 import { getDnsRecords } from "@/server/services/dns";
-import { getFavicon } from "@/server/services/favicon";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
+import { getFavicon } from "@/server/services/icons";
 import { getRegistration } from "@/server/services/registration";
 import { getScreenshot } from "@/server/services/screenshot";
 import { getSeo } from "@/server/services/seo";

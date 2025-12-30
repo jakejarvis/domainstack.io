@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { BadgeCheck, HatGlasses } from "lucide-react";
-import { ProviderLogo } from "@/components/domain/provider-logo";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Spinner } from "@/components/ui/spinner";
 import type { DnsRecordForTooltip } from "@/lib/db/repos/tracked-domains";
 import type { ProviderCategory, RegistrationContacts } from "@/lib/schemas";
@@ -102,7 +102,7 @@ export function ProviderTooltipContent({
       {/* Provider info */}
       <div className="flex items-center gap-2 border-border/20 border-b pb-2">
         {providerId && (
-          <ProviderLogo
+          <ProviderIcon
             providerId={providerId}
             providerName={providerName}
             providerDomain={providerDomain}

@@ -43,9 +43,9 @@ beforeAll(async () => {
 });
 
 // Import after mocks
-let getFavicon: typeof import("./favicon").getFavicon;
+let getFavicon: typeof import("./icons").getFavicon;
 beforeAll(async () => {
-  ({ getFavicon } = await import("./favicon"));
+  ({ getFavicon } = await import("./icons"));
 });
 
 afterEach(async () => {

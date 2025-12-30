@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { ProviderLogo } from "@/components/domain/provider-logo";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import {
   MultiSelect,
   type MultiSelectOption,
@@ -78,7 +78,7 @@ export function ProviderMultiSelect<T extends string>({
         return (
           <>
             {providerOption.id && providerOption.domain && (
-              <ProviderLogo
+              <ProviderIcon
                 providerId={providerOption.id}
                 providerName={providerOption.label}
                 providerDomain={providerOption.domain}

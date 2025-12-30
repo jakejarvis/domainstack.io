@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -123,7 +123,7 @@ export function RegistrationSection({
             value={data.registrarProvider?.name || "Unknown"}
             leading={
               data.registrarProvider?.id ? (
-                <ProviderLogo
+                <ProviderIcon
                   providerId={data.registrarProvider.id}
                   providerName={data.registrarProvider.name}
                   providerDomain={data.registrarProvider.domain}

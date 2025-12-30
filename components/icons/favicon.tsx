@@ -1,6 +1,6 @@
 "use client";
 
-import { RemoteIcon } from "@/components/remote-icon";
+import { RemoteIcon } from "@/components/icons/remote-icon";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function Favicon({

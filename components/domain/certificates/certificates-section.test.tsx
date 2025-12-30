@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/mocks/react";
 import { CertificatesSection, equalHostname } from "./certificates-section";
 
-vi.mock("@/components/domain/provider-logo", () => ({
-  ProviderLogo: ({
+vi.mock("@/components/icons/provider-icon", () => ({
+  ProviderIcon: ({
     providerId,
     providerDomain,
   }: {
@@ -12,8 +12,8 @@ vi.mock("@/components/domain/provider-logo", () => ({
     providerDomain: string | null;
   }) => (
     <div
-      data-testid="provider-logo"
-      data-slot="provider-logo"
+      data-testid="provider-icon"
+      data-slot="provider-icon"
       data-provider-id={providerId}
       data-provider-domain={providerDomain}
     />
@@ -98,7 +98,7 @@ describe("CertificatesSection", () => {
     expect(await screen.findByText("*.example.com")).toBeInTheDocument();
 
     // Assert CA provider logo with correct domain
-    const providerLogo = screen.getByTestId("provider-logo");
+    const providerLogo = screen.getByTestId("provider-icon");
     expect(providerLogo).toHaveAttribute("data-provider-id", "ca-letsencrypt");
     expect(providerLogo).toHaveAttribute(
       "data-provider-domain",

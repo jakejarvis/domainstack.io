@@ -11,10 +11,10 @@ import { Fragment, useState } from "react";
 import { CertificateAlert } from "@/components/domain/certificate-alert";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { ProviderLogo } from "@/components/domain/provider-logo";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { Section } from "@/components/domain/section";
+import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +62,7 @@ export function CertificatesSection({
                   value={firstCert.issuer}
                   leading={
                     firstCert.caProvider?.id ? (
-                      <ProviderLogo
+                      <ProviderIcon
                         providerId={firstCert.caProvider.id}
                         providerName={firstCert.caProvider.name}
                         providerDomain={firstCert.caProvider.domain}
@@ -181,7 +181,7 @@ export function CertificatesSection({
                             value={c.issuer}
                             leading={
                               c.caProvider?.id ? (
-                                <ProviderLogo
+                                <ProviderIcon
                                   providerId={c.caProvider.id}
                                   providerName={c.caProvider.name}
                                   providerDomain={c.caProvider.domain}
