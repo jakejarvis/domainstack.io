@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
 import { BlobUrlResponseSchema } from "@/lib/schemas";
@@ -12,10 +11,8 @@ export const providerRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const provider = await getProviderById(input.providerId);
       if (!provider?.domain) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Provider not found or has no domain",
-        });
+        // Return null instead of throwing to avoid logging errors for missing icons
+        return { url: null };
       }
       return getProviderIcon(input.providerId, provider.domain);
     }),
