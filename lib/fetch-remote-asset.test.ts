@@ -491,4 +491,49 @@ describe("fetchRemoteAsset", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("returns redirect response when redirecting to disallowed host if returnOnDisallowedRedirect is true", async () => {
+    const redirectResponse = new Response(null, {
+      status: 302,
+      headers: { location: "https://disallowed.test/page" },
+    });
+
+    fetchMock.mockResolvedValueOnce(redirectResponse);
+    dnsLookupMock.mockResolvedValueOnce([
+      { address: "93.184.216.34", family: 4 },
+    ]);
+
+    const result = await fetchRemoteAsset({
+      url: "https://allowed.test/",
+      allowedHosts: ["allowed.test"],
+      returnOnDisallowedRedirect: true,
+    });
+
+    expect(result.status).toBe(302);
+    expect(result.headers.location).toBe("https://disallowed.test/page");
+    expect(result.finalUrl).toBe("https://allowed.test/"); // The URL that returned the redirect
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws when redirecting to disallowed host if returnOnDisallowedRedirect is false", async () => {
+    const redirectResponse = new Response(null, {
+      status: 302,
+      headers: { location: "https://disallowed.test/page" },
+    });
+
+    fetchMock.mockResolvedValueOnce(redirectResponse);
+    dnsLookupMock.mockResolvedValueOnce([
+      { address: "93.184.216.34", family: 4 },
+    ]);
+
+    await expect(
+      fetchRemoteAsset({
+        url: "https://allowed.test/",
+        allowedHosts: ["allowed.test"],
+        returnOnDisallowedRedirect: false,
+      }),
+    ).rejects.toMatchObject({
+      code: "host_not_allowed",
+    });
+  });
 });

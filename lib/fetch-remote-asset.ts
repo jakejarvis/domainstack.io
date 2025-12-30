@@ -56,6 +56,8 @@ type BaseFetchRemoteAssetOptions = FetchOptions & {
   allowHttp?: boolean;
   /** If true, return truncated content instead of throwing when maxBytes is exceeded. Useful for HTML parsing. */
   truncateOnLimit?: boolean;
+  /** If true, return the redirect response (3xx) instead of throwing if the redirect target is not in allowedHosts. */
+  returnOnDisallowedRedirect?: boolean;
 };
 
 type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
@@ -142,8 +144,31 @@ export async function fetchRemoteAsset(
         );
       }
       const nextUrl = new URL(location, currentUrl);
-      currentUrl = nextUrl;
-      continue;
+
+      // If strict allowedHosts is set, check if the next hop is allowed.
+      // If not, and returnOnDisallowedRedirect is true, stop following and return the 3xx response.
+      if (allowedHosts.length > 0) {
+        const nextHost = nextUrl.hostname.trim().toLowerCase();
+        if (
+          !allowedHosts.includes(nextHost) &&
+          opts.returnOnDisallowedRedirect
+        ) {
+          logger.debug(
+            "redirect to disallowed host, returning redirect response",
+            {
+              from: currentUrl.toString(),
+              to: nextUrl.toString(),
+            },
+          );
+          // Fall through to process this 3xx response as the final result
+        } else {
+          currentUrl = nextUrl;
+          continue;
+        }
+      } else {
+        currentUrl = nextUrl;
+        continue;
+      }
     }
 
     // If we got 405 on HEAD and fallback is enabled, retry with GET
