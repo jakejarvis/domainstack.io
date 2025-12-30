@@ -52,7 +52,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
           size="lg"
           onClick={handleUpgrade}
           disabled={isLoading}
-          className="w-full shrink-0 cursor-pointer md:w-auto"
+          className="w-full shrink-0 md:w-auto"
         >
           {isLoading ? (
             <>

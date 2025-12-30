@@ -61,7 +61,7 @@ export function DomainNotificationRow({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 cursor-pointer px-2 text-muted-foreground text-xs hover:text-foreground"
+            className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
             onClick={onReset}
             disabled={disabled}
           >

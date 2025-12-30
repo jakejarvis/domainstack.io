@@ -119,7 +119,7 @@ export function DomainSuggestionsClient({
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleClearHistory}
-                  className="flex-shrink-0 cursor-pointer"
+                  className="flex-shrink-0"
                   aria-label="Clear history"
                 >
                   <X />

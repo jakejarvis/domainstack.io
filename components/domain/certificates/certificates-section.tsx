@@ -148,7 +148,7 @@ export function CertificatesSection({
                 size="sm"
                 aria-expanded={false}
                 onClick={() => setShowAll(true)}
-                className="cursor-pointer text-[13px]"
+                className="text-[13px]"
               >
                 <ChevronDown className="h-4 w-4" aria-hidden />
                 <span>Show Chain</span>
@@ -274,7 +274,7 @@ export function CertificatesSection({
                       size="sm"
                       aria-expanded={true}
                       onClick={() => setShowAll(false)}
-                      className="cursor-pointer text-[13px]"
+                      className="text-[13px]"
                     >
                       <ChevronUp className="h-4 w-4" aria-hidden />
                       <span>Hide Chain</span>

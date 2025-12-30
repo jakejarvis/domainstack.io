@@ -173,11 +173,7 @@ export function DashboardHeader({
             <Button
               nativeButton={false}
               render={
-                <Link
-                  href="/dashboard/add-domain"
-                  scroll={false}
-                  className="cursor-pointer"
-                >
+                <Link href="/dashboard/add-domain" scroll={false}>
                   <Plus />
                   Add Domain
                 </Link>

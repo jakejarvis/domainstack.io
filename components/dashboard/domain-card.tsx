@@ -174,11 +174,7 @@ export function DomainCard({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="cursor-pointer"
-                >
+                <Button variant="ghost" size="icon-sm">
                   <MoreVertical />
                   <span className="sr-only">Actions</span>
                 </Button>
@@ -192,7 +188,6 @@ export function DomainCard({
                     href={`https://${domainName}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cursor-pointer"
                   >
                     <ExternalLink />
                     Open
@@ -205,7 +200,6 @@ export function DomainCard({
                   <Link
                     href={`/${encodeURIComponent(domainName)}`}
                     prefetch={false}
-                    className="cursor-pointer"
                   >
                     <BookMarked />
                     View Report
@@ -222,10 +216,12 @@ export function DomainCard({
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
-                <Trash2 className="text-danger-foreground" />
-                Remove
-              </DropdownMenuItem>
+              {onRemove && (
+                <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+                  <Trash2 className="text-danger-foreground" />
+                  Remove
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -368,7 +364,7 @@ export function DomainCard({
             </div>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
-            <Button onClick={onVerify} className="mt-3 w-full cursor-pointer">
+            <Button onClick={onVerify} className="mt-3 w-full">
               <Wrench />
               Fix Verification
             </Button>
@@ -380,7 +376,7 @@ export function DomainCard({
             </p>
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
-            <Button onClick={onVerify} className="w-full cursor-pointer">
+            <Button onClick={onVerify} className="w-full">
               <AlertCircle />
               Complete Verification
             </Button>

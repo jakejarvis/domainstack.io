@@ -98,7 +98,6 @@ export function ArchivedDomainsView({
                         size="sm"
                         onClick={() => onUnarchive(domain.id)}
                         disabled={!canUnarchive}
-                        className="cursor-pointer"
                       >
                         <RotateCcw />
                         <span className="sr-only sm:not-sr-only sm:ml-2">
@@ -117,7 +116,6 @@ export function ArchivedDomainsView({
                   variant="ghost"
                   size="sm"
                   onClick={() => onRemove(domain.id, domain.domainName)}
-                  className="cursor-pointer"
                 >
                   <Trash2 className="text-danger-foreground" />
                   <span className="sr-only">Delete</span>

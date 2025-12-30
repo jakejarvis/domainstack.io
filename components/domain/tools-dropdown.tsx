@@ -149,12 +149,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <Button
-                  variant="outline"
-                  aria-label="Open menu"
-                  size="icon"
-                  className="cursor-pointer"
-                >
+                <Button variant="outline" aria-label="Open menu" size="icon">
                   <MoreHorizontal />
                 </Button>
               }
@@ -180,7 +175,6 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
                 render={
                   <a
                     href={tool.buildUrl(domain)}
-                    className="cursor-pointer"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -214,7 +208,6 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
                   }}
                   target="_blank"
                   rel="noopener"
-                  className="cursor-pointer"
                 >
                   <Plus />
                   Suggest a tool

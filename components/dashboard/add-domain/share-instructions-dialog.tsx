@@ -224,7 +224,7 @@ export function ShareInstructionsDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <Button variant="outline" className="cursor-pointer">
+          <Button variant="outline">
             <Share2 />
             Share
           </Button>
@@ -251,11 +251,7 @@ export function ShareInstructionsDialog({
                 Copy all instructions as text
               </p>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleCopy}
-              className="shrink-0 cursor-pointer"
-            >
+            <Button variant="outline" onClick={handleCopy} className="shrink-0">
               {copied ? <Check className="text-green-600" /> : <Copy />}
               <span className="hidden sm:inline">
                 {copied ? "Copied" : "Copy"}
@@ -277,7 +273,7 @@ export function ShareInstructionsDialog({
             <Button
               variant="outline"
               onClick={handleDownload}
-              className="shrink-0 cursor-pointer"
+              className="shrink-0"
             >
               <Download />
               <span className="hidden sm:inline">Download</span>
@@ -323,7 +319,7 @@ export function ShareInstructionsDialog({
                   disabled={
                     !isValidEmail || sendEmailMutation.isPending || emailSent
                   }
-                  className="shrink-0 cursor-pointer"
+                  className="shrink-0"
                 >
                   {sendEmailMutation.isPending ? (
                     <>

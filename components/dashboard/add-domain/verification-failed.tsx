@@ -81,15 +81,11 @@ export function VerificationFailed({
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button onClick={onCheckAgain} className="flex-1 cursor-pointer">
+        <Button onClick={onCheckAgain} className="flex-1">
           <RefreshCw />
           Check Again
         </Button>
-        <Button
-          variant="outline"
-          onClick={onReturnLater}
-          className="flex-1 cursor-pointer"
-        >
+        <Button variant="outline" onClick={onReturnLater} className="flex-1">
           <Clock />
           Return Later
         </Button>

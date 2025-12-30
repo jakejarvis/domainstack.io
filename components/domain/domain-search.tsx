@@ -196,7 +196,7 @@ export function DomainSearch({
                   <InputGroupButton
                     type="submit"
                     disabled={loading}
-                    className="mx-1 h-8 cursor-pointer disabled:pointer-events-none"
+                    className="mx-1 h-8 disabled:pointer-events-none"
                     variant="ghost"
                   >
                     {loading ? (

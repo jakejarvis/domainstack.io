@@ -457,11 +457,7 @@ export function TrackedDomainsTable({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className="cursor-pointer"
-                >
+                <Button variant="outline" size="icon-sm">
                   <MoreVertical />
                   <span className="sr-only">Actions</span>
                 </Button>
@@ -475,7 +471,6 @@ export function TrackedDomainsTable({
                     href={`https://${row.original.domainName}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="cursor-pointer"
                   >
                     <ExternalLink />
                     Open
@@ -488,7 +483,6 @@ export function TrackedDomainsTable({
                   <Link
                     href={`/${encodeURIComponent(row.original.domainName)}`}
                     prefetch={false}
-                    className="cursor-pointer"
                   >
                     <BookMarked />
                     View Report
@@ -507,15 +501,17 @@ export function TrackedDomainsTable({
                   Archive
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                onClick={() =>
-                  onRemove(row.original.id, row.original.domainName)
-                }
-                className="cursor-pointer"
-              >
-                <Trash2 className="text-danger-foreground" />
-                Remove
-              </DropdownMenuItem>
+              {onRemove && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    onRemove(row.original.id, row.original.domainName)
+                  }
+                  className="cursor-pointer"
+                >
+                  <Trash2 className="text-danger-foreground" />
+                  Remove
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -750,7 +746,7 @@ export function TrackedDomainsTable({
                               size="sm"
                               variant="outline"
                               onClick={() => onVerify(row.original)}
-                              className="cursor-pointer px-2 text-[13px]"
+                              className="px-2 text-[13px]"
                             >
                               <Play className="text-accent-green" />
                               Continue
@@ -764,7 +760,7 @@ export function TrackedDomainsTable({
                                   row.original.domainName,
                                 )
                               }
-                              className="cursor-pointer px-2 text-[13px]"
+                              className="px-2 text-[13px]"
                             >
                               <Trash2 className="text-danger-foreground" />
                               Remove

@@ -23,7 +23,7 @@ export function DashboardButton() {
             size="sm"
             nativeButton={false}
             render={
-              <Link href="/dashboard" className="cursor-pointer">
+              <Link href="/dashboard">
                 <Table2 />
                 <span className="sr-only">Dashboard</span>
               </Link>

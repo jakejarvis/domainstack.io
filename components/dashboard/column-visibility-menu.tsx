@@ -58,7 +58,7 @@ export function ColumnVisibilityMenu<TData>({
           <Button
             variant="outline"
             size="icon"
-            className="size-9 cursor-pointer"
+            className="size-9"
             title={
               hiddenCount > 0
                 ? `Toggle columns (${hiddenCount} hidden)`

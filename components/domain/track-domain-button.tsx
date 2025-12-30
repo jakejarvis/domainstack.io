@@ -87,7 +87,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
               variant="outline"
               nativeButton={false}
               render={
-                <Link href="/dashboard" className="cursor-pointer">
+                <Link href="/dashboard">
                   <BadgeCheck className="text-success-foreground" />
                   <span className="hidden">View in dashboard</span>
                 </Link>
@@ -124,11 +124,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button
-              variant="outline"
-              onClick={handleButtonClick}
-              className="cursor-pointer"
-            >
+            <Button variant="outline" onClick={handleButtonClick}>
               {buttonContent}
             </Button>
           ) : (
@@ -136,7 +132,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
               variant="outline"
               nativeButton={false}
               render={
-                <Link href="/login" scroll={false} className="cursor-pointer">
+                <Link href="/login" scroll={false}>
                   {buttonContent}
                 </Link>
               }

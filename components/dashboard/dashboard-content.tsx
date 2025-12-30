@@ -452,7 +452,7 @@ export function DashboardContent() {
               <Button
                 variant="ghost"
                 onClick={() => setActiveTab("archived")}
-                className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
+                className="gap-2 text-muted-foreground hover:text-foreground"
               >
                 <Archive />
                 View {archivedCount} archived domain{archivedCount !== 1 && "s"}
@@ -469,7 +469,7 @@ export function DashboardContent() {
           <Button
             variant="ghost"
             onClick={() => setActiveTab("active")}
-            className="cursor-pointer gap-2 text-muted-foreground hover:text-foreground"
+            className="gap-2 text-muted-foreground hover:text-foreground"
             type="button"
           >
             <ArrowLeft />

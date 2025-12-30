@@ -343,7 +343,6 @@ export function DomainFilters({
                       size="icon-xs"
                       onClick={() => onSearchChange("")}
                       aria-label="Clear search"
-                      className="cursor-pointer"
                     >
                       <X />
                     </InputGroupButton>
@@ -407,7 +406,7 @@ export function DomainFilters({
               <Button
                 variant="ghost"
                 onClick={onClearFilters}
-                className="cursor-pointer text-muted-foreground"
+                className="text-muted-foreground"
               >
                 <X />
                 Clear all
@@ -421,10 +420,7 @@ export function DomainFilters({
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button
-                  variant="outline"
-                  className="h-9 cursor-pointer gap-2 px-3"
-                >
+                <Button variant="outline" className="h-9 gap-2 px-3">
                   <span className="text-muted-foreground">Sort:</span>
                   <span className="inline-flex items-center gap-1.5">
                     {currentSort?.shortLabel ?? "Select"}
@@ -442,7 +438,7 @@ export function DomainFilters({
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => onSortChange(option.value)}
-                  className="cursor-pointer gap-2"
+                  className="gap-2"
                 >
                   <Check
                     className={cn(
@@ -477,10 +473,7 @@ export function DomainFilters({
           <div className="flex items-center gap-2">
             <CollapsibleTrigger
               render={
-                <Button
-                  variant="outline"
-                  className="flex-1 cursor-pointer justify-between"
-                >
+                <Button variant="outline" className="flex-1 justify-between">
                   <span className="flex items-center gap-2">
                     <Filter className="text-muted-foreground" />
                     <span className="text-sm">Filters</span>

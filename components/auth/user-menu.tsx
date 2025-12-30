@@ -64,7 +64,7 @@ export function UserMenu() {
           <Button
             variant="ghost"
             size="icon"
-            className="cursor-pointer rounded-full px-0 py-0 hover:bg-transparent active:scale-95 dark:hover:bg-transparent"
+            className="rounded-full px-0 py-0 hover:bg-transparent active:scale-95 dark:hover:bg-transparent"
             aria-label="User menu"
           >
             <Avatar className="size-8">
@@ -107,7 +107,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link href="/dashboard" className="mx-1 cursor-pointer">
+              <Link href="/dashboard" className="mx-1">
                 <Table2 />
                 Dashboard
               </Link>
@@ -116,11 +116,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/settings"
-                scroll={false}
-                className="mx-1 cursor-pointer"
-              >
+              <Link href="/settings" scroll={false} className="mx-1">
                 <Settings />
                 Settings
               </Link>
@@ -138,11 +134,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/bookmarklet"
-                scroll={false}
-                className="mx-1 cursor-pointer"
-              >
+              <Link href="/bookmarklet" scroll={false} className="mx-1">
                 <Bookmark />
                 Bookmarklet
               </Link>

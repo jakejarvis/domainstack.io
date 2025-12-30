@@ -48,7 +48,7 @@ export function CopyButton({ value, label, className }: CopyButtonProps) {
       variant="outline"
       size="sm"
       className={cn(
-        "shrink-0 cursor-pointer border-black/15 bg-background/50 backdrop-blur dark:border-white/10",
+        "shrink-0 border-black/15 bg-background/50 backdrop-blur dark:border-white/10",
         className,
       )}
       aria-label={copied ? `Copied ${label}` : `Copy ${label}`}

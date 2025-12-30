@@ -205,7 +205,6 @@ export function RobotsSummary({
                         size="sm"
                         variant="ghost"
                         onClick={() => setQuery("")}
-                        className="cursor-pointer"
                       >
                         <X />
                       </InputGroupButton>
@@ -271,7 +270,7 @@ export function RobotsSummary({
                   <Button
                     type="button"
                     variant="link"
-                    className="cursor-pointer px-1"
+                    className="px-1"
                     onClick={() => {
                       setQuery("");
                       setOnly("all");

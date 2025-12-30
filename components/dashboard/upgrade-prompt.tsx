@@ -39,7 +39,7 @@ export function UpgradePrompt() {
       <Button
         variant="ghost"
         size="icon"
-        className="invisible absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible"
+        className="invisible absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible"
         onClick={() => setIsVisible(false)}
         aria-label="Dismiss"
       >
@@ -77,7 +77,7 @@ export function UpgradePrompt() {
         <Button
           onClick={handleUpgrade}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 cursor-pointer md:w-auto"
+          className="w-full shrink-0 md:w-auto"
         >
           {isCheckoutLoading ? (
             <>

@@ -57,10 +57,7 @@ export function LinkedAccountRow({
                 size="sm"
                 onClick={canUnlink ? onUnlink : undefined}
                 disabled={isLoading}
-                className={cn(
-                  "cursor-pointer",
-                  !canUnlink && "cursor-default opacity-50",
-                )}
+                className={cn(!canUnlink && "cursor-default opacity-50")}
               >
                 {isUnlinking && <Spinner />}
                 Unlink
@@ -79,7 +76,6 @@ export function LinkedAccountRow({
           size="sm"
           onClick={onLink}
           disabled={isLoading}
-          className="cursor-pointer"
         >
           {isLinking && <Spinner />}
           Link

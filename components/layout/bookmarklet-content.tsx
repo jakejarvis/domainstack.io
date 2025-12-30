@@ -93,7 +93,6 @@ export function BookmarkletContent({ className }: { className?: string }) {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       target="_blank"
                       rel="noopener"
-                      className="cursor-pointer"
                     >
                       <Layers2 />
                       <span>Add Shortcut</span>
@@ -107,7 +106,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                       <Button
                         variant="outline"
                         size="lg"
-                        className="!px-3 cursor-pointer"
+                        className="!px-3"
                         aria-label="Watch demo"
                       >
                         <Play />

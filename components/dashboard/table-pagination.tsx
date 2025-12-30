@@ -75,7 +75,6 @@ export function TablePagination({
         <Button
           variant="outline"
           size="icon-xs"
-          className="cursor-pointer"
           onClick={() => onPageChange(pageIndex - 1)}
           disabled={!canPreviousPage}
           aria-label="Go to previous page"
@@ -88,7 +87,6 @@ export function TablePagination({
         <Button
           variant="outline"
           size="icon-xs"
-          className="cursor-pointer"
           onClick={() => onPageChange(pageIndex + 1)}
           disabled={!canNextPage}
           aria-label="Go to next page"

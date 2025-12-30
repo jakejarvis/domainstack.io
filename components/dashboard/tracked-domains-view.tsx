@@ -84,11 +84,7 @@ export function TrackedDomainsView({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button
-            variant="outline"
-            onClick={onClearFilters}
-            className="cursor-pointer"
-          >
+          <Button variant="outline" onClick={onClearFilters}>
             Clear Filters
           </Button>
         </EmptyContent>
@@ -122,7 +118,7 @@ export function TrackedDomainsView({
         </EmptyHeader>
         <EmptyContent className="relative">
           {onAddDomain ? (
-            <Button size="lg" onClick={onAddDomain} className="cursor-pointer">
+            <Button size="lg" onClick={onAddDomain}>
               <Plus />
               Add Your First Domain
             </Button>
@@ -130,11 +126,7 @@ export function TrackedDomainsView({
             <Button
               size="lg"
               render={
-                <Link
-                  href="/dashboard/add-domain"
-                  scroll={false}
-                  className="cursor-pointer"
-                >
+                <Link href="/dashboard/add-domain" scroll={false}>
                   <Plus />
                   Add Your First Domain
                 </Link>

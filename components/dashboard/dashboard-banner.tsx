@@ -194,7 +194,7 @@ export function DashboardBanner({
               size="sm"
               onClick={handleSecondaryActionClick}
               disabled={secondaryAction.loading || secondaryAction.disabled}
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground"
             >
               {secondaryAction.loading ? (
                 <>
@@ -211,10 +211,7 @@ export function DashboardBanner({
               size="sm"
               onClick={handleActionClick}
               disabled={action.loading || action.disabled}
-              className={cn(
-                bannerButtonVariants({ variant }),
-                "cursor-pointer",
-              )}
+              className={bannerButtonVariants({ variant })}
             >
               {action.loading ? (
                 <>
@@ -235,7 +232,7 @@ export function DashboardBanner({
           variant="ghost"
           size="icon"
           onClick={handleDismiss}
-          className="invisible absolute top-2 right-2 z-10 size-6 cursor-pointer text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible"
+          className="invisible absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible"
           aria-label="Dismiss"
         >
           <X />

@@ -26,12 +26,7 @@ export function StepInstructionsError({
           {error || "Something went wrong. Please try again."}
         </p>
       </div>
-      <Button
-        variant="outline"
-        onClick={onRetry}
-        disabled={isRetrying}
-        className="cursor-pointer"
-      >
+      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
         {isRetrying ? (
           <>
             <Spinner />

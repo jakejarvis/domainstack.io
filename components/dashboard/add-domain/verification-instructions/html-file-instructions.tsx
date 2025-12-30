@@ -85,7 +85,7 @@ export function HtmlFileVerificationInstructions({
             render={
               <Button
                 variant="outline"
-                className="w-full cursor-pointer"
+                className="w-full"
                 onClick={handleDownload}
                 type="button"
               >

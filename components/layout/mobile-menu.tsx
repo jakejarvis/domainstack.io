@@ -23,12 +23,7 @@ export function MobileMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Menu"
-            className="cursor-pointer"
-          >
+          <Button variant="ghost" size="icon-sm" aria-label="Menu">
             <Menu />
           </Button>
         }
@@ -41,7 +36,7 @@ export function MobileMenu() {
         <DropdownMenuItem
           nativeButton={false}
           render={
-            <Link href="/bookmarklet" scroll={false} className="cursor-pointer">
+            <Link href="/bookmarklet" scroll={false}>
               <Bookmark />
               Bookmarklet
             </Link>
@@ -51,7 +46,7 @@ export function MobileMenu() {
         <DropdownMenuItem
           nativeButton={false}
           render={
-            <Link href="/login" scroll={false} className="cursor-pointer">
+            <Link href="/login" scroll={false}>
               <LogIn />
               Sign In
             </Link>

@@ -58,7 +58,7 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
           onClick={handleUpgrade}
           disabled={isLoading}
           variant="outline"
-          className="w-full cursor-pointer"
+          className="w-full"
         >
           {isLoading ? (
             <>

@@ -139,18 +139,11 @@ export function AddDomainContent({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button
-            onClick={() => refetchSubscription()}
-            className="w-full cursor-pointer"
-          >
+          <Button onClick={() => refetchSubscription()} className="w-full">
             Retry
           </Button>
           {onClose && (
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="w-full cursor-pointer"
-            >
+            <Button variant="outline" onClick={onClose} className="w-full">
               Close
             </Button>
           )}
@@ -240,7 +233,7 @@ export function AddDomainContent({
                 <Button
                   onClick={handleUpgrade}
                   disabled={isCheckoutLoading}
-                  className="w-full cursor-pointer"
+                  className="w-full"
                 >
                   {isCheckoutLoading ? (
                     <>
@@ -258,7 +251,7 @@ export function AddDomainContent({
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="w-full cursor-pointer"
+                    className="w-full"
                   >
                     Close
                   </Button>
@@ -273,11 +266,7 @@ export function AddDomainContent({
                 remove domains you no longer need to track.
               </p>
               {onClose && (
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="w-full cursor-pointer"
-                >
+                <Button variant="outline" onClick={onClose} className="w-full">
                   Close
                 </Button>
               )}
@@ -361,11 +350,7 @@ export function AddDomainContent({
                   </p>
                 </div>
                 {onClose && (
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    className="cursor-pointer"
-                  >
+                  <Button variant="outline" onClick={onClose}>
                     Close
                   </Button>
                 )}
@@ -411,7 +396,6 @@ export function AddDomainContent({
         disabled={
           !canProceed() || isLoadingInstructions || isMissingInstructions
         }
-        className="cursor-pointer"
       >
         {isAddingDomain || isVerifying ? (
           <Spinner />

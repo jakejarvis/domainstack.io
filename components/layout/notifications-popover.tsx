@@ -93,7 +93,7 @@ export function NotificationsPopover() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative cursor-pointer"
+                  className="relative"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
                   <Bell />
@@ -129,7 +129,7 @@ export function NotificationsPopover() {
                 {view === "inbox" && count > 0 && (
                   <Button
                     variant="ghost"
-                    className="!p-2.5 h-6 w-fit cursor-pointer gap-1.5 text-[13px]"
+                    className="!p-2.5 h-6 w-fit gap-1.5 text-[13px]"
                     onClick={() => markAllRead.mutate()}
                     disabled={markAllRead.isPending}
                     aria-label="Clear All"
@@ -140,7 +140,7 @@ export function NotificationsPopover() {
                 )}
                 <Button
                   variant="ghost"
-                  className="!p-2.5 size-6 cursor-pointer"
+                  className="!p-2.5 size-6"
                   onClick={() => setOpen(false)}
                   aria-label="Close"
                 >

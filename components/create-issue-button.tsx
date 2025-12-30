@@ -4,7 +4,6 @@ import { Bug } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
-import { cn } from "@/lib/utils";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };
 
@@ -70,7 +69,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
     <Button
       variant={variant}
       size={size}
-      className={cn("cursor-pointer", className)}
+      className={className}
       nativeButton={false}
       render={
         <a href={issueUrl} target="_blank" rel="noopener">

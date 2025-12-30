@@ -66,7 +66,7 @@ export function AppHeaderButtons() {
             <Button
               variant="ghost"
               size="sm"
-              className="hidden cursor-pointer md:flex"
+              className="hidden md:flex"
               nativeButton={false}
               render={
                 <Link href="/bookmarklet" scroll={false}>

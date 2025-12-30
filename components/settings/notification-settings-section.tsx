@@ -376,7 +376,7 @@ export function NotificationSettingsSection({
               render={
                 <Button
                   variant="ghost"
-                  className="flex w-full cursor-pointer items-center justify-between"
+                  className="flex w-full items-center justify-between"
                 >
                   <span className="font-medium text-[13px] text-foreground/85 leading-none">
                     Per-domain overrides
