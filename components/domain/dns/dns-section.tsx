@@ -4,7 +4,7 @@ import { Earth } from "lucide-react";
 import { useMemo } from "react";
 import { DnsGroup } from "@/components/domain/dns/dns-group";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
-import { Section } from "@/components/domain/section";
+import { ReportSection } from "@/components/domain/report-section";
 import {
   Empty,
   EmptyDescription,
@@ -39,7 +39,7 @@ export function DnsSection({
   }, [records]);
 
   return (
-    <Section {...sections.dns}>
+    <ReportSection {...sections.dns}>
       {records && records.length > 0 ? (
         <div className="space-y-4">
           <DnsGroup
@@ -93,6 +93,6 @@ export function DnsSection({
           </EmptyHeader>
         </Empty>
       )}
-    </Section>
+    </ReportSection>
   );
 }

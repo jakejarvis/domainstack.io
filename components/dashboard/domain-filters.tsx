@@ -11,6 +11,7 @@ import {
   Globe,
   Search,
   X,
+  XIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
@@ -344,7 +345,7 @@ export function DomainFilters({
                       onClick={() => onSearchChange("")}
                       aria-label="Clear search"
                     >
-                      <X />
+                      <XIcon />
                     </InputGroupButton>
                   </motion.div>
                 </InputGroupAddon>
@@ -408,7 +409,7 @@ export function DomainFilters({
                 onClick={onClearFilters}
                 className="text-muted-foreground"
               >
-                <X />
+                <XIcon />
                 Clear all
               </Button>
             </motion.div>

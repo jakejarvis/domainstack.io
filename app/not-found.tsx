@@ -1,6 +1,6 @@
 import { FileQuestionMark } from "lucide-react";
 import type { Metadata } from "next";
-import { DomainSearch } from "@/components/domain/domain-search";
+import { SearchClient } from "@/components/search/search-client";
 import {
   Empty,
   EmptyContent,
@@ -30,7 +30,7 @@ export default function NotFound() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="w-full">
-          <DomainSearch variant="lg" />
+          <SearchClient variant="lg" />
         </EmptyContent>
       </Empty>
     </div>

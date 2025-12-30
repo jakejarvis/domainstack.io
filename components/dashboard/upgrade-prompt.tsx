@@ -1,6 +1,6 @@
 "use client";
 
-import { Gauge, ShoppingCart, X } from "lucide-react";
+import { Gauge, ShoppingCart, XIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +43,7 @@ export function UpgradePrompt() {
         onClick={() => setIsVisible(false)}
         aria-label="Dismiss"
       >
-        <X />
+        <XIcon />
         <span className="sr-only">Dismiss</span>
       </Button>
 

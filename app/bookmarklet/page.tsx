@@ -1,6 +1,6 @@
 import { MousePointerClick } from "lucide-react";
 import type { Metadata } from "next";
-import { BookmarkletContent } from "@/components/layout/bookmarklet-content";
+import { BookmarkletContent } from "@/components/bookmarklet/bookmarklet-content";
 import { StaticBackground } from "@/components/layout/static-background";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";

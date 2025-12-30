@@ -9,11 +9,11 @@ import {
   FileQuestionMark,
   Filter,
   Signal,
-  X,
+  XIcon,
 } from "lucide-react";
 import * as motion from "motion/react-client";
 import { useCallback, useMemo, useState } from "react";
-import { SubheadCount } from "@/components/domain/subhead-count";
+import { PillCount } from "@/components/domain/pill-count";
 import {
   Accordion,
   AccordionContent,
@@ -172,7 +172,7 @@ export function RobotsSummary({
             aria-hidden="true"
           />
         </a>
-        <SubheadCount
+        <PillCount
           count={(counts.allows + counts.disallows) as number}
           color="blue"
         />
@@ -206,7 +206,7 @@ export function RobotsSummary({
                         variant="ghost"
                         onClick={() => setQuery("")}
                       >
-                        <X />
+                        <XIcon />
                       </InputGroupButton>
                     </InputGroupAddon>
                   ) : null}
@@ -232,7 +232,7 @@ export function RobotsSummary({
                       aria-hidden="true"
                     />
                     All
-                    <SubheadCount
+                    <PillCount
                       count={(counts.allows + counts.disallows) as number}
                       color="slate"
                     />
@@ -247,7 +247,7 @@ export function RobotsSummary({
                       aria-hidden="true"
                     />
                     <span>Allow</span>
-                    <SubheadCount count={counts.allows} color="slate" />
+                    <PillCount count={counts.allows} color="slate" />
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="disallow"
@@ -259,7 +259,7 @@ export function RobotsSummary({
                       aria-hidden="true"
                     />
                     <span>Disallow</span>
-                    <SubheadCount count={counts.disallows} color="slate" />
+                    <PillCount count={counts.disallows} color="slate" />
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
@@ -616,7 +616,7 @@ function SitemapsList({ items }: { items: string[] }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
         <span>Sitemaps</span>
-        <SubheadCount count={items.length} color="green" />
+        <PillCount count={items.length} color="green" />
       </div>
       <div className="flex flex-col gap-2.5">
         {existing.map((u) => (

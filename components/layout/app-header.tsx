@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AppHeaderButtons } from "@/components/layout/app-header-buttons";
-import { AuthButton } from "@/components/layout/auth-button";
+import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
+import { HeaderGrid } from "@/components/layout/app-header-grid";
+import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
+import { AppHeaderSlideOver } from "@/components/layout/app-header-slideover";
 import { GithubStars } from "@/components/layout/github-stars";
-import { GithubStarsSkeleton } from "@/components/layout/github-stars-skeleton";
-import { HeaderButtons } from "@/components/layout/header-buttons";
-import { HeaderGrid } from "@/components/layout/header-grid";
-import { HeaderSearch } from "@/components/layout/header-search";
-import { HeaderSearchProvider } from "@/components/layout/header-search-context";
-import { HeaderSearchSkeleton } from "@/components/layout/header-search-skeleton";
 import { Logo } from "@/components/logo";
-import { Separator } from "@/components/ui/separator";
+import { HeaderSearchClient } from "@/components/search/header-search-client";
+import { HeaderSearchProvider } from "@/components/search/header-search-context";
+import { HeaderSearchSkeleton } from "@/components/search/header-search-skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AppHeader() {
   return (
@@ -24,20 +23,15 @@ export function AppHeader() {
           <Logo className="h-10 w-10" aria-hidden="true" />
         </Link>
         <Suspense fallback={<HeaderSearchSkeleton />}>
-          <HeaderSearch />
+          <HeaderSearchClient />
         </Suspense>
-        <HeaderButtons>
-          <Suspense fallback={<GithubStarsSkeleton />}>
+        <AppHeaderSlideOver>
+          <Suspense fallback={<Skeleton className="h-8 w-[60px]" />}>
             <GithubStars />
           </Suspense>
-          <AppHeaderButtons />
-          <Separator
-            aria-hidden="true"
-            orientation="vertical"
-            className="!h-4"
-          />
-          <AuthButton />
-        </HeaderButtons>
+          <AppHeaderSeparator />
+          <AppHeaderClientButtons />
+        </AppHeaderSlideOver>
       </HeaderGrid>
     </HeaderSearchProvider>
   );

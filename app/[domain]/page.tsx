@@ -1,7 +1,7 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { DomainReportView } from "@/components/domain/domain-report-view";
+import { DomainReportClient } from "@/components/domain/report-client";
 import { analytics } from "@/lib/analytics/server";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { getQueryClient, trpc } from "@/trpc/server";
@@ -84,7 +84,7 @@ export default async function DomainPage({
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <DomainReportView domain={registrable} />
+        <DomainReportClient domain={registrable} />
       </HydrationBoundary>
     </div>
   );

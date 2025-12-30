@@ -3,7 +3,7 @@ import { MailQuestionMark } from "lucide-react";
 import { HostingMap } from "@/components/domain/hosting/hosting-map";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { Section } from "@/components/domain/section";
+import { ReportSection } from "@/components/domain/report-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import {
   Empty,
@@ -34,7 +34,7 @@ export function HostingSection({
     dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
 
   return (
-    <Section {...sections.hosting}>
+    <ReportSection {...sections.hosting}>
       {hasAnyProvider ? (
         <>
           <KeyValueGrid colsDesktop={3}>
@@ -125,6 +125,6 @@ export function HostingSection({
           </EmptyHeader>
         </Empty>
       )}
-    </Section>
+    </ReportSection>
   );
 }

@@ -1,6 +1,6 @@
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
-import { Section } from "@/components/domain/section";
-import { SubheadCountSkeleton } from "@/components/domain/subhead-count";
+import { PillCountSkeleton } from "@/components/domain/pill-count";
+import { ReportSection } from "@/components/domain/report-section";
 import { sections } from "@/lib/constants/sections";
 
 function DnsGroupSkeleton({
@@ -16,7 +16,7 @@ function DnsGroupSkeleton({
         <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
           {title}
         </div>
-        <SubheadCountSkeleton />
+        <PillCountSkeleton />
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {Array.from(
@@ -32,7 +32,7 @@ function DnsGroupSkeleton({
 
 export function DnsSectionSkeleton() {
   return (
-    <Section {...sections.dns} isLoading>
+    <ReportSection {...sections.dns} isLoading>
       <div className="space-y-4">
         <DnsGroupSkeleton title="A Records" />
         <DnsGroupSkeleton title="AAAA Records" />
@@ -40,6 +40,6 @@ export function DnsSectionSkeleton() {
         <DnsGroupSkeleton title="TXT Records" records={4} />
         <DnsGroupSkeleton title="NS Records" />
       </div>
-    </Section>
+    </ReportSection>
   );
 }

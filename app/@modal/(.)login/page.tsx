@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginContent } from "@/components/auth/login-content";
 import { LoginSkeleton } from "@/components/auth/login-skeleton";
-import { Modal } from "@/components/layout/modal";
+import { Modal } from "@/components/ui/modal";
 import { auth } from "@/lib/auth";
 
 export default function InterceptedLoginPage() {

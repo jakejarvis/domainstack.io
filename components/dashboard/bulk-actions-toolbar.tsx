@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Trash2, X } from "lucide-react";
+import { Archive, Trash2, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -116,7 +116,7 @@ export function BulkActionsToolbar({
                 onClick={onCancel}
                 disabled={isLoading}
               >
-                <X />
+                <XIcon />
                 Cancel
               </Button>
             </div>

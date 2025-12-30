@@ -1,5 +1,5 @@
 import { FileQuestionMark } from "lucide-react";
-import { Section } from "@/components/domain/section";
+import { ReportSection } from "@/components/domain/report-section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
 import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
 import { RobotsSummary } from "@/components/domain/seo/robots-summary";
@@ -50,7 +50,7 @@ export function SeoSection({
   }
 
   return (
-    <Section {...sections.seo}>
+    <ReportSection {...sections.seo}>
       {hasAnySeoMeta ? (
         <div className="space-y-4">
           <RedirectedAlert
@@ -83,6 +83,6 @@ export function SeoSection({
           </EmptyHeader>
         </Empty>
       )}
-    </Section>
+    </ReportSection>
   );
 }

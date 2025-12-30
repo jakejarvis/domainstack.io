@@ -8,7 +8,7 @@ import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
-import { Section } from "@/components/domain/section";
+import { ReportSection } from "@/components/domain/report-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import {
   ResponsiveTooltip,
@@ -97,7 +97,7 @@ export function RegistrationSection({
   const isWhoisUnavailable = data.status === "unknown";
 
   return (
-    <Section {...sections.registration}>
+    <ReportSection {...sections.registration}>
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
           <AlertCircle className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200" />
@@ -192,7 +192,7 @@ export function RegistrationSection({
           />
         </KeyValueGrid>
       )}
-    </Section>
+    </ReportSection>
   );
 }
 

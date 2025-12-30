@@ -1,6 +1,6 @@
 import { MousePointerClick } from "lucide-react";
-import { BookmarkletContent } from "@/components/layout/bookmarklet-content";
-import { Modal } from "@/components/layout/modal";
+import { BookmarkletContent } from "@/components/bookmarklet/bookmarklet-content";
+import { Modal } from "@/components/ui/modal";
 
 export default function InterceptedBookmarkletPage() {
   return (

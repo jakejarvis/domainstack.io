@@ -1,19 +1,19 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
-import { Section } from "@/components/domain/section";
-import { SubheadCountSkeleton } from "@/components/domain/subhead-count";
+import { PillCountSkeleton } from "@/components/domain/pill-count";
+import { ReportSection } from "@/components/domain/report-section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sections } from "@/lib/constants/sections";
 
 export function SeoSectionSkeleton() {
   return (
-    <Section {...sections.seo} isLoading>
+    <ReportSection {...sections.seo} isLoading>
       <div className="space-y-4">
         {/* Meta Tags */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
             Meta Tags
-            <SubheadCountSkeleton />
+            <PillCountSkeleton />
           </div>
           <KeyValueGrid colsDesktop={2}>
             <KeyValueSkeleton label="Title" widthClass="w-[220px]" />
@@ -62,7 +62,7 @@ export function SeoSectionSkeleton() {
         <div className="space-y-4 rounded-xl">
           <div className="mt-5 flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
             robots.txt
-            <SubheadCountSkeleton />
+            <PillCountSkeleton />
           </div>
 
           {/* Filters row */}
@@ -108,7 +108,7 @@ export function SeoSectionSkeleton() {
           <div className="space-y-3">
             <div className="mt-5 flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
               Sitemaps
-              <SubheadCountSkeleton />
+              <PillCountSkeleton />
             </div>
             <div className="flex flex-col gap-2.5">
               {["sm-0", "sm-1"].map((sid) => (
@@ -118,6 +118,6 @@ export function SeoSectionSkeleton() {
           </div>
         </div>
       </div>
-    </Section>
+    </ReportSection>
   );
 }

@@ -2,7 +2,7 @@ import { ExternalLink, Info, Logs, Search } from "lucide-react";
 import Link from "next/link";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
-import { Section } from "@/components/domain/section";
+import { ReportSection } from "@/components/domain/report-section";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Empty,
@@ -46,7 +46,7 @@ export function HeadersSection({
   }
 
   return (
-    <Section {...sections.headers}>
+    <ReportSection {...sections.headers}>
       {headers && headers.length > 0 ? (
         <div className="space-y-4">
           {status !== 200 && (
@@ -129,6 +129,6 @@ export function HeadersSection({
           </Empty>
         </div>
       )}
-    </Section>
+    </ReportSection>
   );
 }

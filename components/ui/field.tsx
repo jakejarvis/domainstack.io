@@ -1,8 +1,5 @@
-"use client";
-
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
-import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 
@@ -197,29 +194,23 @@ function FieldError({
 }: Omit<FieldPrimitive.Error.Props, "match"> & {
   errors?: Array<{ message?: string } | undefined>;
 }) {
-  const content = useMemo(() => {
-    if (children) {
-      return children;
-    }
+  let content = children;
 
-    if (!errors) {
-      return null;
+  if (!content && errors?.length) {
+    if (errors.length === 1 && errors[0]?.message) {
+      content = errors[0].message;
+    } else {
+      content = (
+        <ul className="ml-4 flex list-disc flex-col gap-1">
+          {errors.map(
+            (error, index) =>
+              // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
+              error?.message && <li key={index}>{error.message}</li>,
+          )}
+        </ul>
+      );
     }
-
-    if (errors?.length === 1 && errors[0]?.message) {
-      return errors[0].message;
-    }
-
-    return (
-      <ul className="ml-4 flex list-disc flex-col gap-1">
-        {errors.map(
-          (error, index) =>
-            // biome-ignore lint/suspicious/noArrayIndexKey: this is fine
-            error?.message && <li key={index}>{error.message}</li>,
-        )}
-      </ul>
-    );
-  }, [children, errors]);
+  }
 
   if (!content) {
     return null;

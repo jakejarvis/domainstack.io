@@ -1,4 +1,4 @@
-import { SubheadCount } from "@/components/domain/subhead-count";
+import { PillCount } from "@/components/domain/pill-count";
 
 type DnsGroupColor =
   | "blue"
@@ -29,7 +29,7 @@ export function DnsGroup({
         <div className="text-[11px] text-foreground/70 uppercase tracking-[0.08em] dark:text-foreground/80">
           {title}
         </div>
-        <SubheadCount count={actualCount} color={color} />
+        <PillCount count={actualCount} color={color} />
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
     </div>

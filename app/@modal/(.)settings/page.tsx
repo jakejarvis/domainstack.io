@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Modal } from "@/components/layout/modal";
 import {
   SettingsPanels,
   SettingsTabsList,
@@ -10,6 +9,7 @@ import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
+import { Modal } from "@/components/ui/modal";
 import { Tabs } from "@/components/ui/tabs";
 import { auth } from "@/lib/auth";
 

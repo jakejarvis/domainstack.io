@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { X } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn, cva, type VariantProps } from "@/lib/utils";
@@ -210,7 +210,7 @@ export function DashboardBanner({
           className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible sm:invisible"
           aria-label="Dismiss"
         >
-          <X />
+          <XIcon />
           <span className="sr-only">Dismiss</span>
         </Button>
       )}

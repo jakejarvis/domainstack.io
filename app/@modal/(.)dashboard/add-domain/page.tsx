@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
-import { Modal } from "@/components/layout/modal";
+import { Modal } from "@/components/ui/modal";
 import { auth } from "@/lib/auth";
 
 export default function InterceptedAddDomainPage({
