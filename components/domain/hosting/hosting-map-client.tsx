@@ -24,7 +24,7 @@ export function HostingMapClient({
   }, []);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-black/10 bg-background/40 p-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
+    <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-0 backdrop-blur-lg dark:border-border/50">
       <MapboxMap
         key={mountKey}
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}

@@ -39,7 +39,7 @@ export function UpgradePrompt() {
       <Button
         variant="ghost"
         size="icon"
-        className="invisible absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible"
+        className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible sm:invisible"
         onClick={() => setIsVisible(false)}
         aria-label="Dismiss"
       >

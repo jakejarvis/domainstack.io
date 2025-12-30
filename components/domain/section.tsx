@@ -47,7 +47,7 @@ export function Section({
       className="border-none"
     >
       <Card
-        className="relative overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
+        className="relative gap-0 overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
         data-accent={accent}
       >
         {/* Accent glow */}

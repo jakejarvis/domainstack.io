@@ -15,7 +15,7 @@ export function KeyValueSkeleton({
   widthClass?: string;
 }) {
   return (
-    <div className="flex h-16 items-center justify-between gap-4 rounded-2xl border border-black/10 bg-background/40 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-lg dark:border-white/10">
+    <div className="flex h-16 min-w-0 items-center justify-between gap-4 rounded-2xl border border-border/65 bg-background/40 px-4 py-3 backdrop-blur-lg dark:border-border/50">
       <div className="min-w-0 space-y-1">
         {label ? (
           <div className="text-[10px] text-foreground/75 uppercase tracking-[0.08em] dark:text-foreground/80">

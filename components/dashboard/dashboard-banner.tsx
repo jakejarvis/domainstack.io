@@ -219,7 +219,7 @@ export function DashboardBanner({
           variant="ghost"
           size="icon"
           onClick={handleDismiss}
-          className="invisible absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible"
+          className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible sm:invisible"
           aria-label="Dismiss"
         >
           <X />

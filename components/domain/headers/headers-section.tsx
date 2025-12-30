@@ -52,7 +52,7 @@ export function HeadersSection({
       {headers && headers.length > 0 ? (
         <div className="space-y-4">
           {status !== 200 && (
-            <Alert className="border-black/10 bg-background/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/40 dark:border-white/10">
+            <Alert>
               <Info aria-hidden="true" />
               <AlertDescription>
                 <p className="text-[13px]">
