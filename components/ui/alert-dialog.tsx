@@ -1,6 +1,6 @@
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
-import type { VariantProps } from "class-variance-authority";
 import { buttonVariants } from "@/components/ui/button";
+import type { VariantProps } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 type BaseUIClickEvent = React.MouseEvent<HTMLButtonElement, MouseEvent> & {

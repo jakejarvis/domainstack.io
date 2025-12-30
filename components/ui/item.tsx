@@ -1,8 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn, cva, type VariantProps } from "@/lib/utils";
 
 function ItemGroup({
   className,
@@ -37,26 +36,24 @@ function ItemSeparator({
   );
 }
 
-const itemVariants = cva(
-  "group/item flex items-center border border-transparent text-sm rounded-md transition-colors [a]:hover:bg-accent/50 [a]:transition-colors duration-100 flex-wrap outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        outline: "border-border",
-        muted: "bg-muted/50",
-      },
-      size: {
-        default: "p-4 gap-4 ",
-        sm: "py-3 px-4 gap-2.5",
-      },
+const itemVariants = cva({
+  base: "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm outline-none transition-colors duration-100 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent/50",
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      outline: "border-border",
+      muted: "bg-muted/50",
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
+    size: {
+      default: "gap-4 p-4",
+      sm: "gap-2.5 px-4 py-3",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+    size: "default",
+  },
+});
 
 function Item({
   variant = "default",
@@ -79,22 +76,20 @@ function Item({
   });
 }
 
-const itemMediaVariants = cva(
-  "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none group-has-[[data-slot=item-description]]/item:translate-y-0.5",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        icon: "size-8 border rounded-sm bg-muted [&_svg:not([class*='size-'])]:size-4",
-        image:
-          "size-10 rounded-sm overflow-hidden [&_img]:size-full [&_img]:object-cover",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
+const itemMediaVariants = cva({
+  base: "flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none",
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      icon: "size-8 rounded-sm border bg-muted [&_svg:not([class*='size-'])]:size-4",
+      image:
+        "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
     },
   },
-);
+  defaultVariants: {
+    variant: "default",
+  },
+});
 
 function ItemMedia({
   variant = "default",

@@ -81,9 +81,6 @@ importers:
       cheerio:
         specifier: ^1.1.2
         version: 1.1.2
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
       clipboard-copy:
         specifier: ^4.0.1
         version: 4.0.1
@@ -93,6 +90,9 @@ importers:
       country-flag-icons:
         specifier: ^1.6.4
         version: 1.6.4
+      cva:
+        specifier: 1.0.0-beta.4
+        version: 1.0.0-beta.4(typescript@5.9.3)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -3803,6 +3803,14 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  cva@1.0.0-beta.4:
+    resolution: {integrity: sha512-F/JS9hScapq4DBVQXcK85l9U91M6ePeXoBMSp7vypzShoefUBxjQTo3g3935PUHgQd+IW77DjbPRIxugy4/GCQ==}
+    peerDependencies:
+      typescript: '>= 4.5.5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   d3-array@3.2.4:
     resolution: {integrity: sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==}
@@ -9792,6 +9800,12 @@ snapshots:
     optional: true
 
   csstype@3.2.3: {}
+
+  cva@1.0.0-beta.4(typescript@5.9.3):
+    dependencies:
+      clsx: 2.1.1
+    optionalDependencies:
+      typescript: 5.9.3
 
   d3-array@3.2.4:
     dependencies:

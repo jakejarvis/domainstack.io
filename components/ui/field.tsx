@@ -2,10 +2,9 @@
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
-import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn, cva, type VariantProps } from "@/lib/utils";
 
 function FieldSet({ className, ...props }: FieldsetPrimitive.Root.Props) {
   return (
@@ -59,7 +58,8 @@ function FieldGroup({
   );
 }
 
-const fieldVariants = cva("group/field flex w-full gap-3", {
+const fieldVariants = cva({
+  base: "group/field flex w-full gap-3",
   variants: {
     orientation: {
       vertical: ["flex-col [&>*]:w-full [&>.sr-only]:w-auto"],
@@ -69,7 +69,7 @@ const fieldVariants = cva("group/field flex w-full gap-3", {
         "has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],
       responsive: [
-        "flex-col [&>*]:w-full [&>.sr-only]:w-auto @md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>*]:w-auto",
+        "@md/field-group:flex-row flex-col @md/field-group:items-center @md/field-group:[&>*]:w-auto [&>*]:w-full [&>.sr-only]:w-auto",
         "@md/field-group:[&>[data-slot=field-label]]:flex-auto",
         "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],

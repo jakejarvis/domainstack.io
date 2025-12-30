@@ -42,7 +42,13 @@
         "useSemanticElements": "off"
       },
       "nursery": {
-        "useSortedClasses": "error",
+        "useSortedClasses": {
+          "level": "error",
+          "options": {
+            "attributes": ["classList"],
+            "functions": ["cn", "clsx", "cva"]
+          }
+        },
         "noFloatingPromises": "error",
         "noMisusedPromises": "error"
       }
