@@ -122,16 +122,19 @@ export function TrackedDomainsView({
         </EmptyHeader>
         <EmptyContent className="relative">
           {onAddDomain ? (
-            <Button size="lg" onClick={onAddDomain} className="leading-none">
+            <Button size="lg" onClick={onAddDomain} className="cursor-pointer">
               <Plus />
               Add Your First Domain
             </Button>
           ) : (
             <Button
               size="lg"
-              className="leading-none"
               render={
-                <Link href="/dashboard/add-domain" scroll={false}>
+                <Link
+                  href="/dashboard/add-domain"
+                  scroll={false}
+                  className="cursor-pointer"
+                >
                   <Plus />
                   Add Your First Domain
                 </Link>

@@ -70,7 +70,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
     <Button
       variant={variant}
       size={size}
-      className={cn("cursor-pointer leading-none", className)}
+      className={cn("cursor-pointer", className)}
       nativeButton={false}
       render={
         <a href={issueUrl} target="_blank" rel="noopener">

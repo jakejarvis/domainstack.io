@@ -156,7 +156,7 @@ export function DashboardHeader({
               <ResponsiveTooltipTrigger
                 render={
                   <div className="cursor-not-allowed">
-                    <Button disabled className="leading-none">
+                    <Button disabled>
                       <Plus />
                       Add Domain
                     </Button>
@@ -176,7 +176,7 @@ export function DashboardHeader({
                 <Link
                   href="/dashboard/add-domain"
                   scroll={false}
-                  className="cursor-pointer leading-none"
+                  className="cursor-pointer"
                 >
                   <Plus />
                   Add Domain

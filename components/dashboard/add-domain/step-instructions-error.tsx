@@ -30,7 +30,7 @@ export function StepInstructionsError({
         variant="outline"
         onClick={onRetry}
         disabled={isRetrying}
-        className="cursor-pointer leading-none"
+        className="cursor-pointer"
       >
         {isRetrying ? (
           <>

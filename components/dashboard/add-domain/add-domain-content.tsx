@@ -240,7 +240,7 @@ export function AddDomainContent({
                 <Button
                   onClick={handleUpgrade}
                   disabled={isCheckoutLoading}
-                  className="w-full cursor-pointer leading-none"
+                  className="w-full cursor-pointer"
                 >
                   {isCheckoutLoading ? (
                     <>
@@ -258,7 +258,7 @@ export function AddDomainContent({
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="w-full cursor-pointer leading-none"
+                    className="w-full cursor-pointer"
                   >
                     Close
                   </Button>
@@ -276,7 +276,7 @@ export function AddDomainContent({
                 <Button
                   variant="outline"
                   onClick={onClose}
-                  className="w-full cursor-pointer leading-none"
+                  className="w-full cursor-pointer"
                 >
                   Close
                 </Button>
@@ -364,7 +364,7 @@ export function AddDomainContent({
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="cursor-pointer leading-none"
+                    className="cursor-pointer"
                   >
                     Close
                   </Button>
@@ -411,7 +411,7 @@ export function AddDomainContent({
         disabled={
           !canProceed() || isLoadingInstructions || isMissingInstructions
         }
-        className="cursor-pointer leading-none"
+        className="cursor-pointer"
       >
         {isAddingDomain || isVerifying ? (
           <Spinner />

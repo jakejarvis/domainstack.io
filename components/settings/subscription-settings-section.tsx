@@ -108,7 +108,7 @@ export function SubscriptionSettingsSection({
               variant="outline"
               onClick={handleManageSubscription}
               disabled={isPortalLoading}
-              className="w-full cursor-pointer leading-none"
+              className="w-full cursor-pointer"
             >
               {isPortalLoading ? (
                 <>
@@ -163,7 +163,7 @@ export function SubscriptionSettingsSection({
               <Button
                 onClick={handleUpgrade}
                 disabled={isCheckoutLoading}
-                className="w-full cursor-pointer leading-none"
+                className="w-full cursor-pointer"
               >
                 {isCheckoutLoading ? (
                   <>

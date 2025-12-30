@@ -750,7 +750,7 @@ export function TrackedDomainsTable({
                               size="sm"
                               variant="outline"
                               onClick={() => onVerify(row.original)}
-                              className="cursor-pointer px-2 text-[13px] leading-none"
+                              className="cursor-pointer px-2 text-[13px]"
                             >
                               <Play className="text-accent-green" />
                               Continue
@@ -764,7 +764,7 @@ export function TrackedDomainsTable({
                                   row.original.domainName,
                                 )
                               }
-                              className="cursor-pointer px-2 text-[13px] leading-none"
+                              className="cursor-pointer px-2 text-[13px]"
                             >
                               <Trash2 className="text-danger-foreground" />
                               Remove

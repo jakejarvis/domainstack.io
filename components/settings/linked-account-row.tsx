@@ -1,13 +1,13 @@
 "use client";
 
 import type { UseMutationResult } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { Spinner } from "@/components/ui/spinner";
 import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,7 @@ export function LinkedAccountRow({
                   !canUnlink && "cursor-default opacity-50",
                 )}
               >
-                {isUnlinking && <Loader2 className="animate-spin" />}
+                {isUnlinking && <Spinner />}
                 Unlink
               </Button>
             }
@@ -81,7 +81,7 @@ export function LinkedAccountRow({
           disabled={isLoading}
           className="cursor-pointer"
         >
-          {isLinking && <Loader2 className="animate-spin" />}
+          {isLinking && <Spinner />}
           Link
         </Button>
       )}

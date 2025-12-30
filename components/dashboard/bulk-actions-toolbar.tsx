@@ -72,7 +72,7 @@ export function BulkActionsToolbar({
                   size="sm"
                   onClick={onToggleAll}
                   disabled={isLoading}
-                  className="cursor-pointer pr-0 pl-0.5 text-sm leading-none"
+                  className="cursor-pointer pr-0 pl-0.5 text-sm"
                 >
                   Select All ({totalCount})
                 </Button>
@@ -95,7 +95,7 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onArchive}
                 disabled={isLoading}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 <Archive />
                 Archive
@@ -106,7 +106,7 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onDelete}
                 disabled={isLoading}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 <Trash2 />
                 Delete
@@ -117,7 +117,7 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onCancel}
                 disabled={isLoading}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 <X />
                 Cancel

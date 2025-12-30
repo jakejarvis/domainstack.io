@@ -129,7 +129,7 @@ export function NotificationsPopover() {
                 {view === "inbox" && count > 0 && (
                   <Button
                     variant="ghost"
-                    className="!p-2.5 h-6 w-fit cursor-pointer gap-1.5 text-[13px] leading-none"
+                    className="!p-2.5 h-6 w-fit cursor-pointer gap-1.5 text-[13px]"
                     onClick={() => markAllRead.mutate()}
                     disabled={markAllRead.isPending}
                     aria-label="Clear All"
@@ -151,10 +151,7 @@ export function NotificationsPopover() {
             </div>
             <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger
-                  value="inbox"
-                  className="gap-2 text-[13px] leading-none"
-                >
+                <TabsTrigger value="inbox" className="gap-2 text-[13px]">
                   <Inbox />
                   Inbox
                   {count > 0 && (
@@ -163,10 +160,7 @@ export function NotificationsPopover() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="archive"
-                  className="gap-2 text-[13px] leading-none"
-                >
+                <TabsTrigger value="archive" className="gap-2 text-[13px]">
                   <Archive />
                   Archive
                 </TabsTrigger>

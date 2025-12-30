@@ -86,7 +86,7 @@ export function DeleteAccountDialog({
             <AlertDialogFooter className="sm:justify-center">
               <AlertDialogCancel
                 onClick={() => handleOpenChange(false)}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 Close
               </AlertDialogCancel>
@@ -130,7 +130,7 @@ export function DeleteAccountDialog({
             <AlertDialogFooter>
               <AlertDialogCancel
                 disabled={state === "loading"}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 Cancel
               </AlertDialogCancel>
@@ -138,7 +138,7 @@ export function DeleteAccountDialog({
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={state === "loading"}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 {state === "loading" ? (
                   <>

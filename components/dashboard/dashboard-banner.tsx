@@ -194,7 +194,7 @@ export function DashboardBanner({
               size="sm"
               onClick={handleSecondaryActionClick}
               disabled={secondaryAction.loading || secondaryAction.disabled}
-              className="cursor-pointer text-muted-foreground leading-none hover:text-foreground"
+              className="cursor-pointer text-muted-foreground hover:text-foreground"
             >
               {secondaryAction.loading ? (
                 <>
@@ -213,7 +213,7 @@ export function DashboardBanner({
               disabled={action.loading || action.disabled}
               className={cn(
                 bannerButtonVariants({ variant }),
-                "cursor-pointer leading-none",
+                "cursor-pointer",
               )}
             >
               {action.loading ? (

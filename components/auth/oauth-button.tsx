@@ -90,7 +90,7 @@ export function OAuthButton({
     <Button
       size="lg"
       variant="outline"
-      className={cn("w-full cursor-pointer gap-3 leading-none", className)}
+      className={cn("w-full cursor-pointer gap-3", className)}
       onClick={handleSignIn}
       disabled={isAnyLoading}
     >

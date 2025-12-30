@@ -107,10 +107,7 @@ export function UserMenu() {
           <DropdownMenuItem
             nativeButton={false}
             render={
-              <Link
-                href="/dashboard"
-                className="mx-1 cursor-pointer py-2 leading-none"
-              >
+              <Link href="/dashboard" className="mx-1 cursor-pointer">
                 <Table2 />
                 Dashboard
               </Link>
@@ -122,7 +119,7 @@ export function UserMenu() {
               <Link
                 href="/settings"
                 scroll={false}
-                className="mx-1 cursor-pointer py-2 leading-none"
+                className="mx-1 cursor-pointer"
               >
                 <Settings />
                 Settings
@@ -132,7 +129,7 @@ export function UserMenu() {
           <DropdownMenuSeparator />
           {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
           <DropdownMenuItem
-            className="mx-1 cursor-pointer py-2 leading-none"
+            className="mx-1 cursor-pointer"
             onClick={toggleTheme}
           >
             {theme === "dark" ? <Sun /> : <Moon />}
@@ -144,7 +141,7 @@ export function UserMenu() {
               <Link
                 href="/bookmarklet"
                 scroll={false}
-                className="mx-1 cursor-pointer py-2 leading-none"
+                className="mx-1 cursor-pointer"
               >
                 <Bookmark />
                 Bookmarklet
@@ -153,7 +150,7 @@ export function UserMenu() {
           />
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="mx-1 cursor-pointer py-2 leading-none"
+            className="mx-1 cursor-pointer"
             onClick={handleSignOut}
           >
             <LogOut className="text-danger-foreground" />

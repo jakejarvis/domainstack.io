@@ -54,7 +54,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
   return (
     <h1
       className={cn(
-        "flex w-full flex-col items-center justify-center gap-y-2 text-center font-semibold text-3xl leading-none tracking-tight sm:flex-row sm:items-baseline sm:gap-y-0 sm:text-4xl md:text-5xl",
+        "relative flex w-full flex-col items-center justify-center gap-y-2 text-center font-semibold text-3xl leading-none tracking-tight sm:flex-row sm:items-baseline sm:gap-y-0 sm:text-4xl md:text-5xl",
         className,
       )}
     >
@@ -96,7 +96,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
       {/* measurement element for smooth width animation (inherits h1 font sizing) */}
       <span
         ref={measureRef}
-        className="pointer-events-none invisible absolute inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 align-baseline text-foreground shadow-sm ring-1 ring-border/60 sm:rounded-xl sm:px-3 sm:py-1"
+        className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 align-baseline text-foreground shadow-sm ring-1 ring-border/60 sm:rounded-xl sm:px-3 sm:py-1"
         aria-hidden="true"
       >
         <span className="inline-flex items-center whitespace-nowrap">

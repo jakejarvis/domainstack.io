@@ -77,7 +77,7 @@ export function UpgradePrompt() {
         <Button
           onClick={handleUpgrade}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 cursor-pointer leading-none md:w-auto"
+          className="w-full shrink-0 cursor-pointer md:w-auto"
         >
           {isCheckoutLoading ? (
             <>

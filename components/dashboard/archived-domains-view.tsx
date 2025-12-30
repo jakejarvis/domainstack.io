@@ -98,7 +98,7 @@ export function ArchivedDomainsView({
                         size="sm"
                         onClick={() => onUnarchive(domain.id)}
                         disabled={!canUnarchive}
-                        className="cursor-pointer leading-none"
+                        className="cursor-pointer"
                       >
                         <RotateCcw />
                         <span className="sr-only sm:not-sr-only sm:ml-2">

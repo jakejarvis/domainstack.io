@@ -58,9 +58,8 @@ export function DangerZoneSettingsSection({
               </div>
               <Button
                 variant="destructive"
-                size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
-                className="cursor-pointer leading-none"
+                className="cursor-pointer"
               >
                 <Trash2 />
                 Delete

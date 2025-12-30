@@ -15,8 +15,8 @@ const scrollAreaViewportVariants = cva(
   {
     variants: {
       orientation: {
-        vertical: "min-h-0 flex-1",
-        horizontal: "h-full",
+        vertical: "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
+        horizontal: "h-full w-full overflow-x-auto overflow-y-hidden",
       },
       gradient: {
         true: [
@@ -124,7 +124,7 @@ function ScrollArea({
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
       className={cn(
-        "relative",
+        "relative overflow-hidden",
         orientation === "vertical" && "flex flex-col",
         className,
       )}
