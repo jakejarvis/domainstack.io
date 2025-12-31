@@ -15,18 +15,27 @@ type InfiniteNotificationData = InfiniteData<NotificationList>;
 
 type MutationContext = {
   previousCount?: number;
+  previousQueries?: Array<
+    [readonly unknown[], InfiniteNotificationData | undefined]
+  >;
 };
 
 /**
  * Shared mutations for notifications (mark as read, mark all as read).
  * Handles optimistic updates for the notification bell's infinite query.
+ *
+ * Strategy: Instead of trying to perfectly maintain cache consistency
+ * (adding to archive, removing from inbox), we:
+ * 1. Do minimal optimistic updates for immediate visual feedback
+ * 2. Mark queries stale so they refetch on next access
+ * 3. This is simpler and avoids complex cache manipulation bugs
  */
 export function useNotificationMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query keys
-  const listQueryKey = trpc.notifications.list.queryKey(); // Prefix for all list queries
+  // Query keys (prefix for all list queries)
+  const listQueryKey = trpc.notifications.list.queryKey();
   const countQueryKey = trpc.notifications.unreadCount.queryKey();
 
   const markRead = useMutation({
@@ -36,16 +45,16 @@ export function useNotificationMutations() {
       await queryClient.cancelQueries({ queryKey: listQueryKey });
       await queryClient.cancelQueries({ queryKey: countQueryKey });
 
-      // Snapshot previous count
+      // Snapshot previous state for rollback
       const previousCount = queryClient.getQueryData<number>(countQueryKey);
+      const previousQueries =
+        queryClient.getQueriesData<InfiniteNotificationData>({
+          queryKey: listQueryKey,
+        });
 
       // Check if notification is already read to avoid double-decrement
       let isAlreadyRead = false;
-      const queries = queryClient.getQueriesData<InfiniteNotificationData>({
-        queryKey: listQueryKey,
-      });
-
-      for (const [, data] of queries) {
+      for (const [, data] of previousQueries) {
         if (!data?.pages) continue;
         for (const page of data.pages) {
           const notification = page.items.find((n) => n.id === id);
@@ -64,58 +73,45 @@ export function useNotificationMutations() {
         );
       }
 
-      // Optimistically update all list queries (infinite queries)
-      // Reusing 'queries' from above
-      for (const [key, old] of queries) {
+      // Optimistically update all list queries - just set readAt on the notification
+      // Don't try to add/remove from different views - let invalidation handle that
+      for (const [key, old] of previousQueries) {
         if (!old?.pages) continue;
 
-        // Check if this query is for "Inbox" (unreadOnly: true)
-        // tRPC query keys: [path, { input: { unreadOnly: boolean, ... }, ... }]
-        // We look for the input object in the key
-        let isInbox = false;
-        const inputObj = key.find(
-          (k) =>
-            typeof k === "object" &&
-            k !== null &&
-            "input" in k &&
-            (k as { input: { unreadOnly?: boolean } }).input?.unreadOnly ===
-              true,
-        );
-        if (inputObj) isInbox = true;
-
-        if (isInbox) {
-          // Remove notification from inbox
-          queryClient.setQueryData<InfiniteNotificationData>(key, {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.filter((n) => n.id !== id),
-            })),
-          });
-        } else {
-          // Update notification status in archive/all
-          queryClient.setQueryData<InfiniteNotificationData>(key, {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) =>
-                n.id === id ? { ...n, readAt: new Date() } : n,
-              ),
-            })),
-          });
-        }
+        queryClient.setQueryData<InfiniteNotificationData>(key, {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((n) =>
+              n.id === id ? { ...n, readAt: new Date() } : n,
+            ),
+          })),
+        });
       }
 
-      return { previousCount };
+      // Mark all list queries as stale (but don't refetch yet)
+      // This ensures they'll refetch when the user switches views
+      void queryClient.invalidateQueries({
+        queryKey: listQueryKey,
+        refetchType: "none",
+      });
+
+      return { previousCount, previousQueries };
     },
     onError: (_err, _variables, context) => {
-      // Rollback count on error
+      // Rollback on error
       if (context?.previousCount !== undefined) {
         queryClient.setQueryData<number>(countQueryKey, context.previousCount);
       }
+      // Rollback list queries
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData<InfiniteNotificationData>(key, data);
+        }
+      }
     },
     onSettled: () => {
-      // Invalidate to ensure consistency
+      // Invalidate to ensure consistency with server
       void queryClient.invalidateQueries({ queryKey: listQueryKey });
       void queryClient.invalidateQueries({ queryKey: countQueryKey });
     },
@@ -127,57 +123,50 @@ export function useNotificationMutations() {
       await queryClient.cancelQueries({ queryKey: listQueryKey });
       await queryClient.cancelQueries({ queryKey: countQueryKey });
 
+      // Snapshot previous state for rollback
       const previousCount = queryClient.getQueryData<number>(countQueryKey);
+      const previousQueries =
+        queryClient.getQueriesData<InfiniteNotificationData>({
+          queryKey: listQueryKey,
+        });
 
       // Optimistically clear count
       queryClient.setQueryData<number>(countQueryKey, 0);
 
-      // Optimistically update all list queries (infinite queries)
-      const queries = queryClient.getQueriesData<InfiniteNotificationData>({
-        queryKey: listQueryKey,
-      });
-
-      for (const [key, old] of queries) {
+      // Optimistically update all list queries - mark everything as read
+      for (const [key, old] of previousQueries) {
         if (!old?.pages) continue;
 
-        // Check if this query is for "Inbox" (unreadOnly: true)
-        let isInbox = false;
-        const inputObj = key.find(
-          (k) =>
-            typeof k === "object" &&
-            k !== null &&
-            "input" in k &&
-            (k as { input: { unreadOnly?: boolean } }).input?.unreadOnly ===
-              true,
-        );
-        if (inputObj) isInbox = true;
-
-        if (isInbox) {
-          // Clear inbox
-          queryClient.setQueryData<InfiniteNotificationData>(key, {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: [],
+        queryClient.setQueryData<InfiniteNotificationData>(key, {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((n) => ({
+              ...n,
+              readAt: n.readAt ?? new Date(),
             })),
-          });
-        } else {
-          // Mark all as read in archive/all
-          queryClient.setQueryData<InfiniteNotificationData>(key, {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) => ({ ...n, readAt: new Date() })),
-            })),
-          });
-        }
+          })),
+        });
       }
 
-      return { previousCount };
+      // Mark all list queries as stale
+      void queryClient.invalidateQueries({
+        queryKey: listQueryKey,
+        refetchType: "none",
+      });
+
+      return { previousCount, previousQueries };
     },
     onError: (_err, _variables, context) => {
+      // Rollback on error
       if (context?.previousCount !== undefined) {
         queryClient.setQueryData<number>(countQueryKey, context.previousCount);
+      }
+      // Rollback list queries
+      if (context?.previousQueries) {
+        for (const [key, data] of context.previousQueries) {
+          queryClient.setQueryData<InfiniteNotificationData>(key, data);
+        }
       }
     },
     onSettled: () => {

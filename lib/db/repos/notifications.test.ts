@@ -240,7 +240,7 @@ describe("getUserNotifications", () => {
     }
   });
 
-  it("filters unread notifications when unreadOnly is true", async () => {
+  it("filters unread notifications when filter is 'unread'", async () => {
     // Create mix of read and unread notifications
     const unread1 = await createNotification({
       userId: testUserId,
@@ -280,7 +280,7 @@ describe("getUserNotifications", () => {
       testUserId,
       50,
       undefined,
-      true,
+      "unread",
     );
     expect(unreadNotifications).toHaveLength(2);
     expect(unreadNotifications.map((n) => n.id).sort()).toEqual(
@@ -312,13 +312,18 @@ describe("getUserNotifications", () => {
     }
 
     // Get first page of unread notifications (limit 1)
-    const page1 = await getUserNotifications(testUserId, 1, undefined, true);
+    const page1 = await getUserNotifications(
+      testUserId,
+      1,
+      undefined,
+      "unread",
+    );
     expect(page1).toHaveLength(1);
     expect(page1[0].readAt).toBeNull();
 
     // Get second page using cursor
     const cursor = page1[0].id;
-    const page2 = await getUserNotifications(testUserId, 2, cursor, true);
+    const page2 = await getUserNotifications(testUserId, 2, cursor, "unread");
     expect(page2).toHaveLength(1); // Only 1 more unread notification
     expect(page2[0].readAt).toBeNull();
 
@@ -329,6 +334,52 @@ describe("getUserNotifications", () => {
 
     // Sort both arrays for comparison since UUID ordering might differ
     expect(allUnreadIds.sort()).toEqual(expectedUnreadIds.sort());
+  });
+
+  it("filters read notifications when filter is 'read'", async () => {
+    // Create mix of read and unread notifications
+    const notif1 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+      title: "Notification 1",
+      message: "Message 1",
+    });
+
+    const _notif2 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_14d",
+      title: "Notification 2",
+      message: "Message 2",
+    });
+
+    const notif3 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_14d",
+      title: "Notification 3",
+      message: "Message 3",
+    });
+
+    // Mark two as read
+    if (notif1 && notif3) {
+      await markAsRead(notif1.id, testUserId);
+      await markAsRead(notif3.id, testUserId);
+    }
+
+    // Get only read notifications (archive view)
+    const readNotifications = await getUserNotifications(
+      testUserId,
+      50,
+      undefined,
+      "read",
+    );
+    expect(readNotifications).toHaveLength(2);
+    expect(readNotifications.every((n) => n.readAt !== null)).toBe(true);
+    expect(readNotifications.map((n) => n.id).sort()).toEqual(
+      [notif1?.id, notif3?.id].sort(),
+    );
   });
 });
 
