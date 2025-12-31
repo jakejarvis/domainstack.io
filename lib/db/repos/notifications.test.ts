@@ -240,7 +240,7 @@ describe("getUserNotifications", () => {
     }
   });
 
-  it("filters unread notifications when unreadOnly is true", async () => {
+  it("filters unread notifications when filter is 'unread'", async () => {
     // Create mix of read and unread notifications
     const unread1 = await createNotification({
       userId: testUserId,

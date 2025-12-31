@@ -56,11 +56,9 @@ export function NotificationCard({
         </div>
 
         {/* Content */}
-        <div className="min-w-0 flex-1 space-y-1">
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="font-medium text-sm leading-tight">
-              {notification.title}
-            </p>
+            <p className="font-medium text-sm">{notification.title}</p>
             {isUnread && (
               <span
                 className={cn(
@@ -72,10 +70,10 @@ export function NotificationCard({
               />
             )}
           </div>
-          <p className="line-clamp-2 text-[13px] text-muted-foreground leading-relaxed">
+          <p className="line-clamp-2 text-[13px] text-muted-foreground">
             {notification.message}
           </p>
-          <p className="text-muted-foreground/75 text-xs">
+          <p className="mt-1 text-muted-foreground/75 text-xs">
             {formatDistanceToNow(notification.sentAt, {
               addSuffix: true,
             })}
