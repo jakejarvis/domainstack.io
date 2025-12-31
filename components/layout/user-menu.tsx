@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
+import { LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -131,15 +131,6 @@ export function UserMenu() {
             {theme === "dark" ? <Sun /> : <Moon />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            nativeButton={false}
-            render={
-              <Link href="/bookmarklet" scroll={false} className="mx-1">
-                <Bookmark />
-                Bookmarklet
-              </Link>
-            }
-          />
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="mx-1 cursor-pointer"
