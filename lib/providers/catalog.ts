@@ -39,7 +39,7 @@ export async function getProviders(
 /**
  * Get all providers from all categories from Edge Config.
  *
- * Useful for seeding or bulk operations.
+ * Useful for bulk operations or when multiple categories are needed.
  *
  * @returns Record of category to providers array
  */

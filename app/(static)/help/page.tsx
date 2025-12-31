@@ -10,12 +10,8 @@ export const metadata: Metadata = {
     "Get answers to common questions about Domainstack, domain tracking, notifications, and more.",
 };
 
-// Cache tier limits for 1 hour to preserve static nature of the page
-const getCachedTierLimits = unstable_cache(
-  async () => getTierLimits(),
-  ["help-page-tier-limits"],
-  { revalidate: 3600 },
-);
+// Cache tier limits to preserve static nature of the page
+const getCachedTierLimits = unstable_cache(async () => getTierLimits());
 
 // Static pricing info from constants
 const pricing = {
