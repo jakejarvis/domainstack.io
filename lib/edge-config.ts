@@ -1,6 +1,10 @@
 import { get } from "@vercel/edge-config";
 import { DEFAULT_TIER_LIMITS, type TierLimits } from "@/lib/constants";
 import { createLogger } from "@/lib/logger/server";
+import {
+  type ProviderCatalog,
+  safeParseProviderCatalog,
+} from "@/lib/providers/parser";
 
 const logger = createLogger({ source: "edge-config" });
 
@@ -113,4 +117,55 @@ export async function getMaxDomainsForTier(
 ): Promise<number> {
   const limits = await getTierLimits();
   return limits[tier];
+}
+
+/**
+ * Fetches the provider catalog from Vercel Edge Config.
+ *
+ * Returns null if Edge Config is not configured, the key doesn't exist,
+ * or validation fails (graceful degradation - all detections become "unknown").
+ *
+ * Edge Config key: `provider_catalog`
+ *
+ * Expected schema:
+ * ```json
+ * {
+ *   "provider_catalog": {
+ *     "ca": [{ "name": "Let's Encrypt", "domain": "letsencrypt.org", "rule": {...} }],
+ *     "dns": [...],
+ *     "email": [...],
+ *     "hosting": [...],
+ *     "registrar": [...]
+ *   }
+ * }
+ * ```
+ *
+ * @returns Validated ProviderCatalog or null if unavailable/invalid
+ */
+export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
+  // If EDGE_CONFIG is not set, return null
+  if (!process.env.EDGE_CONFIG) {
+    return null;
+  }
+
+  const raw = await get<unknown>("provider_catalog");
+
+  if (!raw) {
+    logger.debug("provider_catalog key not found in Edge Config");
+    return null;
+  }
+
+  const result = safeParseProviderCatalog(raw);
+
+  if (!result.success) {
+    logger.error("failed to parse provider catalog", result.error, {
+      issues: result.error.issues.map((i) => ({
+        path: i.path.join("."),
+        message: i.message,
+      })),
+    });
+    return null;
+  }
+
+  return result.data;
 }

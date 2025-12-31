@@ -9,6 +9,55 @@ import {
   it,
   vi,
 } from "vitest";
+import type { Provider, ProviderCategory } from "@/lib/schemas";
+
+// Mock provider catalog to return test providers
+const TEST_PROVIDERS: Record<ProviderCategory, Provider[]> = {
+  hosting: [
+    {
+      name: "Vercel",
+      domain: "vercel.com",
+      category: "hosting",
+      rule: {
+        any: [
+          { kind: "headerEquals", name: "server", value: "vercel" },
+          { kind: "headerPresent", name: "x-vercel-id" },
+        ],
+      },
+    },
+  ],
+  email: [
+    {
+      name: "Google Workspace",
+      domain: "google.com",
+      category: "email",
+      rule: {
+        any: [
+          { kind: "mxSuffix", suffix: "smtp.google.com" },
+          { kind: "mxSuffix", suffix: "aspmx.l.google.com" },
+          { kind: "mxSuffix", suffix: "googlemail.com" },
+        ],
+      },
+    },
+  ],
+  dns: [
+    {
+      name: "Cloudflare",
+      domain: "cloudflare.com",
+      category: "dns",
+      rule: { kind: "nsSuffix", suffix: "cloudflare.com" },
+    },
+  ],
+  ca: [],
+  registrar: [],
+};
+
+vi.mock("@/lib/providers/catalog", () => ({
+  getProviders: vi.fn((category: ProviderCategory) =>
+    Promise.resolve(TEST_PROVIDERS[category] ?? []),
+  ),
+  getAllProviders: vi.fn(() => Promise.resolve(TEST_PROVIDERS)),
+}));
 
 beforeAll(async () => {
   const { makePGliteDb } = await import("@/lib/db/pglite");

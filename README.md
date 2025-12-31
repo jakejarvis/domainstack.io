@@ -55,12 +55,11 @@ Create `.env.local` and populate [required variables](.env.example):
 cp .env.example .env.local
 ```
 
-### 3. Run Drizzle database migrations & seeds
+### 3. Run Drizzle database migrations
 
 ```bash
 pnpm db:generate   # generate SQL from schema
 pnpm db:migrate    # apply migrations to local Postgres
-pnpm db:seed       # seed database (if needed)
 ```
 
 ### 4. Start development
@@ -110,7 +109,6 @@ pnpm db:generate   # generate SQL migrations from schema
 pnpm db:push       # push the current schema to the database
 pnpm db:migrate    # apply migrations to the database
 pnpm db:studio     # open Drizzle Studio
-pnpm db:seed       # run seed script (scripts/db/seed.ts)
 ```
 
 ## 📜 License

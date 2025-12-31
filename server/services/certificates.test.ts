@@ -1,5 +1,6 @@
 /* @vitest-environment node */
 import type * as tls from "node:tls";
+import type { Provider, ProviderCategory } from "@/lib/schemas";
 
 // Hoisted mock for node:tls to avoid ESM spy limitations
 const tlsMock = vi.hoisted(() => ({
@@ -25,6 +26,42 @@ vi.mock("node:tls", async () => {
     default: { ...(actual as object), connect: mockedConnect },
   };
 });
+
+// Mock provider catalog to return test providers
+const TEST_CA_PROVIDERS: Provider[] = [
+  {
+    name: "Google Trust Services",
+    domain: "pki.goog",
+    category: "ca",
+    rule: {
+      any: [
+        { kind: "issuerIncludes", substr: "google trust services" },
+        { kind: "issuerIncludes", substr: "gts" },
+      ],
+    },
+  },
+  {
+    name: "DigiCert",
+    domain: "digicert.com",
+    category: "ca",
+    rule: { kind: "issuerIncludes", substr: "digicert" },
+  },
+];
+
+vi.mock("@/lib/providers/catalog", () => ({
+  getProviders: vi.fn((category: ProviderCategory) =>
+    Promise.resolve(category === "ca" ? TEST_CA_PROVIDERS : []),
+  ),
+  getAllProviders: vi.fn(() =>
+    Promise.resolve({
+      ca: TEST_CA_PROVIDERS,
+      dns: [],
+      email: [],
+      hosting: [],
+      registrar: [],
+    }),
+  ),
+}));
 
 import {
   afterAll,

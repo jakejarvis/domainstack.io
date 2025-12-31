@@ -43,7 +43,6 @@
 - `pnpm db:push` — push the current schema to the database.
 - `pnpm db:migrate` — apply migrations to the database.
 - `pnpm db:studio` — open Drizzle Studio.
-- `pnpm db:seed` — run seed script (scripts/db/seed.ts).
 - Requires Node.js >= 22 (see `package.json` engines).
 - Local development includes ngrok tunnel for webhook testing; public URL displayed in terminal output.
 
@@ -89,6 +88,7 @@
 - Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
   - `tier_limits` (object): `{ free: 5, pro: 50 }` for domain tracking limits per tier
+  - `provider_catalog` (object): Provider detection rules for CA, DNS, email, hosting, and registrar providers. Structure: `{ ca: [...], dns: [...], email: [...], hosting: [...], registrar: [...] }`. Providers are lazily inserted into the database on first detection.
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).

@@ -6,8 +6,8 @@ import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
 import {
-  batchResolveOrCreateProviderIds,
-  makeProviderKey,
+  resolveOrCreateProviderId,
+  upsertCatalogProviderRef,
 } from "@/lib/db/repos/providers";
 import {
   hosting as hostingTable,
@@ -15,13 +15,14 @@ import {
 } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
+import { getProviders } from "@/lib/providers/catalog";
 import {
   detectDnsProvider,
   detectEmailProvider,
   detectHostingProvider,
 } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { HostingResponse } from "@/lib/schemas";
+import type { HostingResponse, Provider } from "@/lib/schemas";
 import { ttlForHosting } from "@/lib/ttl";
 import { getDnsRecords } from "@/server/services/dns";
 import { getHeaders } from "@/server/services/headers";
@@ -154,37 +155,55 @@ export const getHosting = cache(async function getHosting(
   const headers = headersResponse.headers;
   const geo = meta.geo;
 
+  // Fetch provider catalogs from Edge Config
+  const [hostingProviders, emailProviders, dnsProviders] = await Promise.all([
+    getProviders("hosting"),
+    getProviders("email"),
+    getProviders("dns"),
+  ]);
+
   // Hosting provider detection with fallback:
   // - If no A record/IP → null
   // - Else if unknown → try IP ownership org/ISP
-  const hostingDetected = detectHostingProvider(headers);
+  const hostingMatched = detectHostingProvider(headers, hostingProviders);
 
-  let hostingName = hostingDetected.name;
-  let hostingIconDomain = hostingDetected.domain;
+  let hostingName = hostingMatched?.name ?? null;
+  let hostingIconDomain = hostingMatched?.domain ?? null;
+  let hostingCatalogProvider: Provider | null = hostingMatched;
   if (!ip) {
     hostingName = null;
     hostingIconDomain = null;
+    hostingCatalogProvider = null;
   } else if (!hostingName) {
     // Unknown provider: try IP ownership org/ISP
     if (meta.owner) hostingName = meta.owner;
     hostingIconDomain = meta.domain ?? null;
+    hostingCatalogProvider = null;
   }
 
   // Determine email provider, null when MX is unset
-  const emailDetected =
+  const emailMatched =
     mx.length === 0
-      ? { name: null, domain: null }
-      : detectEmailProvider(mx.map((m) => m.value));
-  let emailName = emailDetected.name;
-  let emailIconDomain = emailDetected.domain;
+      ? null
+      : detectEmailProvider(
+          mx.map((m) => m.value),
+          emailProviders,
+        );
+  let emailName = emailMatched?.name ?? null;
+  let emailIconDomain = emailMatched?.domain ?? null;
+  const emailCatalogProvider: Provider | null = emailMatched;
 
   // DNS provider from nameservers
-  const dnsDetected = detectDnsProvider(nsRecords.map((n) => n.value));
-  let dnsName = dnsDetected.name;
-  let dnsIconDomain = dnsDetected.domain;
+  const dnsMatched = detectDnsProvider(
+    nsRecords.map((n) => n.value),
+    dnsProviders,
+  );
+  let dnsName = dnsMatched?.name ?? null;
+  let dnsIconDomain = dnsMatched?.domain ?? null;
+  const dnsCatalogProvider: Provider | null = dnsMatched;
 
   // If no known match for email provider, fall back to the root domain of the first MX host
-  if (emailName && !emailIconDomain && mx[0]?.value) {
+  if (!emailMatched && mx[0]?.value) {
     const root = toRegistrableDomain(mx[0].value);
     if (root) {
       emailName = root;
@@ -193,7 +212,7 @@ export const getHosting = cache(async function getHosting(
   }
 
   // If no known match for DNS provider, fall back to the root domain of the first NS host
-  if (!dnsIconDomain && nsRecords[0]?.value) {
+  if (!dnsMatched && nsRecords[0]?.value) {
     const root = toRegistrableDomain(nsRecords[0].value);
     if (root) {
       dnsName = root;
@@ -212,45 +231,41 @@ export const getHosting = cache(async function getHosting(
     geo,
   };
 
-  // Batch resolve all providers in one query
-  // We do this before checking existingDomain to ensure we return IDs (and thus icons)
-  // even if the domain hasn't been persisted to the DB yet (race condition with registration service)
-  const providerInputs = [
-    hostingName
-      ? {
-          category: "hosting" as const,
-          domain: hostingIconDomain,
-          name: hostingName,
-        }
-      : null,
-    emailName
-      ? {
-          category: "email" as const,
-          domain: emailIconDomain,
-          name: emailName,
-        }
-      : null,
-    dnsName
-      ? { category: "dns" as const, domain: dnsIconDomain, name: dnsName }
-      : null,
-  ].filter((p): p is NonNullable<typeof p> => p !== null);
-
-  const providerMap = await batchResolveOrCreateProviderIds(providerInputs);
-
-  const hostingProviderId = hostingName
-    ? (providerMap.get(
-        makeProviderKey("hosting", hostingIconDomain, hostingName),
-      ) ?? null)
-    : null;
-
-  const emailProviderId = emailName
-    ? (providerMap.get(makeProviderKey("email", emailIconDomain, emailName)) ??
-      null)
-    : null;
-
-  const dnsProviderId = dnsName
-    ? (providerMap.get(makeProviderKey("dns", dnsIconDomain, dnsName)) ?? null)
-    : null;
+  // Resolve provider IDs - upsert catalog providers, create discovered for fallbacks
+  const [hostingProviderId, emailProviderId, dnsProviderId] = await Promise.all(
+    [
+      // Hosting provider
+      hostingCatalogProvider
+        ? upsertCatalogProviderRef(hostingCatalogProvider).then((r) => r.id)
+        : hostingName
+          ? resolveOrCreateProviderId({
+              category: "hosting",
+              domain: hostingIconDomain,
+              name: hostingName,
+            })
+          : Promise.resolve(null),
+      // Email provider
+      emailCatalogProvider
+        ? upsertCatalogProviderRef(emailCatalogProvider).then((r) => r.id)
+        : emailName
+          ? resolveOrCreateProviderId({
+              category: "email",
+              domain: emailIconDomain,
+              name: emailName,
+            })
+          : Promise.resolve(null),
+      // DNS provider
+      dnsCatalogProvider
+        ? upsertCatalogProviderRef(dnsCatalogProvider).then((r) => r.id)
+        : dnsName
+          ? resolveOrCreateProviderId({
+              category: "dns",
+              domain: dnsIconDomain,
+              name: dnsName,
+            })
+          : Promise.resolve(null),
+    ],
+  );
 
   // Update the info object with resolved IDs
   info.hostingProvider.id = hostingProviderId;
