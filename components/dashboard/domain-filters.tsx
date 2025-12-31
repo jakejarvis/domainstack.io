@@ -362,6 +362,7 @@ export function DomainFilters({
             options={HEALTH_OPTIONS}
             selected={health}
             onSelectionChange={onHealthChange}
+            popoverWidth="w-40"
             className="cursor-pointer"
           />
           {availableTlds.length > 0 && (
@@ -372,7 +373,7 @@ export function DomainFilters({
               selected={tlds}
               onSelectionChange={onTldsChange}
               searchable
-              popoverWidth="w-48"
+              popoverWidth="w-40"
               className="cursor-pointer"
             />
           )}

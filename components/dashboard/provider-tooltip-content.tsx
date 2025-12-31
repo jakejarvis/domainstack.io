@@ -102,7 +102,7 @@ export function ProviderTooltipContent({
   return (
     <div className="space-y-2 py-1">
       {/* Provider info */}
-      <div className="flex items-center gap-2 border-border/20 border-b pb-2">
+      <div className="flex items-center gap-1.5 border-border/20 border-b pb-2">
         {providerId && (
           <ProviderIcon
             providerId={providerId}

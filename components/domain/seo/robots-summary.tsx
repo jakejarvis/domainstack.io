@@ -1,4 +1,5 @@
 import {
+  Asterisk,
   Ban,
   ChevronRight,
   CircleCheck,
@@ -346,13 +347,20 @@ function RobotsGroupHeader({
           <span
             key={ua}
             className={cn(
-              "rounded px-1.5 py-0.5 text-xs",
+              "flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-1 text-xs leading-none",
               ua === "*"
                 ? "bg-accent-purple/18 text-accent-purple"
                 : "bg-muted",
             )}
           >
-            {ua === "*" ? "Everyone" : ua}
+            {ua === "*" ? (
+              <>
+                <Asterisk className="size-3" />
+                All bots
+              </>
+            ) : (
+              ua
+            )}
           </span>
         ))}
       </div>
