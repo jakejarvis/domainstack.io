@@ -383,14 +383,15 @@ async function handleRegistrationChange(
     }
   }
 
-  // Determine primary change type for title
-  const primaryChange = change.registrarChanged
-    ? "Registrar"
-    : change.transferLockChanged
-      ? "Transfer lock"
-      : change.nameserversChanged
-        ? "Nameservers"
-        : "Registration";
+  // Determine primary change type for title (in priority order)
+  let primaryChange = "Registration";
+  if (change.registrarChanged) {
+    primaryChange = "Registrar";
+  } else if (change.transferLockChanged) {
+    primaryChange = "Transfer lock";
+  } else if (change.nameserversChanged) {
+    primaryChange = "Nameservers";
+  }
 
   const title = `${primaryChange} changed for ${domainName}`;
   const subject = `⚠️ ${title}`;
@@ -498,12 +499,15 @@ async function handleProviderChange(
     }
   }
 
-  // Determine primary change type for title
-  const primaryChange = change.dnsProviderChanged
-    ? "DNS provider"
-    : change.hostingProviderChanged
-      ? "Hosting"
-      : "Email provider";
+  // Determine primary change type for title (in priority order)
+  let primaryChange = "Provider";
+  if (change.dnsProviderChanged) {
+    primaryChange = "DNS provider";
+  } else if (change.hostingProviderChanged) {
+    primaryChange = "Hosting";
+  } else if (change.emailProviderChanged) {
+    primaryChange = "Email provider";
+  }
 
   const title = `${primaryChange} changed for ${domainName}`;
   const subject = `🔄 ${title}`;
