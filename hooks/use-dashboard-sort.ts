@@ -55,7 +55,19 @@ export const SORT_OPTIONS: SortOptionConfig[] = [
 const DEFAULT_SORT: SortOption = "domainName.asc";
 
 /**
- * Sort domains based on sort option (using table column format)
+ * Columns where unverified domains should NOT be pushed to the end.
+ * For all other columns, unverified/pending domains will appear last.
+ */
+const COLUMNS_WITHOUT_VERIFICATION_SORT = new Set([
+  "domainName",
+  "verified",
+  "createdAt",
+]);
+
+/**
+ * Sort domains based on sort option (using table column format).
+ * For columns other than domainName, verified, and createdAt,
+ * unverified/pending domains are always pushed to the end of the list.
  */
 export function sortDomains(
   domains: TrackedDomainWithDetails[],
@@ -67,6 +79,7 @@ export function sortDomains(
     "asc" | "desc",
   ];
   const isDesc = direction === "desc";
+  const pushUnverifiedToEnd = !COLUMNS_WITHOUT_VERIFICATION_SORT.has(columnId);
 
   switch (columnId) {
     case "domainName":
@@ -78,7 +91,12 @@ export function sortDomains(
       break;
     case "expirationDate":
       sorted.sort((a, b) => {
-        // Put domains without expiry date at the end
+        // Push unverified domains to the end
+        if (pushUnverifiedToEnd) {
+          if (!a.verified && b.verified) return 1;
+          if (a.verified && !b.verified) return -1;
+        }
+        // Put domains without expiry date at the end (among their verification group)
         if (!a.expirationDate && !b.expirationDate) return 0;
         if (!a.expirationDate) return 1;
         if (!b.expirationDate) return -1;

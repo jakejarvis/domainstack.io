@@ -391,9 +391,9 @@ export function getVerificationInstructions(
   switch (method) {
     case "dns_txt":
       return {
-        title: "Add a DNS TXT Record",
+        title: "Recommended: Add a DNS record",
         description:
-          "Add the following TXT record to your domain's DNS settings. Changes may take a few minutes to propagate.",
+          "Add the following TXT record to your domain's DNS root. Changes may take a few minutes to propagate, but this is the most reliable method.",
         hostname: domain,
         recordType: "TXT",
         value: `${DNS_VERIFICATION_PREFIX}${token}`,
@@ -402,16 +402,17 @@ export function getVerificationInstructions(
       };
     case "html_file":
       return {
-        title: "Upload an HTML File",
+        title: "Upload an HTML file",
         description:
-          "Create a file at the path shown below with the content shown.",
+          "Create a file at the following path with the contents shown below. The file must remain publicly accessible.",
+        hostname: domain,
         fullPath: `${HTML_FILE_DIR}/${token}.html`,
         filename: `${token}.html`,
         fileContent: `${HTML_FILE_CONTENT_PREFIX}${token}`,
       };
     case "meta_tag":
       return {
-        title: "Add a Meta Tag",
+        title: "Add a meta tag",
         description:
           "Add the following meta tag to the <head> section of your homepage.",
         metaTag: `<meta name="${META_TAG_NAME}" content="${token}">`,

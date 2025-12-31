@@ -88,8 +88,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                     <a
                       // https://www.icloud.com/shortcuts/fa17677a0d6440c2a195e608305d6f2b
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
-                      target="_blank"
-                      rel="noopener"
+                      data-disable-progress
                     >
                       <Layers2 />
                       Add Shortcut
@@ -183,6 +182,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                           icon: "magnifying-glass-16",
                         }),
                       )}`}
+                      data-disable-progress
                     >
                       <RaycastIcon />
                       Add to Raycast

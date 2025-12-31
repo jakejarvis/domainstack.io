@@ -283,11 +283,79 @@ type TrackedDomainRow = {
 };
 
 /**
+ * Empty provider info returned for unverified domains.
+ * This ensures domain details are not leaked before ownership is verified.
+ */
+const EMPTY_PROVIDER_INFO: ProviderInfo = {
+  id: null,
+  name: null,
+  domain: null,
+};
+
+/**
+ * Empty registrar info for unverified domains.
+ * Includes all registrar-specific fields set to null.
+ */
+const EMPTY_REGISTRAR_INFO: ProviderInfo = {
+  ...EMPTY_PROVIDER_INFO,
+  whoisServer: null,
+  rdapServers: null,
+  registrationSource: null,
+  transferLock: null,
+  registrantInfo: {
+    privacyEnabled: null,
+    contacts: null,
+  },
+};
+
+/**
+ * Empty CA info for unverified domains.
+ * Includes the certificate expiry date field set to null.
+ */
+const EMPTY_CA_INFO: ProviderInfo = {
+  ...EMPTY_PROVIDER_INFO,
+  certificateExpiryDate: null,
+};
+
+/**
  * Transform flat query rows into nested TrackedDomainWithDetails structure.
+ * For unverified domains, sensitive data (provider info, dates) is nulled out
+ * to prevent leaking domain details before ownership is verified.
  */
 function transformToTrackedDomainWithDetails(
   row: TrackedDomainRow,
 ): TrackedDomainWithDetails {
+  // For unverified domains, return null/empty for all domain details
+  // This is a defense-in-depth measure to prevent data leakage, even though none of this is technically private
+  if (!row.verified) {
+    return {
+      id: row.id,
+      userId: row.userId,
+      domainId: row.domainId,
+      domainName: row.domainName,
+      tld: row.tld,
+      verified: row.verified,
+      verificationMethod: row.verificationMethod,
+      verificationToken: row.verificationToken,
+      verificationStatus: row.verificationStatus,
+      verificationFailedAt: row.verificationFailedAt,
+      lastVerifiedAt: row.lastVerifiedAt,
+      notificationOverrides: row.notificationOverrides,
+      createdAt: row.createdAt,
+      verifiedAt: row.verifiedAt,
+      archivedAt: row.archivedAt,
+      // Null out all domain details for unverified domains
+      expirationDate: null,
+      registrationDate: null,
+      registrar: { ...EMPTY_REGISTRAR_INFO },
+      dns: { ...EMPTY_PROVIDER_INFO },
+      hosting: { ...EMPTY_PROVIDER_INFO },
+      email: { ...EMPTY_PROVIDER_INFO },
+      ca: { ...EMPTY_CA_INFO },
+    };
+  }
+
+  // Verified domains get full details
   return {
     id: row.id,
     userId: row.userId,

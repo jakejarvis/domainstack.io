@@ -471,7 +471,6 @@ export function DashboardContent() {
             variant="ghost"
             onClick={() => setActiveTab("active")}
             className="gap-2 text-muted-foreground hover:text-foreground"
-            type="button"
           >
             <ArrowLeft />
             Back to domains

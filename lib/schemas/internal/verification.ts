@@ -9,12 +9,15 @@ export const VerificationMethodSchema = z.enum(verificationMethod.enumValues);
 
 export type VerificationMethod = z.infer<typeof VerificationMethodSchema>;
 
+const BaseInstructionsSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+});
+
 /**
  * DNS TXT record verification instructions
  */
-export const DnsInstructionsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
+export const DnsInstructionsSchema = BaseInstructionsSchema.extend({
   hostname: z.string(),
   recordType: z.literal("TXT"),
   value: z.string(),
@@ -27,9 +30,8 @@ export type DnsInstructions = z.infer<typeof DnsInstructionsSchema>;
 /**
  * HTML file verification instructions
  */
-export const HtmlFileInstructionsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
+export const HtmlFileInstructionsSchema = BaseInstructionsSchema.extend({
+  hostname: z.string(),
   fullPath: z.string(),
   filename: z.string(),
   fileContent: z.string(),
@@ -40,9 +42,7 @@ export type HtmlFileInstructions = z.infer<typeof HtmlFileInstructionsSchema>;
 /**
  * Meta tag verification instructions
  */
-export const MetaTagInstructionsSchema = z.object({
-  title: z.string(),
-  description: z.string(),
+export const MetaTagInstructionsSchema = BaseInstructionsSchema.extend({
   metaTag: z.string(),
 });
 

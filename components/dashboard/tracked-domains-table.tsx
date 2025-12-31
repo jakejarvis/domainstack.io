@@ -60,6 +60,46 @@ import { formatDateTimeUtc } from "@/lib/format";
 import type { ProviderCategory } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
+/**
+ * Creates a sorting function factory that pushes unverified domains to the end.
+ * Returns a function that creates sortingFn functions with access to the current sort state.
+ *
+ * TanStack Table multiplies the sortingFn result by -1 for descending sorts,
+ * so we need to counteract this to keep unverified domains at the end.
+ *
+ * @param isDescFn - Function that returns whether the current column is sorted descending
+ */
+function createUnverifiedLastSorter(isDescFn: (columnId: string) => boolean) {
+  return function withUnverifiedLast(
+    compareFn: (
+      a: TrackedDomainWithDetails,
+      b: TrackedDomainWithDetails,
+    ) => number,
+  ) {
+    return (
+      rowA: { original: TrackedDomainWithDetails },
+      rowB: { original: TrackedDomainWithDetails },
+      columnId: string,
+    ) => {
+      const a = rowA.original;
+      const b = rowB.original;
+      const isDesc = isDescFn(columnId);
+
+      // Push unverified domains to the end regardless of sort direction
+      // In desc mode, TanStack multiplies the result by -1, so we counteract it
+      if (!a.verified && b.verified) {
+        return isDesc ? -1 : 1;
+      }
+      if (a.verified && !b.verified) {
+        return isDesc ? 1 : -1;
+      }
+
+      // Both have same verification status, apply the comparison
+      return compareFn(a, b);
+    };
+  };
+}
+
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {
   // biome-ignore lint/correctness/noUnusedVariables: generic needs to match library definition
@@ -198,6 +238,12 @@ export function TrackedDomainsTable({
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
 
+  // Create sorting helper that has access to current sort direction
+  const withUnverifiedLast = createUnverifiedLastSorter((columnId) => {
+    const columnSort = sorting.find((s) => s.id === columnId);
+    return columnSort?.desc ?? false;
+  });
+
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [
       // Selection checkbox column
@@ -245,7 +291,7 @@ export function TrackedDomainsTable({
               href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}
               className="group/link flex items-center"
-              data-disable-progress={true}
+              data-disable-progress
             >
               <span className="font-medium text-[13px] group-hover/link:underline">
                 {row.original.domainName}
@@ -299,6 +345,35 @@ export function TrackedDomainsTable({
           />
         ),
         size: 100,
+        // Sort by health status priority: critical (0) > warning (1) > healthy (2) > unknown (3)
+        // Within the same status, sort by expiration date for more granular ordering
+        sortingFn: withUnverifiedLast((a, b) => {
+          const now = new Date();
+          const getHealthPriority = (
+            exp: Date | null,
+            verified: boolean,
+          ): number => {
+            if (!verified || !exp) return 3; // unknown
+            const days = Math.floor(
+              (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            if (days <= 7) return 0; // critical
+            if (days <= 30) return 1; // warning
+            return 2; // healthy
+          };
+
+          const aPriority = getHealthPriority(a.expirationDate, a.verified);
+          const bPriority = getHealthPriority(b.expirationDate, b.verified);
+
+          if (aPriority !== bPriority) {
+            return aPriority - bPriority;
+          }
+
+          // Same status - sort by expiration date
+          const aTime = a.expirationDate?.getTime() ?? 0;
+          const bTime = b.expirationDate?.getTime() ?? 0;
+          return aTime - bTime;
+        }),
       },
       {
         accessorKey: "expirationDate",
@@ -323,11 +398,11 @@ export function TrackedDomainsTable({
           );
         },
         size: 110,
-        sortingFn: (rowA, rowB) => {
-          const a = rowA.original.expirationDate?.getTime() ?? 0;
-          const b = rowB.original.expirationDate?.getTime() ?? 0;
-          return a - b;
-        },
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aTime = a.expirationDate?.getTime() ?? 0;
+          const bTime = b.expirationDate?.getTime() ?? 0;
+          return aTime - bTime;
+        }),
       },
       {
         id: "registrar",
@@ -341,6 +416,11 @@ export function TrackedDomainsTable({
           />
         ),
         size: 128,
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aName = a.registrar.name ?? "";
+          const bName = b.registrar.name ?? "";
+          return aName.localeCompare(bName);
+        }),
       },
       {
         id: "dns",
@@ -354,6 +434,11 @@ export function TrackedDomainsTable({
           />
         ),
         size: 128,
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aName = a.dns.name ?? "";
+          const bName = b.dns.name ?? "";
+          return aName.localeCompare(bName);
+        }),
       },
       {
         id: "hosting",
@@ -367,6 +452,11 @@ export function TrackedDomainsTable({
           />
         ),
         size: 128,
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aName = a.hosting.name ?? "";
+          const bName = b.hosting.name ?? "";
+          return aName.localeCompare(bName);
+        }),
       },
       {
         id: "email",
@@ -380,6 +470,11 @@ export function TrackedDomainsTable({
           />
         ),
         size: 128,
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aName = a.email.name ?? "";
+          const bName = b.email.name ?? "";
+          return aName.localeCompare(bName);
+        }),
       },
       {
         id: "ca",
@@ -393,6 +488,11 @@ export function TrackedDomainsTable({
           />
         ),
         size: 128,
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aName = a.ca.name ?? "";
+          const bName = b.ca.name ?? "";
+          return aName.localeCompare(bName);
+        }),
       },
       {
         accessorKey: "registrationDate",
@@ -417,11 +517,11 @@ export function TrackedDomainsTable({
           );
         },
         size: 110,
-        sortingFn: (rowA, rowB) => {
-          const a = rowA.original.registrationDate?.getTime() ?? 0;
-          const b = rowB.original.registrationDate?.getTime() ?? 0;
-          return a - b;
-        },
+        sortingFn: withUnverifiedLast((a, b) => {
+          const aTime = a.registrationDate?.getTime() ?? 0;
+          const bTime = b.registrationDate?.getTime() ?? 0;
+          return aTime - bTime;
+        }),
       },
       {
         accessorKey: "createdAt",
@@ -522,7 +622,14 @@ export function TrackedDomainsTable({
         },
       },
     ],
-    [selectedIds, onToggleSelect, onRemove, onArchive, onVerify],
+    [
+      selectedIds,
+      onToggleSelect,
+      onRemove,
+      onArchive,
+      onVerify,
+      withUnverifiedLast,
+    ],
   );
 
   const table = useReactTable({

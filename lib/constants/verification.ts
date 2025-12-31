@@ -89,14 +89,14 @@ export const DNS_VERIFICATION_HOST_LEGACY = "_domainstack-verify";
 
 /**
  * Recommended TTL for DNS verification records (in seconds).
- * 1 hour allows for reasonable propagation testing without excessive caching.
+ * 1 minute allows for reasonable propagation testing without excessive caching.
  */
-export const DNS_VERIFICATION_TTL = 3600;
+export const DNS_VERIFICATION_TTL = 60;
 
 /**
  * Human-readable label for the recommended TTL.
  */
-export const DNS_VERIFICATION_TTL_LABEL = "1 hour";
+export const DNS_VERIFICATION_TTL_LABEL = "1 minute";
 
 // ============================================================================
 // HTML File Verification

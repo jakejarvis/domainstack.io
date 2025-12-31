@@ -72,7 +72,7 @@ describe("getVerificationInstructions", () => {
       "meta_tag",
     );
 
-    expect(result.title).toContain("Meta");
+    expect(result.title).toContain("meta tag");
     expect(result.metaTag).toContain("<meta");
     expect(result.metaTag).toContain('name="domainstack-verify"');
     expect(result.metaTag).toContain(`content="${token}"`);

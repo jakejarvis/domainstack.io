@@ -1,7 +1,6 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
 import { autoVerifyPendingDomain } from "@/lib/inngest/functions/auto-verify-pending-domain";
-import { backfillSnapshots } from "@/lib/inngest/functions/backfill-snapshots";
 import { checkCertificateExpiryScheduler } from "@/lib/inngest/functions/check-certificate-expiry/scheduler";
 import { checkCertificateExpiryWorker } from "@/lib/inngest/functions/check-certificate-expiry/worker";
 import { checkDomainExpiryScheduler } from "@/lib/inngest/functions/check-domain-expiry/scheduler";
@@ -26,7 +25,6 @@ export const { GET, POST, PUT } = serve({
     cleanupStaleDomains,
     autoVerifyPendingDomain,
     initializeSnapshot,
-    backfillSnapshots,
     // Monitoring System (Fan-out)
     monitorTrackedDomainsScheduler,
     monitorTrackedDomainsWorker,

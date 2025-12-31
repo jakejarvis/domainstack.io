@@ -9,6 +9,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { Separator } from "@/components/ui/separator";
 import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
@@ -77,9 +78,16 @@ export function HtmlFileVerificationInstructions({
       </div>
 
       <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4 dark:border-white/15 dark:bg-white/2">
-        <CopyableField label="Upload Path" value={instructions.fullPath} />
+        <CopyableField label="Upload Path" value={instructions.fullPath}>
+          <span className="inline-flex items-center gap-0.5">
+            <span className="select-none text-muted-foreground/85">
+              https://{instructions.hostname}
+            </span>
+            {instructions.fullPath}
+          </span>
+        </CopyableField>
         <CopyableField label="File Contents" value={instructions.fileContent} />
-
+        <Separator className="my-3 bg-border/60" />
         <ResponsiveTooltip>
           <ResponsiveTooltipTrigger
             render={
@@ -87,7 +95,6 @@ export function HtmlFileVerificationInstructions({
                 variant="outline"
                 className="w-full"
                 onClick={handleDownload}
-                type="button"
               >
                 <Download />
                 Download File

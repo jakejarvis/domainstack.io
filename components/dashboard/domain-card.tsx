@@ -148,7 +148,7 @@ export function DomainCard({
                 href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}
                 className="block min-w-0 hover:underline"
-                data-disable-progress={true}
+                data-disable-progress
               >
                 <CardTitle className="truncate text-base">
                   {domainName}

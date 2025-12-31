@@ -29,7 +29,7 @@ export function DnsVerificationInstructions({
         <CopyableField label="Host / Name" value="@">
           <span>
             @
-            <span className="select-none text-muted-foreground">
+            <span className="select-none text-muted-foreground/85">
               {" "}
               ({instructions.hostname})
             </span>
@@ -43,7 +43,7 @@ export function DnsVerificationInstructions({
         >
           <span>
             {instructions.suggestedTTL}
-            <span className="select-none text-muted-foreground">
+            <span className="select-none text-muted-foreground/85">
               {" "}
               ({instructions.suggestedTTLLabel})
             </span>

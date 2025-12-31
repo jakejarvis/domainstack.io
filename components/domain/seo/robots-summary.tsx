@@ -202,7 +202,6 @@ export function RobotsSummary({
                   {query ? (
                     <InputGroupAddon align="inline-end">
                       <InputGroupButton
-                        type="button"
                         size="sm"
                         variant="ghost"
                         onClick={() => setQuery("")}
@@ -269,7 +268,6 @@ export function RobotsSummary({
                 <div className="text-muted-foreground text-sm">
                   No matching rules.
                   <Button
-                    type="button"
                     variant="link"
                     className="px-1"
                     onClick={() => {
@@ -530,7 +528,6 @@ function GroupContent({
       {more > 0 ? (
         <div className="mt-1 flex justify-start">
           <Button
-            type="button"
             size="sm"
             variant="outline"
             className="text-[12px]"
@@ -667,7 +664,6 @@ function SitemapsList({ items }: { items: string[] }) {
         {more > 0 ? (
           <div className="mt-1 flex justify-start">
             <Button
-              type="button"
               size="sm"
               variant="outline"
               className="text-[12px]"

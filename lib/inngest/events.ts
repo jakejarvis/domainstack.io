@@ -22,7 +22,6 @@ export const INNGEST_EVENTS = {
 
   // Snapshots
   SNAPSHOT_INITIALIZE: "domain/snapshot.initialize",
-  BACKFILL_SNAPSHOTS: "domain/snapshot.backfill",
 
   // Section revalidation
   SECTION_REVALIDATE: "domain/section.revalidate",
@@ -60,11 +59,5 @@ export type AutoVerifyPendingDomainEvent = {
   data: {
     trackedDomainId: string;
     domainName: string;
-  };
-};
-
-export type BackfillSnapshotsEvent = {
-  data: {
-    limit?: number;
   };
 };
