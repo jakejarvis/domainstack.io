@@ -3,14 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   getProvidersFromCatalog,
   parseProviderCatalog,
-  safeParseProviderCatalog,
   toProvider,
 } from "./parser";
 
 describe("parseProviderCatalog", () => {
   it("parses a valid catalog", () => {
     const raw = {
-      version: 1,
       ca: [
         {
           name: "Let's Encrypt",
@@ -25,13 +23,12 @@ describe("parseProviderCatalog", () => {
     };
 
     const catalog = parseProviderCatalog(raw);
-    expect(catalog.version).toBe(1);
     expect(catalog.ca).toHaveLength(1);
     expect(catalog.ca[0].name).toBe("Let's Encrypt");
   });
 
   it("applies default empty arrays for missing categories", () => {
-    const raw = { version: 1 };
+    const raw = {};
     const catalog = parseProviderCatalog(raw);
     expect(catalog.ca).toEqual([]);
     expect(catalog.dns).toEqual([]);
@@ -40,39 +37,8 @@ describe("parseProviderCatalog", () => {
     expect(catalog.registrar).toEqual([]);
   });
 
-  it("throws on missing version", () => {
-    const raw = {
-      ca: [],
-      dns: [],
-      email: [],
-      hosting: [],
-      registrar: [],
-    };
-
-    expect(() => parseProviderCatalog(raw)).toThrow();
-  });
-
-  it("throws on invalid version type", () => {
-    const raw = {
-      version: "1",
-      ca: [],
-    };
-
-    expect(() => parseProviderCatalog(raw)).toThrow();
-  });
-
-  it("throws on negative version", () => {
-    const raw = {
-      version: -1,
-      ca: [],
-    };
-
-    expect(() => parseProviderCatalog(raw)).toThrow();
-  });
-
   it("throws on missing provider name", () => {
     const raw = {
-      version: 1,
       ca: [
         {
           domain: "example.com",
@@ -86,7 +52,6 @@ describe("parseProviderCatalog", () => {
 
   it("throws on empty provider name", () => {
     const raw = {
-      version: 1,
       ca: [
         {
           name: "",
@@ -101,7 +66,6 @@ describe("parseProviderCatalog", () => {
 
   it("throws on invalid regex pattern", () => {
     const raw = {
-      version: 1,
       dns: [
         {
           name: "Test Provider",
@@ -116,7 +80,6 @@ describe("parseProviderCatalog", () => {
 
   it("validates nested regex patterns in 'any' rules", () => {
     const raw = {
-      version: 1,
       email: [
         {
           name: "Test Provider",
@@ -136,7 +99,6 @@ describe("parseProviderCatalog", () => {
 
   it("validates nested regex patterns in 'all' rules", () => {
     const raw = {
-      version: 1,
       dns: [
         {
           name: "Test Provider",
@@ -156,7 +118,6 @@ describe("parseProviderCatalog", () => {
 
   it("parses valid regex patterns without error", () => {
     const raw = {
-      version: 1,
       dns: [
         {
           name: "Amazon Route 53",
@@ -180,7 +141,6 @@ describe("parseProviderCatalog", () => {
 
   it("parses complex rule structures", () => {
     const raw = {
-      version: 1,
       hosting: [
         {
           name: "Complex Provider",
@@ -208,26 +168,6 @@ describe("parseProviderCatalog", () => {
   });
 });
 
-describe("safeParseProviderCatalog", () => {
-  it("returns success for valid catalog", () => {
-    const raw = { version: 1 };
-    const result = safeParseProviderCatalog(raw);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.version).toBe(1);
-    }
-  });
-
-  it("returns error for invalid catalog", () => {
-    const raw = { ca: [] }; // missing version
-    const result = safeParseProviderCatalog(raw);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues.length).toBeGreaterThan(0);
-    }
-  });
-});
-
 describe("toProvider", () => {
   it("converts catalog entry to full provider with category", () => {
     const entry = {
@@ -247,7 +187,6 @@ describe("toProvider", () => {
 describe("getProvidersFromCatalog", () => {
   it("extracts providers with correct category", () => {
     const catalog = {
-      version: 1,
       ca: [
         {
           name: "CA Provider",
