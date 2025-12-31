@@ -28,13 +28,14 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
       <div className="relative flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         {/* Left side - Icon and text */}
         <div className="flex items-center gap-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/5">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
             <CircleFadingArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
-            <h3 className="font-semibold">Upgrade to Pro</h3>
+            <h3 className="font-semibold leading-snug">Upgrade to Pro</h3>
             <span className="text-[13px] text-muted-foreground">
-              Track up to {proMaxDomains} domains
+              Track <span className="hidden sm:inline">up to </span>
+              {proMaxDomains} domains
               <span className="mx-1">•</span>
               <span className="font-medium text-accent-gold">
                 {PRO_TIER_INFO.monthly.label}

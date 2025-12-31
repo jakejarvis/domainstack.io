@@ -61,6 +61,7 @@ export function DashboardContent() {
 
   const {
     subscription,
+    isPro,
     isLoading: subscriptionLoading,
     isError: subscriptionError,
     refetch: refetchSubscription,
@@ -131,7 +132,7 @@ export function DashboardContent() {
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   useEffect(() => {
-    if (searchParams.get("upgraded") === "true") {
+    if (searchParams?.get("upgraded") === "true") {
       setShowUpgradedBanner(true);
       // Clear only the `upgraded` param while preserving others (e.g., filters)
       const params = new URLSearchParams(searchParams.toString());
@@ -384,10 +385,10 @@ export function DashboardContent() {
       )}
 
       {/* Subscription ending banner for users who canceled */}
-      <SubscriptionEndingBanner />
+      {subscription && <SubscriptionEndingBanner subscription={subscription} />}
 
-      {/* Upgrade prompt when near limit */}
-      <UpgradePrompt />
+      {/* Upgrade prompt when free user is near or at limit */}
+      {subscription && !isPro && <UpgradePrompt subscription={subscription} />}
 
       {/* Active domains view */}
       {activeTab === "active" && (
@@ -432,7 +433,7 @@ export function DashboardContent() {
             totalDomains={totalDomainsCount}
             hasActiveFilters={hasActiveFilters}
             selection={selection}
-            tier={tier}
+            isPro={isPro}
             proMaxDomains={proMaxDomains}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}

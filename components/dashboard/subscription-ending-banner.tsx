@@ -5,11 +5,16 @@ import { CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
-import { useSubscription } from "@/hooks/use-subscription";
+import type { SubscriptionData } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 
-export function SubscriptionEndingBanner() {
-  const { subscription, isLoading: isLoadingSubscription } = useSubscription();
+type SubscriptionEndingBannerProps = {
+  subscription: SubscriptionData;
+};
+
+export function SubscriptionEndingBanner({
+  subscription,
+}: SubscriptionEndingBannerProps) {
   const { handleUpgrade: handleResubscribe, isLoading } = useUpgradeCheckout();
   const { openPortal: handleManage, isLoading: isManageLoading } =
     useCustomerPortal();
@@ -20,12 +25,8 @@ export function SubscriptionEndingBanner() {
     setNow(new Date());
   }, []);
 
-  // Don't show while loading, if subscription unavailable, or no end date
-  if (
-    isLoadingSubscription ||
-    !subscription ||
-    !subscription.subscriptionEndsAt
-  ) {
+  // Don't show if subscription unavailable, or no end date
+  if (!subscription || !subscription.subscriptionEndsAt) {
     return null;
   }
 

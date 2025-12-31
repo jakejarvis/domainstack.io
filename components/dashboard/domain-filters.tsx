@@ -372,6 +372,7 @@ export function DomainFilters({
               selected={tlds}
               onSelectionChange={onTldsChange}
               searchable
+              popoverWidth="w-48"
               className="cursor-pointer"
             />
           )}
@@ -383,7 +384,6 @@ export function DomainFilters({
               selected={providers}
               onSelectionChange={onProvidersChange}
               searchable
-              popoverWidth="w-72"
               className="cursor-pointer"
             />
           )}

@@ -98,12 +98,14 @@ export function NotificationSettingsSection({
     ...trpc.user.updateDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId, overrides }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      const previousDomains =
-        queryClient.getQueryData<typeof domainsQuery.data>(domainsQueryKey);
+      // Snapshot all domain query variants for rollback
+      const previousDomains = queryClient.getQueriesData<
+        typeof domainsQuery.data
+      >({ queryKey: domainsQueryKey });
 
-      // Optimistically update the domain's overrides
-      queryClient.setQueryData<typeof domainsQuery.data>(
-        domainsQueryKey,
+      // Optimistically update the domain's overrides in all query variants
+      queryClient.setQueriesData<typeof domainsQuery.data>(
+        { queryKey: domainsQueryKey },
         (old) =>
           old
             ? old.map((d) =>
@@ -124,10 +126,9 @@ export function NotificationSettingsSection({
     },
     onError: (err, _variables, context) => {
       if (context?.previousDomains) {
-        queryClient.setQueryData<typeof domainsQuery.data>(
-          domainsQueryKey,
-          context.previousDomains,
-        );
+        for (const [key, data] of context.previousDomains) {
+          queryClient.setQueryData(key, data);
+        }
       }
       logger.error("Failed to update domain settings", err);
       toast.error("Failed to update settings");
@@ -144,12 +145,14 @@ export function NotificationSettingsSection({
     ...trpc.user.resetDomainNotificationOverrides.mutationOptions(),
     onMutate: async ({ trackedDomainId }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      const previousDomains =
-        queryClient.getQueryData<typeof domainsQuery.data>(domainsQueryKey);
+      // Snapshot all domain query variants for rollback
+      const previousDomains = queryClient.getQueriesData<
+        typeof domainsQuery.data
+      >({ queryKey: domainsQueryKey });
 
-      // Optimistically reset the domain's overrides
-      queryClient.setQueryData<typeof domainsQuery.data>(
-        domainsQueryKey,
+      // Optimistically reset the domain's overrides in all query variants
+      queryClient.setQueriesData<typeof domainsQuery.data>(
+        { queryKey: domainsQueryKey },
         (old) =>
           old
             ? old.map((d) =>
@@ -164,10 +167,9 @@ export function NotificationSettingsSection({
     },
     onError: (err, _variables, context) => {
       if (context?.previousDomains) {
-        queryClient.setQueryData<typeof domainsQuery.data>(
-          domainsQueryKey,
-          context.previousDomains,
-        );
+        for (const [key, data] of context.previousDomains) {
+          queryClient.setQueryData(key, data);
+        }
       }
       logger.error("Failed to reset domain settings", err);
       toast.error("Failed to reset settings");

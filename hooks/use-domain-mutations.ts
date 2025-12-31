@@ -24,11 +24,17 @@ type SubscriptionData = RouterOutputs["user"]["getSubscription"];
 type DomainsData = RouterOutputs["tracking"]["listDomains"];
 
 /**
+ * Snapshot of a single query's cached data for rollback.
+ */
+type QuerySnapshot<T> = [queryKey: readonly unknown[], data: T | undefined];
+
+/**
  * Shared context type for optimistic update rollback.
  * Stores snapshots of all query caches that may be modified.
+ * Uses array of snapshots to support multiple query variants (e.g., with/without includeArchived).
  */
 type MutationContext = {
-  previousDomains?: DomainsData;
+  previousDomains?: QuerySnapshot<DomainsData>[];
   previousSubscription?: SubscriptionData;
 };
 
@@ -128,10 +134,13 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
   /**
    * Rollback cache to previous state on error.
+   * Restores all query variants that were snapshotted during onMutate.
    */
   const rollback = (context: MutationContext | undefined) => {
     if (context?.previousDomains) {
-      queryClient.setQueryData(domainsQueryKey, context.previousDomains);
+      for (const [key, data] of context.previousDomains) {
+        queryClient.setQueryData(key, data);
+      }
     }
     if (context?.previousSubscription) {
       queryClient.setQueryData(
@@ -147,16 +156,21 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
       await cancelQueries();
 
-      const previousDomains =
-        queryClient.getQueryData<DomainsData>(domainsQueryKey);
+      // Snapshot all domain query variants (e.g., with/without includeArchived)
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
       const previousSubscription =
         queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      // Optimistically remove domain
-      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
-        if (!old) return old;
-        return old.filter((d) => d.id !== trackedDomainId);
-      });
+      // Optimistically remove domain from all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.filter((d) => d.id !== trackedDomainId);
+        },
+      );
 
       // Optimistically update subscription
       queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
@@ -184,18 +198,23 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
       await cancelQueries();
 
-      const previousDomains =
-        queryClient.getQueryData<DomainsData>(domainsQueryKey);
+      // Snapshot all domain query variants
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
       const previousSubscription =
         queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      // Optimistically mark domain as archived
-      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
-        if (!old) return old;
-        return old.map((d) =>
-          d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d,
-        );
-      });
+      // Optimistically mark domain as archived in all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.map((d) =>
+            d.id === trackedDomainId ? { ...d, archivedAt: new Date() } : d,
+          );
+        },
+      );
 
       queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
         updateSubscriptionForArchive(old, 1),
@@ -223,18 +242,23 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     onMutate: async ({ trackedDomainId }): Promise<MutationContext> => {
       await cancelQueries();
 
-      const previousDomains =
-        queryClient.getQueryData<DomainsData>(domainsQueryKey);
+      // Snapshot all domain query variants
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
       const previousSubscription =
         queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
-      // Optimistically mark domain as unarchived
-      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
-        if (!old) return old;
-        return old.map((d) =>
-          d.id === trackedDomainId ? { ...d, archivedAt: null } : d,
-        );
-      });
+      // Optimistically mark domain as unarchived in all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.map((d) =>
+            d.id === trackedDomainId ? { ...d, archivedAt: null } : d,
+          );
+        },
+      );
 
       queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
         updateSubscriptionForUnarchive(old, 1),
@@ -265,24 +289,30 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     onMutate: async ({ trackedDomainIds }): Promise<MutationContext> => {
       await cancelQueries();
 
-      const previousDomains =
-        queryClient.getQueryData<DomainsData>(domainsQueryKey);
+      // Snapshot all domain query variants
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
       const previousSubscription =
         queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count how many will be archived
+      // Count how many will be archived (use first cached query to count)
+      const firstCachedDomains = previousDomains[0]?.[1];
       const archiveCount =
-        previousDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
+        firstCachedDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
 
-      // Optimistically mark domains as archived
-      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
-        if (!old) return old;
-        return old.map((d) =>
-          idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d,
-        );
-      });
+      // Optimistically mark domains as archived in all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.map((d) =>
+            idsSet.has(d.id) ? { ...d, archivedAt: new Date() } : d,
+          );
+        },
+      );
 
       queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
         updateSubscriptionForArchive(old, archiveCount),
@@ -306,22 +336,28 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     onMutate: async ({ trackedDomainIds }): Promise<MutationContext> => {
       await cancelQueries();
 
-      const previousDomains =
-        queryClient.getQueryData<DomainsData>(domainsQueryKey);
+      // Snapshot all domain query variants
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
       const previousSubscription =
         queryClient.getQueryData<SubscriptionData>(subscriptionQueryKey);
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count how many will be deleted
+      // Count how many will be deleted (use first cached query to count)
+      const firstCachedDomains = previousDomains[0]?.[1];
       const deleteCount =
-        previousDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
+        firstCachedDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
 
-      // Optimistically remove domains
-      queryClient.setQueryData<DomainsData>(domainsQueryKey, (old) => {
-        if (!old) return old;
-        return old.filter((d) => !idsSet.has(d.id));
-      });
+      // Optimistically remove domains from all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.filter((d) => !idsSet.has(d.id));
+        },
+      );
 
       queryClient.setQueryData<SubscriptionData>(subscriptionQueryKey, (old) =>
         updateSubscriptionForRemoval(old, deleteCount),

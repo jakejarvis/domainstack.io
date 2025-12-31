@@ -20,7 +20,6 @@ import {
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { SelectionState } from "@/hooks/use-selection";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import type { UserTier } from "@/lib/schemas";
 
 type TrackedDomainsViewProps = {
   viewMode: ViewMode;
@@ -28,7 +27,7 @@ type TrackedDomainsViewProps = {
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
   selection: SelectionState;
-  tier: UserTier;
+  isPro: boolean;
   proMaxDomains: number;
   onAddDomain?: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
@@ -49,7 +48,7 @@ export function TrackedDomainsView({
   totalDomains,
   hasActiveFilters,
   selection,
-  tier,
+  isPro,
   proMaxDomains,
   onAddDomain,
   onVerify,
@@ -165,7 +164,7 @@ export function TrackedDomainsView({
               onRemove={onRemove}
               onArchive={onArchive}
               onTableReady={onTableReady}
-              tier={tier}
+              isPro={isPro}
               proMaxDomains={proMaxDomains}
             />
           ) : (
@@ -176,7 +175,7 @@ export function TrackedDomainsView({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
-              tier={tier}
+              isPro={isPro}
               proMaxDomains={proMaxDomains}
             />
           )}

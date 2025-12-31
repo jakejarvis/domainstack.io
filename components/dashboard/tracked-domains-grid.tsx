@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import type { UserTier } from "@/lib/schemas";
 
 type TrackedDomainsGridProps = {
   domains: TrackedDomainWithDetails[];
@@ -14,7 +13,7 @@ type TrackedDomainsGridProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
-  tier: UserTier;
+  isPro: boolean;
   proMaxDomains: number;
 };
 
@@ -25,11 +24,9 @@ export function TrackedDomainsGrid({
   onVerify,
   onRemove,
   onArchive,
-  tier,
+  isPro,
   proMaxDomains,
 }: TrackedDomainsGridProps) {
-  const showUpgradeCard = tier === "free";
-
   // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
   const isFirstMountRef = useRef(true);
   useEffect(() => {
@@ -82,7 +79,7 @@ export function TrackedDomainsGrid({
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        {showUpgradeCard && (
+        {!isPro && (
           <motion.div
             key="upgrade-cta"
             className="h-full"

@@ -35,7 +35,7 @@ export type ProviderMultiSelectProps<T extends string> = {
   searchable?: boolean;
   /** Custom class name for the trigger button */
   className?: string;
-  /** Width of the popover content (default: "w-48") */
+  /** Optional Tailwind width class for the popover (auto-sizes to content if not set) */
   popoverWidth?: string;
 };
 
@@ -75,15 +75,13 @@ export function ProviderMultiSelect<T extends string>({
 
         return (
           <>
-            {providerOption.id && providerOption.domain && (
-              <ProviderIcon
-                providerId={providerOption.id}
-                providerName={providerOption.label}
-                providerDomain={providerOption.domain}
-                size={14}
-                className="shrink-0 rounded"
-              />
-            )}
+            <ProviderIcon
+              providerId={providerOption.id}
+              providerName={providerOption.label}
+              providerDomain={providerOption.domain}
+              size={14}
+              className="shrink-0 rounded"
+            />
             {providerOption.label}
           </>
         );

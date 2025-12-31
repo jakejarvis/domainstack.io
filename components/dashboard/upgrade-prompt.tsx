@@ -10,20 +10,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { useSubscription } from "@/hooks/use-subscription";
+import type { SubscriptionData } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 
-export function UpgradePrompt() {
-  const [isVisible, setIsVisible] = useState(true);
-  const {
-    subscription,
-    isPro,
-    isLoading: isLoadingSubscription,
-  } = useSubscription();
-  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
+type UpgradePromptProps = {
+  subscription: SubscriptionData;
+};
 
-  // Don't show while loading, if already on Pro, or if subscription data unavailable
-  if (isLoadingSubscription || !subscription || isPro) return null;
+export function UpgradePrompt({ subscription }: UpgradePromptProps) {
+  const [isVisible, setIsVisible] = useState(true);
+  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
 
   const { activeCount, maxDomains } = subscription;
 
@@ -59,25 +55,27 @@ export function UpgradePrompt() {
 
       <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 md:flex-row md:items-center">
         <div className="flex-1 space-y-1.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-5 md:items-center">
             <div className="flex size-10 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
               <Gauge className="size-5 text-accent-gold" />
             </div>
-            <CardTitle className="text-lg">
-              {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
-            </CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">
+                {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
+              </CardTitle>
+              <CardDescription>
+                {atLimit
+                  ? `You've reached your limit of ${maxDomains} tracked domains.`
+                  : `You're using ${activeCount} of ${maxDomains} domain slots.`}{" "}
+                Upgrade to Pro for more capacity.
+              </CardDescription>
+            </div>
           </div>
-          <CardDescription>
-            {atLimit
-              ? `You've reached your limit of ${maxDomains} tracked domains.`
-              : `You're using ${activeCount} of ${maxDomains} domain slots.`}{" "}
-            Upgrade to Pro for more capacity.
-          </CardDescription>
         </div>
         <Button
           onClick={handleUpgrade}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 md:w-auto"
+          className="w-full shrink-0 md:mr-2 md:w-auto"
         >
           {isCheckoutLoading ? (
             <>
@@ -87,7 +85,7 @@ export function UpgradePrompt() {
           ) : (
             <>
               <ShoppingCart />
-              Upgrade to Pro
+              Upgrade
             </>
           )}
         </Button>

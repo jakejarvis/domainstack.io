@@ -57,7 +57,7 @@ import type {
   TrackedDomainWithDetails,
 } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
-import type { ProviderCategory, UserTier } from "@/lib/schemas";
+import type { ProviderCategory } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 // Define custom column meta for styling
@@ -75,7 +75,7 @@ type TrackedDomainsTableProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
-  tier: UserTier;
+  isPro: boolean;
   proMaxDomains: number;
   onTableReady?: (
     table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
@@ -183,7 +183,7 @@ export function TrackedDomainsTable({
   onVerify,
   onRemove,
   onArchive,
-  tier,
+  isPro,
   proMaxDomains,
   onTableReady,
 }: TrackedDomainsTableProps) {
@@ -837,7 +837,7 @@ export function TrackedDomainsTable({
       )}
 
       {/* Upgrade CTA banner for free tier users */}
-      {tier === "free" && <UpgradeBanner proMaxDomains={proMaxDomains} />}
+      {!isPro && <UpgradeBanner proMaxDomains={proMaxDomains} />}
     </div>
   );
 }

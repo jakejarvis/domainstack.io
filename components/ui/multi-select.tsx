@@ -38,7 +38,7 @@ export type MultiSelectProps<T extends string> = {
   searchable?: boolean;
   /** Custom class name for the trigger button */
   className?: string;
-  /** Width of the popover content (default: "w-48") */
+  /** Optional Tailwind width class for the popover (auto-sizes to content if not set) */
   popoverWidth?: string;
 };
 
@@ -56,7 +56,7 @@ export function MultiSelect<T extends string>({
   renderOption,
   searchable = false,
   className,
-  popoverWidth = "w-48",
+  popoverWidth,
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -190,7 +190,8 @@ export function MultiSelect<T extends string>({
           <ComboboxPrimitive.Popup
             className={cn(
               // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
-              "z-50 w-72 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
+              // Width auto-sizes to content; pass popoverWidth to constrain if needed.
+              "z-50 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
               "origin-[var(--transform-origin)] will-change-[transform,opacity]",
               "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
               "data-[ending-style]:scale-95 data-[starting-style]:scale-95",
