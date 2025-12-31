@@ -155,7 +155,7 @@ export async function getSeo(
     finalUrl = htmlResult.finalUrl;
 
     // Check for non-OK status codes
-    if (htmlResult.status < 200 || htmlResult.status >= 300) {
+    if (!htmlResult.ok) {
       htmlError = `HTTP ${htmlResult.status}`;
     } else {
       const contentType = htmlResult.contentType ?? "";
@@ -244,7 +244,7 @@ export async function getSeo(
         maxRedirects: 3,
       });
       // Skip processing if the image fetch returned non-OK status
-      if (asset.status < 200 || asset.status >= 300) {
+      if (!asset.ok) {
         throw new Error(`Image fetch returned HTTP ${asset.status}`);
       }
       const optimized = await optimizeImageCover(

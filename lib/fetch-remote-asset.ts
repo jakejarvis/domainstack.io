@@ -11,7 +11,7 @@ const BLOCKED_HOSTNAMES = new Set(["localhost"]);
 const BLOCKED_SUFFIXES = [".local", ".internal", ".localhost"];
 
 // Sensible defaults; callers can override per-use.
-const DEFAULT_MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const DEFAULT_MAX_BYTES = 15 * 1024 * 1024; // 15MB
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_MAX_REDIRECTS = 3;
 const DEFAULT_RETRIES = 0;
@@ -81,6 +81,7 @@ export type RemoteAssetResult = {
   contentType: string | null;
   finalUrl: string;
   status: number;
+  ok: boolean;
   headers: Record<string, string>;
 };
 
@@ -221,6 +222,7 @@ export async function fetchRemoteAsset(
       contentType,
       finalUrl: currentUrl.toString(),
       status: response.status,
+      ok: response.ok,
       headers,
     };
   }
@@ -303,9 +305,9 @@ async function ensureUrlAllowed(
     const result = await dnsLookupViaHttps(hostname, { all: true });
     records = Array.isArray(result) ? result : [result];
   } catch (err) {
-    // DNS failures are expected for non-existent domains - log at warn level
+    // DNS failures are expected for non-existent domains - log at info level
     // since the caller will gracefully fall back to a placeholder
-    logger.warn("dns lookup failed", {
+    logger.info("dns lookup failed", {
       url: url.toString(),
       reason: err instanceof Error ? err.message : "unknown",
     });
@@ -316,7 +318,7 @@ async function ensureUrlAllowed(
   }
 
   if (!records || records.length === 0) {
-    logger.warn("lookup returned no records", {
+    logger.debug("lookup returned no records", {
       url: url.toString(),
     });
     throw new RemoteAssetError("dns_error", "DNS lookup returned no records");

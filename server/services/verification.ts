@@ -170,10 +170,11 @@ async function verifyDnsTxtImpl(
           }
         }
       } catch (err) {
-        logger.warn("DNS provider error", err, {
+        logger.debug("upstream DNS error", {
           domain,
           hostname,
           provider: provider.key,
+          error: err instanceof Error ? err.message : String(err),
         });
       }
     }
@@ -217,13 +218,11 @@ async function verifyHtmlFileImpl(
       const result = await fetchRemoteAsset({
         url: urlStr,
         allowHttp: true,
-        timeoutMs: 5000,
-        maxBytes: 1024,
-        maxRedirects: 3,
+        allowedHosts: [domain, `www.${domain}`],
       });
 
       // Skip non-OK responses (404, etc.) - try next URL
-      if (result.status < 200 || result.status >= 300) {
+      if (!result.ok) {
         continue;
       }
 
@@ -257,7 +256,7 @@ async function verifyHtmlFileImpl(
       });
 
       // Skip non-OK responses (404, etc.) - try next URL
-      if (result.status < 200 || result.status >= 300) {
+      if (!result.ok) {
         continue;
       }
 
@@ -312,7 +311,7 @@ async function verifyMetaTagImpl(
       });
 
       // Skip non-OK responses - try next URL
-      if (result.status < 200 || result.status >= 300) {
+      if (!result.ok) {
         continue;
       }
 

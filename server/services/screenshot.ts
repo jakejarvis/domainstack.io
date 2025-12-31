@@ -244,11 +244,12 @@ async function generateScreenshot(
           lastError = err;
           // Log when final attempt for this URL fails
           if (attemptIndex === attempts - 1) {
-            logger.warn("screenshot attempts exhausted", err, {
+            logger.info("screenshot attempts exhausted, giving up", {
               domain,
               url,
               attemptIndex: attemptIndex + 1,
               totalAttempts: attempts,
+              error: err instanceof Error ? err.message : String(err),
             });
           }
           const delay = backoffDelayMs(
@@ -307,12 +308,6 @@ async function generateScreenshot(
           fetchedAt: now,
           expiresAt,
         });
-
-        if (isPermanentFailure) {
-          logger.info("cached permanent failure", { domain });
-        } else {
-          logger.warn("cached transient failure", { domain });
-        }
       } catch (err) {
         logger.error("db persist error (null)", err, { domain });
       }

@@ -411,9 +411,11 @@ export const getDnsRecords = cache(async function getDnsRecords(
         resolver: resolverUsed,
       } as DnsRecordsResponse;
     } catch (err) {
-      logger.warn("provider attempt failed", err, {
+      // This is somewhat expected, so log at info level
+      logger.info("provider attempt failed", {
         domain,
         provider: provider.key,
+        error: err instanceof Error ? err.message : String(err),
       });
       durationByProvider[provider.key] = Date.now() - attemptStart;
       lastError = err;

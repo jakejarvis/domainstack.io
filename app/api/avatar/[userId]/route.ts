@@ -10,8 +10,8 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "avatar-api" });
 
-// Maximum avatar size to proxy (1MB)
-const MAX_AVATAR_BYTES = 1 * 1024 * 1024;
+// Maximum avatar size to proxy (4MB)
+const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 
 // Request timeout
 const REQUEST_TIMEOUT_MS = 5000;
@@ -50,11 +50,7 @@ export async function GET(
     });
 
     // Check for non-OK responses
-    if (asset.status < 200 || asset.status >= 300) {
-      logger.warn("upstream returned error status", {
-        userId,
-        status: asset.status,
-      });
+    if (!asset.ok) {
       return new NextResponse("Upstream error", { status: 502 });
     }
 
@@ -81,21 +77,15 @@ export async function GET(
     ].join(", ");
 
     return new NextResponse(new Uint8Array(asset.buffer), {
-      status: 200,
       headers: {
         "Content-Type": contentType,
         "Cache-Control": cacheControl,
-        // CDN cache key varies by user ID (already in URL path)
-        // but add Vary header for Accept to handle format negotiation
-        Vary: "Accept",
-        // Security headers
-        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (err) {
     // Only infrastructure errors (DNS, private IP, size limits, etc.) are thrown
     if (err instanceof RemoteAssetError) {
-      logger.warn("avatar fetch failed", {
+      logger.info("avatar fetch failed", {
         userId,
         code: err.code,
       });
@@ -112,7 +102,7 @@ export async function GET(
       }
     }
 
-    logger.error("failed to fetch avatar", err, { userId });
+    logger.error("unexpected error fetching avatar", err, { userId });
     return new NextResponse("Failed to fetch avatar", { status: 502 });
   }
 }

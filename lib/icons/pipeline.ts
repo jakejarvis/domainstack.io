@@ -78,7 +78,7 @@ async function processIconImpl(
       });
 
       // Handle non-OK responses
-      if (asset.status < 200 || asset.status >= 300) {
+      if (!asset.ok) {
         // 404 is still considered a true "not found", other errors are not
         if (asset.status !== 404) {
           allNotFound = false;
