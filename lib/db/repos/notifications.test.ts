@@ -335,6 +335,52 @@ describe("getUserNotifications", () => {
     // Sort both arrays for comparison since UUID ordering might differ
     expect(allUnreadIds.sort()).toEqual(expectedUnreadIds.sort());
   });
+
+  it("filters read notifications when filter is 'read'", async () => {
+    // Create mix of read and unread notifications
+    const notif1 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_30d",
+      title: "Notification 1",
+      message: "Message 1",
+    });
+
+    const _notif2 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_14d",
+      title: "Notification 2",
+      message: "Message 2",
+    });
+
+    const notif3 = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "certificate_expiry_14d",
+      title: "Notification 3",
+      message: "Message 3",
+    });
+
+    // Mark two as read
+    if (notif1 && notif3) {
+      await markAsRead(notif1.id, testUserId);
+      await markAsRead(notif3.id, testUserId);
+    }
+
+    // Get only read notifications (archive view)
+    const readNotifications = await getUserNotifications(
+      testUserId,
+      50,
+      undefined,
+      "read",
+    );
+    expect(readNotifications).toHaveLength(2);
+    expect(readNotifications.every((n) => n.readAt !== null)).toBe(true);
+    expect(readNotifications.map((n) => n.id).sort()).toEqual(
+      [notif1?.id, notif3?.id].sort(),
+    );
+  });
 });
 
 describe("getUnreadCount", () => {

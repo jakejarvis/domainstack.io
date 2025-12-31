@@ -331,17 +331,73 @@ async function handleRegistrationChange(
     generateChangeHash(change),
   );
 
-  const title = `Registration changes detected for ${domainName}`;
+  // Build descriptive change details
+  const changeDetails: string[] = [];
+
+  if (change.registrarChanged) {
+    if (previousRegistrar && newRegistrar) {
+      changeDetails.push(
+        `Registrar changed from ${previousRegistrar} to ${newRegistrar}`,
+      );
+    } else if (newRegistrar) {
+      changeDetails.push(`Registrar set to ${newRegistrar}`);
+    } else if (previousRegistrar) {
+      changeDetails.push(`Registrar ${previousRegistrar} removed`);
+    }
+  }
+
+  if (change.transferLockChanged) {
+    if (change.newTransferLock === true) {
+      changeDetails.push("Transfer lock enabled");
+    } else if (change.newTransferLock === false) {
+      changeDetails.push("Transfer lock disabled");
+    }
+  }
+
+  if (change.nameserversChanged) {
+    const prevNs = change.previousNameservers.map((ns) => ns.host);
+    const newNs = change.newNameservers.map((ns) => ns.host);
+    if (prevNs.length > 0 && newNs.length > 0) {
+      changeDetails.push(
+        `Nameservers changed to ${newNs.slice(0, 2).join(", ")}${newNs.length > 2 ? ` (+${newNs.length - 2} more)` : ""}`,
+      );
+    } else if (newNs.length > 0) {
+      changeDetails.push(
+        `Nameservers set to ${newNs.slice(0, 2).join(", ")}${newNs.length > 2 ? ` (+${newNs.length - 2} more)` : ""}`,
+      );
+    }
+  }
+
+  if (change.statusesChanged) {
+    const addedStatuses = change.newStatuses.filter(
+      (s) => !change.previousStatuses.includes(s),
+    );
+    const removedStatuses = change.previousStatuses.filter(
+      (s) => !change.newStatuses.includes(s),
+    );
+    if (addedStatuses.length > 0) {
+      changeDetails.push(`Status added: ${addedStatuses.join(", ")}`);
+    }
+    if (removedStatuses.length > 0) {
+      changeDetails.push(`Status removed: ${removedStatuses.join(", ")}`);
+    }
+  }
+
+  // Determine primary change type for title
+  const primaryChange = change.registrarChanged
+    ? "Registrar"
+    : change.transferLockChanged
+      ? "Transfer lock"
+      : change.nameserversChanged
+        ? "Nameservers"
+        : "Registration";
+
+  const title = `${primaryChange} changed for ${domainName}`;
   const subject = `⚠️ ${title}`;
-  const changesList = [
-    change.registrarChanged && "registrar",
-    change.nameserversChanged && "nameservers",
-    change.transferLockChanged && "transfer lock",
-    change.statusesChanged && "statuses",
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const message = `Your domain ${domainName} has registration changes: ${changesList}.`;
+  const message =
+    changeDetails.length > 0
+      ? `${changeDetails.join(". ")}.`
+      : `Registration details updated for ${domainName}.`;
 
   return await sendNotification(
     {
@@ -403,16 +459,58 @@ async function handleProviderChange(
     generateChangeHash(change),
   );
 
-  const title = `Provider changes detected for ${domainName}`;
+  // Build descriptive change details
+  const changeDetails: string[] = [];
+
+  if (change.dnsProviderChanged) {
+    const prev = change.previousDnsProvider;
+    const next = change.newDnsProvider;
+    if (prev && next) {
+      changeDetails.push(`DNS provider changed from ${prev} to ${next}`);
+    } else if (next) {
+      changeDetails.push(`DNS provider set to ${next}`);
+    } else if (prev) {
+      changeDetails.push(`DNS provider ${prev} removed`);
+    }
+  }
+
+  if (change.hostingProviderChanged) {
+    const prev = change.previousHostingProvider;
+    const next = change.newHostingProvider;
+    if (prev && next) {
+      changeDetails.push(`Hosting changed from ${prev} to ${next}`);
+    } else if (next) {
+      changeDetails.push(`Hosting set to ${next}`);
+    } else if (prev) {
+      changeDetails.push(`Hosting provider ${prev} removed`);
+    }
+  }
+
+  if (change.emailProviderChanged) {
+    const prev = change.previousEmailProvider;
+    const next = change.newEmailProvider;
+    if (prev && next) {
+      changeDetails.push(`Email provider changed from ${prev} to ${next}`);
+    } else if (next) {
+      changeDetails.push(`Email provider set to ${next}`);
+    } else if (prev) {
+      changeDetails.push(`Email provider ${prev} removed`);
+    }
+  }
+
+  // Determine primary change type for title
+  const primaryChange = change.dnsProviderChanged
+    ? "DNS provider"
+    : change.hostingProviderChanged
+      ? "Hosting"
+      : "Email provider";
+
+  const title = `${primaryChange} changed for ${domainName}`;
   const subject = `🔄 ${title}`;
-  const changesList = [
-    change.dnsProviderChanged && "DNS",
-    change.hostingProviderChanged && "hosting",
-    change.emailProviderChanged && "email",
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const message = `Your domain ${domainName} has provider changes: ${changesList}.`;
+  const message =
+    changeDetails.length > 0
+      ? `${changeDetails.join(". ")}.`
+      : `Provider configuration updated for ${domainName}.`;
 
   return await sendNotification(
     {
@@ -480,15 +578,42 @@ async function handleCertificateChange(
     generateChangeHash(change),
   );
 
-  const title = `Certificate changes detected for ${domainName}`;
+  // Build descriptive change details
+  const changeDetails: string[] = [];
+
+  if (change.caProviderChanged) {
+    const prev = previousCaProvider;
+    const next = newCaProvider;
+    if (prev && next) {
+      changeDetails.push(
+        `Certificate authority changed from ${prev} to ${next}`,
+      );
+    } else if (next) {
+      changeDetails.push(`Certificate authority set to ${next}`);
+    }
+  }
+
+  if (change.issuerChanged) {
+    const prev = change.previousIssuer;
+    const next = change.newIssuer;
+    if (prev && next) {
+      changeDetails.push(`Issuer changed from ${prev} to ${next}`);
+    } else if (next) {
+      changeDetails.push(`Issuer set to ${next}`);
+    }
+  }
+
+  // Add validity info
+  changeDetails.push(`Valid until ${newValidTo}`);
+
+  // Determine primary change type for title
+  const primaryChange = change.caProviderChanged
+    ? "Certificate authority"
+    : "Certificate";
+
+  const title = `${primaryChange} changed for ${domainName}`;
   const subject = `🔒 ${title}`;
-  const changesList = [
-    change.issuerChanged && "issuer",
-    change.caProviderChanged && "CA provider",
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const message = `The SSL certificate for ${domainName} has changed: ${changesList}. Valid until ${newValidTo}.`;
+  const message = `${changeDetails.join(". ")}.`;
 
   return await sendNotification(
     {

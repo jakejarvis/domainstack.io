@@ -70,7 +70,7 @@ export function NotificationCard({
               />
             )}
           </div>
-          <p className="line-clamp-2 text-[13px] text-muted-foreground">
+          <p className="line-clamp-3 text-[13px] text-muted-foreground">
             {notification.message}
           </p>
           <p className="mt-1 text-muted-foreground/75 text-xs">
