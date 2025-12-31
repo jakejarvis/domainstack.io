@@ -32,7 +32,6 @@ export async function getRdapBootstrapData(): Promise<BootstrapData> {
     },
     next: {
       revalidate: 604800, // 1 week
-      tags: ["rdap-bootstrap"],
     },
   });
 

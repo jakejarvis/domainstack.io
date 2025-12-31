@@ -14,7 +14,6 @@ async function fetchRepoStars(): Promise<number | null> {
       },
       next: {
         revalidate: 3600, // 1 hour
-        tags: ["github-stars"],
       },
     });
 

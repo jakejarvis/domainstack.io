@@ -32,7 +32,6 @@ async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
     },
     next: {
       revalidate: 604800, // 1 week
-      tags: ["cloudflare-ip-ranges"],
     },
   });
 

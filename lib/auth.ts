@@ -2,8 +2,9 @@ import "server-only";
 
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
-import { betterAuth } from "better-auth";
+import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
 import { BASE_URL } from "@/lib/constants";
@@ -147,18 +148,10 @@ export const auth = betterAuth({
               userId: user.id,
             });
           } catch (err) {
-            // Ignore 404 errors - user may never have had a Polar subscription
-            // (free tier users who never upgraded)
-            const isNotFound =
-              err instanceof Error &&
-              "statusCode" in err &&
-              (err as { statusCode: number }).statusCode === 404;
-            if (!isNotFound) {
-              logger.error("failed to delete Polar customer", err, {
-                userId: user.id,
-              });
-              // Don't block account deletion if Polar cleanup fails
-            }
+            // Don't block account deletion if Polar cleanup fails
+            logger.error("failed to delete Polar customer", err, {
+              userId: user.id,
+            });
           }
         }
 
@@ -227,32 +220,36 @@ export const auth = betterAuth({
   experimental: {
     joins: true,
   },
-  plugins: polarClient
-    ? [
-        polar({
-          client: polarClient,
-          createCustomerOnSignUp: true,
-          use: [
-            checkout({
-              products: getProductsForCheckout(),
-              successUrl:
-                process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
-              authenticatedUsersOnly: true,
-              theme: "dark",
-            }),
-            portal(),
-            webhooks({
-              // biome-ignore lint/style/noNonNullAssertion: webhook secret is asserted above
-              secret: process.env.POLAR_WEBHOOK_SECRET!,
-              onSubscriptionCreated: handleSubscriptionCreated,
-              onSubscriptionActive: handleSubscriptionActive,
-              onSubscriptionCanceled: handleSubscriptionCanceled,
-              onSubscriptionRevoked: handleSubscriptionRevoked,
-            }),
-          ],
-        }),
-      ]
-    : [],
-});
+  plugins: [
+    ...(polarClient
+      ? [
+          polar({
+            client: polarClient,
+            createCustomerOnSignUp: true,
+            use: [
+              checkout({
+                products: getProductsForCheckout(),
+                successUrl:
+                  process.env.POLAR_SUCCESS_URL || "/dashboard?upgraded=true",
+                authenticatedUsersOnly: true,
+                theme: "dark",
+              }),
+              portal(),
+              webhooks({
+                // biome-ignore lint/style/noNonNullAssertion: webhook secret is asserted above
+                secret: process.env.POLAR_WEBHOOK_SECRET!,
+                onSubscriptionCreated: handleSubscriptionCreated,
+                onSubscriptionActive: handleSubscriptionActive,
+                onSubscriptionCanceled: handleSubscriptionCanceled,
+                onSubscriptionRevoked: handleSubscriptionRevoked,
+              }),
+            ],
+          }),
+        ]
+      : []),
+    // must be last: https://www.better-auth.com/docs/integrations/next#server-action-cookies
+    nextCookies(),
+  ],
+} satisfies BetterAuthOptions);
 
 export type Session = typeof auth.$Infer.Session;

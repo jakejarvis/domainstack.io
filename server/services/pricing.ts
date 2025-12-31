@@ -84,7 +84,7 @@ export function createFetchWithTimeout(
         signal: controller.signal,
         next: {
           revalidate: config.revalidate,
-          tags: ["pricing", `pricing-${providerName}`],
+          tags: ["pricing", `pricing:${providerName}`],
         },
       });
 
