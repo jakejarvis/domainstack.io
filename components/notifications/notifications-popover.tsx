@@ -26,17 +26,17 @@ export function NotificationsPopover() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
-  const [markedAsReadIds, setMarkedAsReadIds] = useState<Set<string>>(
-    new Set(),
-  );
   const [open, setOpen] = useState(false);
 
   // Get unread count for inbox
-  const { data: count = 0 } = useQuery({
+  const { data: count = 0, refetch: refetchCount } = useQuery({
     ...trpc.notifications.unreadCount.queryOptions(),
     refetchOnWindowFocus: true,
     refetchInterval: 60000,
   });
+
+  // Map view to filter parameter
+  const filter = view === "inbox" ? "unread" : "read";
 
   // Get notifications with infinite scrolling
   const {
@@ -46,20 +46,42 @@ export function NotificationsPopover() {
     isFetchingNextPage,
     isLoading,
     isError: isNotificationsError,
+    refetch: refetchNotifications,
   } = useInfiniteQuery({
     ...trpc.notifications.list.infiniteQueryOptions({
       limit: 20,
-      unreadOnly: view === "inbox",
+      filter,
     }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     refetchOnWindowFocus: true,
+    // Always refetch on mount/access to ensure fresh data
+    staleTime: 0,
   });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
 
-  // Infinite scroll observer
+  // Refetch when popover opens
   useEffect(() => {
-    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+    if (open) {
+      void refetchNotifications();
+      void refetchCount();
+    }
+  }, [open, refetchNotifications, refetchCount]);
+
+  // Reset scroll position when switching tabs
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally trigger on view change
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = 0;
+    }
+  }, [view]);
+
+  // Infinite scroll observer - uses scrollAreaRef as root to observe within the scroll container
+  useEffect(() => {
+    const scrollContainer = scrollAreaRef.current;
+    const loadMoreElement = loadMoreRef.current;
+
+    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -67,18 +89,22 @@ export function NotificationsPopover() {
           void fetchNextPage();
         }
       },
-      { threshold: 0.1 },
+      {
+        threshold: 0.1,
+        // Use the scroll container as the root for proper intersection detection
+        root: scrollContainer,
+      },
     );
 
-    observer.observe(loadMoreRef.current);
+    observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const handleNotificationClick = (notification: NotificationData) => {
     setOpen(false);
-    if (!notification.readAt && !markedAsReadIds.has(notification.id)) {
-      setMarkedAsReadIds((prev) => new Set(prev).add(notification.id));
+    // Only mark as read if not already read
+    if (!notification.readAt) {
       markRead.mutate({ id: notification.id });
     }
   };

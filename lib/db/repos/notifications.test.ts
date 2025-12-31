@@ -280,7 +280,7 @@ describe("getUserNotifications", () => {
       testUserId,
       50,
       undefined,
-      true,
+      "unread",
     );
     expect(unreadNotifications).toHaveLength(2);
     expect(unreadNotifications.map((n) => n.id).sort()).toEqual(
@@ -312,13 +312,18 @@ describe("getUserNotifications", () => {
     }
 
     // Get first page of unread notifications (limit 1)
-    const page1 = await getUserNotifications(testUserId, 1, undefined, true);
+    const page1 = await getUserNotifications(
+      testUserId,
+      1,
+      undefined,
+      "unread",
+    );
     expect(page1).toHaveLength(1);
     expect(page1[0].readAt).toBeNull();
 
     // Get second page using cursor
     const cursor = page1[0].id;
-    const page2 = await getUserNotifications(testUserId, 2, cursor, true);
+    const page2 = await getUserNotifications(testUserId, 2, cursor, "unread");
     expect(page2).toHaveLength(1); // Only 1 more unread notification
     expect(page2[0].readAt).toBeNull();
 

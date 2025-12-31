@@ -5,32 +5,39 @@ import {
   getUserNotifications,
   markAllAsRead,
   markAsRead,
+  type NotificationFilter,
 } from "@/lib/db/repos/notifications";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+
+/** Schema for notification filter parameter */
+const notificationFilterSchema = z
+  .enum(["unread", "read", "all"])
+  .default("all");
 
 export const notificationsRouter = createTRPCRouter({
   /**
    * List notifications for the current user with cursor-based pagination.
+   * @param filter - "unread" for inbox, "read" for archive, "all" for everything
    */
   list: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(), // notification ID to start from
-        unreadOnly: z.boolean().optional().default(false),
+        filter: notificationFilterSchema,
       }),
     )
     .query(async ({ ctx, input }) => {
       const limit = input.limit;
       const cursor = input.cursor;
-      const unreadOnly = input.unreadOnly;
+      const filter: NotificationFilter = input.filter;
 
       // Fetch one extra to determine if there's a next page
       const items = await getUserNotifications(
         ctx.user.id,
         limit + 1,
         cursor,
-        unreadOnly,
+        filter,
       );
 
       let nextCursor: string | undefined;

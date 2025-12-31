@@ -6,6 +6,7 @@ import {
   desc,
   eq,
   gt,
+  isNotNull,
   isNull,
   like,
   lt,
@@ -85,15 +86,31 @@ export async function updateNotificationResendId(
   }
 }
 
+/** Filter type for notification queries */
+export type NotificationFilter = "unread" | "read" | "all";
+
 /**
- * Get all notifications for a user (in-app inbox) with cursor-based pagination.
+ * Get notifications for a user with cursor-based pagination.
+ * @param filter - "unread" for inbox, "read" for archive, "all" for everything
  */
 export async function getUserNotifications(
   userId: string,
   limit = 50,
   cursor?: string,
-  unreadOnly = false,
+  filter: NotificationFilter = "all",
 ) {
+  // Build the read status filter condition
+  const getReadStatusCondition = () => {
+    switch (filter) {
+      case "unread":
+        return isNull(notifications.readAt);
+      case "read":
+        return isNotNull(notifications.readAt);
+      case "all":
+        return undefined;
+    }
+  };
+
   if (!cursor) {
     // First page - no cursor
     const conditions = [
@@ -102,8 +119,9 @@ export async function getUserNotifications(
       sql`${notifications.channels} @> '["in-app"]'`,
     ];
 
-    if (unreadOnly) {
-      conditions.push(isNull(notifications.readAt));
+    const readStatusCondition = getReadStatusCondition();
+    if (readStatusCondition) {
+      conditions.push(readStatusCondition);
     }
 
     return db
@@ -141,8 +159,9 @@ export async function getUserNotifications(
     sql`${notifications.channels} @> '["in-app"]'`,
   ];
 
-  if (unreadOnly) {
-    conditions.push(isNull(notifications.readAt));
+  const readStatusCondition = getReadStatusCondition();
+  if (readStatusCondition) {
+    conditions.push(readStatusCondition);
   }
 
   return db
