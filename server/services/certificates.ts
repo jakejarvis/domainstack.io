@@ -4,10 +4,7 @@ import { after } from "next/server";
 import { db } from "@/lib/db/client";
 import { replaceCertificates } from "@/lib/db/repos/certificates";
 import { findDomainByName } from "@/lib/db/repos/domains";
-import {
-  batchResolveOrCreateProviderIds,
-  makeProviderKey,
-} from "@/lib/db/repos/providers";
+import { upsertCatalogProviderRef } from "@/lib/db/repos/providers";
 import {
   certificates as certTable,
   providers as providersTable,
@@ -15,9 +12,14 @@ import {
 import { isExpectedDnsError } from "@/lib/dns-utils";
 import { isExpectedTlsError } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
+import { getProviders } from "@/lib/providers/catalog";
 import { detectCertificateAuthority } from "@/lib/providers/detection";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { Certificate, CertificatesResponse } from "@/lib/schemas";
+import type {
+  Certificate,
+  CertificatesResponse,
+  Provider,
+} from "@/lib/schemas";
 import { ttlForCertificates } from "@/lib/ttl";
 
 const logger = createLogger({ source: "certificates" });
@@ -88,15 +90,13 @@ export async function getCertificates(
         altNames: safeAltNamesArray(c.altNames),
         validFrom: new Date(c.validFrom).toISOString(),
         validTo: new Date(c.validTo).toISOString(),
-        // Use cached provider data if available, otherwise detect
-        caProvider:
-          c.caProviderDomain && c.caProviderName
-            ? {
-                id: c.caProviderId ?? null,
-                domain: c.caProviderDomain,
-                name: c.caProviderName,
-              }
-            : { id: null, ...detectCertificateAuthority(c.issuer) },
+        // Use cached provider data if available
+        // Note: For cached data, we don't re-detect since we already have the resolved provider
+        caProvider: {
+          id: c.caProviderId ?? null,
+          domain: c.caProviderDomain ?? null,
+          name: c.caProviderName ?? null,
+        },
       }));
 
       return { certificates: out };
@@ -104,6 +104,9 @@ export async function getCertificates(
   }
 
   // Client gating avoids calling this without A/AAAA; server does not pre-check DNS here.
+  // Fetch CA providers from Edge Config
+  const caProviders = await getProviders("ca");
+
   // Probe TLS connection to get certificate chain
   // Note: Certificates are returned in chain order (leaf -> intermediate -> root)
   // because leaf certificates expire first (shorter validity period)
@@ -155,68 +158,50 @@ export async function getCertificates(
       },
     );
 
-    const out: Certificate[] = chain.map((c) => {
+    // Detect CA providers and build certificate list with matched catalog providers
+    const chainWithMatches: Array<{
+      cert: Certificate;
+      catalogProvider: Provider | null;
+    }> = chain.map((c) => {
       const issuerName = toName(c.issuer);
+      const matched = detectCertificateAuthority(issuerName, caProviders);
       return {
-        issuer: issuerName,
-        subject: toName(c.subject),
-        altNames: parseAltNames(
-          (c as Partial<{ subjectaltname: string }>).subjectaltname,
-        ),
-        validFrom: new Date(c.valid_from).toISOString(),
-        validTo: new Date(c.valid_to).toISOString(),
-        caProvider: {
-          id: null,
-          ...detectCertificateAuthority(issuerName),
+        cert: {
+          issuer: issuerName,
+          subject: toName(c.subject),
+          altNames: parseAltNames(
+            (c as Partial<{ subjectaltname: string }>).subjectaltname,
+          ),
+          validFrom: new Date(c.valid_from).toISOString(),
+          validTo: new Date(c.valid_to).toISOString(),
+          caProvider: {
+            id: null,
+            name: matched?.name ?? null,
+            domain: matched?.domain ?? null,
+          },
         },
+        catalogProvider: matched,
       };
     });
+
+    const out: Certificate[] = chainWithMatches.map((c) => c.cert);
 
     const earliestValidTo =
       out.length > 0
         ? new Date(Math.min(...out.map((c) => new Date(c.validTo).getTime())))
         : new Date(Date.now() + 3600_000);
 
-    // Batch resolve all CA providers in one query
-    // Filter out entries with null/empty domain or name to avoid creating bogus providers
-    const caProviderInputs = out
-      .filter(
-        (c) =>
-          c.caProvider.domain &&
-          c.caProvider.name &&
-          c.caProvider.domain.trim() !== "" &&
-          c.caProvider.name.trim() !== "",
-      )
-      .map((c) => ({
-        category: "ca" as const,
-        domain: c.caProvider.domain,
-        name: c.caProvider.name,
-      }));
-
-    const caProviderMap =
-      await batchResolveOrCreateProviderIds(caProviderInputs);
-
-    // Helper to resolve provider ID for a certificate
-    const resolveProviderId = (cert: (typeof out)[number]): string | null => {
-      const hasValidProvider =
-        cert.caProvider.domain &&
-        cert.caProvider.name &&
-        cert.caProvider.domain.trim() !== "" &&
-        cert.caProvider.name.trim() !== "";
-
-      if (!hasValidProvider) {
+    // Upsert catalog providers and resolve provider IDs
+    // Only upsert for matched catalog providers (not null)
+    const providerIds = await Promise.all(
+      chainWithMatches.map(async ({ catalogProvider }) => {
+        if (catalogProvider) {
+          const ref = await upsertCatalogProviderRef(catalogProvider);
+          return ref.id;
+        }
         return null;
-      }
-
-      return (
-        caProviderMap.get(
-          makeProviderKey("ca", cert.caProvider.domain, cert.caProvider.name),
-        ) ?? null
-      );
-    };
-
-    // Resolve provider IDs once and store them
-    const providerIds = out.map((cert) => resolveProviderId(cert));
+      }),
+    );
 
     // Update out array with resolved provider IDs
     for (let i = 0; i < out.length; i++) {

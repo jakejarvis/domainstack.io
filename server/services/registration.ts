@@ -3,14 +3,22 @@ import { after } from "next/server";
 import { getDomainTld, lookup } from "rdapper";
 import { db } from "@/lib/db/client";
 import { upsertDomain } from "@/lib/db/repos/domains";
-import { resolveOrCreateProviderId } from "@/lib/db/repos/providers";
+import {
+  resolveOrCreateProviderId,
+  upsertCatalogProviderRef,
+} from "@/lib/db/repos/providers";
 import { upsertRegistration } from "@/lib/db/repos/registrations";
 import { domains, providers, registrations } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
+import { getProviders } from "@/lib/providers/catalog";
 import { detectRegistrar } from "@/lib/providers/detection";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { RegistrationContacts, RegistrationResponse } from "@/lib/schemas";
+import type {
+  Provider,
+  RegistrationContacts,
+  RegistrationResponse,
+} from "@/lib/schemas";
 import { ttlForRegistration } from "@/lib/ttl";
 
 const logger = createLogger({ source: "registration" });
@@ -18,21 +26,29 @@ const logger = createLogger({ source: "registration" });
 /**
  * Normalize registrar provider information from raw rdapper data.
  * Applies provider detection and falls back to URL hostname parsing.
+ *
+ * @param registrar - Raw registrar data from rdapper
+ * @param providers - Registrar provider catalog from Edge Config
+ * @returns Normalized registrar info with optional catalog match
  */
-function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
+function normalizeRegistrar(
+  registrar: { name?: unknown; url?: unknown } | undefined,
+  providers: Provider[],
+): {
   name: string | null;
   domain: string | null;
+  catalogProvider: Provider | null;
 } {
   let registrarName = (registrar?.name || "").toString();
   let registrarDomain: string | null = null;
+  let catalogProvider: Provider | null = null;
 
   // Run provider detection to normalize known registrars
-  const det = detectRegistrar(registrarName);
-  if (det.name) {
-    registrarName = det.name;
-  }
-  if (det.domain) {
-    registrarDomain = det.domain;
+  const matched = detectRegistrar(registrarName, providers);
+  if (matched) {
+    registrarName = matched.name;
+    registrarDomain = matched.domain;
+    catalogProvider = matched;
   }
 
   // Fall back to URL hostname parsing if domain is still unknown
@@ -47,6 +63,7 @@ function normalizeRegistrar(registrar?: { name?: unknown; url?: unknown }): {
   return {
     name: registrarName.trim() || null,
     domain: registrarDomain,
+    catalogProvider,
   };
 }
 
@@ -152,8 +169,11 @@ export async function getRegistration(
   }
 
   // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
-  // Fetch bootstrap data with Next.js caching to avoid redundant IANA requests
-  const bootstrapData = await getRdapBootstrapData();
+  // Fetch bootstrap data and registrar providers in parallel
+  const [bootstrapData, registrarProviders] = await Promise.all([
+    getRdapBootstrapData(),
+    getProviders("registrar"),
+  ]);
 
   const { ok, record, error } = await lookup(domain, {
     timeoutMs: 5000,
@@ -202,7 +222,10 @@ export async function getRegistration(
 
   // If unregistered, return response without persisting to Postgres
   if (!record.isRegistered) {
-    const registrarProvider = normalizeRegistrar(record.registrar ?? {});
+    const registrarNormalized = normalizeRegistrar(
+      record.registrar ?? {},
+      registrarProviders,
+    );
     // Explicitly construct Registration object to avoid leaking rdapper internals
     return {
       domain: record.domain,
@@ -229,12 +252,19 @@ export async function getRegistration(
       rdapServers: record.rdapServers,
       source: record.source,
       warnings: record.warnings,
-      registrarProvider,
+      registrarProvider: {
+        id: null,
+        name: registrarNormalized.name,
+        domain: registrarNormalized.domain,
+      },
     };
   }
 
   // ===== Persist registered domain to Postgres =====
-  const registrarProvider = normalizeRegistrar(record.registrar ?? {});
+  const registrarNormalized = normalizeRegistrar(
+    record.registrar ?? {},
+    registrarProviders,
+  );
 
   // Explicitly construct Registration object to avoid leaking rdapper internals
   const withProvider: RegistrationResponse = {
@@ -264,8 +294,8 @@ export async function getRegistration(
     warnings: record.warnings,
     registrarProvider: {
       id: null,
-      name: registrarProvider.name,
-      domain: registrarProvider.domain,
+      name: registrarNormalized.name,
+      domain: registrarNormalized.domain,
     },
   };
 
@@ -280,11 +310,16 @@ export async function getRegistration(
         tld: getDomainTld(domain) ?? "",
         unicodeName: record.unicodeName ?? domain,
       }),
-      resolveOrCreateProviderId({
-        category: "registrar",
-        domain: registrarProvider.domain,
-        name: registrarProvider.name,
-      }),
+      // Use catalog upsert for matched providers, fallback to discovered for unmatched
+      registrarNormalized.catalogProvider
+        ? upsertCatalogProviderRef(registrarNormalized.catalogProvider).then(
+            (r) => r.id,
+          )
+        : resolveOrCreateProviderId({
+            category: "registrar",
+            domain: registrarNormalized.domain,
+            name: registrarNormalized.name,
+          }),
     ]);
 
     // Update response with resolved provider ID
@@ -342,7 +377,7 @@ export async function getRegistration(
       err,
       {
         domain,
-        registrarName: registrarProvider.name,
+        registrarName: registrarNormalized.name,
       },
     );
   }

@@ -1,11 +1,4 @@
 import { toRegistrableDomain } from "@/lib/domain-server";
-import {
-  CA_PROVIDERS,
-  DNS_PROVIDERS,
-  EMAIL_PROVIDERS,
-  HOSTING_PROVIDERS,
-  REGISTRAR_PROVIDERS,
-} from "@/lib/providers/catalog";
 import type {
   DetectionContext,
   Header,
@@ -110,13 +103,16 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
 
 /**
  * Detect a provider from a list of providers using the provided context.
+ * Returns the full Provider object for upsert, or null if not found.
  */
 function detectProviderFromList(
   providers: Provider[],
   headerContext?: HeaderDetectionContext,
   mxHosts?: string[],
   nsHosts?: string[],
-): ProviderRef {
+  issuer?: string,
+  registrar?: string,
+): Provider | null {
   const headersObj: Record<string, string> = Object.fromEntries(
     (headerContext?.headers ?? []).map((h) => [
       h.name.toLowerCase(),
@@ -127,29 +123,82 @@ function detectProviderFromList(
     headers: headersObj,
     mx: (mxHosts ?? []).map((h) => h.toLowerCase().replace(/\.$/, "")),
     ns: (nsHosts ?? []).map((h) => h.toLowerCase().replace(/\.$/, "")),
+    issuer,
+    registrar,
   };
   for (const provider of providers) {
     if (evalRule(provider.rule, ctx)) {
-      return { name: provider.name, domain: provider.domain };
+      return provider;
     }
   }
-  return { name: null, domain: null };
+  return null;
 }
 
 /**
- * Detect hosting provider from HTTP headers.
+ * Convert a Provider to a ProviderRef (for backwards compatibility).
  */
-export function detectHostingProvider(headers: Header[]): ProviderRef {
+function toProviderRef(provider: Provider | null): ProviderRef {
+  if (!provider) {
+    return { name: null, domain: null };
+  }
+  return { name: provider.name, domain: provider.domain };
+}
+
+// ============================================================================
+// Detection functions that accept providers as a parameter
+// ============================================================================
+
+/**
+ * Detect hosting provider from HTTP headers.
+ *
+ * @param headers - HTTP response headers
+ * @param providers - Hosting provider catalog from Edge Config
+ * @returns Matched provider or null
+ */
+export function detectHostingProvider(
+  headers: Header[],
+  providers: Provider[],
+): Provider | null {
   const context = createHeaderContext(headers);
-  return detectProviderFromList(HOSTING_PROVIDERS, context);
+  return detectProviderFromList(providers, context);
+}
+
+/**
+ * Detect hosting provider and return ProviderRef (backwards compatibility).
+ */
+export function detectHostingProviderRef(
+  headers: Header[],
+  providers: Provider[],
+): ProviderRef {
+  return toProviderRef(detectHostingProvider(headers, providers));
 }
 
 /**
  * Detect email provider from MX records.
+ *
+ * @param mxHosts - MX record hostnames
+ * @param providers - Email provider catalog from Edge Config
+ * @returns Matched provider or null (falls back to domain extraction if no match)
  */
-export function detectEmailProvider(mxHosts: string[]): ProviderRef {
-  const found = detectProviderFromList(EMAIL_PROVIDERS, undefined, mxHosts);
-  if (found.name) return found;
+export function detectEmailProvider(
+  mxHosts: string[],
+  providers: Provider[],
+): Provider | null {
+  return detectProviderFromList(providers, undefined, mxHosts);
+}
+
+/**
+ * Detect email provider and return ProviderRef with fallback.
+ * Falls back to extracting the root domain from the first MX host if no catalog match.
+ */
+export function detectEmailProviderRef(
+  mxHosts: string[],
+  providers: Provider[],
+): ProviderRef {
+  const found = detectEmailProvider(mxHosts, providers);
+  if (found) return toProviderRef(found);
+
+  // Fallback: extract root domain from first MX host
   const first = mxHosts[0];
   if (first) {
     const root = toRegistrableDomain(first);
@@ -160,15 +209,30 @@ export function detectEmailProvider(mxHosts: string[]): ProviderRef {
 
 /**
  * Detect DNS provider from NS records.
+ *
+ * @param nsHosts - NS record hostnames
+ * @param providers - DNS provider catalog from Edge Config
+ * @returns Matched provider or null
  */
-export function detectDnsProvider(nsHosts: string[]): ProviderRef {
-  const found = detectProviderFromList(
-    DNS_PROVIDERS,
-    undefined,
-    undefined,
-    nsHosts,
-  );
-  if (found.name) return found;
+export function detectDnsProvider(
+  nsHosts: string[],
+  providers: Provider[],
+): Provider | null {
+  return detectProviderFromList(providers, undefined, undefined, nsHosts);
+}
+
+/**
+ * Detect DNS provider and return ProviderRef with fallback.
+ * Falls back to extracting the root domain from the first NS host if no catalog match.
+ */
+export function detectDnsProviderRef(
+  nsHosts: string[],
+  providers: Provider[],
+): ProviderRef {
+  const found = detectDnsProvider(nsHosts, providers);
+  if (found) return toProviderRef(found);
+
+  // Fallback: extract root domain from first NS host
   const first = nsHosts[0];
   if (first) {
     const root = toRegistrableDomain(first);
@@ -177,32 +241,67 @@ export function detectDnsProvider(nsHosts: string[]): ProviderRef {
   return { name: null, domain: null };
 }
 
-/** Detect registrar provider from registrar name */
-export function detectRegistrar(registrarName: string): ProviderRef {
+/**
+ * Detect registrar provider from registrar name.
+ *
+ * @param registrarName - Registrar name from WHOIS/RDAP
+ * @param providers - Registrar provider catalog from Edge Config
+ * @returns Matched provider or null
+ */
+export function detectRegistrar(
+  registrarName: string,
+  providers: Provider[],
+): Provider | null {
   const name = (registrarName || "").toLowerCase();
-  if (!name) return { name: null, domain: null };
-  const ctx: DetectionContext = {
-    headers: {},
-    mx: [],
-    ns: [],
-    issuer: undefined,
-    registrar: name,
-  };
-  for (const reg of REGISTRAR_PROVIDERS) {
-    if (evalRule(reg.rule, ctx)) return { name: reg.name, domain: reg.domain };
-  }
-  return { name: null, domain: null };
+  if (!name) return null;
+  return detectProviderFromList(
+    providers,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    name,
+  );
 }
 
-/** Detect certificate authority from an issuer string */
-export function detectCertificateAuthority(issuer: string): ProviderRef {
+/**
+ * Detect registrar provider and return ProviderRef (backwards compatibility).
+ */
+export function detectRegistrarRef(
+  registrarName: string,
+  providers: Provider[],
+): ProviderRef {
+  return toProviderRef(detectRegistrar(registrarName, providers));
+}
+
+/**
+ * Detect certificate authority from an issuer string.
+ *
+ * @param issuer - Certificate issuer string
+ * @param providers - CA provider catalog from Edge Config
+ * @returns Matched provider or null
+ */
+export function detectCertificateAuthority(
+  issuer: string,
+  providers: Provider[],
+): Provider | null {
   const name = (issuer || "").toLowerCase();
-  if (!name) return { name: null, domain: null };
-  const ctx: DetectionContext = { headers: {}, mx: [], ns: [], issuer: name };
-  for (const ca of CA_PROVIDERS) {
-    if (evalRule(ca.rule, ctx)) {
-      return { name: ca.name, domain: ca.domain };
-    }
-  }
-  return { name: null, domain: null };
+  if (!name) return null;
+  return detectProviderFromList(
+    providers,
+    undefined,
+    undefined,
+    undefined,
+    name,
+  );
+}
+
+/**
+ * Detect certificate authority and return ProviderRef (backwards compatibility).
+ */
+export function detectCertificateAuthorityRef(
+  issuer: string,
+  providers: Provider[],
+): ProviderRef {
+  return toProviderRef(detectCertificateAuthority(issuer, providers));
 }
