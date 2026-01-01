@@ -7,24 +7,27 @@
 - `app/@modal/` Intercepting routes for modal dialogs (`(.)login`, `(.)dashboard`, `(.)settings`, `(.)bookmarklet`).
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
-- `components/dashboard/` Dashboard components (domain cards, tables, settings, add domain dialog, upgrade prompt, subscription section, archived domains view, bulk actions toolbar, domain filters, health summary).
+- `components/dashboard/` Dashboard components (domain cards, tables, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, domain filters, health summary, verification badges, provider tooltips).
+- `components/settings/` Settings page components (subscription section, notification settings, linked accounts, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
-- `hooks/` shared stateful helpers (camelCase named exports): `useDashboardFilters`, `useDashboardSort`, `useDashboardPreferences`, `useTablePagination`, `useSelection`, `useDomainExport`, `useCustomerPortal`, `useUpgradeCheckout`, `useLogger`, etc.
+- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useCustomerPortal`, `useDashboardFilters`, `useDashboardPreferences`, `useDashboardSort`, `useDomainExport`, `useDomainHistory`, `useDomainMutations`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useLogger`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useRouter`, `useSelection`, `useSubscription`, `useTablePagination`, `useTheme`, `useTrackedDomains`, `useTruncation`, `useUpgradeCheckout`.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
-- `lib/constants/` modular constants organized by domain (app, decay, domain-filters, domain-validation, notifications, pricing-providers, sections, tier-limits, headers, ttl).
+- `lib/constants/` modular constants organized by domain (app, auth-errors, decay, domain-filters, domain-validation, email, gdpr, headers, notifications, oauth-providers, pricing-providers, sections, tier-limits, ttl, verification).
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, tracked-domains, domain-snapshots, user-notification-preferences, user-subscription, users).
+- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
 - `lib/logger/` unified structured logging system with console-based JSON logging for both server and client.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
+- `lib/providers/` provider detection system (catalog.ts for Edge Config schema, detection.ts for pattern matching, parser.ts for catalog parsing).
+- `lib/icons/` icon pipeline for favicon extraction (pipeline.ts for multi-source extraction, sources.ts for source definitions).
 - `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
-- `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `tracking.ts`).
-- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, registration, SEO, screenshot, favicon, verification).
+- `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
+- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, icons, IP, pricing, registration, screenshot, SEO, verification).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
 
@@ -37,13 +40,12 @@
 - `pnpm typecheck` — run `tsc --noEmit` for stricter diagnostics.
 - `pnpm test` — run Vitest in watch mode.
 - `pnpm test:run` — run Vitest once.
-- `pnpm test:ui` — open Vitest UI.
 - `pnpm test:coverage` — run tests with coverage report.
 - `pnpm db:generate` — generate Drizzle migrations from schema.
 - `pnpm db:push` — push the current schema to the database.
 - `pnpm db:migrate` — apply migrations to the database.
 - `pnpm db:studio` — open Drizzle Studio.
-- Requires Node.js >= 22 (see `package.json` engines).
+- Requires Node.js >= 24 (see `package.json` engines).
 - Local development includes ngrok tunnel for webhook testing; public URL displayed in terminal output.
 
 ## Coding Style & Naming Conventions
@@ -76,7 +78,7 @@
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
 - Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
-- Commands: `pnpm test`, `pnpm test:run`, `pnpm test:ui`, `pnpm test:coverage`.
+- Commands: `pnpm test`, `pnpm test:run`, `pnpm test:coverage`.
 
 ## Commit & Pull Request Guidelines
 - Commits: single-focus, imperative, sentence case (e.g., "Add RDAP caching layer").
@@ -170,13 +172,15 @@ Key procedures:
 - `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
 
 ### Inngest Background Jobs
-- `check-domain-expiry`: Daily at 9:00 AM UTC; sends domain expiration notifications.
-- `check-certificate-expiry`: Daily at 9:15 AM UTC; sends certificate expiration notifications.
-- `check-subscription-expiry`: Daily at 9:30 AM UTC; sends Pro subscription expiry reminders at 7, 3, and 1 days before end.
-- `monitor-tracked-domains`: Every 4 hours; checks for registration, provider, and certificate changes.
-- `reverify-domains`: Twice daily at 4:00 AM and 4:00 PM UTC; auto-verifies pending and re-verifies existing domains.
+- `check-domain-expiry`: Daily at 9:00 AM UTC; sends domain expiration notifications. Uses fan-out pattern (scheduler + worker).
+- `check-certificate-expiry`: Daily at 9:15 AM UTC; sends certificate expiration notifications. Uses fan-out pattern (scheduler + worker).
+- `check-subscription-expiry`: Daily at 9:30 AM UTC; sends Pro subscription expiry reminders at 7, 3, and 1 days before end. Uses fan-out pattern (scheduler + worker).
+- `monitor-tracked-domains`: Every 4 hours; checks for registration, provider, and certificate changes. Uses fan-out pattern (scheduler + worker).
+- `reverify-domains`: Twice daily at 4:00 AM and 4:00 PM UTC; auto-verifies pending and re-verifies existing domains. Uses fan-out pattern (scheduler + worker).
 - `cleanup-stale-domains`: Weekly on Sundays at 3:00 AM UTC; deletes unverified domains older than 30 days.
 - `auto-verify-pending-domain`: Event-driven; auto-verifies newly added domains with smart retry schedule (1m, 3m, 10m, 30m, 1hr).
+- `initialize-snapshot`: Event-driven; creates baseline snapshot for newly verified domains (establishes state for change detection).
+- `section-revalidate`: Event-driven; background revalidation for individual domain+section combinations with rate limiting and concurrency control.
 
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
@@ -187,7 +191,9 @@ Key procedures:
   - `provider-change.tsx` - Notifications for DNS/Hosting/Email provider changes
   - `registration-change.tsx` - Notifications for registrar/nameserver/status changes
   - `verification-failing.tsx` - Domain verification started failing (7-day grace period begins)
+  - `verification-instructions.tsx` - Instructions for verifying domain ownership
   - `verification-revoked.tsx` - Domain verification revoked (grace period expired)
+  - `delete-account-verify.tsx` - Account deletion verification email
   - `pro-upgrade-success.tsx` - Welcome email when Pro subscription becomes active
   - `pro-welcome.tsx` - Tips email sent after Pro upgrade
   - `subscription-canceling.tsx` - Confirmation when subscription is canceled (still active until period end)
