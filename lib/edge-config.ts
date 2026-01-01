@@ -169,3 +169,31 @@ export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
 
   return result.data;
 }
+
+/**
+ * Fetches the screenshot blocklist source URLs from Vercel Edge Config.
+ *
+ * Returns an empty array if Edge Config is not configured or the key doesn't exist,
+ * which disables blocklist syncing (all domains allowed).
+ *
+ * Edge Config key: `screenshot_blocklist_sources`
+ *
+ * Expected schema:
+ * ```json
+ * {
+ *   "screenshot_blocklist_sources": [
+ *     "https://nsfw.oisd.nl/domainswild"
+ *   ]
+ * }
+ * ```
+ *
+ * @returns Array of blocklist source URLs (empty array if unavailable)
+ */
+export async function getBlocklistSources(): Promise<string[]> {
+  if (!process.env.EDGE_CONFIG) {
+    return [];
+  }
+
+  const sources = await get<string[]>("screenshot_blocklist_sources");
+  return sources ?? [];
+}

@@ -3,6 +3,7 @@ import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import {
   BlobUrlResponseSchema,
+  BlobUrlWithBlockedFlagResponseSchema,
   CertificatesResponseSchema,
   DnsRecordsResponseSchema,
   HeadersResponseSchema,
@@ -68,6 +69,6 @@ export const domainRouter = createTRPCRouter({
     .query(({ input }) => getFavicon(input.domain)),
   getScreenshot: publicProcedure
     .input(DomainInputSchema)
-    .output(BlobUrlResponseSchema)
+    .output(BlobUrlWithBlockedFlagResponseSchema)
     .query(({ input }) => getScreenshot(input.domain)),
 });

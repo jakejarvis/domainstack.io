@@ -17,12 +17,14 @@ import {
   verifyPendingDomainCronWorker,
 } from "@/lib/inngest/functions/reverify-domains/worker";
 import { sectionRevalidate } from "@/lib/inngest/functions/section-revalidate";
+import { syncScreenshotBlocklist } from "@/lib/inngest/functions/sync-screenshot-blocklist";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     sectionRevalidate,
     cleanupStaleDomains,
+    syncScreenshotBlocklist,
     autoVerifyPendingDomain,
     initializeSnapshot,
     // Monitoring System (Fan-out)
