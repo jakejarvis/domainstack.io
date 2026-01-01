@@ -124,7 +124,7 @@ export function LinkedAccountsSection({
 
       return { previousAccounts };
     },
-    onError: (_err, _providerId, context) => {
+    onError: (err, providerId, context) => {
       // Rollback on error
       if (context?.previousAccounts) {
         queryClient.setQueryData(
@@ -132,6 +132,10 @@ export function LinkedAccountsSection({
           context.previousAccounts,
         );
       }
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { provider: providerId, action: "unlink_account" },
+      );
       toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, providerId) => {

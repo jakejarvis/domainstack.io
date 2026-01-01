@@ -94,7 +94,7 @@ Once completed, return to Domainstack to verify ownership.
 function downloadInstructionsFile(
   domain: string,
   instructions: VerificationInstructions,
-): { success: true } | { success: false; error: unknown } {
+): { success: boolean } {
   try {
     const content = formatInstructionsForSharing(domain, instructions);
     const filename = `${domain}-verification-instructions.txt`;
@@ -115,8 +115,8 @@ function downloadInstructionsFile(
     }, 100);
 
     return { success: true };
-  } catch (error) {
-    return { success: false, error };
+  } catch {
+    return { success: false };
   }
 }
 

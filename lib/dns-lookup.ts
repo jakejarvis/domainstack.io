@@ -38,11 +38,7 @@ export async function dnsLookupViaHttps(
       }
     } catch (err) {
       logger.debug(
-        {
-          hostname,
-          provider: provider.key,
-          error: err instanceof Error ? err.message : String(err),
-        },
+        { err, hostname, provider: provider.key },
         "dns lookup failed for provider",
       );
       lastError = err;
@@ -51,11 +47,7 @@ export async function dnsLookupViaHttps(
 
   // All providers failed
   logger.debug(
-    {
-      hostname,
-      lastError:
-        lastError instanceof Error ? lastError.message : String(lastError),
-    },
+    { err: lastError, hostname },
     "all DoH providers failed for hostname",
   );
 

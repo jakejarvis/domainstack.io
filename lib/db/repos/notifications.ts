@@ -58,7 +58,10 @@ export async function createNotification(params: CreateNotificationParams) {
 
     return notification;
   } catch (err) {
-    logger.error({ err, userId, type }, "failed to create notification record");
+    logger.error(
+      { err, userId, type, ...(trackedDomainId && { trackedDomainId }) },
+      "failed to create notification record",
+    );
     return null;
   }
 }
