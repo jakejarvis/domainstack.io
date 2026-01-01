@@ -7,6 +7,7 @@ import {
   clearDomainExpiryNotifications,
   createNotification,
   hasRecentNotification,
+  type NotificationType,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getTrackedDomainForNotification } from "@/lib/db/repos/tracked-domains";
@@ -16,8 +17,7 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import {
   generateIdempotencyKey,
   getDomainExpiryNotificationType,
-  type NotificationType,
-} from "@/lib/notifications";
+} from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
 
 export const checkDomainExpiryWorker = inngest.createFunction(

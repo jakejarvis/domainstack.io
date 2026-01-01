@@ -4,7 +4,7 @@ import {
   generateIdempotencyKey,
   getCertificateExpiryNotificationType,
   getDomainExpiryNotificationType,
-} from "./notifications";
+} from "./notification-utils";
 
 describe("generateIdempotencyKey", () => {
   it("generates key in expected format", () => {

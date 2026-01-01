@@ -8,6 +8,7 @@ import {
   clearCertificateExpiryNotifications,
   createNotification,
   hasRecentNotification,
+  type NotificationType,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
@@ -16,8 +17,7 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import {
   generateIdempotencyKey,
   getCertificateExpiryNotificationType,
-  type NotificationType,
-} from "@/lib/notifications";
+} from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
 
 export const checkCertificateExpiryWorker = inngest.createFunction(

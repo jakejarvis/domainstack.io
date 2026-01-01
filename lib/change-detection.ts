@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -129,6 +130,13 @@ export function detectCertificateChanges(
     previousCaProviderId: snapshot.caProviderId,
     newCaProviderId: current.caProviderId,
   };
+}
+
+export function generateChangeHash(change: unknown): string {
+  return createHash("sha256")
+    .update(JSON.stringify(change))
+    .digest("hex")
+    .slice(0, 16);
 }
 
 /**

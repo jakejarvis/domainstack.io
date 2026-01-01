@@ -21,7 +21,7 @@ import {
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { generateIdempotencyKey } from "@/lib/notifications";
+import { generateIdempotencyKey } from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
 import {
   tryAllVerificationMethods,

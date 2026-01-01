@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import type { Logger } from "inngest";
 import { CertificateChangeEmail } from "@/emails/certificate-change";
 import { ProviderChangeEmail } from "@/emails/provider-change";
@@ -9,16 +8,17 @@ import {
   detectCertificateChanges,
   detectProviderChanges,
   detectRegistrationChanges,
+  generateChangeHash,
 } from "@/lib/change-detection";
 import { getProviderNames } from "@/lib/db/repos/providers";
 import { getSnapshot, updateSnapshot } from "@/lib/db/repos/snapshots";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { generateIdempotencyKey } from "@/lib/notification-utils";
 import {
   determineNotificationChannels,
   sendNotification,
-} from "@/lib/inngest/functions/notifications-helper";
-import { generateIdempotencyKey } from "@/lib/notifications";
+} from "@/lib/notifications";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -278,15 +278,6 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
     }
   },
 );
-
-// --- Notification Helpers (copied from original) ---
-
-function generateChangeHash(change: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(change))
-    .digest("hex")
-    .slice(0, 16);
-}
 
 async function handleRegistrationChange(
   trackedDomainId: string,
