@@ -1,4 +1,4 @@
-import { USER_AGENT } from "@/lib/constants/app";
+import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import type { PricingResponse } from "@/lib/schemas";
 
@@ -11,7 +11,7 @@ const logger = createLogger({ source: "pricing" });
  * - Uses Next.js Data Cache with `fetch` configuration
  * - Automatic stale-while-revalidate (SWR): serves cached data instantly,
  *   revalidates in background when cache expires
- * - Cache TTLs: 7 days (Porkbun and Cloudflare)
+ * - Cache TTLs: 7 days (Porkbun, Cloudflare, Dynadot)
  * - No manual cron jobs needed - Next.js handles revalidation automatically
  * - Gracefully handles slow/failed API responses by returning null
  *
@@ -22,7 +22,6 @@ const logger = createLogger({ source: "pricing" });
  * - To add a new provider, call `createPricingProvider()` with metadata and implementation
  * - Configure timeout, cache TTL, and enabled state via the config parameter
  * - Add the provider to the `providers` array
- * - Use `createFetchWithTimeout()` helper for automatic timeout/error handling
  */
 
 /**
@@ -52,64 +51,15 @@ export interface PricingProviderConfig {
 export interface PricingProvider {
   /** Provider name (must match key in PRICING_PROVIDERS constant) */
   name: string;
-  /** Provider configuration */
-  config: Required<PricingProviderConfig>;
+  /** Whether this provider is enabled */
+  enabled: boolean;
   /** Fetch pricing data from the registrar API */
   fetchPricing: () => Promise<RegistrarPricingResponse>;
 }
 
 // ============================================================================
-// Provider Helper Functions
+// Provider Factory
 // ============================================================================
-
-/**
- * Create a fetch function with automatic timeout, error handling, and Next.js cache configuration.
- * Use this helper when implementing provider `fetchPricing` methods.
- */
-export function createFetchWithTimeout(
-  providerName: string,
-  config: Required<PricingProviderConfig>,
-) {
-  return async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
-
-    try {
-      const res = await fetch(url, {
-        ...options,
-        headers: {
-          "User-Agent": USER_AGENT,
-          ...options.headers,
-        },
-        signal: controller.signal,
-        next: {
-          revalidate: config.revalidate,
-          tags: ["pricing", `pricing:${providerName}`],
-        },
-      });
-
-      if (!res.ok) {
-        logger.error("upstream error", undefined, {
-          provider: providerName,
-          status: res.status,
-        });
-        throw new Error(`${providerName} API returned ${res.status}`);
-      }
-
-      return res;
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        logger.error("upstream timeout", err, {
-          provider: providerName,
-        });
-        throw new Error(`${providerName} API request timed out`);
-      }
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
-}
 
 /**
  * Factory function to create a pricing provider with default configuration.
@@ -118,44 +68,44 @@ export function createPricingProvider(
   name: string,
   implementation: {
     fetchPricing: (
-      fetchWithTimeout: ReturnType<typeof createFetchWithTimeout>,
+      fetchFn: (url: string, options?: RequestInit) => Promise<Response>,
     ) => Promise<RegistrarPricingResponse>;
   },
   config: PricingProviderConfig = {},
 ): PricingProvider {
-  const resolvedConfig: Required<PricingProviderConfig> = {
-    timeout: config.timeout ?? 60_000,
-    revalidate: config.revalidate ?? 604_800, // 7 days
-    enabled: config.enabled ?? true,
-  };
+  const timeout = config.timeout ?? 60_000;
+  const revalidate = config.revalidate ?? 604_800; // 7 days
+  const enabled = config.enabled ?? true;
 
-  const fetchWithTimeout = createFetchWithTimeout(name, resolvedConfig);
+  const providerFetch = async (
+    url: string,
+    options: RequestInit = {},
+  ): Promise<Response> => {
+    const res = await fetchWithTimeoutAndRetry(
+      url,
+      {
+        ...options,
+        next: { revalidate, tags: ["pricing", `pricing:${name}`] },
+      },
+      { timeoutMs: timeout },
+    );
+
+    if (!res.ok) {
+      logger.error("upstream error", undefined, {
+        provider: name,
+        status: res.status,
+      });
+      throw new Error(`${name} API returned ${res.status}`);
+    }
+
+    return res;
+  };
 
   return {
     name,
-    config: resolvedConfig,
-    fetchPricing: () => implementation.fetchPricing(fetchWithTimeout),
+    enabled,
+    fetchPricing: () => implementation.fetchPricing(providerFetch),
   };
-}
-
-/**
- * Fetch pricing data from a provider with Next.js Data Cache.
- */
-async function fetchProviderPricing(
-  provider: PricingProvider,
-): Promise<RegistrarPricingResponse | null> {
-  // Skip disabled providers
-  if (!provider.config.enabled) {
-    return null;
-  }
-
-  try {
-    const payload = await provider.fetchPricing();
-    return payload;
-  } catch (err) {
-    logger.error("fetch error", err, { provider: provider.name });
-    return null;
-  }
 }
 
 // ============================================================================
@@ -163,10 +113,10 @@ async function fetchProviderPricing(
 // ============================================================================
 
 const porkbunProvider = createPricingProvider("porkbun", {
-  async fetchPricing(fetchWithTimeout) {
+  async fetchPricing(fetchFn) {
     // Does not require authentication!
     // https://porkbun.com/api/json/v3/documentation#Domain%20Pricing
-    const res = await fetchWithTimeout(
+    const res = await fetchFn(
       "https://api.porkbun.com/api/json/v3/pricing/get",
       {
         method: "POST",
@@ -177,29 +127,22 @@ const porkbunProvider = createPricingProvider("porkbun", {
 
     const data = await res.json();
     // Porkbun returns: { status: "SUCCESS", pricing: { "com": { ... }, ... } }
-    // Extract just the pricing data
     return data.pricing as RegistrarPricingResponse;
   },
 });
 
 const cloudflareProvider = createPricingProvider("cloudflare", {
-  async fetchPricing(fetchWithTimeout) {
+  async fetchPricing(fetchFn) {
     // Third-party API that aggregates Cloudflare pricing
     // https://cfdomainpricing.com/
-    const res = await fetchWithTimeout(
-      "https://cfdomainpricing.com/prices.json",
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      },
-    );
+    const res = await fetchFn("https://cfdomainpricing.com/prices.json", {
+      headers: { Accept: "application/json" },
+    });
 
     const data = await res.json();
 
-    // Transform the response to match our normalized shape
-    // cfdomainpricing.com returns: { "com": { "registration": 10.44, "renewal": 10.44 }, ... }
+    // Transform: { "com": { "registration": 10.44, ... }, ... } → normalized shape
     const pricing: RegistrarPricingResponse = {};
-
     for (const [tld, prices] of Object.entries(data)) {
       if (
         typeof prices === "object" &&
@@ -213,73 +156,64 @@ const cloudflareProvider = createPricingProvider("cloudflare", {
         };
       }
     }
-
     return pricing;
   },
 });
 
-const dynadotProvider = createPricingProvider("dynadot", {
-  async fetchPricing(fetchWithTimeout) {
-    // Requires API key from environment
-    const apiKey = process.env.DYNADOT_API_KEY;
+const dynadotApiKey = process.env.DYNADOT_API_KEY;
 
-    if (!apiKey) {
-      throw new Error("Dynadot API key not configured");
-    }
+const dynadotProvider = createPricingProvider(
+  "dynadot",
+  {
+    async fetchPricing(fetchFn) {
+      // API key presence checked at provider creation time via `enabled` flag
+      const apiKey = dynadotApiKey as string;
 
-    // Build URL with required query parameters
-    // https://www.dynadot.com/domain/api-document#domain_get_tld_price
-    const url = new URL(
-      "https://api.dynadot.com/restful/v1/domains/get_tld_price",
-    );
-    url.searchParams.set("currency", "USD");
+      // https://www.dynadot.com/domain/api-document#domain_get_tld_price
+      const url = new URL(
+        "https://api.dynadot.com/restful/v1/domains/get_tld_price",
+      );
+      url.searchParams.set("currency", "USD");
 
-    const res = await fetchWithTimeout(url.toString(), {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: "application/json",
-      },
-    });
-
-    const data = await res.json();
-
-    // Check for API errors
-    if (data?.code !== 200) {
-      logger.error("dynadot api error", undefined, {
-        provider: "dynadot",
-        code: data?.code,
-        message: data?.message,
-        error: data?.error,
+      const res = await fetchFn(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Accept: "application/json",
+        },
       });
-      throw new Error(`Dynadot API error: ${data?.message ?? "Unknown error"}`);
-    }
 
-    // Dynadot returns: { code: 200, message: "success", data: { tldPriceList: [...] } }
-    const tldList = data?.data?.tldPriceList || [];
-    const pricing: RegistrarPricingResponse = {};
+      const data = await res.json();
 
-    for (const item of tldList) {
-      // Dynadot includes the leading dot (e.g., ".com"), so we need to remove it
-      const tld = item.tld?.toLowerCase().replace(/^\./, "");
-      // allYearsRegisterPrice is an array, get the first year price
-      const registrationPrice = item.allYearsRegisterPrice?.[0];
-
-      if (tld && registrationPrice !== undefined) {
-        pricing[tld] = {
-          registration: String(registrationPrice),
-        };
+      // Check for API errors (Dynadot returns 200 OK with error payloads)
+      if (data?.code !== 200) {
+        logger.error("dynadot api error", undefined, {
+          provider: "dynadot",
+          code: data?.code,
+          message: data?.message,
+          error: data?.error,
+        });
+        throw new Error(
+          `Dynadot API error: ${data?.message ?? "Unknown error"}`,
+        );
       }
-    }
 
-    return pricing;
+      // Dynadot returns: { code: 200, data: { tldPriceList: [...] } }
+      const pricing: RegistrarPricingResponse = {};
+      for (const item of data?.data?.tldPriceList || []) {
+        // Dynadot includes leading dot (e.g., ".com"), remove it
+        const tld = item.tld?.toLowerCase().replace(/^\./, "");
+        const registrationPrice = item.allYearsRegisterPrice?.[0];
+
+        if (tld && registrationPrice !== undefined) {
+          pricing[tld] = { registration: String(registrationPrice) };
+        }
+      }
+      return pricing;
+    },
   },
-});
+  { enabled: !!dynadotApiKey },
+);
 
-/**
- * List of providers to check.
- * All enabled providers are queried in parallel.
- */
 const providers: PricingProvider[] = [
   porkbunProvider,
   cloudflareProvider,
@@ -295,40 +229,26 @@ const providers: PricingProvider[] = [
  * Returns pricing from all providers that have data for this TLD.
  */
 export async function getPricing(tld: string): Promise<PricingResponse> {
-  // Normalize TLD (remove leading dot if present, lowercase)
   const normalizedTld = (tld ?? "").trim().toLowerCase().replace(/^\./, "");
-
   if (!normalizedTld) return { tld: null, providers: [] };
 
-  // Fetch pricing from all providers in parallel
-  const providerResults = await Promise.allSettled(
-    providers.map(async (provider) => {
-      const payload = await fetchProviderPricing(provider);
-      if (payload) {
-        const price = payload?.[normalizedTld]?.registration ?? null;
-        if (price) {
-          return { provider: provider.name, price };
+  const results = await Promise.all(
+    providers
+      .filter((p) => p.enabled)
+      .map(async (provider) => {
+        try {
+          const payload = await provider.fetchPricing();
+          const price = payload[normalizedTld]?.registration;
+          return price ? { provider: provider.name, price } : null;
+        } catch (err) {
+          logger.error("fetch error", err, { provider: provider.name });
+          return null;
         }
-      }
-      return null;
-    }),
+      }),
   );
 
-  // Filter out rejected promises and null results
-  const availableProviders = providerResults
-    .filter(
-      (
-        result,
-      ): result is PromiseFulfilledResult<{
-        provider: string;
-        price: string;
-      } | null> => result.status === "fulfilled",
-    )
-    .map((result) => result.value)
-    .filter(
-      (result): result is { provider: string; price: string } =>
-        result !== null,
-    );
-
-  return { tld: normalizedTld, providers: availableProviders };
+  return {
+    tld: normalizedTld,
+    providers: results.filter((r): r is NonNullable<typeof r> => r !== null),
+  };
 }

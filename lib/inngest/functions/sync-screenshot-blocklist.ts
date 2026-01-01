@@ -1,5 +1,6 @@
 import "server-only";
 
+import { USER_AGENT } from "@/lib/constants/app";
 import { syncBlockedDomains } from "@/lib/db/repos/blocked-domains";
 import { getBlocklistSources } from "@/lib/edge-config";
 import { inngest } from "@/lib/inngest/client";
@@ -47,7 +48,7 @@ export const syncScreenshotBlocklist = inngest.createFunction(
           try {
             const response = await fetch(sourceUrl, {
               headers: {
-                "User-Agent": "DomainStack/1.0 (blocklist-sync)",
+                "User-Agent": USER_AGENT,
               },
             });
 

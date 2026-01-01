@@ -148,7 +148,6 @@ export async function getSeo(
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en",
-        "User-Agent": USER_AGENT,
       },
     });
 
@@ -242,7 +241,6 @@ export async function getSeo(
           headers: {
             Accept:
               "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
-            "User-Agent": USER_AGENT,
           },
           maxBytes: MAX_REMOTE_IMAGE_BYTES,
           timeoutMs: 8000,

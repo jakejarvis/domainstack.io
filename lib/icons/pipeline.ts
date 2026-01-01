@@ -1,6 +1,5 @@
 import "server-only";
 
-import { USER_AGENT } from "@/lib/constants/app";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
@@ -64,7 +63,6 @@ async function processIconImpl(
     try {
       const headers = {
         Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        "User-Agent": USER_AGENT,
         ...source.headers,
       };
 
