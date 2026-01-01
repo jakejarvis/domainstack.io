@@ -43,6 +43,7 @@ export function NotificationsPopover() {
     data,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
     isLoading,
     isError: isNotificationsError,
@@ -198,6 +199,7 @@ export function NotificationsPopover() {
           <NotificationList
             notifications={notifications}
             isLoading={isLoading}
+            isFetching={isFetching}
             isError={isNotificationsError}
             view={view}
             hasNextPage={hasNextPage}

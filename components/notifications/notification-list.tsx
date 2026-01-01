@@ -7,6 +7,7 @@ import { NotificationEmptyState } from "./notification-empty-state";
 interface NotificationListProps {
   notifications: NotificationData[];
   isLoading: boolean;
+  isFetching: boolean;
   isError: boolean;
   view: "inbox" | "archive";
   hasNextPage?: boolean;
@@ -19,6 +20,7 @@ interface NotificationListProps {
 export function NotificationList({
   notifications,
   isLoading,
+  isFetching,
   isError,
   view,
   hasNextPage,
@@ -27,6 +29,9 @@ export function NotificationList({
   scrollAreaRef,
   onNotificationClick,
 }: NotificationListProps) {
+  // Show loading state on initial load OR when fetching with no data (e.g., tab switch)
+  const showLoading = isLoading || (isFetching && notifications.length === 0);
+
   return (
     <ScrollArea
       viewportRef={scrollAreaRef}
@@ -34,7 +39,7 @@ export function NotificationList({
       gradient
       gradientContext="card"
     >
-      {isLoading ? (
+      {showLoading ? (
         <div className="flex items-center justify-center p-12">
           <Spinner className="size-6 text-muted-foreground" />
         </div>
