@@ -37,7 +37,7 @@ const baseOptions = {
  * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-export const logger = isDev
+export const logger: pino.Logger = isDev
   ? // Development: pretty printing to stdout (sync to avoid worker issues)
     pino({
       ...baseOptions,
@@ -69,5 +69,5 @@ export const logger = isDev
  * // Output: {"level":"debug","source":"dns","domain":"example.com","msg":"Resolving domain"}
  * ```
  */
-export const createLogger = (bindings: Record<string, unknown>) =>
+export const createLogger = (bindings: Record<string, unknown>): pino.Logger =>
   logger.child(bindings);
