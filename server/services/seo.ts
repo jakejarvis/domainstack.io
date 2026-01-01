@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { after } from "next/server";
 import { USER_AGENT } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
+import { isDomainBlocked } from "@/lib/db/repos/blocked-domains";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
@@ -77,12 +78,16 @@ export async function getSeo(
         expiresAt: Date | null;
       }>);
   if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > nowMs) {
+    // Check blocklist for cached OG images (consistent with screenshot service)
+    const blocked =
+      existing[0].previewImageUploadedUrl && (await isDomainBlocked(domain));
+
     const preview = existing[0].canonicalUrl
       ? {
           title: existing[0].previewTitle ?? null,
           description: existing[0].previewDescription ?? null,
           image: existing[0].previewImageUrl ?? null,
-          imageUploaded: existing[0].previewImageUploadedUrl ?? null,
+          imageUploaded: blocked ? null : existing[0].previewImageUploadedUrl,
           canonicalUrl: existing[0].canonicalUrl,
         }
       : null;
@@ -147,7 +152,6 @@ export async function getSeo(
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en",
-        "User-Agent": USER_AGENT,
       },
     });
 
@@ -229,44 +233,48 @@ export async function getSeo(
   let uploadedImageUrl: string | null = null;
 
   if (preview?.image) {
-    try {
-      // Always proxy OG images through Blob storage so we control caching/privacy.
-      const asset = await fetchRemoteAsset({
-        url: preview.image,
-        currentUrl: finalUrl,
-        headers: {
-          Accept:
-            "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
-          "User-Agent": USER_AGENT,
-        },
-        maxBytes: MAX_REMOTE_IMAGE_BYTES,
-        timeoutMs: 8000,
-        maxRedirects: 3,
-      });
-      // Skip processing if the image fetch returned non-OK status
-      if (!asset.ok) {
-        throw new Error(`Image fetch returned HTTP ${asset.status}`);
-      }
-      const optimized = await optimizeImageCover(
-        asset.buffer,
-        SOCIAL_WIDTH,
-        SOCIAL_HEIGHT,
-      );
-      if (!optimized || optimized.length === 0) {
-        throw new Error("Failed to optimize image");
-      }
-      const { url } = await storeImage({
-        kind: "opengraph",
-        domain,
-        buffer: optimized,
-        width: SOCIAL_WIDTH,
-        height: SOCIAL_HEIGHT,
-      });
-      uploadedImageUrl = url;
-      preview.imageUploaded = url;
-    } catch (err) {
-      logger.warn("OG image processing failed", err, { domain });
+    // Check blocklist before fetching OG image
+    if (await isDomainBlocked(domain)) {
       preview.imageUploaded = null;
+    } else {
+      try {
+        // Always proxy OG images through Blob storage so we control caching/privacy.
+        const asset = await fetchRemoteAsset({
+          url: preview.image,
+          currentUrl: finalUrl,
+          headers: {
+            Accept:
+              "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.9,*/*;q=0.8",
+          },
+          maxBytes: MAX_REMOTE_IMAGE_BYTES,
+          timeoutMs: 8000,
+          maxRedirects: 3,
+        });
+        // Skip processing if the image fetch returned non-OK status
+        if (!asset.ok) {
+          throw new Error(`Image fetch returned HTTP ${asset.status}`);
+        }
+        const optimized = await optimizeImageCover(
+          asset.buffer,
+          SOCIAL_WIDTH,
+          SOCIAL_HEIGHT,
+        );
+        if (!optimized || optimized.length === 0) {
+          throw new Error("Failed to optimize image");
+        }
+        const { url } = await storeImage({
+          kind: "opengraph",
+          domain,
+          buffer: optimized,
+          width: SOCIAL_WIDTH,
+          height: SOCIAL_HEIGHT,
+        });
+        uploadedImageUrl = url;
+        preview.imageUploaded = url;
+      } catch (err) {
+        logger.warn("OG image processing failed", err, { domain });
+        preview.imageUploaded = null;
+      }
     }
   }
 

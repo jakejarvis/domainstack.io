@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CircleX } from "lucide-react";
+import { BrickWallShield, CircleX } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -39,6 +39,7 @@ export function Screenshot({
   );
 
   const url = data?.url ?? null;
+  const blocked = data?.blocked ?? false;
   const loading = isLoading || isFetching;
 
   return (
@@ -67,18 +68,23 @@ export function Screenshot({
           className={`h-auto w-full ${aspectClassName} flex items-center justify-center bg-muted/50`}
         >
           <div
-            className="flex items-center gap-2 text-muted-foreground text-xs"
+            className="flex items-center gap-2 text-muted-foreground text-xs [&_svg]:size-4"
             aria-live="polite"
           >
             {loading ? (
               <>
                 <Spinner />
-                <span>Taking screenshot...</span>
+                Taking screenshot...
+              </>
+            ) : blocked ? (
+              <>
+                <BrickWallShield />
+                Screenshot unavailable for this domain.
               </>
             ) : (
               <>
-                <CircleX className="h-4 w-4" />
-                <span>Unable to take a screenshot.</span>
+                <CircleX />
+                Unable to take a screenshot.
               </>
             )}
           </div>

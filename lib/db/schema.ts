@@ -648,3 +648,9 @@ export const domainSnapshots = pgTable("domain_snapshots", {
     .defaultNow()
     .notNull(),
 });
+
+// Blocked domains for screenshot/OG image capture (synced from external blocklists)
+export const blockedDomains = pgTable("blocked_domains", {
+  domain: text("domain").primaryKey(),
+  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
+});

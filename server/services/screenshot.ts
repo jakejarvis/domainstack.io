@@ -1,5 +1,6 @@
 import type { Browser } from "puppeteer-core";
 import { USER_AGENT } from "@/lib/constants/app";
+import { isDomainBlocked } from "@/lib/db/repos/blocked-domains";
 import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
 import {
   getScreenshotByDomainId,
@@ -8,7 +9,7 @@ import {
 import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import { getBrowser } from "@/lib/puppeteer";
-import type { BlobUrlResponse } from "@/lib/schemas";
+import type { BlobUrlWithBlockedFlagResponse } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
 import { ttlForScreenshot } from "@/lib/ttl";
 
@@ -54,8 +55,14 @@ export async function getScreenshot(
     backoffBaseMs?: number;
     backoffMaxMs?: number;
   },
-): Promise<BlobUrlResponse> {
+): Promise<BlobUrlWithBlockedFlagResponse> {
   // Input domain is already normalized to registrable domain by router schema
+
+  // Check blocklist before any expensive operations
+  if (await isDomainBlocked(domain)) {
+    logger.info("screenshot blocked", { domain });
+    return { url: null, blocked: true };
+  }
 
   // Check for in-flight request
   if (screenshotPromises.has(domain)) {
