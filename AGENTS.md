@@ -18,7 +18,7 @@
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
+- `lib/db/repos/` repository layer for each table (blocked-domains, domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
 - `lib/logger/` unified structured logging system with console-based JSON logging for both server and client.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
@@ -91,6 +91,7 @@
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
   - `tier_limits` (object): `{ free: 5, pro: 50 }` for domain tracking limits per tier
   - `provider_catalog` (object): Provider detection rules for CA, DNS, email, hosting, and registrar providers. Structure: `{ ca: [...], dns: [...], email: [...], hosting: [...], registrar: [...] }`. Providers are lazily inserted into the database on first detection.
+  - `screenshot_blocklist_sources` (array): URLs of external blocklists (e.g., OISD NSFW) for screenshot/OG image blocking; fails gracefully to empty array (allows all domains)
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
@@ -181,6 +182,7 @@ Key procedures:
 - `auto-verify-pending-domain`: Event-driven; auto-verifies newly added domains with smart retry schedule (1m, 3m, 10m, 30m, 1hr).
 - `initialize-snapshot`: Event-driven; creates baseline snapshot for newly verified domains (establishes state for change detection).
 - `section-revalidate`: Event-driven; background revalidation for individual domain+section combinations with rate limiting and concurrency control.
+- `sync-screenshot-blocklist`: Weekly on Sundays at 2:00 AM UTC; syncs external blocklists (e.g., OISD NSFW) to `blocked_domains` table for screenshot/OG image blocking.
 
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
@@ -202,6 +204,24 @@ Key procedures:
 - **Idempotency:** Use `generateIdempotencyKey(trackedDomainId, notificationType)` and pass to `resend.emails.send()`.
 - **Pattern:** Create notification record → Send email → Update with `resendId` for troubleshooting.
 - **Environment variables:** `RESEND_API_KEY`, `RESEND_FROM_EMAIL`.
+
+## Screenshot Blocklist
+Screenshots and OG image fetching are blocked for domains on external NSFW/malware blocklists.
+
+### Architecture
+- **Database table:** `blocked_domains` stores blocked domain names with primary key lookup for O(1) checks.
+- **Repository:** `lib/db/repos/blocked-domains.ts` provides `isDomainBlocked(domain)` for blocking checks and `syncBlockedDomains(domains)` for bulk sync.
+- **Edge Config:** `screenshot_blocklist_sources` array of blocklist URLs (e.g., OISD NSFW list).
+- **Inngest job:** `sync-screenshot-blocklist` runs weekly to fetch and sync blocklists.
+
+### Integration Points
+- **Screenshot service:** `server/services/screenshot.ts` checks blocklist before capturing screenshots.
+- **SEO service:** `server/services/seo.ts` checks blocklist before fetching OG images, returns null for blocked domains.
+
+### Sync Behavior
+- Upserts new domains (preserves `addedAt` for existing entries).
+- Removes stale domains no longer in source lists.
+- Skips sync if upstream returns empty (safety against fetch failures).
 
 ## Subscriptions (Polar)
 Polar handles Pro tier subscriptions with automatic tier management via webhooks.
