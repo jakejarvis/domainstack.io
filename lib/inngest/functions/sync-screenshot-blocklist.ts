@@ -1,8 +1,8 @@
 import "server-only";
 
-import { USER_AGENT } from "@/lib/constants/app";
 import { syncBlockedDomains } from "@/lib/db/repos/blocked-domains";
 import { getBlocklistSources } from "@/lib/edge-config";
+import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { inngest } from "@/lib/inngest/client";
 
 /**
@@ -46,11 +46,11 @@ export const syncScreenshotBlocklist = inngest.createFunction(
         `fetch-blocklist-${sourceUrl}`,
         async () => {
           try {
-            const response = await fetch(sourceUrl, {
-              headers: {
-                "User-Agent": USER_AGENT,
-              },
-            });
+            const response = await fetchWithTimeoutAndRetry(
+              sourceUrl,
+              {},
+              { timeoutMs: 30_000, retries: 2 },
+            );
 
             if (!response.ok) {
               inngestLogger.warn(
