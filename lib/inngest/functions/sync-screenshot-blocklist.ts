@@ -76,7 +76,13 @@ export const syncScreenshotBlocklist = inngest.createFunction(
                 : trimmed;
 
               // Basic domain validation
-              if (domain?.includes(".") && !domain.includes(" ")) {
+              if (
+                domain?.includes(".") &&
+                !domain.includes(" ") &&
+                domain.length <= 253 &&
+                !domain.startsWith(".") &&
+                !domain.endsWith(".")
+              ) {
                 parsed.push(domain.toLowerCase());
               }
             }
