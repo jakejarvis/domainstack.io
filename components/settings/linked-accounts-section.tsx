@@ -180,23 +180,31 @@ export function LinkedAccountsSection({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 px-0 pt-1">
-          {OAUTH_PROVIDERS.map((provider) => {
-            const isLinked = linkedProviderIds.has(provider.id);
-            const isLinking = linkingProvider === provider.id;
+          {[...OAUTH_PROVIDERS]
+            .sort((a, b) => {
+              const aLinked = linkedProviderIds.has(a.id);
+              const bLinked = linkedProviderIds.has(b.id);
+              // Linked providers first, then alphabetically by name
+              if (aLinked !== bLinked) return bLinked ? 1 : -1;
+              return a.name.localeCompare(b.name);
+            })
+            .map((provider) => {
+              const isLinked = linkedProviderIds.has(provider.id);
+              const isLinking = linkingProvider === provider.id;
 
-            return (
-              <LinkedAccountRow
-                key={provider.id}
-                provider={provider}
-                isLinked={isLinked}
-                canUnlink={canUnlink}
-                isLinking={isLinking}
-                unlinkMutation={unlinkMutation}
-                onLink={() => handleLink(provider)}
-                onUnlink={() => setUnlinkingProvider(provider.id)}
-              />
-            );
-          })}
+              return (
+                <LinkedAccountRow
+                  key={provider.id}
+                  provider={provider}
+                  isLinked={isLinked}
+                  canUnlink={canUnlink}
+                  isLinking={isLinking}
+                  unlinkMutation={unlinkMutation}
+                  onLink={() => handleLink(provider)}
+                  onUnlink={() => setUnlinkingProvider(provider.id)}
+                />
+              );
+            })}
         </CardContent>
       </div>
 

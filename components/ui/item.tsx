@@ -41,7 +41,8 @@ const itemVariants = cva({
   variants: {
     variant: {
       default: "bg-transparent",
-      outline: "border-border",
+      outline:
+        "border-black/10 bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.02]",
       muted: "bg-muted/50",
     },
     size: {
@@ -81,7 +82,7 @@ const itemMediaVariants = cva({
   variants: {
     variant: {
       default: "bg-transparent",
-      icon: "size-8 rounded-sm border bg-muted [&_svg:not([class*='size-'])]:size-4",
+      icon: "size-8 rounded-full bg-muted [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-foreground/80",
       image:
         "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
     },
@@ -140,7 +141,7 @@ function ItemTitle({
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "flex w-fit items-center gap-2 font-medium text-sm leading-snug",
+        "flex w-fit items-center gap-2 font-medium text-sm",
         className,
       ),
     }),

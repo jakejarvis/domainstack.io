@@ -23,8 +23,9 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 transition-opacity will-change-[opacity]",
-        "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        "fixed inset-0 z-50 bg-black/50",
+        "data-open:fade-in-0 data-open:animate-in",
+        "data-closed:fade-out-0 data-closed:animate-out",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
         className,
@@ -47,18 +48,19 @@ function SheetContent({
       <SheetOverlay />
       <SheetPrimitive.Popup
         data-slot="sheet-content"
+        data-side={side}
         className={cn(
           "fixed z-50 flex flex-col gap-4 bg-background shadow-lg outline-hidden",
-          "transition-[transform,opacity] duration-300 ease-in-out will-change-[transform,opacity]",
-          "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+          "data-open:fade-in-0 data-open:animate-in data-open:duration-300",
+          "data-closed:fade-out-0 data-closed:animate-out data-closed:duration-300",
           side === "right" &&
-            "inset-y-0 right-0 h-full w-3/4 border-l data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full sm:max-w-sm",
+            "data-open:slide-in-from-right data-closed:slide-out-to-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
           side === "left" &&
-            "inset-y-0 left-0 h-full w-3/4 border-r data-[ending-style]:-translate-x-full data-[starting-style]:-translate-x-full sm:max-w-sm",
+            "data-open:slide-in-from-left data-closed:slide-out-to-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
           side === "top" &&
-            "inset-x-0 top-0 h-auto border-b data-[ending-style]:-translate-y-full data-[starting-style]:-translate-y-full",
+            "data-open:slide-in-from-top data-closed:slide-out-to-top inset-x-0 top-0 h-auto border-b",
           side === "bottom" &&
-            "inset-x-0 bottom-0 h-auto border-t data-[ending-style]:translate-y-full data-[starting-style]:translate-y-full",
+            "data-open:slide-in-from-bottom data-closed:slide-out-to-bottom inset-x-0 bottom-0 h-auto border-t",
           className,
         )}
         {...props}

@@ -32,8 +32,9 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 transition-opacity will-change-[opacity]",
-        "data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        "fixed inset-0 z-50 bg-black/50",
+        "data-open:fade-in-0 data-open:animate-in",
+        "data-closed:fade-out-0 data-closed:animate-out",
         // iOS 26+: ensure backdrops cover the visual viewport
         "supports-[-webkit-touch-callout:none]:absolute",
         className,
@@ -54,9 +55,8 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-6 text-foreground shadow-lg outline-hidden sm:max-w-lg",
-          "transition-[transform,opacity] duration-200 will-change-[transform,opacity]",
-          "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-          "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+          "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
+          "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
           // Nested dialog styling: Dim the parent popup
           "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
           // Prevent interaction with parent dialog when nested dialog is open

@@ -74,7 +74,7 @@
     "nuqs": "^2.8.6",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
-    "posthog-js": "^1.311.0",
+    "posthog-js": "^1.312.0",
     "posthog-node": "^5.18.1",
     "prettier": "^3.7.4",
     "puppeteer-core": "24.32.0",
@@ -91,9 +91,9 @@
     "tailwind-merge": "^3.4.0",
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
-    "vaul": "^1.1.2",
+    "vaul-base": "^1.0.0",
     "ws": "^8.18.3",
-    "zod": "^4.3.2"
+    "zod": "^4.3.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.10",

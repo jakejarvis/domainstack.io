@@ -1,6 +1,13 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
@@ -38,47 +45,49 @@ export function LinkedAccountRow({
   }
 
   return (
-    <div className="flex items-center justify-between rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 dark:border-white/10 dark:bg-white/[0.02]">
-      <div className="flex items-center gap-2.5">
-        <Icon className="size-4" />
-        <span className="font-medium text-sm leading-none">
-          {provider.name}
-        </span>
-      </div>
+    <Item size="sm" variant="outline">
+      <ItemMedia variant="icon">
+        <Icon />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{provider.name}</ItemTitle>
+      </ItemContent>
 
-      {isLinked ? (
-        <ResponsiveTooltip>
-          <ResponsiveTooltipTrigger
-            render={
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={canUnlink ? onUnlink : undefined}
-                disabled={isLoading}
-                className={cn(!canUnlink && "cursor-not-allowed opacity-50")}
-              >
-                {isUnlinking && <Spinner />}
-                Unlink
-              </Button>
-            }
-          />
-          {!canUnlink && (
-            <ResponsiveTooltipContent>
-              You must have at least one linked account to sign in
-            </ResponsiveTooltipContent>
-          )}
-        </ResponsiveTooltip>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onLink}
-          disabled={isLoading}
-        >
-          {isLinking && <Spinner />}
-          Link
-        </Button>
-      )}
-    </div>
+      <ItemActions>
+        {isLinked ? (
+          <ResponsiveTooltip>
+            <ResponsiveTooltipTrigger
+              render={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={canUnlink ? onUnlink : undefined}
+                  disabled={isLoading}
+                  className={cn(!canUnlink && "cursor-not-allowed opacity-50")}
+                >
+                  {isUnlinking && <Spinner />}
+                  Unlink
+                </Button>
+              }
+            />
+            {!canUnlink && (
+              <ResponsiveTooltipContent>
+                You must have at least one linked account to sign in
+              </ResponsiveTooltipContent>
+            )}
+          </ResponsiveTooltip>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onLink}
+            disabled={isLoading}
+          >
+            {isLinking && <Spinner />}
+            Link
+          </Button>
+        )}
+      </ItemActions>
+    </Item>
   );
 }

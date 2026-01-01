@@ -32,8 +32,6 @@ function ToggleGroup({
      * Detects active items by checking (in order):
      * - aria-pressed="true"
      * - data-pressed (Base UI Toggle)
-     * - data-state="on"
-     * - data-state="active"
      */
     withActiveIndicator?: boolean;
     /** Optional classes for the animated pill */
@@ -63,9 +61,7 @@ function ToggleGroup({
           (group.querySelector(
             '[aria-pressed="true"]',
           ) as HTMLElement | null) ??
-          (group.querySelector("[data-pressed]") as HTMLElement | null) ??
-          (group.querySelector('[data-state="on"]') as HTMLElement | null) ??
-          (group.querySelector('[data-state="active"]') as HTMLElement | null);
+          (group.querySelector("[data-pressed]") as HTMLElement | null);
 
         if (!active) {
           setIndicatorRect(null);
@@ -109,7 +105,7 @@ function ToggleGroup({
     mutationObserver.observe(group, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["aria-pressed", "data-state", "data-pressed", "class"],
+      attributeFilter: ["aria-pressed", "data-pressed", "class"],
     });
 
     window.addEventListener("resize", updateIndicator);

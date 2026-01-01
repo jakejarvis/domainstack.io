@@ -173,39 +173,10 @@
   --accent-gold-muted: oklch(70% 0.08 65);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-
-    /* Firefox scrollbar styling */
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-
-  ::selection {
-    @apply bg-foreground text-background;
-  }
-
-  /* Custom Scrollbars with Frosted Glass Treatment */
-  /* Webkit-based browsers (Chrome, Safari, Edge) */
-  ::-webkit-scrollbar {
-    width: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-  }
-}
-
-@layer utilities {
+@theme {
   /* Shimmer animation for announcement pill - shimmers quickly then pauses */
+  --animate-shimmer: shimmer 6s ease-in-out infinite;
+
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);
@@ -217,7 +188,23 @@
       transform: translateX(100%);
     }
   }
+}
 
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  ::selection {
+    @apply bg-foreground text-background;
+  }
+}
+
+@layer utilities {
   /* Variable-driven accent glow */
   .accent-glow {
     background: var(--section-accent-glow, var(--glow-slate));
@@ -248,15 +235,6 @@
   }
   [data-accent="slate"] .accent-glow {
     --section-accent-glow: var(--glow-slate);
-  }
-
-  /* Hide scrollbar */
-  .scrollbar-hide {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
   }
 }
 

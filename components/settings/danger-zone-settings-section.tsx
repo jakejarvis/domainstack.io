@@ -22,12 +22,14 @@ export function DangerZoneSettingsSection({
 
   return (
     <>
-      <Collapsible className={className}>
+      <Collapsible
+        className={cn("rounded-xl border border-destructive/20", className)}
+      >
         <CollapsibleTrigger
           render={
             <button
               type="button"
-              className="group flex w-full cursor-pointer items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition-all hover:border-destructive/30 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none data-[panel-open]:border-b-0"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-xl bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
             >
               <div className="flex items-center gap-3">
                 <AlertTriangle className="size-5 text-destructive" />
@@ -39,16 +41,8 @@ export function DangerZoneSettingsSection({
             </button>
           }
         />
-        <CollapsibleContent
-          keepMounted
-          className={cn(
-            "h-[var(--collapsible-panel-height)] overflow-hidden transition-[height,opacity] duration-200 ease-out",
-            "data-[ending-style]:h-0 data-[starting-style]:h-0",
-            "data-closed:opacity-0 data-open:opacity-100",
-            "[&[hidden]:not([hidden='until-found'])]:hidden",
-          )}
-        >
-          <div className="rounded-b-xl border border-destructive/20 border-t-0 bg-destructive/2 p-4">
+        <CollapsibleContent keepMounted>
+          <div className="rounded-b-xl bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-sm">Delete account</p>

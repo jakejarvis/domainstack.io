@@ -1,4 +1,4 @@
-import { Drawer as DrawerPrimitive } from "vaul";
+import { Drawer as DrawerPrimitive } from "vaul-base";
 import { cn } from "@/lib/utils";
 
 function Drawer({
@@ -33,7 +33,9 @@ function DrawerOverlay({
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
       className={cn(
-        "data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-50 bg-black/50 will-change-[opacity] data-closed:animate-out data-open:animate-in",
+        "fixed inset-0 z-50 bg-black/50",
+        "data-open:fade-in-0 data-open:animate-in",
+        "data-closed:fade-out-0 data-closed:animate-out",
         className,
       )}
       {...props}
