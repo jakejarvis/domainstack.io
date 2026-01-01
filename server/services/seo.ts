@@ -78,12 +78,16 @@ export async function getSeo(
         expiresAt: Date | null;
       }>);
   if (existing[0] && (existing[0].expiresAt?.getTime?.() ?? 0) > nowMs) {
+    // Check blocklist for cached OG images (consistent with screenshot service)
+    const blocked =
+      existing[0].previewImageUploadedUrl && (await isDomainBlocked(domain));
+
     const preview = existing[0].canonicalUrl
       ? {
           title: existing[0].previewTitle ?? null,
           description: existing[0].previewDescription ?? null,
           image: existing[0].previewImageUrl ?? null,
-          imageUploaded: existing[0].previewImageUploadedUrl ?? null,
+          imageUploaded: blocked ? null : existing[0].previewImageUploadedUrl,
           canonicalUrl: existing[0].canonicalUrl,
         }
       : null;
