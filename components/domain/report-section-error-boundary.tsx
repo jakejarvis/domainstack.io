@@ -5,7 +5,6 @@ import posthog from "posthog-js";
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { createLogger } from "@/lib/logger/client";
 
 interface Props {
   children: React.ReactNode;
@@ -22,8 +21,6 @@ interface State {
  * Catches rendering errors and provides a fallback UI without crashing the entire page.
  */
 export class SectionErrorBoundary extends Component<Props, State> {
-  private logger = createLogger({ component: "SectionErrorBoundary" });
-
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -34,13 +31,8 @@ export class SectionErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: { componentStack?: string }) {
-    // Log to PostHog for monitoring
+    // Track error in PostHog for monitoring
     posthog.captureException(error, {
-      section: this.props.sectionName,
-      componentStack: errorInfo.componentStack,
-    });
-
-    this.logger.error("render error", error, {
       section: this.props.sectionName,
       componentStack: errorInfo.componentStack,
     });

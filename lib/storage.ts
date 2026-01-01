@@ -69,9 +69,10 @@ async function uploadWithRetry(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      logger.warn(`upload attempt failed ${attempt + 1}/${maxAttempts}`, err, {
-        pathname,
-      });
+      logger.warn(
+        { err, pathname },
+        `upload attempt failed ${attempt + 1}/${maxAttempts}`,
+      );
 
       // Don't sleep on last attempt
       if (attempt < maxAttempts - 1) {
@@ -80,9 +81,7 @@ async function uploadWithRetry(
           UPLOAD_BACKOFF_BASE_MS,
           UPLOAD_BACKOFF_MAX_MS,
         );
-        logger.warn(`retrying after ${delay}ms delay`, err, {
-          pathname,
-        });
+        logger.warn({ err, pathname }, `retrying after ${delay}ms delay`);
         await sleep(delay);
       }
     }

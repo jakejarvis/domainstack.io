@@ -2,7 +2,7 @@
 
 import NextError from "next/error";
 import { useEffect } from "react";
-import { logger } from "@/lib/logger/client";
+import { analytics } from "@/lib/analytics/client";
 
 export default function GlobalError({
   error,
@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    logger.error("Global error boundary caught error", error);
+    analytics.trackException(error);
   }, [error]);
 
   return (

@@ -48,12 +48,12 @@ async function processIconImpl(
         cachedRecord.url !== null || cachedRecord.notFound === true;
 
       if (isDefinitiveResult) {
-        logger.debug("db cache hit", { ...logContext });
+        logger.debug({ ...logContext }, "db cache hit");
         return { url: cachedRecord.url };
       }
     }
   } catch (err) {
-    logger.error("db read failed", err, { ...logContext });
+    logger.error({ err, ...logContext }, "db read failed");
   }
 
   // Generate icon (cache missed)
@@ -121,7 +121,7 @@ async function processIconImpl(
           expiresAt,
         });
       } catch (err) {
-        logger.error("db persist error", err, { ...logContext });
+        logger.error({ err, ...logContext }, "db persist error");
       }
 
       return { url };
@@ -149,7 +149,7 @@ async function processIconImpl(
       expiresAt,
     });
   } catch (err) {
-    logger.error("db persist error (null)", err, { ...logContext });
+    logger.error({ err, ...logContext }, "db persist error (null)");
   }
 
   return { url: null };
@@ -166,7 +166,7 @@ export async function processIcon(
 
   // Check for in-flight request
   if (iconPromises.has(identifier)) {
-    logger.debug("in-flight request hit", { ...logContext });
+    logger.debug({ ...logContext }, "in-flight request hit");
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return iconPromises.get(identifier)!;
   }
@@ -186,10 +186,10 @@ export async function processIcon(
   // Safety: Auto-cleanup stale promise after timeout
   const timeoutId = setTimeout(() => {
     if (iconPromises.get(identifier) === promise) {
-      logger.warn("cleaning up stale promise", {
-        ...logContext,
-        timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
-      });
+      logger.warn(
+        { ...logContext, timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS },
+        "cleaning up stale promise",
+      );
       iconPromises.delete(identifier);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);

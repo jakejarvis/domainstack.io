@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { checkoutEmbed } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 /**
@@ -28,7 +27,10 @@ export function useUpgradeCheckout() {
         ],
       });
     } catch (err) {
-      logger.error("Failed to open checkout", err);
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { action: "upgrade_checkout" },
+      );
       toast.error("Failed to open checkout. Please try again.");
     } finally {
       setIsLoading(false);

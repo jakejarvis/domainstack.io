@@ -143,12 +143,10 @@ export async function queryDohProvider(
 
   // NXDOMAIN or no answers
   if (json.Status !== 0 || !json.Answer) {
-    logger.debug("doh query no records", {
-      provider: provider.key,
-      domain,
-      type,
-      status: json.Status,
-    });
+    logger.debug(
+      { provider: provider.key, domain, type, status: json.Status },
+      "doh query no records",
+    );
     return [];
   }
 

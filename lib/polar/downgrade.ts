@@ -34,13 +34,14 @@ export async function handleDowngrade(userId: string): Promise<number> {
     if (updated.length === 0) {
       // Subscription record doesn't exist - create it with free tier.
       // This handles the edge case where the database hook failed during user signup.
-      logger.warn("subscription not found during downgrade, creating record", {
-        userId,
-      });
+      logger.warn(
+        { userId },
+        "subscription not found during downgrade, creating record",
+      );
       await tx.insert(userSubscriptions).values({ userId, tier: "free" });
     }
 
-    logger.info("updated user tier to free", { userId });
+    logger.info({ userId }, "updated user tier to free");
 
     // 2. Count active domains within transaction (snapshot isolation)
     const [countResult] = await tx
@@ -57,22 +58,19 @@ export async function handleDowngrade(userId: string): Promise<number> {
 
     // 3. If within limit, nothing to archive
     if (activeCount <= freeLimit) {
-      logger.debug("user within free tier limit, no archiving needed", {
-        userId,
-        activeCount,
-        freeLimit,
-      });
+      logger.debug(
+        { userId, activeCount, freeLimit },
+        "user within free tier limit, no archiving needed",
+      );
       return 0;
     }
 
     // 4. Find and archive oldest domains atomically
     const toArchive = activeCount - freeLimit;
-    logger.info("archiving excess domains on downgrade", {
-      userId,
-      activeCount,
-      freeLimit,
-      toArchive,
-    });
+    logger.info(
+      { userId, activeCount, freeLimit, toArchive },
+      "archiving excess domains on downgrade",
+    );
 
     const domainsToArchive = await tx
       .select({ id: userTrackedDomains.id })
@@ -100,10 +98,7 @@ export async function handleDowngrade(userId: string): Promise<number> {
 
     const archivedCount = result.length;
 
-    logger.info("archived domains after downgrade", {
-      userId,
-      archivedCount,
-    });
+    logger.info({ userId, archivedCount }, "archived domains after downgrade");
 
     return archivedCount;
   });

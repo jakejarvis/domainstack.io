@@ -10,7 +10,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
-import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
 function downloadVerificationFile(
@@ -56,9 +55,6 @@ export function HtmlFileVerificationInstructions({
         description: "Upload the file to your website at the path shown.",
       });
     } else {
-      logger.error("Failed to download verification file", result.error, {
-        filename: instructions.filename,
-      });
       toast.error("Failed to download file");
     }
   };

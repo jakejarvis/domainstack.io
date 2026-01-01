@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Logger } from "pino";
 import type { NotificationType } from "@/lib/constants/notifications";
 import {
   createNotification,
@@ -7,7 +8,6 @@ import {
 } from "@/lib/db/repos/notifications";
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
-import type { Logger } from "@/lib/logger";
 import { sendPrettyEmail } from "@/lib/resend";
 import type { NotificationOverrides } from "@/lib/schemas";
 
@@ -135,11 +135,10 @@ export async function sendNotification(
     });
 
     if (!notification) {
-      (logger as Logger).error("Failed to create notification record", {
-        trackedDomainId,
-        notificationType,
-        domainName,
-      });
+      (logger as Logger).error(
+        { trackedDomainId, notificationType, domainName },
+        "Failed to create notification record",
+      );
       throw new Error("Failed to create notification record in database");
     }
 
@@ -165,13 +164,8 @@ export async function sendNotification(
     return true;
   } catch (err) {
     (logger as Logger).error(
+      { err, domainName, userId, idempotencyKey },
       `Error sending ${notificationType} notification`,
-      err,
-      {
-        domainName,
-        userId,
-        idempotencyKey,
-      },
     );
     throw err;
   }

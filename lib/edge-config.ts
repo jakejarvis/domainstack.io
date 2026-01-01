@@ -53,7 +53,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
       logger.debug("skipping domain suggestions during prerender");
     } else {
       // Log unexpected errors but still fail gracefully
-      logger.error("failed to fetch domain suggestions", err);
+      logger.error({ err }, "failed to fetch domain suggestions");
     }
 
     return [];
@@ -101,7 +101,7 @@ export async function getTierLimits(): Promise<TierLimits> {
     if (isPrerenderError) {
       logger.debug("skipping tier limits during prerender");
     } else {
-      logger.error("failed to fetch tier limits", err);
+      logger.error({ err }, "failed to fetch tier limits");
     }
 
     return DEFAULT_TIER_LIMITS;
@@ -158,12 +158,16 @@ export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
   const result = safeParseProviderCatalog(raw);
 
   if (!result.success) {
-    logger.error("failed to parse provider catalog", result.error, {
-      issues: result.error.issues.map((i) => ({
-        path: i.path.join("."),
-        message: i.message,
-      })),
-    });
+    logger.error(
+      {
+        err: result.error,
+        issues: result.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      },
+      "failed to parse provider catalog",
+    );
     return null;
   }
 

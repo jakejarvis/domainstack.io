@@ -10,7 +10,7 @@
 - `components/dashboard/` Dashboard components (domain cards, tables, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, domain filters, health summary, verification badges, provider tooltips).
 - `components/settings/` Settings page components (subscription section, notification settings, linked accounts, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
-- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useCustomerPortal`, `useDashboardFilters`, `useDashboardPreferences`, `useDashboardSort`, `useDomainExport`, `useDomainHistory`, `useDomainMutations`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useLogger`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useRouter`, `useSelection`, `useSubscription`, `useTablePagination`, `useTheme`, `useTrackedDomains`, `useTruncation`, `useUpgradeCheckout`.
+- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useCustomerPortal`, `useDashboardFilters`, `useDashboardPreferences`, `useDashboardSort`, `useDomainExport`, `useDomainHistory`, `useDomainMutations`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useRouter`, `useSelection`, `useSubscription`, `useTablePagination`, `useTheme`, `useTrackedDomains`, `useTruncation`, `useUpgradeCheckout`.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
@@ -19,7 +19,7 @@
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table (blocked-domains, domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
-- `lib/logger/` unified structured logging system with console-based JSON logging for both server and client.
+- `lib/logger/` Pino-based server-side logging system with JSON output in production and pretty-printing in development.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/providers/` provider detection system (catalog.ts for Edge Config schema, detection.ts for pattern matching, parser.ts for catalog parsing).
@@ -66,7 +66,7 @@
   - `vitest.setup.node.ts` for Node environment tests (services, utils).
   - `vitest.setup.browser.ts` for Browser environment tests (components).
   - Mocks analytics clients/servers (`@/lib/analytics/server` and `@/lib/analytics/client`).
-  - Mocks logger clients/servers (`@/lib/logger/server` and `@/lib/logger/client`).
+  - Mocks server logger (`@/lib/logger/server`).
   - Mocks `server-only` module.
 - Database in tests: Drizzle client is not globally mocked. Replace `@/lib/db/client` with a PGlite-backed instance when needed (`@/lib/db/pglite`).
 - UI tests:
@@ -329,39 +329,44 @@ Key patterns:
 - Analytics mocked in tests via `vitest.setup.ts`.
 
 ## Structured Logging
-- Unified logging system in `lib/logger/` with server (`lib/logger/server.ts`) and client (`lib/logger/client.ts`) implementations.
+- Server-only logging system using **Pino** (`lib/logger/server.ts`). No client-side logging.
 - **Architecture:**
-  - **Shared base:** `BaseLogger` class in `lib/logger/index.ts` provides common overload resolution and formatting logic
-  - **Server & Client:** Both extend `BaseLogger` and use native console methods for output
-  - Structured JSON output with consistent format across server and client
+  - **Pino-based:** High-performance, low-overhead JSON logger for Node.js
+  - **Server-only:** Client-side errors are tracked via `analytics.trackException()` (PostHog)
+  - Structured JSON output in production; pretty-printed with colors in development via `pino-pretty`
   - **Important:** OpenTelemetry (OTEL) logging and trace correlation are **intentionally NOT used**. Do not introduce OTEL Logs API, trace/span context, or OTEL instrumentation in future changes.
 - **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create child logger: `const logger = createLogger({ source: "dns" })`
-  - Logs output via `console.debug()`, `console.info()`, `console.warn()`, `console.error()` for proper colorization in runtime logs
-  - Critical errors automatically tracked in PostHog
+  - Uses Pino's object-first API: context object as first argument, message as second
+  - Critical errors (`error`, `fatal`) automatically tracked in PostHog
   - Log levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`
-  - Environment-based log level: configurable via `LOG_LEVEL` env var or defaults (test: warn, dev: debug, prod: info)
-- **Client-side logging:**
-  - Import singleton: `import { logger } from "@/lib/logger/client"`
-  - Or use hook: `const logger = useLogger({ component: "MyComponent" })`
-  - Errors automatically tracked in PostHog
-  - Development: all levels logged; Production: only errors logged
-- **Log format:** Structured JSON with fields: `timestamp` (ISO 8601), `level` (string label), `message`, and context fields merged at root.
+  - Environment-based log level: configurable via `LOG_LEVEL` env var (default: info)
+- **Client-side error tracking:**
+  - No client-side logger. Use `analytics.trackException(error, context)` for error tracking
+  - Error boundaries use `analytics.trackException()` directly
+  - User-facing errors should use `toast.error()` from sonner
+- **Log format (Pino object-first API):**
+  ```typescript
+  // Context object first, message string second
+  logger.info({ domain: "example.com" }, "resolving domain");
+  logger.error({ err, domain: "example.com" }, "failed to resolve");
+  
+  // NOT the old message-first API:
+  // logger.info("resolving domain", { domain: "example.com" }); // WRONG
+  ```
 - **Usage examples:**
   ```typescript
   // Server (service layer)
   import { createLogger } from "@/lib/logger/server";
   const logger = createLogger({ source: "dns" });
-  logger.debug("resolving domain", { domain: "example.com" });
-  logger.info("resolution complete", { domain: "example.com", recordCount: 5 });
-  logger.error("failed to resolve", error, { domain: "example.com" });
+  logger.debug({ domain: "example.com" }, "resolving domain");
+  logger.info({ domain: "example.com", recordCount: 5 }, "resolution complete");
+  logger.error({ err: error, domain: "example.com" }, "failed to resolve");
 
-  // Client (components)
-  import { useLogger } from "@/hooks/use-logger";
-  const logger = useLogger({ component: "DomainSearch" });
-  logger.info("search initiated", { domain: query });
-  logger.error("search failed", error, { domain: query });
+  // Client (error boundaries)
+  import { analytics } from "@/lib/analytics/client";
+  analytics.trackException(error, { source: "RootErrorBoundary" });
   ```
 - **Integration with tRPC:** Middleware in `trpc/init.ts` automatically logs all procedures with structured context.
-- **Testing:** Logger mocked in `vitest.setup.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.
+- **Testing:** Logger mocked in `vitest.setup.node.ts`. Use `vi.mocked(logger.info)` to assert log calls in tests.

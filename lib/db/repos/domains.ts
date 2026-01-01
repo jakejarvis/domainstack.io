@@ -111,6 +111,6 @@ export async function updateLastAccessed(name: string): Promise<void> {
         ),
       );
   } catch (err) {
-    logger.error("failed to update lastAccessedAt", err, { domain: name });
+    logger.error({ err, domain: name }, "failed to update lastAccessedAt");
   }
 }

@@ -22,12 +22,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
+import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import {
   OAUTH_PROVIDERS,
   type OAuthProviderConfig,
 } from "@/lib/constants/oauth-providers";
-import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 
 interface LinkedAccountsSectionProps {
@@ -89,9 +89,10 @@ export function LinkedAccountsSection({
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       setLinkingProvider(null);
-      logger.error(`Failed to link ${provider.name}`, err, {
-        provider: provider.id,
-      });
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { provider: provider.id, action: "link_account" },
+      );
       toast.error(`Failed to link ${provider.name}. Please try again.`);
     }
   };
@@ -123,7 +124,7 @@ export function LinkedAccountsSection({
 
       return { previousAccounts };
     },
-    onError: (err, providerId, context) => {
+    onError: (_err, _providerId, context) => {
       // Rollback on error
       if (context?.previousAccounts) {
         queryClient.setQueryData(
@@ -131,7 +132,6 @@ export function LinkedAccountsSection({
           context.previousAccounts,
         );
       }
-      logger.error("Failed to unlink account", err, { providerId });
       toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, providerId) => {

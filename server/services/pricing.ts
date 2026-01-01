@@ -91,10 +91,7 @@ export function createPricingProvider(
     );
 
     if (!res.ok) {
-      logger.error("upstream error", undefined, {
-        provider: name,
-        status: res.status,
-      });
+      logger.error({ provider: name, status: res.status }, "upstream error");
       throw new Error(`${name} API returned ${res.status}`);
     }
 
@@ -186,12 +183,15 @@ const dynadotProvider = createPricingProvider(
 
       // Check for API errors (Dynadot returns 200 OK with error payloads)
       if (data?.code !== 200) {
-        logger.error("dynadot api error", undefined, {
-          provider: "dynadot",
-          code: data?.code,
-          message: data?.message,
-          error: data?.error,
-        });
+        logger.error(
+          {
+            provider: "dynadot",
+            code: data?.code,
+            message: data?.message,
+            error: data?.error,
+          },
+          "dynadot api error",
+        );
         throw new Error(
           `Dynadot API error: ${data?.message ?? "Unknown error"}`,
         );
@@ -241,7 +241,7 @@ export async function getPricing(tld: string): Promise<PricingResponse> {
           const price = payload[normalizedTld]?.registration;
           return price ? { provider: provider.name, price } : null;
         } catch (err) {
-          logger.error("fetch error", err, { provider: provider.name });
+          logger.error({ err, provider: provider.name }, "fetch error");
           return null;
         }
       }),

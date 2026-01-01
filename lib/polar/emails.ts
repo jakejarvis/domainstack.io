@@ -58,7 +58,7 @@ function generateWelcomeIdempotencyKey(userId: string): string {
 export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
   const user = await getUserById(userId);
   if (!user) {
-    logger.error("User not found for upgrade email", { userId });
+    logger.error({ userId }, "User not found for upgrade email");
     return false;
   }
 
@@ -83,10 +83,10 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
     );
 
     if (error) {
-      logger.error("Failed to send Pro upgrade email", error, {
-        userId,
-        idempotencyKey,
-      });
+      logger.error(
+        { err: error, userId, idempotencyKey },
+        "Failed to send Pro upgrade email",
+      );
       return false;
     }
 
@@ -94,17 +94,18 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
     try {
       await sendProWelcomeEmail(userId, user.name, user.email, tierLimits.pro);
     } catch (err) {
-      logger.error("Failed to send Pro welcome email (non-critical)", err, {
-        userId,
-      });
+      logger.error(
+        { err, userId },
+        "Failed to send Pro welcome email (non-critical)",
+      );
     }
 
     return true;
   } catch (err) {
-    logger.error("Error sending Pro upgrade email", err, {
-      userId,
-      idempotencyKey,
-    });
+    logger.error(
+      { err, userId, idempotencyKey },
+      "Error sending Pro upgrade email",
+    );
     return false;
   }
 }
@@ -140,19 +141,19 @@ async function sendProWelcomeEmail(
     );
 
     if (error) {
-      logger.error("Failed to send Pro welcome email", error, {
-        userId,
-        idempotencyKey,
-      });
+      logger.error(
+        { err: error, userId, idempotencyKey },
+        "Failed to send Pro welcome email",
+      );
       return false;
     }
 
     return true;
   } catch (err) {
-    logger.error("Error sending Pro welcome email", err, {
-      userId,
-      idempotencyKey,
-    });
+    logger.error(
+      { err, userId, idempotencyKey },
+      "Error sending Pro welcome email",
+    );
     return false;
   }
 }
@@ -184,7 +185,7 @@ export async function sendSubscriptionCancelingEmail(
 ): Promise<boolean> {
   const user = await getUserById(userId);
   if (!user) {
-    logger.error("User not found for canceling email", { userId });
+    logger.error({ userId }, "User not found for canceling email");
     return false;
   }
 
@@ -209,19 +210,19 @@ export async function sendSubscriptionCancelingEmail(
     );
 
     if (error) {
-      logger.error("Failed to send subscription canceling email", error, {
-        userId,
-        idempotencyKey,
-      });
+      logger.error(
+        { err: error, userId, idempotencyKey },
+        "Failed to send subscription canceling email",
+      );
       return false;
     }
 
     return true;
   } catch (err) {
-    logger.error("Error sending subscription canceling email", err, {
-      userId,
-      idempotencyKey,
-    });
+    logger.error(
+      { err, userId, idempotencyKey },
+      "Error sending subscription canceling email",
+    );
     return false;
   }
 }
@@ -250,7 +251,7 @@ export async function sendSubscriptionExpiredEmail(
 ): Promise<boolean> {
   const user = await getUserById(userId);
   if (!user) {
-    logger.error("User not found for expired email", { userId });
+    logger.error({ userId }, "User not found for expired email");
     return false;
   }
 
@@ -277,19 +278,19 @@ export async function sendSubscriptionExpiredEmail(
     );
 
     if (error) {
-      logger.error("Failed to send subscription expired email", error, {
-        userId,
-        idempotencyKey,
-      });
+      logger.error(
+        { err: error, userId, idempotencyKey },
+        "Failed to send subscription expired email",
+      );
       return false;
     }
 
     return true;
   } catch (err) {
-    logger.error("Error sending subscription expired email", err, {
-      userId,
-      idempotencyKey,
-    });
+    logger.error(
+      { err, userId, idempotencyKey },
+      "Error sending subscription expired email",
+    );
     return false;
   }
 }

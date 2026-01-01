@@ -1,97 +1,44 @@
 import "server-only";
 
-import {
-  BaseLogger,
-  type LogContext,
-  type Logger,
-  type LogLevel,
-  outputToConsole,
-} from "@/lib/logger";
+import pino from "pino";
+
+const isDev = process.env.NODE_ENV === "development";
+const isTest = process.env.NODE_ENV === "test";
 
 /**
- * Server-side logger using console methods.
+ * Server-side Pino logger.
  *
  * Features:
- * - Structured JSON logging with proper console method routing
- * - PostHog integration for critical errors (via analytics.trackException)
- * - Graceful degradation (never crashes)
- */
-
-// ============================================================================
-// Logger Implementation
-// ============================================================================
-
-class ServerLogger extends BaseLogger {
-  /**
-   * Output logs using appropriate console methods.
-   */
-  protected output(
-    level: LogLevel,
-    message: string,
-    context?: LogContext,
-    error?: unknown,
-  ): void {
-    try {
-      const formatted = this.formatLogRecord(level, message, context, error);
-
-      // Route to correct console method
-      outputToConsole(level, formatted);
-
-      // Track critical errors in PostHog (async, non-blocking)
-      // Only track error and fatal levels, not warnings
-      if ((level === "error" || level === "fatal") && error instanceof Error) {
-        this.trackErrorInPostHog(error, context);
-      }
-    } catch (err) {
-      // Logging should never crash the application
-      console.error("[logger] failed to log:", err);
-    }
-  }
-
-  private trackErrorInPostHog(error: Error, context?: LogContext): void {
-    try {
-      // Import analytics directly - the trackException method already handles
-      // wrapping itself in after() where appropriate, so we don't double-wrap here
-      import("@/lib/analytics/server")
-        .then(({ analytics }) => {
-          analytics.trackException(error, {
-            ...context,
-            source: "logger",
-          });
-        })
-        .catch(() => {
-          // Graceful degradation
-        });
-    } catch {
-      // Silently skip
-    }
-  }
-
-  child(context: LogContext): Logger {
-    return new ServerLogger(this.minLevel, {
-      ...this.baseContext,
-      ...context,
-    });
-  }
-}
-
-// ============================================================================
-// Exports
-// ============================================================================
-
-/**
- * Singleton server logger instance.
- * Use this for all server-side logging.
+ * - Structured JSON logging (ndjson format)
+ * - ISO timestamps for consistent ordering
+ * - Standard error serialization
+ * - Pretty printing in development only
  *
  * @example
  * ```typescript
  * import { logger } from "@/lib/logger/server";
  *
- * logger.info("User logged in", { userId: "123" });
- * logger.error("Database connection failed", error, { table: "users" });
+ * logger.info({ userId: "123" }, "User logged in");
+ * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-export const logger = new ServerLogger();
+export const logger = pino({
+  level: process.env.LOG_LEVEL ?? (isTest ? "warn" : isDev ? "debug" : "info"),
+  timestamp: pino.stdTimeFunctions.isoTime,
+  formatters: {
+    level: (label) => ({ level: label }),
+  },
+  serializers: {
+    err: pino.stdSerializers.err,
+  },
+  // Sync pretty printing in dev (no worker thread issues)
+  ...(isDev && {
+    transport: {
+      target: "pino-pretty",
+      options: { colorize: true, sync: true },
+    },
+  }),
+});
 
 /**
  * Create a child logger with a specific context prefix.
@@ -99,10 +46,10 @@ export const logger = new ServerLogger();
  *
  * @example
  * ```typescript
- * const dnsLogger = createLogger({ service: "dns" });
- * dnsLogger.debug("Resolving domain", { domain: "example.com" });
+ * const logger = createLogger({ source: "dns" });
+ * logger.debug({ domain: "example.com" }, "Resolving domain");
+ * // Output: {"level":"debug","source":"dns","domain":"example.com","msg":"Resolving domain"}
  * ```
  */
-export function createLogger(baseContext: LogContext): Logger {
-  return logger.child(baseContext);
-}
+export const createLogger = (bindings: Record<string, unknown>) =>
+  logger.child(bindings);

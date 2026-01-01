@@ -1,7 +1,6 @@
 import { notifyManager, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useLogger } from "@/hooks/use-logger";
 import { analytics } from "@/lib/analytics/client";
 import { exportDomainData } from "@/lib/json-export";
 import { useTRPC } from "@/lib/trpc/client";
@@ -13,7 +12,6 @@ import { useTRPC } from "@/lib/trpc/client";
 export function useDomainExport(domain: string) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const logger = useLogger({ component: "DomainExport" });
   const [allDataLoaded, setAllDataLoaded] = useState(false);
 
   // Build query keys directly using tRPC's queryOptions
@@ -93,9 +91,6 @@ export function useDomainExport(domain: string) {
       // Export with partial data (graceful degradation)
       exportDomainData(domain, exportData);
     } catch (err) {
-      logger.error("failed to export domain data", err, { domain });
-
-      // Show error toast
       toast.error(`Failed to export ${domain}`, {
         description:
           err instanceof Error
@@ -104,7 +99,7 @@ export function useDomainExport(domain: string) {
         position: "bottom-center",
       });
     }
-  }, [domain, queryClient, queryKeys, logger]);
+  }, [domain, queryClient, queryKeys]);
 
   return { handleExport, allDataLoaded };
 }

@@ -28,7 +28,6 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { logger } from "@/lib/logger/client";
 import type { VerificationInstructions } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -159,8 +158,7 @@ export function ShareInstructionsDialog({
         setEmail("");
       }, 3000);
     },
-    onError: (error) => {
-      logger.error("Failed to send verification instructions", error);
+    onError: () => {
       toast.error("Failed to send email", {
         description: "Please try again or use another method.",
       });
@@ -180,8 +178,7 @@ export function ShareInstructionsDialog({
         clearTimeout(timeoutRef.current);
       }
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      logger.error("Failed to copy instructions to clipboard", error);
+    } catch {
       toast.error("Failed to copy", {
         icon: <CircleX className="h-4 w-4" />,
       });
@@ -195,7 +192,6 @@ export function ShareInstructionsDialog({
         description: "Send this file to your domain admin.",
       });
     } else {
-      logger.error("Failed to download instructions file", result.error);
       toast.error("Failed to download file");
     }
   };

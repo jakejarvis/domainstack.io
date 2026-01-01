@@ -116,8 +116,17 @@ export const auth = betterAuth({
   baseURL: BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   logger: {
-    log: (level, message, ...args) =>
-      logger.log(level, message, args.length > 0 ? { args } : undefined),
+    log: (level, message, ...args) => {
+      const logFn =
+        level === "error"
+          ? logger.error.bind(logger)
+          : level === "warn"
+            ? logger.warn.bind(logger)
+            : level === "debug"
+              ? logger.debug.bind(logger)
+              : logger.info.bind(logger);
+      logFn(args.length > 0 ? { args } : {}, message);
+    },
   },
   databaseHooks: {
     user: {
@@ -144,14 +153,16 @@ export const auth = betterAuth({
             await polarClient.customers.deleteExternal({
               externalId: user.id,
             });
-            logger.info("deleted Polar customer on account deletion", {
-              userId: user.id,
-            });
+            logger.info(
+              { userId: user.id },
+              "deleted Polar customer on account deletion",
+            );
           } catch (err) {
             // Don't block account deletion if Polar cleanup fails
-            logger.error("failed to delete Polar customer", err, {
-              userId: user.id,
-            });
+            logger.error(
+              { err, userId: user.id },
+              "failed to delete Polar customer",
+            );
           }
         }
 

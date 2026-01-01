@@ -340,9 +340,10 @@ export async function batchResolveOrCreateProviderIds(
         }
       }
     } catch (err) {
-      logger.error("batch insert partial failure", err, {
-        count: toCreate.length,
-      });
+      logger.error(
+        { err, count: toCreate.length },
+        "batch insert partial failure",
+      );
 
       // Fall back to individual resolution for failed items
       for (const input of toCreate) {
@@ -469,10 +470,14 @@ function catalogRuleMatchesDiscovered(
   try {
     return evalRule(catalogProvider.rule, ctx);
   } catch (err) {
-    logger.warn("failed to evaluate rule for catalog match", err, {
-      catalog: catalogProvider.name,
-      discovered: discoveredProvider.name,
-    });
+    logger.warn(
+      {
+        err,
+        catalog: catalogProvider.name,
+        discovered: discoveredProvider.name,
+      },
+      "failed to evaluate rule for catalog match",
+    );
     return false;
   }
 }
@@ -553,11 +558,14 @@ export async function upsertCatalogProvider(
       })
     ) {
       // Found a matching discovered provider - merge it
-      logger.info("merging discovered provider into catalog", {
-        discovered: discovered.name,
-        catalog: provider.name,
-        category: provider.category,
-      });
+      logger.info(
+        {
+          discovered: discovered.name,
+          catalog: provider.name,
+          category: provider.category,
+        },
+        "merging discovered provider into catalog",
+      );
 
       // Update the discovered provider to become the catalog provider
       const updated = await db

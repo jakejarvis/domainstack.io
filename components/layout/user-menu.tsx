@@ -17,7 +17,6 @@ import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signOut, useSession } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
 
 export function UserMenu() {
   const router = useRouter();
@@ -52,8 +51,8 @@ export function UserMenu() {
           },
         },
       });
-    } catch (err) {
-      logger.error("Sign-out failed", err);
+    } catch {
+      // Sign-out failure is rare; user sees they're still logged in
     }
   };
 
