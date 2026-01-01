@@ -101,7 +101,6 @@ pnpm format        # apply Biome formatting
 pnpm typecheck     # tsc --noEmit
 pnpm test          # Vitest (watch mode)
 pnpm test:run      # Vitest (single run)
-pnpm test:ui       # Vitest UI
 pnpm test:coverage # Vitest with coverage report
 
 # Drizzle
