@@ -2,15 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/mocks/react";
 import { HostingSection } from "./hosting-section";
 
-vi.mock("next/dynamic", () => ({
-  __esModule: true,
-  // biome-ignore lint/suspicious/noExplicitAny: fine for this test
-  default: (_loader: any, _opts: any) => {
-    // return a dummy component to avoid map rendering
-    return () => <div data-slot="hosting-map" />;
-  },
-}));
-
 vi.mock("@/components/icons/provider-icon", () => ({
   ProviderIcon: ({
     providerId: _providerId,
@@ -19,6 +10,15 @@ vi.mock("@/components/icons/provider-icon", () => ({
     providerId: string | null | undefined;
     providerDomain: string | null;
   }) => <div>logo:{providerDomain}</div>,
+}));
+
+// Mock the map client to avoid loading maplibre-gl in tests
+vi.mock("@/components/domain/hosting/hosting-map-client", () => ({
+  HostingMapClient: ({ lat, lon }: { lat: number; lon: number }) => (
+    <div data-testid="hosting-map">
+      Map: {lat}, {lon}
+    </div>
+  ),
 }));
 
 describe("HostingSection", () => {

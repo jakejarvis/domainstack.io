@@ -7,7 +7,6 @@ import { toRegistrableDomain } from "@/lib/domain-server";
 import { getQueryClient, trpc } from "@/trpc/server";
 
 import "country-flag-icons/3x2/flags.css";
-import "mapbox-gl/dist/mapbox-gl.css";
 
 export async function generateMetadata({
   params,

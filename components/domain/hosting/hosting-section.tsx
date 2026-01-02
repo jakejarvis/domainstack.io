@@ -1,6 +1,6 @@
 import { hasFlag } from "country-flag-icons";
 import { MailQuestionMark } from "lucide-react";
-import { HostingMap } from "@/components/domain/hosting/hosting-map";
+import { HostingMapClient } from "@/components/domain/hosting/hosting-map-client";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
@@ -48,7 +48,6 @@ export function HostingSection({
                     providerName={dnsProvider.name}
                     providerDomain={dnsProvider.domain}
                     size={16}
-                    className="rounded"
                   />
                 ) : undefined
               }
@@ -63,7 +62,6 @@ export function HostingSection({
                     providerName={hostingProvider.name}
                     providerDomain={hostingProvider.domain}
                     size={16}
-                    className="rounded"
                   />
                 ) : undefined
               }
@@ -78,7 +76,6 @@ export function HostingSection({
                     providerName={emailProvider.name}
                     providerDomain={emailProvider.domain}
                     size={16}
-                    className="rounded"
                   />
                 ) : undefined
               }
@@ -106,7 +103,9 @@ export function HostingSection({
                 }
               />
 
-              <HostingMap hosting={data} />
+              <div className="relative h-[280px] w-full">
+                <HostingMapClient lat={data.geo.lat} lon={data.geo.lon} />
+              </div>
             </>
           ) : null}
         </>

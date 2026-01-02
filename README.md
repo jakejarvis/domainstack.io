@@ -23,19 +23,19 @@
 - **Tailwind CSS v4** + **shadcn/ui** components (of the [**Base UI**](https://x.com/colmtuite/status/1999535911126565050) variety)
 - **tRPC** API with **TanStack Query** for data fetching and optimistic updates
 - **TanStack Table** for sortable dashboard table view
+- [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
 - **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
 - **Better Auth** for authentication via OAuth
-- **Polar** for subscription payments and customer portal (Pro tier)
-- **Inngest** for event-driven background jobs (revalidation, expiry checks, domain re-verification)
+- **Polar** for subscription payments
+- **Inngest** for scheduled and event-driven background jobs
 - **Resend** + **React Email** for transactional email notifications
-- **Vercel Edge Config** for runtime configuration (domain suggestions, tier limits)
-- **Vercel Blob** for favicon/screenshot storage with Postgres metadata caching
-- [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
-- **Logo.dev** for high-quality provider logos
-- **Puppeteer** (with `@sparticuz/chromium` on Vercel) for server-side screenshots
-- **Mapbox** for IP geolocation maps
-- **PostHog** for analytics and error tracking with sourcemap uploads and reverse proxy
-- **Vitest** (Browser Mode w/ Playwright) for component testing and **Biome** for lint/format
+- **Vercel Edge Config** for runtime configuration (domain suggestions, tier limits, and other safeguards)
+- **Vercel Blob** for media storage
+- **PostHog** for analytics and error tracking
+- [**mapcn**](https://mapcn.vercel.app/) with [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps) for beautiful IP geolocation maps
+- [**Logo.dev**](https://www.logo.dev) for provider icons
+- **Puppeteer** for on-demand screenshots
+- **Biome** for linting/formatting and **Vitest** (Browser Mode w/ Playwright) for E2E testing
 
 ## 🌱 Getting Started
 
@@ -55,11 +55,10 @@ Create `.env.local` and populate [required variables](.env.example):
 cp .env.example .env.local
 ```
 
-### 3. Run Drizzle database migrations
+### 3. Apply Drizzle database migrations to local Postgres database
 
 ```bash
-pnpm db:generate   # generate SQL from schema
-pnpm db:migrate    # apply migrations to local Postgres
+pnpm db:migrate
 ```
 
 ### 4. Start development
@@ -71,10 +70,10 @@ pnpm dev
 ```
 
 This single command boots:
-- **Postgres** on `localhost:5432`
-- **Inngest dev server** on `http://localhost:8288`
-- **ngrok tunnel** with public HTTPS URL (for webhooks) and web UI on `http://localhost:4040`
 - **Next.js dev server** on `http://localhost:3000`
+- **Inngest dev server** on `http://localhost:8288`
+- **Postgres** on `localhost:5432`
+- **ngrok tunnel** with public HTTPS URL (for webhook testing) and web UI on `http://localhost:4040`
 
 Open [http://localhost:3000](http://localhost:3000). Press `Ctrl+C` to stop all services at once.
 
