@@ -1,18 +1,21 @@
 "use client";
 
+import { Favicon } from "@/components/icons/favicon";
 import {
   MapControls,
   MapInstance,
   MapMarker,
   MapMarkerContent,
+  MapMarkerLabel,
 } from "@/components/ui/map";
 
 interface HostingMapClientProps {
   lat: number;
   lon: number;
+  domain?: string;
 }
 
-export function HostingMapClient({ lat, lon }: HostingMapClientProps) {
+export function HostingMapClient({ lat, lon, domain }: HostingMapClientProps) {
   return (
     <MapInstance
       center={[lon, lat]}
@@ -31,10 +34,20 @@ export function HostingMapClient({ lat, lon }: HostingMapClientProps) {
           <div className="relative">
             <div className="absolute -inset-2 not-motion-safe:hidden animate-ping rounded-full bg-accent-cyan/30 [animation-duration:2s]" />
             <div className="absolute -inset-1 rounded-full bg-accent-cyan/20 blur-sm" />
-            <div className="relative flex size-4 items-center justify-center rounded-full bg-gradient-to-b from-accent-cyan to-accent-blue shadow-lg ring-2 ring-white dark:ring-background/40">
-              <div className="size-2 rounded-full bg-white/90 dark:bg-white/75" />
-            </div>
+            <div className="relative size-4 rounded-full bg-gradient-to-b from-accent-cyan to-accent-blue shadow-lg" />
           </div>
+          {domain && (
+            <MapMarkerLabel position="bottom">
+              <div className="mt-1.5 flex items-center gap-1 leading-none">
+                <Favicon
+                  domain={domain}
+                  size={12}
+                  className="shrink-0 rounded"
+                />
+                {domain}
+              </div>
+            </MapMarkerLabel>
+          )}
         </MapMarkerContent>
       </MapMarker>
       <MapControls position="top-right" showZoom showCompass />

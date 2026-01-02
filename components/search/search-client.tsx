@@ -172,7 +172,7 @@ export function SearchClient({
                 onBlur={handleBlur}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
-                className="relative top-0 truncate sm:top-px"
+                className="relative truncate sm:translate-y-[1px]"
               />
 
               <InputGroupAddon>

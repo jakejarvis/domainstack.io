@@ -54,7 +54,7 @@ export async function GithubStars() {
           aria-label="Open GitHub repository"
         >
           <GitHubIcon className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
-          <span className="relative top-px flex items-center font-mono text-[13px] text-muted-foreground leading-none transition-colors group-hover:text-foreground">
+          <span className="relative inline-block translate-y-[1px] font-mono text-[13px] text-muted-foreground transition-colors group-hover:text-foreground">
             {label}
           </span>
         </a>

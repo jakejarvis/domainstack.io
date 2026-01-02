@@ -80,10 +80,7 @@ export function RemoteIcon({
 
   const url = (data as { url: string | null } | undefined)?.url ?? null;
 
-  const baseClassNames = cn(
-    "pointer-events-none select-none rounded-xs",
-    className,
-  );
+  const baseClassNames = cn("pointer-events-none select-none rounded-xs");
 
   // During SSR and initial client render, always show skeleton
   // This ensures server and client HTML match perfectly

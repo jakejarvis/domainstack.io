@@ -82,7 +82,7 @@ export function HomeSearchSuggestionsClient({
       showScrollbar={false}
       viewportRef={scrollContainerRef}
     >
-      <div className="flex gap-2 px-[1px] py-[2px]">
+      <div className="flex gap-2 p-0.5">
         {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map(
           (domain) => (
             <Button

@@ -123,6 +123,7 @@ export function DomainCard({
               domain={domainName}
               size={32}
               className={cn(
+                "rounded-md",
                 onToggleSelect &&
                   (isSelected ? "hidden" : "group-hover:hidden"),
               )}

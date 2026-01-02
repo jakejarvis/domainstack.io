@@ -22,6 +22,7 @@ function formatLocation(geo: HostingResponse["geo"]): string {
 }
 
 export function HostingSection({
+  domain,
   data,
 }: {
   domain?: string;
@@ -92,7 +93,7 @@ export function HostingSection({
                   hasFlag(data.geo.country_code.toUpperCase()) ? (
                     <span
                       className={cn(
-                        "!w-[15px] !h-[10px] relative top-[2px] inline-block rounded-xs",
+                        "!w-[15px] !h-[10px] relative inline-block translate-y-0.5 rounded-xs",
                         // https://gitlab.com/catamphetamine/country-flag-icons/-/tree/master/flags/3x2
                         `flag:${data.geo.country_code.toUpperCase()}`,
                       )}
@@ -103,7 +104,11 @@ export function HostingSection({
               />
 
               <div className="relative h-[280px] w-full">
-                <HostingMapClient lat={data.geo.lat} lon={data.geo.lon} />
+                <HostingMapClient
+                  lat={data.geo.lat}
+                  lon={data.geo.lon}
+                  domain={domain}
+                />
               </div>
             </>
           ) : null}
