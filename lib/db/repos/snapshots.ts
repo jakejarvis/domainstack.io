@@ -71,17 +71,17 @@ export async function getOrCreateSnapshot(
       const error = new Error(
         `Failed to create snapshot for tracked domain ${trackedDomainId} after retry`,
       );
-      logger.error("Snapshot creation failed after retry", error, {
-        trackedDomainId,
-        retryCount,
-      });
+      logger.error(
+        { err: error, trackedDomainId, retryCount },
+        "Snapshot creation failed after retry",
+      );
       throw error;
     }
 
-    logger.warn("Snapshot disappeared after conflict, recreating", {
-      trackedDomainId,
-      retryCount,
-    });
+    logger.warn(
+      { trackedDomainId, retryCount },
+      "Snapshot disappeared after conflict, recreating",
+    );
     // Recursively retry once - if this fails, let it throw
     return getOrCreateSnapshot(trackedDomainId, retryCount + 1);
   }
@@ -127,9 +127,10 @@ export async function createSnapshot(params: CreateSnapshotParams) {
     .returning();
 
   if (!inserted || inserted.length === 0) {
-    logger.error("failed to create snapshot - no row returned", {
-      trackedDomainId,
-    });
+    logger.error(
+      { trackedDomainId },
+      "failed to create snapshot - no row returned",
+    );
     throw new Error("Failed to create snapshot");
   }
 
@@ -171,7 +172,7 @@ export async function updateSnapshot(
     .returning();
 
   if (updated.length === 0) {
-    logger.warn("snapshot not found for update", { trackedDomainId });
+    logger.warn({ trackedDomainId }, "snapshot not found for update");
     return null;
   }
 
@@ -249,9 +250,7 @@ export async function getSnapshot(
     if (!registration.success) errors.registration = registration.error;
     if (!certificate.success) errors.certificate = certificate.error;
 
-    logger.error("Invalid snapshot data", errors, {
-      trackedDomainId,
-    });
+    logger.error({ errors, trackedDomainId }, "Invalid snapshot data");
     return null;
   }
 
@@ -311,12 +310,12 @@ export async function getSnapshotsForMonitoring(): Promise<
 
     if (!registration.success) {
       logger.error(
-        "Invalid registration snapshot data, skipping domain",
-        registration.error,
         {
+          err: registration.error,
           trackedDomainId: row.trackedDomainId,
           domainName: row.domainName,
         },
+        "Invalid registration snapshot data, skipping domain",
       );
       skippedCount++;
       continue;
@@ -324,12 +323,12 @@ export async function getSnapshotsForMonitoring(): Promise<
 
     if (!certificate.success) {
       logger.error(
-        "Invalid certificate snapshot data, skipping domain",
-        certificate.error,
         {
+          err: certificate.error,
           trackedDomainId: row.trackedDomainId,
           domainName: row.domainName,
         },
+        "Invalid certificate snapshot data, skipping domain",
       );
       skippedCount++;
       continue;
@@ -343,11 +342,10 @@ export async function getSnapshotsForMonitoring(): Promise<
   }
 
   if (skippedCount > 0) {
-    logger.warn("Skipped domains with invalid snapshot data", {
-      skippedCount,
-      totalCount: rows.length,
-      validCount: validRows.length,
-    });
+    logger.warn(
+      { skippedCount, totalCount: rows.length, validCount: validRows.length },
+      "Skipped domains with invalid snapshot data",
+    );
   }
 
   return validRows;
@@ -365,7 +363,7 @@ export async function deleteSnapshot(trackedDomainId: string) {
 
     return true;
   } catch (err) {
-    logger.error("failed to delete snapshot", err, { trackedDomainId });
+    logger.error({ err, trackedDomainId }, "failed to delete snapshot");
     return false;
   }
 }

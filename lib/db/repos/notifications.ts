@@ -58,7 +58,10 @@ export async function createNotification(params: CreateNotificationParams) {
 
     return notification;
   } catch (err) {
-    logger.error("failed to create notification record", err, { userId, type });
+    logger.error(
+      { err, userId, type, ...(trackedDomainId && { trackedDomainId }) },
+      "failed to create notification record",
+    );
     return null;
   }
 }
@@ -78,10 +81,10 @@ export async function updateNotificationResendId(
       .where(eq(notifications.id, notificationId));
     return true;
   } catch (err) {
-    logger.error("failed to update notification resend ID", err, {
-      notificationId,
-      resendId,
-    });
+    logger.error(
+      { err, notificationId, resendId },
+      "failed to update notification resend ID",
+    );
     return false;
   }
 }
@@ -209,10 +212,10 @@ export async function markAsRead(notificationId: string, userId: string) {
 
     return updated.length > 0;
   } catch (err) {
-    logger.error("failed to mark notification as read", err, {
-      notificationId,
-      userId,
-    });
+    logger.error(
+      { err, notificationId, userId },
+      "failed to mark notification as read",
+    );
     return false;
   }
 }
@@ -232,7 +235,7 @@ export async function markAllAsRead(userId: string) {
 
     return updated.length;
   } catch (err) {
-    logger.error("failed to mark all notifications as read", err, { userId });
+    logger.error({ err, userId }, "failed to mark all notifications as read");
     return 0;
   }
 }
@@ -292,7 +295,7 @@ export async function deleteNotificationsForTrackedDomain(
       .where(eq(notifications.trackedDomainId, trackedDomainId));
     return true;
   } catch (err) {
-    logger.error("failed to delete notifications", err, { trackedDomainId });
+    logger.error({ err, trackedDomainId }, "failed to delete notifications");
     return false;
   }
 }
@@ -318,9 +321,10 @@ export async function clearDomainExpiryNotifications(
 
     return deleted.length;
   } catch (err) {
-    logger.error("failed to clear domain expiry notifications", err, {
-      trackedDomainId,
-    });
+    logger.error(
+      { err, trackedDomainId },
+      "failed to clear domain expiry notifications",
+    );
     return 0;
   }
 }
@@ -346,9 +350,10 @@ export async function clearCertificateExpiryNotifications(
 
     return deleted.length;
   } catch (err) {
-    logger.error("failed to clear certificate expiry notifications", err, {
-      trackedDomainId,
-    });
+    logger.error(
+      { err, trackedDomainId },
+      "failed to clear certificate expiry notifications",
+    );
     return 0;
   }
 }

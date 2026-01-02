@@ -6,7 +6,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
 import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
-import { logger } from "@/lib/logger/client";
 import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {
@@ -77,9 +76,13 @@ export function OAuthButton({
       // Only reset on actual error
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       onLoadingChange?.(false);
-      logger.error(`${provider.name} sign-in failed`, err, {
-        provider: provider.id,
-      });
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        {
+          provider: provider.id,
+          action: "sign_in",
+        },
+      );
       toast.error(`Failed to sign in with ${provider.name}.`, {
         description: "Please try again or choose a different provider.",
       });

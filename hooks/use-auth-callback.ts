@@ -4,8 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "@/hooks/use-router";
+import { analytics } from "@/lib/analytics/client";
 import { getAuthErrorMessage, isAccountLinkingError } from "@/lib/constants";
-import { logger } from "@/lib/logger/client";
 
 /**
  * Hook to handle auth callback error query parameters.
@@ -43,14 +43,18 @@ export function useAuthCallback() {
     const errorMessage = getAuthErrorMessage(error);
     const isLinkError = isAccountLinkingError(error);
 
+    // Track auth errors in PostHog
+    analytics.trackException(new Error(error), {
+      action: isLinkError ? "link_account" : "sign_in",
+      errorCode: error,
+    });
+
     // Title based on error type
     const title = isLinkError ? "Failed to link account" : "Sign in failed";
 
     toast.error(title, {
       description: errorMessage,
     });
-
-    logger.warn("Auth callback error", { error, isLinkError });
 
     // Clear error param from URL while preserving others
     const params = new URLSearchParams(searchParams.toString());

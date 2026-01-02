@@ -124,7 +124,7 @@ export const getHosting = cache(async function getHosting(
   const [headersResponse, meta] = await Promise.all([
     hasWebHosting
       ? getHeaders(domain).catch((err) => {
-          logger.error("headers probe error", err, { domain });
+          logger.error({ err, domain }, "headers probe error");
           return {
             headers: [] as { name: string; value: string }[],
             status: 0,

@@ -15,7 +15,6 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
 
 type DeleteAccountDialogProps = {
   open: boolean;
@@ -40,7 +39,9 @@ export function DeleteAccountDialog({
       const result = await deleteUser();
 
       if (result.error) {
-        logger.error("Failed to request account deletion", result.error);
+        analytics.trackException(new Error(result.error.message), {
+          action: "delete_account",
+        });
         setErrorMessage(
           result.error.message || "Failed to request account deletion",
         );
@@ -51,7 +52,10 @@ export function DeleteAccountDialog({
       analytics.track("delete_account_initiated");
       setState("success");
     } catch (err) {
-      logger.error("Failed to request account deletion", err);
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { action: "delete_account" },
+      );
       setErrorMessage("An unexpected error occurred. Please try again.");
       setState("error");
     }

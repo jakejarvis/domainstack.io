@@ -56,11 +56,8 @@ export async function fetchWithTimeoutAndRetry(
 
       if (attempt < retries) {
         logger.warn(
+          { err, url: input instanceof Request ? input.url : String(input) },
           `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,
-          err,
-          {
-            url: input instanceof Request ? input.url : String(input),
-          },
         );
         // Simple linear backoff — good enough for trusted upstream retry logic.
         await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
@@ -116,7 +113,7 @@ function createAbortSignal(
         fn();
       } catch (err) {
         // Ignore cleanup errors to ensure all cleanup functions run
-        logger.error("cleanup error", err);
+        logger.error({ err }, "cleanup error");
       }
     }
   };

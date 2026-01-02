@@ -58,7 +58,7 @@ export async function closePGliteDb(): Promise<void> {
     await cached.client.close();
   } catch (err) {
     // Swallow errors on close (client may already be closed)
-    logger.error("close warning", err);
+    logger.error({ err }, "close warning");
   } finally {
     cached = null;
     schemaApplied = false;

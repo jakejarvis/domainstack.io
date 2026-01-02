@@ -88,9 +88,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       : [];
   } catch (err) {
     // Postgres unavailable - log and fall through to DoH lookup
-    logger.warn("db cache unavailable, falling back to doh", err, {
-      domain,
-    });
+    logger.warn({ err, domain }, "db cache unavailable, falling back to doh");
   }
 
   if (rows.length > 0) {
@@ -295,22 +293,25 @@ export const getDnsRecords = cache(async function getDnsRecords(
           { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
         );
 
-        logger.debug("partial refresh done", {
-          domain,
-          counts,
-          resolver: pinnedProvider.key,
-          durationMs: durationByProvider[pinnedProvider.key],
-        });
+        logger.debug(
+          {
+            domain,
+            counts,
+            resolver: pinnedProvider.key,
+            durationMs: durationByProvider[pinnedProvider.key],
+          },
+          "partial refresh done",
+        );
         return {
           records: merged,
           resolver: pinnedProvider.key,
         } as DnsRecordsResponse;
       } catch (err) {
         // Fall through to full provider loop below
-        logger.error("partial refresh failed", err, {
-          domain,
-          provider: pinnedProvider.key,
-        });
+        logger.error(
+          { err, domain, provider: pinnedProvider.key },
+          "partial refresh failed",
+        );
       }
     }
   }
@@ -412,11 +413,14 @@ export const getDnsRecords = cache(async function getDnsRecords(
       } as DnsRecordsResponse;
     } catch (err) {
       // This is somewhat expected, so log at info level
-      logger.info("provider attempt failed", {
-        domain,
-        provider: provider.key,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.info(
+        {
+          domain,
+          provider: provider.key,
+          error: err instanceof Error ? err.message : String(err),
+        },
+        "provider attempt failed",
+      );
       durationByProvider[provider.key] = Date.now() - attemptStart;
       lastError = err;
 
@@ -428,10 +432,10 @@ export const getDnsRecords = cache(async function getDnsRecords(
   const error = new Error(`All DoH providers failed for ${domain}`, {
     cause: lastError,
   });
-  logger.error("all providers failed", error, {
-    domain,
-    providers: providers.map((p) => p.key).join(","),
-  });
+  logger.error(
+    { err: error, domain, providers: providers.map((p) => p.key).join(",") },
+    "all providers failed",
+  );
   throw error;
 });
 

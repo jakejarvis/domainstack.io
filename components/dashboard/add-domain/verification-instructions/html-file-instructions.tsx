@@ -10,13 +10,12 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
-import { logger } from "@/lib/logger/client";
 import type { HtmlFileInstructions } from "@/lib/schemas";
 
 function downloadVerificationFile(
   filename: string,
   content: string,
-): { success: true } | { success: false; error: unknown } {
+): { success: boolean } {
   try {
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -34,8 +33,8 @@ function downloadVerificationFile(
     }, 1000);
 
     return { success: true };
-  } catch (error) {
-    return { success: false, error };
+  } catch {
+    return { success: false };
   }
 }
 
@@ -56,9 +55,6 @@ export function HtmlFileVerificationInstructions({
         description: "Upload the file to your website at the path shown.",
       });
     } else {
-      logger.error("Failed to download verification file", result.error, {
-        filename: instructions.filename,
-      });
       toast.error("Failed to download file");
     }
   };

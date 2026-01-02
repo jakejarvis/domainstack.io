@@ -25,7 +25,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
-import { useLogger } from "@/hooks/use-logger";
 import { useSession } from "@/lib/auth-client";
 import {
   NOTIFICATION_CATEGORIES,
@@ -45,7 +44,6 @@ export function NotificationSettingsSection({
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const logger = useLogger({ component: "NotificationSettingsSection" });
   const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
 
   // Query keys for cache manipulation
@@ -76,14 +74,13 @@ export function NotificationSettingsSection({
 
       return { previousPrefs };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousPrefs) {
         queryClient.setQueryData<UserNotificationPreferences>(
           globalPrefsQueryKey,
           context.previousPrefs,
         );
       }
-      logger.error("Failed to update global settings", err);
       toast.error("Failed to update settings");
     },
     onSuccess: () => {
@@ -124,13 +121,12 @@ export function NotificationSettingsSection({
 
       return { previousDomains };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousDomains) {
         for (const [key, data] of context.previousDomains) {
           queryClient.setQueryData(key, data);
         }
       }
-      logger.error("Failed to update domain settings", err);
       toast.error("Failed to update settings");
     },
     onSuccess: () => {
@@ -165,13 +161,12 @@ export function NotificationSettingsSection({
 
       return { previousDomains };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousDomains) {
         for (const [key, data] of context.previousDomains) {
           queryClient.setQueryData(key, data);
         }
       }
-      logger.error("Failed to reset domain settings", err);
       toast.error("Failed to reset settings");
     },
     onSuccess: () => {
@@ -249,20 +244,6 @@ export function NotificationSettingsSection({
   }
 
   if (domainsQuery.isError || globalPrefsQuery.isError) {
-    // Log query errors for observability
-    if (domainsQuery.isError) {
-      logger.error(
-        "Failed to load domains for notifications",
-        domainsQuery.error,
-      );
-    }
-    if (globalPrefsQuery.isError) {
-      logger.error(
-        "Failed to load notification preferences",
-        globalPrefsQuery.error,
-      );
-    }
-
     return (
       <div>
         <CardHeader className="px-0 pt-0 pb-2">

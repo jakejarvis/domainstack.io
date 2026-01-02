@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { customer } from "@/lib/auth-client";
-import { logger } from "@/lib/logger/client";
 
 /**
  * Hook to handle opening the customer portal for subscription management.
@@ -29,7 +28,10 @@ export function useCustomerPortal() {
     try {
       await customer.portal();
     } catch (err) {
-      logger.error("Failed to open customer portal", err);
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { action: "open_customer_portal" },
+      );
       toast.error("Failed to open customer portal. Please try again.");
     } finally {
       if (isMountedRef.current) {

@@ -64,11 +64,14 @@ export async function scheduleRevalidation(
 
   // Check if domain should stop being revalidated due to inactivity
   if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
-    logger.debug("skip (stopped: inactive)", {
-      domain: normalizedDomain,
-      section,
-      lastAccessedAt: lastAccessedAt?.toISOString() ?? "never",
-    });
+    logger.debug(
+      {
+        domain: normalizedDomain,
+        section,
+        lastAccessedAt: lastAccessedAt?.toISOString() ?? "never",
+      },
+      "skip (stopped: inactive)",
+    );
     return false;
   }
 
@@ -94,12 +97,15 @@ export async function scheduleRevalidation(
   // This handles race conditions where dueAtMs was calculated in the past
   if (scheduledDueMs <= now) {
     scheduledDueMs = now + minTtlSecondsForSection(section) * 1000;
-    logger.warn("adjusted past timestamp", {
-      domain: normalizedDomain,
-      section,
-      originalDueMs: dueAtMs,
-      adjustedDueMs: scheduledDueMs,
-    });
+    logger.warn(
+      {
+        domain: normalizedDomain,
+        section,
+        originalDueMs: dueAtMs,
+        adjustedDueMs: scheduledDueMs,
+      },
+      "adjusted past timestamp",
+    );
   }
 
   // Send event to Inngest
@@ -121,10 +127,10 @@ export async function scheduleRevalidation(
     });
     return true;
   } catch (err) {
-    logger.error("unexpected failure", err, {
-      domain: normalizedDomain,
-      section,
-    });
+    logger.error(
+      { err, domain: normalizedDomain, section },
+      "unexpected failure",
+    );
     return false;
   }
 }

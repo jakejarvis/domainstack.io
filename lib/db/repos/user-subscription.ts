@@ -69,10 +69,10 @@ export async function updateUserTier(
   if (updated.length === 0) {
     // Subscription record doesn't exist - create it with the specified tier.
     // This handles the edge case where the database hook failed during user signup.
-    logger.warn("subscription not found, creating missing record", {
-      userId,
-      tier,
-    });
+    logger.warn(
+      { userId, tier },
+      "subscription not found, creating missing record",
+    );
 
     await db.insert(userSubscriptions).values({ userId, tier });
 
@@ -125,7 +125,7 @@ export async function clearSubscriptionEndsAt(userId: string): Promise<void> {
     .returning({ userId: userSubscriptions.userId });
 
   if (updated.length === 0) {
-    logger.warn("subscription not found when clearing end date", { userId });
+    logger.warn({ userId }, "subscription not found when clearing end date");
     return;
   }
 }
@@ -145,7 +145,7 @@ export async function createSubscription(userId: string): Promise<void> {
       .onConflictDoNothing({ target: userSubscriptions.userId });
   } catch (err) {
     // Log but don't rethrow - user signup should not fail due to subscription creation
-    logger.error("failed to create subscription for new user", err, { userId });
+    logger.error({ err, userId }, "failed to create subscription for new user");
   }
 }
 
@@ -270,10 +270,10 @@ export async function setLastExpiryNotification(
   if (updated.length === 0) {
     // Log but don't throw - avoid breaking the cron job for this edge case.
     // The user's subscription record should exist since we just fetched it.
-    logger.warn("subscription not found when setting expiry notification", {
-      userId,
-      threshold,
-    });
+    logger.warn(
+      { userId, threshold },
+      "subscription not found when setting expiry notification",
+    );
     return;
   }
 }

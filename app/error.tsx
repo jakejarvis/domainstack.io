@@ -4,7 +4,7 @@ import { RefreshCcw } from "lucide-react";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
-import { logger } from "@/lib/logger/client";
+import { analytics } from "@/lib/analytics/client";
 
 export default function RootError(props: {
   error: Error & { digest?: string };
@@ -13,9 +13,7 @@ export default function RootError(props: {
   const { error, reset } = props;
 
   useEffect(() => {
-    logger.error("Root error boundary caught error", error, {
-      digest: error.digest,
-    });
+    analytics.trackException(error, { digest: error.digest });
   }, [error]);
 
   const isDev = process.env.NODE_ENV !== "production";

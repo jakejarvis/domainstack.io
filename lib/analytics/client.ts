@@ -15,9 +15,6 @@ function track(event: string, properties?: Record<string, unknown>) {
   }
 }
 
-/**
- * @internal Use logger.error() instead, which automatically tracks exceptions.
- */
 function trackException(error: Error, properties?: Record<string, unknown>) {
   try {
     posthog.captureException(error, properties);

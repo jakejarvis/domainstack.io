@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
-import { logger } from "@/lib/logger/server";
+import { createLogger } from "@/lib/logger/server";
 
 const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
 
@@ -76,26 +76,18 @@ export const createCallerFactory = t.createCallerFactory;
 const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
+  const procedureLogger = createLogger({ source: "trpc", path, type });
+
   try {
     const result = await next();
     const durationMs = Math.round(performance.now() - start);
 
     // Log successful completion
-    logger.debug("procedure ok", {
-      source: "trpc",
-      path,
-      type,
-      durationMs,
-    });
+    procedureLogger.debug({ durationMs }, "procedure ok");
 
     // Track slow requests (>5s threshold) in PostHog
     if (durationMs > 5000) {
-      logger.warn("slow request", {
-        source: "trpc",
-        path,
-        type,
-        durationMs,
-      });
+      procedureLogger.warn({ durationMs }, "slow request");
 
       const { analytics } = await import("@/lib/analytics/server");
       // Explicitly void the promise to avoid unhandled rejection warnings
@@ -109,13 +101,7 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
     return result;
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
-
-    logger.error("procedure error", err, {
-      source: "trpc",
-      path,
-      type,
-      durationMs,
-    });
+    procedureLogger.error({ err, durationMs }, "procedure error");
 
     throw err;
   }
@@ -134,11 +120,6 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    logger.info("recording access for domain", {
-      source: "trpc",
-      domain: input.domain,
-    });
-
     after(() => updateLastAccessed(input.domain as string));
   }
   return next();

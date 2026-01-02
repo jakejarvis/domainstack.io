@@ -99,7 +99,7 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
     parseAndCacheRanges(ranges);
     return ranges;
   } catch (err) {
-    logger.error("fetch error", err);
+    logger.error({ err }, "fetch error");
     // Return empty ranges on error
     return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }

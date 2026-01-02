@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
-import { logger } from "@/lib/logger/client";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 
@@ -179,9 +178,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       return { previousDomains, previousSubscription };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       rollback(context);
-      logger.error("Failed to remove domain", err);
       toast.error("Failed to remove domain");
     },
     onSuccess: () => {
@@ -222,9 +220,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       return { previousDomains, previousSubscription };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       rollback(context);
-      logger.error("Failed to archive domain", err);
       toast.error("Failed to archive domain");
     },
     onSuccess: () => {
@@ -268,7 +265,6 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     },
     onError: (err, _variables, context) => {
       rollback(context);
-      logger.error("Failed to unarchive domain", err);
       // Show server error message (e.g., "You've reached your domain limit")
       const message =
         err instanceof Error ? err.message : "Failed to reactivate domain";
@@ -320,9 +316,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       return { previousDomains, previousSubscription };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       rollback(context);
-      logger.error("Failed to bulk archive domains", err);
       toast.error("Failed to archive domains");
     },
     onSettled: () => {
@@ -365,9 +360,8 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
 
       return { previousDomains, previousSubscription };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       rollback(context);
-      logger.error("Failed to bulk delete domains", err);
       toast.error("Failed to delete domains");
     },
     onSettled: () => {

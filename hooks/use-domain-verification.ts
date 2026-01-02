@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
-import { logger } from "@/lib/logger/client";
 import type {
   VerificationInstructions,
   VerificationMethod,
@@ -100,19 +99,6 @@ export function useDomainVerification({
     }),
     enabled: !!trackedDomainId && open,
   });
-
-  // Log errors for debugging
-  useEffect(() => {
-    if (instructionsQuery.error) {
-      logger.error(
-        "Failed to fetch verification instructions",
-        instructionsQuery.error,
-        {
-          trackedDomainId,
-        },
-      );
-    }
-  }, [instructionsQuery.error, trackedDomainId]);
 
   // When resumeDomain changes, update the state accordingly
   // This handles the case when TrackDomainButton switches from prefill to resume mode
@@ -211,7 +197,6 @@ export function useDomainVerification({
         });
       }
     } catch (err) {
-      logger.error("Failed to add domain for tracking", err, { domain });
       if (err instanceof Error) {
         setDomainError(err.message);
       } else {
@@ -253,11 +238,7 @@ export function useDomainVerification({
           error: result.error,
         });
       }
-    } catch (err) {
-      logger.error("Domain verification failed", err, {
-        trackedDomainId,
-        method,
-      });
+    } catch {
       setVerificationState({
         status: "failed",
         error: "Verification failed. Please try again.",
@@ -267,7 +248,7 @@ export function useDomainVerification({
         error: "exception",
       });
     }
-  }, [trackedDomainId, domain, method, verifyDomainMutation, onSuccess]);
+  }, [trackedDomainId, domain, verifyDomainMutation, onSuccess]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {

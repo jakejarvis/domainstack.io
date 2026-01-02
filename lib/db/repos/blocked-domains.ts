@@ -43,7 +43,7 @@ export async function syncBlockedDomains(domains: string[]): Promise<{
   if (uniqueDomains.length === 0) {
     // Don't clear existing blocklist if upstream returns empty, this could indicate fetch failure rather than an
     // intentional bulk deletion
-    logger.warn("empty blocklist provided, skipping sync to be safe");
+    logger.warn({}, "empty blocklist provided, skipping sync to be safe");
     return { added: 0, removed: 0, total: 0 };
   }
 
@@ -73,11 +73,10 @@ export async function syncBlockedDomains(domains: string[]): Promise<{
     removedCount = deleted.length;
   });
 
-  logger.debug("blocklist sync complete", {
-    added: addedCount,
-    removed: removedCount,
-    total: uniqueDomains.length,
-  });
+  logger.debug(
+    { added: addedCount, removed: removedCount, total: uniqueDomains.length },
+    "blocklist sync complete",
+  );
 
   return {
     added: addedCount,

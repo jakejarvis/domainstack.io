@@ -37,21 +37,19 @@ export async function dnsLookupViaHttps(
         return all ? records : records[0];
       }
     } catch (err) {
-      logger.debug("dns lookup failed for provider", {
-        hostname,
-        provider: provider.key,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.debug(
+        { err, hostname, provider: provider.key },
+        "dns lookup failed for provider",
+      );
       lastError = err;
     }
   }
 
   // All providers failed
-  logger.debug("all DoH providers failed for hostname", {
-    hostname,
-    lastError:
-      lastError instanceof Error ? lastError.message : String(lastError),
-  });
+  logger.debug(
+    { err: lastError, hostname },
+    "all DoH providers failed for hostname",
+  );
 
   // Throw the last error to maintain compatibility with native dns.lookup()
   throw lastError instanceof Error ? lastError : new Error("DNS lookup failed");

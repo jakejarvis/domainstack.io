@@ -32,7 +32,7 @@ export async function GET(
   const avatarUrl = await getUserAvatarUrl(userId);
 
   if (!avatarUrl) {
-    logger.debug("no avatar found for user", { userId });
+    logger.debug({ userId }, "no avatar found for user");
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -57,10 +57,10 @@ export async function GET(
     // Validate content type is a safe image format (block SVGs which can contain scripts)
     const contentType = asset.contentType;
     if (!contentType?.startsWith("image/") || contentType === "image/svg+xml") {
-      logger.warn("upstream returned invalid content type", {
-        userId,
-        contentType,
-      });
+      logger.warn(
+        { userId, contentType },
+        "upstream returned invalid content type",
+      );
       return new NextResponse("Invalid content type", { status: 502 });
     }
 
@@ -85,10 +85,7 @@ export async function GET(
   } catch (err) {
     // Only infrastructure errors (DNS, private IP, size limits, etc.) are thrown
     if (err instanceof RemoteAssetError) {
-      logger.info("avatar fetch failed", {
-        userId,
-        code: err.code,
-      });
+      logger.info({ userId, code: err.code }, "avatar fetch failed");
 
       switch (err.code) {
         case "host_not_allowed":
@@ -102,7 +99,7 @@ export async function GET(
       }
     }
 
-    logger.error("unexpected error fetching avatar", err, { userId });
+    logger.error({ err, userId }, "unexpected error fetching avatar");
     return new NextResponse("Failed to fetch avatar", { status: 502 });
   }
 }

@@ -18,11 +18,15 @@ export const onRequestError: Instrumentation.onRequestError = async (
     try {
       // Use logger for structured error logging
       const { logger } = await import("@/lib/logger/server");
-      logger.error("request error", error, {
-        source: "instrumentation",
-        path: request.path,
-        method: request.method,
-      });
+      logger.error(
+        {
+          err: error,
+          source: "instrumentation",
+          path: request.path,
+          method: request.method,
+        },
+        "request error",
+      );
     } catch {
       // Graceful degradation - don't throw to avoid breaking the request
     }

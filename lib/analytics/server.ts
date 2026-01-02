@@ -9,7 +9,6 @@ import type {
   IdentifyProperties,
   IdentifySetOnceProperties,
 } from "@/lib/analytics/types";
-import { logger } from "@/lib/logger/server";
 
 // PostHog clients maintain background flushers; keep a single shared instance
 // per runtime to avoid reopening sockets for every event. We deliberately avoid
@@ -54,9 +53,8 @@ const getDistinctId = cache(async (): Promise<string> => {
     const isExpectedError =
       err instanceof Error && err.message.includes("outside a request scope");
     if (!isExpectedError) {
-      logger.warn("unexpected error accessing cookies", err, {
-        source: "analytics",
-      });
+      // Use console.warn to avoid circular dependency with logger
+      console.warn("unexpected error accessing cookies", err);
     }
     // Fall through to generate a UUID
   }

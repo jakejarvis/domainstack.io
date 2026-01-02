@@ -163,9 +163,10 @@ export async function getRegistration(
     }
   } catch (err) {
     // Postgres unavailable - log and fall through to slow path
-    logger.warn("db cache unavailable, falling back to rdapper", err, {
-      domain,
-    });
+    logger.warn(
+      { err, domain },
+      "db cache unavailable, falling back to rdapper",
+    );
   }
 
   // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
@@ -190,11 +191,10 @@ export async function getRegistration(
         ? ("timeout" as const)
         : ("unsupported_tld" as const);
 
-      logger.info(isTimeout ? "timeout" : "unavailable", {
-        domain,
-        reason: error || "unknown",
-        unavailableReason,
-      });
+      logger.info(
+        { domain, reason: error || "unknown", unavailableReason },
+        isTimeout ? "timeout" : "unavailable",
+      );
 
       // Return response with status: "unknown" and explicit unavailableReason
       // isRegistered: false kept for backward compatibility but status is preferred
@@ -216,7 +216,7 @@ export async function getRegistration(
     const err = new Error(
       `Registration lookup failed for ${domain}: ${error || "unknown error"}`,
     );
-    logger.error("lookup failed", err, { domain });
+    logger.error({ err, domain }, "lookup failed");
     throw err;
   }
 
@@ -373,12 +373,8 @@ export async function getRegistration(
     // Persistence or scheduling failed, but we still have valid rdapper data
     // Log the error and return the response anyway
     logger.error(
+      { err, domain, registrarName: registrarNormalized.name },
       "persistence failed, returning rdapper data without cache",
-      err,
-      {
-        domain,
-        registrarName: registrarNormalized.name,
-      },
     );
   }
 

@@ -119,11 +119,14 @@ export async function getSeo(
 
     // Log if cached data has errors (helps debug issues)
     if (response.errors?.html || response.errors?.robots) {
-      logger.debug("returning cached seo with errors", {
-        domain,
-        htmlError: response.errors.html,
-        robotsError: response.errors.robots,
-      });
+      logger.debug(
+        {
+          domain,
+          htmlError: response.errors.html,
+          robotsError: response.errors.robots,
+        },
+        "returning cached seo with errors",
+      );
     }
 
     return response;
@@ -182,17 +185,17 @@ export async function getSeo(
         : String(err);
 
     if (isDnsError) {
-      logger.debug("html fetch failed (DNS lookup failed)", {
-        domain,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.debug(
+        { domain, error: err instanceof Error ? err.message : String(err) },
+        "html fetch failed (DNS lookup failed)",
+      );
     } else if (isTlsError) {
-      logger.debug("html fetch failed (TLS error)", {
-        domain,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.debug(
+        { domain, error: err instanceof Error ? err.message : String(err) },
+        "html fetch failed (TLS error)",
+      );
     } else {
-      logger.error("html fetch failed", err, { domain, url: finalUrl });
+      logger.error({ err, domain, url: finalUrl }, "html fetch failed");
     }
   }
 
@@ -272,7 +275,7 @@ export async function getSeo(
         uploadedImageUrl = url;
         preview.imageUploaded = url;
       } catch (err) {
-        logger.warn("OG image processing failed", err, { domain });
+        logger.warn({ err, domain }, "OG image processing failed");
         preview.imageUploaded = null;
       }
     }

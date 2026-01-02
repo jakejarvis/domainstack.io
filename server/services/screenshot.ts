@@ -60,13 +60,13 @@ export async function getScreenshot(
 
   // Check blocklist before any expensive operations
   if (await isDomainBlocked(domain)) {
-    logger.info("screenshot blocked", { domain });
+    logger.info({ domain }, "screenshot blocked");
     return { url: null, blocked: true };
   }
 
   // Check for in-flight request
   if (screenshotPromises.has(domain)) {
-    logger.debug("in-flight request hit", { domain });
+    logger.debug({ domain }, "in-flight request hit");
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return screenshotPromises.get(domain)!;
   }
@@ -88,10 +88,10 @@ export async function getScreenshot(
   // This catches edge cases where promise never settles
   const timeoutId = setTimeout(() => {
     if (screenshotPromises.get(domain) === promise) {
-      logger.warn("cleaning up stale promise", {
-        domain,
-        timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS,
-      });
+      logger.warn(
+        { domain, timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS },
+        "cleaning up stale promise",
+      );
       screenshotPromises.delete(domain);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
@@ -101,9 +101,10 @@ export async function getScreenshot(
 
   // Log map size for monitoring
   if (screenshotPromises.size > 10) {
-    logger.warn("promise map size high (potential memory pressure)", {
-      count: screenshotPromises.size,
-    });
+    logger.warn(
+      { count: screenshotPromises.size },
+      "promise map size high (potential memory pressure)",
+    );
   }
 
   return promise;
@@ -138,13 +139,13 @@ async function generateScreenshot(
           screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
         if (isDefinitiveResult) {
-          logger.debug("db cache hit", { domain });
+          logger.debug({ domain }, "db cache hit");
           return { url: screenshotRecord.url };
         }
       }
     }
   } catch (err) {
-    logger.error("db read failed", err, { domain });
+    logger.error({ err, domain }, "db read failed");
   }
 
   // Generate screenshot (cache missed)
@@ -182,11 +183,10 @@ async function generateScreenshot(
             const status = response.status();
             if (status === 404 || status === 410) {
               permanentFailureUrls.add(url);
-              logger.debug("permanent failure detected for url", {
-                domain,
-                url,
-                status,
-              });
+              logger.debug(
+                { domain, url, status },
+                "permanent failure detected for url",
+              );
               break; // No point retrying this specific URL
             }
           }
@@ -243,7 +243,7 @@ async function generateScreenshot(
               expiresAt,
             });
           } catch (err) {
-            logger.error("db persist error", err, { domain });
+            logger.error({ err, domain }, "db persist error");
           }
           resultUrl = storedUrl;
           break urlLoop;
@@ -251,13 +251,16 @@ async function generateScreenshot(
           lastError = err;
           // Log when final attempt for this URL fails
           if (attemptIndex === attempts - 1) {
-            logger.info("screenshot attempts exhausted, giving up", {
-              domain,
-              url,
-              attemptIndex: attemptIndex + 1,
-              totalAttempts: attempts,
-              error: err instanceof Error ? err.message : String(err),
-            });
+            logger.info(
+              {
+                domain,
+                url,
+                attemptIndex: attemptIndex + 1,
+                totalAttempts: attempts,
+                error: err instanceof Error ? err.message : String(err),
+              },
+              "screenshot attempts exhausted, giving up",
+            );
           }
           const delay = backoffDelayMs(
             attemptIndex,
@@ -272,9 +275,7 @@ async function generateScreenshot(
             try {
               await page.close();
             } catch (err) {
-              logger.error("failed to close page", err, {
-                domain,
-              });
+              logger.error({ err, domain }, "failed to close page");
             }
           }
         }
@@ -288,10 +289,10 @@ async function generateScreenshot(
     // Only mark as permanently failed if ALL candidate URLs returned permanent signals
     if (permanentFailureUrls.size === tryUrls.length && tryUrls.length > 0) {
       isPermanentFailure = true;
-      logger.debug("screenshot permanently unavailable (all urls failed)", {
-        domain,
-        failedUrls: Array.from(permanentFailureUrls),
-      });
+      logger.debug(
+        { domain, failedUrls: Array.from(permanentFailureUrls) },
+        "screenshot permanently unavailable (all urls failed)",
+      );
     }
 
     // All attempts failed - persist result based on failure type
@@ -316,11 +317,11 @@ async function generateScreenshot(
           expiresAt,
         });
       } catch (err) {
-        logger.error("db persist error (null)", err, { domain });
+        logger.error({ err, domain }, "db persist error (null)");
       }
     }
   } catch (err) {
-    logger.error("screenshot generation failed", err, { domain });
+    logger.error({ err, domain }, "screenshot generation failed");
   }
 
   return { url: resultUrl };

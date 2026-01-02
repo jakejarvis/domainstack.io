@@ -155,11 +155,8 @@ export async function fetchRemoteAsset(
           opts.returnOnDisallowedRedirect
         ) {
           logger.debug(
+            { from: currentUrl.toString(), to: nextUrl.toString() },
             "redirect to disallowed host, returning redirect response",
-            {
-              from: currentUrl.toString(),
-              to: nextUrl.toString(),
-            },
           );
           // Fall through to process this 3xx response as the final result
         } else {
@@ -179,9 +176,10 @@ export async function fetchRemoteAsset(
       fallbackToGetOnHeadFailure &&
       !retryingWithGet
     ) {
-      logger.debug("HEAD returned 405, retrying with GET", {
-        url: currentUrl.toString(),
-      });
+      logger.debug(
+        { url: currentUrl.toString() },
+        "HEAD returned 405, retrying with GET",
+      );
       method = "GET";
       retryingWithGet = true;
       // Reset redirect count since we're starting over with GET
@@ -202,10 +200,10 @@ export async function fetchRemoteAsset(
           "size_exceeded",
           `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
         );
-        logger.warn("size exceeded", {
-          url: currentUrl.toString(),
-          reason: error.message,
-        });
+        logger.warn(
+          { url: currentUrl.toString(), reason: error.message },
+          "size exceeded",
+        );
         throw error;
       }
     }
@@ -266,9 +264,7 @@ async function ensureUrlAllowed(
     BLOCKED_HOSTNAMES.has(hostname) ||
     BLOCKED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
   ) {
-    logger.warn("blocked host", {
-      url: url.toString(),
-    });
+    logger.warn({ url: url.toString() }, "blocked host");
     throw new RemoteAssetError("host_blocked", `Host ${hostname} is blocked`);
   }
 
@@ -276,9 +272,7 @@ async function ensureUrlAllowed(
     options.allowedHosts.length > 0 &&
     !options.allowedHosts.includes(hostname)
   ) {
-    logger.warn("blocked host", {
-      url: url.toString(),
-    });
+    logger.warn({ url: url.toString() }, "blocked host");
     throw new RemoteAssetError(
       "host_not_allowed",
       `Host ${hostname} is not in allow list`,
@@ -287,9 +281,7 @@ async function ensureUrlAllowed(
 
   if (ipaddr.isValid(hostname)) {
     if (isBlockedIp(hostname)) {
-      logger.warn("blocked private ip", {
-        url: url.toString(),
-      });
+      logger.warn({ url: url.toString() }, "blocked private ip");
       throw new RemoteAssetError(
         "private_ip",
         `IP ${hostname} is not reachable`,
@@ -307,10 +299,13 @@ async function ensureUrlAllowed(
   } catch (err) {
     // DNS failures are expected for non-existent domains - log at info level
     // since the caller will gracefully fall back to a placeholder
-    logger.info("dns lookup failed", {
-      url: url.toString(),
-      reason: err instanceof Error ? err.message : "unknown",
-    });
+    logger.info(
+      {
+        url: url.toString(),
+        reason: err instanceof Error ? err.message : "unknown",
+      },
+      "dns lookup failed",
+    );
     throw new RemoteAssetError(
       "dns_error",
       err instanceof Error ? err.message : "DNS lookup failed",
@@ -318,16 +313,12 @@ async function ensureUrlAllowed(
   }
 
   if (!records || records.length === 0) {
-    logger.debug("lookup returned no records", {
-      url: url.toString(),
-    });
+    logger.debug({ url: url.toString() }, "lookup returned no records");
     throw new RemoteAssetError("dns_error", "DNS lookup returned no records");
   }
 
   if (records.some((record) => isBlockedIp(record.address))) {
-    logger.warn("blocked private ip", {
-      url: url.toString(),
-    });
+    logger.warn({ url: url.toString() }, "blocked private ip");
     throw new RemoteAssetError(
       "private_ip",
       `DNS for ${hostname} resolved to private address`,

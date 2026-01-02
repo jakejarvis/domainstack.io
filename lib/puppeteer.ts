@@ -118,7 +118,7 @@ export function getBrowser(
 ): Promise<Browser> {
   if (!browserPromise) {
     browserPromise = createBrowser(overrides).catch((err) => {
-      logger.error("failed to create browser", err);
+      logger.error({ err }, "failed to create browser");
       // Reset promise to allow retry on next call
       browserPromise = null;
       throw err;
@@ -133,7 +133,7 @@ export async function closeBrowser(): Promise<void> {
       const browser = await browserPromise;
       await browser.close();
     } catch (err) {
-      logger.error("failed to close browser", err);
+      logger.error({ err }, "failed to close browser");
     } finally {
       browserPromise = null;
     }
