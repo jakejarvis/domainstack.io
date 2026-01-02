@@ -11,7 +11,6 @@ let nextConfig: NextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: true,
-  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   outputFileTracingIncludes: {
     "/api/**": ["node_modules/@sparticuz/chromium/bin/**"],
   },

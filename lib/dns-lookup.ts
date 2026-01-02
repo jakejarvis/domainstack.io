@@ -42,12 +42,6 @@ export async function dnsLookupViaHttps(
     }
   }
 
-  // All providers failed
-  logger.debug(
-    { err: lastError, hostname },
-    "all DoH providers failed for hostname",
-  );
-
   // Throw the last error to maintain compatibility with native dns.lookup()
   throw lastError instanceof Error ? lastError : new Error("DNS lookup failed");
 }

@@ -65,6 +65,34 @@ const baseOptions: pino.LoggerOptions = {
 };
 
 /**
+ * Creates the Pino logger instance.
+ * Extracted to a function to support the global singleton pattern.
+ */
+function createPinoLogger(): pino.Logger {
+  return isDev
+    ? // Development: pretty printing to stdout (sync to avoid worker issues)
+      pino({
+        ...baseOptions,
+        transport: {
+          target: "pino-pretty",
+          options: { colorize: true, sync: true },
+        },
+      })
+    : // Production: route logs to console methods for proper Vercel log coloring
+      // console.error -> red, console.warn -> yellow, console.log -> default
+      pino(baseOptions, createConsoleDestination());
+}
+
+/**
+ * Global singleton to prevent multiple logger instances during Next.js HMR.
+ * In development, module re-evaluation would create new pino-pretty transports,
+ * causing "MaxListenersExceededWarning" from leaked socket listeners.
+ */
+const globalForLogger = globalThis as unknown as {
+  __pino_logger?: pino.Logger;
+};
+
+/**
  * Server-side Pino logger.
  *
  * Features:
@@ -73,6 +101,7 @@ const baseOptions: pino.LoggerOptions = {
  * - Standard error serialization
  * - Pretty printing in development only
  * - Uses console methods for safe Vercel log level translation
+ * - Global singleton prevents HMR-related memory leaks
  *
  * @example
  * ```typescript
@@ -82,18 +111,10 @@ const baseOptions: pino.LoggerOptions = {
  * logger.error({ err: error, table: "users" }, "Database connection failed");
  * ```
  */
-export const logger: pino.Logger = isDev
-  ? // Development: pretty printing to stdout (sync to avoid worker issues)
-    pino({
-      ...baseOptions,
-      transport: {
-        target: "pino-pretty",
-        options: { colorize: true, sync: true },
-      },
-    })
-  : // Production: route logs to console methods for proper Vercel log coloring
-    // console.error -> red, console.warn -> yellow, console.log -> default
-    pino(baseOptions, createConsoleDestination());
+export const logger: pino.Logger =
+  globalForLogger.__pino_logger ??
+  // biome-ignore lint/suspicious/noAssignInExpressions: we need to assign to the global variable
+  (globalForLogger.__pino_logger = createPinoLogger());
 
 /**
  * Create a child logger with a specific context prefix.

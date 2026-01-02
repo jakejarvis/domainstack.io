@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
+import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
 import type { FetchIconConfig } from "@/lib/schemas";
@@ -126,7 +126,9 @@ async function processIconImpl(
 
       return { url };
     } catch (err) {
-      logger.warn({ err, identifier });
+      if (!(err instanceof RemoteAssetError)) {
+        logger.warn({ err, identifier });
+      }
       // Infrastructure errors (DNS, private IP, etc.) - not a true "not found"
       allNotFound = false;
       // Try next source

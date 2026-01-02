@@ -240,7 +240,7 @@ async function generateScreenshot(
           lastError = err;
           // Log when final attempt for this URL fails
           if (attemptIndex === attempts - 1) {
-            logger.info(
+            logger.debug(
               {
                 err,
                 domain,

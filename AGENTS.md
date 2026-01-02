@@ -334,7 +334,7 @@ Key patterns:
   - **Pino-based:** High-performance, low-overhead JSON logger for Node.js
   - **Server-only:** Client-side errors are tracked via `analytics.trackException()` (PostHog)
   - Structured JSON output in production; pretty-printed with colors in development via `pino-pretty`
-  - **Important:** OpenTelemetry (OTEL) logging and trace correlation are **intentionally NOT used**. Do not introduce OTEL Logs API, trace/span context, or OTEL instrumentation in future changes.
+  - **OTel trace correlation:** Logs automatically include `traceId` and `spanId` from Vercel's OpenTelemetry context via `@opentelemetry/instrumentation-pino`, enabling request tracing in Vercel's Observability dashboard.
 - **Server-side logging:**
   - Import singleton: `import { logger } from "@/lib/logger/server"`
   - Or create child logger: `const logger = createLogger({ source: "dns" })`

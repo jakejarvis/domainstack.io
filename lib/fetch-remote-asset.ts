@@ -1,6 +1,7 @@
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
 import { dnsLookupViaHttps } from "@/lib/dns-lookup";
+import { isExpectedDnsError } from "@/lib/dns-utils";
 import { type FetchOptions, fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 
@@ -299,10 +300,12 @@ async function ensureUrlAllowed(
   } catch (err) {
     // DNS failures are expected for non-existent domains - log at info level
     // since the caller will gracefully fall back to a placeholder
-    logger.info({
-      url: url.toString(),
-      err,
-    });
+    if (!isExpectedDnsError(err)) {
+      logger.warn({
+        err,
+        url: url.toString(),
+      });
+    }
     throw new RemoteAssetError(
       "dns_error",
       err instanceof Error ? err.message : "DNS lookup failed",

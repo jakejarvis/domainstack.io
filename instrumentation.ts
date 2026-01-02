@@ -1,8 +1,15 @@
+import { PinoInstrumentation } from "@opentelemetry/instrumentation-pino";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
 export function register() {
-  registerOTel({ serviceName: "domainstack" });
+  registerOTel({
+    serviceName: "domainstack",
+    instrumentations: [
+      "auto", // Keep Vercel's default fetch instrumentation
+      new PinoInstrumentation(),
+    ],
+  });
 }
 
 /**

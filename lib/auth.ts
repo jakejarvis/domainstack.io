@@ -117,15 +117,8 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   logger: {
     log: (level, message, ...args) => {
-      const logFn =
-        level === "error"
-          ? logger.error.bind(logger)
-          : level === "warn"
-            ? logger.warn.bind(logger)
-            : level === "debug"
-              ? logger.debug.bind(logger)
-              : logger.info.bind(logger);
-      logFn(args.length > 0 ? { args } : {}, message);
+      const logFn = logger[level].bind(logger);
+      logFn({ ...args }, message);
     },
   },
   databaseHooks: {
