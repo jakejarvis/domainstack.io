@@ -53,7 +53,7 @@ export function SocialPreview({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#64748b] text-[11px] dark:text-[#8b98a5]">
-                  <ImageOff className="h-5 w-5" aria-hidden="true" />
+                  <ImageOff className="h-5 w-5" aria-hidden />
                   <span className="sr-only">No image</span>
                 </div>
               )}
@@ -94,7 +94,7 @@ export function SocialPreview({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#64748b] text-[12px] dark:text-[#8b98a5]">
-                  <ImageOff className="h-5 w-5" aria-hidden="true" />
+                  <ImageOff className="h-5 w-5" aria-hidden />
                   <span className="sr-only">No image</span>
                 </div>
               )}
@@ -135,7 +135,7 @@ export function SocialPreview({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[#606770] text-[12px] dark:text-[#b0b3b8]">
-                <ImageOff className="h-5 w-5" aria-hidden="true" />
+                <ImageOff className="h-5 w-5" aria-hidden />
                 <span className="sr-only">No image</span>
               </div>
             )}
@@ -176,7 +176,7 @@ export function SocialPreview({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[#6e7781] text-[12px] dark:text-[#9aa6b2]">
-                <ImageOff className="h-5 w-5" aria-hidden="true" />
+                <ImageOff className="h-5 w-5" aria-hidden />
                 <span className="sr-only">No image</span>
               </div>
             )}
@@ -225,7 +225,7 @@ export function SocialPreview({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[#6b7075] text-[12px] dark:text-[#9aa6b2]">
-                <ImageOff className="h-5 w-5" aria-hidden="true" />
+                <ImageOff className="h-5 w-5" aria-hidden />
                 <span className="sr-only">No image</span>
               </div>
             )}
@@ -265,7 +265,7 @@ export function SocialPreview({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-[#99a1ab] text-[12px]">
-                <ImageOff className="h-5 w-5" aria-hidden="true" />
+                <ImageOff className="h-5 w-5" aria-hidden />
                 <span className="sr-only">No image</span>
               </div>
             )}

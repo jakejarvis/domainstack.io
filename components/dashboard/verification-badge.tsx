@@ -1,5 +1,3 @@
-"use client";
-
 import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { useEffect, useState } from "react";

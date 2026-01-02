@@ -1,5 +1,3 @@
-"use client";
-
 import { Ban } from "lucide-react";
 import posthog from "posthog-js";
 import { Component } from "react";

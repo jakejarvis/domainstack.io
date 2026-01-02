@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle, CheckCircle2, HeartCrack } from "lucide-react";
 import { useState } from "react";
 import {

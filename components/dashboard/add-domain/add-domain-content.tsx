@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertCircle, Check, Gauge, ShoppingCart } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";

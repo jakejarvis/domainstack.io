@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
-import { HeaderGrid } from "@/components/layout/app-header-grid";
+import { AppHeaderGrid } from "@/components/layout/app-header-grid";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { AppHeaderSlideOver } from "@/components/layout/app-header-slideover";
 import { GithubStars } from "@/components/layout/github-stars";
@@ -15,13 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function AppHeader() {
   return (
     <HeaderSearchProvider>
-      <HeaderGrid>
+      <AppHeaderGrid>
         <Link
           href="/"
           className="mr-2.5 flex items-center justify-self-start rounded-md text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
           aria-label="Go to homepage"
         >
-          <Logo className="h-10 w-10" aria-hidden="true" />
+          <Logo className="size-10" />
         </Link>
         <Suspense fallback={<HeaderSearchSkeleton />}>
           <HeaderSearchClient />
@@ -40,7 +40,7 @@ export function AppHeader() {
           <AppHeaderSeparator />
           <AppHeaderClientButtons />
         </AppHeaderSlideOver>
-      </HeaderGrid>
+      </AppHeaderGrid>
     </HeaderSearchProvider>
   );
 }

@@ -120,7 +120,7 @@ function TabsList({ className, children, ...props }: TabsPrimitive.List.Props) {
     >
       <motion.span
         data-slot="tabs-indicator"
-        aria-hidden="true"
+        aria-hidden
         className={cn(
           "pointer-events-none absolute top-0 left-0 z-0 rounded-md",
           "bg-background/90 shadow-sm ring-1 ring-black/10",

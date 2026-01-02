@@ -19,7 +19,6 @@ export function HostingMapClient({ lat, lon }: HostingMapClientProps) {
       zoom={4}
       minZoom={2}
       maxZoom={10} // don't pretend that geolocation is accurate ;)
-      dragPan={false}
       dragRotate={false}
       keyboard={false}
       scrollZoom={false}

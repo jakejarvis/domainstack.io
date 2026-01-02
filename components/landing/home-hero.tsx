@@ -97,7 +97,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
       <span
         ref={measureRef}
         className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 align-baseline text-foreground shadow-sm ring-1 ring-border/60 sm:rounded-xl sm:px-3 sm:py-1"
-        aria-hidden="true"
+        aria-hidden
       >
         <span className="inline-flex items-center whitespace-nowrap">
           {rotatingWords[index]}

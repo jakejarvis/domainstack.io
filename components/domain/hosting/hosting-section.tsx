@@ -96,7 +96,6 @@ export function HostingSection({
                         // https://gitlab.com/catamphetamine/country-flag-icons/-/tree/master/flags/3x2
                         `flag:${data.geo.country_code.toUpperCase()}`,
                       )}
-                      aria-hidden="true"
                       title={data.geo.country || data.geo.country_code}
                     />
                   ) : undefined

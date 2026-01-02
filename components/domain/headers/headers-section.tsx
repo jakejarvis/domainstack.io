@@ -51,7 +51,7 @@ export function HeadersSection({
         <div className="space-y-4">
           {status !== 200 && (
             <Alert>
-              <Info aria-hidden="true" />
+              <Info aria-hidden />
               <AlertDescription>
                 <p className="text-[13px]">
                   Server returned{" "}
@@ -65,10 +65,7 @@ export function HeadersSection({
                       {status}
                       {statusMessage ? ` ${statusMessage}` : ""}
                     </span>
-                    <ExternalLink
-                      className="!h-3.5 !w-3.5"
-                      aria-hidden="true"
-                    />
+                    <ExternalLink className="!size-3.5" aria-hidden />
                   </a>
                   {"."}
                 </p>

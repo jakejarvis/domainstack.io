@@ -29,7 +29,7 @@ export function Modal({
   const router = useRouter();
 
   return (
-    <Dialog open={true} onOpenChange={() => router.back()}>
+    <Dialog open onOpenChange={() => router.back()}>
       <DialogContent
         className={cn(
           "flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0",

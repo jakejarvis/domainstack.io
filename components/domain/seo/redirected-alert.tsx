@@ -19,7 +19,7 @@ export function RedirectedAlert({
     if (dest === src) return null;
     return (
       <Alert {...props}>
-        <Milestone aria-hidden="true" />
+        <Milestone aria-hidden />
         <AlertDescription>
           <p className="text-[13px]">
             We followed a redirect to{" "}
@@ -30,7 +30,7 @@ export function RedirectedAlert({
               title={`View report for ${dest}`}
             >
               <span className="font-medium">{dest}</span>
-              <Search className="!h-3.5 !w-3.5" aria-hidden="true" />
+              <Search className="!size-3.5" aria-hidden />
             </Link>
             {"."}
           </p>

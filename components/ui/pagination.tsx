@@ -94,7 +94,7 @@ function PaginationPrevious({ className, ...props }: PaginationLinkProps) {
       className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
       {...props}
     >
-      <ChevronLeftIcon aria-hidden={true} />
+      <ChevronLeftIcon aria-hidden />
       <span className="hidden sm:block">Previous</span>
     </PaginationLink>
   );
@@ -109,7 +109,7 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
       {...props}
     >
       <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon aria-hidden={true} />
+      <ChevronRightIcon aria-hidden />
     </PaginationLink>
   );
 }
@@ -126,7 +126,7 @@ function PaginationEllipsis({
       className: cn("flex size-9 items-center justify-center", className),
       children: (
         <>
-          <MoreHorizontalIcon className="size-4" aria-hidden={true} />
+          <MoreHorizontalIcon className="size-4" aria-hidden />
           <span className="sr-only">More pages</span>
         </>
       ),

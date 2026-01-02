@@ -13,7 +13,7 @@ export function CertificateAlert({
 }) {
   return (
     <Alert variant="destructive" className={cn(className)} {...props}>
-      <ShieldAlert aria-hidden="true" className="size-4" />
+      <ShieldAlert aria-hidden className="size-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {error ||

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ArrowUp,
   ChevronDown,
@@ -149,7 +147,7 @@ export function CertificatesSection({
                 onClick={() => setShowAll(true)}
                 className="text-[13px]"
               >
-                <ChevronDown className="h-4 w-4" aria-hidden />
+                <ChevronDown className="size-4" aria-hidden />
                 <span>Show Chain</span>
               </Button>
             </div>
@@ -166,8 +164,11 @@ export function CertificatesSection({
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   style={{ overflow: "hidden" }}
                 >
-                  <div className="my-3 flex justify-center" aria-hidden>
-                    <ArrowUp className="h-4 w-4 text-muted-foreground/60" />
+                  <div className="my-3 flex justify-center">
+                    <ArrowUp
+                      className="size-4 text-muted-foreground/60"
+                      aria-hidden
+                    />
                   </div>
                   {remainingCerts.map((c, idx) => (
                     <Fragment
@@ -260,8 +261,11 @@ export function CertificatesSection({
                       </div>
 
                       {idx < remainingCerts.length - 1 && (
-                        <div className="my-3 flex justify-center" aria-hidden>
-                          <ArrowUp className="h-4 w-4 text-muted-foreground/60" />
+                        <div className="my-3 flex justify-center">
+                          <ArrowUp
+                            className="size-4 text-muted-foreground/60"
+                            aria-hidden
+                          />
                         </div>
                       )}
                     </Fragment>
@@ -270,11 +274,11 @@ export function CertificatesSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      aria-expanded={true}
                       onClick={() => setShowAll(false)}
                       className="text-[13px]"
+                      aria-expanded
                     >
-                      <ChevronUp className="h-4 w-4" aria-hidden />
+                      <ChevronUp className="size-4" aria-hidden />
                       <span>Hide Chain</span>
                     </Button>
                   </div>

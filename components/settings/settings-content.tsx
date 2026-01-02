@@ -1,3 +1,5 @@
+"use client";
+
 import { Bell, User, WalletMinimal } from "lucide-react";
 import { DangerZoneSettingsSection } from "@/components/settings/danger-zone-settings-section";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts-section";
@@ -22,7 +24,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
               value="subscription"
               className="h-auto flex-col items-center gap-2 px-4 py-2.5"
             >
-              <WalletMinimal className="size-[18px]" aria-hidden="true" />
+              <WalletMinimal className="size-[18px]" aria-hidden />
               <span className="hidden text-[13px] leading-none sm:inline">
                 Subscription
               </span>
@@ -41,7 +43,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
               value="notifications"
               className="h-auto flex-col items-center gap-2 px-4 py-2.5"
             >
-              <Bell className="size-[18px]" aria-hidden="true" />
+              <Bell className="size-[18px]" aria-hidden />
               <span className="hidden text-[13px] leading-none sm:inline">
                 Notifications
               </span>
@@ -60,7 +62,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
               value="account"
               className="h-auto flex-col items-center gap-2 px-4 py-2.5"
             >
-              <User className="size-[18px]" aria-hidden="true" />
+              <User className="size-[18px]" aria-hidden />
               <span className="hidden text-[13px] leading-none sm:inline">
                 Account
               </span>

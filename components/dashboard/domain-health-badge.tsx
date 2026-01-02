@@ -1,5 +1,3 @@
-"use client";
-
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import {
   Activity,

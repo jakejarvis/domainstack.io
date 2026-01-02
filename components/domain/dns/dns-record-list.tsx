@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { TtlBadge } from "@/components/domain/dns/ttl-badge";
 import { KeyValue } from "@/components/domain/key-value";

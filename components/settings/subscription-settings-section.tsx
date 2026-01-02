@@ -1,5 +1,3 @@
-"use client";
-
 import { format } from "date-fns";
 import { CreditCard, ShoppingCart } from "lucide-react";
 import { UsageMeter } from "@/components/dashboard/usage-meter";

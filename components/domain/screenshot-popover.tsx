@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Screenshot } from "@/components/domain/screenshot";
 import {
@@ -52,7 +50,7 @@ export function ScreenshotPopover({
         nativeButton={false}
         openOnHover
         delay={0}
-        closeDelay={0}
+        closeDelay={300}
         onClick={handleInteraction}
         render={children}
       />

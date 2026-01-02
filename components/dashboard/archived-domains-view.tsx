@@ -1,5 +1,3 @@
-"use client";
-
 import { formatDistanceToNow } from "date-fns";
 import { Archive, CircleFadingArrowUp, RotateCcw, Trash2 } from "lucide-react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";

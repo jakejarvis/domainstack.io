@@ -58,10 +58,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         </div>
       </div>
 
-      <Separator
-        aria-hidden="true"
-        className="my-4 bg-border/80 dark:bg-border/50"
-      />
+      <Separator className="my-4 bg-border/80 dark:bg-border/50" />
 
       <Accordion className="w-full">
         <AccordionItem value="apple-shortcut">
@@ -136,10 +133,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         </AccordionItem>
       </Accordion>
 
-      <Separator
-        aria-hidden="true"
-        className="my-4 bg-border/80 dark:bg-border/50"
-      />
+      <Separator className="my-4 bg-border/80 dark:bg-border/50" />
 
       <Accordion className="w-full">
         <AccordionItem value="raycast" className="border-b-0">

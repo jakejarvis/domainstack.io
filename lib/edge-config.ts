@@ -50,7 +50,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
 
     if (isPrerenderError) {
       // This is expected during static generation when accessing dynamic data
-      logger.debug("skipping domain suggestions during prerender");
+      logger.info("skipping domain suggestions during prerender");
     } else {
       // Log unexpected errors but still fail gracefully
       logger.error(err, "failed to fetch domain suggestions");
@@ -99,7 +99,7 @@ export async function getTierLimits(): Promise<TierLimits> {
       err instanceof Error && err.message.includes("During prerendering");
 
     if (isPrerenderError) {
-      logger.debug("skipping tier limits during prerender");
+      logger.info("skipping tier limits during prerender");
     } else {
       logger.error(err, "failed to fetch tier limits");
     }
@@ -152,7 +152,7 @@ export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
     const raw = await get<unknown>("provider_catalog");
 
     if (!raw) {
-      logger.debug("provider_catalog key not found in Edge Config");
+      logger.warn("provider_catalog key not found in Edge Config");
       return null;
     }
 

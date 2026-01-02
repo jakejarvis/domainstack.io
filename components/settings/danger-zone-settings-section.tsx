@@ -1,5 +1,3 @@
-"use client";
-
 import { AlertTriangle, ChevronDown, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";

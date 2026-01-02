@@ -1,5 +1,3 @@
-"use client";
-
 import { Info } from "lucide-react";
 import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
 import type { DnsInstructions } from "@/lib/schemas";

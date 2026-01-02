@@ -1,5 +1,3 @@
-"use client";
-
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Archive, Bell, CheckCheck, Inbox, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -126,7 +124,7 @@ export function NotificationsPopover() {
                   {count > 0 && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
-                      aria-hidden="true"
+                      aria-hidden
                     />
                   )}
                 </Button>

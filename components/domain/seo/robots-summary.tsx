@@ -170,7 +170,7 @@ export function RobotsSummary({
           <span>robots.txt</span>
           <ExternalLink
             className="relative bottom-px inline-flex size-3"
-            aria-hidden="true"
+            aria-hidden
           />
         </a>
         <PillCount
@@ -229,7 +229,7 @@ export function RobotsSummary({
                   >
                     <CircleDot
                       className="size-3.5 text-accent-blue"
-                      aria-hidden="true"
+                      aria-hidden
                     />
                     All
                     <PillCount
@@ -244,7 +244,7 @@ export function RobotsSummary({
                   >
                     <CircleCheck
                       className="size-3.5 text-accent-green"
-                      aria-hidden="true"
+                      aria-hidden
                     />
                     <span>Allow</span>
                     <PillCount count={counts.allows} color="slate" />
@@ -254,10 +254,7 @@ export function RobotsSummary({
                     variant="ghost"
                     className="h-[calc(100%-1px)] cursor-pointer"
                   >
-                    <Ban
-                      className="size-3.5 text-destructive"
-                      aria-hidden="true"
-                    />
+                    <Ban className="size-3.5 text-destructive" aria-hidden />
                     <span>Disallow</span>
                     <PillCount count={counts.disallows} color="slate" />
                   </ToggleGroupItem>
@@ -533,7 +530,7 @@ function GroupContent({
             className="text-[12px]"
             onClick={() => setVisible(total)}
           >
-            <EllipsisVertical className="!h-3.5 !w-3.5" aria-hidden />
+            <EllipsisVertical className="!size-3.5" aria-hidden />
             <span>Show {more} more</span>
           </Button>
         </div>
@@ -602,7 +599,7 @@ function RuleTypeDot({
     <Tooltip>
       <TooltipTrigger
         render={
-          <div className="flex h-4 w-4 items-center justify-center">
+          <div className="flex size-4 items-center justify-center">
             <Icon className={cn("size-3.5", colorClass)} aria-hidden />
           </div>
         }
@@ -669,7 +666,7 @@ function SitemapsList({ items }: { items: string[] }) {
               className="text-[12px]"
               onClick={() => setVisible(total)}
             >
-              <EllipsisVertical className="!h-3.5 !w-3.5" aria-hidden />
+              <EllipsisVertical className="!size-3.5" aria-hidden />
               <span>Show {more} more</span>
             </Button>
           </div>

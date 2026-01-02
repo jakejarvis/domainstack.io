@@ -34,10 +34,7 @@ export function MetaTagsGrid({
                     className="text-muted-foreground hover:text-foreground"
                     title="Open URL in new tab"
                   >
-                    <ExternalLink
-                      className="!h-3.5 !w-3.5"
-                      aria-hidden="true"
-                    />
+                    <ExternalLink className="!size-3.5" aria-hidden />
                   </a>
                 ) : null
               }

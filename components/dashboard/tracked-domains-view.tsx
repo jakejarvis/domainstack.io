@@ -1,5 +1,3 @@
-"use client";
-
 import type { Table } from "@tanstack/react-table";
 import { FilterX, Globe, Plus, Timer } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";

@@ -1,5 +1,3 @@
-"use client";
-
 import { Download, Info } from "lucide-react";
 import { toast } from "sonner";
 import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";

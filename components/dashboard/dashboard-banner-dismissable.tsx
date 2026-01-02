@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { DashboardBanner } from "@/components/dashboard/dashboard-banner";
 

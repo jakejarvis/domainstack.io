@@ -1,5 +1,3 @@
-"use client";
-
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";

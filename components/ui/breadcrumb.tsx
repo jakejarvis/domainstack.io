@@ -127,7 +127,7 @@ function BreadcrumbEllipsis({
         "flex size-5 items-center justify-center [&>svg]:size-4",
         className,
       ),
-      children: <MoreHorizontalIcon aria-hidden={true} />,
+      children: <MoreHorizontalIcon aria-hidden />,
     }),
     state: {
       slot: "breadcrumb-ellipsis",

@@ -1,5 +1,3 @@
-"use client";
-
 import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";

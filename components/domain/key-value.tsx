@@ -1,5 +1,3 @@
-"use client";
-
 import { CopyButton } from "@/components/ui/copy-button";
 import {
   ResponsiveTooltip,

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   DiscordIcon,
@@ -39,23 +37,23 @@ export function SocialPreviewTabs({
       >
         <TabsList className="h-11 gap-1 md:justify-start">
           <TabsTrigger value="twitter" data-1p-ignore>
-            <TwitterIcon className="size-4 md:size-3.5" aria-hidden="true" />
+            <TwitterIcon className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Twitter</span>
           </TabsTrigger>
           <TabsTrigger value="facebook" data-1p-ignore>
-            <FacebookIcon className="size-4 md:size-3.5" aria-hidden="true" />
+            <FacebookIcon className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Facebook</span>
           </TabsTrigger>
           <TabsTrigger value="linkedin" data-1p-ignore>
-            <LinkedinIcon className="size-4 md:size-3.5" aria-hidden="true" />
+            <LinkedinIcon className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">LinkedIn</span>
           </TabsTrigger>
           <TabsTrigger value="discord" data-1p-ignore>
-            <DiscordIcon className="size-4 md:size-3.5" aria-hidden="true" />
+            <DiscordIcon className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Discord</span>
           </TabsTrigger>
           <TabsTrigger value="slack" data-1p-ignore>
-            <SlackIcon className="size-4 md:size-3.5" aria-hidden="true" />
+            <SlackIcon className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Slack</span>
           </TabsTrigger>
         </TabsList>

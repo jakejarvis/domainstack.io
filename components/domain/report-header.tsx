@@ -38,7 +38,7 @@ export function DomainReportHeader({
           </h2>
           <ExternalLink
             className="size-3.5 flex-shrink-0 text-muted-foreground/60"
-            aria-hidden="true"
+            aria-hidden
           />
         </a>
       </ScreenshotPopover>

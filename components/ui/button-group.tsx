@@ -65,7 +65,7 @@ function ButtonGroupSeparator({
 }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
-      aria-hidden="true"
+      aria-hidden
       data-slot="button-group-separator"
       orientation={orientation}
       className={cn(

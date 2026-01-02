@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { useHeaderSearchFocus } from "@/components/search/header-search-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export function HeaderGrid({ children }: { children: React.ReactNode }) {
+export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
   const { isSearchFocused } = useHeaderSearchFocus();
   const isMobile = useIsMobile();
 

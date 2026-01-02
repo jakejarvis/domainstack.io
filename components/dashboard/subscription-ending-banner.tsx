@@ -1,5 +1,3 @@
-"use client";
-
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { useEffect, useState } from "react";

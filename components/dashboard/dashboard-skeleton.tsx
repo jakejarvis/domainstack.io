@@ -1,10 +1,6 @@
 import { DomainCardSkeleton } from "@/components/dashboard/domain-card-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/**
- * Loading skeleton for the main dashboard page.
- * Server component - no "use client" needed.
- */
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6">

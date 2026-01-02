@@ -1,5 +1,3 @@
-"use client";
-
 import { Earth } from "lucide-react";
 import { useMemo } from "react";
 import { DnsGroup } from "@/components/domain/dns/dns-group";

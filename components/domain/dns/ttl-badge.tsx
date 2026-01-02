@@ -1,5 +1,3 @@
-"use client";
-
 import { ClockFading } from "lucide-react";
 import { ms } from "ms";
 import { Badge } from "@/components/ui/badge";

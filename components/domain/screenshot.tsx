@@ -1,5 +1,3 @@
-"use client";
-
 import { useQuery } from "@tanstack/react-query";
 import { BrickWallShield, CircleX } from "lucide-react";
 import Image from "next/image";

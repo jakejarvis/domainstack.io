@@ -1,5 +1,3 @@
-"use client";
-
 import { Archive, Trash2, XIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";

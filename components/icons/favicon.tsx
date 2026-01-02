@@ -1,5 +1,3 @@
-"use client";
-
 import { RemoteIcon } from "@/components/icons/remote-icon";
 import { useTRPC } from "@/lib/trpc/client";
 

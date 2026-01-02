@@ -57,7 +57,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                   "mx-3 h-px flex-1",
                   isCompleted ? "bg-primary" : "bg-border",
                 )}
-                aria-hidden="true"
+                aria-hidden
               />
             )}
           </div>

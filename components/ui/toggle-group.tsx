@@ -134,7 +134,7 @@ function ToggleGroup({
     >
       {withActiveIndicator && (
         <motion.span
-          aria-hidden="true"
+          aria-hidden
           data-slot="toggle-group-indicator"
           className={cn(
             "pointer-events-none absolute top-0 left-0 z-0 rounded-md",
