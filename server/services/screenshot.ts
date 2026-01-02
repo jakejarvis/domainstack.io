@@ -139,7 +139,7 @@ async function generateScreenshot(
           screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
         if (isDefinitiveResult) {
-          logger.debug({ domain }, "db cache hit");
+          // Postgres cache hit
           return { url: screenshotRecord.url };
         }
       }

@@ -1,21 +1,13 @@
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import {
   getNotificationIcon,
   getNotificationSeverity,
   getSeverityColors,
   getUnreadIndicatorColor,
-} from "./notification-utils";
-
-export interface NotificationData {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  sentAt: Date;
-  readAt: Date | null;
-}
+} from "@/lib/notification-utils";
+import type { NotificationData } from "@/lib/schemas";
+import { cn } from "@/lib/utils";
 
 interface NotificationCardProps {
   notification: NotificationData;

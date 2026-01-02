@@ -1,8 +1,10 @@
 import type { RefObject } from "react";
+import { NotificationCard } from "@/components/notifications/notification-card";
+import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
+import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import { NotificationCard, type NotificationData } from "./notification-card";
-import { NotificationEmptyState } from "./notification-empty-state";
+import type { NotificationData } from "@/lib/schemas";
 
 interface NotificationListProps {
   notifications: NotificationData[];
@@ -40,9 +42,7 @@ export function NotificationList({
       gradientContext="card"
     >
       {showLoading ? (
-        <div className="flex items-center justify-center p-12">
-          <Spinner className="size-6 text-muted-foreground" />
-        </div>
+        <NotificationListSkeleton />
       ) : isError ? (
         <div className="p-12 text-center text-destructive text-sm">
           Failed to load notifications

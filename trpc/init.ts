@@ -80,12 +80,9 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
 
   try {
     const result = await next();
-    const durationMs = Math.round(performance.now() - start);
-
-    // Log successful completion
-    procedureLogger.debug({ durationMs }, "procedure ok");
 
     // Track slow requests (>5s threshold) in PostHog
+    const durationMs = Math.round(performance.now() - start);
     if (durationMs > 5000) {
       procedureLogger.warn({ durationMs }, "slow request");
 
@@ -100,9 +97,8 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
 
     return result;
   } catch (err) {
-    const durationMs = Math.round(performance.now() - start);
-    procedureLogger.error({ err, durationMs }, "procedure error");
-
+    // Log error and re-throw
+    procedureLogger.error({ err }, "procedure error");
     throw err;
   }
 });

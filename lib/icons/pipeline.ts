@@ -48,7 +48,7 @@ async function processIconImpl(
         cachedRecord.url !== null || cachedRecord.notFound === true;
 
       if (isDefinitiveResult) {
-        logger.debug({ ...logContext }, "db cache hit");
+        // Postgres cache hit
         return { url: cachedRecord.url };
       }
     }

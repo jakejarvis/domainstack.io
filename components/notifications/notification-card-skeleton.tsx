@@ -1,4 +1,3 @@
-import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -6,22 +5,24 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function NotificationCardSkeleton() {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            {/* Icon circle */}
-            <Skeleton className="mt-0.5 size-9 rounded-full" />
-            {/* Content */}
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-4 w-full max-w-md" />
-            </div>
+    <div className="w-full p-3">
+      <div className="flex gap-3">
+        {/* Icon */}
+        <Skeleton className="size-8 shrink-0 rounded-lg" />
+
+        {/* Content */}
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <Skeleton className="h-4 w-32" />
+            {/* Unread dot */}
+            <Skeleton className="mt-0.5 size-2 shrink-0 rounded-full" />
           </div>
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
           {/* Timestamp */}
-          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-20" />
         </div>
-      </CardHeader>
-    </Card>
+      </div>
+    </div>
   );
 }

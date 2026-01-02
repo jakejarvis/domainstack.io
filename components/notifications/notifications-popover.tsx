@@ -3,8 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Archive, Bell, CheckCheck, Inbox, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { NotificationData } from "@/components/notifications";
-import { NotificationList } from "@/components/notifications";
+import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -18,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
+import type { NotificationData } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 
 export function NotificationsPopover() {

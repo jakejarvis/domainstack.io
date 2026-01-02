@@ -1,6 +1,20 @@
 import { z } from "zod";
 
 /**
+ * Data for a single notification item displayed in the UI.
+ */
+export const NotificationDataSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  title: z.string(),
+  message: z.string(),
+  sentAt: z.date(),
+  readAt: z.date().nullable(),
+});
+
+export type NotificationData = z.infer<typeof NotificationDataSchema>;
+
+/**
  * Notification channels schema - each notification category has separate toggles for in-app and email.
  */
 export const NotificationChannelsSchema = z.object({
