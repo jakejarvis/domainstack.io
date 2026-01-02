@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { GitHubIcon } from "@/components/brand-icons";
 import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
 import { HeaderGrid } from "@/components/layout/app-header-grid";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
@@ -26,7 +27,14 @@ export function AppHeader() {
           <HeaderSearchClient />
         </Suspense>
         <AppHeaderSlideOver>
-          <Suspense fallback={<Skeleton className="h-8 w-[60px]" />}>
+          <Suspense
+            fallback={
+              <div className="mr-1.5 ml-2.5 inline-flex shrink-0 items-center gap-2">
+                <GitHubIcon className="flex size-3.5 shrink-0" />
+                <Skeleton className="h-[15px] w-[28px]" />
+              </div>
+            }
+          >
             <GithubStars />
           </Suspense>
           <AppHeaderSeparator />

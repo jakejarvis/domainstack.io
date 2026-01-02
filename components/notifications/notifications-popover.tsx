@@ -43,7 +43,6 @@ export function NotificationsPopover() {
     data,
     fetchNextPage,
     hasNextPage,
-    isFetching,
     isFetchingNextPage,
     isLoading,
     isError: isNotificationsError,
@@ -142,9 +141,14 @@ export function NotificationsPopover() {
       <PopoverContent
         className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden p-0 max-sm:w-[calc(100vw-1rem)] sm:w-96"
         align="end"
+        side="bottom"
+        collisionAvoidance={{
+          side: "none",
+          align: "shift",
+        }}
         collisionPadding={8}
       >
-        <div className="flex max-h-[600px] flex-col">
+        <div className="flex max-h-[calc(min(100dvh-6rem,600px))] flex-col">
           {/* Header with tabs */}
           <div className="shrink-0 space-y-3 border-b p-4">
             <div className="flex items-center justify-between">
@@ -199,7 +203,6 @@ export function NotificationsPopover() {
           <NotificationList
             notifications={notifications}
             isLoading={isLoading}
-            isFetching={isFetching}
             isError={isNotificationsError}
             view={view}
             hasNextPage={hasNextPage}

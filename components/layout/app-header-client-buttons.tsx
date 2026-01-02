@@ -36,9 +36,9 @@ export function AppHeaderClientButtons() {
   if (isPending) {
     return (
       <>
-        <Skeleton className="h-8 w-8" />
+        <Skeleton className="size-7 max-md:ml-1" />
         <AppHeaderSeparator className="hidden md:block" />
-        <Skeleton className="hidden h-8 w-12 md:block" />
+        <Skeleton className="hidden h-7 w-12 md:block" />
       </>
     );
   }
@@ -66,7 +66,7 @@ export function AppHeaderClientButtons() {
         </Tooltip>
         <AppHeaderSeparator />
         <NotificationsPopover />
-        <AppHeaderSeparator className="mr-1.5" />
+        <AppHeaderSeparator className="mr-2" />
         <UserMenu />
       </>
     );

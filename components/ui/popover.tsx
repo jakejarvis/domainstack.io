@@ -17,6 +17,7 @@ function PopoverContent({
   anchor,
   alignOffset,
   collisionPadding,
+  collisionAvoidance,
   sticky,
   positionMethod,
   ...props
@@ -29,6 +30,7 @@ function PopoverContent({
     | "side"
     | "sideOffset"
     | "collisionPadding"
+    | "collisionAvoidance"
     | "sticky"
     | "positionMethod"
   >) {
@@ -41,6 +43,7 @@ function PopoverContent({
         sideOffset={sideOffset}
         anchor={anchor}
         collisionPadding={collisionPadding}
+        collisionAvoidance={collisionAvoidance}
         sticky={sticky}
         positionMethod={positionMethod}
       >

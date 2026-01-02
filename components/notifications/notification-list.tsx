@@ -1,3 +1,4 @@
+import { CircleX } from "lucide-react";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
@@ -9,7 +10,6 @@ import type { NotificationData } from "@/lib/schemas";
 interface NotificationListProps {
   notifications: NotificationData[];
   isLoading: boolean;
-  isFetching: boolean;
   isError: boolean;
   view: "inbox" | "archive";
   hasNextPage?: boolean;
@@ -22,7 +22,6 @@ interface NotificationListProps {
 export function NotificationList({
   notifications,
   isLoading,
-  isFetching,
   isError,
   view,
   hasNextPage,
@@ -31,20 +30,18 @@ export function NotificationList({
   scrollAreaRef,
   onNotificationClick,
 }: NotificationListProps) {
-  // Show loading state on initial load OR when fetching with no data (e.g., tab switch)
-  const showLoading = isLoading || (isFetching && notifications.length === 0);
-
   return (
     <ScrollArea
       viewportRef={scrollAreaRef}
-      className="max-h-[480px] min-h-0 flex-1 bg-card"
+      className="min-h-0 flex-1 bg-card"
       gradient
       gradientContext="card"
     >
-      {showLoading ? (
+      {isLoading ? (
         <NotificationListSkeleton />
       ) : isError ? (
-        <div className="p-12 text-center text-destructive text-sm">
+        <div className="flex flex-col items-center justify-center gap-1.5 py-12 text-sm">
+          <CircleX className="size-4" />
           Failed to load notifications
         </div>
       ) : notifications.length === 0 ? (
