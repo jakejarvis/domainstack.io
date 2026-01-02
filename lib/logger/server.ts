@@ -5,10 +5,54 @@ import pino from "pino";
 const isDev = process.env.NODE_ENV === "development";
 const isTest = process.env.NODE_ENV === "test";
 
+/** Pino's built-in level name to numeric value mapping. */
+const levels = pino.levels.values;
+
+/**
+ * Creates a destination stream that routes logs to the appropriate console method.
+ *
+ * This is safer than using process.stdout/stderr directly in serverless environments
+ * like Vercel, as console methods are guaranteed to work and Vercel properly interprets
+ * them for log level coloring.
+ */
+function createConsoleDestination(): pino.DestinationStream {
+  return {
+    write(msg: string): void {
+      // Remove trailing newline for cleaner console output
+      const trimmed = msg.trimEnd();
+
+      try {
+        const parsed = JSON.parse(trimmed) as { level?: string | number };
+        const level =
+          typeof parsed.level === "string"
+            ? levels[parsed.level as keyof typeof levels]
+            : parsed.level;
+
+        // Route to appropriate console method based on log level
+        if (typeof level === "number") {
+          if (level >= levels.error) {
+            console.error(trimmed);
+          } else if (level >= levels.warn) {
+            console.warn(trimmed);
+          } else {
+            console.log(trimmed);
+          }
+        } else {
+          // Fallback for unknown level format
+          console.log(trimmed);
+        }
+      } catch {
+        // If JSON parsing fails, still output the message
+        console.log(trimmed);
+      }
+    },
+  };
+}
+
 /**
  * Shared logger options.
  */
-const baseOptions = {
+const baseOptions: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL ?? (isTest ? "warn" : isDev ? "debug" : "info"),
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
@@ -27,7 +71,7 @@ const baseOptions = {
  * - ISO timestamps for consistent ordering
  * - Standard error serialization
  * - Pretty printing in development only
- * - Routes warn/error/fatal to stderr for proper Vercel log coloring
+ * - Uses console methods for safe Vercel log level translation
  *
  * @example
  * ```typescript
@@ -46,17 +90,9 @@ export const logger: pino.Logger = isDev
         options: { colorize: true, sync: true },
       },
     })
-  : // Production: route error/fatal to stderr so Vercel shows them as red
-    // Vercel parses JSON level field, so warn on stdout will be yellow
-    pino(
-      { ...baseOptions },
-      pino.multistream([
-        // trace, debug, info, warn -> stdout (Vercel parses level for coloring)
-        { level: "trace", stream: process.stdout },
-        // error, fatal -> stderr (Vercel shows these as red)
-        { level: "error", stream: process.stderr },
-      ]),
-    );
+  : // Production: route logs to console methods for proper Vercel log coloring
+    // console.error -> red, console.warn -> yellow, console.log -> default
+    pino(baseOptions, createConsoleDestination());
 
 /**
  * Create a child logger with a specific context prefix.

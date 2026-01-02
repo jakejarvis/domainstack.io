@@ -1,0 +1,29 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "ghcr.io/devcontainers/features/copilot-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/vercel-cli:1": {
+      "version": "latest"
+    }
+  },
+  "postCreateCommand": ". ${NVM_DIR}/nvm.sh && nvm install && corepack enable && CI=true pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "biomejs.biome",
+        "bradlc.vscode-tailwindcss",
+        "vitest.explorer"
+      ],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  },
+  "forwardPorts": [3000],
+  "containerEnv": {
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}
