@@ -67,7 +67,6 @@ export function CertificatesSection({
                         providerName={firstCert.caProvider.name}
                         providerDomain={firstCert.caProvider.domain}
                         size={16}
-                        className="rounded"
                       />
                     ) : undefined
                   }
@@ -186,7 +185,6 @@ export function CertificatesSection({
                                   providerName={c.caProvider.name}
                                   providerDomain={c.caProvider.domain}
                                   size={16}
-                                  className="rounded"
                                 />
                               ) : undefined
                             }

@@ -17,7 +17,6 @@ export function ProviderValue({
           providerName={name}
           providerDomain={domain}
           size={16}
-          className="rounded"
         />
       ) : null}
       <span>{name}</span>

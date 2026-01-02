@@ -109,7 +109,7 @@ export function ProviderTooltipContent({
             providerName={providerName}
             providerDomain={providerDomain}
             size={16}
-            className="shrink-0 rounded"
+            className="shrink-0"
           />
         )}
         <span className="font-medium">{providerName}</span>

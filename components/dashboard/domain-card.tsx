@@ -416,7 +416,7 @@ function InfoRow({
           providerName={provider.name}
           providerDomain={provider.domain}
           size={14}
-          className="shrink-0 rounded"
+          className="shrink-0"
         />
       )}
       <span ref={valueRef} className="min-w-0 flex-1 truncate">

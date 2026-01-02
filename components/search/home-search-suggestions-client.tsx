@@ -103,7 +103,7 @@ export function HomeSearchSuggestionsClient({
                   <Favicon
                     domain={domain}
                     size={faviconSize}
-                    className="pointer-events-none size-4 shrink-0 rounded-sm"
+                    className="shrink-0"
                   />
                   {domain}
                 </Link>

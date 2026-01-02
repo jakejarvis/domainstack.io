@@ -151,7 +151,7 @@ function ProviderCell({
           providerName={provider.name}
           providerDomain={provider.domain}
           size={13}
-          className="shrink-0 rounded"
+          className="shrink-0"
         />
       )}
       <span ref={valueRef} className="min-w-0 flex-1 truncate">

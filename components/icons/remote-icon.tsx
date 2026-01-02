@@ -80,12 +80,17 @@ export function RemoteIcon({
 
   const url = (data as { url: string | null } | undefined)?.url ?? null;
 
+  const baseClassNames = cn(
+    "pointer-events-none select-none rounded-xs",
+    className,
+  );
+
   // During SSR and initial client render, always show skeleton
   // This ensures server and client HTML match perfectly
   if (!mounted) {
     return (
       <Skeleton
-        className={cn("bg-input", className)}
+        className={cn(baseClassNames, "bg-input", className)}
         style={{ ...style, width: size, height: size }}
       />
     );
@@ -95,7 +100,7 @@ export function RemoteIcon({
   if (isPending) {
     return (
       <Skeleton
-        className={cn("bg-input", className)}
+        className={cn(baseClassNames, "bg-input", className)}
         style={{ ...style, width: size, height: size }}
       />
     );
@@ -109,8 +114,9 @@ export function RemoteIcon({
     return (
       <div
         className={cn(
+          baseClassNames,
           // Use flex (block-level) instead of inline-flex for consistent alignment with <img>
-          "pointer-events-none flex select-none items-center justify-center rounded font-bold text-white",
+          "flex items-center justify-center font-bold text-white",
           className,
         )}
         style={{
@@ -136,7 +142,7 @@ export function RemoteIcon({
       src={url}
       width={size}
       height={size}
-      className={className}
+      className={cn(baseClassNames, className)}
       style={{ ...style, width: size, height: size }}
       unoptimized
       priority={false}

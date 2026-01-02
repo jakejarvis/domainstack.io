@@ -29,11 +29,7 @@ export function DomainReportHeader({
           rel="noopener"
           className="flex min-w-0 items-center gap-2"
         >
-          <Favicon
-            domain={domain}
-            size={20}
-            className="flex-shrink-0 rounded"
-          />
+          <Favicon domain={domain} size={20} className="shrink-0" />
           <h2
             className="truncate font-semibold text-xl tracking-tight"
             title={domain}

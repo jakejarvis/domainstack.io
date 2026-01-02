@@ -80,7 +80,7 @@ export function ProviderMultiSelect<T extends string>({
               providerName={providerOption.label}
               providerDomain={providerOption.domain}
               size={14}
-              className="shrink-0 rounded"
+              className="shrink-0"
             />
             {providerOption.label}
           </>

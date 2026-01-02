@@ -224,7 +224,7 @@ export function DomainFilters({
               providerName={provider.name}
               providerDomain={provider.domain}
               size={12}
-              className="shrink-0 rounded"
+              className="shrink-0"
             />
           ) : (
             <EthernetPort className="size-3 text-muted-foreground" />
