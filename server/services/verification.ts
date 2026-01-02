@@ -20,7 +20,7 @@ import {
   providerOrderForLookup,
 } from "@/lib/dns-utils";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
+import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
 import type {
   DnsInstructions,
@@ -92,7 +92,7 @@ export async function tryAllVerificationMethods(
       return htmlResult;
     }
   } catch (err) {
-    logger.warn({ err, domain }, "html verification threw unexpectedly");
+    logger.warn({ err, domain }, "file verification threw unexpectedly");
     // Continue to next method
   }
 
@@ -103,7 +103,7 @@ export async function tryAllVerificationMethods(
       return metaResult;
     }
   } catch (err) {
-    logger.warn({ err, domain }, "meta verification threw unexpectedly");
+    logger.warn({ err, domain }, "meta tag verification threw unexpectedly");
     // Fall through to return unverified
   }
 
@@ -170,15 +170,7 @@ async function verifyDnsTxtImpl(
           }
         }
       } catch (err) {
-        logger.debug(
-          {
-            domain,
-            hostname,
-            provider: provider.key,
-            error: err instanceof Error ? err.message : String(err),
-          },
-          "upstream DNS error",
-        );
+        logger.warn({ err, domain }, "dns verification threw unexpectedly");
       }
     }
   }
@@ -235,16 +227,7 @@ async function verifyHtmlFileImpl(
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
-      // Log SSRF blocks as warnings, infrastructure errors are caught here
-      if (err instanceof RemoteAssetError) {
-        if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn(
-            { err, domain },
-            "HTML file verification blocked (SSRF protection)",
-          );
-        }
-        // Other infrastructure errors - try next URL
-      }
+      logger.warn({ err, domain }, "file verification threw unexpectedly");
     }
   }
 
@@ -269,14 +252,7 @@ async function verifyHtmlFileImpl(
         return { verified: true, method: "html_file" };
       }
     } catch (err) {
-      if (err instanceof RemoteAssetError) {
-        if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn(
-            { err, domain },
-            "HTML file verification blocked (SSRF protection)",
-          );
-        }
-      }
+      logger.warn({ err, domain }, "file verification threw unexpectedly");
     }
   }
 
@@ -344,16 +320,7 @@ async function verifyMetaTagImpl(
         return { verified: true, method: "meta_tag" };
       }
     } catch (err) {
-      // Log SSRF blocks as warnings (potential attack attempts)
-      if (err instanceof RemoteAssetError) {
-        if (err.code === "private_ip" || err.code === "host_blocked") {
-          logger.warn(
-            { err, domain },
-            "Meta tag verification blocked (SSRF protection)",
-          );
-        }
-        // Other infrastructure errors - try next URL
-      }
+      logger.warn({ err, domain }, "meta tag verification threw unexpectedly");
     }
   }
 

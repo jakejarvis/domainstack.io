@@ -124,22 +124,16 @@ export const getHeaders = cache(async function getHeaders(
     const isTlsError = isExpectedTlsError(err);
 
     if (isDnsError) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "no web hosting (no A/AAAA records)",
-      );
+      // Fail silently
     } else if (isTlsError) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "probe failed (TLS error)",
-      );
+      // Fail with invalid SSL certificate notice
       return {
         headers: [],
         status: 0,
         statusMessage: "Invalid SSL certificate",
       };
     } else {
-      logger.error({ err, domain }, "probe failed (unexpected error)");
+      logger.error({ err, domain });
     }
 
     // Return empty on failure without caching to avoid long-lived negatives

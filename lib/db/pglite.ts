@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/logger/server";
 const { pushSchema } =
   require("drizzle-kit/api") as typeof import("drizzle-kit/api");
 
-const logger = createLogger({ source: "pglite" });
+const _logger = createLogger({ source: "pglite" });
 
 type DbBundle = { db: ReturnType<typeof drizzle>; client: PGlite };
 let cached: DbBundle | null = null;
@@ -56,9 +56,8 @@ export async function closePGliteDb(): Promise<void> {
   if (!cached) return;
   try {
     await cached.client.close();
-  } catch (err) {
+  } catch {
     // Swallow errors on close (client may already be closed)
-    logger.error({ err }, "close warning");
   } finally {
     cached = null;
     schemaApplied = false;

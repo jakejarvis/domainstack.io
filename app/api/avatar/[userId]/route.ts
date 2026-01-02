@@ -32,7 +32,6 @@ export async function GET(
   const avatarUrl = await getUserAvatarUrl(userId);
 
   if (!avatarUrl) {
-    logger.debug({ userId }, "no avatar found for user");
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -85,8 +84,6 @@ export async function GET(
   } catch (err) {
     // Only infrastructure errors (DNS, private IP, size limits, etc.) are thrown
     if (err instanceof RemoteAssetError) {
-      logger.info({ userId, code: err.code }, "avatar fetch failed");
-
       switch (err.code) {
         case "host_not_allowed":
         case "host_blocked":

@@ -27,7 +27,7 @@ export async function putBlob(options: {
       pathname: options.pathname,
     };
   } catch (err) {
-    logger.error({ err, pathname: options.pathname }, "put failed");
+    logger.error({ err, pathname: options.pathname });
     throw err;
   }
 }
@@ -52,7 +52,7 @@ export async function deleteBlobs(urls: string[]): Promise<DeleteResult> {
       results.push({ url, deleted: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error";
-      logger.error({ err, url }, "delete failed");
+      logger.error({ err, url });
 
       results.push({ url, deleted: false, error: message });
     }

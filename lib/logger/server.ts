@@ -55,6 +55,7 @@ function createConsoleDestination(): pino.DestinationStream {
 const baseOptions: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL ?? (isTest ? "warn" : isDev ? "debug" : "info"),
   timestamp: pino.stdTimeFunctions.isoTime,
+  base: undefined, // Removes the unhelpful pid and hostname fields
   formatters: {
     level: (label: string) => ({ level: label }),
   },

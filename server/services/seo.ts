@@ -6,7 +6,6 @@ import { isDomainBlocked } from "@/lib/db/repos/blocked-domains";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertSeo } from "@/lib/db/repos/seo";
 import { seo as seoTable } from "@/lib/db/schema";
-import { isExpectedDnsError } from "@/lib/dns-utils";
 import { isExpectedTlsError } from "@/lib/fetch";
 import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
@@ -117,18 +116,6 @@ export async function getSeo(
       },
     };
 
-    // Log if cached data has errors (helps debug issues)
-    if (response.errors?.html || response.errors?.robots) {
-      logger.debug(
-        {
-          domain,
-          htmlError: response.errors.html,
-          robotsError: response.errors.robots,
-        },
-        "returning cached seo with errors",
-      );
-    }
-
     return response;
   }
 
@@ -174,29 +161,7 @@ export async function getSeo(
       }
     }
   } catch (err) {
-    // Infrastructure errors (DNS, private IP, etc.) are still thrown
-    const isDnsError = isExpectedDnsError(err);
-    const isTlsError = isExpectedTlsError(err);
-
-    htmlError = isTlsError
-      ? "Invalid SSL certificate"
-      : isDnsError
-        ? "DNS lookup failed"
-        : String(err);
-
-    if (isDnsError) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "html fetch failed (DNS lookup failed)",
-      );
-    } else if (isTlsError) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "html fetch failed (TLS error)",
-      );
-    } else {
-      logger.error({ err, domain, url: finalUrl }, "html fetch failed");
-    }
+    logger.debug({ err, domain, url: finalUrl });
   }
 
   // robots.txt fetch - also allow any host redirects

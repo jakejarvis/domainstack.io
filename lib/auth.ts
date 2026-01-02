@@ -153,10 +153,6 @@ export const auth = betterAuth({
             await polarClient.customers.deleteExternal({
               externalId: user.id,
             });
-            logger.info(
-              { userId: user.id },
-              "deleted Polar customer on account deletion",
-            );
           } catch (err) {
             // Don't block account deletion if Polar cleanup fails
             logger.error(

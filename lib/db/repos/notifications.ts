@@ -295,7 +295,10 @@ export async function deleteNotificationsForTrackedDomain(
       .where(eq(notifications.trackedDomainId, trackedDomainId));
     return true;
   } catch (err) {
-    logger.error({ err, trackedDomainId }, "failed to delete notifications");
+    logger.error(
+      { err, trackedDomainId },
+      "failed to delete all notifications for domain",
+    );
     return false;
   }
 }
@@ -323,7 +326,7 @@ export async function clearDomainExpiryNotifications(
   } catch (err) {
     logger.error(
       { err, trackedDomainId },
-      "failed to clear domain expiry notifications",
+      "failed to clear all domain expiry notifications for domain",
     );
     return 0;
   }
@@ -352,7 +355,7 @@ export async function clearCertificateExpiryNotifications(
   } catch (err) {
     logger.error(
       { err, trackedDomainId },
-      "failed to clear certificate expiry notifications",
+      "failed to clear all certificate expiry notifications for domain",
     );
     return 0;
   }

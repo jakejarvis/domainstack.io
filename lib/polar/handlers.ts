@@ -81,19 +81,19 @@ export async function handleSubscriptionActive(
   payload: SubscriptionActivePayload,
 ) {
   const { customer, product } = payload.data;
-  const userId = customer.externalId;
 
   logger.debug(
     {
       polarCustomerId: customer.id,
-      userId,
+      userId: customer.externalId,
       productId: product.id,
       subscriptionId: payload.data.id,
+      status: payload.data.status,
     },
     "subscription active (payment confirmed)",
   );
 
-  if (!userId) {
+  if (!customer.externalId) {
     logger.error(
       { polarCustomerId: customer.id },
       "subscription webhook missing customer.externalId (userId)",
@@ -105,7 +105,7 @@ export async function handleSubscriptionActive(
   const tier = getTierForProductId(product.id);
   if (!tier) {
     logger.error(
-      { productId: product.id, productName: product.name, userId },
+      { productId: product.id, userId: customer.externalId },
       "unknown product ID in subscription webhook",
     );
     return;
@@ -113,16 +113,19 @@ export async function handleSubscriptionActive(
 
   try {
     // Upgrade tier and clear any pending cancellation (e.g., user re-subscribed)
-    await updateUserTier(userId, tier);
-    await clearSubscriptionEndsAt(userId);
-    logger.debug({ userId, tier }, "upgraded user tier");
+    await updateUserTier(customer.externalId, tier);
+    await clearSubscriptionEndsAt(customer.externalId);
+    logger.debug({ userId: customer.externalId, tier }, "upgraded user tier");
 
-    analytics.track("subscription_activated", { tier }, userId);
+    analytics.track("subscription_activated", { tier }, customer.externalId);
 
     // Send welcome email (best-effort, don't fail webhook on email error)
-    after(() => sendProUpgradeEmail(userId));
+    after(() => sendProUpgradeEmail(customer.externalId as string));
   } catch (err) {
-    logger.error({ err, userId, tier }, "failed to upgrade user tier");
+    logger.error(
+      { err, userId: customer.externalId, tier },
+      "failed to upgrade user tier",
+    );
     throw err; // Re-throw to trigger webhook retry
   }
 }
@@ -138,20 +141,20 @@ export async function handleSubscriptionCanceled(
   payload: SubscriptionCanceledPayload,
 ) {
   const { customer, currentPeriodEnd, canceledAt } = payload.data;
-  const userId = customer.externalId;
 
   logger.debug(
     {
       polarCustomerId: customer.id,
-      userId,
+      userId: customer.externalId,
       subscriptionId: payload.data.id,
+      status: payload.data.status,
       currentPeriodEnd,
       canceledAt,
     },
     "subscription canceled (still active until period end)",
   );
 
-  if (!userId) {
+  if (!customer.externalId) {
     logger.error(
       { polarCustomerId: customer.id },
       "subscription webhook missing customer.externalId (userId)",
@@ -164,18 +167,23 @@ export async function handleSubscriptionCanceled(
   if (currentPeriodEnd) {
     const endsAt = new Date(currentPeriodEnd);
     try {
-      await setSubscriptionEndsAt(userId, endsAt);
+      await setSubscriptionEndsAt(customer.externalId, endsAt);
 
       analytics.track(
         "subscription_canceled",
         { endsAt: endsAt.toISOString() },
-        userId,
+        customer.externalId,
       );
 
       // Send immediate cancellation confirmation email (best-effort, don't fail webhook on email error)
-      after(() => sendSubscriptionCancelingEmail(userId, endsAt));
+      after(() =>
+        sendSubscriptionCancelingEmail(customer.externalId as string, endsAt),
+      );
     } catch (err) {
-      logger.error({ err, userId }, "failed to set subscription end date");
+      logger.error(
+        { err, userId: customer.externalId },
+        "failed to set subscription end date",
+      );
       throw err; // Re-throw to trigger webhook retry
     }
   }
@@ -196,14 +204,17 @@ export async function handleSubscriptionRevoked(
   payload: SubscriptionRevokedPayload,
 ) {
   const { customer } = payload.data;
-  const userId = customer.externalId;
 
   logger.debug(
-    { polarCustomerId: customer.id, userId, subscriptionId: payload.data.id },
+    {
+      polarCustomerId: customer.id,
+      userId: customer.externalId,
+      subscriptionId: payload.data.id,
+    },
     "subscription revoked (access ended)",
   );
 
-  if (!userId) {
+  if (!customer.externalId) {
     logger.error(
       { polarCustomerId: customer.id },
       "subscription webhook missing customer.externalId (userId)",
@@ -212,16 +223,31 @@ export async function handleSubscriptionRevoked(
   }
 
   try {
-    const archivedCount = await handleDowngrade(userId);
-    await clearSubscriptionEndsAt(userId);
-    logger.debug({ userId, archivedCount }, "downgraded user");
+    const archivedCount = await handleDowngrade(customer.externalId);
+    await clearSubscriptionEndsAt(customer.externalId);
+    logger.debug(
+      { userId: customer.externalId, archivedCount },
+      "downgraded user",
+    );
 
-    analytics.track("subscription_revoked", { archivedCount }, userId);
+    analytics.track(
+      "subscription_revoked",
+      { archivedCount },
+      customer.externalId,
+    );
 
     // Send expiration email (best-effort, don't fail webhook on email error)
-    after(() => sendSubscriptionExpiredEmail(userId, archivedCount));
+    after(() =>
+      sendSubscriptionExpiredEmail(
+        customer.externalId as string,
+        archivedCount,
+      ),
+    );
   } catch (err) {
-    logger.error({ err, userId }, "failed to downgrade user");
+    logger.error(
+      { err, userId: customer.externalId },
+      "failed to downgrade user",
+    );
     throw err; // Re-throw to trigger webhook retry
   }
 }

@@ -41,7 +41,7 @@ export async function handleDowngrade(userId: string): Promise<number> {
       await tx.insert(userSubscriptions).values({ userId, tier: "free" });
     }
 
-    logger.info({ userId }, "updated user tier to free");
+    logger.debug({ userId }, "updated user tier to free");
 
     // 2. Count active domains within transaction (snapshot isolation)
     const [countResult] = await tx
@@ -67,7 +67,7 @@ export async function handleDowngrade(userId: string): Promise<number> {
 
     // 4. Find and archive oldest domains atomically
     const toArchive = activeCount - freeLimit;
-    logger.info(
+    logger.debug(
       { userId, activeCount, freeLimit, toArchive },
       "archiving excess domains on downgrade",
     );
@@ -96,10 +96,6 @@ export async function handleDowngrade(userId: string): Promise<number> {
       .where(inArray(userTrackedDomains.id, idsToArchive))
       .returning({ id: userTrackedDomains.id });
 
-    const archivedCount = result.length;
-
-    logger.info({ userId, archivedCount }, "archived domains after downgrade");
-
-    return archivedCount;
+    return result.length;
   });
 }

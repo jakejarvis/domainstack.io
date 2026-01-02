@@ -1,8 +1,5 @@
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-import { createLogger } from "@/lib/logger/server";
 import { simpleHash } from "@/lib/simple-hash";
-
-const logger = createLogger({ source: "dns-utils" });
 
 // ============================================================================
 // DNS-over-HTTPS (DoH) providers
@@ -143,10 +140,6 @@ export async function queryDohProvider(
 
   // NXDOMAIN or no answers
   if (json.Status !== 0 || !json.Answer) {
-    logger.debug(
-      { provider: provider.key, domain, type, status: json.Status },
-      "doh query no records",
-    );
     return [];
   }
 

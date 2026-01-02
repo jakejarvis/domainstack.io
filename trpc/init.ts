@@ -98,7 +98,7 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
     return result;
   } catch (err) {
     // Log error and re-throw
-    procedureLogger.error({ err }, "procedure error");
+    procedureLogger.error(err);
     throw err;
   }
 });

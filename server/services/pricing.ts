@@ -185,10 +185,8 @@ const dynadotProvider = createPricingProvider(
       if (data?.code !== 200) {
         logger.error(
           {
+            err: data?.error,
             provider: "dynadot",
-            code: data?.code,
-            message: data?.message,
-            error: data?.error,
           },
           "dynadot api error",
         );
@@ -241,7 +239,7 @@ export async function getPricing(tld: string): Promise<PricingResponse> {
           const price = payload[normalizedTld]?.registration;
           return price ? { provider: provider.name, price } : null;
         } catch (err) {
-          logger.error({ err, provider: provider.name }, "fetch error");
+          logger.error({ err, provider: provider.name });
           return null;
         }
       }),

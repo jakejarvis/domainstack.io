@@ -37,7 +37,6 @@ export const getFavicon = cache(async function getFavicon(
       });
     },
     ttlFn: ttlForFavicon,
-    logContext: { domain },
     size: DEFAULT_SIZE,
   });
 });
@@ -70,7 +69,6 @@ export const getProviderIcon = cache(async function getProviderIcon(
       });
     },
     ttlFn: ttlForProviderIcon,
-    logContext: { providerId, providerDomain },
     size: DEFAULT_PROVIDER_ICON_SIZE,
     timeoutMs: 2000,
     maxBytes: 2 * 1024 * 1024, // 2MB

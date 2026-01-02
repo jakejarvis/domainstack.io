@@ -53,7 +53,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
       logger.debug("skipping domain suggestions during prerender");
     } else {
       // Log unexpected errors but still fail gracefully
-      logger.error({ err }, "failed to fetch domain suggestions");
+      logger.error(err, "failed to fetch domain suggestions");
     }
 
     return [];
@@ -101,7 +101,7 @@ export async function getTierLimits(): Promise<TierLimits> {
     if (isPrerenderError) {
       logger.debug("skipping tier limits during prerender");
     } else {
-      logger.error({ err }, "failed to fetch tier limits");
+      logger.error(err, "failed to fetch tier limits");
     }
 
     return DEFAULT_TIER_LIMITS;
@@ -148,30 +148,27 @@ export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
     return null;
   }
 
-  const raw = await get<unknown>("provider_catalog");
+  try {
+    const raw = await get<unknown>("provider_catalog");
 
-  if (!raw) {
-    logger.debug("provider_catalog key not found in Edge Config");
+    if (!raw) {
+      logger.debug("provider_catalog key not found in Edge Config");
+      return null;
+    }
+
+    const result = safeParseProviderCatalog(raw);
+
+    if (!result.success) {
+      logger.error(result.error, "failed to parse provider catalog");
+      return null;
+    }
+
+    return result.data;
+  } catch (err) {
+    // Log unexpected errors but still fail gracefully
+    logger.error(err, "failed to fetch provider catalog");
     return null;
   }
-
-  const result = safeParseProviderCatalog(raw);
-
-  if (!result.success) {
-    logger.error(
-      {
-        err: result.error,
-        issues: result.error.issues.map((i) => ({
-          path: i.path.join("."),
-          message: i.message,
-        })),
-      },
-      "failed to parse provider catalog",
-    );
-    return null;
-  }
-
-  return result.data;
 }
 
 /**
@@ -198,6 +195,12 @@ export async function getBlocklistSources(): Promise<string[]> {
     return [];
   }
 
-  const sources = await get<string[]>("screenshot_blocklist_sources");
-  return sources ?? [];
+  try {
+    const sources = await get<string[]>("screenshot_blocklist_sources");
+    return sources ?? [];
+  } catch (err) {
+    // Log unexpected errors but still fail gracefully
+    logger.error(err, "failed to fetch screenshot blocklist sources");
+    return [];
+  }
 }

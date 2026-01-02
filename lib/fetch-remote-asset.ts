@@ -196,13 +196,13 @@ export async function fetchRemoteAsset(
     if (declaredLength && !truncateOnLimit) {
       const declared = Number(declaredLength);
       if (Number.isFinite(declared) && declared > maxBytes) {
+        logger.debug(
+          { url: currentUrl.toString(), declared, limit: maxBytes },
+          "size exceeded",
+        );
         const error = new RemoteAssetError(
           "size_exceeded",
           `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
-        );
-        logger.warn(
-          { url: currentUrl.toString(), reason: error.message },
-          "size exceeded",
         );
         throw error;
       }
@@ -299,13 +299,10 @@ async function ensureUrlAllowed(
   } catch (err) {
     // DNS failures are expected for non-existent domains - log at info level
     // since the caller will gracefully fall back to a placeholder
-    logger.info(
-      {
-        url: url.toString(),
-        reason: err instanceof Error ? err.message : "unknown",
-      },
-      "dns lookup failed",
-    );
+    logger.info({
+      url: url.toString(),
+      err,
+    });
     throw new RemoteAssetError(
       "dns_error",
       err instanceof Error ? err.message : "DNS lookup failed",

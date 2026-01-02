@@ -25,13 +25,13 @@ async function processIconImpl(
   config: FetchIconConfig,
 ): Promise<{ url: string | null }> {
   const {
+    identifier,
     blobKind,
     blobDomain,
     sources,
     getCachedRecord,
     persistRecord,
     ttlFn,
-    logContext = {},
     size = DEFAULT_SIZE,
     timeoutMs = REQUEST_TIMEOUT_MS,
     maxBytes = MAX_ICON_BYTES,
@@ -53,7 +53,7 @@ async function processIconImpl(
       }
     }
   } catch (err) {
-    logger.error({ err, ...logContext }, "db read failed");
+    logger.error({ err, identifier });
   }
 
   // Generate icon (cache missed)
@@ -121,11 +121,12 @@ async function processIconImpl(
           expiresAt,
         });
       } catch (err) {
-        logger.error({ err, ...logContext }, "db persist error");
+        logger.error({ err, identifier });
       }
 
       return { url };
-    } catch {
+    } catch (err) {
+      logger.warn({ err, identifier });
       // Infrastructure errors (DNS, private IP, etc.) - not a true "not found"
       allNotFound = false;
       // Try next source
@@ -149,7 +150,7 @@ async function processIconImpl(
       expiresAt,
     });
   } catch (err) {
-    logger.error({ err, ...logContext }, "db persist error (null)");
+    logger.error({ err, identifier });
   }
 
   return { url: null };
@@ -162,11 +163,10 @@ async function processIconImpl(
 export async function processIcon(
   config: FetchIconConfig,
 ): Promise<{ url: string | null }> {
-  const { identifier, logContext = {} } = config;
+  const { identifier } = config;
 
   // Check for in-flight request
   if (iconPromises.has(identifier)) {
-    logger.debug({ ...logContext }, "in-flight request hit");
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return iconPromises.get(identifier)!;
   }
@@ -186,10 +186,7 @@ export async function processIcon(
   // Safety: Auto-cleanup stale promise after timeout
   const timeoutId = setTimeout(() => {
     if (iconPromises.get(identifier) === promise) {
-      logger.warn(
-        { ...logContext, timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS },
-        "cleaning up stale promise",
-      );
+      logger.warn("cleaning up stale promise");
       iconPromises.delete(identifier);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);

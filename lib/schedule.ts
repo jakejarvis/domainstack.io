@@ -127,10 +127,7 @@ export async function scheduleRevalidation(
     });
     return true;
   } catch (err) {
-    logger.error(
-      { err, domain: normalizedDomain, section },
-      "unexpected failure",
-    );
+    logger.error({ err, domain: normalizedDomain, section });
     return false;
   }
 }

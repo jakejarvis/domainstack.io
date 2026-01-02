@@ -245,25 +245,19 @@ export async function getCertificates(
     return { certificates: out };
   } catch (err) {
     if (isExpectedDnsError(err)) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "no certificates found (DNS lookup failed)",
-      );
+      logger.debug({ err, domain });
       return { certificates: [] };
     }
 
     if (isExpectedTlsError(err)) {
-      logger.debug(
-        { domain, error: err instanceof Error ? err.message : String(err) },
-        "probe failed (TLS error)",
-      );
+      logger.debug({ err, domain });
       return {
         certificates: [],
         error: "Invalid SSL certificate",
       };
     }
 
-    logger.error({ err, domain }, "probe failed (unexpected error)");
+    logger.error({ err, domain });
 
     // Rethrow to let callers distinguish between:
     // - Empty array: domain has no certificates (legitimately empty)

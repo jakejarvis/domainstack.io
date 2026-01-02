@@ -340,10 +340,7 @@ export async function batchResolveOrCreateProviderIds(
         }
       }
     } catch (err) {
-      logger.error(
-        { err, count: toCreate.length },
-        "batch insert partial failure",
-      );
+      logger.error(err, "batch insert partial failure");
 
       // Fall back to individual resolution for failed items
       for (const input of toCreate) {
@@ -473,8 +470,9 @@ function catalogRuleMatchesDiscovered(
     logger.warn(
       {
         err,
-        catalog: catalogProvider.name,
         discovered: discoveredProvider.name,
+        catalog: catalogProvider.name,
+        category: catalogProvider.category,
       },
       "failed to evaluate rule for catalog match",
     );

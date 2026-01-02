@@ -844,7 +844,7 @@ export async function verifyTrackedDomain(
             trackedDomainId: updated[0].id,
             domainId: updated[0].domainId,
           },
-          "Failed to trigger snapshot initialization",
+          "failed to trigger snapshot initialization for domain",
         );
       });
   }
@@ -928,7 +928,10 @@ export async function deleteTrackedDomain(id: string) {
     await db.delete(userTrackedDomains).where(eq(userTrackedDomains.id, id));
     return true;
   } catch (err) {
-    logger.error({ err, id }, "failed to delete tracked domain");
+    logger.error(
+      { err, trackedDomainId: id },
+      "failed to delete tracked domain",
+    );
     return false;
   }
 }

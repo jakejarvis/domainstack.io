@@ -28,8 +28,6 @@ export const FetchIconConfigSchema = z.object({
   blobDomain: z.string(),
   /** Sources to try in order (first success wins) */
   sources: z.array(IconSourceSchema),
-  /** Additional context for logging */
-  logContext: z.record(z.string(), z.unknown()).optional(),
   /** Icon size in pixels (default: 32) */
   size: z.number().optional(),
   /** Request timeout per source in ms (default: 1500) */

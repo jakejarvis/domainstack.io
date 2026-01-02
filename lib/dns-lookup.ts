@@ -37,10 +37,7 @@ export async function dnsLookupViaHttps(
         return all ? records : records[0];
       }
     } catch (err) {
-      logger.debug(
-        { err, hostname, provider: provider.key },
-        "dns lookup failed for provider",
-      );
+      logger.debug({ err, hostname, provider: provider.key });
       lastError = err;
     }
   }

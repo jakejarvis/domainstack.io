@@ -113,7 +113,7 @@ function createAbortSignal(
         fn();
       } catch (err) {
         // Ignore cleanup errors to ensure all cleanup functions run
-        logger.error({ err }, "cleanup error");
+        logger.error(err);
       }
     }
   };

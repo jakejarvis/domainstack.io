@@ -88,7 +88,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       : [];
   } catch (err) {
     // Postgres unavailable - log and fall through to DoH lookup
-    logger.warn({ err, domain }, "db cache unavailable, falling back to doh");
+    logger.warn({ err, domain });
   }
 
   if (rows.length > 0) {
@@ -279,39 +279,21 @@ export const getDnsRecords = cache(async function getDnsRecords(
             isCloudflare: r.isCloudflare ?? undefined,
           })),
         );
-        // Deduplicate merged results (handles duplicates within and across arrays)
+
+        // Deduplicate and sort merged results
         const deduplicated = deduplicateDnsRecords([
           ...cachedFresh,
           ...fetchedStale,
         ]);
         const merged = sortDnsRecordsByType(deduplicated, types);
-        const counts = (types as DnsType[]).reduce(
-          (acc, t) => {
-            acc[t] = merged.filter((r) => r.type === t).length;
-            return acc;
-          },
-          { A: 0, AAAA: 0, MX: 0, TXT: 0, NS: 0 } as Record<DnsType, number>,
-        );
 
-        logger.debug(
-          {
-            domain,
-            counts,
-            resolver: pinnedProvider.key,
-            durationMs: durationByProvider[pinnedProvider.key],
-          },
-          "partial refresh done",
-        );
         return {
           records: merged,
           resolver: pinnedProvider.key,
         } as DnsRecordsResponse;
       } catch (err) {
         // Fall through to full provider loop below
-        logger.error(
-          { err, domain, provider: pinnedProvider.key },
-          "partial refresh failed",
-        );
+        logger.error({ err, domain, provider: pinnedProvider.key });
       }
     }
   }
@@ -413,14 +395,7 @@ export const getDnsRecords = cache(async function getDnsRecords(
       } as DnsRecordsResponse;
     } catch (err) {
       // This is somewhat expected, so log at info level
-      logger.info(
-        {
-          domain,
-          provider: provider.key,
-          error: err instanceof Error ? err.message : String(err),
-        },
-        "provider attempt failed",
-      );
+      logger.info({ err, domain, provider: provider.key });
       durationByProvider[provider.key] = Date.now() - attemptStart;
       lastError = err;
 
@@ -429,13 +404,14 @@ export const getDnsRecords = cache(async function getDnsRecords(
   }
 
   // All providers failed
+  logger.error({
+    err: lastError,
+    domain,
+    providers: providers.map((p) => p.key).join(","),
+  });
   const error = new Error(`All DoH providers failed for ${domain}`, {
     cause: lastError,
   });
-  logger.error(
-    { err: error, domain, providers: providers.map((p) => p.key).join(",") },
-    "all providers failed",
-  );
   throw error;
 });
 

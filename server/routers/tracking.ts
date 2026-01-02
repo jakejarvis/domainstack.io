@@ -580,10 +580,7 @@ export const trackingRouter = createTRPCRouter({
         });
 
         if (error) {
-          logger.error(
-            { err: error, trackedDomainId, recipientEmail },
-            "Failed to send verification instructions email",
-          );
+          logger.error({ err: error, trackedDomainId });
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to send email",
@@ -598,12 +595,9 @@ export const trackingRouter = createTRPCRouter({
 
         return { success: true };
       } catch (error) {
-        if (error instanceof TRPCError) throw error;
+        logger.error({ err: error, trackedDomainId });
 
-        logger.error(
-          { err: error, trackedDomainId, recipientEmail },
-          "Failed to send verification instructions email",
-        );
+        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to send email",

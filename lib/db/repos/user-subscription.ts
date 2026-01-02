@@ -69,10 +69,7 @@ export async function updateUserTier(
   if (updated.length === 0) {
     // Subscription record doesn't exist - create it with the specified tier.
     // This handles the edge case where the database hook failed during user signup.
-    logger.warn(
-      { userId, tier },
-      "subscription not found, creating missing record",
-    );
+    logger.warn({ userId }, "subscription not found, creating missing record");
 
     await db.insert(userSubscriptions).values({ userId, tier });
 

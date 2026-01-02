@@ -13,7 +13,7 @@ const handler = async (req: Request) => {
     onError: async ({ path, error }) => {
       // Use logger for unhandled errors
       const { logger } = await import("@/lib/logger/server");
-      logger.error({ err: error, source: "trpc", path }, "unhandled error");
+      logger.error({ err: error, source: "trpc", path });
     },
   });
 };

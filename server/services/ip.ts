@@ -33,10 +33,7 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
     );
 
     if (!res.ok) {
-      logger.error(
-        { ip, status: res.status, statusMessage: res.statusText },
-        "lookup failed",
-      );
+      logger.error({ status: res.status }, "ipwho.is lookup failed");
       throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
     }
 
@@ -95,7 +92,7 @@ export const lookupIpMeta = cache(async function lookupIpMeta(
 
     return { geo, owner, domain };
   } catch (err) {
-    logger.error({ err, ip }, "lookup failed");
+    logger.error(err, "ipwho.is lookup failed");
     return {
       owner: null,
       domain: null,

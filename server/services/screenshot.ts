@@ -66,7 +66,6 @@ export async function getScreenshot(
 
   // Check for in-flight request
   if (screenshotPromises.has(domain)) {
-    logger.debug({ domain }, "in-flight request hit");
     // biome-ignore lint/style/noNonNullAssertion: checked above
     return screenshotPromises.get(domain)!;
   }
@@ -88,10 +87,7 @@ export async function getScreenshot(
   // This catches edge cases where promise never settles
   const timeoutId = setTimeout(() => {
     if (screenshotPromises.get(domain) === promise) {
-      logger.warn(
-        { domain, timeoutMs: PROMISE_CLEANUP_TIMEOUT_MS },
-        "cleaning up stale promise",
-      );
+      logger.warn("cleaning up stale promise");
       screenshotPromises.delete(domain);
     }
   }, PROMISE_CLEANUP_TIMEOUT_MS);
@@ -101,10 +97,7 @@ export async function getScreenshot(
 
   // Log map size for monitoring
   if (screenshotPromises.size > 10) {
-    logger.warn(
-      { count: screenshotPromises.size },
-      "promise map size high (potential memory pressure)",
-    );
+    logger.warn("promise map size high (potential memory pressure)");
   }
 
   return promise;
@@ -145,7 +138,7 @@ async function generateScreenshot(
       }
     }
   } catch (err) {
-    logger.error({ err, domain }, "db read failed");
+    logger.error({ err, domain });
   }
 
   // Generate screenshot (cache missed)
@@ -183,10 +176,6 @@ async function generateScreenshot(
             const status = response.status();
             if (status === 404 || status === 410) {
               permanentFailureUrls.add(url);
-              logger.debug(
-                { domain, url, status },
-                "permanent failure detected for url",
-              );
               break; // No point retrying this specific URL
             }
           }
@@ -243,7 +232,7 @@ async function generateScreenshot(
               expiresAt,
             });
           } catch (err) {
-            logger.error({ err, domain }, "db persist error");
+            logger.error({ err, domain });
           }
           resultUrl = storedUrl;
           break urlLoop;
@@ -253,11 +242,10 @@ async function generateScreenshot(
           if (attemptIndex === attempts - 1) {
             logger.info(
               {
+                err,
                 domain,
                 url,
-                attemptIndex: attemptIndex + 1,
-                totalAttempts: attempts,
-                error: err instanceof Error ? err.message : String(err),
+                attempt: attemptIndex + 1,
               },
               "screenshot attempts exhausted, giving up",
             );
@@ -289,10 +277,6 @@ async function generateScreenshot(
     // Only mark as permanently failed if ALL candidate URLs returned permanent signals
     if (permanentFailureUrls.size === tryUrls.length && tryUrls.length > 0) {
       isPermanentFailure = true;
-      logger.debug(
-        { domain, failedUrls: Array.from(permanentFailureUrls) },
-        "screenshot permanently unavailable (all urls failed)",
-      );
     }
 
     // All attempts failed - persist result based on failure type
@@ -317,11 +301,11 @@ async function generateScreenshot(
           expiresAt,
         });
       } catch (err) {
-        logger.error({ err, domain }, "db persist error (null)");
+        logger.error({ err, domain });
       }
     }
   } catch (err) {
-    logger.error({ err, domain }, "screenshot generation failed");
+    logger.error({ err, domain });
   }
 
   return { url: resultUrl };
