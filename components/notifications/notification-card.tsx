@@ -12,18 +12,21 @@ import { cn } from "@/lib/utils";
 interface NotificationCardProps {
   notification: NotificationData;
   onClick?: () => void;
-  href?: string;
 }
 
 export function NotificationCard({
   notification,
   onClick,
-  href = "/dashboard",
 }: NotificationCardProps) {
   const Icon = getNotificationIcon(notification.type);
   const severity = getNotificationSeverity(notification.type);
   const colors = getSeverityColors(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
+
+  // Build href with domainId filter when notification is domain-specific
+  const href = notification.trackedDomainId
+    ? `/dashboard?domainId=${notification.trackedDomainId}`
+    : "/dashboard";
 
   return (
     <Link

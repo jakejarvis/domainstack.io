@@ -5,6 +5,7 @@ import { z } from "zod";
  */
 export const NotificationDataSchema = z.object({
   id: z.string(),
+  trackedDomainId: z.string().nullable(),
   type: z.string(),
   title: z.string(),
   message: z.string(),

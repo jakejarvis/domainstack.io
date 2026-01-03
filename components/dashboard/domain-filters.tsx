@@ -61,6 +61,10 @@ type DomainFiltersProps = {
   onTldsChange: (values: string[]) => void;
   onProvidersChange: (values: string[]) => void;
   onClearFilters: () => void;
+  // Hidden domain ID filter (for notification deep links)
+  domainId?: string | null;
+  filteredDomainName?: string | null;
+  onClearDomainId?: () => void;
   // Sort (only shown in grid view)
   viewMode: ViewMode;
   sortOption?: SortOption;
@@ -72,7 +76,7 @@ type DomainFiltersProps = {
 
 /** Discriminated union for type-safe filter chip handling */
 type FilterChip = {
-  type: "search" | "status" | "health" | "tld" | "provider";
+  type: "search" | "status" | "health" | "tld" | "provider" | "domainId";
   value: string;
   label: string;
   prefix?: string;
@@ -94,6 +98,9 @@ export function DomainFilters({
   onTldsChange,
   onProvidersChange,
   onClearFilters,
+  domainId,
+  filteredDomainName,
+  onClearDomainId,
   viewMode,
   sortOption,
   onSortChange,
@@ -235,6 +242,18 @@ export function DomainFilters({
 
   // Get labels for active filters to show as chips
   const activeFilterChips: FilterChip[] = [
+    // Domain ID chip (from notification deep links) - shown first for prominence
+    ...(domainId && filteredDomainName
+      ? [
+          {
+            type: "domainId" as const,
+            value: domainId,
+            label: filteredDomainName,
+            prefix: "Domain",
+            icon: <Globe className="size-3 text-muted-foreground" />,
+          },
+        ]
+      : []),
     // Include search term as a chip if present
     ...(search.length > 0
       ? [
@@ -282,7 +301,9 @@ export function DomainFilters({
 
   const removeFilter = useCallback(
     (chip: FilterChip) => {
-      if (chip.type === "search") {
+      if (chip.type === "domainId") {
+        onClearDomainId?.();
+      } else if (chip.type === "search") {
         onSearchChange("");
       } else if (chip.type === "status") {
         onStatusChange(status.filter((s) => s !== chip.value));
@@ -299,6 +320,7 @@ export function DomainFilters({
       health,
       tlds,
       providers,
+      onClearDomainId,
       onSearchChange,
       onStatusChange,
       onHealthChange,

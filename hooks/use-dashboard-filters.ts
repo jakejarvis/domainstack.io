@@ -64,6 +64,8 @@ export function useDashboardFilters(
       health: parseAsArrayOf(parseAsString).withDefault([]),
       tlds: parseAsArrayOf(parseAsString).withDefault([]),
       providers: parseAsArrayOf(parseAsString).withDefault([]),
+      // Hidden filter for notification deep links - filters to a single domain by ID
+      domainId: parseAsString,
     },
     {
       shallow: true, // Don't trigger server re-render
@@ -212,7 +214,8 @@ export function useDashboardFilters(
     activeFilters.status.length > 0 ||
     activeFilters.health.length > 0 ||
     activeFilters.tlds.length > 0 ||
-    activeFilters.providers.length > 0;
+    activeFilters.providers.length > 0 ||
+    !!activeFilters.domainId;
 
   // Filter domains based on current filters
   const filteredDomains = useMemo(() => {
@@ -220,6 +223,13 @@ export function useDashboardFilters(
     if (!now) return domains;
 
     return domains.filter((domain) => {
+      // Domain ID filter (hidden, exact match for notification deep links)
+      if (activeFilters.domainId) {
+        if (domain.id !== activeFilters.domainId) {
+          return false;
+        }
+      }
+
       // Search filter
       if (activeFilters.search) {
         const searchLower = activeFilters.search.toLowerCase();
@@ -331,29 +341,32 @@ export function useDashboardFilters(
     return { expiringSoon, pendingVerification };
   }, [domains, now]);
 
-  // Filter setters
+  // Filter setters - all clear domainId to ensure the hidden filter doesn't persist on user interaction
   const setSearch = (value: string) => {
-    setFilters({ search: value || null });
+    setFilters({ search: value || null, domainId: null });
     options?.onFilterChange?.();
   };
 
   const setStatus = (values: StatusFilter[]) => {
-    setFilters({ status: values.length > 0 ? values : null });
+    setFilters({ status: values.length > 0 ? values : null, domainId: null });
     options?.onFilterChange?.();
   };
 
   const setHealth = (values: HealthFilter[]) => {
-    setFilters({ health: values.length > 0 ? values : null });
+    setFilters({ health: values.length > 0 ? values : null, domainId: null });
     options?.onFilterChange?.();
   };
 
   const setTlds = (values: string[]) => {
-    setFilters({ tlds: values.length > 0 ? values : null });
+    setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
     options?.onFilterChange?.();
   };
 
   const setProviders = (values: string[]) => {
-    setFilters({ providers: values.length > 0 ? values : null });
+    setFilters({
+      providers: values.length > 0 ? values : null,
+      domainId: null,
+    });
     options?.onFilterChange?.();
   };
 
@@ -364,6 +377,7 @@ export function useDashboardFilters(
       health: null,
       tlds: null,
       providers: null,
+      domainId: null,
     });
     options?.onFilterChange?.();
   };
@@ -371,12 +385,23 @@ export function useDashboardFilters(
   // Quick filter for health summary clicks
   const applyHealthFilter = (filter: HealthFilter | "pending") => {
     if (filter === "pending") {
-      setFilters({ status: ["pending"], health: null });
+      setFilters({ status: ["pending"], health: null, domainId: null });
     } else {
-      setFilters({ status: null, health: [filter] });
+      setFilters({ status: null, health: [filter], domainId: null });
     }
     options?.onFilterChange?.();
   };
+
+  // Clear just the domainId filter (for notification deep link chip removal)
+  const clearDomainId = () => {
+    setFilters({ domainId: null });
+    options?.onFilterChange?.();
+  };
+
+  // Get the domain name for the filtered domain ID (for chip display)
+  const filteredDomainName = activeFilters.domainId
+    ? (domains.find((d) => d.id === activeFilters.domainId)?.domainName ?? null)
+    : null;
 
   return {
     // Current filter values
@@ -385,6 +410,8 @@ export function useDashboardFilters(
     health: activeFilters.health as HealthFilter[],
     tlds: activeFilters.tlds,
     providers: activeFilters.providers,
+    domainId: activeFilters.domainId,
+    filteredDomainName,
 
     // Setters
     setSearch,
@@ -394,6 +421,7 @@ export function useDashboardFilters(
     setProviders,
     clearFilters,
     applyHealthFilter,
+    clearDomainId,
 
     // Computed values
     filteredDomains,

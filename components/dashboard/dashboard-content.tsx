@@ -99,11 +99,14 @@ export function DashboardContent() {
     health,
     tlds,
     providers,
+    domainId,
+    filteredDomainName,
     setSearch,
     setStatus,
     setHealth,
     setTlds,
     setProviders,
+    clearDomainId,
     filteredDomains: filteredUnsorted,
     availableTlds,
     availableProviders,
@@ -420,6 +423,9 @@ export function DashboardContent() {
               onProvidersChange={setProviders}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={clearFilters}
+              domainId={domainId}
+              filteredDomainName={filteredDomainName}
+              onClearDomainId={clearDomainId}
               viewMode={viewMode}
               sortOption={sortOption}
               onSortChange={setSortOption}
