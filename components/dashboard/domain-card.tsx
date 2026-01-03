@@ -9,7 +9,6 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   DomainHealthBadge,
   getHealthAccent,
@@ -35,6 +34,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
@@ -88,11 +88,8 @@ export function DomainCard({
   isSelected = false,
   onToggleSelect,
 }: DomainCardProps) {
-  // Capture current time only on client after mount (not during SSR)
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  // Use shared hydrated time to avoid N separate useEffect calls for N cards
+  const now = useHydratedNow();
 
   const accent = getHealthAccent(expirationDate, verified, now || undefined);
   const isFailing = verified && verificationStatus === "failing";
@@ -386,6 +383,9 @@ export function DomainCard({
   );
 }
 
+// Stable fallback for empty provider to avoid creating new object on every render
+const EMPTY_PROVIDER: ProviderInfo = { id: null, name: null, domain: null };
+
 function InfoRow({
   label,
   provider,
@@ -401,8 +401,11 @@ function InfoRow({
 }) {
   const { valueRef, isTruncated } = useTruncation();
 
+  // Use stable reference for empty provider
+  const effectiveProvider = provider ?? EMPTY_PROVIDER;
+
   const tooltipData = useProviderTooltipData({
-    provider: provider ?? { id: null, name: null, domain: null },
+    provider: effectiveProvider,
     trackedDomainId,
     providerType,
   });

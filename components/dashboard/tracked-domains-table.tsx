@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
 import { TablePagination } from "@/components/dashboard/table-pagination";
@@ -237,11 +237,20 @@ export function TrackedDomainsTable({
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
 
-  // Create sorting helper that has access to current sort direction
-  const withUnverifiedLast = createUnverifiedLastSorter((columnId) => {
-    const columnSort = sorting.find((s) => s.id === columnId);
-    return columnSort?.desc ?? false;
-  });
+  // Use a ref to store current sorting state so withUnverifiedLast can be memoized
+  // without causing columns to be recreated on every sort change
+  const sortingRef = useRef(sorting);
+  sortingRef.current = sorting;
+
+  // Create a stable sorting helper that reads from ref instead of closing over state
+  // This prevents columns from being recreated on every render
+  const withUnverifiedLast = useCallback(
+    createUnverifiedLastSorter((columnId) => {
+      const columnSort = sortingRef.current.find((s) => s.id === columnId);
+      return columnSort?.desc ?? false;
+    }),
+    [], // Empty deps - reads from ref, not state
+  );
 
   const columns = useMemo<ColumnDef<TrackedDomainWithDetails>[]>(
     () => [

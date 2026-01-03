@@ -3,7 +3,7 @@
 import type { SortingState } from "@tanstack/react-table";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 /**
@@ -219,17 +219,22 @@ export function useTableSortPreference(options?: {
 
   const activeSortParam = isDashboardPage ? sortParam : cachedSortParam;
 
-  const sorting = parseSortParam(activeSortParam as string);
+  // Memoize sorting state to avoid creating new array on every render
+  const sorting = useMemo(
+    () => parseSortParam(activeSortParam as string),
+    [activeSortParam],
+  );
 
-  const setSorting = (
-    updater: SortingState | ((old: SortingState) => SortingState),
-  ) => {
-    const newSorting =
-      typeof updater === "function" ? updater(sorting) : updater;
-    const serialized = serializeSortState(newSorting);
-    setSortParam(serialized);
-    options?.onSortChange?.();
-  };
+  const setSorting = useCallback(
+    (updater: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      const serialized = serializeSortState(newSorting);
+      setSortParam(serialized);
+      options?.onSortChange?.();
+    },
+    [sorting, setSortParam, options],
+  );
 
   return { sorting, setSorting };
 }

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { simpleHash } from "@/lib/simple-hash";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,10 @@ export type RemoteIconProps = {
 /**
  * Shared component for rendering remote icons (favicons, logos, etc.)
  * with loading states, error handling, and letter avatar fallback.
+ *
+ * Note: No explicit hydration gating needed here. React Query's `isPending`
+ * state is consistent between SSR and client hydration (both true for
+ * unfetched queries), so the Skeleton renders in both cases with no mismatch.
  */
 export function RemoteIcon({
   queryOptions,
@@ -63,12 +67,6 @@ export function RemoteIcon({
   dataAttribute,
 }: RemoteIconProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  // Only render data-dependent content after mount to avoid hydration mismatches
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const { data, isPending, isError } = useQuery({
     ...queryOptions,
@@ -80,24 +78,14 @@ export function RemoteIcon({
 
   const url = (data as { url: string | null } | undefined)?.url ?? null;
 
-  const baseClassNames = cn("pointer-events-none select-none rounded-xs");
+  const baseClassName = "pointer-events-none select-none rounded-xs";
 
-  // During SSR and initial client render, always show skeleton
-  // This ensures server and client HTML match perfectly
-  if (!mounted) {
-    return (
-      <Skeleton
-        className={cn(baseClassNames, "bg-input", className)}
-        style={{ ...style, width: size, height: size }}
-      />
-    );
-  }
-
-  // After mount, show skeleton while query is still loading
+  // Show skeleton while query is loading
+  // This is consistent between SSR and client hydration (both isPending=true)
   if (isPending) {
     return (
       <Skeleton
-        className={cn(baseClassNames, "bg-input", className)}
+        className={cn(baseClassName, "bg-input", className)}
         style={{ ...style, width: size, height: size }}
       />
     );
@@ -111,7 +99,7 @@ export function RemoteIcon({
     return (
       <div
         className={cn(
-          baseClassNames,
+          baseClassName,
           // Use flex (block-level) instead of inline-flex for consistent alignment with <img>
           "flex items-center justify-center font-bold text-white",
           className,
@@ -139,7 +127,7 @@ export function RemoteIcon({
       src={url}
       width={size}
       height={size}
-      className={cn(baseClassNames, className)}
+      className={cn(baseClassName, className)}
       style={{ ...style, width: size, height: size }}
       unoptimized
       priority={false}

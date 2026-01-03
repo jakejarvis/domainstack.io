@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import useLocalStorageState from "use-local-storage-state";
 
 export type ViewMode = "grid" | "table";
@@ -34,17 +35,26 @@ export function useDashboardPreferences() {
       defaultValue: DEFAULT_PREFERENCES,
     });
 
-  const setViewMode = (viewMode: ViewMode) => {
-    setPreferences((prev) => ({ ...prev, viewMode }));
-  };
+  const setViewMode = useCallback(
+    (viewMode: ViewMode) => {
+      setPreferences((prev) => ({ ...prev, viewMode }));
+    },
+    [setPreferences],
+  );
 
-  const setPageSize = (pageSize: PageSize) => {
-    setPreferences((prev) => ({ ...prev, pageSize }));
-  };
+  const setPageSize = useCallback(
+    (pageSize: PageSize) => {
+      setPreferences((prev) => ({ ...prev, pageSize }));
+    },
+    [setPreferences],
+  );
 
-  const setColumnVisibility = (columnVisibility: ColumnVisibility) => {
-    setPreferences((prev) => ({ ...prev, columnVisibility }));
-  };
+  const setColumnVisibility = useCallback(
+    (columnVisibility: ColumnVisibility) => {
+      setPreferences((prev) => ({ ...prev, columnVisibility }));
+    },
+    [setPreferences],
+  );
 
   return {
     viewMode: preferences?.viewMode ?? DEFAULT_PREFERENCES.viewMode,
@@ -90,20 +100,23 @@ export function useColumnVisibilityPreference(): [
 ] {
   const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
 
-  const setVisibility = (
-    updaterOrValue:
-      | ColumnVisibility
-      | ((prev: ColumnVisibility) => ColumnVisibility),
-  ) => {
-    if (typeof updaterOrValue === "function") {
-      // Handle updater function pattern (TanStack Table uses this)
-      const newValue = updaterOrValue(columnVisibility);
-      setColumnVisibility(newValue);
-    } else {
-      // Handle direct value pattern
-      setColumnVisibility(updaterOrValue);
-    }
-  };
+  const setVisibility = useCallback(
+    (
+      updaterOrValue:
+        | ColumnVisibility
+        | ((prev: ColumnVisibility) => ColumnVisibility),
+    ) => {
+      if (typeof updaterOrValue === "function") {
+        // Handle updater function pattern (TanStack Table uses this)
+        const newValue = updaterOrValue(columnVisibility);
+        setColumnVisibility(newValue);
+      } else {
+        // Handle direct value pattern
+        setColumnVisibility(updaterOrValue);
+      }
+    },
+    [columnVisibility, setColumnVisibility],
+  );
 
   return [columnVisibility, setVisibility];
 }

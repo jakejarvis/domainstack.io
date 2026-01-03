@@ -2,6 +2,7 @@
 
 import type { PaginationState } from "@tanstack/react-table";
 import { parseAsInteger, useQueryState } from "nuqs";
+import { useCallback, useMemo } from "react";
 import {
   type PageSize,
   usePageSizePreference,
@@ -32,25 +33,34 @@ export function useTablePagination(): {
   // Convert 1-indexed URL param to 0-indexed internal state
   const pageIndex = Math.max(0, pageParam - 1);
 
-  const pagination: PaginationState = {
-    pageIndex,
-    pageSize,
-  };
+  const pagination: PaginationState = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize],
+  );
 
-  const setPageIndex = (newIndex: number) => {
-    // Convert 0-indexed internal state to 1-indexed URL param
-    setPageParam(newIndex + 1);
-  };
+  const setPageIndex = useCallback(
+    (newIndex: number) => {
+      // Convert 0-indexed internal state to 1-indexed URL param
+      setPageParam(newIndex + 1);
+    },
+    [setPageParam],
+  );
 
-  const setPageSize = (newSize: PageSize) => {
-    setPageSizePreference(newSize);
-    // Reset to first page when changing page size
+  const setPageSize = useCallback(
+    (newSize: PageSize) => {
+      setPageSizePreference(newSize);
+      // Reset to first page when changing page size
+      setPageParam(1);
+    },
+    [setPageSizePreference, setPageParam],
+  );
+
+  const resetPage = useCallback(() => {
     setPageParam(1);
-  };
-
-  const resetPage = () => {
-    setPageParam(1);
-  };
+  }, [setPageParam]);
 
   return {
     pagination,

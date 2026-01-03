@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
@@ -15,9 +15,59 @@ type TrackedDomainsGridProps = {
   proMaxDomains: number;
 };
 
+// Stable empty Set to avoid creating new instance on every render
+const EMPTY_SET = new Set<string>();
+
+/**
+ * Memoized grid item to prevent re-renders when parent updates but item data hasn't changed.
+ * Handles callback binding internally to avoid inline functions in the parent map.
+ */
+const GridItem = memo(function GridItem({
+  domain,
+  isSelected,
+  onToggleSelect,
+  onVerify,
+  onRemove,
+  onArchive,
+}: {
+  domain: TrackedDomainWithDetails;
+  isSelected: boolean;
+  onToggleSelect?: (id: string) => void;
+  onVerify: (domain: TrackedDomainWithDetails) => void;
+  onRemove: (id: string, domainName: string) => void;
+  onArchive?: (id: string, domainName: string) => void;
+}) {
+  const handleToggleSelect = useCallback(() => {
+    onToggleSelect?.(domain.id);
+  }, [onToggleSelect, domain.id]);
+
+  const handleVerify = useCallback(() => {
+    onVerify(domain);
+  }, [onVerify, domain]);
+
+  const handleRemove = useCallback(() => {
+    onRemove(domain.id, domain.domainName);
+  }, [onRemove, domain.id, domain.domainName]);
+
+  const handleArchive = useCallback(() => {
+    onArchive?.(domain.id, domain.domainName);
+  }, [onArchive, domain.id, domain.domainName]);
+
+  return (
+    <SelectableDomainCard
+      domain={domain}
+      isSelected={isSelected}
+      onToggleSelect={handleToggleSelect}
+      onVerify={handleVerify}
+      onRemove={handleRemove}
+      onArchive={onArchive ? handleArchive : undefined}
+    />
+  );
+});
+
 export function TrackedDomainsGrid({
   domains,
-  selectedIds = new Set(),
+  selectedIds = EMPTY_SET,
   onToggleSelect,
   onVerify,
   onRemove,
@@ -61,17 +111,13 @@ export function TrackedDomainsGrid({
             className="h-full"
             {...getItemMotionProps(index)}
           >
-            <SelectableDomainCard
+            <GridItem
               domain={domain}
               isSelected={selectedIds.has(domain.id)}
-              onToggleSelect={() => onToggleSelect?.(domain.id)}
-              onVerify={() => onVerify(domain)}
-              onRemove={() => onRemove(domain.id, domain.domainName)}
-              onArchive={
-                onArchive
-                  ? () => onArchive(domain.id, domain.domainName)
-                  : undefined
-              }
+              onToggleSelect={onToggleSelect}
+              onVerify={onVerify}
+              onRemove={onRemove}
+              onArchive={onArchive}
             />
           </motion.div>
         ))}

@@ -6,8 +6,9 @@ import {
   type LucideIcon,
   Siren,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { cn } from "@/lib/utils";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
@@ -23,11 +24,8 @@ export function DomainHealthBadge({
   verified,
   className,
 }: DomainHealthBadgeProps) {
-  // Capture current time only on client after mount (not during SSR)
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  // Use shared hydrated time to avoid N separate useEffect calls for N badges
+  const now = useHydratedNow();
 
   // During SSR (when now is null), show "Unknown" status without calculating
   const status = now

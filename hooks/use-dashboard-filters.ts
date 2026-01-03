@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants";
 import type {
   HealthFilter,
@@ -50,11 +51,8 @@ export function useDashboardFilters(
   domains: TrackedDomainWithDetails[],
   options?: { onFilterChange?: () => void },
 ) {
-  // Capture current time only on client after mount (not during SSR)
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  // Use shared hydrated time to avoid extra re-renders
+  const now = useHydratedNow();
 
   // URL state with nuqs
   const [filters, setFilters] = useQueryStates(
@@ -342,35 +340,51 @@ export function useDashboardFilters(
   }, [domains, now]);
 
   // Filter setters - all clear domainId to ensure the hidden filter doesn't persist on user interaction
-  const setSearch = (value: string) => {
-    setFilters({ search: value || null, domainId: null });
-    options?.onFilterChange?.();
-  };
+  // Wrapped in useCallback to provide stable references for child components
+  const setSearch = useCallback(
+    (value: string) => {
+      setFilters({ search: value || null, domainId: null });
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
-  const setStatus = (values: StatusFilter[]) => {
-    setFilters({ status: values.length > 0 ? values : null, domainId: null });
-    options?.onFilterChange?.();
-  };
+  const setStatus = useCallback(
+    (values: StatusFilter[]) => {
+      setFilters({ status: values.length > 0 ? values : null, domainId: null });
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
-  const setHealth = (values: HealthFilter[]) => {
-    setFilters({ health: values.length > 0 ? values : null, domainId: null });
-    options?.onFilterChange?.();
-  };
+  const setHealth = useCallback(
+    (values: HealthFilter[]) => {
+      setFilters({ health: values.length > 0 ? values : null, domainId: null });
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
-  const setTlds = (values: string[]) => {
-    setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
-    options?.onFilterChange?.();
-  };
+  const setTlds = useCallback(
+    (values: string[]) => {
+      setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
-  const setProviders = (values: string[]) => {
-    setFilters({
-      providers: values.length > 0 ? values : null,
-      domainId: null,
-    });
-    options?.onFilterChange?.();
-  };
+  const setProviders = useCallback(
+    (values: string[]) => {
+      setFilters({
+        providers: values.length > 0 ? values : null,
+        domainId: null,
+      });
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       search: null,
       status: null,
@@ -380,23 +394,26 @@ export function useDashboardFilters(
       domainId: null,
     });
     options?.onFilterChange?.();
-  };
+  }, [setFilters, options]);
 
   // Quick filter for health summary clicks
-  const applyHealthFilter = (filter: HealthFilter | "pending") => {
-    if (filter === "pending") {
-      setFilters({ status: ["pending"], health: null, domainId: null });
-    } else {
-      setFilters({ status: null, health: [filter], domainId: null });
-    }
-    options?.onFilterChange?.();
-  };
+  const applyHealthFilter = useCallback(
+    (filter: HealthFilter | "pending") => {
+      if (filter === "pending") {
+        setFilters({ status: ["pending"], health: null, domainId: null });
+      } else {
+        setFilters({ status: null, health: [filter], domainId: null });
+      }
+      options?.onFilterChange?.();
+    },
+    [setFilters, options],
+  );
 
   // Clear just the domainId filter (for notification deep link chip removal)
-  const clearDomainId = () => {
+  const clearDomainId = useCallback(() => {
     setFilters({ domainId: null });
     options?.onFilterChange?.();
-  };
+  }, [setFilters, options]);
 
   // Get the domain name for the filtered domain ID (for chip display)
   const filteredDomainName = activeFilters.domainId
