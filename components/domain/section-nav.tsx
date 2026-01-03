@@ -33,9 +33,9 @@ export function SectionNav({
   onSectionClick,
 }: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null);
+  // offsetThreshold defaults to HEADER_HEIGHT from layout constants
   const { direction, isPastThreshold } = useScrollDirection({
     threshold: 15,
-    offsetThreshold: 80,
   });
 
   // On mobile past threshold: header hidden when scrolling down, visible when up
@@ -69,16 +69,16 @@ export function SectionNav({
         isPastThreshold
           ? isGlobalHeaderHidden
             ? "top-0 transition-[top] duration-300 ease-out"
-            : "top-[var(--header-height)] transition-[top] duration-300 ease-out"
-          : "top-[calc(var(--header-height)-var(--scroll-y,0px))]",
+            : "top-[var(--header-height,80px)] transition-[top] duration-300 ease-out"
+          : "top-[calc(var(--header-height,80px)-var(--scroll-y,0px))]",
         // Desktop: always below sticky global header (no mobile behavior)
-        "md:!top-[var(--header-height)] md:!transition-none",
+        "md:!top-[var(--header-height,80px)] md:!transition-none",
       )}
     >
       <div
         className={cn(
           "relative flex items-center",
-          "h-[var(--section-nav-height)]",
+          "h-[var(--section-nav-height,48px)]",
           // Full-width background using pseudo-element
           "before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2",
           "before:bg-background/80 before:backdrop-blur-md dark:before:bg-background/90",

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HEADER_HEIGHT } from "@/lib/constants/layout";
 
 export type ScrollDirection = "up" | "down" | null;
 
 interface UseScrollDirectionOptions {
   /** Minimum scroll delta to trigger direction change (prevents jitter) */
   threshold?: number;
-  /** Scroll position threshold before hide/show behavior kicks in */
+  /** Scroll position threshold before hide/show behavior kicks in (defaults to header height) */
   offsetThreshold?: number;
   /** Initial direction before any scroll */
   initialDirection?: ScrollDirection;
@@ -26,7 +27,7 @@ interface UseScrollDirectionResult {
  */
 export function useScrollDirection({
   threshold = 10,
-  offsetThreshold = 80,
+  offsetThreshold = HEADER_HEIGHT,
   initialDirection = null,
 }: UseScrollDirectionOptions = {}): UseScrollDirectionResult {
   const [direction, setDirection] = useState<ScrollDirection>(initialDirection);

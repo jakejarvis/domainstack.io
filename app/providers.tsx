@@ -5,9 +5,13 @@ import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useLayoutCSSVariables } from "@/hooks/use-layout-css-variables";
 import { TRPCProvider } from "@/trpc/client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Inject layout CSS variables (--header-height, etc.) from JS constants
+  useLayoutCSSVariables();
+
   return (
     <TRPCProvider>
       <PostHogIdentityProvider>

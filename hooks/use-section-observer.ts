@@ -2,6 +2,37 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import {
+  HEADER_HEIGHT,
+  SCROLL_PADDING,
+  SECTION_NAV_HEIGHT,
+} from "@/lib/constants/layout";
+
+/**
+ * Reads a CSS variable as a pixel number from the document root.
+ * Falls back to the provided default if the variable is not set or invalid.
+ */
+function getCSSVarPx(name: string, fallback: number): number {
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+/**
+ * Gets the current scroll margin from CSS variables.
+ * This ensures consistency with what CSS is actually using for scroll-margin-top.
+ */
+function getScrollMarginFromCSS(): number {
+  const headerHeight = getCSSVarPx("--header-height", HEADER_HEIGHT);
+  const sectionNavHeight = getCSSVarPx(
+    "--section-nav-height",
+    SECTION_NAV_HEIGHT,
+  );
+  const scrollPadding = getCSSVarPx("--scroll-padding", SCROLL_PADDING);
+  return headerHeight + sectionNavHeight + scrollPadding;
+}
 
 interface UseSectionObserverOptions {
   sectionIds: string[];
@@ -66,13 +97,8 @@ export function useSectionObserver({
       }
     };
 
-    // Read scroll margin from CSS variable (computed from header + nav + padding)
-    const styles = getComputedStyle(document.documentElement);
-    const scrollMargin = styles.getPropertyValue("--scroll-mt-desktop").trim();
-    // Parse rem/px value to pixels for rootMargin
-    const scrollMarginPx = scrollMargin.endsWith("rem")
-      ? Number.parseFloat(scrollMargin) * 16
-      : Number.parseFloat(scrollMargin) || 144; // fallback to 144px
+    // Read scroll margin from CSS variables for consistency with CSS scroll-margin-top
+    const scrollMarginPx = getScrollMarginFromCSS();
 
     // rootMargin: negative top margin accounts for sticky headers
     // -60% from bottom means we detect when section enters top 40% of viewport
@@ -140,6 +166,10 @@ export function useSectionObserver({
       // Update active section immediately for responsive feedback
       setActiveSection(id);
 
+      const scrollTarget = document.documentElement;
+      // Capture scroll position before initiating scroll to validate scrollend source
+      const scrollTopAtStart = scrollTarget.scrollTop;
+
       element.scrollIntoView({
         behavior: prefersReducedMotion ? "instant" : "smooth",
         block: "start",
@@ -152,23 +182,44 @@ export function useSectionObserver({
           isScrollingRef.current = false;
         }, 50);
       } else {
-        // Use scrollend event for accurate detection, with fallback timeout
-        const scrollTarget = document.documentElement;
+        // Track whether the document has scrolled (vs scrollend from other sources)
+        let documentScrolled = false;
 
         const unlockScroll = () => {
+          // Check if document actually scrolled - filters scrollend events from other
+          // scroll sources (e.g., horizontal tab scroll in section-nav which scrolls
+          // its own container, not document.documentElement)
+          if (!documentScrolled) {
+            documentScrolled = scrollTarget.scrollTop !== scrollTopAtStart;
+          }
+
+          // If document scroll position unchanged and we're not at the target,
+          // this is likely a spurious scrollend from a different scroll source
+          if (!documentScrolled) {
+            // Check if already at target (clicked on current section)
+            const rect = element.getBoundingClientRect();
+            // Read expected position from CSS variables for consistency
+            const expectedTop = getScrollMarginFromCSS();
+            const isAtTarget = Math.abs(rect.top - expectedTop) < 5;
+
+            if (!isAtTarget) {
+              // Re-listen for the real scrollend
+              scrollTarget.addEventListener("scrollend", unlockScroll, {
+                once: true,
+              });
+              return;
+            }
+          }
+
           isScrollingRef.current = false;
           if (scrollTimeoutRef.current) {
             clearTimeout(scrollTimeoutRef.current);
           }
         };
 
-        // Small delay to skip any immediate scrollend from other scroll operations
-        // (like the horizontal tab scroll in section-nav)
-        requestAnimationFrame(() => {
-          // Listen for scrollend on the document element (main page scroll)
-          scrollTarget.addEventListener("scrollend", unlockScroll, {
-            once: true,
-          });
+        // Listen for scrollend on the document element (main page scroll)
+        scrollTarget.addEventListener("scrollend", unlockScroll, {
+          once: true,
         });
 
         // Fallback timeout in case scrollend doesn't fire (older browsers)

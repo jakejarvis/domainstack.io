@@ -7,6 +7,7 @@ export * from "./domain-validation";
 export * from "./email";
 export * from "./gdpr";
 export * from "./headers";
+export * from "./layout";
 export * from "./notifications";
 export * from "./oauth-providers";
 export * from "./pricing-providers";
