@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import type { SectionDef } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { ScreenshotPopover } from "./screenshot-popover";
 
 interface SectionNavProps {
   domain: string;
@@ -137,7 +137,7 @@ export function SectionNav({
                 variant="ghost"
                 size="sm"
                 onClick={() => onSectionClick(slug)}
-                aria-current={activeSection === slug ? "true" : undefined}
+                aria-current={activeSection === slug ? "page" : undefined}
                 style={
                   {
                     "--section-accent": `var(--accent-${accent})`,
