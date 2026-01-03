@@ -107,8 +107,6 @@ export default async function OGImage() {
                   borderRadius: 999,
                   background: `linear-gradient(180deg, ${hexToRGBA(color, 0.1)} 0%, rgba(255,255,255,0.03) 100%)`,
                   border: `1px solid ${hexToRGBA(color, 0.28)}`,
-                  boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(0,0,0,0.35)",
                 }}
               >
                 {label}
@@ -160,9 +158,8 @@ export default async function OGImage() {
         },
       ],
       headers: {
-        "Cache-Control": "public, max-age=604800, stale-while-revalidate=3600",
-        "Vercel-CDN-Cache-Control":
-          "max-age=604800, stale-while-revalidate=3600",
+        "Cache-Control":
+          "public, max-age=3600, s-maxage=604800, stale-while-revalidate=86400",
       },
     },
   );

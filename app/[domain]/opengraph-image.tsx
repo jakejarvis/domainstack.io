@@ -1,7 +1,13 @@
 import { ImageResponse } from "next/og";
 import { LogoSimple } from "@/components/logo";
 import { normalizeDomainInput } from "@/lib/domain";
-import { BRAND, CHIPS, hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
+import {
+  BRAND,
+  CHIPS,
+  cacheHeaders,
+  hexToRGBA,
+  loadGoogleFont,
+} from "@/lib/og-utils";
 
 export const alt = "Domainstack — Domain Report";
 export const size = { width: 1200, height: 630 };
@@ -94,22 +100,31 @@ export default async function OGImage({
 
         {/* Title + subtitle + chips */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div
-            style={{
-              fontSize: 84,
-              lineHeight: 1.05,
-              fontWeight: 600,
-              color: BRAND.fg,
-              letterSpacing: -1.2,
-              textShadow: "0 2px 16px rgba(0,0,0,0.35)",
-              maxWidth: 980,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-            title={normalized}
-          >
-            {normalized}
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {/** biome-ignore lint/performance/noImgElement: should add an exception for opengraph images */}
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(normalized)}&sz=128`}
+              alt="favicon"
+              width={64}
+              height={64}
+            />
+            <div
+              style={{
+                fontSize: 72,
+                lineHeight: 1.1,
+                fontWeight: 600,
+                color: BRAND.fg,
+                letterSpacing: -1.2,
+                textShadow: "0 2px 16px rgba(0,0,0,0.35)",
+                maxWidth: 980,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+              title={normalized}
+            >
+              {normalized}
+            </div>
           </div>
 
           <div
@@ -137,8 +152,6 @@ export default async function OGImage({
                   borderRadius: 999,
                   background: `linear-gradient(180deg, ${hexToRGBA(color, 0.1)} 0%, rgba(255,255,255,0.03) 100%)`,
                   border: `1px solid ${hexToRGBA(color, 0.28)}`,
-                  boxShadow:
-                    "0 1px 0 rgba(255,255,255,0.05) inset, 0 8px 24px rgba(0,0,0,0.35)",
                 }}
               >
                 {label}
@@ -190,9 +203,7 @@ export default async function OGImage({
         },
       ],
       headers: {
-        "Cache-Control": "public, max-age=604800, stale-while-revalidate=3600",
-        "Vercel-CDN-Cache-Control":
-          "max-age=604800, stale-while-revalidate=3600",
+        ...cacheHeaders,
       },
     },
   );

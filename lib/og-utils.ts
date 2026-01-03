@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 // ── Brand palette
 export const BRAND = {
   bg: "#0B0D10",
@@ -29,6 +31,8 @@ export async function loadGoogleFont(
   font: string,
   weight: number,
 ): Promise<ArrayBuffer> {
+  "use cache";
+
   const url = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}`;
 
   const cssResponse = await fetch(url, {
@@ -48,6 +52,7 @@ export async function loadGoogleFont(
       },
     });
     if (fontResponse.status === 200) {
+      cacheLife("max"); // cache indefinitely if successful
       return fontResponse.arrayBuffer();
     }
   }
@@ -72,3 +77,9 @@ export function hexToRGBA(hex: string, alpha: number) {
   const b = bigint & 255;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+export const cacheHeaders = {
+  "Cache-Control": "public, max-age=3600",
+  "Vercel-CDN-Cache-Control":
+    "public, s-maxage=604800, stale-while-revalidate=86400",
+};
