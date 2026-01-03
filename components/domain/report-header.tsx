@@ -19,10 +19,16 @@ export function DomainReportHeader({
   domain,
   onExport,
   exportDisabled,
-}: DomainReportHeaderProps) {
+  ...props
+}: React.ComponentPropsWithRef<"div"> & DomainReportHeaderProps) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-4">
-      <ScreenshotPopover domain={domain}>
+    <div className="flex min-w-0 items-center justify-between gap-4" {...props}>
+      <ScreenshotPopover
+        domain={domain}
+        align="start"
+        side="bottom"
+        sideOffset={8}
+      >
         <a
           href={`https://${domain}`}
           target="_blank"

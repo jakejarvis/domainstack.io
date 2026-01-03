@@ -55,6 +55,28 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* Layout heights for sticky headers */
+  --header-height: calc(var(--spacing) * 20); /* 80px - global app header */
+  --section-nav-height: calc(
+    var(--spacing) *
+    12
+  ); /* 48px - section navigation bar */
+  --scroll-padding: calc(
+    var(--spacing) *
+    4
+  ); /* 16px - extra breathing room when scrolling to sections */
+
+  /* Computed scroll margins for section navigation */
+  /* Mobile: nav + padding (header scrolls away) */
+  --scroll-mt-mobile: calc(var(--section-nav-height) + var(--scroll-padding));
+  /* Desktop: header + nav + padding */
+  --scroll-mt-desktop: calc(
+    var(--header-height) +
+    var(--section-nav-height) +
+    var(--scroll-padding)
+  );
+
   --background: oklch(99.5% 0 0);
   --foreground: oklch(14.5% 0 0);
   --card: oklch(98.9% 0 0);
@@ -94,6 +116,7 @@
   --accent-purple: oklch(58.79% 0.22 308.7);
   --accent-orange: oklch(78% 0.17 70);
   --accent-cyan: oklch(64% 0.16 195);
+  --accent-pink: oklch(65% 0.2 350);
   --accent-slate: oklch(56.24% 0 271.15);
   --accent-red: oklch(64% 0.2 27);
 
@@ -165,6 +188,7 @@
   --accent-purple: oklch(80% 0.16 310);
   --accent-orange: oklch(86% 0.14 70);
   --accent-cyan: oklch(78% 0.12 195);
+  --accent-pink: oklch(80% 0.16 350);
   --accent-slate: oklch(81% 0 54.26);
   --accent-red: oklch(78% 0.16 27);
 
@@ -205,6 +229,15 @@
 }
 
 @layer utilities {
+  /* Scrollbar hiding utility for horizontal scroll containers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Variable-driven accent glow */
   .accent-glow {
     background: var(--section-accent-glow, var(--glow-slate));

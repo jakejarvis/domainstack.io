@@ -46,7 +46,8 @@ export function ReportSection({
     <section
       id={computedSlug}
       aria-labelledby={headerId}
-      className="border-none"
+      // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
+      className="scroll-mt-[var(--scroll-mt-mobile)] border-none md:scroll-mt-[var(--scroll-mt-desktop)]"
     >
       <Card
         className="relative gap-0 overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"

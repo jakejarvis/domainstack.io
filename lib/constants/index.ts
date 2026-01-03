@@ -10,6 +10,7 @@ export * from "./headers";
 export * from "./notifications";
 export * from "./oauth-providers";
 export * from "./pricing-providers";
+export * from "./sections";
 export * from "./tier-limits";
 export * from "./ttl";
 export * from "./verification";
