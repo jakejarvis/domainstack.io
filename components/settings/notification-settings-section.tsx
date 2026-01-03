@@ -1,22 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
-import { Button } from "@/components/ui/button";
 import {
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -30,7 +24,6 @@ import {
 } from "@/lib/constants/notifications";
 import type { UserNotificationPreferences } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
 interface NotificationSettingsSectionProps {
   className?: string;
@@ -42,7 +35,7 @@ export function NotificationSettingsSection({
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [isPerDomainOpen, setIsPerDomainOpen] = useState(false);
+  const [_isPerDomainOpen, _setIsPerDomainOpen] = useState(false);
 
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
@@ -326,7 +319,7 @@ export function NotificationSettingsSection({
       </CardHeader>
       <CardContent className="space-y-2.5 px-0 pt-1">
         {/* Headers */}
-        <div className="flex items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:gap-6">
+        <div className="hidden items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:flex sm:gap-6">
           <div className="w-12 text-center sm:w-16">Web</div>
           <div className="w-12 text-center sm:w-16">Email</div>
         </div>
@@ -346,56 +339,35 @@ export function NotificationSettingsSection({
             />
           ))}
         </div>
+      </CardContent>
 
-        {/* Divider */}
-        <Separator className={"mt-2 mb-4"} />
+      <Separator className="mt-3 mb-6" />
 
+      <CardHeader className="px-0 pt-0 pb-2">
+        <CardTitle>Domain Preferences</CardTitle>
+        <CardDescription>
+          Customize notifications for individual verified domains.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2.5 px-0 pt-1">
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (
-          <Collapsible open={isPerDomainOpen} onOpenChange={setIsPerDomainOpen}>
-            <CollapsibleTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  className="flex w-full items-center justify-between"
-                >
-                  <span className="font-medium text-[13px] text-foreground/85 leading-none">
-                    Per-domain overrides
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "text-muted-foreground transition-transform duration-200",
-                      isPerDomainOpen && "rotate-180",
-                    )}
-                  />
-                </Button>
-              }
-            />
-            <CollapsibleContent className="mt-4">
-              <div className="space-y-2">
-                {/* Headers for domain section */}
-                <div className="flex items-center justify-end gap-2 px-5 font-medium text-muted-foreground text-xs sm:gap-6">
-                  <div className="w-12 text-center sm:w-16">Web</div>
-                  <div className="w-12 text-center sm:w-16">Email</div>
-                </div>
-
-                {/* Domain Rows */}
-                {verifiedDomains.map((domain) => (
-                  <DomainNotificationRow
-                    key={domain.id}
-                    domainName={domain.domainName}
-                    overrides={domain.notificationOverrides}
-                    globalPrefs={globalPrefs}
-                    onToggle={(category, type, value) =>
-                      handleDomainToggle(domain.id, category, type, value)
-                    }
-                    onReset={() => handleResetDomain(domain.id)}
-                    disabled={isPending}
-                  />
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          <div className="space-y-2">
+            {/* Domain Rows */}
+            {verifiedDomains.map((domain) => (
+              <DomainNotificationRow
+                key={domain.id}
+                domainName={domain.domainName}
+                overrides={domain.notificationOverrides}
+                globalPrefs={globalPrefs}
+                onToggle={(category, type, value) =>
+                  handleDomainToggle(domain.id, category, type, value)
+                }
+                onReset={() => handleResetDomain(domain.id)}
+                disabled={isPending}
+              />
+            ))}
+          </div>
         )}
 
         {/* Info note */}

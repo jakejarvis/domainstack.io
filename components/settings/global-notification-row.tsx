@@ -38,7 +38,7 @@ export function GlobalNotificationRow({
   return (
     <div
       className={cn(
-        "group flex items-center justify-between gap-4 rounded-xl px-3 py-3 transition-colors",
+        "group flex flex-col gap-2 rounded-xl px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         "hover:bg-muted/50",
         disabled && "pointer-events-none opacity-60",
       )}
@@ -48,7 +48,7 @@ export function GlobalNotificationRow({
         {/* Icon indicator */}
         <div
           className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+            "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors sm:size-9",
             anyEnabled
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground",
@@ -86,9 +86,10 @@ export function GlobalNotificationRow({
       </div>
 
       {/* Switches */}
-      <div className="flex items-center gap-2 sm:gap-6">
+      <div className="flex w-full items-center justify-start gap-8 pl-12 sm:w-auto sm:justify-end sm:gap-6 sm:pl-0">
         {/* In-App Switch */}
-        <div className="flex w-12 justify-center sm:w-16">
+        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
+          <span className="text-muted-foreground text-xs sm:hidden">Web</span>
           <Switch
             checked={inAppEnabled}
             onCheckedChange={(v) => onToggle("inApp", v)}
@@ -99,7 +100,8 @@ export function GlobalNotificationRow({
         </div>
 
         {/* Email Switch */}
-        <div className="flex w-12 justify-center sm:w-16">
+        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
+          <span className="text-muted-foreground text-xs sm:hidden">Email</span>
           <Switch
             checked={emailEnabled}
             onCheckedChange={(v) => onToggle("email", v)}
