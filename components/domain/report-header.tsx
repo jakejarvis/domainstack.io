@@ -4,6 +4,7 @@ import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { Favicon } from "@/components/icons/favicon";
+import { cn } from "@/lib/utils";
 
 interface DomainReportHeaderProps {
   domain: string;
@@ -19,10 +20,23 @@ export function DomainReportHeader({
   domain,
   onExport,
   exportDisabled,
-}: DomainReportHeaderProps) {
+  className,
+  ...props
+}: React.ComponentPropsWithRef<"div"> & DomainReportHeaderProps) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-4">
-      <ScreenshotPopover domain={domain}>
+    <div
+      className={cn(
+        "flex min-w-0 items-center justify-between gap-4",
+        className,
+      )}
+      {...props}
+    >
+      <ScreenshotPopover
+        domain={domain}
+        align="start"
+        side="bottom"
+        sideOffset={8}
+      >
         <a
           href={`https://${domain}`}
           target="_blank"

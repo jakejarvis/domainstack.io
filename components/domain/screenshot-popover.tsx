@@ -10,10 +10,17 @@ import { usePointerCapability } from "@/hooks/use-pointer-capability";
 export function ScreenshotPopover({
   domain,
   children,
+  align,
+  alignOffset,
+  side,
+  sideOffset,
 }: {
   domain: string;
   children: React.ReactElement;
-}) {
+} & Pick<
+  React.ComponentProps<typeof PopoverContent>,
+  "align" | "alignOffset" | "side" | "sideOffset"
+>) {
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [tapCount, setTapCount] = useState(0);
@@ -54,7 +61,13 @@ export function ScreenshotPopover({
         onClick={handleInteraction}
         render={children}
       />
-      <PopoverContent className="w-auto border-0 bg-transparent p-0 shadow-none">
+      <PopoverContent
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+      >
         <div className="w-[300px] sm:w-[360px] md:w-[420px]">
           <div className="inline-block h-auto w-full select-none overflow-hidden rounded-lg border shadow-xl">
             {/* Top Chrome Bar */}
