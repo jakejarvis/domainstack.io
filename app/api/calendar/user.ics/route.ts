@@ -31,11 +31,7 @@ export async function GET(request: NextRequest) {
   const validation = await validateCalendarFeedToken(token);
 
   if (!validation.valid) {
-    // Log without exposing full token (only prefix for debugging)
-    logger.warn(
-      { tokenPrefix: token.slice(0, 12), reason: validation.reason },
-      "invalid calendar feed token",
-    );
+    logger.warn({ reason: validation.reason }, "invalid calendar feed token");
 
     // Use same error message for both cases to prevent enumeration
     return new Response("Invalid or disabled feed", {
@@ -78,8 +74,7 @@ export async function GET(request: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition":
-        'attachment; filename="domainstack-expirations.ics"',
+      "Content-Disposition": 'attachment; filename="domainstack-calendar.ics"',
       "Cache-Control": "private, max-age=3600",
       ETag: `"${etag}"`,
     },

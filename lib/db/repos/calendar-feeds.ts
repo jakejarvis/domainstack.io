@@ -6,18 +6,12 @@ import { db } from "@/lib/db/client";
 import { calendarFeeds } from "@/lib/db/schema";
 
 /**
- * Token prefix for calendar feed tokens.
- * Makes tokens easily identifiable in logs and debugging.
- */
-const TOKEN_PREFIX = "dscal_";
-
-/**
  * Generate a cryptographically secure calendar feed token.
- * Format: dscal_{32-byte-base64url} (~43 chars after prefix)
+ * Format: 32-byte-base64url (~43 chars)
  */
 export function generateCalendarFeedToken(): string {
   const bytes = crypto.randomBytes(32);
-  return `${TOKEN_PREFIX}${bytes.toString("base64url")}`;
+  return bytes.toString("base64url");
 }
 
 export type CalendarFeed = typeof calendarFeeds.$inferSelect;
@@ -41,38 +35,27 @@ export async function getCalendarFeed(
  * Enable (create or re-enable) a calendar feed for a user.
  * If a feed already exists but is disabled, re-enables it.
  * If no feed exists, creates a new one with a fresh token.
+ *
+ * Uses an atomic upsert to avoid race conditions on concurrent calls.
  */
 export async function enableCalendarFeed(
   userId: string,
 ): Promise<CalendarFeed> {
-  // Check if feed already exists
-  const existing = await getCalendarFeed(userId);
-
-  if (existing) {
-    // Re-enable if disabled
-    if (!existing.enabled) {
-      const [updated] = await db
-        .update(calendarFeeds)
-        .set({ enabled: true })
-        .where(eq(calendarFeeds.id, existing.id))
-        .returning();
-      return updated;
-    }
-    // Already enabled, just return
-    return existing;
-  }
-
-  // Create new feed with fresh token
   const token = generateCalendarFeedToken();
-  const [created] = await db
+
+  const [feed] = await db
     .insert(calendarFeeds)
     .values({
       userId,
       token,
     })
+    .onConflictDoUpdate({
+      target: calendarFeeds.userId,
+      set: { enabled: true },
+    })
     .returning();
 
-  return created;
+  return feed;
 }
 
 /**
@@ -141,11 +124,6 @@ export type CalendarFeedValidation =
 export async function validateCalendarFeedToken(
   token: string,
 ): Promise<CalendarFeedValidation> {
-  // Quick format check
-  if (!token.startsWith(TOKEN_PREFIX)) {
-    return { valid: false, reason: "not_found" };
-  }
-
   const [feed] = await db
     .select({
       id: calendarFeeds.id,

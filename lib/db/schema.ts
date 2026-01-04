@@ -669,7 +669,7 @@ export const calendarFeeds = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    // Token format: dscal_{32-byte-base64url} (~43 chars after prefix)
+    // Token format: 32-byte-base64url (~43 chars)
     token: text("token").notNull(),
     // Soft-disable without losing token (allows re-enable)
     enabled: boolean("enabled").notNull().default(true),

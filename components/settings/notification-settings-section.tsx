@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Info } from "lucide-react";
+import { Globe, Info, Target } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
@@ -274,7 +274,10 @@ export function NotificationSettingsSection({
   return (
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Global Preferences</CardTitle>
+        <CardTitle className="flex items-center gap-1.5 leading-none">
+          <Globe className="size-4.5" />
+          Global Preferences
+        </CardTitle>
         <CardDescription>
           Alerts will be sent to{" "}
           <span className="whitespace-nowrap rounded-sm border bg-card px-1.5 py-1 font-medium text-foreground">
@@ -344,9 +347,12 @@ export function NotificationSettingsSection({
       <Separator className="mt-3 mb-6" />
 
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Domain Preferences</CardTitle>
+        <CardTitle className="flex items-center gap-1.5 leading-none">
+          <Target className="size-4.5" />
+          Domain Preferences
+        </CardTitle>
         <CardDescription>
-          Customize notifications for individual verified domains.
+          Override global notifications for individual verified domains.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2.5 px-0 pt-1">

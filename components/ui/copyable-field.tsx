@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 type CopyableFieldProps = {
   label: string;
   value: string;
+  showLabel?: boolean;
   /** Optional custom content to render instead of the plain input (e.g., syntax-highlighted code) */
   children?: React.ReactNode;
   className?: string;
@@ -23,6 +24,7 @@ type CopyableFieldProps = {
 export function CopyableField({
   label,
   value,
+  showLabel = true,
   children,
   className,
 }: CopyableFieldProps) {
@@ -78,7 +80,13 @@ export function CopyableField({
 
   return (
     <Field className={cn("min-w-0", className)}>
-      <FieldLabel className="text-muted-foreground text-xs uppercase tracking-wide">
+      <FieldLabel
+        className={cn(
+          showLabel
+            ? "text-muted-foreground text-xs uppercase tracking-wide"
+            : "sr-only",
+        )}
+      >
         {label}
       </FieldLabel>
       <InputGroup className="max-w-full border-border bg-background">
@@ -87,7 +95,7 @@ export function CopyableField({
             type="button"
             data-slot="input-group-control"
             onClick={handleSelect}
-            className="h-10 w-full cursor-text overflow-x-auto bg-transparent px-3 text-left font-mono text-sm outline-none selection:bg-primary selection:text-primary-foreground"
+            className="h-10 w-full cursor-text overflow-x-auto bg-transparent px-3 text-left font-mono text-[13px] outline-none selection:bg-primary selection:text-primary-foreground"
           >
             <span ref={contentRef} className="inline-block whitespace-nowrap">
               {children ?? value}

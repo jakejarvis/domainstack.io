@@ -1,5 +1,5 @@
 import { Info } from "lucide-react";
-import { CopyableField } from "@/components/dashboard/add-domain/verification-instructions/copyable-field";
+import { CopyableField } from "@/components/ui/copyable-field";
 import type { DnsInstructions } from "@/lib/schemas";
 
 type DnsVerificationInstructionsProps = {

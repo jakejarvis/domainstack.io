@@ -34,7 +34,7 @@ export function generateCalendarFeed(
   );
 
   const calendar = ical({
-    name: "Domainstack Domain Expirations",
+    name: "Domain Expirations by Domainstack",
     description:
       "Expiration dates for your tracked domains. Powered by Domainstack.",
     prodId: {
@@ -57,10 +57,9 @@ export function generateCalendarFeed(
       // For all-day events, we just pass the date
       start: domain.expirationDate,
       allDay: true,
-      // Emoji helps visibility in calendar views
       summary: `🌐 ${domain.domainName} expires`,
       description: buildEventDescription(domain),
-      url: `${BASE_URL}/dashboard`,
+      url: `${BASE_URL}/dashboard?domainId=${domain.id}`,
       categories: [{ name: "Domain Expiration" }],
     });
   }
@@ -87,7 +86,7 @@ function buildEventDescription(domain: TrackedDomainWithDetails): string {
 
   if (domain.expirationDate) {
     lines.push("");
-    lines.push(`Exact expiration: ${domain.expirationDate.toISOString()}`);
+    lines.push(`Exact time: ${domain.expirationDate.toISOString()}`);
   }
 
   if (domain.ca.certificateExpiryDate) {
@@ -97,7 +96,7 @@ function buildEventDescription(domain: TrackedDomainWithDetails): string {
   }
 
   lines.push("");
-  lines.push(`Manage your domains: ${BASE_URL}/dashboard`);
+  lines.push(`View more details: ${BASE_URL}/dashboard?domainId=${domain.id}`);
 
   return lines.join("\n");
 }
