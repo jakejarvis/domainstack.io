@@ -168,7 +168,12 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
         <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary">
           Subscribe to domain expiration dates in your calendar app (
           <a
-            href="https://support.google.com/calendar/answer/37100"
+            href={
+              // https://jamesdoc.com/blog/2024/webcal/
+              isEnabled
+                ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feed.feedUrl.replace("https://", "webcal://"))}`
+                : "https://support.google.com/calendar/answer/37100"
+            }
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -176,15 +181,24 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
           </a>
           ,{" "}
           <a
-            href="https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
-            target="_blank"
-            rel="noopener noreferrer"
+            href={
+              isEnabled
+                ? feed.feedUrl.replace("https://", "webcal://")
+                : "https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
+            }
+            target={isEnabled ? undefined : "_blank"}
+            rel={isEnabled ? undefined : "noopener noreferrer"}
+            data-disable-progress={isEnabled ? true : undefined}
           >
             Apple Calendar
           </a>
           ,{" "}
           <a
-            href="https://support.microsoft.com/en-us/office/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web-cff1429c-5af6-41ec-a5b4-74f2c278e98c"
+            href={
+              isEnabled
+                ? `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(feed.feedUrl.replace("https://", "webcal://"))}`
+                : "https://support.microsoft.com/en-us/office/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web-cff1429c-5af6-41ec-a5b4-74f2c278e98c"
+            }
             target="_blank"
             rel="noopener noreferrer"
           >
