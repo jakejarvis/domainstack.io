@@ -61,6 +61,7 @@
     "drizzle-zod": "^0.8.3",
     "file-type": "^21.2.0",
     "geist": "^1.5.1",
+    "ical-generator": "^10.0.0",
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "inngest": "^3.48.1",

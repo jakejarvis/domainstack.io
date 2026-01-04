@@ -2,7 +2,15 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { analytics } from "@/lib/analytics/server";
+import { BASE_URL } from "@/lib/constants";
 import { db } from "@/lib/db/client";
+import {
+  deleteCalendarFeed,
+  disableCalendarFeed,
+  enableCalendarFeed,
+  getCalendarFeed,
+  rotateCalendarFeedToken,
+} from "@/lib/db/repos/calendar-feeds";
 import {
   countTrackedDomainsByStatus,
   findTrackedDomainById,
@@ -20,6 +28,13 @@ import {
   UpdateNotificationPreferencesSchema,
 } from "@/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+
+/**
+ * Build the full calendar feed URL from a token.
+ */
+function buildCalendarFeedUrl(token: string): string {
+  return `${BASE_URL}/api/calendar/user.ics?token=${token}`;
+}
 
 export const userRouter = createTRPCRouter({
   /**
@@ -220,4 +235,105 @@ export const userRouter = createTRPCRouter({
         notificationOverrides: updated.notificationOverrides,
       };
     }),
+
+  // ============================================================================
+  // Calendar Feed Procedures
+  // ============================================================================
+
+  /**
+   * Get the user's calendar feed status and URL.
+   * Returns the full feed URL if enabled (token is stored retrievably).
+   */
+  getCalendarFeed: protectedProcedure.query(async ({ ctx }) => {
+    const feed = await getCalendarFeed(ctx.user.id);
+
+    if (!feed) {
+      return { enabled: false } as const;
+    }
+
+    return {
+      enabled: feed.enabled,
+      feedUrl: buildCalendarFeedUrl(feed.token),
+      createdAt: feed.createdAt,
+      rotatedAt: feed.rotatedAt,
+      lastAccessedAt: feed.lastAccessedAt,
+      accessCount: feed.accessCount,
+    };
+  }),
+
+  /**
+   * Enable the calendar feed for the user.
+   * Creates a new feed with a fresh token if one doesn't exist,
+   * or re-enables an existing disabled feed.
+   */
+  enableCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
+    const feed = await enableCalendarFeed(ctx.user.id);
+
+    analytics.track("calendar_feed_enabled", {}, ctx.user.id);
+
+    return {
+      feedUrl: buildCalendarFeedUrl(feed.token),
+      createdAt: feed.createdAt,
+    };
+  }),
+
+  /**
+   * Disable the calendar feed for the user.
+   * The token is preserved so the feed can be re-enabled later with the same URL.
+   */
+  disableCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
+    const feed = await disableCalendarFeed(ctx.user.id);
+
+    if (!feed) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Calendar feed not found",
+      });
+    }
+
+    analytics.track("calendar_feed_disabled", {}, ctx.user.id);
+
+    return { success: true };
+  }),
+
+  /**
+   * Rotate the calendar feed token, generating a new URL.
+   * The old URL will immediately stop working.
+   */
+  rotateCalendarFeedToken: protectedProcedure.mutation(async ({ ctx }) => {
+    const feed = await rotateCalendarFeedToken(ctx.user.id);
+
+    if (!feed) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Calendar feed not found",
+      });
+    }
+
+    analytics.track("calendar_feed_rotated", {}, ctx.user.id);
+
+    return {
+      feedUrl: buildCalendarFeedUrl(feed.token),
+      rotatedAt: feed.rotatedAt,
+    };
+  }),
+
+  /**
+   * Delete the calendar feed entirely.
+   * Used when user wants to completely remove the feed rather than just disable it.
+   */
+  deleteCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
+    const deleted = await deleteCalendarFeed(ctx.user.id);
+
+    if (!deleted) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Calendar feed not found",
+      });
+    }
+
+    analytics.track("calendar_feed_deleted", {}, ctx.user.id);
+
+    return { success: true };
+  }),
 });
