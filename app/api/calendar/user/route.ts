@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.json(
-      { error: "Missing token parameter" },
+      { message: "Missing token" },
       {
         status: 400,
         headers: {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // Use same error message for both cases to prevent enumeration
     return NextResponse.json(
-      { error: "Invalid or disabled calendar" },
+      { message: "Invalid or disabled token" },
       {
         status: 401,
         headers: {
@@ -61,12 +61,7 @@ export async function GET(request: NextRequest) {
   });
 
   // 5. Generate ICS content
-  const { icsContent, etag, eventCount } = generateCalendarFeed(domains);
-
-  logger.debug(
-    { userId: validation.userId, eventCount },
-    "generated calendar feed",
-  );
+  const { icsContent, etag } = generateCalendarFeed(domains);
 
   // 6. Handle conditional request (If-None-Match)
   const ifNoneMatch = request.headers.get("If-None-Match");

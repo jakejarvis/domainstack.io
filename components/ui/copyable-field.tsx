@@ -1,7 +1,7 @@
 "use client";
 
 import clipboardCopy from "clipboard-copy";
-import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
+import { Check, CircleX, Clipboard, ClipboardCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -10,6 +10,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
 } from "@/components/ui/input-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type CopyableFieldProps = {
@@ -89,32 +90,41 @@ export function CopyableField({
       >
         {label}
       </FieldLabel>
-      <InputGroup className="max-w-full border-border bg-background">
-        <div className="w-0 min-w-0 flex-1 overflow-hidden">
+      <InputGroup className="!bg-popover h-10 max-w-full">
+        <ScrollArea
+          orientation="horizontal"
+          gradient
+          gradientContext="popover"
+          showScrollbar={false}
+          className="w-0 min-w-0 flex-1 overflow-hidden rounded-md"
+        >
           <button
             type="button"
             data-slot="input-group-control"
             onClick={handleSelect}
-            className="h-10 w-full cursor-text overflow-x-auto bg-transparent px-3 text-left font-mono text-[13px] outline-none selection:bg-primary selection:text-primary-foreground"
+            className="h-[38px] w-max min-w-full cursor-text bg-transparent px-3 text-left font-mono text-[13px] outline-none selection:bg-primary selection:text-primary-foreground"
           >
             <span ref={contentRef} className="inline-block whitespace-nowrap">
               {children ?? value}
             </span>
           </button>
-        </div>
+        </ScrollArea>
         <InputGroupAddon align="inline-end">
           <InputGroupButton
             variant="ghost"
-            size="icon-xs"
-            aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
+            size="icon-sm"
+            aria-label={copied ? "Copied URL" : "Copy URL"}
             onClick={handleCopy}
             className="text-muted-foreground hover:text-foreground"
           >
             {copied ? (
-              <Check className="size-3.5" />
+              <Check className="size-3.5 text-success-foreground" />
             ) : (
-              <Copy className="size-3.5" />
+              <Clipboard className="mb-[1px]" />
             )}
+            <span className="sr-only">
+              {copied ? "Copied URL" : "Copy URL"}
+            </span>
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>

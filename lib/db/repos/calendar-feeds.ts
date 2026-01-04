@@ -6,12 +6,18 @@ import { db } from "@/lib/db/client";
 import { calendarFeeds } from "@/lib/db/schema";
 
 /**
+ * Token prefix for calendar feed tokens.
+ * Makes tokens easily identifiable in logs and debugging.
+ */
+const TOKEN_PREFIX = "ck_";
+
+/**
  * Generate a cryptographically secure calendar feed token.
- * Format: 32-byte-base64url (~43 chars)
+ * Format: prefix + 32-byte base64url
  */
 export function generateCalendarFeedToken(): string {
   const bytes = crypto.randomBytes(32);
-  return bytes.toString("base64url");
+  return `${TOKEN_PREFIX}${bytes.toString("base64url")}`;
 }
 
 type CalendarFeedSelect = InferSelectModel<typeof calendarFeeds>;

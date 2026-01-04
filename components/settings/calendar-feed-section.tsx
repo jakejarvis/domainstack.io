@@ -4,8 +4,8 @@ import {
   CalendarFold,
   CalendarOff,
   CalendarPlus,
-  CalendarSync,
-  Info,
+  Clock,
+  RotateCcwKey,
   ShieldAlert,
 } from "lucide-react";
 import { useState } from "react";
@@ -200,7 +200,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
           </a>
           , and{" "}
           <a
-            href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+a+.ics+calendar+feed+in+%5Bmy+app%5D%3F"
+            href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+a+.ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -220,7 +220,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
                 <p className="font-semibold">Treat this URL as a password!</p>
                 <p>
                   Anyone with this link can view your verified domains. You can
-                  create a new URL at any time by regenerating it below.
+                  invalidate it at any time by generating a fresh URL below.
                 </p>
               </div>
             </div>
@@ -236,16 +236,17 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
 
             {/* Stats */}
             <div className="flex items-center gap-1.5 text-muted-foreground text-xs leading-none">
-              <Info className="size-3 shrink-0" />
+              <Clock className="size-3 shrink-0" />
               {feed.lastAccessedAt ? (
                 <span>
                   Last accessed{" "}
                   {formatDistanceToNow(new Date(feed.lastAccessedAt), {
                     addSuffix: true,
                   })}
+                  .
                 </span>
               ) : (
-                <span>Not accessed yet</span>
+                <span>Not accessed yet.</span>
               )}
             </div>
 
@@ -256,7 +257,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
                 onClick={() => setShowRotateDialog(true)}
                 disabled={isPending}
               >
-                {rotateMutation.isPending ? <Spinner /> : <CalendarSync />}
+                {rotateMutation.isPending ? <Spinner /> : <RotateCcwKey />}
                 Regenerate URL
               </Button>
               <Button
