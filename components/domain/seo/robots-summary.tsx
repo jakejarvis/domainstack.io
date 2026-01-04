@@ -219,7 +219,6 @@ export function RobotsSummary({
                     const next = groupValue[0] as typeof only | undefined;
                     setOnly(next ?? "all");
                   }}
-                  withActiveIndicator
                   className="h-9 w-full items-stretch sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
                 >
                   <ToggleGroupItem

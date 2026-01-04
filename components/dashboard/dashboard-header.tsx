@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
-import * as motion from "motion/react-client";
 import Link from "next/link";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
   TooltipContent,
@@ -93,35 +93,41 @@ export function DashboardHeader({
         <div className="flex items-center gap-2 sm:gap-3">
           {/* View toggle - only show when there are domains */}
           {hasAnyDomains && (
-            <div className="relative inline-flex overflow-hidden rounded-md border border-muted-foreground/30">
-              <motion.span
+            <ToggleGroup
+              multiple={false}
+              value={[viewMode]}
+              onValueChange={(groupValue) => {
+                const next = groupValue[0] as ViewMode | undefined;
+                if (next) onViewModeChange(next);
+              }}
+              className="relative inline-flex h-9 gap-0 overflow-hidden rounded-md border border-muted-foreground/30 bg-background p-0"
+            >
+              <span
                 aria-hidden
                 className={cn(
                   "pointer-events-none absolute inset-y-0 left-0 z-0 w-10 bg-primary",
-                  viewMode === "grid" ? "rounded-l-md" : "rounded-r-md",
+                  "transition-[translate] duration-200 ease-out motion-reduce:transition-none",
+                  viewMode === "grid"
+                    ? "translate-x-0 rounded-l-md"
+                    : "translate-x-10 rounded-r-md",
                 )}
-                animate={{ x: viewMode === "grid" ? 0 : 40 }}
-                transition={{ type: "spring", stiffness: 550, damping: 45 }}
-                initial={false}
               />
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
+                    <ToggleGroupItem
+                      value="grid"
                       type="button"
-                      onClick={() => onViewModeChange("grid")}
                       aria-label="Grid view"
-                      aria-pressed={viewMode === "grid"}
+                      variant="ghost"
                       className={cn(
-                        "relative z-10 flex h-9 w-10 items-center justify-center rounded-l-md border-input border-r bg-transparent transition-colors dark:border-white/20",
-                        viewMode === "grid"
-                          ? "text-primary-foreground"
-                          : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                        "relative z-10 h-9 w-10 cursor-pointer rounded-l-md border-input border-r bg-transparent px-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/20",
+                        "data-[pressed]:rounded-l-md data-[pressed]:bg-transparent data-[pressed]:text-primary-foreground data-[pressed]:shadow-none data-[pressed]:ring-0",
                       )}
                     >
                       <LayoutGrid className="size-4" />
                       <span className="sr-only">Grid view</span>
-                    </button>
+                    </ToggleGroupItem>
                   }
                 />
                 <TooltipContent>Grid view</TooltipContent>
@@ -129,26 +135,24 @@ export function DashboardHeader({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
+                    <ToggleGroupItem
+                      value="table"
                       type="button"
-                      onClick={() => onViewModeChange("table")}
                       aria-label="Table view"
-                      aria-pressed={viewMode === "table"}
+                      variant="ghost"
                       className={cn(
-                        "relative z-10 flex h-9 w-10 items-center justify-center rounded-r-md bg-transparent transition-colors",
-                        viewMode === "table"
-                          ? "text-primary-foreground"
-                          : "cursor-pointer bg-background text-muted-foreground hover:bg-muted hover:text-foreground dark:bg-transparent",
+                        "relative z-10 h-9 w-10 cursor-pointer rounded-r-md bg-transparent px-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                        "data-[pressed]:rounded-r-md data-[pressed]:bg-transparent data-[pressed]:text-primary-foreground data-[pressed]:shadow-none data-[pressed]:ring-0",
                       )}
                     >
                       <TableIcon className="size-4" />
                       <span className="sr-only">Table view</span>
-                    </button>
+                    </ToggleGroupItem>
                   }
                 />
                 <TooltipContent>Table view</TooltipContent>
               </Tooltip>
-            </div>
+            </ToggleGroup>
           )}
 
           {trackedCount >= maxDomains ? (
