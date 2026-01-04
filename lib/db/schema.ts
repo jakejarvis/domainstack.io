@@ -654,3 +654,40 @@ export const blockedDomains = pgTable("blocked_domains", {
   domain: text("domain").primaryKey(),
   addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ============================================================================
+// Calendar Feed Tokens
+// ============================================================================
+
+// Calendar feed tokens for iCalendar subscriptions
+// Tokens are stored unhashed since they are capability tokens (like webhook secrets)
+// that users need to view and copy, not passwords
+export const calendarFeeds = pgTable(
+  "calendar_feeds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Token format: 32-byte-base64url (~43 chars)
+    token: text("token").notNull(),
+    // Soft-disable without losing token (allows re-enable)
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    // When the token was last rotated (null if never rotated)
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    // For activity monitoring and leak detection
+    lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
+    accessCount: integer("access_count").notNull().default(0),
+  },
+  (t) => [
+    // One feed per user
+    unique("u_calendar_feeds_user").on(t.userId),
+    // Token must be unique for lookups
+    unique("u_calendar_feeds_token").on(t.token),
+    // Fast token validation
+    index("i_calendar_feeds_token").on(t.token),
+  ],
+);

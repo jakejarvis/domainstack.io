@@ -1,6 +1,7 @@
 import { createSchemaFactory } from "drizzle-zod";
 import { z } from "zod";
 import {
+  calendarFeeds,
   certificates,
   dnsRecords,
   domains,
@@ -72,3 +73,8 @@ export const ProviderLogoUpdate = zWrite.createUpdateSchema(providerLogos);
 export const ScreenshotSelect = zRead.createSelectSchema(screenshots);
 export const ScreenshotInsert = zWrite.createInsertSchema(screenshots);
 export const ScreenshotUpdate = zWrite.createUpdateSchema(screenshots);
+
+// Calendar Feeds
+export const CalendarFeedSelect = zRead.createSelectSchema(calendarFeeds);
+export const CalendarFeedInsert = zWrite.createInsertSchema(calendarFeeds);
+export const CalendarFeedUpdate = zWrite.createUpdateSchema(calendarFeeds);

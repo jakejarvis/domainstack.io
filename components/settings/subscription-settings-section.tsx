@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CreditCard, ShoppingCart } from "lucide-react";
+import { CreditCard, Gauge, Gem, ShoppingCart } from "lucide-react";
 import { UsageMeter } from "@/components/dashboard/usage-meter";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,10 @@ export function SubscriptionSettingsSection({
     return (
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Plan</CardTitle>
+          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+            <Gauge className="size-4.5" />
+            Plan
+          </CardTitle>
           <CardDescription className="text-destructive">
             Failed to load subscription information
           </CardDescription>
@@ -58,7 +61,10 @@ export function SubscriptionSettingsSection({
   return (
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Plan</CardTitle>
+        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+          <Gauge className="size-4.5" />
+          Plan
+        </CardTitle>
         <CardDescription>
           {isPro
             ? "You're on the Pro plan. Thank you for your support!"
@@ -140,7 +146,10 @@ export function SubscriptionSettingsSection({
             />
 
             <div className="relative">
-              <div className="mb-2 font-medium">{proTierInfo.name}</div>
+              <div className="mb-2 flex items-center gap-2 font-medium">
+                <Gem className="size-4.5" />
+                {proTierInfo.name} Plan
+              </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
                 {proTierInfo.features.map((feature) => (
                   <li key={feature}>• {feature}</li>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, User, WalletMinimal } from "lucide-react";
+import { CalendarFeedSection } from "@/components/settings/calendar-feed-section";
 import { DangerZoneSettingsSection } from "@/components/settings/danger-zone-settings-section";
 import { LinkedAccountsSection } from "@/components/settings/linked-accounts-section";
 import { NotificationSettingsSection } from "@/components/settings/notification-settings-section";
@@ -85,16 +86,17 @@ export function SettingsPanels({ className }: { className?: string }) {
       </TabsContent>
 
       <TabsContent value="notifications" className={className}>
-        <NotificationSettingsSection />
+        <div className="space-y-6">
+          <NotificationSettingsSection />
+          <Separator />
+          <CalendarFeedSection />
+        </div>
       </TabsContent>
 
       <TabsContent value="account" className={className}>
         <div className="space-y-6">
           <LinkedAccountsSection />
-
-          {/* Divider */}
           <Separator />
-
           <DangerZoneSettingsSection />
         </div>
       </TabsContent>

@@ -8,7 +8,7 @@
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
 - `components/dashboard/` Dashboard components (domain cards, tables, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, domain filters, health summary, verification badges, provider tooltips).
-- `components/settings/` Settings page components (subscription section, notification settings, linked accounts, danger zone/account deletion).
+- `components/settings/` Settings page components (subscription section, notification settings, linked accounts, calendar feed, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
 - `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useCustomerPortal`, `useDashboardFilters`, `useDashboardPreferences`, `useDashboardSort`, `useDomainExport`, `useDomainHistory`, `useDomainMutations`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useRouter`, `useSelection`, `useSubscription`, `useTablePagination`, `useTheme`, `useTrackedDomains`, `useTruncation`, `useUpgradeCheckout`.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
@@ -18,9 +18,10 @@
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (blocked-domains, domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
+- `lib/db/repos/` repository layer for each table (blocked-domains, calendar-feeds, domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
 - `lib/logger/` Pino-based server-side logging system with JSON output in production and pretty-printing in development.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
+- `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/providers/` provider detection system (catalog.ts for Edge Config schema, detection.ts for pattern matching, parser.ts for catalog parsing).
 - `lib/icons/` icon pipeline for favicon extraction (pipeline.ts for multi-source extraction, sources.ts for source definitions).
@@ -171,6 +172,32 @@ Key procedures:
 #### User Router (`server/routers/user.ts`)
 Key procedures:
 - `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
+- `getCalendarFeed` / `enableCalendarFeed` / `disableCalendarFeed`: Manage calendar feed subscription.
+- `rotateCalendarFeedToken`: Generate a new calendar URL (invalidates old URL).
+- `deleteCalendarFeed`: Completely remove calendar feed.
+
+### Calendar Feed
+Users can subscribe to domain expiration dates via iCalendar feed compatible with Google Calendar, Apple Calendar, Outlook, etc.
+
+**Architecture:**
+- **Database table:** `calendar_feeds` stores per-user feed tokens with enable/disable state and access tracking.
+- **Repository:** `lib/db/repos/calendar-feeds.ts` provides token generation, validation, and CRUD operations.
+- **Generator:** `lib/calendar/generate.ts` creates iCalendar content using `ical-generator` library.
+- **API endpoint:** `GET /api/calendar/user?token=...` (public-friendly URL: `/dashboard/feed.ics?token=...` via rewrite).
+- **UI component:** `components/settings/calendar-feed-section.tsx` in settings page.
+
+**Key features:**
+- Token-based authentication (capability URL pattern) - no session required.
+- All-day events for domain expirations (date-focused, timezone-agnostic).
+- ETag/If-None-Match support for efficient caching (304 Not Modified).
+- Access tracking: `lastAccessedAt` and `accessCount` updated on each fetch.
+- Token rotation for security (generates new URL, invalidates old one).
+- Enable/disable without losing token (can re-enable later).
+
+**Security considerations:**
+- Tokens are 32-byte base64url (~43 chars) for cryptographic security.
+- Same error message for "not found" and "disabled" to prevent enumeration.
+- UI warns users to treat feed URL as a password.
 
 ### Inngest Background Jobs
 - `check-domain-expiry`: Daily at 9:00 AM UTC; sends domain expiration notifications. Uses fan-out pattern (scheduler + worker).
