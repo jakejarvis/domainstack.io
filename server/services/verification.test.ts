@@ -2,10 +2,10 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
+import { getVerificationInstructions } from "@/lib/verification/instructions";
 import { server } from "@/mocks/server";
 import {
   generateVerificationToken,
-  getVerificationInstructions,
   tryAllVerificationMethods,
   verifyDomainOwnership,
 } from "./verification";

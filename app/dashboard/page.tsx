@@ -1,6 +1,6 @@
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { headers } from "next/headers";
-import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { auth } from "@/lib/auth";
 import { getQueryClient, trpc } from "@/trpc/server";
 
@@ -25,7 +25,7 @@ export default async function DashboardPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardContent />
+      <DashboardClient />
     </HydrationBoundary>
   );
 }

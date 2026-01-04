@@ -26,12 +26,12 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import type { VerificationInstructions } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import { buildVerificationInstructions } from "@/lib/verification/instructions";
 
 type ShareInstructionsDialogProps = {
   domain: string;
-  instructions: VerificationInstructions;
+  verificationToken: string;
   trackedDomainId: string;
 };
 
@@ -41,9 +41,12 @@ type ShareInstructionsDialogProps = {
  */
 function formatInstructionsForSharing(
   domain: string,
-  instructions: VerificationInstructions,
+  verificationToken: string,
 ): string {
-  const { dns_txt, html_file, meta_tag } = instructions;
+  const { dns_txt, html_file, meta_tag } = buildVerificationInstructions(
+    domain,
+    verificationToken,
+  );
 
   return `Domain Verification Instructions for ${domain}
 ${"=".repeat(50)}
@@ -91,10 +94,10 @@ Once completed, return to Domainstack to verify ownership.
  */
 function downloadInstructionsFile(
   domain: string,
-  instructions: VerificationInstructions,
+  verificationToken: string,
 ): { success: boolean } {
   try {
-    const content = formatInstructionsForSharing(domain, instructions);
+    const content = formatInstructionsForSharing(domain, verificationToken);
     const filename = `${domain}-verification-instructions.txt`;
 
     const blob = new Blob([content], { type: "text/plain" });
@@ -120,7 +123,7 @@ function downloadInstructionsFile(
 
 export function ShareInstructionsDialog({
   domain,
-  instructions,
+  verificationToken,
   trackedDomainId,
 }: ShareInstructionsDialogProps) {
   const [open, setOpen] = useState(false);
@@ -165,7 +168,10 @@ export function ShareInstructionsDialog({
 
   const handleCopy = async () => {
     try {
-      const formattedText = formatInstructionsForSharing(domain, instructions);
+      const formattedText = formatInstructionsForSharing(
+        domain,
+        verificationToken,
+      );
       await clipboardCopy(formattedText);
       setCopied(true);
       toast.success("Copied!", {
@@ -184,7 +190,7 @@ export function ShareInstructionsDialog({
   };
 
   const handleDownload = () => {
-    const result = downloadInstructionsFile(domain, instructions);
+    const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
       toast.success("Instructions downloaded!", {
         description: "Send this file to your domain admin.",

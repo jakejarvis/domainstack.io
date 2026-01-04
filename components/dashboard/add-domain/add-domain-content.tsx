@@ -64,7 +64,7 @@ export function AddDomainContent({
     domainError,
     method,
     setMethod,
-    instructions,
+    verificationToken,
     verificationState,
     hasAttemptedDomainSubmit,
     trackedDomainId,
@@ -74,19 +74,19 @@ export function AddDomainContent({
     handleVerify,
     handleReturnLater,
     canProceed,
-    refetchInstructions,
+    refetchVerificationData,
 
     // Query/mutation state
     isAddingDomain,
-    isRefetchingInstructions,
-    instructionsErrorMessage,
+    isRefetchingVerificationData,
+    verificationDataErrorMessage,
 
     // Derived state
     isResuming,
     isPrefilled,
-    isLoadingInstructions,
-    isInstructionsQueryError,
-    isMissingInstructions,
+    isLoadingVerificationData,
+    isVerificationDataQueryError,
+    isMissingVerificationData,
     isVerifying,
     hasFailed,
     showFooterButtons,
@@ -316,25 +316,25 @@ export function AddDomainContent({
               readOnly={isPrefilled}
             />
           )}
-          {step === 2 && isLoadingInstructions && (
+          {step === 2 && isLoadingVerificationData && (
             <div className="flex h-[200px] items-center justify-center">
               <Spinner className="size-6" />
             </div>
           )}
-          {step === 2 && isMissingInstructions && (
+          {step === 2 && isMissingVerificationData && (
             <StepInstructionsError
               error={
-                isInstructionsQueryError
-                  ? instructionsErrorMessage
-                  : "Verification instructions could not be loaded."
+                isVerificationDataQueryError
+                  ? verificationDataErrorMessage
+                  : "Verification details could not be loaded."
               }
-              onRetry={() => refetchInstructions()}
-              isRetrying={isRefetchingInstructions}
+              onRetry={() => refetchVerificationData()}
+              isRetrying={isRefetchingVerificationData}
             />
           )}
           {step === 2 &&
-            instructions &&
-            !isLoadingInstructions &&
+            verificationToken &&
+            !isLoadingVerificationData &&
             !trackedDomainId && (
               <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
                 <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
@@ -355,16 +355,15 @@ export function AddDomainContent({
               </div>
             )}
           {step === 2 &&
-            instructions &&
-            !isLoadingInstructions &&
+            verificationToken &&
+            !isLoadingVerificationData &&
             trackedDomainId && (
               <StepVerifyOwnership
                 method={method}
                 setMethod={setMethod}
-                instructions={instructions}
-                verificationState={verificationState}
                 domain={domain}
-                trackedDomainId={trackedDomainId}
+                verificationToken={verificationToken}
+                verificationState={verificationState}
                 onVerify={handleVerify}
                 onReturnLater={handleReturnLater}
               />
@@ -379,10 +378,10 @@ export function AddDomainContent({
     <div className="mt-6 flex w-full items-center justify-between gap-2">
       {/* Left side: Share instructions button (only on step 2) */}
       <div className="flex-1">
-        {step === 2 && instructions && trackedDomainId && (
+        {step === 2 && verificationToken && trackedDomainId && (
           <ShareInstructionsDialog
             domain={domain}
-            instructions={instructions}
+            verificationToken={verificationToken}
             trackedDomainId={trackedDomainId}
           />
         )}
@@ -392,7 +391,9 @@ export function AddDomainContent({
       <Button
         onClick={handleNext}
         disabled={
-          !canProceed() || isLoadingInstructions || isMissingInstructions
+          !canProceed() ||
+          isLoadingVerificationData ||
+          isMissingVerificationData
         }
       >
         {isAddingDomain || isVerifying ? (

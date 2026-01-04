@@ -1,8 +1,10 @@
+"use client";
+
 import { Ban } from "lucide-react";
-import posthog from "posthog-js";
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { analytics } from "@/lib/analytics/client";
 
 interface Props {
   children: React.ReactNode;
@@ -30,7 +32,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: { componentStack?: string }) {
     // Track error in PostHog for monitoring
-    posthog.captureException(error, {
+    analytics.trackException(error, {
       section: this.props.sectionName,
       componentStack: errorInfo.componentStack,
     });

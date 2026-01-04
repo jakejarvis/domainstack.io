@@ -60,16 +60,3 @@ export const VerificationInstructionsSchema = z.object({
 export type VerificationInstructions = z.infer<
   typeof VerificationInstructionsSchema
 >;
-
-/**
- * Verification instructions response with domain name included
- * (used by the getVerificationInstructions tRPC procedure)
- */
-export const VerificationInstructionsResponseSchema =
-  VerificationInstructionsSchema.extend({
-    domain: z.string(),
-  });
-
-export type VerificationInstructionsResponse = z.infer<
-  typeof VerificationInstructionsResponseSchema
->;

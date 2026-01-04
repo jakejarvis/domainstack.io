@@ -44,7 +44,7 @@ type ConfirmAction =
   | { type: "bulk-archive"; domainIds: string[]; count: number }
   | { type: "bulk-delete"; domainIds: string[]; count: number };
 
-export function DashboardContent() {
+export function DashboardClient() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
     null,
   );
@@ -80,9 +80,7 @@ export function DashboardContent() {
     unarchiveMutation,
     bulkArchiveMutation,
     bulkDeleteMutation,
-  } = useDomainMutations({
-    onUnarchiveSuccess: () => setActiveTab("active"),
-  });
+  } = useDomainMutations();
 
   const domains = useMemo(
     () => allDomains?.filter((d) => d.archivedAt === null) ?? [],

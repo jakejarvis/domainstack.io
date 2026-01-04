@@ -44,14 +44,6 @@ type MutationContext = {
 export type UseDomainMutationsReturn = ReturnType<typeof useDomainMutations>;
 
 /**
- * Options for domain mutation handlers.
- */
-type MutationHandlerOptions = {
-  onArchiveSuccess?: () => void;
-  onUnarchiveSuccess?: () => void;
-};
-
-/**
  * Helper to update subscription cache for removing domains from active list.
  */
 function updateSubscriptionForRemoval(
@@ -107,7 +99,7 @@ function updateSubscriptionForUnarchive(
  * Centralizes cache update logic to ensure consistent semantics across
  * remove, archive, unarchive, and bulk operations.
  */
-export function useDomainMutations(options: MutationHandlerOptions = {}) {
+export function useDomainMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -226,7 +218,6 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     },
     onSuccess: () => {
       toast.success("Domain archived");
-      options.onArchiveSuccess?.();
     },
     onSettled: () => {
       invalidateQueries();
@@ -272,7 +263,6 @@ export function useDomainMutations(options: MutationHandlerOptions = {}) {
     },
     onSuccess: () => {
       toast.success("Domain reactivated");
-      options.onUnarchiveSuccess?.();
     },
     onSettled: () => {
       invalidateQueries();

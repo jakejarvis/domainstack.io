@@ -1,6 +1,6 @@
 import { AlertCircle, BadgeCheck, BellPlus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -18,13 +18,7 @@ type TrackDomainButtonProps = {
 
 export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
-  const [mounted, setMounted] = useState(false);
   const router = useRouter();
-
-  // Track mounted state to avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Only query tracked domains when user is authenticated
   const isAuthenticated = !!session?.user;
@@ -67,7 +61,7 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
 
   // Show loading state during SSR, initial hydration, or while data is loading
   // This ensures consistent rendering between server and client
-  if (!mounted || isSessionPending || (session?.user && isLoadingDomains)) {
+  if (isSessionPending || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled>
         <Spinner />

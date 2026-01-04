@@ -1,14 +1,9 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
-import type {
-  VerificationInstructions,
-  VerificationMethod,
-} from "@/lib/schemas";
+import type { VerificationMethod } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 
 export type ResumeDomainData = {
@@ -45,6 +40,7 @@ export function useDomainVerification({
   const initialDomain = resumeDomain?.domainName ?? prefillDomain ?? "";
   const initialStep = resumeDomain ? 2 : 1;
   const initialTrackedDomainId = resumeDomain?.id ?? null;
+  const initialVerificationToken = resumeDomain?.verificationToken ?? "";
   const initialMethod =
     resumeDomain?.verificationMethod ?? ("dns_txt" as VerificationMethod);
 
@@ -55,8 +51,9 @@ export function useDomainVerification({
   const [trackedDomainId, setTrackedDomainId] = useState<string | null>(
     initialTrackedDomainId,
   );
-  const [instructions, setInstructions] =
-    useState<VerificationInstructions | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string>(
+    initialVerificationToken,
+  );
   const [verificationState, setVerificationState] = useState<VerificationState>(
     { status: "idle" },
   );
@@ -92,12 +89,19 @@ export function useDomainVerification({
     },
   });
 
-  // Fetch instructions when resuming verification (keyed on trackedDomainId for safety)
-  const instructionsQuery = useQuery({
-    ...trpc.tracking.getVerificationInstructions.queryOptions({
+  const isResuming = !!resumeDomain;
+
+  // Fetch verification token + canonical domain when resuming verification
+  // (e.g. resume via URL params where we only have the trackedDomainId).
+  const verificationDataQuery = useQuery({
+    ...trpc.tracking.getVerificationData.queryOptions({
       trackedDomainId: trackedDomainId ?? "",
     }),
-    enabled: !!trackedDomainId && open,
+    enabled:
+      !!trackedDomainId &&
+      open &&
+      isResuming &&
+      (!verificationToken || !domain.trim().length),
   });
 
   // When resumeDomain changes, update the state accordingly
@@ -107,7 +111,7 @@ export function useDomainVerification({
       setDomain(resumeDomain.domainName);
 
       // If we're already tracking this domain (e.g. just added it and the list refreshed),
-      // don't reset the state. This prevents clearing instructions/ID.
+      // don't reset the state. This prevents clearing token/ID.
       if (trackedDomainId === resumeDomain.id) {
         return;
       }
@@ -118,23 +122,23 @@ export function useDomainVerification({
       setVerificationState({ status: "idle" });
       setDomainError("");
       setMethod(resumeDomain.verificationMethod ?? "dns_txt");
-      setInstructions(null); // Will be set by instructionsQuery effect
+      setVerificationToken(resumeDomain.verificationToken ?? "");
     }
   }, [resumeDomain, open, trackedDomainId]);
 
-  // When instructions are fetched (resume mode), set them and update local state
-  // prioritizing server data over resumeDomain props (except for id which is the key)
   useEffect(() => {
-    if (instructionsQuery.data) {
-      // Extract domain and instructions separately (server response includes both)
-      const { domain: responseDomain, ...instructionsOnly } =
-        instructionsQuery.data;
-      setInstructions(instructionsOnly);
-      if (responseDomain) {
-        setDomain(responseDomain);
-      }
+    if (verificationDataQuery.data) {
+      const {
+        domain: responseDomain,
+        verificationToken,
+        verificationMethod,
+      } = verificationDataQuery.data;
+
+      if (responseDomain) setDomain(responseDomain);
+      if (verificationToken) setVerificationToken(verificationToken);
+      if (verificationMethod) setMethod(verificationMethod);
     }
-  }, [instructionsQuery.data]);
+  }, [verificationDataQuery.data]);
 
   // Sync domain state when prefillDomain changes and no resumeDomain is active
   // This ensures the domain field is updated when props change
@@ -158,7 +162,7 @@ export function useDomainVerification({
     setDomainError("");
     setMethod("dns_txt");
     setTrackedDomainId(null);
-    setInstructions(null);
+    setVerificationToken("");
     setVerificationState({ status: "idle" });
     setHasAttemptedDomainSubmit(false);
   }, [prefillDomain]);
@@ -186,7 +190,7 @@ export function useDomainVerification({
     try {
       const result = await addDomainMutation.mutateAsync({ domain });
       setTrackedDomainId(result.id);
-      setInstructions(result.instructions);
+      setVerificationToken(result.verificationToken);
       setStep(2);
 
       // Let user know if they're resuming a previous verification attempt
@@ -297,12 +301,13 @@ export function useDomainVerification({
   }, []);
 
   // Derived state
-  const isResuming = !!resumeDomain;
   const isPrefilled = !!prefillDomain && !isResuming;
-  const isLoadingInstructions = isResuming && instructionsQuery.isLoading;
-  const isInstructionsQueryError = isResuming && instructionsQuery.isError;
-  const isMissingInstructions =
-    step === 2 && !isLoadingInstructions && !instructions;
+  const isLoadingVerificationData =
+    isResuming && verificationDataQuery.isLoading;
+  const isVerificationDataQueryError =
+    isResuming && verificationDataQuery.isError;
+  const isMissingVerificationData =
+    step === 2 && !isLoadingVerificationData && !verificationToken;
   const isVerifying = verificationState.status === "verifying";
   const hasFailed = verificationState.status === "failed";
   const showFooterButtons = step !== 2 || !hasFailed;
@@ -315,7 +320,7 @@ export function useDomainVerification({
     domainError,
     method,
     setMethod,
-    instructions,
+    verificationToken,
     verificationState,
     hasAttemptedDomainSubmit,
     trackedDomainId,
@@ -327,19 +332,19 @@ export function useDomainVerification({
     handleReturnLater,
     goBack,
     canProceed,
-    refetchInstructions: instructionsQuery.refetch,
+    refetchVerificationData: verificationDataQuery.refetch,
 
     // Query/mutation state
     isAddingDomain: addDomainMutation.isPending,
-    isRefetchingInstructions: instructionsQuery.isFetching,
-    instructionsErrorMessage: instructionsQuery.error?.message,
+    isRefetchingVerificationData: verificationDataQuery.isFetching,
+    verificationDataErrorMessage: verificationDataQuery.error?.message,
 
     // Derived state
     isResuming,
     isPrefilled,
-    isLoadingInstructions,
-    isInstructionsQueryError,
-    isMissingInstructions,
+    isLoadingVerificationData,
+    isVerificationDataQueryError,
+    isMissingVerificationData,
     isVerifying,
     hasFailed,
     showFooterButtons,

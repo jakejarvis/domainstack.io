@@ -1,8 +1,8 @@
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { CalendarClock } from "lucide-react";
-import { useEffect, useState } from "react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useCustomerPortal } from "@/hooks/use-customer-portal";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import type { SubscriptionData } from "@/hooks/use-subscription";
 import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
 
@@ -16,12 +16,7 @@ export function SubscriptionEndingBanner({
   const { handleUpgrade: handleResubscribe, isLoading } = useUpgradeCheckout();
   const { openPortal: handleManage, isLoading: isManageLoading } =
     useCustomerPortal();
-
-  // Capture current time only on client after mount (not during SSR)
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  const now = useHydratedNow();
 
   // Don't show if subscription unavailable, or no end date
   if (!subscription || !subscription.subscriptionEndsAt) {

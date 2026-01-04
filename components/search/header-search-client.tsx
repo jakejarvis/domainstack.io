@@ -7,7 +7,7 @@ import { SearchClient } from "@/components/search/search-client";
 export function HeaderSearchClient() {
   const { setIsSearchFocused } = useHeaderSearchFocus();
   const segment = useSelectedLayoutSegment();
-  const isHome = segment === null || segment === "(home)";
+  const isHome = segment === null || segment === "(landing)";
 
   // Return empty div to avoid messing up header grid layout
   // We use useSelectedLayoutSegment instead of usePathname because it correctly

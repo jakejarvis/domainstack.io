@@ -47,7 +47,7 @@ export function AddDomainModalClient({
       return {
         id,
         // Optional: fallback to empty string if not in params,
-        // will be populated by useDomainVerification fetching instructions
+        // will be populated by useDomainVerification fetching verification data
         domainName: domain ?? "",
         // Token is not needed here as it will be fetched from the server
         verificationToken: "",

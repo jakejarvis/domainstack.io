@@ -24,8 +24,8 @@ import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
 import { VerificationMethodSchema } from "@/lib/schemas";
+import { buildVerificationInstructions } from "@/lib/verification/instructions";
 import {
-  buildVerificationInstructions,
   generateVerificationToken,
   tryAllVerificationMethods,
   verifyDomainOwnership,
@@ -103,7 +103,7 @@ export const trackingRouter = createTRPCRouter({
 
   /**
    * Add a new domain to track (or resume tracking an unverified domain).
-   * Returns the verification token and instructions.
+   * Returns the verification token (instructions are generated client-side).
    * If the domain is already being tracked but unverified, returns the existing record.
    */
   addDomain: protectedProcedure
@@ -127,16 +127,10 @@ export const trackingRouter = createTRPCRouter({
         }
 
         // If unverified, return the existing record so user can resume verification
-        const instructions = buildVerificationInstructions(
-          domain,
-          existing.verificationToken,
-        );
-
         return {
           id: existing.id,
           domain,
           verificationToken: existing.verificationToken,
-          instructions,
           resumed: true, // Flag to indicate this is resuming verification
         };
       }
@@ -171,16 +165,10 @@ export const trackingRouter = createTRPCRouter({
           domainRecord.id,
         );
         if (raceExisting) {
-          const instructions = buildVerificationInstructions(
-            domain,
-            raceExisting.verificationToken,
-          );
-
           return {
             id: raceExisting.id,
             domain,
             verificationToken: raceExisting.verificationToken,
-            instructions,
             resumed: true,
           };
         }
@@ -193,12 +181,6 @@ export const trackingRouter = createTRPCRouter({
       }
 
       const tracked = result.trackedDomain;
-
-      // Get verification instructions for all methods
-      const instructions = buildVerificationInstructions(
-        domain,
-        verificationToken,
-      );
 
       // Trigger auto-verification schedule in the background
       // This will check at 1min, 3min, 10min, 30min, 1hr intervals
@@ -216,7 +198,6 @@ export const trackingRouter = createTRPCRouter({
         id: tracked.id,
         domain,
         verificationToken,
-        instructions,
         resumed: false,
       };
     }),
@@ -290,9 +271,10 @@ export const trackingRouter = createTRPCRouter({
     }),
 
   /**
-   * Get verification instructions for a tracked domain.
+   * Get verification data needed to display verification instructions.
+   * (Instructions are generated on the client from the returned token.)
    */
-  getVerificationInstructions: protectedProcedure
+  getVerificationData: protectedProcedure
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
@@ -314,11 +296,9 @@ export const trackingRouter = createTRPCRouter({
       }
 
       return {
-        ...buildVerificationInstructions(
-          tracked.domainName,
-          tracked.verificationToken,
-        ),
         domain: tracked.domainName,
+        verificationToken: tracked.verificationToken,
+        verificationMethod: tracked.verificationMethod,
       };
     }),
 
