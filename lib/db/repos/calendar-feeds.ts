@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq, type InferSelectModel, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { calendarFeeds } from "@/lib/db/schema";
 
@@ -14,14 +14,14 @@ export function generateCalendarFeedToken(): string {
   return bytes.toString("base64url");
 }
 
-export type CalendarFeed = typeof calendarFeeds.$inferSelect;
+type CalendarFeedSelect = InferSelectModel<typeof calendarFeeds>;
 
 /**
  * Get a user's calendar feed record if it exists.
  */
 export async function getCalendarFeed(
   userId: string,
-): Promise<CalendarFeed | null> {
+): Promise<CalendarFeedSelect | null> {
   const [feed] = await db
     .select()
     .from(calendarFeeds)
@@ -40,7 +40,7 @@ export async function getCalendarFeed(
  */
 export async function enableCalendarFeed(
   userId: string,
-): Promise<CalendarFeed> {
+): Promise<CalendarFeedSelect> {
   const token = generateCalendarFeedToken();
 
   const [feed] = await db
@@ -65,7 +65,7 @@ export async function enableCalendarFeed(
  */
 export async function disableCalendarFeed(
   userId: string,
-): Promise<CalendarFeed | null> {
+): Promise<CalendarFeedSelect | null> {
   const [updated] = await db
     .update(calendarFeeds)
     .set({ enabled: false })
@@ -82,7 +82,7 @@ export async function disableCalendarFeed(
  */
 export async function rotateCalendarFeedToken(
   userId: string,
-): Promise<CalendarFeed | null> {
+): Promise<CalendarFeedSelect | null> {
   const newToken = generateCalendarFeedToken();
 
   const [updated] = await db
