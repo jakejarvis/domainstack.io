@@ -42,11 +42,10 @@ export function generateCalendarFeed(
       product: "Calendar Feed",
       language: "EN",
     },
+    // PUBLISH method is standard for subscription feeds
+    // (as opposed to REQUEST for meeting invitations)
+    method: ICalCalendarMethod.PUBLISH,
   });
-
-  // PUBLISH method is standard for subscription feeds
-  // (as opposed to REQUEST for meeting invitations)
-  calendar.method(ICalCalendarMethod.PUBLISH);
 
   for (const domain of expiringDomains) {
     // Skip if no expiration date (shouldn't happen after filtering)
