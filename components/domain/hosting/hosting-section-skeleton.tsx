@@ -1,12 +1,12 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
-import { ReportSection } from "@/components/domain/report-section";
+import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { sections } from "@/lib/constants/sections";
 
 export function HostingSectionSkeleton() {
   return (
-    <ReportSection {...sections.hosting} isLoading>
+    <ReportSectionSkeleton {...sections.hosting}>
       <KeyValueGrid colsDesktop={3}>
         <KeyValueSkeleton label="DNS" withLeading widthClass="w-[100px]" />
         <KeyValueSkeleton label="Hosting" withLeading widthClass="w-[100px]" />
@@ -23,6 +23,6 @@ export function HostingSectionSkeleton() {
           </div>
         </div>
       </div>
-    </ReportSection>
+    </ReportSectionSkeleton>
   );
 }

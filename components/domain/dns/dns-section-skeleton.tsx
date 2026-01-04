@@ -1,6 +1,6 @@
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { PillCountSkeleton } from "@/components/domain/pill-count";
-import { ReportSection } from "@/components/domain/report-section";
+import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { sections } from "@/lib/constants/sections";
 
 function DnsGroupSkeleton({
@@ -32,7 +32,7 @@ function DnsGroupSkeleton({
 
 export function DnsSectionSkeleton() {
   return (
-    <ReportSection {...sections.dns} isLoading>
+    <ReportSectionSkeleton {...sections.dns}>
       <div className="space-y-4">
         <DnsGroupSkeleton title="A Records" />
         <DnsGroupSkeleton title="AAAA Records" />
@@ -40,6 +40,6 @@ export function DnsSectionSkeleton() {
         <DnsGroupSkeleton title="TXT Records" records={4} />
         <DnsGroupSkeleton title="NS Records" />
       </div>
-    </ReportSection>
+    </ReportSectionSkeleton>
   );
 }

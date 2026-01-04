@@ -1,11 +1,11 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
-import { ReportSection } from "@/components/domain/report-section";
+import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { sections } from "@/lib/constants/sections";
 
 export function RegistrationSectionSkeleton() {
   return (
-    <ReportSection {...sections.registration} isLoading>
+    <ReportSectionSkeleton {...sections.registration}>
       <KeyValueGrid colsDesktop={2}>
         <KeyValueSkeleton
           label="Registrar"
@@ -16,6 +16,6 @@ export function RegistrationSectionSkeleton() {
         <KeyValueSkeleton label="Created" widthClass="w-[120px]" />
         <KeyValueSkeleton label="Expires" widthClass="w-[120px]" />
       </KeyValueGrid>
-    </ReportSection>
+    </ReportSectionSkeleton>
   );
 }

@@ -1,13 +1,13 @@
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { PillCountSkeleton } from "@/components/domain/pill-count";
-import { ReportSection } from "@/components/domain/report-section";
+import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sections } from "@/lib/constants/sections";
 
 export function SeoSectionSkeleton() {
   return (
-    <ReportSection {...sections.seo} isLoading>
+    <ReportSectionSkeleton {...sections.seo}>
       <div className="space-y-4">
         {/* Meta Tags */}
         <div className="space-y-3">
@@ -118,6 +118,6 @@ export function SeoSectionSkeleton() {
           </div>
         </div>
       </div>
-    </ReportSection>
+    </ReportSectionSkeleton>
   );
 }
