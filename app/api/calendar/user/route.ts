@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
       { error: "Missing token parameter" },
       {
         status: 400,
-        headers: { "Content-Type": "text/plain" },
+        headers: {
+          "Cache-Control": "private, must-revalidate",
+        },
       },
     );
   }
@@ -42,7 +44,9 @@ export async function GET(request: NextRequest) {
       { error: "Invalid or disabled calendar" },
       {
         status: 401,
-        headers: { "Content-Type": "text/plain" },
+        headers: {
+          "Cache-Control": "private, must-revalidate",
+        },
       },
     );
   }
@@ -71,6 +75,7 @@ export async function GET(request: NextRequest) {
       status: 304,
       headers: {
         ETag: `"${etag}"`,
+        "Content-Type": "text/calendar; charset=utf-8",
         "Cache-Control": "max-age=3600, private, must-revalidate",
       },
     });

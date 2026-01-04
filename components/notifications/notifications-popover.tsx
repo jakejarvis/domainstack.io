@@ -30,7 +30,7 @@ export function NotificationsPopover() {
   const { data: count = 0, refetch: refetchCount } = useQuery({
     ...trpc.notifications.unreadCount.queryOptions(),
     refetchOnWindowFocus: true,
-    refetchInterval: 60000,
+    refetchInterval: 60_000,
   });
 
   // Map view to filter parameter

@@ -1,14 +1,10 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import copy from "clipboard-copy";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Calendar,
+  CalendarFold,
   CalendarOff,
   CalendarPlus,
   CalendarSync,
-  ExternalLink,
   Info,
   ShieldAlert,
 } from "lucide-react";
@@ -43,15 +39,17 @@ interface CalendarFeedSectionProps {
 export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [_copied, setCopied] = useState(false);
   const [showRotateDialog, setShowRotateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Query key for cache manipulation
   const feedQueryKey = trpc.user.getCalendarFeed.queryKey();
 
-  // Query
-  const feedQuery = useQuery(trpc.user.getCalendarFeed.queryOptions());
+  // Query - auto-refresh every 30s to keep "last accessed" timestamp current
+  const feedQuery = useQuery({
+    ...trpc.user.getCalendarFeed.queryOptions(),
+    refetchInterval: 30_000,
+  });
 
   // Mutations
   const enableMutation = useMutation({
@@ -60,10 +58,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
       queryClient.setQueryData(feedQueryKey, {
         enabled: true,
         feedUrl: data.feedUrl,
-        createdAt: data.createdAt,
-        rotatedAt: null,
         lastAccessedAt: null,
-        accessCount: 0,
       });
       toast.success("Calendar feed enabled");
     },
@@ -134,17 +129,6 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
     },
   });
 
-  const _handleCopy = async (url: string) => {
-    try {
-      await copy(url);
-      setCopied(true);
-      toast.success("Copied to clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy");
-    }
-  };
-
   const isPending =
     enableMutation.isPending ||
     disableMutation.isPending ||
@@ -159,7 +143,10 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
     return (
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Calendar Feed</CardTitle>
+          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+            <CalendarFold className="size-4.5" />
+            Calendar Feed
+          </CardTitle>
           <CardDescription className="text-destructive">
             Failed to load calendar feed settings
           </CardDescription>
@@ -174,11 +161,11 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
   return (
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="flex items-center gap-1.5 leading-none">
-          <Calendar className="size-4.5" />
+        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+          <CalendarFold className="size-4.5" />
           Calendar Feed
         </CardTitle>
-        <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary [&_svg]:relative [&_svg]:bottom-px [&_svg]:ml-[3px] [&_svg]:inline-block [&_svg]:size-3 [&_svg]:-translate-y-[1px]">
+        <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary">
           Subscribe to domain expiration dates in your calendar app (
           <a
             href="https://support.google.com/calendar/answer/37100"
@@ -186,7 +173,6 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
             rel="noopener noreferrer"
           >
             Google Calendar
-            <ExternalLink />
           </a>
           ,{" "}
           <a
@@ -195,7 +181,6 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
             rel="noopener noreferrer"
           >
             Apple Calendar
-            <ExternalLink />
           </a>
           ,{" "}
           <a
@@ -204,20 +189,35 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
             rel="noopener noreferrer"
           >
             Microsoft Outlook
-            <ExternalLink />
           </a>
-          , etc.).
+          ,{" "}
+          <a
+            href="https://flexibits.com/fantastical-ios/help/getting-started#adding-a-calendar-subscription"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Fantastical
+          </a>
+          , and{" "}
+          <a
+            href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+a+.ics+calendar+feed+in+%5Bmy+app%5D%3F"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            more
+          </a>
+          ).
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4 px-0 pt-1">
+      <CardContent className="space-y-4 px-0 pt-2">
         {isEnabled ? (
           <>
             {/* Security warning */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
               <ShieldAlert className="size-4 shrink-0 translate-y-[3px]" />
               <div className="space-y-0.5 text-[13px]">
-                <p className="font-semibold">Treat this URL as a password.</p>
+                <p className="font-semibold">Treat this URL as a password!</p>
                 <p>
                   Anyone with this link can view your verified domains. You can
                   create a new URL at any time by regenerating it below.
@@ -235,7 +235,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-1 text-muted-foreground text-xs leading-none">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs leading-none">
               <Info className="size-3 shrink-0" />
               {feed.lastAccessedAt ? (
                 <span>
@@ -245,12 +245,12 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
                   })}
                 </span>
               ) : (
-                <span>Not yet accessed</span>
+                <span>Not accessed yet</span>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Button
                 variant="outline"
                 onClick={() => setShowRotateDialog(true)}
@@ -269,7 +269,7 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
                 ) : (
                   <CalendarOff className="text-destructive" />
                 )}
-                Turn Off
+                Disable
               </Button>
             </div>
           </>

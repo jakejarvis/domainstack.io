@@ -86,21 +86,17 @@ export function SettingsPanels({ className }: { className?: string }) {
       </TabsContent>
 
       <TabsContent value="notifications" className={className}>
-        <NotificationSettingsSection />
-
-        {/* Divider */}
-        <Separator className="my-6" />
-
-        <CalendarFeedSection />
+        <div className="space-y-6">
+          <NotificationSettingsSection />
+          <Separator />
+          <CalendarFeedSection />
+        </div>
       </TabsContent>
 
       <TabsContent value="account" className={className}>
         <div className="space-y-6">
           <LinkedAccountsSection />
-
-          {/* Divider */}
           <Separator />
-
           <DangerZoneSettingsSection />
         </div>
       </TabsContent>

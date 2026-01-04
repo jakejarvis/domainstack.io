@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FingerprintPattern } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { LinkedAccountRow } from "@/components/settings/linked-account-row";
@@ -176,7 +177,10 @@ export function LinkedAccountsSection({
     <>
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Login Providers</CardTitle>
+          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+            <FingerprintPattern className="size-4.5" />
+            Login Providers
+          </CardTitle>
           <CardDescription>
             Protect your account with additional third-party services.
           </CardDescription>

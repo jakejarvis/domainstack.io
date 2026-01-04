@@ -254,10 +254,7 @@ export const userRouter = createTRPCRouter({
     return {
       enabled: feed.enabled,
       feedUrl: buildCalendarFeedUrl(feed.token),
-      createdAt: feed.createdAt,
-      rotatedAt: feed.rotatedAt,
       lastAccessedAt: feed.lastAccessedAt,
-      accessCount: feed.accessCount,
     };
   }),
 

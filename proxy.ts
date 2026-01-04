@@ -37,7 +37,6 @@ export function proxy(request: NextRequest) {
   // Quick redirect for unauthenticated users trying to access protected routes
   // This is NOT for security - just a faster redirect path before hitting the page
   // The actual security check happens in the page/layout server components
-  // Exempt calendar feed route from authentication check based on a token query parameter
   const isProtectedRoute = PROTECTED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
