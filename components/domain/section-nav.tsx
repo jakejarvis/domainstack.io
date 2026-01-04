@@ -64,13 +64,13 @@ export function SectionNav({
       className={cn(
         "sticky z-40 -mx-4 mt-4 mb-4 px-4",
         // Mobile: position follows header visibility
-        // Before threshold: use CSS variable for instant scroll-linked positioning
+        // Before threshold: stick to top naturally (global header scrolls away)
         // Past threshold: transition between top-0 (header hidden) and header height (header visible)
         isPastThreshold
           ? isGlobalHeaderHidden
             ? "top-0 transition-[top] duration-300 ease-out"
             : "top-[var(--header-height,80px)] transition-[top] duration-300 ease-out"
-          : "top-[calc(var(--header-height,80px)-var(--scroll-y,0px))]",
+          : "top-0",
         // Desktop: always below sticky global header (no mobile behavior)
         "md:!top-[var(--header-height,80px)] md:!transition-none",
       )}

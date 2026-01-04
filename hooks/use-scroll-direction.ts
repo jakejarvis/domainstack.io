@@ -44,22 +44,9 @@ export function useScrollDirection({
     lastPastThreshold.current = pastThreshold;
     setIsPastThreshold(pastThreshold);
 
-    // Set initial CSS variable for scroll position (used for header natural scroll)
-    document.documentElement.style.setProperty(
-      "--scroll-y",
-      `${Math.min(initialScrollY, offsetThreshold)}px`,
-    );
-
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY.current;
-
-      // Update CSS variable directly (no React state = no delay)
-      // Clamped to threshold - past threshold it stays at max value
-      document.documentElement.style.setProperty(
-        "--scroll-y",
-        `${Math.min(currentScrollY, offsetThreshold)}px`,
-      );
 
       // Update threshold state (only when it changes)
       const pastThreshold = currentScrollY > offsetThreshold;
@@ -95,7 +82,6 @@ export function useScrollDirection({
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      document.documentElement.style.removeProperty("--scroll-y");
     };
   }, [threshold, offsetThreshold]);
 

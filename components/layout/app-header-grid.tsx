@@ -21,18 +21,18 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <motion.header
         className={cn(
-          "fixed top-0 right-0 left-0 z-50 grid h-[var(--header-height,80px)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b bg-background/60 py-3 pr-4 pl-6 backdrop-blur",
+          "top-0 right-0 left-0 z-50 grid h-[var(--header-height,80px)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b bg-background/60 py-3 pr-4 pl-6 backdrop-blur",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
-          // - Before threshold: translate by -scrollY (natural scroll)
+          // - Before threshold: behave like a normal element (scrolls away with the page)
           // - Past threshold + scrolling down: stay at -100% (hidden)
           // - Past threshold + scrolling up: translate to 0 (visible)
           isMobile &&
             (isPastThreshold
               ? shouldHideHeader
-                ? "-translate-y-full" // Hidden (no transition - instant hide)
-                : "translate-y-0 transition-transform duration-300 ease-out" // Visible (animate reveal)
-              : "translate-y-[calc(var(--scroll-y,0px)*-1)]"), // Natural scroll (no transition)
+                ? "fixed -translate-y-full" // Hidden (no transition - instant hide)
+                : "fixed translate-y-0 transition-transform duration-300 ease-out" // Visible (animate reveal)
+              : "absolute translate-y-0"), // Natural scroll (no scroll-linked transforms)
         )}
         animate={{
           gridTemplateColumns: isMobile

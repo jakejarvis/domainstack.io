@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   HEADER_HEIGHT,
@@ -24,13 +25,18 @@ function getCSSVarPx(name: string, fallback: number): number {
  * Gets the current scroll margin from CSS variables.
  * This ensures consistency with what CSS is actually using for scroll-margin-top.
  */
-function getScrollMarginFromCSS(): number {
-  const headerHeight = getCSSVarPx("--header-height", HEADER_HEIGHT);
+function getScrollMarginFromCSS(isMobile: boolean): number {
   const sectionNavHeight = getCSSVarPx(
     "--section-nav-height",
     SECTION_NAV_HEIGHT,
   );
   const scrollPadding = getCSSVarPx("--scroll-padding", SCROLL_PADDING);
+  // Match `components/domain/report-section.tsx` scroll-mt behavior:
+  // - mobile: section nav + padding
+  // - md+: global header + section nav + padding
+  const headerHeight = !isMobile
+    ? getCSSVarPx("--header-height", HEADER_HEIGHT)
+    : 0;
   return headerHeight + sectionNavHeight + scrollPadding;
 }
 
@@ -59,64 +65,94 @@ export function useSectionObserver({
   const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "");
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
 
+  // Check if the device is mobile
+  const isMobile = useIsMobile();
+
   // Check for reduced motion preference
   const prefersReducedMotion = useReducedMotion();
 
-  // Track visible sections with their intersection ratios for priority selection
-  const visibleSectionsRef = useRef<Map<string, number>>(new Map());
+  // When navigating via tab click, keep the clicked tab active until the scroll
+  // has effectively landed. This prevents the scrollspy from briefly selecting
+  // a neighbor section mid-animation.
+  const programmaticTargetIdRef = useRef<string | null>(null);
+  const programmaticLockUntilRef = useRef<number>(0);
 
-  // Lock to prevent observer updates during programmatic scrolling
-  const isScrollingRef = useRef(false);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Section observer - tracks which section is in the top portion of viewport
+  // Section tracking - computes active section based on section positions
   useEffect(() => {
     if (sectionIds.length === 0) return;
 
-    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
-      // Always update the visibility map (even during programmatic scrolling)
-      for (const entry of entries) {
-        const id = entry.target.id;
-        if (entry.isIntersecting) {
-          visibleSectionsRef.current.set(id, entry.intersectionRatio);
+    let rafId: number | null = null;
+    let scrollMarginPx = getScrollMarginFromCSS(isMobile);
+
+    const updateActiveSection = () => {
+      // During programmatic scrolling, keep the clicked section active until
+      // it reaches its expected position (or we time out).
+      const targetId = programmaticTargetIdRef.current;
+      if (targetId) {
+        const now =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        const targetEl = document.getElementById(targetId);
+
+        if (!targetEl || now > programmaticLockUntilRef.current) {
+          programmaticTargetIdRef.current = null;
         } else {
-          visibleSectionsRef.current.delete(id);
+          const top = targetEl.getBoundingClientRect().top;
+          const isLanded = Math.abs(top - scrollMarginPx) <= 2;
+          if (!isLanded) {
+            setActiveSection((prev) => (prev === targetId ? prev : targetId));
+            return;
+          }
+
+          programmaticTargetIdRef.current = null;
         }
       }
 
-      // Skip active section updates during programmatic scrolling to prevent jitter
-      if (isScrollingRef.current) return;
+      const sectionEls = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el instanceof HTMLElement);
 
-      // Select the first visible section in document order
-      const visibleInOrder = sectionIds.filter((id) =>
-        visibleSectionsRef.current.has(id),
-      );
-
-      if (visibleInOrder.length > 0) {
-        setActiveSection(visibleInOrder[0]);
+      // Pick the last section whose top has crossed the effective "top boundary"
+      // (below sticky nav + padding). This avoids "skipping" short sections when
+      // the previous section remains partially visible.
+      let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
+      for (const el of sectionEls) {
+        const top = el.getBoundingClientRect().top;
+        if (top - scrollMarginPx <= 1) {
+          nextActive = el.id;
+        } else {
+          break;
+        }
       }
+
+      setActiveSection((prev) => (prev === nextActive ? prev : nextActive));
     };
 
-    // Read scroll margin from CSS variables for consistency with CSS scroll-margin-top
-    const scrollMarginPx = getScrollMarginFromCSS();
+    const scheduleUpdate = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateActiveSection();
+      });
+    };
 
-    // rootMargin: negative top margin accounts for sticky headers
-    // -60% from bottom means we detect when section enters top 40% of viewport
-    const observer = new IntersectionObserver(handleIntersection, {
-      rootMargin: `-${scrollMarginPx}px 0px -60% 0px`,
-      threshold: [0, 0.1],
-    });
+    const handleResize = () => {
+      scrollMarginPx = getScrollMarginFromCSS(isMobile);
+      scheduleUpdate();
+    };
 
-    // Observe all sections
-    for (const id of sectionIds) {
-      const element = document.getElementById(id);
-      if (element) {
-        observer.observe(element);
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    // Initial computation
+    scheduleUpdate();
+
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", handleResize);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
       }
-    }
-
-    return () => observer.disconnect();
-  }, [sectionIds]);
+    };
+  }, [sectionIds, isMobile]);
 
   // Header observer - tracks if page header is visible for context injection
   useEffect(() => {
@@ -140,94 +176,26 @@ export function useSectionObserver({
     return () => observer.disconnect();
   }, [headerRef]);
 
-  // Cleanup scroll timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Smooth scroll to section - relies on CSS scroll-margin-top for offset
   const scrollToSection = useCallback(
     (id: string) => {
       const element = document.getElementById(id);
       if (!element) return;
 
-      // Clear any existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      // Lock observer updates during scroll
-      isScrollingRef.current = true;
-
       // Update active section immediately for responsive feedback
       setActiveSection(id);
-
-      const scrollTarget = document.documentElement;
-      // Capture scroll position before initiating scroll to validate scrollend source
-      const scrollTopAtStart = scrollTarget.scrollTop;
+      programmaticTargetIdRef.current = id;
+      const now =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      // Smooth scroll duration varies; we just need a short lock to prevent
+      // mid-animation flicker. Timeout is a safety valve.
+      programmaticLockUntilRef.current =
+        now + (prefersReducedMotion ? 100 : 1500);
 
       element.scrollIntoView({
         behavior: prefersReducedMotion ? "instant" : "smooth",
         block: "start",
       });
-
-      // Unlock when scroll completes
-      if (prefersReducedMotion) {
-        // Instant scroll - unlock immediately
-        scrollTimeoutRef.current = setTimeout(() => {
-          isScrollingRef.current = false;
-        }, 50);
-      } else {
-        // Track whether the document has scrolled (vs scrollend from other sources)
-        let documentScrolled = false;
-
-        const unlockScroll = () => {
-          // Check if document actually scrolled - filters scrollend events from other
-          // scroll sources (e.g., horizontal tab scroll in section-nav which scrolls
-          // its own container, not document.documentElement)
-          if (!documentScrolled) {
-            documentScrolled = scrollTarget.scrollTop !== scrollTopAtStart;
-          }
-
-          // If document scroll position unchanged and we're not at the target,
-          // this is likely a spurious scrollend from a different scroll source
-          if (!documentScrolled) {
-            // Check if already at target (clicked on current section)
-            const rect = element.getBoundingClientRect();
-            // Read expected position from CSS variables for consistency
-            const expectedTop = getScrollMarginFromCSS();
-            const isAtTarget = Math.abs(rect.top - expectedTop) < 5;
-
-            if (!isAtTarget) {
-              // Re-listen for the real scrollend
-              scrollTarget.addEventListener("scrollend", unlockScroll, {
-                once: true,
-              });
-              return;
-            }
-          }
-
-          isScrollingRef.current = false;
-          if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current);
-          }
-        };
-
-        // Listen for scrollend on the document element (main page scroll)
-        scrollTarget.addEventListener("scrollend", unlockScroll, {
-          once: true,
-        });
-
-        // Fallback timeout in case scrollend doesn't fire (older browsers)
-        scrollTimeoutRef.current = setTimeout(() => {
-          scrollTarget.removeEventListener("scrollend", unlockScroll);
-          isScrollingRef.current = false;
-        }, 1500);
-      }
     },
     [prefersReducedMotion],
   );
