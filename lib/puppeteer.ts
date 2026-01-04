@@ -128,7 +128,7 @@ export function getBrowser(
 }
 
 export async function closeBrowser(): Promise<void> {
-  if (browserPromise) {
+  if (await browserPromise) {
     try {
       const browser = await browserPromise;
       await browser.close();

@@ -42,7 +42,13 @@ export function proxy(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
-  if (isProtectedRoute && !searchParams.get("token")) {
+  // Exempt only the calendar feed route from auth check when token is present
+  const isCalendarFeedRoute =
+    (pathname === "/dashboard/feed.ics" ||
+      pathname === "/dashboard/feed.ics/") &&
+    searchParams.get("token");
+
+  if (isProtectedRoute && !isCalendarFeedRoute) {
     const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       return NextResponse.redirect(new URL("/login", request.url));

@@ -22,14 +22,14 @@ let nextConfig: NextConfig = {
   rewrites: async () => {
     return [
       {
-        source: "/dashboard/calendar.ics",
+        source: "/dashboard/feed.ics",
         has: [
           {
             type: "query",
             key: "token",
           },
         ],
-        destination: "/api/calendar/user.ics?token=:token",
+        destination: "/api/calendar/user?token=:token",
       },
       {
         source: "/_proxy/ingest/static/:path*",

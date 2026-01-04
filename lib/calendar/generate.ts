@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import ical from "ical-generator";
+import ical, { ICalCalendarMethod } from "ical-generator";
 import { BASE_URL } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
@@ -42,10 +42,11 @@ export function generateCalendarFeed(
       product: "Calendar Feed",
       language: "EN",
     },
-    // PUBLISH method is standard for subscription feeds
-    // (as opposed to REQUEST for meeting invitations)
-    // Note: ical-generator handles this automatically when not specified
   });
+
+  // PUBLISH method is standard for subscription feeds
+  // (as opposed to REQUEST for meeting invitations)
+  calendar.method(ICalCalendarMethod.PUBLISH);
 
   for (const domain of expiringDomains) {
     // Skip if no expiration date (shouldn't happen after filtering)
