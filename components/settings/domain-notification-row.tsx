@@ -1,6 +1,7 @@
 import { ChevronDown, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -18,7 +19,6 @@ import type {
   UserNotificationPreferences,
 } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { Badge } from "../ui/badge";
 
 interface DomainNotificationRowProps {
   domainName: string;

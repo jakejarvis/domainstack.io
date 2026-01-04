@@ -1,7 +1,7 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
 import { DnsSection } from "@/components/domain/dns/dns-section";
@@ -15,11 +15,14 @@ import { RegistrationSectionSkeleton } from "@/components/domain/registration/re
 import { DomainReportHeader } from "@/components/domain/report-header";
 import { SectionErrorBoundary } from "@/components/domain/report-section-error-boundary";
 import { DomainReportSkeleton } from "@/components/domain/report-skeleton";
+import { SectionNav } from "@/components/domain/section-nav";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useDomainExport } from "@/hooks/use-domain-export";
 import { useDomainHistory } from "@/hooks/use-domain-history";
+import { useSectionObserver } from "@/hooks/use-section-observer";
+import { sections } from "@/lib/constants/sections";
 import { useTRPC } from "@/lib/trpc/client";
 
 // Section content components that fetch and render data
@@ -81,6 +84,14 @@ function DomainReportClientContent({ domain }: { domain: string }) {
     trpc.domain.getRegistration.queryOptions({ domain }),
   );
 
+  // Section navigation - tracks active section and header visibility for context injection
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { activeSection, isHeaderVisible, scrollToSection } =
+    useSectionObserver({
+      sectionIds: Object.keys(sections),
+      headerRef,
+    });
+
   // Show unregistered state if confirmed unregistered
   const isConfirmedUnregistered =
     registration.isRegistered === false && registration.source !== null;
@@ -96,11 +107,22 @@ function DomainReportClientContent({ domain }: { domain: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div>
+      {/* Page header - observed for visibility to trigger context injection */}
       <DomainReportHeader
         domain={domain}
         onExport={handleExport}
         exportDisabled={!allDataLoaded}
+        ref={headerRef}
+      />
+
+      {/* Sticky section nav with context injection */}
+      <SectionNav
+        domain={domain}
+        sections={Object.values(sections)}
+        activeSection={activeSection}
+        isHeaderVisible={isHeaderVisible}
+        onSectionClick={scrollToSection}
       />
 
       <div className="space-y-4">

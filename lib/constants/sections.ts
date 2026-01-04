@@ -15,7 +15,7 @@ export type SectionAccent =
   | "pink"
   | "cyan";
 
-type SectionDef = {
+export type SectionDef = {
   title: string;
   accent: SectionAccent;
   icon: React.ElementType;

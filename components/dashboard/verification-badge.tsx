@@ -1,7 +1,7 @@
 import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
-import { useEffect, useState } from "react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import {
   VERIFICATION_GRACE_PERIOD_DAYS,
   VERIFICATION_METHOD_LABELS,
@@ -29,11 +29,8 @@ export function VerificationBadge({
   onClick,
   className,
 }: VerificationBadgeProps) {
-  // Capture current time only on client after mount (not during SSR)
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-  }, []);
+  // Use shared hydrated timestamp to avoid per-component state updates
+  const now = useHydratedNow();
 
   // Failing state: verified but verification is failing
   if (verified && verificationStatus === "failing") {
