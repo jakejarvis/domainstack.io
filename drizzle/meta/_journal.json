@@ -85,6 +85,13 @@
       "when": 1767230261433,
       "tag": "0011_cynical_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767485180053,
+      "tag": "0012_handy_jazinda",
+      "breakpoints": true
     }
   ]
 }
