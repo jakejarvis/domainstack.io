@@ -13,7 +13,7 @@ const logger = createLogger({ source: "calendar-feed" });
 /**
  * GET /api/calendar/user.ics?token=...
  *
- * Returns an iCalendar feed of domain expiration dates.
+ * Returns an ICS feed of domain expiration dates.
  * Authentication is via token query parameter (capability URL pattern).
  */
 export async function GET(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     logger.warn({ reason: validation.reason }, "invalid calendar feed token");
 
     // Use same error message for both cases to prevent enumeration
-    return new Response("Invalid or disabled feed", {
+    return new Response("Invalid or disabled calendar", {
       status: 401,
       headers: { "Content-Type": "text/plain" },
     });

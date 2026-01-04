@@ -33,7 +33,7 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
  * Build the full calendar feed URL from a token.
  */
 function buildCalendarFeedUrl(token: string): string {
-  return `${BASE_URL}/api/calendar/user.ics?token=${token}`;
+  return `${BASE_URL}/dashboard/calendar.ics?token=${token}`;
 }
 
 export const userRouter = createTRPCRouter({

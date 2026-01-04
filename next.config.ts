@@ -22,6 +22,16 @@ let nextConfig: NextConfig = {
   rewrites: async () => {
     return [
       {
+        source: "/dashboard/calendar.ics",
+        has: [
+          {
+            type: "query",
+            key: "token",
+          },
+        ],
+        destination: "/api/calendar/user.ics?token=:token",
+      },
+      {
         source: "/_proxy/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
