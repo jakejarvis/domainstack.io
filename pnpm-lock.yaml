@@ -214,8 +214,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(@base-ui/react@1.0.0(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       ws:
-        specifier: ^8.18.3
-        version: 8.18.3(bufferutil@4.1.0)
+        specifier: ^8.19.0
+        version: 8.19.0(bufferutil@4.1.0)
       zod:
         specifier: ^4.3.5
         version: 4.3.5
@@ -6265,6 +6265,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
     engines: {node: '>=18'}
@@ -9183,7 +9195,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.0.3
       vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@25.0.3)(@vitest/browser-playwright@4.0.16)(@vitest/ui@4.0.16)(jiti@2.6.1)(jsdom@27.3.0(bufferutil@4.1.0))(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.3)(typescript@5.9.3))(terser@5.44.1)(tsx@4.21.0)
-      ws: 8.18.3(bufferutil@4.1.0)
+      ws: 8.19.0(bufferutil@4.1.0)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -10623,7 +10635,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 15.1.0
-      ws: 8.18.3(bufferutil@4.1.0)
+      ws: 8.19.0(bufferutil@4.1.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -11285,7 +11297,7 @@ snapshots:
       devtools-protocol: 0.0.1534754
       typed-query-selector: 2.12.0
       webdriver-bidi-protocol: 0.3.9
-      ws: 8.18.3(bufferutil@4.1.0)
+      ws: 8.19.0(bufferutil@4.1.0)
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -12243,6 +12255,10 @@ snapshots:
   wrappy@1.0.2: {}
 
   ws@8.18.3(bufferutil@4.1.0):
+    optionalDependencies:
+      bufferutil: 4.1.0
+
+  ws@8.19.0(bufferutil@4.1.0):
     optionalDependencies:
       bufferutil: 4.1.0
 
