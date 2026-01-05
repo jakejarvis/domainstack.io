@@ -94,7 +94,7 @@
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
     "vaul-base": "^1.0.0",
-    "ws": "^8.18.3",
+    "ws": "^8.19.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {
