@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   HEADER_HEIGHT,
   SCROLL_PADDING,
@@ -58,7 +57,7 @@ interface UseSectionObserverReturn {
  * @param options.sectionIds - Array of section element IDs to observe
  * @param options.headerRef - Ref to the page header element for visibility detection
  */
-export function useSectionObserver({
+export function useReportSectionObserver({
   sectionIds,
   headerRef,
 }: UseSectionObserverOptions): UseSectionObserverReturn {
@@ -67,9 +66,6 @@ export function useSectionObserver({
 
   // Check if the device is mobile
   const isMobile = useIsMobile();
-
-  // Check for reduced motion preference
-  const prefersReducedMotion = useReducedMotion();
 
   // When navigating via tab click, keep the clicked tab active until the scroll
   // has effectively landed. This prevents the scrollspy from briefly selecting
@@ -177,28 +173,24 @@ export function useSectionObserver({
   }, [headerRef]);
 
   // Smooth scroll to section - relies on CSS scroll-margin-top for offset
-  const scrollToSection = useCallback(
-    (id: string) => {
-      const element = document.getElementById(id);
-      if (!element) return;
+  const scrollToSection = useCallback((id: string) => {
+    const element = document.getElementById(id);
+    if (!element) return;
 
-      // Update active section immediately for responsive feedback
-      setActiveSection(id);
-      programmaticTargetIdRef.current = id;
-      const now =
-        typeof performance !== "undefined" ? performance.now() : Date.now();
-      // Smooth scroll duration varies; we just need a short lock to prevent
-      // mid-animation flicker. Timeout is a safety valve.
-      programmaticLockUntilRef.current =
-        now + (prefersReducedMotion ? 100 : 1500);
+    // Update active section immediately for responsive feedback
+    setActiveSection(id);
+    programmaticTargetIdRef.current = id;
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    // Smooth scroll duration varies; we just need a short lock to prevent
+    // mid-animation flicker. Timeout is a safety valve.
+    programmaticLockUntilRef.current = now + 1500;
 
-      element.scrollIntoView({
-        behavior: prefersReducedMotion ? "instant" : "smooth",
-        block: "start",
-      });
-    },
-    [prefersReducedMotion],
-  );
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
 
   return {
     activeSection,

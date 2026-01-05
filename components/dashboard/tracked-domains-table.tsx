@@ -45,10 +45,10 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
-import { useTablePagination } from "@/hooks/use-table-pagination";
 import { useTruncation } from "@/hooks/use-truncation";
 import type {
   ProviderInfo,
@@ -113,8 +113,6 @@ type TrackedDomainsTableProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
-  isPro: boolean;
-  proMaxDomains: number;
   onTableReady?: (
     table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
   ) => void;
@@ -222,15 +220,13 @@ export function TrackedDomainsTable({
   onVerify,
   onRemove,
   onArchive,
-  isPro,
-  proMaxDomains,
   onTableReady,
 }: TrackedDomainsTableProps) {
   "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
   // See: https://github.com/TanStack/table/issues/5567
 
   const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
-    useTablePagination();
+    useDashboardPagination();
   const { sorting, setSorting } = useTableSortPreference({
     onSortChange: resetPage,
   });
@@ -663,7 +659,7 @@ export function TrackedDomainsTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
-      <ScrollArea orientation="horizontal" gradient className="w-full">
+      <ScrollArea showFade className="w-full">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
             {table.getVisibleLeafColumns().map((column) => (
@@ -952,7 +948,7 @@ export function TrackedDomainsTable({
       )}
 
       {/* Upgrade CTA banner for free tier users */}
-      {!isPro && <UpgradeBanner proMaxDomains={proMaxDomains} />}
+      {<UpgradeBanner />}
     </div>
   );
 }

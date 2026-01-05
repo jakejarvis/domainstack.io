@@ -8,22 +8,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import type { SubscriptionData } from "@/hooks/use-subscription";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
+import { useSubscription } from "@/hooks/use-subscription";
 
-type UpgradePromptProps = {
-  subscription: SubscriptionData;
-};
-
-export function UpgradePrompt({ subscription }: UpgradePromptProps) {
+export function UpgradePrompt() {
   const [isVisible, setIsVisible] = useState(true);
-  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
+  const {
+    subscription,
+    isPro,
+    isSubscriptionLoading,
+    handleCheckout,
+    isCheckoutLoading,
+  } = useSubscription();
 
-  const { activeCount, maxDomains } = subscription;
+  if (!subscription || isSubscriptionLoading || isPro) {
+    return null;
+  }
 
   // Show prompt when at 80% capacity or at limit
-  const nearLimit = activeCount >= maxDomains * 0.8;
-  const atLimit = activeCount >= maxDomains;
+  const nearLimit = subscription.activeCount >= subscription.planQuota * 0.8;
+  const atLimit = subscription.activeCount >= subscription.planQuota;
 
   if (!nearLimit || !isVisible) return null;
 
@@ -63,15 +66,15 @@ export function UpgradePrompt({ subscription }: UpgradePromptProps) {
               </CardTitle>
               <CardDescription>
                 {atLimit
-                  ? `You've reached your limit of ${maxDomains} tracked domains.`
-                  : `You're using ${activeCount} of ${maxDomains} domain slots.`}{" "}
+                  ? `You've reached your limit of ${subscription?.planQuota} tracked domains.`
+                  : `You're using ${subscription?.activeCount} of ${subscription?.planQuota} domain slots.`}{" "}
                 Upgrade to Pro for more capacity.
               </CardDescription>
             </div>
           </div>
         </div>
         <Button
-          onClick={handleUpgrade}
+          onClick={handleCheckout}
           disabled={isCheckoutLoading}
           className="w-full shrink-0 md:mr-2 md:w-auto"
         >

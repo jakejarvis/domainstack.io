@@ -1,15 +1,18 @@
 import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
+import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
-type UpgradeBannerProps = {
-  proMaxDomains: number;
-};
+export function UpgradeBanner() {
+  const { isPro, isSubscriptionLoading, handleCheckout, isCheckoutLoading } =
+    useSubscription();
 
-export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
-  const { handleUpgrade, isLoading } = useUpgradeCheckout();
+  // Don't show if already a Pro user or still loading
+  if (isSubscriptionLoading || isPro) {
+    return null;
+  }
 
   return (
     <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.02] dark:via-transparent dark:to-white/[0.03]">
@@ -33,7 +36,7 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
             <h3 className="font-semibold leading-snug">Upgrade to Pro</h3>
             <span className="text-[13px] text-muted-foreground">
               Track <span className="hidden sm:inline">up to </span>
-              {proMaxDomains} domains
+              {PLAN_QUOTAS.pro} domains
               <span className="mx-1">•</span>
               <span className="font-medium text-accent-gold">
                 {PRO_TIER_INFO.monthly.label}
@@ -49,11 +52,11 @@ export function UpgradeBanner({ proMaxDomains }: UpgradeBannerProps) {
         {/* Right side - CTA */}
         <Button
           size="lg"
-          onClick={handleUpgrade}
-          disabled={isLoading}
+          onClick={handleCheckout}
+          disabled={isCheckoutLoading}
           className="w-full shrink-0 md:w-auto"
         >
-          {isLoading ? (
+          {isCheckoutLoading ? (
             <>
               <Spinner />
               Loading...

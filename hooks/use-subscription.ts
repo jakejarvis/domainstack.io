@@ -1,26 +1,13 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
-import type { UserTier } from "@/lib/schemas";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import { analytics } from "@/lib/analytics/client";
+import { checkoutEmbed, customer } from "@/lib/auth-client";
+import { PRO_TIER_INFO } from "@/lib/polar/products";
+import type { Subscription } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
-
-export type SubscriptionData = {
-  /** User's current tier */
-  tier: UserTier;
-  /** Maximum domains user can track */
-  maxDomains: number;
-  /** Number of active domains */
-  activeCount: number;
-  /** Number of archived domains */
-  archivedCount: number;
-  /** Can user add more domains */
-  canAddMore: boolean;
-  /** When canceled subscription ends (null if no pending cancellation) */
-  subscriptionEndsAt: Date | null;
-  /** Pro tier max domains for upgrade prompts */
-  proMaxDomains: number;
-};
 
 export type UseSubscriptionOptions = {
   /** Whether to enable the query (defaults to true) */
@@ -29,17 +16,25 @@ export type UseSubscriptionOptions = {
 
 export type UseSubscriptionResult = {
   /** Subscription data (undefined while loading) */
-  subscription: SubscriptionData | undefined;
+  subscription: Subscription | undefined;
   /** True if user has Pro subscription */
   isPro: boolean;
   /** True if actively loading */
-  isLoading: boolean;
+  isSubscriptionLoading: boolean;
   /** True if error occurred */
-  isError: boolean;
+  isSubscriptionError: boolean;
   /** Refetch subscription data */
-  refetch: () => void;
+  refetchSubscription: () => void;
   /** Invalidate subscription query cache */
-  invalidate: () => void;
+  invalidateSubscription: () => void;
+  /** Handle checkout */
+  handleCheckout: () => void;
+  /** True if checkout is loading */
+  isCheckoutLoading: boolean;
+  /** Handle customer portal */
+  handleCustomerPortal: () => void;
+  /** True if customer portal is loading */
+  isCustomerPortalLoading: boolean;
 };
 
 /**
@@ -101,6 +96,8 @@ export function useSubscription(
   const { enabled = true } = options;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const [isCheckoutLoading, setCheckoutLoading] = useState(false);
+  const [isCustomerPortalLoading, setCustomerPortalLoading] = useState(false);
 
   const query = useQuery({
     ...trpc.user.getSubscription.queryOptions(),
@@ -113,24 +110,57 @@ export function useSubscription(
     });
   }, [queryClient, trpc]);
 
-  const subscription: SubscriptionData | undefined = query.data
-    ? {
-        tier: query.data.tier,
-        maxDomains: query.data.maxDomains,
-        activeCount: query.data.activeCount,
-        archivedCount: query.data.archivedCount,
-        canAddMore: query.data.canAddMore,
-        subscriptionEndsAt: query.data.subscriptionEndsAt,
-        proMaxDomains: query.data.proMaxDomains,
-      }
-    : undefined;
+  const handleCheckout = async () => {
+    if (isCheckoutLoading) return;
+    setCheckoutLoading(true);
+    analytics.track("upgrade_clicked");
+
+    try {
+      await checkoutEmbed({
+        products: [
+          PRO_TIER_INFO.monthly.productId,
+          PRO_TIER_INFO.yearly.productId,
+        ],
+      });
+    } catch (err) {
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { action: "upgrade_checkout" },
+      );
+      toast.error("Failed to open checkout. Please try again.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleCustomerPortal = async () => {
+    if (isCustomerPortalLoading) return;
+    setCustomerPortalLoading(true);
+    analytics.track("customer_portal_opened");
+
+    try {
+      await customer.portal();
+    } catch (err) {
+      analytics.trackException(
+        err instanceof Error ? err : new Error(String(err)),
+        { action: "open_customer_portal" },
+      );
+      toast.error("Failed to open customer portal. Please try again.");
+    } finally {
+      setCustomerPortalLoading(false);
+    }
+  };
 
   return {
-    subscription,
-    isPro: subscription?.tier === "pro",
-    isLoading: query.isLoading,
-    isError: query.isError,
-    refetch: query.refetch,
-    invalidate,
+    subscription: query.data,
+    isPro: query.data?.plan === "pro",
+    isSubscriptionLoading: query.isLoading,
+    isSubscriptionError: query.isError,
+    refetchSubscription: query.refetch,
+    invalidateSubscription: invalidate,
+    handleCheckout,
+    isCheckoutLoading,
+    handleCustomerPortal,
+    isCustomerPortalLoading,
   };
 }

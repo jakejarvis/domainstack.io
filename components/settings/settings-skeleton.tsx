@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function SubscriptionSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <CardHeader className="px-0 pt-0 pb-2">
+      <CardHeader className="mb-2 px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-28" />
         <Skeleton className="mt-1 h-4 w-64" />
       </CardHeader>
@@ -84,7 +84,7 @@ export function NotificationRowSkeleton({ className }: { className?: string }) {
 export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <CardHeader className="px-0 pt-0 pb-2">
+      <CardHeader className="mb-2 px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-40" />
         <div className="mt-1 flex items-center gap-1.5">
           <Skeleton className="h-4 w-32" />
@@ -140,7 +140,7 @@ export function LinkedAccountRowSkeleton({
 export function LinkedAccountsSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <CardHeader className="px-0 pt-0 pb-2">
+      <CardHeader className="mb-2 px-0 pt-0 pb-2">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="mt-1 h-4 w-72" />
       </CardHeader>
@@ -231,7 +231,7 @@ export function SettingsSkeletonPanels({ className }: { className?: string }) {
 export function CalendarFeedSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <CardHeader className="px-0 pt-0 pb-2">
+      <CardHeader className="mb-2 px-0 pt-0 pb-2">
         <div className="flex items-center gap-2">
           <Skeleton className="size-5 rounded" />
           <Skeleton className="h-6 w-28" />

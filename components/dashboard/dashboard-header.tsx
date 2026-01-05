@@ -15,31 +15,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
-import type { UserTier } from "@/lib/schemas";
+import type { Subscription } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type DashboardHeaderProps = {
   userName: string;
-  trackedCount: number;
-  maxDomains: number;
+  subscription?: Subscription;
   viewMode: ViewMode;
-  tier: UserTier;
-  /** When a canceled subscription ends (null = active subscription) */
-  subscriptionEndsAt?: Date | null;
   onViewModeChange: (mode: ViewMode) => void;
-  /** Whether the dashboard has any domains (active or archived) */
-  hasAnyDomains?: boolean;
 };
 
 export function DashboardHeader({
   userName,
-  trackedCount,
-  maxDomains,
+  subscription,
   viewMode,
-  tier,
-  subscriptionEndsAt,
   onViewModeChange,
-  hasAnyDomains = false,
 }: DashboardHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -48,8 +38,8 @@ export function DashboardHeader({
           Welcome back
           {userName ? `, ${userName.split(" ")[0]}` : ""}!
         </h1>
-        {tier === "pro" ? (
-          subscriptionEndsAt ? (
+        {subscription?.plan === "pro" ? (
+          subscription?.endsAt ? (
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 nativeButton={false}
@@ -61,7 +51,7 @@ export function DashboardHeader({
                 }
               />
               <ResponsiveTooltipContent>
-                Access until {format(subscriptionEndsAt, "MMM d, yyyy")}
+                Access until {format(subscription.endsAt, "MMM d, yyyy")}
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
           ) : (
@@ -80,19 +70,19 @@ export function DashboardHeader({
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
           <UsageMeter
-            activeCount={trackedCount}
-            maxDomains={maxDomains}
+            activeCount={subscription?.activeCount}
+            planQuota={subscription?.planQuota}
             className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
           />
           <span className="text-[13px] text-muted-foreground tabular-nums">
-            {trackedCount}/{maxDomains}
+            {subscription?.activeCount}/{subscription?.planQuota}
           </span>
         </div>
 
         {/* View toggle and Add Domain - always right aligned */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* View toggle - only show when there are domains */}
-          {hasAnyDomains && (
+          {subscription?.activeCount && subscription.activeCount > 0 ? (
             <ToggleGroup
               multiple={false}
               value={[viewMode]}
@@ -106,10 +96,7 @@ export function DashboardHeader({
                 aria-hidden
                 className={cn(
                   "pointer-events-none absolute inset-y-0 left-0 z-0 w-10 bg-primary",
-                  "transition-[translate] duration-200 ease-out motion-reduce:transition-none",
-                  viewMode === "grid"
-                    ? "translate-x-0 rounded-l-md"
-                    : "translate-x-10 rounded-r-md",
+                  viewMode === "grid" ? "translate-x-0" : "translate-x-10",
                 )}
               />
               <Tooltip>
@@ -153,9 +140,19 @@ export function DashboardHeader({
                 <TooltipContent>Table view</TooltipContent>
               </Tooltip>
             </ToggleGroup>
-          )}
+          ) : null}
 
-          {trackedCount >= maxDomains ? (
+          {subscription?.canAddMore ? (
+            <Button
+              nativeButton={false}
+              render={
+                <Link href="/dashboard/add-domain" scroll={false}>
+                  <Plus />
+                  Add Domain
+                </Link>
+              }
+            />
+          ) : (
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 render={
@@ -168,21 +165,11 @@ export function DashboardHeader({
                 }
               />
               <ResponsiveTooltipContent>
-                {tier === "free"
+                {subscription?.plan === "free"
                   ? "Upgrade to add more domains"
                   : "Domain limit reached"}
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
-          ) : (
-            <Button
-              nativeButton={false}
-              render={
-                <Link href="/dashboard/add-domain" scroll={false}>
-                  <Plus />
-                  Add Domain
-                </Link>
-              }
-            />
           )}
         </div>
       </div>

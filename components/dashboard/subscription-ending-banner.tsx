@@ -1,40 +1,40 @@
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
-import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import type { SubscriptionData } from "@/hooks/use-subscription";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
+import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
-type SubscriptionEndingBannerProps = {
-  subscription: SubscriptionData;
-};
-
-export function SubscriptionEndingBanner({
-  subscription,
-}: SubscriptionEndingBannerProps) {
-  const { handleUpgrade: handleResubscribe, isLoading } = useUpgradeCheckout();
-  const { openPortal: handleManage, isLoading: isManageLoading } =
-    useCustomerPortal();
+export function SubscriptionEndingBanner() {
+  const {
+    handleCheckout,
+    isCheckoutLoading,
+    handleCustomerPortal,
+    isCustomerPortalLoading,
+  } = useSubscription();
   const now = useHydratedNow();
+  const { subscription, isPro, isSubscriptionLoading } = useSubscription();
 
   // Don't show if subscription unavailable, or no end date
-  if (!subscription || !subscription.subscriptionEndsAt) {
+  if (
+    isSubscriptionLoading ||
+    !isPro ||
+    !subscription ||
+    !subscription.endsAt
+  ) {
     return null;
   }
 
   // During SSR, don't show the banner (will render after hydration)
   if (!now) return null;
 
-  const { subscriptionEndsAt } = subscription;
-
   // Don't show if already expired (they would have been downgraded)
-  const isExpired = subscriptionEndsAt < now;
+  const isExpired = subscription.endsAt < now;
   if (isExpired) return null;
 
-  const daysRemaining = differenceInDays(subscriptionEndsAt, now);
-  const formattedDate = format(subscriptionEndsAt, "MMMM d, yyyy");
-  const relativeTime = formatDistanceToNow(subscriptionEndsAt, {
+  const daysRemaining = differenceInDays(subscription.endsAt, now);
+  const formattedDate = format(subscription.endsAt, "MMMM d, yyyy");
+  const relativeTime = formatDistanceToNow(subscription.endsAt, {
     addSuffix: true,
   });
 
@@ -54,18 +54,19 @@ export function SubscriptionEndingBanner({
         <>
           Your access continues until{" "}
           <span className="font-medium">{formattedDate}</span>. After that,
-          domains beyond the free tier limit will be archived.
+          domains beyond the free quota of {PLAN_QUOTAS.free} domains will be
+          archived.
         </>
       }
       action={{
         label: "Resubscribe",
-        onClick: handleResubscribe,
-        loading: isLoading,
+        onClick: handleCheckout,
+        loading: isCheckoutLoading,
       }}
       secondaryAction={{
         label: "Manage",
-        onClick: handleManage,
-        loading: isManageLoading,
+        onClick: handleCustomerPortal,
+        loading: isCustomerPortalLoading,
       }}
     />
   );

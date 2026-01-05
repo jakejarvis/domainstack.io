@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { analytics } from "@/lib/analytics/server";
-import { BASE_URL } from "@/lib/constants";
+import { BASE_URL } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
 import {
   deleteCalendarFeed,
@@ -22,7 +22,6 @@ import {
 } from "@/lib/db/repos/user-notification-preferences";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { accounts, userTrackedDomains } from "@/lib/db/schema";
-import { getMaxDomainsForTier } from "@/lib/edge-config";
 import {
   NotificationOverridesSchema,
   UpdateNotificationPreferencesSchema,
@@ -62,23 +61,20 @@ export const userRouter = createTRPCRouter({
    */
   getSubscription: protectedProcedure.query(async ({ ctx }) => {
     // Run all independent queries in parallel for better performance
-    const [sub, counts, proMaxDomains] = await Promise.all([
+    const [subscription, counts] = await Promise.all([
       getUserSubscription(ctx.user.id),
       countTrackedDomainsByStatus(ctx.user.id),
-      getMaxDomainsForTier("pro"),
     ]);
 
     return {
-      tier: sub.tier,
-      maxDomains: sub.maxDomains,
+      plan: subscription.plan,
+      planQuota: subscription.planQuota,
+      // When a canceled subscription expires (null = no pending cancellation)
+      endsAt: subscription.endsAt,
       activeCount: counts.active,
       archivedCount: counts.archived,
       // Only active domains count against limit
-      canAddMore: counts.active < sub.maxDomains,
-      // When a canceled subscription expires (null = no pending cancellation)
-      subscriptionEndsAt: sub.endsAt,
-      // Pro tier limit for upgrade prompts
-      proMaxDomains,
+      canAddMore: counts.active < subscription.planQuota,
     };
   }),
 

@@ -3,7 +3,6 @@ import {
   getProduct,
   getProductsForCheckout,
   getProductsForTier,
-  getProTierInfo,
   getTierForProductId,
   POLAR_PRODUCTS,
   PRO_TIER_INFO,
@@ -96,26 +95,5 @@ describe("PRO_TIER_INFO", () => {
   it("references monthly and yearly products", () => {
     expect(PRO_TIER_INFO.monthly).toBe(POLAR_PRODUCTS["pro-monthly"]);
     expect(PRO_TIER_INFO.yearly).toBe(POLAR_PRODUCTS["pro-yearly"]);
-  });
-});
-
-describe("getProTierInfo", () => {
-  it("returns tier info with dynamic domain limit", () => {
-    const tierInfo = getProTierInfo(50);
-    expect(tierInfo.name).toBe("Pro");
-    expect(tierInfo.description).toContain("50");
-  });
-
-  it("has features array with domain limit", () => {
-    const tierInfo = getProTierInfo(100);
-    expect(tierInfo.features).toBeInstanceOf(Array);
-    expect(tierInfo.features.length).toBeGreaterThan(0);
-    expect(tierInfo.features[0]).toContain("100");
-  });
-
-  it("includes monthly and yearly product info", () => {
-    const tierInfo = getProTierInfo(50);
-    expect(tierInfo.monthly).toBe(POLAR_PRODUCTS["pro-monthly"]);
-    expect(tierInfo.yearly).toBe(POLAR_PRODUCTS["pro-yearly"]);
   });
 });

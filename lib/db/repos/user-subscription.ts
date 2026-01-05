@@ -1,21 +1,17 @@
 import "server-only";
 
 import { and, eq, gt, isNotNull } from "drizzle-orm";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { db } from "@/lib/db/client";
 import { userSubscriptions, users } from "@/lib/db/schema";
-import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
-import type { UserTier } from "@/lib/schemas";
+import type { Subscription } from "@/lib/schemas";
 
 const logger = createLogger({ source: "user-subscription" });
 
 export type UserSubscriptionData = {
   userId: string;
-  tier: UserTier;
-  maxDomains: number;
-  /** When a canceled subscription ends. Null = no pending cancellation. */
-  endsAt: Date | null;
-};
+} & Pick<Subscription, "plan" | "planQuota" | "endsAt">;
 
 /**
  * Get user's subscription data.
@@ -39,12 +35,12 @@ export async function getUserSubscription(
     throw new Error(`Subscription not found for user: ${userId}`);
   }
 
-  const maxDomains = await getMaxDomainsForTier(record.tier);
+  const planQuota = PLAN_QUOTAS[record.tier];
 
   return {
     userId,
-    tier: record.tier,
-    maxDomains,
+    plan: record.tier,
+    planQuota,
     endsAt: record.endsAt,
   };
 }
@@ -58,7 +54,7 @@ export async function getUserSubscription(
  */
 export async function updateUserTier(
   userId: string,
-  tier: UserTier,
+  tier: Subscription["plan"],
 ): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
@@ -84,8 +80,8 @@ export async function canUserAddDomain(
   userId: string,
   currentCount: number,
 ): Promise<boolean> {
-  const sub = await getUserSubscription(userId);
-  return currentCount < sub.maxDomains;
+  const subscription = await getUserSubscription(userId);
+  return currentCount < subscription.planQuota;
 }
 
 /**

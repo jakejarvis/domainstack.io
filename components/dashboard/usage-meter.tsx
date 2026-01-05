@@ -3,20 +3,24 @@ import { cn } from "@/lib/utils";
 
 interface UsageMeterProps
   extends Omit<React.ComponentProps<typeof Meter>, "value"> {
-  activeCount: number;
-  maxDomains: number;
+  activeCount?: number;
+  planQuota?: number;
 }
 
 export function UsageMeter({
   activeCount,
-  maxDomains,
+  planQuota,
   className,
   ...props
 }: UsageMeterProps) {
+  if (!activeCount || !planQuota) {
+    return null;
+  }
+
   const percentage =
-    maxDomains > 0 ? Math.min((activeCount / maxDomains) * 100, 100) : 0;
-  const isAtLimit = activeCount >= maxDomains;
-  const isNearLimit = !isAtLimit && activeCount >= maxDomains * 0.8;
+    planQuota > 0 ? Math.min((activeCount / planQuota) * 100, 100) : 0;
+  const isAtLimit = activeCount >= planQuota;
+  const isNearLimit = !isAtLimit && activeCount >= planQuota * 0.8;
 
   return (
     <Meter

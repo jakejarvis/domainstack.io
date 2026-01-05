@@ -165,9 +165,9 @@ const withProTier = t.middleware(async (opts) => {
 
   // Type assertion needed because middleware chaining doesn't preserve extended context types
   const ctx = opts.ctx as typeof opts.ctx & { user: { id: string } };
-  const sub = await getUserSubscription(ctx.user.id);
+  const subscription = await getUserSubscription(ctx.user.id);
 
-  if (sub.tier !== "pro") {
+  if (subscription.plan !== "pro") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "This feature requires a Pro subscription",
@@ -177,7 +177,7 @@ const withProTier = t.middleware(async (opts) => {
   return opts.next({
     ctx: {
       ...ctx,
-      subscription: sub,
+      subscription,
     },
   });
 });

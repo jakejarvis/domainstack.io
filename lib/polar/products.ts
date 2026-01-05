@@ -1,4 +1,4 @@
-import type { UserTier } from "@/lib/schemas";
+import type { SubscriptionPlan } from "@/lib/schemas";
 
 /**
  * Get Polar product IDs from environment variables with validation.
@@ -36,7 +36,7 @@ export const POLAR_PRODUCTS = {
       return getProductIds().monthlyId;
     },
     slug: "pro-monthly",
-    tier: "pro" as UserTier,
+    tier: "pro" as SubscriptionPlan,
     name: "Pro Monthly",
     interval: "month" as const,
     amount: 200, // $2/month
@@ -47,7 +47,7 @@ export const POLAR_PRODUCTS = {
       return getProductIds().yearlyId;
     },
     slug: "pro-yearly",
-    tier: "pro" as UserTier,
+    tier: "pro" as SubscriptionPlan,
     name: "Pro Yearly",
     interval: "year" as const,
     amount: 2000, // $20/year
@@ -78,7 +78,7 @@ export function getProductsForCheckout() {
 /**
  * Get all products for a specific tier.
  */
-export function getProductsForTier(tier: UserTier) {
+export function getProductsForTier(tier: SubscriptionPlan) {
   return Object.values(POLAR_PRODUCTS).filter((p) => p.tier === tier);
 }
 
@@ -86,7 +86,9 @@ export function getProductsForTier(tier: UserTier) {
  * Find the tier associated with a Polar product ID.
  * Used by webhooks to determine which tier to assign.
  */
-export function getTierForProductId(productId: string): UserTier | null {
+export function getTierForProductId(
+  productId: string,
+): SubscriptionPlan | null {
   const product = Object.values(POLAR_PRODUCTS).find(
     (p) => p.productId === productId,
   );
@@ -102,19 +104,3 @@ export const PRO_TIER_INFO = {
   monthly: POLAR_PRODUCTS["pro-monthly"],
   yearly: POLAR_PRODUCTS["pro-yearly"],
 } as const;
-
-/**
- * Get Pro tier info with dynamic domain limit.
- * Pass the proMaxDomains value from the getSubscription query.
- */
-export function getProTierInfo(proMaxDomains: number) {
-  return {
-    ...PRO_TIER_INFO,
-    description: `Track up to ${proMaxDomains} domains with advanced monitoring`,
-    features: [
-      `Track up to ${proMaxDomains} domains`,
-      "Priority email notifications",
-      "Support development",
-    ],
-  };
-}

@@ -6,7 +6,6 @@ import ProWelcomeEmail from "@/emails/pro-welcome";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import SubscriptionExpiredEmail from "@/emails/subscription-expired";
 import { getUserById } from "@/lib/db/repos/users";
-import { getTierLimits } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
 
@@ -66,7 +65,6 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
 
   try {
     const firstName = getFirstName(user.name);
-    const tierLimits = await getTierLimits();
 
     const { error } = await sendPrettyEmail(
       {
@@ -74,7 +72,6 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
         subject: "🎉 Welcome to Domainstack Pro!",
         react: ProUpgradeSuccessEmail({
           userName: firstName,
-          proMaxDomains: tierLimits.pro,
         }),
       },
       {
@@ -89,7 +86,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
 
     // Also send the welcome/tips email (best-effort, non-critical)
     try {
-      await sendProWelcomeEmail(userId, user.name, user.email, tierLimits.pro);
+      await sendProWelcomeEmail(userId, user.name, user.email);
     } catch (err) {
       logger.error({ err, userId });
     }
@@ -110,7 +107,6 @@ async function sendProWelcomeEmail(
   userId: string,
   userName: string,
   userEmail: string,
-  proMaxDomains: number,
 ): Promise<boolean> {
   const idempotencyKey = generateWelcomeIdempotencyKey(userId);
 
@@ -123,7 +119,6 @@ async function sendProWelcomeEmail(
         subject: "Getting the most out of Domainstack Pro",
         react: ProWelcomeEmail({
           userName: firstName,
-          proMaxDomains,
         }),
       },
       {
@@ -238,7 +233,6 @@ export async function sendSubscriptionExpiredEmail(
 
   try {
     const firstName = getFirstName(user.name);
-    const tierLimits = await getTierLimits();
 
     const { error } = await sendPrettyEmail(
       {
@@ -247,8 +241,6 @@ export async function sendSubscriptionExpiredEmail(
         react: SubscriptionExpiredEmail({
           userName: firstName,
           archivedCount,
-          freeMaxDomains: tierLimits.free,
-          proMaxDomains: tierLimits.pro,
         }),
       },
       {

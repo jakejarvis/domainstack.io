@@ -4,11 +4,11 @@ import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { EXPIRING_SOON_DAYS } from "@/lib/constants";
 import type {
   HealthFilter,
   StatusFilter,
 } from "@/lib/constants/domain-filters";
+import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import type { ProviderCategory } from "@/lib/schemas";
 

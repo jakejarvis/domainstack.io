@@ -11,8 +11,6 @@ type TrackedDomainsGridProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
-  isPro: boolean;
-  proMaxDomains: number;
 };
 
 // Stable empty Set to avoid creating new instance on every render
@@ -72,8 +70,6 @@ export function TrackedDomainsGrid({
   onVerify,
   onRemove,
   onArchive,
-  isPro,
-  proMaxDomains,
 }: TrackedDomainsGridProps) {
   // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
   const isFirstMountRef = useRef(true);
@@ -123,15 +119,13 @@ export function TrackedDomainsGrid({
         ))}
 
         {/* Free-tier CTA: treated as just another (last) grid item */}
-        {!isPro && (
-          <motion.div
-            key="upgrade-cta"
-            className="h-full"
-            {...getItemMotionProps(domains.length)}
-          >
-            <UpgradeCard proMaxDomains={proMaxDomains} />
-          </motion.div>
-        )}
+        <motion.div
+          key="upgrade-cta"
+          className="h-full"
+          {...getItemMotionProps(domains.length)}
+        >
+          <UpgradeCard />
+        </motion.div>
       </AnimatePresence>
     </div>
   );

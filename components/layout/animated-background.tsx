@@ -9,7 +9,7 @@ import {
 } from "motion/react";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
-import { StaticBackground } from "./static-background";
+import { StaticBackground } from "@/components/layout/static-background";
 
 /**
  * Animated gradient background with organic, drifting motion.

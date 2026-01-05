@@ -10,11 +10,11 @@
 - `components/dashboard/` Dashboard components (domain cards, tables, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, domain filters, health summary, verification badges, provider tooltips).
 - `components/settings/` Settings page components (subscription section, notification settings, linked accounts, calendar feed, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
-- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useCustomerPortal`, `useDashboardFilters`, `useDashboardPreferences`, `useDashboardSort`, `useDomainExport`, `useDomainHistory`, `useDomainMutations`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useRouter`, `useSelection`, `useSubscription`, `useTablePagination`, `useTheme`, `useTrackedDomains`, `useTruncation`, `useUpgradeCheckout`.
+- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useDashboardFilters`, `useDashboardPagination`, `useDashboardPreferences`, `useDashboardSelection`, `useDashboardSort`, `useDomainHistory`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useReportExport`, `useReportSectionObserver`, `useRouter`, `useSubscription`, `useTheme`, `useTrackedDomains`, `useTruncation`.
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
-- `lib/constants/` modular constants organized by domain (app, auth-errors, decay, domain-filters, domain-validation, email, gdpr, headers, notifications, oauth-providers, pricing-providers, sections, tier-limits, ttl, verification).
+- `lib/constants/` modular constants organized by domain (app, auth-errors, decay, domain-filters, domain-validation, email, gdpr, headers, notifications, oauth-providers, plan-quotas, pricing-providers, sections, ttl, verification).
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
@@ -53,7 +53,7 @@
 - TypeScript only, `strict` enabled; prefer small, pure modules (≈≤300 LOC).
 - 2-space indentation. Files/folders: kebab-case; exports: PascalCase; helpers: camelCase named exports.
 - Client components must begin with `"use client"`. Consolidate imports via `@/...`. Keep page roots lean.
-- Constants: Organize by domain in `lib/constants/` submodules; re-export via `lib/constants/index.ts`.
+- Constants: Organize by domain in `lib/constants/` submodules.
 - Use `drizzle-zod` for DB boundary validation:
   - Read schemas: `lib/db/zod.ts` `*Select` (strict `Date` types)
   - Write schemas: `lib/db/zod.ts` `*Insert`/`*Update` (dates coerced)
@@ -90,9 +90,9 @@
 - Keep secrets in `.env.local`. See `.env.example` for required variables.
 - Vercel Edge Config provides dynamic, low-latency configuration without redeployment:
   - `domain_suggestions` (array): Homepage domain suggestions; fails gracefully to empty array
-  - `tier_limits` (object): `{ free: 5, pro: 50 }` for domain tracking limits per tier
   - `provider_catalog` (object): Provider detection rules for CA, DNS, email, hosting, and registrar providers. Structure: `{ ca: [...], dns: [...], email: [...], hosting: [...], registrar: [...] }`. Providers are lazily inserted into the database on first detection.
   - `screenshot_blocklist_sources` (array): URLs of external blocklists (e.g., OISD NSFW) for screenshot/OG image blocking; fails gracefully to empty array (allows all domains)
+- Free vs Pro quotas are defined in `lib/constants/plan-quotas.ts`.
 - Vercel Blob backs favicon/screenshot storage with automatic public URLs; metadata cached in Postgres.
 - Screenshots (Puppeteer): prefer `puppeteer-core` + `@sparticuz/chromium` on Vercel.
 - Persist domain data in Postgres via Drizzle with per-table TTL columns (`expiresAt`).
@@ -171,7 +171,7 @@ Key procedures:
 
 #### User Router (`server/routers/user.ts`)
 Key procedures:
-- `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `subscriptionEndsAt` for canceled-but-active subscriptions.
+- `getSubscription`: Get user's subscription data including tier, active/archived counts, max domains, and `endsAt` for canceled-but-active subscriptions.
 - `getCalendarFeed` / `enableCalendarFeed` / `disableCalendarFeed`: Manage calendar feed subscription.
 - `rotateCalendarFeedToken`: Generate a new calendar URL (invalidates old URL).
 - `deleteCalendarFeed`: Completely remove calendar feed.
@@ -264,8 +264,8 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
 - **Webhook handlers:** `lib/polar/handlers.ts`:
   - `handleSubscriptionCreated` - logs subscription initiation (payment may still be pending)
   - `handleSubscriptionActive` - upgrades tier after payment confirmed, clears any pending cancellation
-  - `handleSubscriptionCanceled` - stores `subscriptionEndsAt` to show banner (user keeps access until period ends)
-  - `handleSubscriptionRevoked` - triggers downgrade and clears `subscriptionEndsAt`
+  - `handleSubscriptionCanceled` - stores `endsAt` to show banner (user keeps access until period ends)
+  - `handleSubscriptionRevoked` - triggers downgrade and clears `endsAt`
 - **Downgrade logic:** `lib/polar/downgrade.ts` archives oldest domains beyond free tier limit.
 
 ### UI Components

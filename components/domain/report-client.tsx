@@ -19,9 +19,9 @@ import { SectionNav } from "@/components/domain/section-nav";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
-import { useDomainExport } from "@/hooks/use-domain-export";
 import { useDomainHistory } from "@/hooks/use-domain-history";
-import { useSectionObserver } from "@/hooks/use-section-observer";
+import { useReportExport } from "@/hooks/use-report-export";
+import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
 import { sections } from "@/lib/constants/sections";
 import { useTRPC } from "@/lib/trpc/client";
 
@@ -87,7 +87,7 @@ function DomainReportClientContent({ domain }: { domain: string }) {
   // Section navigation - tracks active section and header visibility for context injection
   const headerRef = useRef<HTMLDivElement>(null);
   const { activeSection, isHeaderVisible, scrollToSection } =
-    useSectionObserver({
+    useReportSectionObserver({
       sectionIds: Object.keys(sections),
       headerRef,
     });
@@ -100,7 +100,7 @@ function DomainReportClientContent({ domain }: { domain: string }) {
   useDomainHistory(isConfirmedUnregistered ? "" : domain);
 
   // Track export state and get export handler
-  const { handleExport, allDataLoaded } = useDomainExport(domain);
+  const { handleExport, allDataLoaded } = useReportExport(domain);
 
   if (isConfirmedUnregistered) {
     return <DomainUnregisteredCard domain={domain} />;

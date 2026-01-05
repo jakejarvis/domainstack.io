@@ -13,5 +13,5 @@ export * from "./internal/provider";
 export * from "./internal/sections";
 export * from "./internal/snapshot";
 export * from "./internal/stats";
-export * from "./internal/user";
+export * from "./internal/subscription";
 export * from "./internal/verification";

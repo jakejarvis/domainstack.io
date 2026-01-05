@@ -16,11 +16,6 @@ vi.mock("@/lib/db/client", async () => {
   return { db };
 });
 
-// Mock edge config for tier limits
-vi.mock("@/lib/edge-config", () => ({
-  getMaxDomainsForTier: vi.fn(),
-}));
-
 import { asc } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
@@ -29,7 +24,6 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { handleDowngrade } from "./downgrade";
 
 let testUserId = "";
@@ -82,8 +76,6 @@ beforeEach(async () => {
 
 describe("handleDowngrade", () => {
   it("updates user tier to free", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(5);
-
     // Add 3 tracked domains (under limit)
     for (let i = 0; i < 3; i++) {
       await db.insert(userTrackedDomains).values({
@@ -102,8 +94,6 @@ describe("handleDowngrade", () => {
   });
 
   it("does not archive domains when under limit", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(5);
-
     // Add 3 tracked domains (under limit of 5)
     for (let i = 0; i < 3; i++) {
       await db.insert(userTrackedDomains).values({
@@ -124,8 +114,6 @@ describe("handleDowngrade", () => {
   });
 
   it("does not archive domains when at limit", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(5);
-
     // Add exactly 5 tracked domains (at limit)
     for (let i = 0; i < 5; i++) {
       await db.insert(userTrackedDomains).values({
@@ -146,8 +134,6 @@ describe("handleDowngrade", () => {
   });
 
   it("archives excess domains when over limit", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(5);
-
     // Add 8 tracked domains (3 over limit)
     for (let i = 0; i < 8; i++) {
       await db.insert(userTrackedDomains).values({
@@ -172,11 +158,9 @@ describe("handleDowngrade", () => {
   });
 
   it("archives oldest domains first", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(2);
-
-    // Add 4 tracked domains with staggered creation times
+    // Add 7 tracked domains with staggered creation times (2 over free limit of 5)
     const baseDate = new Date("2024-01-01T00:00:00Z");
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 7; i++) {
       await db.insert(userTrackedDomains).values({
         userId: testUserId,
         domainId: testDomainIds[i],
@@ -199,12 +183,13 @@ describe("handleDowngrade", () => {
     expect(trackedDomains[0].archivedAt).not.toBeNull(); // oldest
     expect(trackedDomains[1].archivedAt).not.toBeNull(); // second oldest
     expect(trackedDomains[2].archivedAt).toBeNull(); // third
-    expect(trackedDomains[3].archivedAt).toBeNull(); // newest
+    expect(trackedDomains[3].archivedAt).toBeNull(); // fourth
+    expect(trackedDomains[4].archivedAt).toBeNull(); // fifth
+    expect(trackedDomains[5].archivedAt).toBeNull(); // sixth
+    expect(trackedDomains[6].archivedAt).toBeNull(); // newest
   });
 
   it("creates subscription record if not found during downgrade", async () => {
-    vi.mocked(getMaxDomainsForTier).mockResolvedValue(5);
-
     // Create a new user without a subscription
     const [newUser] = await db
       .insert(users)

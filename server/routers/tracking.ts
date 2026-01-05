@@ -146,7 +146,7 @@ export const trackingRouter = createTRPCRouter({
         userId: ctx.user.id,
         domainId: domainRecord.id,
         verificationToken,
-        maxDomains: sub.maxDomains,
+        maxDomains: sub.planQuota,
       });
 
       // Handle different failure cases
@@ -407,7 +407,7 @@ export const trackingRouter = createTRPCRouter({
       const result = await unarchiveTrackedDomainWithLimitCheck(
         trackedDomainId,
         ctx.user.id,
-        sub.maxDomains,
+        sub.planQuota,
       );
 
       if (!result.success) {

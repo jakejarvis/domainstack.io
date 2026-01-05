@@ -43,7 +43,7 @@ import {
   HEALTH_OPTIONS,
   type HealthFilter,
   type StatusFilter,
-} from "@/lib/constants";
+} from "@/lib/constants/domain-filters";
 import { cn } from "@/lib/utils";
 
 type DomainFiltersProps = {

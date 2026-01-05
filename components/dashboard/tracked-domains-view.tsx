@@ -16,7 +16,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
-import type { SelectionState } from "@/hooks/use-selection";
+import type { SelectionState } from "@/hooks/use-dashboard-selection";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 type TrackedDomainsViewProps = {
@@ -25,8 +25,6 @@ type TrackedDomainsViewProps = {
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
   selection: SelectionState;
-  isPro: boolean;
-  proMaxDomains: number;
   onAddDomain?: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
@@ -46,8 +44,6 @@ export function TrackedDomainsView({
   totalDomains,
   hasActiveFilters,
   selection,
-  isPro,
-  proMaxDomains,
   onAddDomain,
   onVerify,
   onRemove,
@@ -162,8 +158,6 @@ export function TrackedDomainsView({
               onRemove={onRemove}
               onArchive={onArchive}
               onTableReady={onTableReady}
-              isPro={isPro}
-              proMaxDomains={proMaxDomains}
             />
           ) : (
             <TrackedDomainsGrid
@@ -173,8 +167,6 @@ export function TrackedDomainsView({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
-              isPro={isPro}
-              proMaxDomains={proMaxDomains}
             />
           )}
         </motion.div>

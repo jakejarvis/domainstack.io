@@ -9,16 +9,13 @@ import {
   EmailText,
 } from "@/components/email/email-shared";
 import { BASE_URL } from "@/lib/constants/app";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
 type ProWelcomeEmailProps = {
   userName: string;
-  proMaxDomains: number;
 };
 
-export function ProWelcomeEmail({
-  userName,
-  proMaxDomains,
-}: ProWelcomeEmailProps) {
+export function ProWelcomeEmail({ userName }: ProWelcomeEmailProps) {
   const previewText = "Get the most out of Domainstack Pro";
 
   return (
@@ -37,7 +34,7 @@ export function ProWelcomeEmail({
           1. Add Your Domains
         </EmailBoxText>
         <EmailBoxText variant="tip">
-          You can now track up to {proMaxDomains} domains. Add them from your
+          You can now track up to {PLAN_QUOTAS.pro} domains. Add them from your
           dashboard and verify ownership to start receiving alerts.
         </EmailBoxText>
       </EmailBox>
@@ -84,7 +81,6 @@ export function ProWelcomeEmail({
 // Preview props for email development
 ProWelcomeEmail.PreviewProps = {
   userName: "Jake",
-  proMaxDomains: 50,
 } as ProWelcomeEmailProps;
 
 export default ProWelcomeEmail;

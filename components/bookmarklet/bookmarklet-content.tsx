@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { VideoPlayer, VideoPlayerContent } from "@/components/ui/video-player";
-import { APPLE_SHORTCUT_ID, BASE_URL } from "@/lib/constants";
+import { APPLE_SHORTCUT_ID, BASE_URL } from "@/lib/constants/app";
 
 export function BookmarkletContent({ className }: { className?: string }) {
   // a little hack to "unsafely" use raw javascript as a link

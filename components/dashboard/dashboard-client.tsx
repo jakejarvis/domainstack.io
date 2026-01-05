@@ -28,14 +28,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useViewPreference } from "@/hooks/use-dashboard-preferences";
+import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
-import { useDomainMutations } from "@/hooks/use-domain-mutations";
 import { useRouter } from "@/hooks/use-router";
-import { useSelection } from "@/hooks/use-selection";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
-import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 type ConfirmAction =
@@ -61,26 +59,22 @@ export function DashboardClient() {
 
   const {
     subscription,
-    isPro,
-    isLoading: subscriptionLoading,
-    isError: subscriptionError,
-    refetch: refetchSubscription,
+    isSubscriptionLoading: subscriptionLoading,
+    isSubscriptionError: subscriptionError,
+    refetchSubscription,
   } = useSubscription();
+
   const {
     domains: allDomains,
     isLoading: domainsLoading,
     isError: domainsError,
     refetch: refetchDomains,
-  } = useTrackedDomains({ includeArchived: true });
-
-  // Domain mutations with optimistic updates
-  const {
     removeMutation,
     archiveMutation,
     unarchiveMutation,
     bulkArchiveMutation,
     bulkDeleteMutation,
-  } = useDomainMutations();
+  } = useTrackedDomains({ includeArchived: true });
 
   const domains = useMemo(
     () => allDomains?.filter((d) => d.archivedAt === null) ?? [],
@@ -128,10 +122,10 @@ export function DashboardClient() {
     () => filteredDomains.map((d) => d.id),
     [filteredDomains],
   );
-  const selection = useSelection(filteredDomainIds);
-  const searchParams = useSearchParams();
+  const selection = useDashboardSelection(filteredDomainIds);
 
   // Handle ?upgraded=true query param (after nuqs adapter)
+  const searchParams = useSearchParams();
   useEffect(() => {
     if (searchParams?.get("upgraded") === "true") {
       setShowUpgradedBanner(true);
@@ -350,27 +344,13 @@ export function DashboardClient() {
     return <DashboardError onRetry={handleRetry} />;
   }
 
-  const userName = session?.user?.name || "";
-  const activeCount = subscription?.activeCount ?? 0;
-  const archivedCount = subscription?.archivedCount ?? 0;
-  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const tier = subscription?.tier ?? "free";
-  const canAddMore = subscription?.canAddMore ?? true;
-  const subscriptionEndsAt = subscription?.subscriptionEndsAt ?? null;
-  const hasAnyDomains = activeCount > 0 || archivedCount > 0;
-
   return (
     <div className="space-y-6">
       <DashboardHeader
-        userName={userName}
-        trackedCount={activeCount}
-        maxDomains={maxDomains}
+        userName={session?.user?.name ?? ""}
+        subscription={subscription}
         viewMode={viewMode}
-        tier={tier}
-        subscriptionEndsAt={subscriptionEndsAt}
         onViewModeChange={setViewMode}
-        hasAnyDomains={hasAnyDomains}
       />
 
       {/* Pro upgrade success banner */}
@@ -379,17 +359,17 @@ export function DashboardClient() {
           variant="gold"
           icon={HeartHandshake}
           title="Welcome to Pro!"
-          description={`You now have access to track up to ${proMaxDomains} domains. Thank you for upgrading!`}
+          description={`You now have access to track up to ${subscription?.planQuota} domains. Thank you for upgrading!`}
           dismissible
           onDismiss={() => setShowUpgradedBanner(false)}
         />
       )}
 
       {/* Subscription ending banner for users who canceled */}
-      {subscription && <SubscriptionEndingBanner subscription={subscription} />}
+      <SubscriptionEndingBanner />
 
       {/* Upgrade prompt when free user is near or at limit */}
-      {subscription && !isPro && <UpgradePrompt subscription={subscription} />}
+      {<UpgradePrompt />}
 
       {/* Active domains view */}
       {activeTab === "active" && (
@@ -437,8 +417,6 @@ export function DashboardClient() {
             totalDomains={totalDomainsCount}
             hasActiveFilters={hasActiveFilters}
             selection={selection}
-            isPro={isPro}
-            proMaxDomains={proMaxDomains}
             onAddDomain={handleAddDomain}
             onVerify={handleVerify}
             onRemove={handleRemove}
@@ -452,7 +430,7 @@ export function DashboardClient() {
           />
 
           {/* Link to archived domains - only show when there are archived domains */}
-          {archivedCount > 0 && (
+          {subscription?.archivedCount && subscription.archivedCount > 0 ? (
             <div className="pt-4 text-center">
               <Button
                 variant="ghost"
@@ -460,10 +438,11 @@ export function DashboardClient() {
                 className="gap-2 text-muted-foreground hover:text-foreground"
               >
                 <Archive />
-                View {archivedCount} archived domain{archivedCount !== 1 && "s"}
+                View {subscription?.archivedCount} archived domain
+                {subscription?.archivedCount !== 1 && "s"}
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -484,8 +463,6 @@ export function DashboardClient() {
             domains={archivedDomains}
             onUnarchive={handleUnarchive}
             onRemove={handleRemove}
-            canUnarchive={canAddMore}
-            tier={tier}
           />
         </div>
       )}

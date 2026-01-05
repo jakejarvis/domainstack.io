@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Gauge, ShoppingCart } from "lucide-react";
+import { AlertCircle, Check, Gauge, Gem, ShoppingCart } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
@@ -14,9 +14,8 @@ import {
   useDomainVerification,
 } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
-import { getProTierInfo } from "@/lib/polar/products";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
+import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export type { ResumeDomainData };
 
@@ -46,14 +45,15 @@ export function AddDomainContent({
   resumeDomain,
   prefillDomain,
 }: AddDomainContentProps) {
-  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
-
   // Check user subscription
   const {
     subscription,
-    isLoading: isLoadingSubscription,
-    isError: isSubscriptionError,
-    refetch: refetchSubscription,
+    isPro,
+    isSubscriptionLoading,
+    isSubscriptionError,
+    refetchSubscription,
+    handleCheckout,
+    isCheckoutLoading,
   } = useSubscription();
 
   const {
@@ -102,15 +102,8 @@ export function AddDomainContent({
     prefillDomain,
   });
 
-  // Extract subscription data
-  const activeCount = subscription?.activeCount ?? 0;
-  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const tier = subscription?.tier ?? "free";
-  const canAddMore = subscription?.canAddMore ?? true;
-
   // Show loading spinner while checking subscription
-  if (isLoadingSubscription) {
+  if (isSubscriptionLoading) {
     const loadingContent = (
       <div className="flex min-h-[200px] items-center justify-center">
         <Spinner className="size-6" />
@@ -137,7 +130,11 @@ export function AddDomainContent({
         </div>
 
         <div className="flex flex-col gap-2">
-          <Button onClick={() => refetchSubscription()} className="w-full">
+          <Button
+            onClick={() => void refetchSubscription()}
+            disabled={isSubscriptionLoading}
+            className="w-full"
+          >
             Retry
           </Button>
           {onClose && (
@@ -154,44 +151,55 @@ export function AddDomainContent({
 
   // If at quota (and not resuming verification for an existing domain), show quota message
   // Exception: If we just finished adding a domain (step 3), don't show the limit message yet
-  if (!canAddMore && !resumeDomain && step !== 3) {
-    const proTierInfo = getProTierInfo(proMaxDomains);
-
+  if (!subscription?.canAddMore && !resumeDomain && step !== 3) {
     const quotaContent = (
       <>
         <div className="mb-4 flex flex-col items-center text-center">
-          <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
+          <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
             <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
           </div>
-          <h2 className="font-semibold text-lg leading-none tracking-tight">
+          <h2 className="font-semibold text-lg tracking-tight">
             Domain Limit Reached
           </h2>
           <p className="mt-1 text-muted-foreground text-sm">
-            You&apos;ve reached your limit of {maxDomains} tracked domain
-            {maxDomains !== 1 && "s"}.
+            You&apos;ve reached your limit of {subscription?.planQuota} tracked
+            domain
+            {subscription?.planQuota !== 1 && "s"}.
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Usage indicator */}
           <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
             <div>
-              <div className="font-medium">
-                {tier === "pro" ? "Pro" : "Free"} Plan
-              </div>
+              <div className="font-medium">{isPro ? "Pro" : "Free"} Plan</div>
               <p className="text-muted-foreground text-sm">
-                {activeCount} of {maxDomains} domains used
+                {subscription?.activeCount} of {subscription?.planQuota} domains
+                used
               </p>
             </div>
             <UsageMeter
-              activeCount={activeCount}
-              maxDomains={maxDomains}
+              activeCount={subscription?.activeCount}
+              planQuota={subscription?.planQuota}
               className="w-24"
               aria-label="Domain usage"
             />
           </div>
 
-          {tier === "free" ? (
+          {isPro ? (
+            <>
+              {/* Pro user at limit */}
+              <p className="text-center text-muted-foreground text-sm">
+                You can archive unused domains to make room for new ones, or
+                remove domains you no longer need to track.
+              </p>
+              {onClose && (
+                <Button variant="outline" onClick={onClose} className="w-full">
+                  Close
+                </Button>
+              )}
+            </>
+          ) : (
             <>
               {/* Pro upgrade option */}
               <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
@@ -205,31 +213,32 @@ export function AddDomainContent({
                   className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
                 />
 
-                <div className="relative mb-2 font-medium">
-                  {proTierInfo.name}
+                <div className="mb-2 flex items-center gap-2 font-medium">
+                  <Gem className="size-4" />
+                  {PRO_TIER_INFO.name} Plan
                 </div>
                 <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
-                  {proTierInfo.features.map((feature) => (
-                    <li key={feature}>• {feature}</li>
-                  ))}
+                  <li>Track up to {PLAN_QUOTAS.pro} domains</li>
+                  <li>Priority email notifications</li>
+                  <li>Support development</li>
                 </ul>
                 <div className="relative flex items-baseline gap-2 text-sm">
                   <span className="font-semibold text-accent-gold">
-                    {proTierInfo.monthly.label}
+                    {PRO_TIER_INFO.monthly.label}
                   </span>
                   <span className="text-muted-foreground">or</span>
                   <span className="font-semibold text-accent-gold">
-                    {proTierInfo.yearly.label}
+                    {PRO_TIER_INFO.yearly.label}
                   </span>
                   <span className="text-muted-foreground/70 text-xs">
-                    ({proTierInfo.yearly.savings})
+                    ({PRO_TIER_INFO.yearly.savings})
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <Button
-                  onClick={handleUpgrade}
+                  onClick={handleCheckout}
                   disabled={isCheckoutLoading}
                   className="w-full"
                 >
@@ -255,19 +264,6 @@ export function AddDomainContent({
                   </Button>
                 )}
               </div>
-            </>
-          ) : (
-            <>
-              {/* Pro user at limit */}
-              <p className="text-center text-muted-foreground text-sm">
-                You can archive unused domains to make room for new ones, or
-                remove domains you no longer need to track.
-              </p>
-              {onClose && (
-                <Button variant="outline" onClick={onClose} className="w-full">
-                  Close
-                </Button>
-              )}
             </>
           )}
         </div>

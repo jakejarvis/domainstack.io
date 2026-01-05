@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  * - `toggleAll` operates on visible items only
  * - Selection persists across page changes
  */
-export function useSelection<T extends string = string>(
+export function useDashboardSelection<T extends string = string>(
   /** All selectable item IDs */
   allIds: T[] = [],
   /** Currently visible item IDs (defaults to allIds). Used for pagination-aware "select all". */
@@ -141,4 +141,4 @@ export function useSelection<T extends string = string>(
   };
 }
 
-export type SelectionState = ReturnType<typeof useSelection>;
+export type SelectionState = ReturnType<typeof useDashboardSelection>;

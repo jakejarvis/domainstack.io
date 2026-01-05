@@ -9,7 +9,7 @@ import { useTRPC } from "@/lib/trpc/client";
  * Hook to handle domain data export and track when all section data is loaded.
  * Subscribes to query cache updates and provides a handler to export all domain data.
  */
-export function useDomainExport(domain: string) {
+export function useReportExport(domain: string) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [allDataLoaded, setAllDataLoaded] = useState(false);

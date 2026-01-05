@@ -2,7 +2,7 @@ import "server-only";
 
 import crypto from "node:crypto";
 import ical, { ICalCalendarMethod } from "ical-generator";
-import { BASE_URL } from "@/lib/constants";
+import { BASE_URL } from "@/lib/constants/app";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
 /**

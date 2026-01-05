@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { LAYOUT_CSS_VARIABLES } from "@/lib/constants";
+import { LAYOUT_CSS_VARIABLES } from "@/lib/constants/layout";
 
 /**
  * Injects layout CSS variables onto the document root.
  * Should be called once on client-side mount.
  */
-function injectLayoutCSSVariables(): void {
+function injectCssVariables(): void {
   if (typeof document === "undefined") return;
 
   const root = document.documentElement;
@@ -28,12 +28,12 @@ function injectLayoutCSSVariables(): void {
  * @example
  * // In app/providers.tsx or root layout
  * function Providers({ children }) {
- *   useLayoutCSSVariables();
+ *   useLayoutVariables();
  *   return <>{children}</>;
  * }
  */
-export function useLayoutCSSVariables(): void {
+export function useLayoutVariables(): void {
   useEffect(() => {
-    injectLayoutCSSVariables();
+    injectCssVariables();
   }, []);
 }

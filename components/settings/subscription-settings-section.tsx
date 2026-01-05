@@ -10,11 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { useCustomerPortal } from "@/hooks/use-customer-portal";
 import { useSubscription } from "@/hooks/use-subscription";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
-import { DEFAULT_TIER_LIMITS } from "@/lib/constants";
-import { getProTierInfo } from "@/lib/polar/products";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
+import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { cn } from "@/lib/utils";
 
 interface SubscriptionSettingsSectionProps {
@@ -24,19 +22,23 @@ interface SubscriptionSettingsSectionProps {
 export function SubscriptionSettingsSection({
   className,
 }: SubscriptionSettingsSectionProps) {
-  // Subscription hooks
-  const { handleUpgrade, isLoading: isCheckoutLoading } = useUpgradeCheckout();
-  const { openPortal: handleManageSubscription, isLoading: isPortalLoading } =
-    useCustomerPortal();
+  // Subscription query and hooks
+  const {
+    subscription,
+    isPro,
+    isSubscriptionLoading,
+    isSubscriptionError,
+    handleCheckout,
+    isCheckoutLoading,
+    handleCustomerPortal,
+    isCustomerPortalLoading,
+  } = useSubscription();
 
-  // Query
-  const { subscription, isPro, isLoading, isError } = useSubscription();
-
-  if (isLoading) {
+  if (isSubscriptionLoading) {
     return <SubscriptionSkeleton className={className} />;
   }
 
-  if (isError) {
+  if (isSubscriptionError) {
     return (
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
@@ -51,12 +53,6 @@ export function SubscriptionSettingsSection({
       </div>
     );
   }
-
-  const activeCount = subscription?.activeCount ?? 0;
-  const maxDomains = subscription?.maxDomains ?? DEFAULT_TIER_LIMITS.free;
-  const proMaxDomains = subscription?.proMaxDomains ?? DEFAULT_TIER_LIMITS.pro;
-  const subscriptionEndsAt = subscription?.subscriptionEndsAt ?? null;
-  const proTierInfo = getProTierInfo(proMaxDomains);
 
   return (
     <div className={className}>
@@ -81,27 +77,28 @@ export function SubscriptionSettingsSection({
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 font-medium text-xs",
-                    subscriptionEndsAt
+                    subscription?.endsAt
                       ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       : "bg-accent-gold/10 text-accent-gold",
                   )}
                 >
-                  {subscriptionEndsAt
-                    ? `Ends ${format(subscriptionEndsAt, "MMM d")}`
+                  {subscription?.endsAt
+                    ? `Ends ${format(subscription?.endsAt, "MMM d")}`
                     : "Active"}
                 </span>
               )}
             </div>
             <p className="text-muted-foreground text-sm">
-              {activeCount} of {maxDomains} domains used
+              {subscription?.activeCount} of {subscription?.planQuota} domains
+              used
             </p>
           </div>
           <UsageMeter
-            activeCount={activeCount}
-            maxDomains={maxDomains}
+            activeCount={subscription?.activeCount}
+            planQuota={subscription?.planQuota}
             className="w-24"
             aria-label="Domain usage"
-            aria-valuetext={`${activeCount} of ${maxDomains} domains used`}
+            aria-valuetext={`${subscription?.activeCount} of ${subscription?.planQuota} domains used`}
           />
         </div>
 
@@ -110,11 +107,11 @@ export function SubscriptionSettingsSection({
           <div className="space-y-2">
             <Button
               variant="outline"
-              onClick={handleManageSubscription}
-              disabled={isPortalLoading}
+              onClick={handleCustomerPortal}
+              disabled={isCustomerPortalLoading}
               className="w-full"
             >
-              {isPortalLoading ? (
+              {isCustomerPortalLoading ? (
                 <>
                   <Spinner />
                   Loading...
@@ -126,10 +123,10 @@ export function SubscriptionSettingsSection({
                 </>
               )}
             </Button>
-            {subscriptionEndsAt && (
+            {subscription?.endsAt && (
               <p className="text-center text-muted-foreground text-xs">
                 Your Pro access continues until{" "}
-                {format(subscriptionEndsAt, "MMMM d, yyyy")}
+                {format(subscription?.endsAt, "MMMM d, yyyy")}
               </p>
             )}
           </div>
@@ -147,28 +144,28 @@ export function SubscriptionSettingsSection({
 
             <div className="relative">
               <div className="mb-2 flex items-center gap-2 font-medium">
-                <Gem className="size-4.5" />
-                {proTierInfo.name} Plan
+                <Gem className="size-4" />
+                {PRO_TIER_INFO.name} Plan
               </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
-                {proTierInfo.features.map((feature) => (
-                  <li key={feature}>• {feature}</li>
-                ))}
+                <li>Track up to {PLAN_QUOTAS.pro} domains</li>
+                <li>Priority email notifications</li>
+                <li>Support development</li>
               </ul>
               <div className="mb-4 flex items-baseline gap-2 text-sm">
                 <span className="font-semibold text-accent-gold">
-                  {proTierInfo.monthly.label}
+                  {PRO_TIER_INFO.monthly.label}
                 </span>
                 <span className="text-muted-foreground">or</span>
                 <span className="font-semibold text-accent-gold">
-                  {proTierInfo.yearly.label}
+                  {PRO_TIER_INFO.yearly.label}
                 </span>
                 <span className="text-muted-foreground/70 text-xs">
-                  ({proTierInfo.yearly.savings})
+                  ({PRO_TIER_INFO.yearly.savings})
                 </span>
               </div>
               <Button
-                onClick={handleUpgrade}
+                onClick={handleCheckout}
                 disabled={isCheckoutLoading}
                 className="w-full"
               >

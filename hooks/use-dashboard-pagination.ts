@@ -11,7 +11,7 @@ import {
 /**
  * Hook for table pagination - syncs page index with URL, keeps page size in localStorage
  */
-export function useTablePagination(): {
+export function useDashboardPagination(): {
   pagination: PaginationState;
   pageSize: PageSize;
   setPageIndex: (pageIndex: number) => void;

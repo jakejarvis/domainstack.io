@@ -10,19 +10,16 @@ import {
   EmailText,
 } from "@/components/email/email-shared";
 import { BASE_URL } from "@/lib/constants/app";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
 type SubscriptionExpiredEmailProps = {
   userName: string;
   archivedCount: number;
-  freeMaxDomains: number;
-  proMaxDomains: number;
 };
 
 export function SubscriptionExpiredEmail({
   userName,
   archivedCount,
-  freeMaxDomains,
-  proMaxDomains,
 }: SubscriptionExpiredEmailProps) {
   const previewText = "Your Pro subscription has ended";
 
@@ -53,12 +50,12 @@ export function SubscriptionExpiredEmail({
 
       <EmailText>
         You can continue using Domainstack with the free tier, which includes
-        tracking up to {freeMaxDomains} domains.
+        tracking up to {PLAN_QUOTAS.free} domains.
       </EmailText>
 
       <EmailText>
         Miss Pro? You can resubscribe anytime to unlock all your domains and get
-        back to tracking up to {proMaxDomains} domains.
+        back to tracking up to {PLAN_QUOTAS.pro} domains.
       </EmailText>
 
       <EmailButton variant="success" href={`${BASE_URL}/settings`}>
@@ -86,8 +83,6 @@ export function SubscriptionExpiredEmail({
 SubscriptionExpiredEmail.PreviewProps = {
   userName: "Jake",
   archivedCount: 12,
-  freeMaxDomains: 5,
-  proMaxDomains: 50,
 } as SubscriptionExpiredEmailProps;
 
 export default SubscriptionExpiredEmail;

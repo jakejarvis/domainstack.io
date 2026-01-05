@@ -2,15 +2,18 @@ import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { useUpgradeCheckout } from "@/hooks/use-upgrade-checkout";
+import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
-type UpgradeCardProps = {
-  proMaxDomains: number;
-};
+export function UpgradeCard() {
+  const { isPro, isSubscriptionLoading, handleCheckout, isCheckoutLoading } =
+    useSubscription();
 
-export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
-  const { handleUpgrade, isLoading } = useUpgradeCheckout();
+  // Don't show if already a Pro user or still loading
+  if (isSubscriptionLoading || isPro) {
+    return null;
+  }
 
   return (
     <Card className="relative flex h-full flex-col overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] via-transparent to-black/[0.03] py-0 dark:border-white/10 dark:from-white/[0.03] dark:via-transparent dark:to-white/[0.02]">
@@ -36,7 +39,7 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
 
           {/* Value prop */}
           <p className="mb-4 text-muted-foreground text-sm">
-            Track up to {proMaxDomains} domains with priority notifications.
+            Track up to {PLAN_QUOTAS.pro} domains with priority notifications.
           </p>
 
           {/* Pricing */}
@@ -53,12 +56,12 @@ export function UpgradeCard({ proMaxDomains }: UpgradeCardProps) {
 
         {/* CTA Button - pushed to bottom */}
         <Button
-          onClick={handleUpgrade}
-          disabled={isLoading}
+          onClick={handleCheckout}
+          disabled={isCheckoutLoading}
           variant="outline"
           className="w-full"
         >
-          {isLoading ? (
+          {isCheckoutLoading ? (
             <>
               <Spinner />
               Loading...

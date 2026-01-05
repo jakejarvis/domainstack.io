@@ -9,15 +9,14 @@ import {
   EmailText,
 } from "@/components/email/email-shared";
 import { BASE_URL } from "@/lib/constants/app";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
 type ProUpgradeSuccessEmailProps = {
   userName: string;
-  proMaxDomains: number;
 };
 
 export function ProUpgradeSuccessEmail({
   userName,
-  proMaxDomains,
 }: ProUpgradeSuccessEmailProps) {
   const previewText = "Welcome to Domainstack Pro!";
 
@@ -37,7 +36,7 @@ export function ProUpgradeSuccessEmail({
           Your Pro benefits are now active:
         </EmailBoxText>
         <EmailBoxText variant="success">
-          • Track up to {proMaxDomains} domains
+          • Track up to {PLAN_QUOTAS.pro} domains
         </EmailBoxText>
         <EmailBoxText variant="success">
           • Priority email notifications
@@ -71,7 +70,6 @@ export function ProUpgradeSuccessEmail({
 // Preview props for email development
 ProUpgradeSuccessEmail.PreviewProps = {
   userName: "Jake",
-  proMaxDomains: 50,
 } as ProUpgradeSuccessEmailProps;
 
 export default ProUpgradeSuccessEmail;

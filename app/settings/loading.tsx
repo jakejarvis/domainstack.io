@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page header skeleton */}
       <div>
         <Skeleton className="h-8 w-28" />
@@ -16,9 +16,9 @@ export default function SettingsLoading() {
 
       {/* Settings content skeleton */}
       <Card className="overflow-hidden p-0">
-        <div className="w-full">
-          <SettingsSkeletonTabsList className="px-6 pt-6 pb-2" />
-          <SettingsSkeletonPanels className="px-6 pt-2 pb-4" />
+        <div className="w-full space-y-6 px-6">
+          <SettingsSkeletonTabsList className="mt-6" />
+          <SettingsSkeletonPanels className="mb-4" />
         </div>
       </Card>
     </div>

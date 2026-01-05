@@ -16,7 +16,7 @@
 - **Calendar integration**: Subscribe to domain expiration dates via iCalendar feed (Google Calendar, Apple Calendar, Outlook, etc.).
 - **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
 - **Advanced dashboard**: Domain filtering by status/health/TLD, URL-persisted filters, bulk archive/delete actions, and sortable table/grid views.
-- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable domain suggestions and tier limits without redeployment.
+- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable data and flags without redeployment.
 
 ## 🛠️ Tech Stack
 
@@ -30,7 +30,7 @@
 - **Polar** for subscription payments
 - **Inngest** for scheduled and event-driven background jobs
 - **Resend** + **React Email** for transactional email notifications
-- **Vercel Edge Config** for runtime configuration (domain suggestions, tier limits, and other safeguards)
+- **Vercel Edge Config** for runtime configuration (domain suggestions, provider detection, and other safeguards)
 - **Vercel Blob** for media storage
 - **PostHog** for analytics and error tracking
 - [**mapcn**](https://mapcn.vercel.app/) with [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps) for beautiful IP geolocation maps

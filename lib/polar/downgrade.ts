@@ -1,9 +1,9 @@
 import "server-only";
 
 import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
+import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { db } from "@/lib/db/client";
 import { userSubscriptions, userTrackedDomains } from "@/lib/db/schema";
-import { getMaxDomainsForTier } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "polar-downgrade" });
@@ -19,8 +19,7 @@ const logger = createLogger({ source: "polar-downgrade" });
  * @returns The number of domains that were archived (0 if none)
  */
 export async function handleDowngrade(userId: string): Promise<number> {
-  // Get the free tier limit (from Edge Config, cached)
-  const freeLimit = await getMaxDomainsForTier("free");
+  const freeLimit = PLAN_QUOTAS.free;
 
   // Use a transaction to make the entire operation atomic
   return await db.transaction(async (tx) => {

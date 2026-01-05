@@ -7,7 +7,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import { DeleteAccountVerifyEmail } from "@/emails/delete-account-verify";
-import { BASE_URL } from "@/lib/constants";
+import { BASE_URL } from "@/lib/constants/app";
 import { db } from "@/lib/db/client";
 import { createSubscription } from "@/lib/db/repos/user-subscription";
 import * as schema from "@/lib/db/schema";

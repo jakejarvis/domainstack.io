@@ -103,5 +103,3 @@ export function SettingsPanels({ className }: { className?: string }) {
     </>
   );
 }
-
-// SettingsContent removed in favor of composable exports

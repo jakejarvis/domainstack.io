@@ -1,4 +1,4 @@
-import { NotificationCardSkeleton } from "./notification-card-skeleton";
+import { NotificationCardSkeleton } from "@/components/notifications/notification-card-skeleton";
 
 interface NotificationListSkeletonProps {
   /** Number of skeleton cards to render. Defaults to 4. */

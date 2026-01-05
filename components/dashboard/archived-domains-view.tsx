@@ -16,24 +16,22 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import type { UserTier } from "@/lib/schemas";
 
 type ArchivedDomainsViewProps = {
   domains: TrackedDomainWithDetails[];
   onUnarchive: (id: string) => void;
   onRemove: (id: string, domainName: string) => void;
-  canUnarchive: boolean;
-  tier: UserTier;
 };
 
 export function ArchivedDomainsView({
   domains,
   onUnarchive,
   onRemove,
-  canUnarchive,
-  tier,
 }: ArchivedDomainsViewProps) {
+  const { subscription, isPro } = useSubscription();
+
   if (domains.length === 0) {
     return (
       <Empty className="rounded-xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -51,12 +49,10 @@ export function ArchivedDomainsView({
     );
   }
 
-  const isPro = tier === "pro";
-
   return (
     <div className="space-y-4">
       {/* Info banner when at limit */}
-      {!canUnarchive && !isPro && (
+      {!subscription?.canAddMore && !isPro && (
         <DashboardBannerDismissable
           variant="warning"
           icon={CircleFadingArrowUp}
@@ -95,7 +91,7 @@ export function ArchivedDomainsView({
                         variant="ghost"
                         size="sm"
                         onClick={() => onUnarchive(domain.id)}
-                        disabled={!canUnarchive}
+                        disabled={!subscription?.canAddMore}
                       >
                         <RotateCcw />
                         <span className="sr-only sm:not-sr-only sm:ml-2">
@@ -105,7 +101,7 @@ export function ArchivedDomainsView({
                     }
                   />
                   <TooltipContent>
-                    {canUnarchive
+                    {subscription?.canAddMore
                       ? "Reactivate this domain"
                       : "Upgrade or remove active domains first"}
                   </TooltipContent>

@@ -16,7 +16,7 @@ import { auth } from "@/lib/auth";
 function SettingsSkeleton() {
   return (
     <div className="w-full">
-      <SettingsSkeletonTabsList className="mb-2" />
+      <SettingsSkeletonTabsList className="mb-4" />
       <SettingsSkeletonPanels className="my-2" />
     </div>
   );

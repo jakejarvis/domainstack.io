@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { EXPIRING_SOON_DAYS } from "@/lib/constants";
+import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import { cn } from "@/lib/utils";
 
 type HealthSummaryProps = {
