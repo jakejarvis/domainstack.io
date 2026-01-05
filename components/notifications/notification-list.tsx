@@ -34,8 +34,7 @@ export function NotificationList({
     <ScrollArea
       viewportRef={scrollAreaRef}
       className="min-h-0 flex-1 bg-card"
-      gradient
-      gradientContext="card"
+      showFade
     >
       {isLoading ? (
         <NotificationListSkeleton />

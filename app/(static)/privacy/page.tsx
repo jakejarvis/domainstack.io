@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -104,6 +105,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Polar
+                <ExternalLink />
               </a>
             </strong>{" "}
             — Our merchant of record for subscription management. Polar collects
@@ -115,6 +117,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Privacy Policy
+              <ExternalLink />
             </a>
             .
           </li>
@@ -126,6 +129,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Stripe
+                <ExternalLink />
               </a>
             </strong>{" "}
             — Payment processing infrastructure. Stripe handles your payment
@@ -136,6 +140,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Privacy Policy
+              <ExternalLink />
             </a>
             .
           </li>
@@ -158,6 +163,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend
+            <ExternalLink />
           </a>{" "}
           to send transactional emails, including:
         </p>
@@ -176,6 +182,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend&apos;s Privacy Policy
+            <ExternalLink />
           </a>
           .
         </p>
@@ -191,6 +198,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog
+            <ExternalLink />
           </a>{" "}
           for product analytics and error tracking to understand how our service
           is used and to improve the user experience. PostHog collects:
@@ -210,6 +218,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog&apos;s Privacy Policy
+            <ExternalLink />
           </a>
           .
         </p>

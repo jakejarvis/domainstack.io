@@ -234,11 +234,7 @@ export function MultiSelect<T extends string>({
               </ComboboxPrimitive.Empty>
 
               {sections ? (
-                <ScrollArea
-                  className="max-h-[300px]"
-                  gradient
-                  gradientContext="popover"
-                >
+                <ScrollArea className="max-h-[300px]" showFade>
                   <ComboboxPrimitive.List
                     data-slot="command-list"
                     className="scroll-py-1"
@@ -279,11 +275,7 @@ export function MultiSelect<T extends string>({
                   </ComboboxPrimitive.List>
                 </ScrollArea>
               ) : (
-                <ScrollArea
-                  className="max-h-[300px]"
-                  gradient
-                  gradientContext="popover"
-                >
+                <ScrollArea className="max-h-[300px]" showFade>
                   <ComboboxPrimitive.List
                     data-slot="command-list"
                     className="scroll-py-1 p-1 text-foreground"

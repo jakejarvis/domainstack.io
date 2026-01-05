@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -143,6 +144,7 @@ export default function TermsPage() {
           Payments are processed by{" "}
           <a href="https://polar.sh" target="_blank" rel="noopener noreferrer">
             Polar
+            <ExternalLink />
           </a>{" "}
           (our merchant of record) and{" "}
           <a
@@ -151,6 +153,7 @@ export default function TermsPage() {
             rel="noopener noreferrer"
           >
             Stripe
+            <ExternalLink />
           </a>{" "}
           (payment infrastructure). By subscribing, you also agree to:
         </p>
@@ -162,6 +165,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Terms of Service
+              <ExternalLink />
             </a>
           </li>
           <li>
@@ -171,6 +175,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Consumer Terms
+              <ExternalLink />
             </a>
           </li>
         </ul>

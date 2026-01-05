@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -100,34 +99,20 @@ export function SectionNav({
               : "mr-3 w-auto border-black/10 border-r pr-3 opacity-100 dark:border-white/10",
           )}
         >
-          <ScreenshotPopover
-            domain={domain}
-            align="start"
-            side="bottom"
-            sideOffset={8}
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex min-w-0 cursor-pointer items-center gap-2"
           >
-            <a
-              href={`https://${domain}`}
-              target="_blank"
-              rel="noopener"
-              className="flex min-w-0 items-center gap-2"
-            >
-              <Favicon domain={domain} size={16} className="shrink-0" />
-              <span className="max-w-32 truncate font-medium text-[15px]">
-                {domain}
-              </span>
-            </a>
-          </ScreenshotPopover>
+            <Favicon domain={domain} size={16} className="shrink-0" />
+            <span className="max-w-32 truncate font-medium text-[15px]">
+              {domain}
+            </span>
+          </button>
         </div>
 
         {/* Section tabs - horizontally scrollable with gradient indicators */}
-        <ScrollArea
-          orientation="horizontal"
-          gradient
-          gradientContext="background"
-          showScrollbar={false}
-          className="flex-1"
-        >
+        <ScrollArea showFade showScrollbar={false} className="flex-1">
           <div className="flex items-center gap-1 px-1 md:justify-center">
             {sections.map(({ slug, title, icon: Icon, accent }) => (
               <Button

@@ -90,19 +90,17 @@ export function CopyableField({
       >
         {label}
       </FieldLabel>
-      <InputGroup className="!bg-popover h-10 max-w-full">
+      <InputGroup className="h-10 max-w-full">
         <ScrollArea
-          orientation="horizontal"
-          gradient
-          gradientContext="popover"
+          showFade
           showScrollbar={false}
-          className="w-0 min-w-0 flex-1 overflow-hidden rounded-md"
+          className="w-0 min-w-0 flex-1"
         >
           <button
             type="button"
             data-slot="input-group-control"
             onClick={handleSelect}
-            className="h-[38px] w-max min-w-full cursor-text bg-transparent px-3 text-left font-mono text-[13px] outline-none selection:bg-primary selection:text-primary-foreground"
+            className="h-full w-max min-w-full cursor-text bg-transparent px-3 text-left font-mono text-[13px] outline-none selection:bg-primary selection:text-primary-foreground"
           >
             <span ref={contentRef} className="inline-block whitespace-nowrap">
               {children ?? value}

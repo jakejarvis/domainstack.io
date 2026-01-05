@@ -160,11 +160,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
         align="end"
         className="flex min-w-52 flex-col overflow-hidden p-0"
       >
-        <ScrollArea
-          className="h-auto max-h-[65vh] min-h-0 flex-1"
-          gradient
-          gradientContext="popover"
-        >
+        <ScrollArea className="h-auto max-h-[65vh] min-h-0 flex-1" showFade>
           <div className="p-1">
             {TOOLS.map((tool) => (
               <DropdownMenuItem

@@ -38,25 +38,25 @@ function createFaqSections(
         {
           question: "What is Domainstack?",
           answer: (
-            <>
+            <p>
               Domainstack is a domain intelligence platform that lets you look
               up detailed information about any domain and track domains you
               own. Enter any domain name to instantly see registration details,
               DNS records, SSL certificates, hosting information, and more. Sign
               up for free to begin receiving notifications about critical
               changes and upcoming expirations for your domains.
-            </>
+            </p>
           ),
         },
         {
           question: "Do I need an account to use Domainstack?",
           answer: (
-            <>
+            <p>
               Nope! You can look up any domain and view its full report without
               signing in. An account is only required if you want to track
               domains you own and receive expiration notifications. Sign up is
               free and uses GitHub for authentication.
-            </>
+            </p>
           ),
         },
       ],
@@ -68,8 +68,8 @@ function createFaqSections(
           question: "What information is shown on a domain report?",
           answer: (
             <>
-              Each domain report includes:
-              <ul className="mt-2 list-disc space-y-1 pl-6">
+              <p>Each domain report includes:</p>
+              <ul className="my-2">
                 <li>
                   <strong>Registration data</strong> — Registrar, creation date,
                   expiration date, and WHOIS/RDAP information
@@ -105,36 +105,36 @@ function createFaqSections(
         {
           question: "Where does the domain data come from?",
           answer: (
-            <>
+            <p>
               All domain data is gathered from publicly available sources. We
               query RDAP and WHOIS servers for registration info, perform DNS
               lookups against public resolvers, initiate TLS handshakes to
               inspect certificates, and make HTTP requests to analyze headers
               and capture screenshots. We don&apos;t access any private data.
-            </>
+            </p>
           ),
         },
         {
           question: "How often is domain data refreshed?",
           answer: (
-            <>
+            <p>
               Domain data is cached to ensure fast load times. Different data
               types have different refresh intervals — DNS records update more
               frequently than registration data, for example.
-            </>
+            </p>
           ),
         },
         {
           question: "Can I share a domain report?",
           answer: (
-            <>
+            <p>
               Yes! Every domain has its own public URL (like{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
                 domainstack.io/example.com
               </code>
               ) that you can share with anyone. No account is required to view
               reports.
-            </>
+            </p>
           ),
         },
       ],
@@ -145,23 +145,25 @@ function createFaqSections(
         {
           question: "How do I track a domain?",
           answer: (
-            <>
+            <p>
               From your dashboard, click &quot;Add Domain&quot; and enter the
               domain name you want to track. You&apos;ll need to verify
               ownership before tracking becomes active. Once verified,
               we&apos;ll monitor the domain and send you notifications about
               critical changes (like DNS updates) and before it or its
               certificate expires.
-            </>
+            </p>
           ),
         },
         {
           question: "How do I verify domain ownership?",
           answer: (
             <>
-              We offer three verification methods — use whichever is easiest for
-              you:
-              <ul className="mt-2 list-disc space-y-1 pl-6">
+              <p>
+                We offer three verification methods — use whichever is easiest
+                for you:
+              </p>
+              <ul className="my-2">
                 <li>
                   <strong>DNS TXT record</strong> — Add a TXT record to your
                   apex domain
@@ -180,7 +182,7 @@ function createFaqSections(
                   meta tag to your homepage
                 </li>
               </ul>
-              <p className="mt-2">
+              <p>
                 Detailed instructions with your unique verification token are
                 shown when you add a domain.
               </p>
@@ -190,37 +192,37 @@ function createFaqSections(
         {
           question: "How long do I have to verify a domain?",
           answer: (
-            <>
+            <p>
               You have 30 days to verify a domain after adding it. We&apos;ll
               automatically attempt to verify your domain periodically, so once
               you&apos;ve set up verification, it should be detected within
               minutes.
-            </>
+            </p>
           ),
         },
         {
           question: "What happens if my verification fails?",
           answer: (
-            <>
+            <p>
               If you&apos;ve already verified a domain but we can no longer
               detect your verification record, you&apos;ll receive an email and
               have a 7-day grace period to fix it. If verification isn&apos;t
               restored within that window, tracking will be revoked and
               you&apos;ll need to re-verify.
-            </>
+            </p>
           ),
         },
         {
           question:
             "What is the difference between active and archived domains?",
           answer: (
-            <>
+            <p>
               Active domains count toward your tracking limit and receive
               notifications. Archived domains are paused — they don&apos;t count
               against your limit and won&apos;t trigger notifications. You can
               archive domains you&apos;re not actively managing and reactivate
               them anytime.
-            </>
+            </p>
           ),
         },
       ],
@@ -232,8 +234,8 @@ function createFaqSections(
           question: "What notifications will I receive?",
           answer: (
             <>
-              We send email notifications for:
-              <ul className="mt-2 list-disc space-y-1 pl-6">
+              <p>We send email notifications for:</p>
+              <ul className="my-2">
                 <li>
                   <strong>Domain expiration</strong> — 30, 14, 7, and 1 day
                   before your domain expires
@@ -257,23 +259,23 @@ function createFaqSections(
         {
           question: "Can I customize notifications for specific domains?",
           answer: (
-            <>
+            <p>
               Yes! Each tracked domain has its own notification settings. You
               can override global preferences on a per-domain basis — for
               example, disable certificate alerts for a domain that handles its
               own renewal while keeping domain expiry and change alerts enabled.
-            </>
+            </p>
           ),
         },
         {
           question: "How do I disable notifications?",
           answer: (
-            <>
-              Go to your dashboard settings to toggle notification categories on
-              or off globally. You can disable domain expiration alerts,
-              certificate expiration alerts, or verification status alerts
-              independently.
-            </>
+            <p>
+              Go to <Link href="/settings">your settings</Link> to toggle
+              notification categories on or off globally. You can disable domain
+              expiration alerts, certificate expiration alerts, or verification
+              status alerts independently.
+            </p>
           ),
         },
       ],
@@ -284,26 +286,27 @@ function createFaqSections(
         {
           question: "How many domains can I track?",
           answer: (
-            <>
+            <p>
               Free accounts can track up to {limits.free} domains. Pro
               subscribers can track up to {limits.pro} domains. Archived domains
               don&apos;t count toward these limits.
-            </>
+            </p>
           ),
         },
         {
           question: "What's included in Pro?",
           answer: (
             <>
-              Pro includes:
-              <ul className="mt-2 list-disc space-y-1 pl-6">
+              <p>The Pro plan includes the following benefits:</p>
+              <ul className="my-2">
                 <li>
-                  Track up to {limits.pro} domains (vs {limits.free} on free)
+                  Track up to {limits.pro} domains (increased from {limits.free}
+                  )
                 </li>
                 <li>Priority email notifications</li>
                 <li>Support ongoing development of Domainstack</li>
               </ul>
-              <p className="mt-2">
+              <p>
                 Pro is available for {pricing.monthlyLabel} or{" "}
                 {pricing.yearlyLabel} ({pricing.yearlySavings}).
               </p>
@@ -313,25 +316,25 @@ function createFaqSections(
         {
           question: "What happens if I downgrade from Pro?",
           answer: (
-            <>
+            <p>
               If you cancel your Pro subscription, you&apos;ll keep Pro access
               until the end of your billing period. After that, if you have more
               than {limits.free} active domains, the oldest ones will be
               automatically archived to fit within the free tier limit. You can
               manually choose which domains to archive before the downgrade
               takes effect.
-            </>
+            </p>
           ),
         },
         {
           question: "Can I cancel my subscription anytime?",
           answer: (
-            <>
+            <p>
               Yes, you can cancel anytime from your dashboard settings.
               You&apos;ll continue to have Pro access until the end of your
               current billing period — we don&apos;t prorate or issue partial
               refunds, but you won&apos;t be charged again.
-            </>
+            </p>
           ),
         },
       ],
@@ -342,31 +345,25 @@ function createFaqSections(
         {
           question: "What data does Domainstack collect?",
           answer: (
-            <>
+            <p>
               We collect your account information (name and email via your
               chosen login provider), the domains you choose to track, and basic
               usage analytics. Domain data shown in reports is all publicly
               available information — we don&apos;t access anything private. See
-              our{" "}
-              <Link href="/privacy" className="underline underline-offset-4">
-                Privacy Policy
-              </Link>{" "}
-              for full details.
-            </>
+              our <Link href="/privacy">Privacy Policy</Link> for full details.
+            </p>
           ),
         },
         {
           question: "Is my data shared with third parties?",
           answer: (
-            <>
+            <p>
               We never sell your personal information. We only share data with
               service providers necessary to operate Domainstack (hosting, email
               delivery, payment processing). See our{" "}
-              <Link href="/privacy" className="underline underline-offset-4">
-                Privacy Policy
-              </Link>{" "}
-              for a complete list.
-            </>
+              <Link href="/privacy">Privacy Policy</Link> for a complete list of
+              our partners.
+            </p>
           ),
         },
       ],
@@ -377,26 +374,24 @@ function createFaqSections(
         {
           question: "How do I sign up?",
           answer: (
-            <>
+            <p>
               Click &quot;Sign in&quot; in the header (or{" "}
-              <Link href="/login" className="underline underline-offset-4">
-                click here
-              </Link>
-              ) and authenticate with one of the supported services. We use
-              OAuth so you don&apos;t need to worry about a password. You can
-              always change your linked account later in Settings.
-            </>
+              <Link href="/login">click here</Link>) and authenticate with one
+              of the supported services. We use OAuth so you don&apos;t need to
+              worry about a password. You can always change your linked account
+              later in Settings.
+            </p>
           ),
         },
         {
           question: "How do I delete my account?",
           answer: (
-            <>
+            <p>
               Go to your dashboard settings and scroll to the &quot;Danger
               Zone&quot; section. Click &quot;Delete Account&quot; and confirm
               to permanently remove your account and all associated data. This
               action cannot be undone.
-            </>
+            </p>
           ),
         },
       ],
@@ -424,7 +419,7 @@ export function FaqAccordion({ tierLimits, pricing }: FaqAccordionProps) {
                 value={item.question}
                 className="border-border/30 border-b px-4 last:border-none"
               >
-                <AccordionTrigger className="cursor-pointer text-left text-foreground tracking-[0.01em] decoration-muted-foreground/50 underline-offset-4 hover:text-foreground/85 hover:underline">
+                <AccordionTrigger className="cursor-pointer text-left text-foreground/90 tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/85 hover:underline hover:underline-offset-4">
                   {item.question}
                 </AccordionTrigger>
                 <AccordionContent className="pt-1 text-foreground/85">

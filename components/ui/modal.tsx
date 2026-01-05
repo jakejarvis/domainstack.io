@@ -44,7 +44,7 @@ export function Modal({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1" gradient>
+        <ScrollArea className="min-h-0 flex-1" showFade>
           <div className="py-6">{children}</div>
         </ScrollArea>
       </DialogContent>
