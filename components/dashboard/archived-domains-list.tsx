@@ -19,17 +19,17 @@ import {
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
-type ArchivedDomainsViewProps = {
+type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];
   onUnarchive: (id: string) => void;
   onRemove: (id: string, domainName: string) => void;
 };
 
-export function ArchivedDomainsView({
+export function ArchivedDomainsList({
   domains,
   onUnarchive,
   onRemove,
-}: ArchivedDomainsViewProps) {
+}: ArchivedDomainsListProps) {
   const { subscription, isPro } = useSubscription();
 
   if (domains.length === 0) {

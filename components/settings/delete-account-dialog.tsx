@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, HeartCrack } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useReducer } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,24 +14,69 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
 
+// ============================================================================
+// Types
+// ============================================================================
+
 type DeleteAccountDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-type DialogState = "confirm" | "loading" | "success" | "error";
+// ============================================================================
+// State Machine
+// ============================================================================
+
+/**
+ * Discriminated union for the delete account dialog state machine.
+ * Error message is embedded in the error state - no separate useState needed.
+ */
+type DialogState =
+  | { status: "confirm" }
+  | { status: "loading" }
+  | { status: "success" }
+  | { status: "error"; message: string };
+
+type DialogAction =
+  | { type: "START_DELETE" }
+  | { type: "DELETE_SUCCESS" }
+  | { type: "DELETE_ERROR"; message: string }
+  | { type: "RESET" };
+
+const initialState: DialogState = { status: "confirm" };
+
+function dialogReducer(state: DialogState, action: DialogAction): DialogState {
+  switch (action.type) {
+    case "START_DELETE":
+      return { status: "loading" };
+
+    case "DELETE_SUCCESS":
+      return { status: "success" };
+
+    case "DELETE_ERROR":
+      return { status: "error", message: action.message };
+
+    case "RESET":
+      return initialState;
+
+    default:
+      return state;
+  }
+}
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export function DeleteAccountDialog({
   open,
   onOpenChange,
 }: DeleteAccountDialogProps) {
-  const [state, setState] = useState<DialogState>("confirm");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(dialogReducer, initialState);
   const analytics = useAnalytics();
 
-  const handleDelete = async () => {
-    setState("loading");
-    setErrorMessage(null);
+  const handleDelete = useCallback(async () => {
+    dispatch({ type: "START_DELETE" });
 
     try {
       const result = await deleteUser();
@@ -40,38 +85,47 @@ export function DeleteAccountDialog({
         analytics.trackException(new Error(result.error.message), {
           action: "delete_account",
         });
-        setErrorMessage(
-          result.error.message || "Failed to request account deletion",
-        );
-        setState("error");
+        dispatch({
+          type: "DELETE_ERROR",
+          message: result.error.message || "Failed to request account deletion",
+        });
         return;
       }
 
       analytics.track("delete_account_initiated");
-      setState("success");
+      dispatch({ type: "DELETE_SUCCESS" });
     } catch (err) {
       analytics.trackException(
         err instanceof Error ? err : new Error(String(err)),
         { action: "delete_account" },
       );
-      setErrorMessage("An unexpected error occurred. Please try again.");
-      setState("error");
+      dispatch({
+        type: "DELETE_ERROR",
+        message: "An unexpected error occurred. Please try again.",
+      });
     }
-  };
+  }, [analytics]);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      // Reset state when dialog closes
-      setState("confirm");
-      setErrorMessage(null);
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        // Reset state when dialog closes
+        dispatch({ type: "RESET" });
+      }
+      onOpenChange(newOpen);
+    },
+    [onOpenChange],
+  );
+
+  // Derived state
+  const isLoading = state.status === "loading";
+  const isSuccess = state.status === "success";
+  const errorMessage = state.status === "error" ? state.message : null;
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
-        {state === "success" ? (
+        {isSuccess ? (
           <>
             <AlertDialogHeader>
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
@@ -131,7 +185,7 @@ export function DeleteAccountDialog({
 
             <AlertDialogFooter>
               <AlertDialogCancel
-                disabled={state === "loading"}
+                disabled={isLoading}
                 className="cursor-pointer"
               >
                 Cancel
@@ -139,10 +193,10 @@ export function DeleteAccountDialog({
               <AlertDialogAction
                 variant="destructive"
                 onClick={handleDelete}
-                disabled={state === "loading"}
+                disabled={isLoading}
                 className="cursor-pointer"
               >
-                {state === "loading" ? (
+                {isLoading ? (
                   <>
                     <Spinner />
                     Loading...

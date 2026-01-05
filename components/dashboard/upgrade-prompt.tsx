@@ -20,7 +20,7 @@ export function UpgradePrompt() {
     isCheckoutLoading,
   } = useSubscription();
 
-  if (!subscription || isSubscriptionLoading || isPro) {
+  if (!isVisible || !subscription || isSubscriptionLoading || isPro) {
     return null;
   }
 
@@ -28,7 +28,7 @@ export function UpgradePrompt() {
   const nearLimit = subscription.activeCount >= subscription.planQuota * 0.8;
   const atLimit = subscription.activeCount >= subscription.planQuota;
 
-  if (!nearLimit || !isVisible) return null;
+  if (!nearLimit) return null;
 
   return (
     <Card className="group/upgrade-prompt relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">

@@ -86,7 +86,13 @@ export function KeyValue({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {trailing}
-        {copyable && <CopyButton value={value} label={label} />}
+        {copyable && (
+          <CopyButton
+            value={value}
+            variant="outline"
+            className="border-black/15 bg-background/50 dark:border-white/10"
+          />
+        )}
       </div>
     </div>
   );

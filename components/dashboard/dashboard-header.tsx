@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import Link from "next/link";
-import { UsageMeter } from "@/components/dashboard/usage-meter";
+import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveTooltip,
@@ -69,7 +69,7 @@ export function DashboardHeader({
       <div className="flex items-center justify-between gap-3">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
-          <UsageMeter
+          <QuotaBar
             activeCount={subscription?.activeCount}
             planQuota={subscription?.planQuota}
             className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"

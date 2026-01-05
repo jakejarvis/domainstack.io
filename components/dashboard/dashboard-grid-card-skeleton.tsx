@@ -1,14 +1,13 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-type DomainCardSkeletonProps = {
+type DashboardGridCardSkeletonProps = {
   /** Number of info rows to show. Default is 3. */
   infoRows?: number;
 };
 
-/**
- * Skeleton for a single domain card matching TrackedDomainCard layout.
- */
-export function DomainCardSkeleton({ infoRows = 3 }: DomainCardSkeletonProps) {
+export function DashboardGridCardSkeleton({
+  infoRows = 3,
+}: DashboardGridCardSkeletonProps) {
   return (
     <div className="rounded-xl border border-black/15 bg-background/60 p-6 dark:border-white/15">
       {/* Header: favicon + domain name + dropdown */}

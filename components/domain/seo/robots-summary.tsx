@@ -12,7 +12,7 @@ import {
   Signal,
   XIcon,
 } from "lucide-react";
-import * as motion from "motion/react-client";
+import { motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { PillCount } from "@/components/domain/pill-count";
 import {

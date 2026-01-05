@@ -5,15 +5,15 @@ import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArchivedDomainsView } from "@/components/dashboard/archived-domains-view";
+import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
+import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
+import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
-import { DomainFilters } from "@/components/dashboard/domain-filters";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
-import { TrackedDomainsView } from "@/components/dashboard/tracked-domains-view";
 import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
 import {
   AlertDialog,
@@ -386,7 +386,7 @@ export function DashboardClient() {
 
           {/* Filters - only show when there are domains */}
           {domains.length > 0 && (
-            <DomainFilters
+            <DashboardFilters
               search={search}
               status={status}
               health={health}
@@ -411,7 +411,7 @@ export function DashboardClient() {
             />
           )}
 
-          <TrackedDomainsView
+          <DashboardContent
             viewMode={viewMode}
             domains={filteredDomains}
             totalDomains={totalDomainsCount}
@@ -459,7 +459,7 @@ export function DashboardClient() {
             Back to domains
           </Button>
 
-          <ArchivedDomainsView
+          <ArchivedDomainsList
             domains={archivedDomains}
             onUnarchive={handleUnarchive}
             onRemove={handleRemove}

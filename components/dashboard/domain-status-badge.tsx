@@ -12,7 +12,7 @@ import type {
 } from "@/lib/db/repos/tracked-domains";
 import { cn } from "@/lib/utils";
 
-type VerificationBadgeProps = {
+type DomainStatusBadgeProps = {
   verified: boolean;
   verificationStatus?: VerificationStatusType;
   verificationMethod?: VerificationMethod | null;
@@ -21,14 +21,14 @@ type VerificationBadgeProps = {
   className?: string;
 };
 
-export function VerificationBadge({
+export function DomainStatusBadge({
   verified,
   verificationStatus,
   verificationMethod,
   verificationFailedAt,
   onClick,
   className,
-}: VerificationBadgeProps) {
+}: DomainStatusBadgeProps) {
   // Use shared hydrated timestamp to avoid per-component state updates
   const now = useHydratedNow();
 

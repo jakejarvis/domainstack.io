@@ -5,7 +5,7 @@ import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirm
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { UsageMeter } from "@/components/dashboard/usage-meter";
+import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { type Step, Stepper } from "@/components/ui/stepper";
@@ -178,7 +178,7 @@ export function AddDomainContent({
                 used
               </p>
             </div>
-            <UsageMeter
+            <QuotaBar
               activeCount={subscription?.activeCount}
               planQuota={subscription?.planQuota}
               className="w-24"

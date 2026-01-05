@@ -12,7 +12,7 @@ import {
   Send,
   Share2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +29,90 @@ import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/lib/trpc/client";
 import { buildVerificationInstructions } from "@/lib/verification/instructions";
 
+// ============================================================================
+// Types
+// ============================================================================
+
 type ShareInstructionsDialogProps = {
   domain: string;
   verificationToken: string;
   trackedDomainId: string;
 };
+
+// ============================================================================
+// State Machine
+// ============================================================================
+
+/**
+ * State machine for the share dialog.
+ * Models the copy and email flows as explicit states.
+ */
+type ShareDialogState = {
+  /** Whether the dialog is open */
+  open: boolean;
+  /** Copy to clipboard state */
+  copyStatus: "idle" | "copied";
+  /** Email form state */
+  emailStatus: "idle" | "sending" | "sent";
+  /** Current email input value */
+  email: string;
+};
+
+type ShareDialogAction =
+  | { type: "OPEN" }
+  | { type: "CLOSE" }
+  | { type: "SET_EMAIL"; email: string }
+  | { type: "COPY_SUCCESS" }
+  | { type: "COPY_RESET" }
+  | { type: "EMAIL_SENDING" }
+  | { type: "EMAIL_SENT" }
+  | { type: "EMAIL_RESET" };
+
+const initialState: ShareDialogState = {
+  open: false,
+  copyStatus: "idle",
+  emailStatus: "idle",
+  email: "",
+};
+
+function shareDialogReducer(
+  state: ShareDialogState,
+  action: ShareDialogAction,
+): ShareDialogState {
+  switch (action.type) {
+    case "OPEN":
+      return { ...state, open: true };
+
+    case "CLOSE":
+      // Reset everything when dialog closes
+      return initialState;
+
+    case "SET_EMAIL":
+      return { ...state, email: action.email };
+
+    case "COPY_SUCCESS":
+      return { ...state, copyStatus: "copied" };
+
+    case "COPY_RESET":
+      return { ...state, copyStatus: "idle" };
+
+    case "EMAIL_SENDING":
+      return { ...state, emailStatus: "sending" };
+
+    case "EMAIL_SENT":
+      return { ...state, emailStatus: "sent" };
+
+    case "EMAIL_RESET":
+      return { ...state, emailStatus: "idle", email: "" };
+
+    default:
+      return state;
+  }
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
 
 /**
  * Formats all verification instructions into a plain text format
@@ -121,15 +200,16 @@ function downloadInstructionsFile(
   }
 }
 
+// ============================================================================
+// Component
+// ============================================================================
+
 export function ShareInstructionsDialog({
   domain,
   verificationToken,
   trackedDomainId,
 }: ShareInstructionsDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [state, dispatch] = useReducer(shareDialogReducer, initialState);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const trpc = useTRPC();
@@ -145,35 +225,40 @@ export function ShareInstructionsDialog({
 
   const sendEmailMutation = useMutation({
     ...trpc.tracking.sendVerificationInstructions.mutationOptions(),
+    onMutate: () => {
+      dispatch({ type: "EMAIL_SENDING" });
+      return undefined;
+    },
     onSuccess: () => {
-      setEmailSent(true);
+      dispatch({ type: "EMAIL_SENT" });
       toast.success("Instructions sent!", {
-        description: `Email sent to ${email}`,
+        description: `Email sent to ${state.email}`,
       });
       // Reset after a delay
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       timeoutRef.current = setTimeout(() => {
-        setEmailSent(false);
-        setEmail("");
+        dispatch({ type: "EMAIL_RESET" });
       }, 3000);
     },
     onError: () => {
+      // Reset to idle on error so user can retry
+      dispatch({ type: "EMAIL_RESET" });
       toast.error("Failed to send email", {
         description: "Please try again or use another method.",
       });
     },
   });
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       const formattedText = formatInstructionsForSharing(
         domain,
         verificationToken,
       );
       await clipboardCopy(formattedText);
-      setCopied(true);
+      dispatch({ type: "COPY_SUCCESS" });
       toast.success("Copied!", {
         description: "Instructions copied to clipboard.",
         icon: <ClipboardCheck className="h-4 w-4" />,
@@ -181,15 +266,17 @@ export function ShareInstructionsDialog({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+      timeoutRef.current = setTimeout(() => {
+        dispatch({ type: "COPY_RESET" });
+      }, 2000);
     } catch {
       toast.error("Failed to copy", {
         icon: <CircleX className="h-4 w-4" />,
       });
     }
-  };
+  }, [domain, verificationToken]);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
       toast.success("Instructions downloaded!", {
@@ -198,33 +285,40 @@ export function ShareInstructionsDialog({
     } else {
       toast.error("Failed to download file");
     }
-  };
+  }, [domain, verificationToken]);
 
-  const handleSendEmail = () => {
-    if (!email.trim()) return;
+  const handleSendEmail = useCallback(() => {
+    if (!state.email.trim()) return;
     sendEmailMutation.mutate({
       trackedDomainId,
-      recipientEmail: email.trim(),
+      recipientEmail: state.email.trim(),
     });
-  };
+  }, [state.email, trackedDomainId, sendEmailMutation]);
 
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
-      // Reset state when dialog closes
-      setEmail("");
-      setEmailSent(false);
-      setCopied(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+  const handleOpenChange = useCallback((isOpen: boolean) => {
+    if (isOpen) {
+      dispatch({ type: "OPEN" });
+    } else {
+      dispatch({ type: "CLOSE" });
     }
-  };
+  }, []);
+
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      dispatch({ type: "SET_EMAIL", email: e.target.value });
+    },
+    [],
+  );
+
+  // Derived state
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim());
+  const isCopied = state.copyStatus === "copied";
+  const isEmailSending = state.emailStatus === "sending";
+  const isEmailSent = state.emailStatus === "sent";
+  const isEmailDisabled = !isValidEmail || isEmailSending || isEmailSent;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={state.open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button variant="outline">
@@ -255,9 +349,9 @@ export function ShareInstructionsDialog({
               </p>
             </div>
             <Button variant="outline" onClick={handleCopy} className="shrink-0">
-              {copied ? <Check className="text-green-600" /> : <Copy />}
+              {isCopied ? <Check className="text-green-600" /> : <Copy />}
               <span className="hidden sm:inline">
-                {copied ? "Copied" : "Copy"}
+                {isCopied ? "Copied" : "Copy"}
               </span>
             </Button>
           </div>
@@ -306,30 +400,32 @@ export function ShareInstructionsDialog({
                     id="email"
                     type="email"
                     placeholder={`admin@${domain}`}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={state.email}
+                    onChange={handleEmailChange}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && isValidEmail) {
+                      if (
+                        e.key === "Enter" &&
+                        isValidEmail &&
+                        !isEmailSending
+                      ) {
                         handleSendEmail();
                       }
                     }}
-                    disabled={sendEmailMutation.isPending || emailSent}
+                    disabled={isEmailSending || isEmailSent}
                   />
                 </div>
                 <Button
                   onClick={handleSendEmail}
                   variant="outline"
-                  disabled={
-                    !isValidEmail || sendEmailMutation.isPending || emailSent
-                  }
+                  disabled={isEmailDisabled}
                   className="shrink-0"
                 >
-                  {sendEmailMutation.isPending ? (
+                  {isEmailSending ? (
                     <>
                       <Spinner />
                       <span className="hidden sm:inline">Sending...</span>
                     </>
-                  ) : emailSent ? (
+                  ) : isEmailSent ? (
                     <>
                       <Check />
                       <span className="hidden sm:inline">Sent!</span>

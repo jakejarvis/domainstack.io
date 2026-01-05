@@ -2,56 +2,73 @@
 
 import clipboardCopy from "clipboard-copy";
 import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button, type buttonVariants } from "@/components/ui/button";
+import { cn, type VariantProps } from "@/lib/utils";
 
-interface CopyButtonProps {
+type CopyButtonProps = {
   value: string;
-  label?: string;
   className?: string;
-}
+} & VariantProps<typeof buttonVariants>;
 
-export function CopyButton({ value, label, className }: CopyButtonProps) {
+export function CopyButton({
+  value,
+  variant = "ghost",
+  size = "icon-sm",
+  className,
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
 
-  const handleCopy = async () => {
+  // Clear the reset timer on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) {
+        window.clearTimeout(resetTimerRef.current);
+        resetTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    // Show optimistic feedback immediately - don't wait for clipboard API
+    setCopied(true);
+
+    // Clear any existing timer before starting new one
+    if (resetTimerRef.current) {
+      window.clearTimeout(resetTimerRef.current);
+    }
+
     try {
       await clipboardCopy(value);
 
       toast.success("Copied!", {
-        icon: <ClipboardCheck className="h-4 w-4" />,
+        icon: <ClipboardCheck className="size-4" />,
         position: "bottom-center",
       });
 
-      setCopied(true);
-
-      if (resetTimerRef.current) {
-        window.clearTimeout(resetTimerRef.current);
-      }
+      // Start reset timer after successful copy
       resetTimerRef.current = window.setTimeout(() => {
         setCopied(false);
         resetTimerRef.current = null;
       }, 1200);
     } catch {
+      // Revert optimistic update on failure
+      setCopied(false);
       toast.error("Failed to copy", {
-        icon: <CircleX className="h-4 w-4" />,
+        icon: <CircleX className="size-4" />,
         position: "bottom-center",
       });
     }
-  };
+  }, [value]);
 
   return (
     <Button
-      variant="outline"
-      size="sm"
-      className={cn(
-        "shrink-0 border-black/15 bg-background/50 backdrop-blur dark:border-white/10",
-        className,
-      )}
-      aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
+      variant={variant}
+      size={size}
+      className={cn("shrink-0", className)}
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
       {copied ? (
@@ -59,7 +76,7 @@ export function CopyButton({ value, label, className }: CopyButtonProps) {
       ) : (
         <Copy className="size-3.5" />
       )}
-      <span className="sr-only">{copied ? "Copied" : "Copy"}</span>
+      <span className="sr-only">{copied ? "Copied" : "Copy to clipboard"}</span>
     </Button>
   );
 }

@@ -31,11 +31,7 @@ export function NotificationList({
   onNotificationClick,
 }: NotificationListProps) {
   return (
-    <ScrollArea
-      viewportRef={scrollAreaRef}
-      className="min-h-0 flex-1 bg-card"
-      showFade
-    >
+    <ScrollArea viewportRef={scrollAreaRef} className="min-h-0 flex-1 bg-card">
       {isLoading ? (
         <NotificationListSkeleton />
       ) : isError ? (

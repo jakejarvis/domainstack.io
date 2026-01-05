@@ -1,18 +1,18 @@
 import { Meter } from "@/components/ui/meter";
 import { cn } from "@/lib/utils";
 
-interface UsageMeterProps
+interface QuotaBarProps
   extends Omit<React.ComponentProps<typeof Meter>, "value"> {
   activeCount?: number;
   planQuota?: number;
 }
 
-export function UsageMeter({
+export function QuotaBar({
   activeCount,
   planQuota,
   className,
   ...props
-}: UsageMeterProps) {
+}: QuotaBarProps) {
   if (!activeCount || !planQuota) {
     return null;
   }

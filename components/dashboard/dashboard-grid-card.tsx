@@ -13,8 +13,8 @@ import {
   DomainHealthBadge,
   getHealthAccent,
 } from "@/components/dashboard/domain-health-badge";
+import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
@@ -46,7 +46,7 @@ import { formatDateTimeUtc } from "@/lib/format";
 import type { ProviderCategory } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
-type DomainCardProps = {
+type DashboardGridCardProps = {
   trackedDomainId: string;
   domainName: string;
   verified: boolean;
@@ -68,7 +68,7 @@ type DomainCardProps = {
   onToggleSelect?: () => void;
 };
 
-export function DomainCard({
+export function DashboardGridCard({
   trackedDomainId,
   domainName,
   verified,
@@ -87,7 +87,7 @@ export function DomainCard({
   className,
   isSelected = false,
   onToggleSelect,
-}: DomainCardProps) {
+}: DashboardGridCardProps) {
   // Use shared hydrated time to avoid N separate useEffect calls for N cards
   const now = useHydratedNow();
 
@@ -158,7 +158,7 @@ export function DomainCard({
                   verified={verified}
                 />
               )}
-              <VerificationBadge
+              <DomainStatusBadge
                 verified={verified}
                 verificationStatus={verificationStatus}
                 verificationMethod={verificationMethod}

@@ -5,7 +5,7 @@ import {
   CalendarOff,
   CalendarPlus,
   Clock,
-  RotateCcwKey,
+  RefreshCw,
   ShieldAlert,
 } from "lucide-react";
 import { useState } from "react";
@@ -271,19 +271,15 @@ export function CalendarFeedSection({ className }: CalendarFeedSectionProps) {
                 onClick={() => setShowRotateDialog(true)}
                 disabled={isPending}
               >
-                {rotateMutation.isPending ? <Spinner /> : <RotateCcwKey />}
+                {rotateMutation.isPending ? <Spinner /> : <RefreshCw />}
                 Regenerate URL
               </Button>
               <Button
-                variant="outline"
+                variant="destructive"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={isPending}
               >
-                {deleteMutation.isPending ? (
-                  <Spinner />
-                ) : (
-                  <CalendarOff className="text-destructive" />
-                )}
+                {deleteMutation.isPending ? <Spinner /> : <CalendarOff />}
                 Disable
               </Button>
             </div>

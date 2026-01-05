@@ -77,7 +77,6 @@ export function HomeSearchSuggestionsClient({
   return (
     <ScrollArea
       className={cn("w-full", className)}
-      showFade
       showScrollbar={false}
       viewportRef={scrollContainerRef}
     >

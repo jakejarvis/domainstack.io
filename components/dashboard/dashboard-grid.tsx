@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "motion/react";
 import { memo, useCallback, useEffect, useRef } from "react";
-import { SelectableDomainCard } from "@/components/dashboard/selectable-domain-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import { cn } from "@/lib/utils";
+import { DashboardGridCard } from "./dashboard-grid-card";
 
-type TrackedDomainsGridProps = {
+type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -52,25 +53,55 @@ const GridItem = memo(function GridItem({
   }, [onArchive, domain.id, domain.domainName]);
 
   return (
-    <SelectableDomainCard
-      domain={domain}
-      isSelected={isSelected}
-      onToggleSelect={handleToggleSelect}
-      onVerify={handleVerify}
-      onRemove={handleRemove}
-      onArchive={onArchive ? handleArchive : undefined}
-    />
+    <motion.div
+      className="group relative h-full"
+      animate={{ scale: isSelected ? 1.01 : 1 }}
+      transition={{ duration: 0.15 }}
+    >
+      {/* Selection ring overlay */}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
+          isSelected
+            ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
+            : "ring-0",
+        )}
+        aria-hidden
+      />
+
+      {/* The actual card with integrated checkbox */}
+      <DashboardGridCard
+        trackedDomainId={domain.id}
+        domainName={domain.domainName}
+        verified={domain.verified}
+        verificationStatus={domain.verificationStatus}
+        verificationMethod={domain.verificationMethod}
+        verificationFailedAt={domain.verificationFailedAt}
+        expirationDate={domain.expirationDate}
+        registrar={domain.registrar}
+        dns={domain.dns}
+        hosting={domain.hosting}
+        email={domain.email}
+        ca={domain.ca}
+        isSelected={isSelected}
+        onVerify={handleVerify}
+        onRemove={handleRemove}
+        onArchive={handleArchive}
+        onToggleSelect={handleToggleSelect}
+        className={cn("h-full", isSelected && "bg-primary/10")}
+      />
+    </motion.div>
   );
 });
 
-export function TrackedDomainsGrid({
+export function DashboardGrid({
   domains,
   selectedIds = EMPTY_SET,
   onToggleSelect,
   onVerify,
   onRemove,
   onArchive,
-}: TrackedDomainsGridProps) {
+}: DashboardGridProps) {
   // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
   const isFirstMountRef = useRef(true);
   useEffect(() => {

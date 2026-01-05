@@ -12,7 +12,7 @@ interface ScrollAreaProps
 function ScrollArea({
   className,
   children,
-  showFade = false,
+  showFade = true,
   showScrollbar = true,
   viewportRef,
   ...props
@@ -29,13 +29,11 @@ function ScrollArea({
         className={cn(
           // Base styles
           "min-h-0 flex-1 overflow-auto overscroll-contain rounded-[inherit] outline-none",
-          "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          "scrollbar-hide",
           "focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
           // Edge fade masks - composed for both axes, invisible when no overflow
-          showFade && [
-            "[mask-image:linear-gradient(to_bottom,transparent,black_min(48px,var(--scroll-area-overflow-y-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-y-end,0))),transparent),linear-gradient(to_right,transparent,black_min(48px,var(--scroll-area-overflow-x-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-x-end,0))),transparent)]",
-            "[-webkit-mask-composite:source-in] [mask-composite:intersect]",
-          ],
+          showFade &&
+            "mask-intersect mask-[linear-gradient(to_bottom,transparent,black_min(48px,var(--scroll-area-overflow-y-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-y-end,0))),transparent),linear-gradient(to_right,transparent,black_min(48px,var(--scroll-area-overflow-x-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-x-end,0))),transparent)] [-webkit-mask-composite:source-in]",
         )}
       >
         <ScrollAreaPrimitive.Content data-slot="scroll-area-content">

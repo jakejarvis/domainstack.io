@@ -7,7 +7,7 @@
 - `app/@modal/` Intercepting routes for modal dialogs (`(.)login`, `(.)dashboard`, `(.)settings`, `(.)bookmarklet`).
 - `components/` reusable UI primitives (kebab-case files, PascalCase exports).
 - `components/auth/` Authentication components (sign-in button, user menu, login content).
-- `components/dashboard/` Dashboard components (domain cards, tables, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, domain filters, health summary, verification badges, provider tooltips).
+- `components/dashboard/` Dashboard components (grid cards, grid/table views, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, filters, health summary, domain status badges, provider tooltips).
 - `components/settings/` Settings page components (subscription section, notification settings, linked accounts, calendar feed, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
 - `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useDashboardFilters`, `useDashboardPagination`, `useDashboardPreferences`, `useDashboardSelection`, `useDashboardSort`, `useDomainHistory`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useReportExport`, `useReportSectionObserver`, `useRouter`, `useSubscription`, `useTheme`, `useTrackedDomains`, `useTruncation`.

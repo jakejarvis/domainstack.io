@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
-import { TrackedDomainsGrid } from "@/components/dashboard/tracked-domains-grid";
-import { TrackedDomainsTable } from "@/components/dashboard/tracked-domains-table";
+import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { DashboardTable } from "@/components/dashboard/dashboard-table";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -19,7 +19,7 @@ import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { SelectionState } from "@/hooks/use-dashboard-selection";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 
-type TrackedDomainsViewProps = {
+type DashboardContentProps = {
   viewMode: ViewMode;
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
@@ -38,7 +38,7 @@ type TrackedDomainsViewProps = {
   isBulkDeleting?: boolean;
 };
 
-export function TrackedDomainsView({
+export function DashboardContent({
   viewMode,
   domains,
   totalDomains,
@@ -54,7 +54,7 @@ export function TrackedDomainsView({
   onTableReady,
   isBulkArchiving = false,
   isBulkDeleting = false,
-}: TrackedDomainsViewProps) {
+}: DashboardContentProps) {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
@@ -150,7 +150,7 @@ export function TrackedDomainsView({
           }
         >
           {viewMode === "table" ? (
-            <TrackedDomainsTable
+            <DashboardTable
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}
@@ -160,7 +160,7 @@ export function TrackedDomainsView({
               onTableReady={onTableReady}
             />
           ) : (
-            <TrackedDomainsGrid
+            <DashboardGrid
               domains={domains}
               selectedIds={selection.selectedIds}
               onToggleSelect={selection.toggle}

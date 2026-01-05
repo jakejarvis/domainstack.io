@@ -13,8 +13,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
-import { ColumnVisibilityMenu } from "@/components/dashboard/column-visibility-menu";
-import { ProviderMultiSelect } from "@/components/dashboard/provider-multi-select";
+import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,10 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { MultiSelect } from "@/components/ui/multi-select";
+import {
+  MultiSelect,
+  type MultiSelectOption,
+} from "@/components/ui/multi-select";
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import { SORT_OPTIONS, type SortOption } from "@/hooks/use-dashboard-sort";
@@ -46,7 +48,7 @@ import {
 } from "@/lib/constants/domain-filters";
 import { cn } from "@/lib/utils";
 
-type DomainFiltersProps = {
+type DashboardFiltersProps = {
   search: string;
   status: StatusFilter[];
   health: HealthFilter[];
@@ -83,7 +85,7 @@ type FilterChip = {
   icon: React.ReactNode;
 };
 
-export function DomainFilters({
+export function DashboardFilters({
   search,
   status,
   health,
@@ -105,7 +107,7 @@ export function DomainFilters({
   sortOption,
   onSortChange,
   table,
-}: DomainFiltersProps) {
+}: DashboardFiltersProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Memoize TLD options to avoid re-allocating on every render
@@ -398,7 +400,7 @@ export function DomainFilters({
             />
           )}
           {providerSections.length > 0 && (
-            <ProviderMultiSelect
+            <MultiSelect
               label="Providers"
               icon={EthernetPort}
               sections={providerSections}
@@ -406,6 +408,29 @@ export function DomainFilters({
               onSelectionChange={onProvidersChange}
               searchable
               className="cursor-pointer"
+              renderOption={(
+                option: MultiSelectOption<string> & {
+                  /** Optional domain for provider logo rendering */
+                  domain?: string | null;
+                  /** Optional provider ID for provider logo rendering */
+                  id?: string | null;
+                },
+              ) => {
+                return (
+                  <div className="flex items-center gap-1.5 px-0.5 py-[3px]">
+                    <ProviderIcon
+                      providerId={option.id}
+                      providerName={option.label}
+                      providerDomain={option.domain}
+                      size={14}
+                      className="shrink-0"
+                    />
+                    <span className="max-w-[240px] truncate leading-none">
+                      {option.label}
+                    </span>
+                  </div>
+                );
+              }}
             />
           )}
         </div>
@@ -478,7 +503,7 @@ export function DomainFilters({
         {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}
         {viewMode === "table" && table && (
           <div className="hidden lg:block">
-            <ColumnVisibilityMenu table={table} />
+            <DashboardTableColumnMenu table={table} />
           </div>
         )}
       </div>
@@ -531,7 +556,7 @@ export function DomainFilters({
 
             {/* Column visibility - always visible in collapsed mode for table view */}
             {viewMode === "table" && table && (
-              <ColumnVisibilityMenu table={table} />
+              <DashboardTableColumnMenu table={table} />
             )}
           </div>
 

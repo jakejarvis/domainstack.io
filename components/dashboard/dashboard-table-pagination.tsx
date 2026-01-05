@@ -12,7 +12,7 @@ import {
   type PageSize,
 } from "@/hooks/use-dashboard-preferences";
 
-type TablePaginationProps = {
+type DashboardTablePaginationProps = {
   pageIndex: number;
   pageSize: PageSize;
   pageCount: number;
@@ -26,7 +26,7 @@ type TablePaginationProps = {
  * Pagination controls for the domains table.
  * Includes page navigation and page size selector.
  */
-export function TablePagination({
+export function DashboardTablePagination({
   pageIndex,
   pageSize,
   pageCount,
@@ -34,7 +34,7 @@ export function TablePagination({
   canNextPage,
   onPageChange,
   onPageSizeChange,
-}: TablePaginationProps) {
+}: DashboardTablePaginationProps) {
   return (
     <div className="flex h-12 items-center justify-between border-black/10 border-t px-4 py-2 dark:border-white/10">
       {/* Page size selector */}

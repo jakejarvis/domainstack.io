@@ -112,7 +112,7 @@ export function SectionNav({
         </div>
 
         {/* Section tabs - horizontally scrollable with gradient indicators */}
-        <ScrollArea showFade showScrollbar={false} className="flex-1">
+        <ScrollArea showScrollbar={false} className="flex-1">
           <div className="flex items-center gap-1 px-1 md:justify-center">
             {sections.map(({ slug, title, icon: Icon, accent }) => (
               <Button

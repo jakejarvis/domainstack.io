@@ -12,13 +12,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
 
-type ColumnVisibilityMenuProps<TData> = {
+type DashboardTableColumnMenuProps<TData> = {
   table: Table<TData>;
 };
 
-export function ColumnVisibilityMenu<TData>({
+export function DashboardTableColumnMenu<TData>({
   table,
-}: ColumnVisibilityMenuProps<TData>) {
+}: DashboardTableColumnMenuProps<TData>) {
   // Read visibility state directly from localStorage hook (not stale table API)
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
@@ -72,7 +72,7 @@ export function ColumnVisibilityMenu<TData>({
         align="end"
         className="flex min-w-44 flex-col overflow-hidden p-0"
       >
-        <ScrollArea className="h-auto min-h-0 flex-1" showFade>
+        <ScrollArea className="h-auto min-h-0 flex-1">
           <div className="p-1">
             {allColumns.map((column) => {
               const columnDef = column.columnDef;

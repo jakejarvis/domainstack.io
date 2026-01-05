@@ -411,10 +411,10 @@ export default function HelpPage() {
                     value={item.question}
                     className="border-border/30 border-b px-4 last:border-none"
                   >
-                    <AccordionTrigger className="cursor-pointer text-left text-foreground/90 tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/85 hover:underline hover:underline-offset-4">
+                    <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
                       {item.question}
                     </AccordionTrigger>
-                    <AccordionContent className="pt-1 text-foreground/85">
+                    <AccordionContent className="pt-1 text-foreground/90">
                       {item.answer}
                     </AccordionContent>
                   </AccordionItem>

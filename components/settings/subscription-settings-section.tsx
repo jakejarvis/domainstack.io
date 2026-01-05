@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { CreditCard, Gauge, Gem, ShoppingCart } from "lucide-react";
-import { UsageMeter } from "@/components/dashboard/usage-meter";
+import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,7 +93,7 @@ export function SubscriptionSettingsSection({
               used
             </p>
           </div>
-          <UsageMeter
+          <QuotaBar
             activeCount={subscription?.activeCount}
             planQuota={subscription?.planQuota}
             className="w-24"

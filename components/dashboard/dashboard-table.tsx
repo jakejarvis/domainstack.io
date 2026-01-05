@@ -22,11 +22,11 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { DashboardTablePagination } from "@/components/dashboard/dashboard-table-pagination";
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
+import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { TablePagination } from "@/components/dashboard/table-pagination";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
-import { VerificationBadge } from "@/components/dashboard/verification-badge";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { ProviderIcon } from "@/components/icons/provider-icon";
@@ -106,7 +106,7 @@ declare module "@tanstack/react-table" {
   }
 }
 
-type TrackedDomainsTableProps = {
+type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -213,7 +213,7 @@ function SortIndicator({ isSorted }: { isSorted: false | "asc" | "desc" }) {
 
 const EMPTY_SET = new Set<string>();
 
-export function TrackedDomainsTable({
+export function DashboardTable({
   domains,
   selectedIds = EMPTY_SET,
   onToggleSelect,
@@ -221,7 +221,7 @@ export function TrackedDomainsTable({
   onRemove,
   onArchive,
   onTableReady,
-}: TrackedDomainsTableProps) {
+}: DashboardTableProps) {
   "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
   // See: https://github.com/TanStack/table/issues/5567
 
@@ -318,7 +318,7 @@ export function TrackedDomainsTable({
           const isPending = !row.original.verified;
 
           return (
-            <VerificationBadge
+            <DomainStatusBadge
               verified={row.original.verified}
               verificationStatus={row.original.verificationStatus}
               verificationMethod={row.original.verificationMethod}
@@ -657,7 +657,7 @@ export function TrackedDomainsTable({
 
   return (
     <div className="overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
-      <ScrollArea showFade className="w-full">
+      <ScrollArea className="w-full">
         <table className="w-full text-[13px]" style={{ tableLayout: "fixed" }}>
           <colgroup>
             {table.getVisibleLeafColumns().map((column) => (
@@ -934,7 +934,7 @@ export function TrackedDomainsTable({
 
       {/* Pagination controls - only show if there are domains */}
       {domains.length > 0 && (
-        <TablePagination
+        <DashboardTablePagination
           pageIndex={table.getState().pagination.pageIndex}
           pageSize={pageSize}
           pageCount={table.getPageCount()}
