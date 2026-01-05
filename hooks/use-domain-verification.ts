@@ -347,6 +347,10 @@ export function useDomainVerification({
 
     const normalized = normalizeDomainInput(state.domain);
     if (!isValidDomain(normalized)) {
+      dispatch({
+        type: "SET_DOMAIN_ERROR",
+        error: "Please enter a valid domain",
+      });
       return;
     }
 
@@ -471,13 +475,13 @@ export function useDomainVerification({
     const isVerifying = state.step === 2 && state.verifyStatus === "verifying";
     const hasFailed = state.step === 2 && state.verifyStatus === "failed";
     const verificationError = state.step === 2 ? state.verifyError : undefined;
-    const showFooterButtons = state.step !== 2 || !hasFailed;
 
     // Can proceed logic
     let canProceedValue = false;
     if (state.step === 1) {
+      const normalized = normalizeDomainInput(state.domain);
       canProceedValue =
-        state.domain.trim().length > 0 && !addDomainMutation.isPending;
+        isValidDomain(normalized) && !addDomainMutation.isPending;
     } else if (state.step === 2) {
       canProceedValue = state.verifyStatus !== "verifying";
     } else {
@@ -501,7 +505,6 @@ export function useDomainVerification({
         : isVerifying
           ? ({ status: "verifying" } as const)
           : ({ status: "idle" } as const),
-      showFooterButtons,
       canProceedValue,
     };
   }, [
@@ -536,7 +539,7 @@ export function useDomainVerification({
     handleVerify,
     handleReturnLater,
     goBack,
-    canProceed: () => derived.canProceedValue,
+    canProceed: derived.canProceedValue,
     refetchVerificationData: verificationDataQuery.refetch,
 
     // Query/mutation state
@@ -552,6 +555,5 @@ export function useDomainVerification({
     isMissingVerificationData: derived.isMissingVerificationData,
     isVerifying: derived.isVerifying,
     hasFailed: derived.hasFailed,
-    showFooterButtons: derived.showFooterButtons,
   };
 }

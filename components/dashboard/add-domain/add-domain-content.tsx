@@ -8,7 +8,21 @@ import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-veri
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { type Step, Stepper } from "@/components/ui/stepper";
+import {
+  Stepper,
+  StepperContent,
+  StepperIndicator,
+  StepperItem,
+  StepperNav,
+  StepperPanel,
+  StepperSeparator,
+  StepperTrigger,
+} from "@/components/ui/stepper";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   type ResumeDomainData,
   useDomainVerification,
@@ -31,12 +45,6 @@ export type AddDomainContentProps = {
   /** Pre-fill the domain input (e.g., from domain report "Track" button) */
   prefillDomain?: string;
 };
-
-const STEPS: Step[] = [
-  { title: "Enter domain" },
-  { title: "Verify ownership" },
-  { title: "Complete" },
-];
 
 export function AddDomainContent({
   className,
@@ -89,7 +97,6 @@ export function AddDomainContent({
     isMissingVerificationData,
     isVerifying,
     hasFailed,
-    showFooterButtons,
   } = useDomainVerification({
     open: true,
     onOpenChange: (open) => {
@@ -273,146 +280,186 @@ export function AddDomainContent({
     return <div className={className}>{quotaContent}</div>;
   }
 
-  // Normal add domain flow
-  const title = isResuming ? "Complete Verification" : "Add Domain";
-  const description = isResuming
-    ? domain
-      ? `Verify ownership of ${domain}`
-      : "Verify ownership"
-    : "Track and monitor your domain";
-
-  const headerContent = (
-    <>
-      <h2 className="font-semibold text-lg leading-none tracking-tight">
-        {title}
-      </h2>
-      <p className="text-muted-foreground text-sm">{description}</p>
-      <Stepper steps={STEPS} currentStep={step} className="mb-6 pt-4" />
-    </>
-  );
-
-  const mainContent = (
-    <div className="min-h-[200px]">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${step}-${hasFailed}`}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2 }}
-        >
-          {step === 1 && !isResuming && (
-            <StepEnterDomain
-              domain={domain}
-              setDomain={setDomain}
-              error={domainError}
-              isLoading={isAddingDomain}
-              onSubmit={handleNext}
-              hasAttemptedSubmit={hasAttemptedDomainSubmit}
-              readOnly={isPrefilled}
-            />
-          )}
-          {step === 2 && isLoadingVerificationData && (
-            <div className="flex h-[200px] items-center justify-center">
-              <Spinner className="size-6" />
-            </div>
-          )}
-          {step === 2 && isMissingVerificationData && (
-            <StepInstructionsError
-              error={
-                isVerificationDataQueryError
-                  ? verificationDataErrorMessage
-                  : "Verification details could not be loaded."
-              }
-              onRetry={() => refetchVerificationData()}
-              isRetrying={isRefetchingVerificationData}
-            />
-          )}
-          {step === 2 &&
-            verificationToken &&
-            !isLoadingVerificationData &&
-            !trackedDomainId && (
-              <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                  <AlertCircle className="size-6 text-destructive" />
-                </div>
-                <div className="text-center" aria-live="polite">
-                  <h3 className="font-semibold">Something went wrong</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Domain tracking ID is missing. Please try adding the domain
-                    again.
-                  </p>
-                </div>
-                {onClose && (
-                  <Button variant="outline" onClick={onClose}>
-                    Close
-                  </Button>
-                )}
-              </div>
-            )}
-          {step === 2 &&
-            verificationToken &&
-            !isLoadingVerificationData &&
-            trackedDomainId && (
-              <StepVerifyOwnership
-                method={method}
-                setMethod={setMethod}
-                domain={domain}
-                verificationToken={verificationToken}
-                verificationState={verificationState}
-                onVerify={handleVerify}
-                onReturnLater={handleReturnLater}
-              />
-            )}
-          {step === 3 && <StepConfirmation domain={domain} />}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-
-  const footerContent = showFooterButtons && (
-    <div className="mt-6 flex w-full items-center justify-between gap-2">
-      {/* Left side: Share instructions button (only on step 2) */}
-      <div className="flex-1">
-        {step === 2 && verificationToken && trackedDomainId && (
-          <ShareInstructionsDialog
-            domain={domain}
-            verificationToken={verificationToken}
-            trackedDomainId={trackedDomainId}
-          />
-        )}
-      </div>
-
-      {/* Right side: Confirmation/Next button */}
-      <Button
-        onClick={handleNext}
-        disabled={
-          !canProceed() ||
-          isLoadingVerificationData ||
-          isMissingVerificationData
-        }
-      >
-        {isAddingDomain || isVerifying ? (
-          <Spinner />
-        ) : step === 2 ? (
-          <Check />
-        ) : null}
-        {step === 2
-          ? isVerifying
-            ? "Checking..."
-            : "Check Now"
-          : step === 3
-            ? "Done"
-            : "Continue"}
-      </Button>
-    </div>
-  );
-
   return (
     <div className={className}>
-      <div className="space-y-1.5">{headerContent}</div>
-      {mainContent}
-      {footerContent}
+      <div className="space-y-1.5">
+        <h2 className="font-semibold text-lg leading-none tracking-tight">
+          {isResuming ? "Complete Verification" : "Add Domain"}
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          {isResuming
+            ? domain
+              ? `Verify ownership of ${domain}`
+              : "Verify ownership"
+            : "Track and monitor your domain"}
+        </p>
+      </div>
+
+      <Stepper
+        value={step}
+        indicators={{
+          completed: <Check className="size-4" />,
+          loading: <Spinner className="size-4" />,
+        }}
+      >
+        <StepperNav className="py-4">
+          <StepperItem step={1} loading={isAddingDomain}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <StepperTrigger>
+                    <StepperIndicator>1</StepperIndicator>
+                  </StepperTrigger>
+                }
+              />
+              <TooltipContent sideOffset={6}>Enter domain</TooltipContent>
+            </Tooltip>
+            <StepperSeparator />
+          </StepperItem>
+          <StepperItem
+            step={2}
+            loading={isLoadingVerificationData || isVerifying}
+          >
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <StepperTrigger>
+                    <StepperIndicator>2</StepperIndicator>
+                  </StepperTrigger>
+                }
+              />
+              <TooltipContent sideOffset={6}>Verify ownership</TooltipContent>
+            </Tooltip>
+            <StepperSeparator />
+          </StepperItem>
+          <StepperItem step={3}>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <StepperTrigger>
+                    <StepperIndicator>3</StepperIndicator>
+                  </StepperTrigger>
+                }
+              />
+              <TooltipContent sideOffset={6}>Done!</TooltipContent>
+            </Tooltip>
+            <StepperSeparator />
+          </StepperItem>
+        </StepperNav>
+
+        <StepperPanel>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${step}-${hasFailed}`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <StepperContent
+                value={1}
+                className="flex min-h-[200px] flex-col justify-between"
+              >
+                <StepEnterDomain
+                  domain={domain}
+                  setDomain={setDomain}
+                  error={hasAttemptedDomainSubmit ? domainError : ""}
+                  isLoading={isAddingDomain}
+                  onSubmit={handleNext}
+                  hasAttemptedSubmit={hasAttemptedDomainSubmit}
+                  readOnly={isPrefilled}
+                />
+                <div className="mt-6 flex w-full items-center justify-end">
+                  <Button onClick={handleNext} disabled={!canProceed}>
+                    {isAddingDomain && <Spinner />}
+                    Continue
+                  </Button>
+                </div>
+              </StepperContent>
+
+              <StepperContent value={2}>
+                {isLoadingVerificationData && (
+                  <div className="flex h-[200px] items-center justify-center">
+                    <Spinner className="size-6" />
+                  </div>
+                )}
+                {isMissingVerificationData && (
+                  <StepInstructionsError
+                    error={
+                      isVerificationDataQueryError
+                        ? verificationDataErrorMessage
+                        : "Verification details could not be loaded."
+                    }
+                    onRetry={() => refetchVerificationData()}
+                    isRetrying={isRefetchingVerificationData}
+                  />
+                )}
+                {verificationToken &&
+                  !isLoadingVerificationData &&
+                  (trackedDomainId ? (
+                    <>
+                      <StepVerifyOwnership
+                        method={method}
+                        setMethod={setMethod}
+                        domain={domain}
+                        verificationToken={verificationToken}
+                        verificationState={verificationState}
+                        onVerify={handleVerify}
+                        onReturnLater={handleReturnLater}
+                      />
+
+                      <div className="mt-6 flex w-full items-center justify-between gap-2">
+                        <div className="flex-1">
+                          <ShareInstructionsDialog
+                            domain={domain}
+                            verificationToken={verificationToken}
+                            trackedDomainId={trackedDomainId}
+                          />
+                        </div>
+                        <Button
+                          onClick={handleNext}
+                          disabled={
+                            !canProceed ||
+                            isLoadingVerificationData ||
+                            isMissingVerificationData
+                          }
+                        >
+                          {isVerifying ? <Spinner /> : <Check />}
+                          {isVerifying ? "Checking..." : "Check Now"}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                        <AlertCircle className="size-6 text-destructive" />
+                      </div>
+                      <div className="text-center" aria-live="polite">
+                        <h3 className="font-semibold">Something went wrong</h3>
+                        <p className="text-muted-foreground text-sm">
+                          Domain tracking ID is missing. Please try adding the
+                          domain again.
+                        </p>
+                      </div>
+                      {onClose && (
+                        <Button variant="outline" onClick={onClose}>
+                          Close
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+              </StepperContent>
+
+              <StepperContent value={3}>
+                <StepConfirmation domain={domain} />
+                <div className="mt-6 flex w-full items-center justify-end">
+                  <Button onClick={handleNext}>Done</Button>
+                </div>
+              </StepperContent>
+            </motion.div>
+          </AnimatePresence>
+        </StepperPanel>
+      </Stepper>
     </div>
   );
 }
