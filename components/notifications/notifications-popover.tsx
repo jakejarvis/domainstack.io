@@ -27,7 +27,7 @@ export function NotificationsPopover() {
   const [open, setOpen] = useState(false);
 
   // Get unread count for inbox
-  const { data: count = 0, refetch: refetchCount } = useQuery({
+  const { data: count = 0 } = useQuery({
     ...trpc.notifications.unreadCount.queryOptions(),
     refetchOnWindowFocus: true,
     refetchInterval: 60_000,
@@ -44,7 +44,6 @@ export function NotificationsPopover() {
     isFetchingNextPage,
     isLoading,
     isError: isNotificationsError,
-    refetch: refetchNotifications,
   } = useInfiniteQuery({
     ...trpc.notifications.list.infiniteQueryOptions({
       limit: 20,
@@ -58,13 +57,9 @@ export function NotificationsPopover() {
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
 
-  // Refetch when popover opens
-  useEffect(() => {
-    if (open) {
-      void refetchNotifications();
-      void refetchCount();
-    }
-  }, [open, refetchNotifications, refetchCount]);
+  // Note: Refetch on popover open is handled automatically by TanStack Query
+  // since staleTime: 0 ensures fresh data on each mount/query key change.
+  // The infinite query refetches when `filter` changes (via query key).
 
   // Reset scroll position when switching tabs
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally trigger on view change

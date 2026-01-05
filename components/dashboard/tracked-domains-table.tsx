@@ -233,10 +233,12 @@ export function TrackedDomainsTable({
   const [columnVisibility, setColumnVisibility] =
     useColumnVisibilityPreference();
 
-  // Use a ref to store current sorting state so withUnverifiedLast can be memoized
-  // without causing columns to be recreated on every sort change
+  // Use refs to store current state so columns can be memoized
+  // without being recreated on every selection/sort change
   const sortingRef = useRef(sorting);
   sortingRef.current = sorting;
+  const selectedIdsRef = useRef(selectedIds);
+  selectedIdsRef.current = selectedIds;
 
   // Create a stable sorting helper that reads from ref instead of closing over state
   // This prevents columns from being recreated on every render
@@ -255,7 +257,8 @@ export function TrackedDomainsTable({
         id: "select",
         header: () => null, // No header checkbox here - it's in the bulk toolbar
         cell: ({ row }) => {
-          const isSelected = selectedIds.has(row.original.id);
+          // Read from ref to avoid columns recreation on selection change
+          const isSelected = selectedIdsRef.current.has(row.original.id);
           return (
             <div className="relative size-4">
               {/* Favicon - hidden on hover or when selected */}
@@ -626,14 +629,9 @@ export function TrackedDomainsTable({
         },
       },
     ],
-    [
-      selectedIds,
-      onToggleSelect,
-      onRemove,
-      onArchive,
-      onVerify,
-      withUnverifiedLast,
-    ],
+    // Note: selectedIds is accessed via ref (selectedIdsRef) to avoid recreating
+    // columns on every selection change. The table re-renders cells independently.
+    [onToggleSelect, onRemove, onArchive, onVerify, withUnverifiedLast],
   );
 
   const table = useReactTable({

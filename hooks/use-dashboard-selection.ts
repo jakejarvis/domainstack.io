@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Hook for managing multi-select state with O(1) operations.
@@ -92,16 +92,20 @@ export function useDashboardSelection<T extends string = string>(
   }, [effectiveVisibleIds, selectedIds, selectAll]);
 
   // Keyboard handler for Escape to clear selection
+  // Use ref to avoid re-attaching listener on every selection change
+  const selectedCountRef = useRef(selectedIds.size);
+  selectedCountRef.current = selectedIds.size;
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedIds.size > 0) {
+      if (e.key === "Escape" && selectedCountRef.current > 0) {
         clearSelection();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIds.size, clearSelection]);
+  }, [clearSelection]);
 
   // Computed state - based on visible items for pagination support
   const selectedCount = selectedIds.size;

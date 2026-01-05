@@ -51,6 +51,8 @@ export function useDashboardFilters(
   domains: TrackedDomainWithDetails[],
   options?: { onFilterChange?: () => void },
 ) {
+  // Destructure to get stable reference for callbacks
+  const onFilterChange = options?.onFilterChange;
   // Use shared hydrated time to avoid extra re-renders
   const now = useHydratedNow();
 
@@ -344,33 +346,33 @@ export function useDashboardFilters(
   const setSearch = useCallback(
     (value: string) => {
       setFilters({ search: value || null, domainId: null });
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   const setStatus = useCallback(
     (values: StatusFilter[]) => {
       setFilters({ status: values.length > 0 ? values : null, domainId: null });
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   const setHealth = useCallback(
     (values: HealthFilter[]) => {
       setFilters({ health: values.length > 0 ? values : null, domainId: null });
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   const setTlds = useCallback(
     (values: string[]) => {
       setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   const setProviders = useCallback(
@@ -379,9 +381,9 @@ export function useDashboardFilters(
         providers: values.length > 0 ? values : null,
         domainId: null,
       });
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   const clearFilters = useCallback(() => {
@@ -393,8 +395,8 @@ export function useDashboardFilters(
       providers: null,
       domainId: null,
     });
-    options?.onFilterChange?.();
-  }, [setFilters, options]);
+    onFilterChange?.();
+  }, [setFilters, onFilterChange]);
 
   // Quick filter for health summary clicks
   const applyHealthFilter = useCallback(
@@ -404,16 +406,16 @@ export function useDashboardFilters(
       } else {
         setFilters({ status: null, health: [filter], domainId: null });
       }
-      options?.onFilterChange?.();
+      onFilterChange?.();
     },
-    [setFilters, options],
+    [setFilters, onFilterChange],
   );
 
   // Clear just the domainId filter (for notification deep link chip removal)
   const clearDomainId = useCallback(() => {
     setFilters({ domainId: null });
-    options?.onFilterChange?.();
-  }, [setFilters, options]);
+    onFilterChange?.();
+  }, [setFilters, onFilterChange]);
 
   // Get the domain name for the filtered domain ID (for chip display)
   const filteredDomainName = activeFilters.domainId

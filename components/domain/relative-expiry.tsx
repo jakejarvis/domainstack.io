@@ -1,13 +1,9 @@
 "use client";
 
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { cn } from "@/lib/utils";
-
-type ExpiryState = {
-  text: string;
-  daysUntil: number;
-} | null;
 
 export function RelativeExpiryString({
   to,
@@ -24,23 +20,25 @@ export function RelativeExpiryString({
   /** className applied to the wrapper span */
   className?: string;
 }) {
-  const [state, setState] = useState<ExpiryState>(null);
+  // Use shared hydrated time to avoid render cascades
+  const now = useHydratedNow();
 
-  // Calculate both text and days in a single effect to avoid multiple state updates
-  useEffect(() => {
+  // Calculate state synchronously using memoization
+  const state = useMemo(() => {
+    if (!now) return null;
     try {
       const targetDate = new Date(to);
-      const now = new Date();
-      setState({
+      return {
         text: formatDistanceToNowStrict(targetDate, { addSuffix: true }),
         daysUntil: differenceInDays(targetDate, now),
-      });
+      };
     } catch {
-      // Invalid date - leave as null
+      // Invalid date
+      return null;
     }
-  }, [to]);
+  }, [to, now]);
 
-  // SSR: render nothing until client calculates values
+  // SSR: render nothing until client hydrates
   if (!state) return null;
 
   const { text, daysUntil } = state;

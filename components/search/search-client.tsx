@@ -49,14 +49,11 @@ export function SearchClient({
   useEffect(() => setMounted(true), []);
 
   // Store function refs to avoid unnecessary effect re-runs
+  // Direct assignment is sufficient - no useEffect needed
   const navigateRef = useRef(navigateToDomain);
+  navigateRef.current = navigateToDomain;
   const onCompleteRef = useRef(onNavigationCompleteAction);
-
-  // Update refs when functions change
-  useEffect(() => {
-    navigateRef.current = navigateToDomain;
-    onCompleteRef.current = onNavigationCompleteAction;
-  }, [navigateToDomain, onNavigationCompleteAction]);
+  onCompleteRef.current = onNavigationCompleteAction;
 
   // Handle external navigation requests (e.g., from suggestion clicks)
   useEffect(() => {
