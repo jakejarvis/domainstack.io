@@ -9,7 +9,93 @@ import {
   it,
   vi,
 } from "vitest";
-import type { Provider, ProviderCategory } from "@/lib/schemas";
+import type { DnsRecord, Provider, ProviderCategory } from "@/lib/schemas";
+
+// Mock DNS workflow responses by domain
+const DNS_MOCK_DATA: Record<string, DnsRecord[]> = {
+  "web-hosting.example": [
+    { type: "A", name: "web-hosting.example", value: "1.2.3.4", ttl: 3600 },
+    {
+      type: "MX",
+      name: "web-hosting.example",
+      value: "aspmx.l.google.com",
+      ttl: 3600,
+      priority: 10,
+    },
+    {
+      type: "NS",
+      name: "web-hosting.example",
+      value: "ns1.cloudflare.com",
+      ttl: 3600,
+    },
+  ],
+  "no-a.example": [
+    {
+      type: "MX",
+      name: "no-a.example",
+      value: "mail.example.com",
+      ttl: 3600,
+      priority: 10,
+    },
+    { type: "NS", name: "no-a.example", value: "ns1.example.net", ttl: 3600 },
+  ],
+  "email-only.example": [
+    {
+      type: "MX",
+      name: "email-only.example",
+      value: "mail.example.com",
+      ttl: 3600,
+      priority: 10,
+    },
+    {
+      type: "NS",
+      name: "email-only.example",
+      value: "ns1.example.net",
+      ttl: 3600,
+    },
+  ],
+  "owner.example": [
+    { type: "A", name: "owner.example", value: "9.9.9.9", ttl: 3600 },
+    {
+      type: "NS",
+      name: "owner.example",
+      value: "ns1.example.net",
+      ttl: 3600,
+    },
+  ],
+  "provider-create.example": [
+    { type: "A", name: "provider-create.example", value: "1.2.3.4", ttl: 3600 },
+    {
+      type: "MX",
+      name: "provider-create.example",
+      value: "aspmx.l.google.com",
+      ttl: 3600,
+      priority: 10,
+    },
+    {
+      type: "NS",
+      name: "provider-create.example",
+      value: "ns1.cloudflare.com",
+      ttl: 3600,
+    },
+  ],
+};
+
+// Mock workflow API
+vi.mock("workflow/api", () => ({
+  start: vi.fn((_workflow: unknown, args: unknown[]) => {
+    const { domain } = (args as [{ domain: string }])[0];
+    const records = DNS_MOCK_DATA[domain] ?? [];
+    return Promise.resolve({
+      runId: `mock-run-${domain}`,
+      returnValue: Promise.resolve({
+        data: { records, resolver: "mock" },
+        cached: false,
+        success: true,
+      }),
+    });
+  }),
+}));
 
 // Mock provider catalog to return test providers
 const TEST_PROVIDERS: Record<ProviderCategory, Provider[]> = {

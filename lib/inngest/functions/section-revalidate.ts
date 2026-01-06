@@ -4,21 +4,23 @@ import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type { Section } from "@/lib/schemas";
-import { getDnsRecords } from "@/server/services/dns";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
-import { getSeo } from "@/server/services/seo";
 import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
 import { registrationWorkflow } from "@/workflows/registration";
+import { seoWorkflow } from "@/workflows/seo";
 
 async function runSingleSection(
   domain: string,
   section: Section,
 ): Promise<void> {
   switch (section) {
-    case "dns":
-      await getDnsRecords(domain);
+    case "dns": {
+      const run = await start(dnsWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
     case "headers":
       await getHeaders(domain);
       return;
@@ -30,9 +32,11 @@ async function runSingleSection(
       await run.returnValue;
       return;
     }
-    case "seo":
-      await getSeo(domain);
+    case "seo": {
+      const run = await start(seoWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
     case "registration": {
       const run = await start(registrationWorkflow, [{ domain }]);
       await run.returnValue;

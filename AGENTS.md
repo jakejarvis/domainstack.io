@@ -230,10 +230,12 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 | Workflow | Input | Purpose | Steps |
 |----------|-------|---------|-------|
 | `certificatesWorkflow` | `{ domain }` | Fetch SSL/TLS certificate chain | checkCache → fetchCertificateChain → detectProvidersAndBuildResponse → persistCertificates |
+| `dnsWorkflow` | `{ domain }` | Resolve DNS records via DoH | checkCache → fetchFromProviders → persistRecords |
 | `faviconWorkflow` | `{ domain }` | Extract domain favicon | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
 | `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
 | `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
 | `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
+| `seoWorkflow` | `{ domain }` | Fetch SEO meta and robots.txt | checkCache → fetchHtml → fetchRobots → processOgImage → persistSeo |
 
 **Usage Pattern:**
 ```typescript
@@ -246,7 +248,7 @@ const result = await run.returnValue;
 ```
 
 **When to use Workflow vs Inngest:**
-- **Workflow:** Heavy, request-triggered operations that need durability (screenshots, TLS handshakes, RDAP lookups)
+- **Workflow:** Heavy, request-triggered operations that need durability (screenshots, TLS handshakes, RDAP lookups, DNS resolution, SEO data fetching)
 - **Inngest:** Scheduled jobs, event-driven background tasks, fan-out patterns, multi-domain batch operations
 
 **Observability:**

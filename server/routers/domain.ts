@@ -13,19 +13,19 @@ import {
   RegistrationResponseSchema,
   SeoResponseSchema,
 } from "@/lib/schemas";
-import { getDnsRecords } from "@/server/services/dns";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
-import { getSeo } from "@/server/services/seo";
 import {
   createTRPCRouter,
   domainProcedure,
   publicProcedure,
 } from "@/trpc/init";
 import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
 import { faviconWorkflow } from "@/workflows/favicon";
 import { registrationWorkflow } from "@/workflows/registration";
 import { screenshotWorkflow } from "@/workflows/screenshot";
+import { seoWorkflow } from "@/workflows/seo";
 
 const logger = createLogger({ source: "domain-router" });
 
@@ -95,10 +95,35 @@ export const domainRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * Get DNS records for a domain using a durable workflow.
+   * Queries multiple DoH providers with automatic fallback.
+   */
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
     .output(DnsRecordsResponseSchema)
-    .query(({ input }) => getDnsRecords(input.domain)),
+    .query(async ({ input }) => {
+      try {
+        const run = await start(dnsWorkflow, [{ domain: input.domain }]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "dns workflow started",
+        );
+
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "dns workflow completed",
+        );
+
+        return result.data;
+      } catch (err) {
+        logger.error({ err, domain: input.domain }, "dns workflow failed");
+        return { records: [], resolver: null };
+      }
+    }),
 
   getHosting: domainProcedure
     .input(DomainInputSchema)
@@ -145,10 +170,40 @@ export const domainRouter = createTRPCRouter({
     .output(HeadersResponseSchema)
     .query(({ input }) => getHeaders(input.domain)),
 
+  /**
+   * Get SEO data for a domain using a durable workflow.
+   * Fetches HTML, robots.txt, and OG images with automatic retries.
+   */
   getSeo: domainProcedure
     .input(DomainInputSchema)
     .output(SeoResponseSchema)
-    .query(({ input }) => getSeo(input.domain)),
+    .query(async ({ input }) => {
+      try {
+        const run = await start(seoWorkflow, [{ domain: input.domain }]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "seo workflow started",
+        );
+
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "seo workflow completed",
+        );
+
+        return result.data;
+      } catch (err) {
+        logger.error({ err, domain: input.domain }, "seo workflow failed");
+        return {
+          meta: null,
+          robots: null,
+          preview: null,
+          source: { finalUrl: null, status: null },
+        };
+      }
+    }),
 
   /**
    * Get a favicon for a domain using a durable workflow.

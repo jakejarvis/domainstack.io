@@ -1,0 +1,457 @@
+import type { DnsRecord, DnsRecordsResponse, DnsType } from "@/lib/schemas";
+
+export interface DnsWorkflowInput {
+  domain: string;
+}
+
+export interface DnsWorkflowResult {
+  success: boolean;
+  cached: boolean;
+  data: DnsRecordsResponse;
+}
+
+// Internal types for step-to-step transfer
+interface CacheHit {
+  found: true;
+  records: DnsRecord[];
+  resolver: string | null;
+}
+
+interface CacheMiss {
+  found: false;
+  domainId: string | null;
+  lastAccessedAt: Date | null;
+}
+
+type CacheResult = CacheHit | CacheMiss;
+
+interface FetchSuccess {
+  success: true;
+  records: DnsRecord[];
+  resolver: string;
+  // Records with expiry info for persistence
+  recordsWithExpiry: Array<{
+    type: DnsType;
+    name: string;
+    value: string;
+    ttl: number | null;
+    priority: number | null;
+    isCloudflare: boolean | null;
+    expiresAt: string; // ISO string for serialization
+  }>;
+}
+
+interface FetchFailure {
+  success: false;
+  error: string;
+}
+
+type FetchResult = FetchSuccess | FetchFailure;
+
+/**
+ * Durable DNS workflow that breaks down DNS resolution into
+ * independently retryable steps:
+ * 1. Check cache (Postgres)
+ * 2. Fetch from DoH providers with fallback
+ * 3. Persist to database
+ */
+export async function dnsWorkflow(
+  input: DnsWorkflowInput,
+): Promise<DnsWorkflowResult> {
+  "use workflow";
+
+  const { domain } = input;
+
+  // Step 1: Check Postgres cache
+  const cacheResult = await checkCache(domain);
+
+  if (cacheResult.found) {
+    return {
+      success: true,
+      cached: true,
+      data: {
+        records: cacheResult.records,
+        resolver: cacheResult.resolver,
+      },
+    };
+  }
+
+  // Step 2: Fetch from DoH providers
+  const fetchResult = await fetchFromProviders(domain);
+
+  if (!fetchResult.success) {
+    return {
+      success: false,
+      cached: false,
+      data: { records: [], resolver: null },
+    };
+  }
+
+  // Step 3: Persist to database (only if domain exists)
+  if (cacheResult.domainId) {
+    await persistRecords(
+      cacheResult.domainId,
+      fetchResult.resolver,
+      fetchResult.recordsWithExpiry,
+      cacheResult.lastAccessedAt?.toISOString() ?? null,
+      domain,
+    );
+  }
+
+  return {
+    success: true,
+    cached: false,
+    data: {
+      records: fetchResult.records,
+      resolver: fetchResult.resolver,
+    },
+  };
+}
+
+/**
+ * Step: Check Postgres cache for existing DNS records
+ */
+async function checkCache(domain: string): Promise<CacheResult> {
+  "use step";
+
+  const { eq } = await import("drizzle-orm");
+  const { db } = await import("@/lib/db/client");
+  const { findDomainByName } = await import("@/lib/db/repos/domains");
+  const { dnsRecords } = await import("@/lib/db/schema");
+  const { DnsTypeSchema } = await import("@/lib/schemas");
+
+  const nowMs = Date.now();
+  const types = DnsTypeSchema.options;
+
+  try {
+    const existingDomain = await findDomainByName(domain);
+
+    if (!existingDomain) {
+      return { found: false, domainId: null, lastAccessedAt: null };
+    }
+
+    const rows = await db
+      .select({
+        type: dnsRecords.type,
+        name: dnsRecords.name,
+        value: dnsRecords.value,
+        ttl: dnsRecords.ttl,
+        priority: dnsRecords.priority,
+        isCloudflare: dnsRecords.isCloudflare,
+        resolver: dnsRecords.resolver,
+        expiresAt: dnsRecords.expiresAt,
+      })
+      .from(dnsRecords)
+      .where(eq(dnsRecords.domainId, existingDomain.id));
+
+    if (rows.length === 0) {
+      return {
+        found: false,
+        domainId: existingDomain.id,
+        lastAccessedAt: existingDomain.lastAccessedAt,
+      };
+    }
+
+    // Group by type and check freshness
+    const rowsByType = rows.reduce(
+      (acc, r) => {
+        const t = r.type as DnsType;
+        if (!acc[t]) acc[t] = [];
+        acc[t].push(r);
+        return acc;
+      },
+      {} as Record<DnsType, typeof rows>,
+    );
+
+    const typeIsFresh = (t: DnsType) => {
+      const arr = rowsByType[t] ?? [];
+      return (
+        arr.length > 0 &&
+        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
+      );
+    };
+
+    const allFresh = (types as DnsType[]).every((t) => typeIsFresh(t));
+
+    if (!allFresh) {
+      return {
+        found: false,
+        domainId: existingDomain.id,
+        lastAccessedAt: existingDomain.lastAccessedAt,
+      };
+    }
+
+    // Assemble cached records
+    const records: DnsRecord[] = rows.map((r) => ({
+      type: r.type as DnsType,
+      name: r.name,
+      value: r.value,
+      ttl: r.ttl ?? undefined,
+      priority: r.priority ?? undefined,
+      isCloudflare: r.isCloudflare ?? undefined,
+    }));
+
+    // Deduplicate and sort
+    const deduplicated = deduplicateDnsRecords(records);
+    const sorted = sortDnsRecordsByType(deduplicated, types);
+
+    return {
+      found: true,
+      records: sorted,
+      resolver: rows[0]?.resolver ?? null,
+    };
+  } catch {
+    // Cache check failed, proceed to fetch
+    return { found: false, domainId: null, lastAccessedAt: null };
+  }
+}
+
+/**
+ * Step: Fetch DNS records from DoH providers with fallback
+ */
+async function fetchFromProviders(domain: string): Promise<FetchResult> {
+  "use step";
+
+  const { DNS_TYPE_NUMBERS, providerOrderForLookup, queryDohProvider } =
+    await import("@/lib/dns-utils");
+  const { isCloudflareIp } = await import("@/lib/cloudflare");
+  const { DnsTypeSchema } = await import("@/lib/schemas");
+  const { ttlForDnsRecord } = await import("@/lib/ttl");
+  const { createLogger } = await import("@/lib/logger/server");
+
+  const logger = createLogger({ source: "dns-workflow" });
+  const providers = providerOrderForLookup(domain);
+  const types = DnsTypeSchema.options;
+  const now = new Date();
+
+  for (const provider of providers) {
+    try {
+      const results = await Promise.all(
+        types.map(async (type) => {
+          const answers = await queryDohProvider(provider, domain, type, {
+            timeoutMs: 2000,
+            retries: 1,
+            backoffMs: 150,
+          });
+
+          const records: DnsRecord[] = [];
+          for (const a of answers) {
+            // Filter out records that don't match requested type
+            const expectedTypeNumber = DNS_TYPE_NUMBERS[type];
+            if (a.type !== expectedTypeNumber) continue;
+
+            const name = a.name.endsWith(".") ? a.name.slice(0, -1) : a.name;
+            const ttl = a.TTL;
+
+            switch (type) {
+              case "A":
+              case "AAAA": {
+                const value = a.data.endsWith(".")
+                  ? a.data.slice(0, -1)
+                  : a.data;
+                const isCloudflare = await isCloudflareIp(value);
+                records.push({ type, name, value, ttl, isCloudflare });
+                break;
+              }
+              case "NS": {
+                const value = a.data.endsWith(".")
+                  ? a.data.slice(0, -1)
+                  : a.data;
+                records.push({ type, name, value, ttl });
+                break;
+              }
+              case "TXT": {
+                const value = a.data.replace(/^"|"$/g, "");
+                records.push({ type, name, value, ttl });
+                break;
+              }
+              case "MX": {
+                const [prioStr, ...hostParts] = a.data.split(" ");
+                const priority = Number(prioStr);
+                let host = hostParts.join(" ");
+                host = host.endsWith(".") ? host.slice(0, -1) : host;
+                if (!host) continue;
+                records.push({
+                  type,
+                  name,
+                  value: host,
+                  ttl,
+                  priority: Number.isFinite(priority) ? priority : 0,
+                });
+                break;
+              }
+            }
+          }
+          return records;
+        }),
+      );
+
+      const flat = results.flat();
+      const deduplicated = deduplicateDnsRecords(flat);
+      const sorted = sortDnsRecordsByType(deduplicated, types);
+
+      // Build records with expiry for persistence
+      const recordsWithExpiry = flat.map((r) => ({
+        type: r.type,
+        name: r.name,
+        value: r.value,
+        ttl: r.ttl ?? null,
+        priority: r.priority ?? null,
+        isCloudflare: r.isCloudflare ?? null,
+        expiresAt: ttlForDnsRecord(now, r.ttl ?? null).toISOString(),
+      }));
+
+      return {
+        success: true,
+        records: sorted,
+        resolver: provider.key,
+        recordsWithExpiry,
+      };
+    } catch (err) {
+      logger.info({ err, domain, provider: provider.key }, "provider failed");
+      // Try next provider
+    }
+  }
+
+  logger.error({ domain }, "all DoH providers failed");
+  return { success: false, error: "All DoH providers failed" };
+}
+
+/**
+ * Step: Persist DNS records to database
+ */
+async function persistRecords(
+  domainId: string,
+  resolver: string,
+  recordsWithExpiry: Array<{
+    type: DnsType;
+    name: string;
+    value: string;
+    ttl: number | null;
+    priority: number | null;
+    isCloudflare: boolean | null;
+    expiresAt: string;
+  }>,
+  lastAccessedAt: string | null,
+  domain: string,
+): Promise<void> {
+  "use step";
+
+  const { replaceDns } = await import("@/lib/db/repos/dns");
+  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { createLogger } = await import("@/lib/logger/server");
+  const { DnsTypeSchema } = await import("@/lib/schemas");
+
+  const logger = createLogger({ source: "dns-workflow" });
+  const types = DnsTypeSchema.options;
+  const now = new Date();
+
+  try {
+    // Group records by type for replaceDns
+    const recordsByType = Object.fromEntries(
+      (types as DnsType[]).map((t) => [
+        t,
+        recordsWithExpiry
+          .filter((r) => r.type === t)
+          .map((r) => ({
+            name: r.name,
+            value: r.value,
+            ttl: r.ttl,
+            priority: r.priority,
+            isCloudflare: r.isCloudflare,
+            expiresAt: new Date(r.expiresAt),
+          })),
+      ]),
+    ) as Record<
+      DnsType,
+      Array<{
+        name: string;
+        value: string;
+        ttl: number | null;
+        priority: number | null;
+        isCloudflare: boolean | null;
+        expiresAt: Date;
+      }>
+    >;
+
+    await replaceDns({
+      domainId,
+      resolver,
+      fetchedAt: now,
+      recordsByType,
+    });
+
+    // Schedule revalidation
+    const times = recordsWithExpiry
+      .map((r) => new Date(r.expiresAt).getTime())
+      .filter((t) => Number.isFinite(t));
+    const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
+
+    await scheduleRevalidation(
+      domain,
+      "dns",
+      soonest,
+      lastAccessedAt ? new Date(lastAccessedAt) : null,
+    );
+
+    logger.debug(
+      { domain, recordCount: recordsWithExpiry.length },
+      "persisted",
+    );
+  } catch (err) {
+    logger.error({ err, domain }, "failed to persist DNS records");
+    // Don't throw - persistence failure shouldn't fail the workflow
+  }
+}
+
+// Helper functions (same logic as original service)
+function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
+  const seen = new Set<string>();
+  const deduplicated: DnsRecord[] = [];
+
+  for (const r of records) {
+    const priorityPart = r.priority != null ? `|${r.priority}` : "";
+    const key = `${r.type}|${r.name.trim().toLowerCase()}|${r.value.trim().toLowerCase()}${priorityPart}`;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated;
+}
+
+function sortDnsRecordsByType(
+  records: DnsRecord[],
+  order: readonly DnsType[],
+): DnsRecord[] {
+  const byType: Record<DnsType, DnsRecord[]> = {
+    A: [],
+    AAAA: [],
+    MX: [],
+    TXT: [],
+    NS: [],
+  };
+  for (const r of records) byType[r.type].push(r);
+
+  const sorted: DnsRecord[] = [];
+  for (const t of order) {
+    sorted.push(...sortDnsRecordsForType(byType[t], t));
+  }
+  return sorted;
+}
+
+function sortDnsRecordsForType(arr: DnsRecord[], type: DnsType): DnsRecord[] {
+  if (type === "MX") {
+    arr.sort((a, b) => {
+      const ap = a.priority ?? Number.MAX_SAFE_INTEGER;
+      const bp = b.priority ?? Number.MAX_SAFE_INTEGER;
+      if (ap !== bp) return ap - bp;
+      return a.value.localeCompare(b.value);
+    });
+    return arr;
+  }
+  arr.sort((a, b) => a.value.localeCompare(b.value));
+  return arr;
+}

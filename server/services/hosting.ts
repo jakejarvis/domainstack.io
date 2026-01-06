@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { after } from "next/server";
 import { cache } from "react";
+import { start } from "workflow/api";
 import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
@@ -24,9 +25,9 @@ import {
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { HostingResponse, Provider } from "@/lib/schemas";
 import { ttlForHosting } from "@/lib/ttl";
-import { getDnsRecords } from "@/server/services/dns";
 import { getHeaders } from "@/server/services/headers";
 import { lookupIpMeta } from "@/server/services/ip";
+import { dnsWorkflow } from "@/workflows/dns";
 
 const logger = createLogger({ source: "hosting" });
 
@@ -112,7 +113,10 @@ export const getHosting = cache(async function getHosting(
     }
   }
 
-  const { records: dns } = await getDnsRecords(domain);
+  // Get DNS records via workflow
+  const dnsRun = await start(dnsWorkflow, [{ domain }]);
+  const dnsResult = await dnsRun.returnValue;
+  const dns = dnsResult.data.records;
   const a = dns.find((d) => d.type === "A");
   const aaaa = dns.find((d) => d.type === "AAAA");
   const mx = dns.filter((d) => d.type === "MX");
