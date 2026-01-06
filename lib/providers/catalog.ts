@@ -1,7 +1,8 @@
 import { cache } from "react";
 import { getProviderCatalog } from "@/lib/edge-config";
-import type { Provider, ProviderCategory } from "@/lib/schemas";
+import type { ProviderCategory } from "@/lib/schemas/primitives";
 import { getProvidersFromCatalog } from "./parser";
+import type { CatalogProvider } from "./types";
 
 /**
  * Cached fetch of the provider catalog from Edge Config.
@@ -26,7 +27,7 @@ const getCachedCatalog = cache(async () => {
  */
 export async function getProviders(
   category: ProviderCategory,
-): Promise<Provider[]> {
+): Promise<CatalogProvider[]> {
   const catalog = await getCachedCatalog();
 
   if (!catalog) {
@@ -44,7 +45,7 @@ export async function getProviders(
  * @returns Record of category to providers array
  */
 export async function getAllProviders(): Promise<
-  Record<ProviderCategory, Provider[]>
+  Record<ProviderCategory, CatalogProvider[]>
 > {
   const catalog = await getCachedCatalog();
 

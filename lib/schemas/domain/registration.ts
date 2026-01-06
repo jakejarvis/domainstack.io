@@ -1,5 +1,19 @@
 import { z } from "zod";
-import { ProviderRefSchema } from "@/lib/schemas/internal/provider-ref";
+import {
+  ProviderRefSchema,
+  type RegistrationContact,
+  RegistrationContactSchema,
+  type RegistrationContacts,
+  RegistrationContactsSchema,
+} from "@/lib/schemas/primitives";
+
+// Re-export registration contacts from primitives for backwards compatibility
+export {
+  type RegistrationContact,
+  RegistrationContactSchema,
+  type RegistrationContacts,
+  RegistrationContactsSchema,
+};
 
 // Reusable sub-schemas to avoid duplication elsewhere
 export const RegistrationStatusSchema = z.object({
@@ -9,32 +23,9 @@ export const RegistrationStatusSchema = z.object({
 });
 export const RegistrationStatusesSchema = z.array(RegistrationStatusSchema);
 
-export const RegistrationContactSchema = z.object({
-  type: z.enum([
-    "registrant",
-    "admin",
-    "tech",
-    "billing",
-    "abuse",
-    "registrar",
-    "reseller",
-    "unknown",
-  ]),
-  name: z.string().optional(),
-  organization: z.string().optional(),
-  email: z.union([z.string(), z.array(z.string())]).optional(),
-  phone: z.union([z.string(), z.array(z.string())]).optional(),
-  fax: z.union([z.string(), z.array(z.string())]).optional(),
-  street: z.array(z.string()).optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
-  countryCode: z.string().optional(),
-});
-export const RegistrationContactsSchema = z.array(RegistrationContactSchema);
-
-export const RegistrationSourceSchema = z.enum(["rdap", "whois"]);
+// Note: RegistrationSource is exported from primitives/registration-source.ts
+// Re-exported here for backwards compatibility
+export { RegistrationSourceSchema } from "@/lib/schemas/primitives";
 
 // Registration availability status
 export const RegistrationStatusEnumSchema = z.enum([
@@ -161,6 +152,6 @@ export type RegistrationNameserver = z.infer<
 export type RegistrationNameservers = z.infer<
   typeof RegistrationNameserversSchema
 >;
-export type RegistrationContact = z.infer<typeof RegistrationContactSchema>;
-export type RegistrationContacts = z.infer<typeof RegistrationContactsSchema>;
-export type RegistrationSource = z.infer<typeof RegistrationSourceSchema>;
+// RegistrationContact and RegistrationContacts types are re-exported from primitives
+// RegistrationSource is re-exported from primitives/registration-source.ts
+export type { RegistrationSource } from "@/lib/schemas/primitives";

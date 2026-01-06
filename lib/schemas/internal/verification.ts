@@ -1,13 +1,17 @@
 import { z } from "zod";
 import {
+  type VerificationMethod,
   VerificationMethodSchema,
+  type VerificationStatus,
   VerificationStatusSchema,
-} from "@/lib/db/zod";
+} from "@/lib/schemas/primitives";
 
-// Export the schema for use in other files
-export { VerificationMethodSchema, VerificationStatusSchema };
-export type VerificationMethod = z.infer<typeof VerificationMethodSchema>;
-export type VerificationStatus = z.infer<typeof VerificationStatusSchema>;
+// Re-export primitives for backwards compatibility
+export { VerificationMethodSchema };
+export type { VerificationMethod };
+
+export { VerificationStatusSchema };
+export type { VerificationStatus };
 
 const BaseInstructionsSchema = z.object({
   title: z.string(),

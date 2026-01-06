@@ -1,6 +1,5 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import type { Provider } from "@/lib/schemas";
 import {
   detectCertificateAuthority,
   detectDnsProvider,
@@ -8,9 +7,10 @@ import {
   detectHostingProvider,
   detectRegistrar,
 } from "./detection";
+import type { CatalogProvider } from "./types";
 
 // Mock provider catalogs for testing
-const MOCK_HOSTING_PROVIDERS: Provider[] = [
+const MOCK_HOSTING_PROVIDERS: CatalogProvider[] = [
   {
     name: "Vercel",
     domain: "vercel.com",
@@ -24,7 +24,7 @@ const MOCK_HOSTING_PROVIDERS: Provider[] = [
   },
 ];
 
-const MOCK_EMAIL_PROVIDERS: Provider[] = [
+const MOCK_EMAIL_PROVIDERS: CatalogProvider[] = [
   {
     name: "Google Workspace",
     domain: "google.com",
@@ -39,7 +39,7 @@ const MOCK_EMAIL_PROVIDERS: Provider[] = [
   },
 ];
 
-const MOCK_DNS_PROVIDERS: Provider[] = [
+const MOCK_DNS_PROVIDERS: CatalogProvider[] = [
   {
     name: "Cloudflare",
     domain: "cloudflare.com",
@@ -67,7 +67,7 @@ const MOCK_DNS_PROVIDERS: Provider[] = [
   },
 ];
 
-const MOCK_REGISTRAR_PROVIDERS: Provider[] = [
+const MOCK_REGISTRAR_PROVIDERS: CatalogProvider[] = [
   {
     name: "GoDaddy",
     domain: "godaddy.com",
@@ -82,7 +82,7 @@ const MOCK_REGISTRAR_PROVIDERS: Provider[] = [
   },
 ];
 
-const MOCK_CA_PROVIDERS: Provider[] = [
+const MOCK_CA_PROVIDERS: CatalogProvider[] = [
   {
     name: "Let's Encrypt",
     domain: "letsencrypt.org",

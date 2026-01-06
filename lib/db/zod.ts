@@ -4,22 +4,15 @@ import {
   calendarFeeds,
   certificates,
   dnsRecords,
-  dnsRecordType,
   domains,
   favicons,
   hosting,
   httpHeaders,
-  providerCategory,
   providerLogos,
-  providerSource,
   providers,
-  registrationSource,
   registrations,
   screenshots,
   seo,
-  userTier,
-  verificationMethod,
-  verificationStatus,
 } from "@/lib/db/schema";
 
 // Factories: strict for reads; coerce dates for writes
@@ -85,16 +78,3 @@ export const ScreenshotUpdate = zWrite.createUpdateSchema(screenshots);
 export const CalendarFeedSelect = zRead.createSelectSchema(calendarFeeds);
 export const CalendarFeedInsert = zWrite.createInsertSchema(calendarFeeds);
 export const CalendarFeedUpdate = zWrite.createUpdateSchema(calendarFeeds);
-
-// Enums
-export const ProviderCategorySchema =
-  zRead.createSelectSchema(providerCategory);
-export const ProviderSourceSchema = zRead.createSelectSchema(providerSource);
-export const DnsRecordTypeSchema = zRead.createSelectSchema(dnsRecordType);
-export const RegistrationSourceSchema =
-  zRead.createSelectSchema(registrationSource);
-export const VerificationMethodSchema =
-  zRead.createSelectSchema(verificationMethod);
-export const VerificationStatusSchema =
-  zRead.createSelectSchema(verificationStatus);
-export const UserTierSchema = zRead.createSelectSchema(userTier);

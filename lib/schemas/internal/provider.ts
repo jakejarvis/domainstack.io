@@ -1,22 +1,30 @@
 import { z } from "zod";
-import { ProviderCategorySchema, ProviderSourceSchema } from "@/lib/db/zod";
-import { RuleSchema } from "../../providers/rules";
+import {
+  type ProviderCategory,
+  ProviderCategorySchema,
+  type ProviderSource,
+  ProviderSourceSchema,
+  RegistrationContactsSchema,
+} from "@/lib/schemas/primitives";
 import { DnsRecordSchema } from "../domain/dns";
-import { RegistrationContactsSchema } from "../domain/registration";
 
-// Re-export ProviderRefSchema from its own file to avoid circular dependencies
-export { type ProviderRef, ProviderRefSchema } from "./provider-ref";
-
+// Re-export primitives for backwards compatibility
 export { ProviderCategorySchema };
-export type ProviderCategory = z.infer<typeof ProviderCategorySchema>;
+export type { ProviderCategory };
 
 export { ProviderSourceSchema };
-export type ProviderSource = z.infer<typeof ProviderSourceSchema>;
+export type { ProviderSource };
 
+export { type ProviderRef, ProviderRefSchema } from "@/lib/schemas/primitives";
+
+/**
+ * Provider schema without rule - the rule is a catalog concern,
+ * not needed for the type used throughout most of the app.
+ * The catalog parser extends this with rules when needed.
+ */
 export const ProviderSchema = z.object({
   name: z.string(),
   domain: z.string(),
-  rule: RuleSchema,
   category: ProviderCategorySchema,
 });
 export type Provider = z.infer<typeof ProviderSchema>;

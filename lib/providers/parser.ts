@@ -1,15 +1,11 @@
 import { z } from "zod";
-import { type Rule, RuleSchema } from "@/lib/providers/rules";
-import type { Provider, ProviderCategory } from "@/lib/schemas";
-
-/**
- * Schema for a provider entry without category (category is inferred from the key).
- */
-const CatalogProviderEntrySchema = z.object({
-  name: z.string().min(1),
-  domain: z.string().min(1),
-  rule: RuleSchema,
-});
+import type { ProviderCategory } from "@/lib/schemas/primitives";
+import type { Rule } from "./rules";
+import {
+  type CatalogProvider,
+  CatalogProviderEntrySchema,
+  toCatalogProvider,
+} from "./types";
 
 /**
  * Schema for the full provider catalog stored in Edge Config.
@@ -95,11 +91,6 @@ export const ProviderCatalogSchema = z
 export type ProviderCatalog = z.infer<typeof ProviderCatalogSchema>;
 
 /**
- * Type for the raw catalog entry (without category, as stored in Edge Config).
- */
-export type CatalogProviderEntry = z.infer<typeof CatalogProviderEntrySchema>;
-
-/**
  * Parse and validate a raw provider catalog from Edge Config.
  *
  * @param raw - Raw JSON object from Edge Config
@@ -126,25 +117,12 @@ export function safeParseProviderCatalog(
 }
 
 /**
- * Convert a catalog entry to a full Provider with category.
- */
-export function toProvider(
-  entry: CatalogProviderEntry,
-  category: ProviderCategory,
-): Provider {
-  return {
-    ...entry,
-    category,
-  };
-}
-
-/**
  * Extract providers of a specific category from a parsed catalog.
  */
 export function getProvidersFromCatalog(
   catalog: ProviderCatalog,
   category: ProviderCategory,
-): Provider[] {
+): CatalogProvider[] {
   const entries = catalog[category];
-  return entries.map((entry) => toProvider(entry, category));
+  return entries.map((entry) => toCatalogProvider(entry, category));
 }

@@ -26,7 +26,9 @@ import type {
   TwitterMeta,
 } from "@/lib/schemas";
 
-// Enums
+// Enums - values must match lib/schemas/primitives/* (source of truth for validation).
+// Drizzle requires literal tuples for proper type inference, so we duplicate the values here.
+// If you update these, also update the corresponding Zod schema in lib/schemas/primitives/.
 export const providerCategory = pgEnum("provider_category", [
   "hosting",
   "email",
