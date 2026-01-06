@@ -49,6 +49,7 @@
     "@vercel/edge-config": "^1.4.3",
     "@vercel/functions": "^3.3.5",
     "@vercel/otel": "^2.1.0",
+    "@workflow/world-vercel": "4.0.1-beta.25",
     "better-auth": "^1.4.10",
     "cheerio": "^1.1.2",
     "clipboard-copy": "^4.0.1",
@@ -94,6 +95,7 @@
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
     "vaul-base": "^1.0.0",
+    "workflow": "4.0.1-beta.41",
     "ws": "^8.19.0",
     "zod": "^4.3.5"
   },
