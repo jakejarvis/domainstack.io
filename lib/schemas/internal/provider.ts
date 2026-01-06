@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { DnsRecordSchema } from "../domain/dns";
+import { RegistrationContactsSchema } from "../domain/registration";
 
 // Primitive checks (schemas + inferred types)
 export const HeaderEqualsSchema = z.object({
@@ -131,3 +133,24 @@ export const ProviderRefSchema = z.object({
   domain: z.string().nullable(),
 });
 export type ProviderRef = z.infer<typeof ProviderRefSchema>;
+
+export const ProviderInfoSchema = z.object({
+  id: z.string().nullable(),
+  name: z.string().nullable(),
+  domain: z.string().nullable(),
+  records: z.array(DnsRecordSchema).optional(),
+  // Registrar-specific verification data (WHOIS/RDAP)
+  whoisServer: z.string().nullable().optional(),
+  rdapServers: z.array(z.string()).nullable().optional(),
+  registrationSource: z.enum(["rdap", "whois"]).nullable().optional(),
+  transferLock: z.boolean().nullable().optional(),
+  registrantInfo: z
+    .object({
+      privacyEnabled: z.boolean().nullable(),
+      contacts: RegistrationContactsSchema.nullable(),
+    })
+    .optional(),
+  // CA-specific verification data
+  certificateExpiryDate: z.date().nullable().optional(),
+});
+export type ProviderInfo = z.infer<typeof ProviderInfoSchema>;

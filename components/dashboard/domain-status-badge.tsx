@@ -6,15 +6,12 @@ import {
   VERIFICATION_GRACE_PERIOD_DAYS,
   VERIFICATION_METHOD_LABELS,
 } from "@/lib/constants/verification";
-import type {
-  VerificationMethod,
-  VerificationStatusType,
-} from "@/lib/db/repos/tracked-domains";
+import type { VerificationMethod, VerificationStatus } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 type DomainStatusBadgeProps = {
   verified: boolean;
-  verificationStatus?: VerificationStatusType;
+  verificationStatus?: VerificationStatus;
   verificationMethod?: VerificationMethod | null;
   verificationFailedAt?: Date | null;
   onClick?: () => void;

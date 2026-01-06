@@ -1,4 +1,4 @@
-import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
+import type { VerificationMethod } from "@/lib/schemas";
 
 export interface VerificationWorkflowInput {
   domain: string;

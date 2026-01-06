@@ -22,44 +22,25 @@ import {
   registrations,
   users,
   userTrackedDomains,
-  type verificationMethod,
-  type verificationStatus,
 } from "@/lib/db/schema";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-import type { DnsRecord, NotificationOverrides } from "@/lib/schemas";
+import type {
+  DnsRecord,
+  NotificationOverrides,
+  ProviderInfo,
+  RegistrationContacts,
+  VerificationMethod,
+  VerificationStatus,
+} from "@/lib/schemas";
 
 const logger = createLogger({ source: "tracked-domains" });
-
-export type VerificationMethod = (typeof verificationMethod.enumValues)[number];
-export type VerificationStatusType =
-  (typeof verificationStatus.enumValues)[number];
 
 export type CreateTrackedDomainParams = {
   userId: string;
   domainId: string;
   verificationToken: string;
   verificationMethod?: VerificationMethod;
-};
-
-export type DnsRecordForTooltip = Pick<DnsRecord, "value" | "priority">;
-
-export type ProviderInfo = {
-  id: string | null;
-  name: string | null;
-  domain: string | null;
-  records?: DnsRecordForTooltip[];
-  // Registrar-specific verification data (WHOIS/RDAP)
-  whoisServer?: string | null;
-  rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
-  transferLock?: boolean | null;
-  registrantInfo?: {
-    privacyEnabled: boolean | null;
-    contacts: unknown;
-  };
-  // CA-specific verification data
-  certificateExpiryDate?: Date | null;
 };
 
 export type TrackedDomainWithDetails = {
@@ -71,7 +52,7 @@ export type TrackedDomainWithDetails = {
   verified: boolean;
   verificationMethod: VerificationMethod | null;
   verificationToken: string;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
   notificationOverrides: NotificationOverrides;
@@ -211,7 +192,7 @@ export type TrackedDomainWithDomainName = {
   verificationToken: string;
   verificationMethod: VerificationMethod | null;
   verified: boolean;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
 };
 
 /**
@@ -249,7 +230,7 @@ type TrackedDomainRow = {
   verified: boolean;
   verificationMethod: VerificationMethod | null;
   verificationToken: string;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
   notificationOverrides: NotificationOverrides;
@@ -279,7 +260,7 @@ type TrackedDomainRow = {
   registrationSource: "rdap" | "whois" | null;
   registrationTransferLock: boolean | null;
   registrationPrivacyEnabled: boolean | null;
-  registrationContacts: unknown;
+  registrationContacts: RegistrationContacts | null;
 };
 
 /**
@@ -407,11 +388,9 @@ function transformToTrackedDomainWithDetails(
  * Deduplicate tooltip records by value and priority.
  * Case-insensitive comparison for consistent deduplication.
  */
-function deduplicateTooltipRecords(
-  records: DnsRecordForTooltip[],
-): DnsRecordForTooltip[] {
+function deduplicateTooltipRecords(records: DnsRecord[]): DnsRecord[] {
   const seen = new Set<string>();
-  const deduplicated: DnsRecordForTooltip[] = [];
+  const deduplicated: DnsRecord[] = [];
 
   for (const r of records) {
     const key = `${r.value.trim().toLowerCase()}|${r.priority ?? ""}`;
@@ -432,9 +411,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
   Map<
     string,
     {
-      hosting: DnsRecordForTooltip[];
-      email: DnsRecordForTooltip[];
-      dns: DnsRecordForTooltip[];
+      hosting: DnsRecord[];
+      email: DnsRecord[];
+      dns: DnsRecord[];
     }
   >
 > {
@@ -447,6 +426,7 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
     .select({
       domainId: dnsRecords.domainId,
       type: dnsRecords.type,
+      name: dnsRecords.name,
       value: dnsRecords.value,
       priority: dnsRecords.priority,
     })
@@ -462,9 +442,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
   const recordsByDomain = new Map<
     string,
     {
-      hosting: DnsRecordForTooltip[];
-      email: DnsRecordForTooltip[];
-      dns: DnsRecordForTooltip[];
+      hosting: DnsRecord[];
+      email: DnsRecord[];
+      dns: DnsRecord[];
     }
   >();
 
@@ -480,7 +460,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
       recordsByDomain.set(record.domainId, groups);
     }
 
-    const dnsRecord: DnsRecordForTooltip = {
+    const dnsRecord: DnsRecord = {
+      type: record.type,
+      name: record.name,
       value: record.value,
       ...(record.priority != null && { priority: record.priority }),
     };
@@ -954,7 +936,7 @@ export type TrackedDomainForReverification = {
   domainName: string;
   verificationToken: string;
   verificationMethod: VerificationMethod;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   notificationOverrides: NotificationOverrides;
   userEmail: string;

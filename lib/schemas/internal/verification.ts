@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { verificationMethod } from "@/lib/db/schema";
+import {
+  VerificationMethodSchema,
+  VerificationStatusSchema,
+} from "@/lib/db/zod";
 
-/**
- * Zod schema for verification methods, derived from the database enum
- * to ensure type safety and prevent drift between validation and DB layer.
- */
-export const VerificationMethodSchema = z.enum(verificationMethod.enumValues);
-
+// Export the schema for use in other files
+export { VerificationMethodSchema, VerificationStatusSchema };
 export type VerificationMethod = z.infer<typeof VerificationMethodSchema>;
+export type VerificationStatus = z.infer<typeof VerificationStatusSchema>;
 
 const BaseInstructionsSchema = z.object({
   title: z.string(),

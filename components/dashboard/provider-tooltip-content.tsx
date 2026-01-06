@@ -3,8 +3,11 @@ import { BadgeCheck, HatGlasses, Lock, LockOpen } from "lucide-react";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Spinner } from "@/components/ui/spinner";
-import type { DnsRecordForTooltip } from "@/lib/db/repos/tracked-domains";
-import type { ProviderCategory, RegistrationContacts } from "@/lib/schemas";
+import type {
+  DnsRecord,
+  ProviderCategory,
+  RegistrationContacts,
+} from "@/lib/schemas";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -12,7 +15,7 @@ type ProviderTooltipContentProps = {
   providerDomain: string | null;
   providerType?: ProviderCategory;
   isLoading: boolean;
-  records?: DnsRecordForTooltip[];
+  records?: DnsRecord[];
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
   rdapServers?: string[] | null;

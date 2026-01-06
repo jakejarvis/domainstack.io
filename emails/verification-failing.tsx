@@ -9,7 +9,7 @@ import {
   EmailText,
 } from "@/components/email/email-shared";
 import { BASE_URL } from "@/lib/constants/app";
-import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
+import type { VerificationMethod } from "@/lib/schemas";
 
 type VerificationFailingEmailProps = {
   userName: string;

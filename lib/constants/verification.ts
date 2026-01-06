@@ -3,7 +3,7 @@
  * Centralized configuration for verification methods, grace periods, and format strings.
  */
 
-import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
+import type { VerificationMethod } from "@/lib/schemas";
 
 // ============================================================================
 // Valid Verification Methods
