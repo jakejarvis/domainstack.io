@@ -1,25 +1,19 @@
 import { TRPCError } from "@trpc/server";
-import { getRun, start } from "workflow/api";
+import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
+import {
+  BlobUrlResponseSchema,
+  BlobUrlWithBlockedFlagResponseSchema,
+  CertificatesResponseSchema,
+  RegistrationResponseSchema,
+} from "@/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
-import {
-  type CertificatesWorkflowResult,
-  certificatesWorkflow,
-} from "@/workflows/certificates";
-import {
-  type FaviconWorkflowResult,
-  faviconWorkflow,
-} from "@/workflows/favicon";
-import {
-  type RegistrationWorkflowResult,
-  registrationWorkflow,
-} from "@/workflows/registration";
-import {
-  type ScreenshotWorkflowResult,
-  screenshotWorkflow,
-} from "@/workflows/screenshot";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { faviconWorkflow } from "@/workflows/favicon";
+import { registrationWorkflow } from "@/workflows/registration";
+import { screenshotWorkflow } from "@/workflows/screenshot";
 
 const logger = createLogger({ source: "workflow-router" });
 
@@ -37,166 +31,170 @@ const DomainInputSchema = z
     return { domain: registrable };
   });
 
-// Workflow run ID input schema
-const RunIdInputSchema = z.object({
-  runId: z.string().min(1),
-});
-
-// Union of all workflow result types for status checking
-type WorkflowResult =
-  | ScreenshotWorkflowResult
-  | RegistrationWorkflowResult
-  | CertificatesWorkflowResult
-  | FaviconWorkflowResult;
-
-// Response schemas
-const StartWorkflowResponseSchema = z.object({
-  runId: z.string(),
-  domain: z.string(),
-});
-
-const WorkflowStatusResponseSchema = z.object({
-  runId: z.string(),
-  status: z.enum(["pending", "running", "completed", "failed", "cancelled"]),
-  result: z.unknown().optional(),
-});
-
 /**
  * Workflow router for durable backend operations.
  *
- * These procedures use the start + poll pattern:
- * 1. Call a start* mutation to kick off a workflow
- * 2. Poll getWorkflowStatus with the runId to check progress
- * 3. Once status is "completed", the result is available
+ * These procedures start a durable workflow and await its completion.
+ * The workflow provides automatic retries, durability, and resumability.
+ *
+ * @see https://useworkflow.dev/docs/foundations/starting-workflows#wait-for-completion
  */
 export const workflowRouter = createTRPCRouter({
   /**
-   * Start a screenshot workflow for a domain.
+   * Get a screenshot for a domain using a durable workflow.
+   * Returns the screenshot URL or null if capture failed.
    */
-  startScreenshotWorkflow: publicProcedure
+  getScreenshot: publicProcedure
     .input(DomainInputSchema)
-    .output(StartWorkflowResponseSchema)
-    .mutation(async ({ input }) => {
-      const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
-
-      logger.info(
-        { domain: input.domain, runId: run.runId },
-        "screenshot workflow started via tRPC",
-      );
-
-      return { runId: run.runId, domain: input.domain };
-    }),
-
-  /**
-   * Start a registration workflow for a domain.
-   */
-  startRegistrationWorkflow: publicProcedure
-    .input(DomainInputSchema)
-    .output(StartWorkflowResponseSchema)
-    .mutation(async ({ input }) => {
-      const run = await start(registrationWorkflow, [{ domain: input.domain }]);
-
-      logger.info(
-        { domain: input.domain, runId: run.runId },
-        "registration workflow started via tRPC",
-      );
-
-      return { runId: run.runId, domain: input.domain };
-    }),
-
-  /**
-   * Start a certificates workflow for a domain.
-   */
-  startCertificatesWorkflow: publicProcedure
-    .input(DomainInputSchema)
-    .output(StartWorkflowResponseSchema)
-    .mutation(async ({ input }) => {
-      const run = await start(certificatesWorkflow, [{ domain: input.domain }]);
-
-      logger.info(
-        { domain: input.domain, runId: run.runId },
-        "certificates workflow started via tRPC",
-      );
-
-      return { runId: run.runId, domain: input.domain };
-    }),
-
-  /**
-   * Start a favicon workflow for a domain.
-   */
-  startFaviconWorkflow: publicProcedure
-    .input(DomainInputSchema)
-    .output(StartWorkflowResponseSchema)
-    .mutation(async ({ input }) => {
-      const run = await start(faviconWorkflow, [{ domain: input.domain }]);
-
-      logger.info(
-        { domain: input.domain, runId: run.runId },
-        "favicon workflow started via tRPC",
-      );
-
-      return { runId: run.runId, domain: input.domain };
-    }),
-
-  /**
-   * Get the status of a workflow run.
-   * Use this to poll for completion after starting a workflow.
-   */
-  getWorkflowStatus: publicProcedure
-    .input(RunIdInputSchema)
-    .output(WorkflowStatusResponseSchema)
+    .output(BlobUrlWithBlockedFlagResponseSchema)
     .query(async ({ input }) => {
       try {
-        const run = getRun<WorkflowResult>(input.runId);
-        const status = await run.status;
+        const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
 
-        // Map workflow status to our response schema
-        const mappedStatus = mapWorkflowStatus(status);
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "screenshot workflow started",
+        );
 
-        if (mappedStatus === "completed") {
-          const result = await run.returnValue;
-          return {
-            runId: input.runId,
-            status: mappedStatus,
-            result,
-          };
-        }
+        // Wait for the workflow to complete
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "screenshot workflow completed",
+        );
 
         return {
-          runId: input.runId,
-          status: mappedStatus,
+          url: result.url,
+          ...(result.blocked && { blocked: true as const }),
         };
       } catch (err) {
         logger.error(
-          { err, runId: input.runId },
-          "failed to get workflow status",
+          { err, domain: input.domain },
+          "screenshot workflow failed",
+        );
+        return { url: null };
+      }
+    }),
+
+  /**
+   * Get registration data for a domain using a durable workflow.
+   * Performs WHOIS/RDAP lookup with automatic retries.
+   */
+  getRegistration: publicProcedure
+    .input(DomainInputSchema)
+    .output(RegistrationResponseSchema)
+    .query(async ({ input }) => {
+      try {
+        const run = await start(registrationWorkflow, [
+          { domain: input.domain },
+        ]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "registration workflow started",
+        );
+
+        // Wait for the workflow to complete
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "registration workflow completed",
+        );
+
+        if (result.success) {
+          return result.data;
+        }
+
+        // Return error response for failed lookups
+        if (result.data) {
+          return result.data;
+        }
+
+        // Fallback error response
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Registration lookup failed: ${result.error}`,
+        });
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+
+        logger.error(
+          { err, domain: input.domain },
+          "registration workflow failed",
         );
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Workflow run not found",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Registration lookup failed",
         });
       }
     }),
-});
 
-/**
- * Map workflow SDK status to our response schema.
- */
-function mapWorkflowStatus(
-  status: string,
-): "pending" | "running" | "completed" | "failed" | "cancelled" {
-  switch (status) {
-    case "completed":
-      return "completed";
-    case "failed":
-      return "failed";
-    case "cancelled":
-      return "cancelled";
-    case "running":
-    case "sleeping":
-    case "suspended":
-      return "running";
-    default:
-      return "pending";
-  }
-}
+  /**
+   * Get SSL certificates for a domain using a durable workflow.
+   * Performs TLS handshake with automatic retries.
+   */
+  getCertificates: publicProcedure
+    .input(DomainInputSchema)
+    .output(CertificatesResponseSchema)
+    .query(async ({ input }) => {
+      try {
+        const run = await start(certificatesWorkflow, [
+          { domain: input.domain },
+        ]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "certificates workflow started",
+        );
+
+        // Wait for the workflow to complete
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "certificates workflow completed",
+        );
+
+        return result.data;
+      } catch (err) {
+        logger.error(
+          { err, domain: input.domain },
+          "certificates workflow failed",
+        );
+        return { certificates: [] };
+      }
+    }),
+
+  /**
+   * Get a favicon for a domain using a durable workflow.
+   * Fetches from multiple sources with automatic retries.
+   */
+  getFavicon: publicProcedure
+    .input(DomainInputSchema)
+    .output(BlobUrlResponseSchema)
+    .query(async ({ input }) => {
+      try {
+        const run = await start(faviconWorkflow, [{ domain: input.domain }]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "favicon workflow started",
+        );
+
+        // Wait for the workflow to complete
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "favicon workflow completed",
+        );
+
+        return { url: result.url };
+      } catch (err) {
+        logger.error({ err, domain: input.domain }, "favicon workflow failed");
+        return { url: null };
+      }
+    }),
+});

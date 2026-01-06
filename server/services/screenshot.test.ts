@@ -100,7 +100,8 @@ describe("getScreenshot", () => {
 
   it("deduplicates concurrent requests for the same domain", async () => {
     // Create a promise that we can control
-    let resolveWorkflow: (value: unknown) => void;
+    // Using definite assignment assertion since Promise executor runs synchronously
+    let resolveWorkflow!: (value: unknown) => void;
     const workflowPromise = new Promise((resolve) => {
       resolveWorkflow = resolve;
     });
@@ -118,7 +119,7 @@ describe("getScreenshot", () => {
     expect(workflowMock.start).toHaveBeenCalledTimes(1);
 
     // Resolve the workflow
-    resolveWorkflow?.({
+    resolveWorkflow({
       url: "https://blob.vercel-storage.com/concurrent.webp",
       blocked: false,
       cached: false,
