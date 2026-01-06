@@ -10,5 +10,6 @@
 
 export * from "./certificates";
 export * from "./favicon";
+export * from "./provider-logo";
 export * from "./registration";
 export * from "./screenshot";

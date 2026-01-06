@@ -1,8 +1,9 @@
+import { start } from "workflow/api";
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
-import { getProviderIcon } from "@/lib/icons/provider";
 import { BlobUrlResponseSchema } from "@/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
+import { providerLogoWorkflow } from "@/workflows/provider-logo";
 
 export const providerRouter = createTRPCRouter({
   getProviderIcon: publicProcedure
@@ -14,6 +15,12 @@ export const providerRouter = createTRPCRouter({
         // Return null instead of throwing to avoid logging errors for missing icons
         return { url: null };
       }
-      return getProviderIcon(input.providerId, provider.domain);
+
+      const run = await start(providerLogoWorkflow, [
+        { providerId: input.providerId, providerDomain: provider.domain },
+      ]);
+      const result = await run.returnValue;
+
+      return { url: result.url };
     }),
 });
