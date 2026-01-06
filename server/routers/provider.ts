@@ -1,7 +1,7 @@
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
-import { BlobUrlResponseSchema } from "@/lib/schemas";
 import { getProviderIcon } from "@/lib/icons/provider";
+import { BlobUrlResponseSchema } from "@/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 export const providerRouter = createTRPCRouter({

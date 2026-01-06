@@ -402,16 +402,16 @@ async function persistCertificates(
   }
 }
 
-// Helper functions
+// Helper functions (exported for testing and reuse)
 
-function toName(subject: TlsCertificate | undefined): string {
+export function toName(subject: TlsCertificate | undefined): string {
   if (!subject) return "";
   const cn = typeof subject.CN === "string" ? subject.CN : undefined;
   const o = typeof subject.O === "string" ? subject.O : undefined;
   return cn ? cn : o ? o : JSON.stringify(subject);
 }
 
-function parseAltNames(subjectAltName: string | undefined): string[] {
+export function parseAltNames(subjectAltName: string | undefined): string[] {
   if (typeof subjectAltName !== "string" || subjectAltName.length === 0) {
     return [];
   }

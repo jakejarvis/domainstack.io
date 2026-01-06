@@ -80,9 +80,8 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
           ]);
 
           // Extract response data from workflow results
-          const registrationData: RegistrationResponse | null = regResult.success
-            ? regResult.data
-            : regResult.data; // Error responses still have data
+          const registrationData: RegistrationResponse | null =
+            regResult.success ? regResult.data : regResult.data; // Error responses still have data
           const certificatesData: CertificatesResponse = certsResult.success
             ? certsResult.data
             : { certificates: [] };
