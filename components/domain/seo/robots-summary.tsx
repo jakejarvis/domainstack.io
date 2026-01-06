@@ -219,12 +219,13 @@ export function RobotsSummary({
                     const next = groupValue[0] as typeof only | undefined;
                     setOnly(next ?? "all");
                   }}
-                  className="h-9 w-full items-stretch sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none"
+                  spacing={1}
+                  className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
                 >
                   <ToggleGroupItem
                     value="all"
-                    variant="ghost"
-                    className="h-[calc(100%-1px)] cursor-pointer"
+                    variant="outline"
+                    className="h-full"
                   >
                     <CircleDot
                       className="size-3.5 text-accent-blue"
@@ -238,8 +239,8 @@ export function RobotsSummary({
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="allow"
-                    variant="ghost"
-                    className="h-[calc(100%-1px)] cursor-pointer"
+                    variant="outline"
+                    className="h-full"
                   >
                     <CircleCheck
                       className="size-3.5 text-accent-green"
@@ -250,8 +251,8 @@ export function RobotsSummary({
                   </ToggleGroupItem>
                   <ToggleGroupItem
                     value="disallow"
-                    variant="ghost"
-                    className="h-[calc(100%-1px)] cursor-pointer"
+                    variant="outline"
+                    className="h-full"
                   >
                     <Ban className="size-3.5 text-destructive" aria-hidden />
                     <span>Disallow</span>

@@ -80,14 +80,14 @@ export function SectionNav({
           "h-[var(--section-nav-height,48px)]",
           // Full-width background using pseudo-element
           "before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2",
-          "before:bg-background/80 before:backdrop-blur-md dark:before:bg-background/90",
+          "before:bg-background/80 before:backdrop-blur",
           // Full-width bottom border using pseudo-element
           "after:absolute after:bottom-0 after:left-1/2 after:h-px after:w-screen after:-translate-x-1/2",
           "after:transition-opacity after:duration-200",
           // Solid border when scrolled, faded edges when at top (desktop only)
           isHeaderVisible
-            ? "after:bg-gradient-to-r after:from-transparent after:via-black/5 after:to-transparent dark:after:via-white/10"
-            : "after:bg-black/5 dark:after:bg-white/10",
+            ? "after:bg-gradient-to-r after:from-transparent after:via-black/10 after:to-transparent dark:after:via-white/10"
+            : "shadow-black/5 shadow-xl after:bg-black/10 dark:shadow-none dark:after:bg-white/10",
         )}
       >
         <div

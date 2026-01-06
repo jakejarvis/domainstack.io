@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef } from "react";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "./copy-button";
 
 type CopyableFieldProps = {
   label: string;

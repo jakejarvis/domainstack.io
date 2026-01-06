@@ -1,3 +1,5 @@
+"use client";
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 

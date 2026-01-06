@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Globe, Info, ListTree } from "lucide-react";
+import { Bell, CalendarFold, Globe, Info, ListTree } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CalendarInstructions } from "@/components/calendar-instructions";
 import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
@@ -388,6 +389,22 @@ export function NotificationSettingsSection({
             </p>
           </div>
         )}
+      </CardContent>
+
+      <Separator className="my-6" />
+
+      <CardHeader className="px-0 pt-0 pb-2">
+        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+          <CalendarFold className="size-4.5" />
+          Calendar Feed
+        </CardTitle>
+        <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary">
+          Subscribe to domain expiration dates in your calendar app.
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="px-0 pt-2">
+        <CalendarInstructions />
       </CardContent>
     </div>
   );

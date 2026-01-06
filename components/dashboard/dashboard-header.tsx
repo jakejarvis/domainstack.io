@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import Link from "next/link";
+import { CalendarFeedPopover } from "@/components/dashboard/calendar-feed-popover";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { Subscription } from "@/lib/schemas";
-import { cn } from "@/lib/utils";
+import { Separator } from "../ui/separator";
 
 type DashboardHeaderProps = {
   userName: string;
@@ -32,7 +33,8 @@ export function DashboardHeader({
   onViewModeChange,
 }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-4 lg:flex lg:justify-between">
+      {/* Welcome message */}
       <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back
@@ -66,7 +68,42 @@ export function DashboardHeader({
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between gap-3">
+
+      {/* Add Domain button - top-right on mobile, far right on desktop */}
+      <div className="lg:order-last">
+        {subscription?.canAddMore ? (
+          <Button
+            nativeButton={false}
+            render={
+              <Link href="/dashboard/add-domain" scroll={false}>
+                <Plus />
+                Add Domain
+              </Link>
+            }
+          />
+        ) : (
+          <ResponsiveTooltip>
+            <ResponsiveTooltipTrigger
+              render={
+                <div className="cursor-not-allowed">
+                  <Button disabled>
+                    <Plus />
+                    Add Domain
+                  </Button>
+                </div>
+              }
+            />
+            <ResponsiveTooltipContent>
+              {subscription?.plan === "free"
+                ? "Upgrade to add more domains"
+                : "Domain limit reached"}
+            </ResponsiveTooltipContent>
+          </ResponsiveTooltip>
+        )}
+      </div>
+
+      {/* Bottom row on mobile: quota + view controls */}
+      <div className="col-span-2 flex items-start justify-between gap-3 lg:col-auto lg:ml-auto lg:items-center lg:gap-3">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
           <QuotaBar
@@ -79,8 +116,8 @@ export function DashboardHeader({
           </span>
         </div>
 
-        {/* View toggle and Add Domain - always right aligned */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* View toggle and Calendar */}
+        <div className="flex items-center gap-3 lg:gap-2">
           {/* View toggle - only show when there are domains */}
           {subscription?.activeCount && subscription.activeCount > 0 ? (
             <ToggleGroup
@@ -90,49 +127,35 @@ export function DashboardHeader({
                 const next = groupValue[0] as ViewMode | undefined;
                 if (next) onViewModeChange(next);
               }}
-              className="relative inline-flex h-9 gap-0 overflow-hidden rounded-md border border-muted-foreground/30 bg-background p-0"
+              className="relative h-9 gap-0 overflow-hidden rounded-md border border-border bg-transparent p-0 shadow-xs dark:border-input"
             >
-              <span
-                aria-hidden
-                className={cn(
-                  "pointer-events-none absolute inset-y-0 left-0 z-0 w-10 bg-primary",
-                  viewMode === "grid" ? "translate-x-0" : "translate-x-10",
-                )}
-              />
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <ToggleGroupItem
                       value="grid"
                       type="button"
+                      variant="secondary"
                       aria-label="Grid view"
-                      variant="ghost"
-                      className={cn(
-                        "relative z-10 h-9 w-10 cursor-pointer rounded-l-md border-input border-r bg-transparent px-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/20",
-                        "data-[pressed]:rounded-l-md data-[pressed]:bg-transparent data-[pressed]:text-primary-foreground data-[pressed]:shadow-none data-[pressed]:ring-0",
-                      )}
                     >
-                      <LayoutGrid className="size-4" />
+                      <LayoutGrid className="size-4 -translate-y-[1px]" />
                       <span className="sr-only">Grid view</span>
                     </ToggleGroupItem>
                   }
                 />
                 <TooltipContent>Grid view</TooltipContent>
               </Tooltip>
+              <Separator orientation="vertical" />
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <ToggleGroupItem
                       value="table"
                       type="button"
+                      variant="secondary"
                       aria-label="Table view"
-                      variant="ghost"
-                      className={cn(
-                        "relative z-10 h-9 w-10 cursor-pointer rounded-r-md bg-transparent px-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                        "data-[pressed]:rounded-r-md data-[pressed]:bg-transparent data-[pressed]:text-primary-foreground data-[pressed]:shadow-none data-[pressed]:ring-0",
-                      )}
                     >
-                      <TableIcon className="size-4" />
+                      <TableIcon className="size-4 -translate-y-[1px]" />
                       <span className="sr-only">Table view</span>
                     </ToggleGroupItem>
                   }
@@ -142,35 +165,8 @@ export function DashboardHeader({
             </ToggleGroup>
           ) : null}
 
-          {subscription?.canAddMore ? (
-            <Button
-              nativeButton={false}
-              render={
-                <Link href="/dashboard/add-domain" scroll={false}>
-                  <Plus />
-                  Add Domain
-                </Link>
-              }
-            />
-          ) : (
-            <ResponsiveTooltip>
-              <ResponsiveTooltipTrigger
-                render={
-                  <div className="cursor-not-allowed">
-                    <Button disabled>
-                      <Plus />
-                      Add Domain
-                    </Button>
-                  </div>
-                }
-              />
-              <ResponsiveTooltipContent>
-                {subscription?.plan === "free"
-                  ? "Upgrade to add more domains"
-                  : "Domain limit reached"}
-              </ResponsiveTooltipContent>
-            </ResponsiveTooltip>
-          )}
+          {/* Calendar feed */}
+          <CalendarFeedPopover />
         </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <motion.header
         className={cn(
-          "top-0 right-0 left-0 z-50 grid h-[var(--header-height,80px)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-b bg-background/60 py-3 pr-4 pl-6 backdrop-blur",
+          "top-0 right-0 left-0 z-99 grid h-[var(--header-height,80px)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-black/15 border-b bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
           // - Before threshold: behave like a normal element (scrolls away with the page)

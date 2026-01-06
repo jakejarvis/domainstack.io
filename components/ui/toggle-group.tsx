@@ -1,25 +1,54 @@
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
+import { createContext, useContext } from "react";
 import { toggleVariants } from "@/components/ui/toggle";
 import type { VariantProps } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
+const ToggleGroupContext = createContext<
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number;
+    orientation?: "horizontal" | "vertical";
+  }
+>({
+  size: "default",
+  variant: "default",
+  spacing: 0,
+  orientation: "horizontal",
+});
+
 function ToggleGroup({
   className,
+  variant,
+  size,
+  spacing = 0,
+  orientation = "horizontal",
   children,
   ...props
-}: ToggleGroupPrimitive.Props) {
+}: ToggleGroupPrimitive.Props &
+  VariantProps<typeof toggleVariants> & {
+    spacing?: number;
+    orientation?: "horizontal" | "vertical";
+  }) {
   return (
     <ToggleGroupPrimitive
       data-slot="toggle-group"
+      data-variant={variant}
+      data-size={size}
+      data-spacing={spacing}
+      data-orientation={orientation}
+      style={{ "--gap": spacing } as React.CSSProperties}
       className={cn(
-        "group/toggle-group flex w-fit items-stretch gap-1 rounded-md data-[variant=outline]:shadow-xs",
-        "relative overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm dark:border-white/10",
+        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-md data-[spacing=0]:data-[variant=outline]:shadow-xs data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch",
         className,
       )}
       {...props}
     >
-      {children}
+      <ToggleGroupContext.Provider
+        value={{ variant, size, spacing, orientation }}
+      >
+        {children}
+      </ToggleGroupContext.Provider>
     </ToggleGroupPrimitive>
   );
 }
@@ -27,24 +56,26 @@ function ToggleGroup({
 function ToggleGroupItem({
   className,
   children,
-  variant,
-  size,
+  variant = "default",
+  size = "default",
   ...props
 }: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
+  const context = useContext(ToggleGroupContext);
+
   return (
     <TogglePrimitive
       data-slot="toggle-group-item"
-      className={(state) =>
-        cn(
-          toggleVariants({
-            variant,
-            size,
-          }),
-          "min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
-          "data-[pressed]:rounded-md data-[pressed]:bg-background/90 data-[pressed]:text-foreground data-[pressed]:shadow-sm data-[pressed]:ring-1 data-[pressed]:ring-black/10 dark:data-[pressed]:bg-white/10 dark:data-[pressed]:shadow-none dark:data-[pressed]:ring-white/15",
-          typeof className === "function" ? className(state) : className,
-        )
-      }
+      data-variant={context.variant || variant}
+      data-size={context.size || size}
+      data-spacing={context.spacing}
+      className={cn(
+        "shrink-0 focus:z-10 focus-visible:z-10 data-[state=on]:bg-muted group-data-[spacing=0]/toggle-group:rounded-none group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-[spacing=0]/toggle-group:px-2 group-data-[spacing=0]/toggle-group:shadow-none group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-md group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-md",
+        toggleVariants({
+          variant: context.variant || variant,
+          size: context.size || size,
+        }),
+        className,
+      )}
       {...props}
     >
       {children}

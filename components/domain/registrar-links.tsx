@@ -118,14 +118,7 @@ export function RegistrarLinks({
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <span
-                          className={cn(
-                            "rounded-full",
-                            config.transparentIcon
-                              ? "bg-transparent"
-                              : "bg-white",
-                          )}
-                        >
+                        <span className="rounded-full">
                           <Icon className="size-5" />
                         </span>
                       }

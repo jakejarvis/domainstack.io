@@ -15,11 +15,11 @@ export function UpgradeBanner() {
   }
 
   return (
-    <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.02] dark:via-transparent dark:to-white/[0.03]">
+    <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.01] dark:via-transparent dark:to-white/[0.02]">
       {/* Decorative elements - subtle warm glows */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent-gold/15 blur-3xl"
+        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent-gold/8 blur-3xl"
       />
       <div
         aria-hidden
@@ -51,6 +51,7 @@ export function UpgradeBanner() {
 
         {/* Right side - CTA */}
         <Button
+          variant="outline"
           size="lg"
           onClick={handleCheckout}
           disabled={isCheckoutLoading}
