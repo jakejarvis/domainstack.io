@@ -1,48 +1,69 @@
 import { cache } from "react";
-import { ensureDomainRecord } from "@/lib/db/repos/domains";
-import { getFaviconByDomain, upsertFavicon } from "@/lib/db/repos/favicons";
+import { start } from "workflow/api";
 import {
   getProviderLogoByProviderId,
   upsertProviderLogo,
 } from "@/lib/db/repos/provider-logos";
 import { processIcon } from "@/lib/icons/pipeline";
 import { buildIconSources } from "@/lib/icons/sources";
+import { createLogger } from "@/lib/logger/server";
 import type { BlobUrlResponse } from "@/lib/schemas";
-import { ttlForFavicon, ttlForProviderIcon } from "@/lib/ttl";
+import { ttlForProviderIcon } from "@/lib/ttl";
+import { faviconWorkflow } from "@/workflows/favicon/workflow";
 
-const DEFAULT_SIZE = 32;
 const DEFAULT_PROVIDER_ICON_SIZE = 64;
+
+const logger = createLogger({ source: "icons" });
 
 /**
  * Get or create a favicon for a domain.
+ *
+ * This is a thin wrapper around the durable favicon workflow.
+ * The workflow handles:
+ * - Cache checking (Postgres)
+ * - Multi-source fetching with fallbacks
+ * - Image processing (WebP conversion)
+ * - Storage (Vercel Blob) and database persistence
+ *
  * Uses React's cache() for request-scoped deduplication.
  */
 export const getFavicon = cache(async function getFavicon(
   domain: string,
 ): Promise<BlobUrlResponse> {
-  return processIcon({
-    identifier: domain,
-    blobKind: "favicon",
-    blobDomain: domain,
-    sources: buildIconSources(domain, { size: DEFAULT_SIZE }),
-    getCachedRecord: async () => {
-      const record = await getFaviconByDomain(domain);
-      return record ? { url: record.url, notFound: record.notFound } : null;
-    },
-    persistRecord: async (data) => {
-      const domainRecord = await ensureDomainRecord(domain);
-      await upsertFavicon({
-        domainId: domainRecord.id,
-        ...data,
-      });
-    },
-    ttlFn: ttlForFavicon,
-    size: DEFAULT_SIZE,
-  });
+  try {
+    // Start the durable workflow
+    const run = await start(faviconWorkflow, [{ domain }]);
+
+    logger.debug({ domain, runId: run.runId }, "favicon workflow started");
+
+    // Wait for the workflow to complete and get the result
+    const result = await run.returnValue;
+
+    logger.debug(
+      {
+        domain,
+        runId: run.runId,
+        cached: result.cached,
+        notFound: result.notFound,
+      },
+      "favicon workflow completed",
+    );
+
+    return { url: result.url };
+  } catch (err) {
+    logger.error({ err, domain }, "favicon workflow failed");
+
+    // Return null URL on failure (maintains backward compatibility)
+    return { url: null };
+  }
 });
 
 /**
  * Get or create a provider icon by provider ID.
+ *
+ * Uses the processIcon pipeline directly (no workflow) since provider
+ * icons are typically smaller operations than domain favicons.
+ *
  * Uses React's cache() for request-scoped deduplication.
  */
 export const getProviderIcon = cache(async function getProviderIcon(

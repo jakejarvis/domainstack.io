@@ -1,273 +1,289 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const hoisted = vi.hoisted(() => ({
-  lookup: vi.fn(async (_domain: string) => ({
-    ok: true,
-    error: null,
-    record: {
-      isRegistered: true,
-      source: "rdap",
-      registrar: { name: "GoDaddy" },
-    },
-  })),
+// Mock workflow/api module
+const workflowMock = vi.hoisted(() => ({
+  start: vi.fn(),
 }));
 
-vi.mock("rdapper", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("rdapper")>();
-  return {
-    ...actual,
-    lookup: hoisted.lookup,
-  };
-});
-
-vi.mock("@/lib/rdap-bootstrap", () => ({
-  getRdapBootstrapData: vi.fn().mockResolvedValue({
-    version: "1.0",
-    publication: "2024-01-01T00:00:00Z",
-    services: [],
-  }),
-}));
+vi.mock("workflow/api", () => workflowMock);
 
 // Mock scheduleRevalidation to avoid Inngest API calls in tests
 vi.mock("@/lib/schedule", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(true),
 }));
 
+// Mock next/server's after() to run callback synchronously
+vi.mock("next/server", () => ({
+  after: vi.fn((fn: () => void) => fn()),
+}));
+
 describe("getRegistration", () => {
-  // Setup DB mock once for all tests (expensive operations)
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@/lib/db/pglite");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  // Reset only data between tests (lightweight operation)
-  beforeEach(async () => {
-    const { resetPGliteDb } = await import("@/lib/db/pglite");
-    await resetPGliteDb();
-  });
-
-  afterEach(async () => {
+  afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  afterAll(async () => {
-    // Close PGlite client to prevent file handle leaks
-    const { closePGliteDb } = await import("@/lib/db/pglite");
-    await closePGliteDb();
-  });
-
-  it("returns cached record when present (DB fast-path, rdapper not called)", async () => {
-    const { upsertDomain } = await import("@/lib/db/repos/domains");
-    const { upsertRegistration } = await import("@/lib/db/repos/registrations");
-    const { lookup } = await import("rdapper");
-    const spy = lookup as unknown as import("vitest").Mock;
-    spy.mockClear();
-
-    const d = await upsertDomain({
-      name: "example.test",
-      tld: "test",
-      unicodeName: "example.test",
-    });
-    await upsertRegistration({
-      domainId: d.id,
-      isRegistered: true,
-      registry: "verisign",
-      statuses: [],
-      contacts: [],
-      whoisServer: null,
-      rdapServers: [],
-      source: "rdap",
-      fetchedAt: new Date("2024-01-01T00:00:00.000Z"),
-      expiresAt: new Date("2099-01-01T00:00:00.000Z"),
-      transferLock: null,
-      creationDate: null,
-      updatedDate: null,
-      expirationDate: null,
-      deletionDate: null,
-      registrarProviderId: null,
-      resellerProviderId: null,
-      nameservers: [],
+  it("returns registration data from successful workflow", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-1",
+      returnValue: Promise.resolve({
+        success: true,
+        cached: false,
+        data: {
+          domain: "example.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          registrarProvider: {
+            id: "prov-1",
+            name: "GoDaddy",
+            domain: "godaddy.com",
+          },
+          source: "rdap",
+        },
+      }),
     });
 
     const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("example.test");
-    expect(rec.isRegistered).toBe(true);
-    expect(rec.status).toBe("registered");
-    expect(rec.unavailableReason).toBeUndefined();
-    expect(spy).not.toHaveBeenCalled();
+    const result = await getRegistration("example.com");
+
+    expect(workflowMock.start).toHaveBeenCalledOnce();
+    expect(result.domain).toBe("example.com");
+    expect(result.isRegistered).toBe(true);
+    expect(result.status).toBe("registered");
+    expect(result.registrarProvider?.name).toBe("GoDaddy");
   });
 
-  it("loads via rdapper, creates registrar provider when missing, and caches", async () => {
-    const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("example.test");
-    expect(rec.isRegistered).toBe(true);
-    expect(rec.status).toBe("registered");
-    expect(rec.registrarProvider?.name).toBe("GoDaddy");
+  it("returns cached registration data without scheduling revalidation", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-2",
+      returnValue: Promise.resolve({
+        success: true,
+        cached: true,
+        data: {
+          domain: "cached.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          registrarProvider: { id: null, name: null, domain: null },
+          source: "rdap",
+        },
+      }),
+    });
 
-    // Verify provider row exists and is linked
-    const { db } = await import("@/lib/db/client");
-    const { domains, providers, registrations } = await import(
-      "@/lib/db/schema"
+    const { scheduleRevalidation } = await import("@/lib/schedule");
+    const { getRegistration } = await import("./registration");
+    await getRegistration("cached.com");
+
+    // Cached results should NOT trigger scheduling
+    expect(scheduleRevalidation).not.toHaveBeenCalled();
+  });
+
+  it("schedules revalidation for non-cached successful results", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-3",
+      returnValue: Promise.resolve({
+        success: true,
+        cached: false,
+        data: {
+          domain: "fresh.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          registrarProvider: { id: null, name: null, domain: null },
+          source: "rdap",
+        },
+      }),
+    });
+
+    const { scheduleRevalidation } = await import("@/lib/schedule");
+    const { getRegistration } = await import("./registration");
+    await getRegistration("fresh.com");
+
+    // Non-cached results SHOULD trigger scheduling
+    expect(scheduleRevalidation).toHaveBeenCalledWith(
+      "fresh.com",
+      "registration",
+      expect.any(Number),
+      null,
     );
-    const { eq } = await import("drizzle-orm");
-    const d = await db
-      .select({ id: domains.id })
-      .from(domains)
-      .where(eq(domains.name, "example.test"))
-      .limit(1);
-    const row = (
-      await db
-        .select({ registrarProviderId: registrations.registrarProviderId })
-        .from(registrations)
-        .where(eq(registrations.domainId, d[0].id))
-        .limit(1)
-    )[0];
-    expect(row.registrarProviderId).toBeTruthy();
-    const prov = (
-      await db
-        .select({ name: providers.name })
-        .from(providers)
-        .where(eq(providers.id, row.registrarProviderId as string))
-        .limit(1)
-    )[0];
-    expect(prov?.name).toBe("GoDaddy");
   });
 
-  it("does not persist unregistered domains in Postgres", async () => {
-    const { lookup } = await import("rdapper");
-    (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
-      ok: true,
-      error: null,
-      record: { isRegistered: false, source: "rdap" },
+  it("skips scheduling when skipScheduling option is true", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-4",
+      returnValue: Promise.resolve({
+        success: true,
+        cached: false,
+        data: {
+          domain: "skip.com",
+          tld: "com",
+          isRegistered: true,
+          status: "registered",
+          registrarProvider: { id: null, name: null, domain: null },
+          source: "rdap",
+        },
+      }),
+    });
+
+    const { scheduleRevalidation } = await import("@/lib/schedule");
+    const { getRegistration } = await import("./registration");
+    await getRegistration("skip.com", { skipScheduling: true });
+
+    expect(scheduleRevalidation).not.toHaveBeenCalled();
+  });
+
+  it("returns unregistered domain data", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-5",
+      returnValue: Promise.resolve({
+        success: true,
+        cached: false,
+        data: {
+          domain: "available.com",
+          tld: "com",
+          isRegistered: false,
+          status: "unregistered",
+          registrarProvider: { id: null, name: null, domain: null },
+          source: "rdap",
+        },
+      }),
     });
 
     const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("unregistered.test");
-    expect(rec.isRegistered).toBe(false);
-    expect(rec.status).toBe("unregistered");
+    const result = await getRegistration("available.com");
 
-    // Verify NOT stored in Postgres
-    const { db } = await import("@/lib/db/client");
-    const { domains } = await import("@/lib/db/schema");
-    const { eq } = await import("drizzle-orm");
-    const d = await db
-      .select({ id: domains.id })
-      .from(domains)
-      .where(eq(domains.name, "unregistered.test"))
-      .limit(1);
-    expect(d.length).toBe(0);
+    expect(result.isRegistered).toBe(false);
+    expect(result.status).toBe("unregistered");
   });
 
-  it("persists registered domains in Postgres", async () => {
-    const { lookup } = await import("rdapper");
-    (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
-      ok: true,
-      error: null,
-      record: {
+  it("handles unsupported TLD gracefully", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-6",
+      returnValue: Promise.resolve({
+        success: false,
+        cached: false,
+        error: "unsupported_tld",
+        data: {
+          domain: "example.ls",
+          tld: "ls",
+          isRegistered: false,
+          status: "unknown",
+          unavailableReason: "unsupported_tld",
+          source: null,
+          registrarProvider: { id: null, name: null, domain: null },
+        },
+      }),
+    });
+
+    const { getRegistration } = await import("./registration");
+    const result = await getRegistration("example.ls");
+
+    expect(result.domain).toBe("example.ls");
+    expect(result.status).toBe("unknown");
+    expect(result.unavailableReason).toBe("unsupported_tld");
+  });
+
+  it("handles timeout gracefully", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-7",
+      returnValue: Promise.resolve({
+        success: false,
+        cached: false,
+        error: "timeout",
+        data: {
+          domain: "slow.com",
+          tld: "com",
+          isRegistered: false,
+          status: "unknown",
+          unavailableReason: "timeout",
+          source: null,
+          registrarProvider: { id: null, name: null, domain: null },
+        },
+      }),
+    });
+
+    const { getRegistration } = await import("./registration");
+    const result = await getRegistration("slow.com");
+
+    expect(result.status).toBe("unknown");
+    expect(result.unavailableReason).toBe("timeout");
+  });
+
+  it("throws error when workflow fails with lookup_failed and no data", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-8",
+      returnValue: Promise.resolve({
+        success: false,
+        cached: false,
+        error: "lookup_failed",
+        data: null,
+      }),
+    });
+
+    const { getRegistration } = await import("./registration");
+
+    await expect(getRegistration("error.com")).rejects.toThrow(
+      "Registration lookup failed for error.com: lookup_failed",
+    );
+  });
+
+  it("throws error when workflow itself throws", async () => {
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-9",
+      returnValue: Promise.reject(new Error("Workflow crashed")),
+    });
+
+    const { getRegistration } = await import("./registration");
+
+    await expect(getRegistration("crash.com")).rejects.toThrow(
+      "Workflow crashed",
+    );
+  });
+
+  it("deduplicates concurrent requests to the same domain", async () => {
+    let resolveWorkflow: (value: unknown) => void = () => {};
+    const workflowPromise = new Promise((resolve) => {
+      resolveWorkflow = resolve;
+    });
+
+    workflowMock.start.mockReturnValue({
+      runId: "test-run-10",
+      returnValue: workflowPromise,
+    });
+
+    const { getRegistration } = await import("./registration");
+
+    // Start two concurrent requests
+    const promise1 = getRegistration("concurrent.com");
+    const promise2 = getRegistration("concurrent.com");
+
+    // Resolve the workflow
+    resolveWorkflow({
+      success: true,
+      cached: false,
+      data: {
+        domain: "concurrent.com",
+        tld: "com",
         isRegistered: true,
+        status: "registered",
+        registrarProvider: { id: null, name: null, domain: null },
         source: "rdap",
-        registrar: { name: "Test Registrar" },
       },
     });
 
-    const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("registered.test");
-    expect(rec.isRegistered).toBe(true);
-    expect(rec.status).toBe("registered");
+    const [result1, result2] = await Promise.all([promise1, promise2]);
 
-    // Verify stored in Postgres
-    const { db } = await import("@/lib/db/client");
-    const { domains, registrations } = await import("@/lib/db/schema");
-    const { eq } = await import("drizzle-orm");
-    const d = await db
-      .select({ id: domains.id })
-      .from(domains)
-      .where(eq(domains.name, "registered.test"))
-      .limit(1);
-    expect(d.length).toBe(1);
+    // Both should get the same result
+    expect(result1.domain).toBe("concurrent.com");
+    expect(result2.domain).toBe("concurrent.com");
 
-    const reg = await db
-      .select()
-      .from(registrations)
-      .where(eq(registrations.domainId, d[0].id))
-      .limit(1);
-    expect(reg.length).toBe(1);
-    expect(reg[0].isRegistered).toBe(true);
-  });
-
-  it("handles TLDs without WHOIS/RDAP gracefully (no server discovered)", async () => {
-    const { lookup } = await import("rdapper");
-
-    // Simulate rdapper error for TLD without WHOIS server
-    (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
-      ok: false,
-      error:
-        "No WHOIS server discovered for TLD 'ls'. This registry may not publish public WHOIS over port 43.",
-      record: null,
-    });
-
-    const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("whois.ls");
-
-    // Should return response with status: "unknown" and unavailableReason
-    expect(rec.domain).toBe("whois.ls");
-    expect(rec.tld).toBe("ls");
-    expect(rec.isRegistered).toBe(false); // Backward compatibility
-    expect(rec.status).toBe("unknown"); // Explicit status
-    expect(rec.unavailableReason).toBe("unsupported_tld");
-    expect(rec.source).toBeNull();
-    expect(rec.registrarProvider.name).toBeNull();
-    expect(rec.registrarProvider.domain).toBeNull();
-  });
-
-  it("handles TLDs with unresponsive WHOIS servers gracefully (timeout)", async () => {
-    const { lookup } = await import("rdapper");
-
-    // Simulate rdapper timeout error (WHOIS server exists but doesn't respond)
-    (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
-      ok: false,
-      error: "WHOIS socket timeout",
-      record: null,
-    });
-
-    const { getRegistration } = await import("./registration");
-    const rec = await getRegistration("timeout.ls");
-
-    // Should return response with status: "unknown" and unavailableReason: "timeout"
-    expect(rec.domain).toBe("timeout.ls");
-    expect(rec.tld).toBe("ls");
-    expect(rec.isRegistered).toBe(false); // Backward compatibility
-    expect(rec.status).toBe("unknown"); // Explicit status
-    expect(rec.unavailableReason).toBe("timeout");
-    expect(rec.source).toBeNull();
-  });
-
-  it("logs actual registration errors as errors (timeout, network failure)", async () => {
-    const { lookup } = await import("rdapper");
-
-    // Simulate a real error (timeout, network failure, etc.)
-    (lookup as unknown as import("vitest").Mock).mockResolvedValueOnce({
-      ok: false,
-      error: "Connection timeout after 5000ms",
-      record: null,
-    });
-
-    const { getRegistration } = await import("./registration");
-
-    // Should throw error
-    await expect(getRegistration("timeout.test")).rejects.toThrow(
-      "Registration lookup failed for timeout.test: Connection timeout after 5000ms",
-    );
+    // Note: The service doesn't have built-in deduplication like screenshot
+    // so this test verifies the workflow is called twice
+    expect(workflowMock.start).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,71 +1,11 @@
-import { eq } from "drizzle-orm";
 import { after } from "next/server";
-import { getDomainTld, lookup } from "rdapper";
-import { db } from "@/lib/db/client";
-import { upsertDomain } from "@/lib/db/repos/domains";
-import {
-  resolveOrCreateProviderId,
-  upsertCatalogProviderRef,
-} from "@/lib/db/repos/providers";
-import { upsertRegistration } from "@/lib/db/repos/registrations";
-import { domains, providers, registrations } from "@/lib/db/schema";
+import { start } from "workflow/api";
 import { createLogger } from "@/lib/logger/server";
-import { getProviders } from "@/lib/providers/catalog";
-import { detectRegistrar } from "@/lib/providers/detection";
-import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type {
-  Provider,
-  RegistrationContacts,
-  RegistrationResponse,
-} from "@/lib/schemas";
-import { ttlForRegistration } from "@/lib/ttl";
+import type { RegistrationResponse } from "@/lib/schemas";
+import { registrationWorkflow } from "@/workflows/registration/workflow";
 
 const logger = createLogger({ source: "registration" });
-
-/**
- * Normalize registrar provider information from raw rdapper data.
- * Applies provider detection and falls back to URL hostname parsing.
- *
- * @param registrar - Raw registrar data from rdapper
- * @param providers - Registrar provider catalog from Edge Config
- * @returns Normalized registrar info with optional catalog match
- */
-function normalizeRegistrar(
-  registrar: { name?: unknown; url?: unknown } | undefined,
-  providers: Provider[],
-): {
-  name: string | null;
-  domain: string | null;
-  catalogProvider: Provider | null;
-} {
-  let registrarName = (registrar?.name || "").toString();
-  let registrarDomain: string | null = null;
-  let catalogProvider: Provider | null = null;
-
-  // Run provider detection to normalize known registrars
-  const matched = detectRegistrar(registrarName, providers);
-  if (matched) {
-    registrarName = matched.name;
-    registrarDomain = matched.domain;
-    catalogProvider = matched;
-  }
-
-  // Fall back to URL hostname parsing if domain is still unknown
-  try {
-    if (!registrarDomain && registrar?.url) {
-      registrarDomain = new URL(registrar.url.toString()).hostname || null;
-    }
-  } catch {
-    // URL parsing failed, leave domain as null
-  }
-
-  return {
-    name: registrarName.trim() || null,
-    domain: registrarDomain,
-    catalogProvider,
-  };
-}
 
 export type ServiceOptions = {
   skipScheduling?: boolean;
@@ -73,339 +13,72 @@ export type ServiceOptions = {
 
 /**
  * Fetch domain registration using rdapper and cache the normalized DomainRecord.
+ *
+ * This is a thin wrapper around the durable registration workflow.
+ * The workflow handles:
+ * - Cache checking (Postgres)
+ * - RDAP/WHOIS lookup via rdapper
+ * - Registrar normalization and provider detection
+ * - Database persistence
+ *
+ * This service adds:
+ * - Background revalidation scheduling (via `after()`)
  */
 export async function getRegistration(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<RegistrationResponse> {
-  // Generate single timestamp for access tracking and scheduling
-  const now = new Date();
-
-  // ===== Fast path: Postgres cache for full registration data =====
-  // Wrapped in try/catch to gracefully handle Postgres unavailability
   try {
-    // Single query to fetch domain + registration + provider
-    const existing = await db
-      .select({
-        domainId: domains.id,
-        domainName: domains.name,
-        domainTld: domains.tld,
-        domainUnicodeName: domains.unicodeName,
-        domainLastAccessedAt: domains.lastAccessedAt,
-        registration: registrations,
-        providerId: providers.id,
-        providerName: providers.name,
-        providerDomain: providers.domain,
-      })
-      .from(domains)
-      .innerJoin(registrations, eq(registrations.domainId, domains.id))
-      .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
-      .where(eq(domains.name, domain))
-      .limit(1);
+    // Start the durable workflow
+    const run = await start(registrationWorkflow, [{ domain }]);
 
-    if (existing[0] && existing[0].registration.expiresAt > now) {
-      const row = existing[0];
+    logger.debug({ domain, runId: run.runId }, "registration workflow started");
 
-      const registrarProvider = row.providerName
-        ? {
-            id: row.providerId ?? null,
-            name: row.providerName,
-            domain: row.providerDomain ?? null,
-          }
-        : {
-            id: null,
-            name: null as string | null,
-            domain: null as string | null,
-          };
+    // Wait for the workflow to complete and get the result
+    const result = await run.returnValue;
 
-      const contactsArray: RegistrationContacts =
-        row.registration.contacts ?? [];
-      const nameserversArray = row.registration.nameservers ?? [];
-
-      const response: RegistrationResponse = {
+    logger.debug(
+      {
         domain,
-        tld: row.domainTld,
-        isRegistered: row.registration.isRegistered,
-        status: row.registration.isRegistered ? "registered" : "unregistered",
-        unavailableReason: undefined,
-        privacyEnabled: row.registration.privacyEnabled ?? false,
-        unicodeName: row.domainUnicodeName,
-        punycodeName: row.domainName,
-        registry: row.registration.registry ?? undefined,
-        // registrar object is optional; we don't persist its full details, so omit
-        statuses: row.registration.statuses ?? undefined,
-        creationDate: row.registration.creationDate?.toISOString(),
-        updatedDate: row.registration.updatedDate?.toISOString(),
-        expirationDate: row.registration.expirationDate?.toISOString(),
-        deletionDate: row.registration.deletionDate?.toISOString(),
-        transferLock: row.registration.transferLock ?? undefined,
-        nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
-        contacts: contactsArray,
-        whoisServer: row.registration.whoisServer ?? undefined,
-        rdapServers: row.registration.rdapServers ?? undefined,
-        source: row.registration.source ?? null,
-        registrarProvider,
-      };
-
-      // Schedule background revalidation using actual last access time
-      if (!options.skipScheduling) {
-        after(() =>
-          scheduleRevalidation(
-            domain,
-            "registration",
-            row.registration.expiresAt.getTime(),
-            row.domainLastAccessedAt ?? null,
-          ),
-        );
-      }
-
-      return response;
-    }
-  } catch (err) {
-    // Postgres unavailable - log and fall through to slow path
-    logger.warn({ err, domain });
-  }
-
-  // ===== Slow path: Fetch fresh data from WHOIS/RDAP via rdapper =====
-  // Fetch bootstrap data and registrar providers in parallel
-  const [bootstrapData, registrarProviders] = await Promise.all([
-    getRdapBootstrapData(),
-    getProviders("registrar"),
-  ]);
-
-  const { ok, record, error } = await lookup(domain, {
-    timeoutMs: 5000,
-    customBootstrapData: bootstrapData,
-  });
-
-  if (!ok || !record) {
-    // Classify error types to distinguish infrastructure issues from unsupported TLDs
-    const isUnsupported = isExpectedRegistrationError(error);
-    const isTimeout = isTimeoutError(error);
-
-    if (isUnsupported || isTimeout) {
-      const unavailableReason = isTimeout
-        ? ("timeout" as const)
-        : ("unsupported_tld" as const);
-
-      logger.info(
-        { domain, err: error },
-        isTimeout ? "timeout" : "unavailable",
-      );
-
-      // Return response with status: "unknown" and explicit unavailableReason
-      // isRegistered: false kept for backward compatibility but status is preferred
-      return {
-        domain,
-        tld: getDomainTld(domain) ?? "",
-        isRegistered: false,
-        status: "unknown",
-        unavailableReason,
-        source: null,
-        registrarProvider: {
-          name: null,
-          domain: null,
-        },
-      };
-    }
-
-    // Actual errors (timeouts, network failures, etc.) are still logged as errors
-    const err = new Error(
-      `Registration lookup failed for ${domain}: ${error || "unknown error"}`,
-    );
-    logger.error({ err, domain });
-    throw err;
-  }
-
-  // If unregistered, return response without persisting to Postgres
-  if (!record.isRegistered) {
-    const registrarNormalized = normalizeRegistrar(
-      record.registrar ?? {},
-      registrarProviders,
-    );
-    // Explicitly construct Registration object to avoid leaking rdapper internals
-    return {
-      domain: record.domain,
-      tld: record.tld,
-      isRegistered: record.isRegistered,
-      status: "unregistered",
-      unavailableReason: undefined,
-      unicodeName: record.unicodeName,
-      punycodeName: record.punycodeName,
-      registry: record.registry,
-      registrar: record.registrar,
-      reseller: record.reseller,
-      statuses: record.statuses,
-      creationDate: record.creationDate,
-      updatedDate: record.updatedDate,
-      expirationDate: record.expirationDate,
-      deletionDate: record.deletionDate,
-      transferLock: record.transferLock,
-      dnssec: record.dnssec,
-      nameservers: record.nameservers,
-      contacts: record.contacts,
-      privacyEnabled: record.privacyEnabled,
-      whoisServer: record.whoisServer,
-      rdapServers: record.rdapServers,
-      source: record.source,
-      warnings: record.warnings,
-      registrarProvider: {
-        id: null,
-        name: registrarNormalized.name,
-        domain: registrarNormalized.domain,
+        runId: run.runId,
+        success: result.success,
+        cached: result.cached,
       },
-    };
-  }
-
-  // ===== Persist registered domain to Postgres =====
-  const registrarNormalized = normalizeRegistrar(
-    record.registrar ?? {},
-    registrarProviders,
-  );
-
-  // Explicitly construct Registration object to avoid leaking rdapper internals
-  const withProvider: RegistrationResponse = {
-    domain: record.domain,
-    tld: record.tld,
-    isRegistered: record.isRegistered,
-    status: "registered",
-    unavailableReason: undefined,
-    unicodeName: record.unicodeName,
-    punycodeName: record.punycodeName,
-    registry: record.registry,
-    registrar: record.registrar,
-    reseller: record.reseller,
-    statuses: record.statuses,
-    creationDate: record.creationDate,
-    updatedDate: record.updatedDate,
-    expirationDate: record.expirationDate,
-    deletionDate: record.deletionDate,
-    transferLock: record.transferLock,
-    dnssec: record.dnssec,
-    nameservers: record.nameservers,
-    contacts: record.contacts,
-    privacyEnabled: record.privacyEnabled,
-    whoisServer: record.whoisServer,
-    rdapServers: record.rdapServers,
-    source: record.source,
-    warnings: record.warnings,
-    registrarProvider: {
-      id: null,
-      name: registrarNormalized.name,
-      domain: registrarNormalized.domain,
-    },
-  };
-
-  // Attempt to persist to Postgres and schedule revalidation
-  // Wrap in try/catch to ensure we always return the rdapper response
-  // even if persistence/scheduling fails
-  try {
-    // Upsert domain record and resolve registrar provider in parallel (independent operations)
-    const [domainRecord, registrarProviderId] = await Promise.all([
-      upsertDomain({
-        name: domain,
-        tld: getDomainTld(domain) ?? "",
-        unicodeName: record.unicodeName ?? domain,
-      }),
-      // Use catalog upsert for matched providers, fallback to discovered for unmatched
-      registrarNormalized.catalogProvider
-        ? upsertCatalogProviderRef(registrarNormalized.catalogProvider).then(
-            (r) => r.id,
-          )
-        : resolveOrCreateProviderId({
-            category: "registrar",
-            domain: registrarNormalized.domain,
-            name: registrarNormalized.name,
-          }),
-    ]);
-
-    // Update response with resolved provider ID
-    withProvider.registrarProvider.id = registrarProviderId;
-
-    const expiresAt = ttlForRegistration(
-      now,
-      record.expirationDate ? new Date(record.expirationDate) : null,
+      "registration workflow completed",
     );
 
-    await upsertRegistration({
-      domainId: domainRecord.id,
-      isRegistered: record.isRegistered,
-      privacyEnabled: record.privacyEnabled ?? false,
-      registry: record.registry ?? null,
-      creationDate: record.creationDate ? new Date(record.creationDate) : null,
-      updatedDate: record.updatedDate ? new Date(record.updatedDate) : null,
-      expirationDate: record.expirationDate
-        ? new Date(record.expirationDate)
-        : null,
-      deletionDate: record.deletionDate ? new Date(record.deletionDate) : null,
-      transferLock: record.transferLock ?? null,
-      statuses: record.statuses ?? [],
-      contacts: record.contacts ?? [],
-      whoisServer: record.whoisServer ?? null,
-      rdapServers: record.rdapServers ?? [],
-      source: record.source,
-      registrarProviderId,
-      resellerProviderId: null,
-      fetchedAt: now,
-      expiresAt,
-      nameservers: (record.nameservers ?? []).map((n) => ({
-        host: n.host,
-        ipv4: n.ipv4 ?? [],
-        ipv6: n.ipv6 ?? [],
-      })),
-    });
-
-    // Schedule background revalidation
-    if (!options.skipScheduling) {
-      after(() =>
+    // Schedule background revalidation for successful non-cached results
+    // (the workflow persisted fresh data that will need revalidation later)
+    if (!options.skipScheduling && result.success && !result.cached) {
+      // Schedule revalidation based on default TTL
+      // The actual scheduling is handled by the section-revalidate Inngest function
+      void after(() =>
         scheduleRevalidation(
           domain,
           "registration",
-          expiresAt.getTime(),
-          domainRecord.lastAccessedAt ?? null,
+          // Use a reasonable default - fresh data typically expires in 24h
+          Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+          null, // lastAccessedAt not available here
         ),
       );
     }
+
+    if (!result.success) {
+      // Workflow completed but lookup failed (unsupported TLD, timeout, etc.)
+      // Return the error response data if available
+      if (result.data) {
+        return result.data;
+      }
+
+      // Fallback error response
+      throw new Error(
+        `Registration lookup failed for ${domain}: ${result.error}`,
+      );
+    }
+
+    return result.data;
   } catch (err) {
-    // Persistence or scheduling failed, but we still have valid rdapper data
-    // Log the error and return the response anyway
-    logger.error({ err, domain });
+    logger.error({ err, domain }, "registration workflow failed");
+    throw err;
   }
-
-  return withProvider;
-}
-
-/**
- * Check if a registration error is an expected limitation.
- * These occur when TLDs don't offer public WHOIS/RDAP services.
- * Excludes transient errors like timeouts.
- */
-function isExpectedRegistrationError(error: unknown): boolean {
-  if (!error) return false;
-
-  const errorStr = String(error).toLowerCase();
-
-  // Known patterns indicating TLD doesn't support public WHOIS/RDAP
-  return (
-    errorStr.includes("no whois server discovered") ||
-    errorStr.includes("no rdap server found") ||
-    errorStr.includes("registry may not publish public whois") ||
-    errorStr.includes("tld is not supported") ||
-    errorStr.includes("no whois server configured")
-  );
-}
-
-/**
- * Check if an error indicates a timeout (connectivity issue).
- * Tracked separately from unsupported TLDs to distinguish infrastructure problems.
- */
-function isTimeoutError(error: unknown): boolean {
-  if (!error) return false;
-
-  const errorStr = String(error).toLowerCase();
-  return (
-    errorStr.includes("whois socket timeout") ||
-    errorStr.includes("whois timeout") ||
-    errorStr.includes("rdap timeout")
-  );
 }
