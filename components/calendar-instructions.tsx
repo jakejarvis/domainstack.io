@@ -8,7 +8,7 @@ import {
   RefreshCw,
   ShieldAlert,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AppleIcon,
@@ -182,6 +182,15 @@ export function CalendarInstructions({ className }: { className?: string }) {
 
   const integrations = getIntegrations(feed?.feedUrl);
 
+  const gptUrl = useMemo(() => {
+    const url = new URL("https://chatgpt.com/");
+    url.searchParams.set(
+      "prompt",
+      "How do I subscribe to an ics calendar feed in Microsoft Bob?",
+    );
+    return url.toString();
+  }, []);
+
   return (
     <>
       <div className={className}>
@@ -298,17 +307,19 @@ export function CalendarInstructions({ className }: { className?: string }) {
                         );
                       })}
                     </div>
-                    <DropdownMenuSeparator className="mx-0" />
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       render={
                         <a
-                          href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+an+ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
+                          href={gptUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="justify-center text-[13px] text-foreground/90"
+                          aria-label="Ask ChatGPT"
                         >
                           <ChatGPTIcon />
                           Other…
+                          <span className="sr-only">(Ask ChatGPT)</span>
                         </a>
                       }
                     />
