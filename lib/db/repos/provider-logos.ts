@@ -4,7 +4,6 @@ import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { providerLogos } from "@/lib/db/schema";
-import { ProviderLogoInsert as ProviderLogoInsertSchema } from "@/lib/db/zod";
 
 type ProviderLogoInsert = InferInsertModel<typeof providerLogos>;
 type ProviderLogo = InferSelectModel<typeof providerLogos>;
@@ -12,13 +11,12 @@ type ProviderLogo = InferSelectModel<typeof providerLogos>;
 export async function upsertProviderLogo(
   params: ProviderLogoInsert,
 ): Promise<ProviderLogo | null> {
-  const insertRow = ProviderLogoInsertSchema.parse(params);
   const rows = await db
     .insert(providerLogos)
-    .values(insertRow)
+    .values(params)
     .onConflictDoUpdate({
       target: providerLogos.providerId,
-      set: insertRow,
+      set: params,
     })
     .returning();
   return rows[0] ?? null;

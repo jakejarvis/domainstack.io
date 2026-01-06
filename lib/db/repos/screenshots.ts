@@ -3,7 +3,6 @@ import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { screenshots } from "@/lib/db/schema";
-import { ScreenshotInsert as ScreenshotInsertSchema } from "@/lib/db/zod";
 
 type ScreenshotInsert = InferInsertModel<typeof screenshots>;
 type Screenshot = InferSelectModel<typeof screenshots>;
@@ -11,13 +10,12 @@ type Screenshot = InferSelectModel<typeof screenshots>;
 export async function upsertScreenshot(
   params: ScreenshotInsert,
 ): Promise<Screenshot | null> {
-  const insertRow = ScreenshotInsertSchema.parse(params);
   const rows = await db
     .insert(screenshots)
-    .values(insertRow)
+    .values(params)
     .onConflictDoUpdate({
       target: screenshots.domainId,
-      set: insertRow,
+      set: params,
     })
     .returning();
   return rows[0] ?? null;

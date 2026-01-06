@@ -58,7 +58,6 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
-    "drizzle-zod": "^0.8.3",
     "file-type": "^21.3.0",
     "geist": "^1.5.1",
     "ical-generator": "10.0.1-develop.11",

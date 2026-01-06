@@ -3,7 +3,6 @@ import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
-import { DnsRecordInsert as DnsRecordInsertSchema } from "@/lib/db/zod";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
 
@@ -71,8 +70,7 @@ export async function replaceDns(params: UpsertDnsParams) {
   }
 
   // Collect all records to upsert and records to delete
-  const allRecordsToUpsert: ReturnType<typeof DnsRecordInsertSchema.parse>[] =
-    [];
+  const allRecordsToUpsert: DnsRecordInsert[] = [];
 
   const allNextKeys = new Set<string>();
 
@@ -107,20 +105,18 @@ export async function replaceDns(params: UpsertDnsParams) {
 
       allNextKeys.add(key);
 
-      allRecordsToUpsert.push(
-        DnsRecordInsertSchema.parse({
-          domainId,
-          type,
-          name: r.name,
-          value: r.value,
-          ttl: r.ttl ?? null,
-          priority: r.priority ?? null,
-          isCloudflare: r.isCloudflare ?? null,
-          resolver: params.resolver,
-          fetchedAt: params.fetchedAt,
-          expiresAt: r.expiresAt,
-        }),
-      );
+      allRecordsToUpsert.push({
+        domainId,
+        type,
+        name: r.name,
+        value: r.value,
+        ttl: r.ttl ?? null,
+        priority: r.priority ?? null,
+        isCloudflare: r.isCloudflare ?? null,
+        resolver: params.resolver,
+        fetchedAt: params.fetchedAt,
+        expiresAt: r.expiresAt,
+      });
     }
   }
 

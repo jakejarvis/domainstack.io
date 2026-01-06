@@ -9,7 +9,6 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
 import type { NotificationOverrides } from "@/lib/schemas";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
@@ -30,19 +29,17 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
     await tx.delete(certificates).where(eq(certificates.domainId, domainId));
     if (params.chain.length > 0) {
       await tx.insert(certificates).values(
-        params.chain.map((c) =>
-          CertificateInsertSchema.parse({
-            domainId,
-            issuer: c.issuer,
-            subject: c.subject,
-            altNames: c.altNames,
-            validFrom: c.validFrom as Date | string,
-            validTo: c.validTo as Date | string,
-            caProviderId: c.caProviderId ?? null,
-            fetchedAt: params.fetchedAt as Date | string,
-            expiresAt: params.expiresAt as Date | string,
-          }),
-        ),
+        params.chain.map((c) => ({
+          domainId,
+          issuer: c.issuer,
+          subject: c.subject,
+          altNames: c.altNames,
+          validFrom: c.validFrom,
+          validTo: c.validTo,
+          caProviderId: c.caProviderId ?? null,
+          fetchedAt: params.fetchedAt,
+          expiresAt: params.expiresAt,
+        })),
       );
     }
   });

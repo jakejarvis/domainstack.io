@@ -2,10 +2,6 @@ import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { registrations } from "@/lib/db/schema";
-import {
-  RegistrationInsert as RegistrationInsertSchema,
-  RegistrationUpdate as RegistrationUpdateSchema,
-} from "@/lib/db/zod";
 import type { RegistrationNameservers } from "@/lib/schemas";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
@@ -23,15 +19,15 @@ export async function upsertRegistration(params: RegistrationInsert) {
       ipv6: n.ipv6 ?? [],
     }));
 
-  const insertRow = RegistrationInsertSchema.parse({
+  const insertRow = {
     domainId,
     nameservers: normalizedNameservers,
     ...rest,
-  });
-  const updateRow = RegistrationUpdateSchema.parse({
+  };
+  const updateRow = {
     nameservers: normalizedNameservers,
     ...rest,
-  });
+  };
 
   await db.insert(registrations).values(insertRow).onConflictDoUpdate({
     target: registrations.domainId,
