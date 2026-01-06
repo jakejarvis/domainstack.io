@@ -246,83 +246,74 @@ export function CalendarInstructions({ className }: { className?: string }) {
             {/* Actions */}
             <div className="@container/actions">
               <div className="grid @lg/actions:grid-cols-3 grid-cols-2 gap-2 pt-1">
-                <ButtonGroup className="@lg/actions:col-span-1 col-span-2 flex w-full">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
+                <DropdownMenu>
+                  <DropdownMenuTrigger
                     nativeButton={false}
                     render={
-                      <a
-                        href={
-                          isEnabled &&
-                          feed.feedUrl.replace("https://", "webcal://")
-                        }
-                        data-disable-progress
-                      />
-                    }
-                  >
-                    <AppStoreIcon className="text-muted-foreground" />
-                    Open In…
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
+                      <ButtonGroup className="@lg/actions:col-span-1 col-span-2 flex w-full">
+                        <Button variant="outline" className="flex-1">
+                          <AppStoreIcon className="text-muted-foreground" />
+                          Open In…
+                        </Button>
                         <Button variant="outline" className="!px-2.5">
                           <ChevronDownIcon />
                         </Button>
+                      </ButtonGroup>
+                    }
+                  />
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-[var(--anchor-width)] max-w-[235px] p-1"
+                  >
+                    {/* 2x2 Grid of calendar apps */}
+                    <div className="grid w-full grid-cols-2 gap-1">
+                      {integrations.map((integration) => {
+                        const { id, label, icon: Icon, href } = integration;
+                        const opensNatively = href.startsWith("webcal://");
+
+                        return (
+                          <DropdownMenuItem
+                            key={id}
+                            render={
+                              <a
+                                href={href}
+                                target={opensNatively ? undefined : "_blank"}
+                                rel={
+                                  opensNatively
+                                    ? undefined
+                                    : "noopener noreferrer"
+                                }
+                                data-disable-progress={
+                                  opensNatively ? true : undefined
+                                }
+                                className="flex aspect-3/2 w-full flex-col items-center justify-center gap-2.5 rounded-md text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+                              >
+                                <Icon className="size-5 text-foreground/90" />
+                                <span className="text-foreground/75 text-xs leading-none">
+                                  {label}
+                                </span>
+                              </a>
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                    <DropdownMenuSeparator className="mx-0" />
+                    <DropdownMenuItem
+                      render={
+                        <a
+                          href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+an+ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="justify-center text-[13px] text-foreground/90"
+                        >
+                          <ChatGPTIcon />
+                          Other…
+                        </a>
                       }
                     />
-                    <DropdownMenuContent align="end" className="p-1">
-                      {/* 2x2 Grid of calendar apps */}
-                      <div className="grid grid-cols-2 gap-1">
-                        {integrations.map((integration) => {
-                          const { id, label, icon: Icon, href } = integration;
-                          const opensNatively = href.startsWith("webcal://");
-
-                          return (
-                            <DropdownMenuItem
-                              key={id}
-                              render={
-                                <a
-                                  href={href}
-                                  target={opensNatively ? undefined : "_blank"}
-                                  rel={
-                                    opensNatively
-                                      ? undefined
-                                      : "noopener noreferrer"
-                                  }
-                                  data-disable-progress={
-                                    opensNatively ? true : undefined
-                                  }
-                                  className="flex h-[70px] w-[90px] flex-col items-center justify-center gap-2.5 rounded-md text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
-                                >
-                                  <Icon className="size-5 text-foreground/90" />
-                                  <span className="text-foreground/75 text-xs leading-none">
-                                    {label}
-                                  </span>
-                                </a>
-                              }
-                            />
-                          );
-                        })}
-                      </div>
-                      <DropdownMenuSeparator className="mx-0" />
-                      <DropdownMenuItem
-                        render={
-                          <a
-                            href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+an+ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="justify-center text-[13px] text-foreground/90"
-                          >
-                            <ChatGPTIcon />
-                            Other…
-                          </a>
-                        }
-                      />
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </ButtonGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <Button
                   variant="outline"
