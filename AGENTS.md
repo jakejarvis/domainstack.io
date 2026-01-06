@@ -28,10 +28,10 @@
 - `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
-- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, icons, IP, pricing, registration, screenshot, SEO, verification).
+- `server/services/` service layer for domain data fetching (DNS, headers, hosting, IP, pricing, SEO, verification). Note: Heavy operations (certificates, registration, screenshot, favicons, provider logos) use durable workflows in `workflows/`.
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
-- `workflows/` Vercel Workflow definitions for durable backend operations. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
+- `workflows/` Vercel Workflow definitions for durable backend operations. Contains 5 workflows: `certificates/`, `favicon/`, `provider-logo/`, `registration/`, `screenshot/`. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -76,9 +76,12 @@
   - Mock tRPC/React Query for components like `Favicon` and `Screenshot`.
 - Server tests:
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).
-  - Screenshot service (`server/services/screenshot.ts`) uses hoisted mocks for `puppeteer`/`puppeteer-core` and `@sparticuz/chromium`.
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
+- Workflow tests (`workflows/*/workflow.test.ts`):
+  - Test step functions directly by mocking their dependencies (dynamic imports).
+  - Use PGlite for database-backed tests, mock external services (`@/lib/storage`, `@/lib/fetch-remote-asset`).
+  - For steps with dynamic imports (Puppeteer, TLS), focus on cache and blocklist tests; integration tests cover the full flow.
 - Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
 - Commands: `pnpm test`, `pnpm test:run`, `pnpm test:coverage`.
 
@@ -212,33 +215,39 @@ Users can subscribe to domain expiration dates via iCalendar feed compatible wit
 - `section-revalidate`: Event-driven; background revalidation for individual domain+section combinations with rate limiting and concurrency control.
 - `sync-screenshot-blocklist`: Weekly on Sundays at 2:00 AM UTC; syncs external blocklists (e.g., OISD NSFW) to `blocked_domains` table for screenshot/OG image blocking.
 
-### Vercel Workflow (Durable Workflows)
-Vercel Workflow DevKit provides durable execution for heavy backend operations. Unlike Inngest (scheduled/event-driven jobs), Workflow is designed for long-running, resource-intensive operations that benefit from step-by-step durability and automatic retries.
+### Workflow DevKit (Durable Workflows)
+Vercel's Workflow DevKit provides durable execution for heavy backend operations. Unlike Inngest (scheduled/event-driven jobs), Workflow is designed for long-running, resource-intensive operations that benefit from step-by-step durability and automatic retries.
 
 **Architecture:**
 - **Config:** `next.config.ts` wrapped with `withWorkflow()` for directive support.
 - **Instrumentation:** `instrumentation.ts` initializes the workflow world on server startup.
 - **Workflows:** `workflows/` directory contains workflow definitions.
 - **Steps:** Functions marked with `"use step"` directive run as durable, retryable steps.
+- **Integration:** tRPC procedures in `server/routers/domain.ts` and `server/routers/provider.ts` call workflows via `start()` and await `run.returnValue`.
 
-**Screenshot Workflow (`workflows/screenshot/workflow.ts`):**
-Durable screenshot generation that breaks down the heavy Puppeteer operation into retryable steps:
-1. **checkBlocklist** - Check if domain is on NSFW/malware blocklist
-2. **checkCache** - Check Postgres for cached screenshot
-3. **captureScreenshot** - Capture screenshot using Puppeteer (the heavy operation)
-4. **storeScreenshot** - Process image and store to Vercel Blob
-5. **persistSuccess/persistFailure** - Update database cache
+**Available Workflows:**
 
-**API Endpoint:**
-- `POST /api/workflow/screenshot` - Start a screenshot workflow
-  - Body: `{ domain: string }`
-  - Response: `{ runId: string, domain: string, status: "started" }`
-- `GET /api/workflow/screenshot?runId=xxx` - Check workflow status
-  - Response: `{ runId: string, status: string, result?: { url, blocked, cached } }`
+| Workflow | Input | Purpose | Steps |
+|----------|-------|---------|-------|
+| `certificatesWorkflow` | `{ domain }` | Fetch SSL/TLS certificate chain | checkCache → fetchCertificateChain → detectProvidersAndBuildResponse → persistCertificates |
+| `faviconWorkflow` | `{ domain }` | Extract domain favicon | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
+| `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
+| `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
+| `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
+
+**Usage Pattern:**
+```typescript
+import { start } from "workflow/api";
+import { registrationWorkflow } from "@/workflows/registration";
+
+// Start workflow and wait for result
+const run = await start(registrationWorkflow, [{ domain: "example.com" }]);
+const result = await run.returnValue;
+```
 
 **When to use Workflow vs Inngest:**
-- **Workflow:** Heavy, synchronous-feeling operations that need durability (screenshots, complex data processing)
-- **Inngest:** Scheduled jobs, event-driven background tasks, fan-out patterns
+- **Workflow:** Heavy, request-triggered operations that need durability (screenshots, TLS handshakes, RDAP lookups)
+- **Inngest:** Scheduled jobs, event-driven background tasks, fan-out patterns, multi-domain batch operations
 
 **Observability:**
 ```bash
@@ -247,6 +256,9 @@ npx workflow web
 # CLI inspection
 npx workflow inspect runs
 ```
+
+**Reference**
+[Workflow DevKit docs](https://useworkflow.dev/llms.txt)
 
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
@@ -279,7 +291,7 @@ Screenshots and OG image fetching are blocked for domains on external NSFW/malwa
 - **Inngest job:** `sync-screenshot-blocklist` runs weekly to fetch and sync blocklists.
 
 ### Integration Points
-- **Screenshot service:** `server/services/screenshot.ts` checks blocklist before capturing screenshots.
+- **Screenshot workflow:** `workflows/screenshot/workflow.ts` checks blocklist in `checkBlocklist` step before capturing.
 - **SEO service:** `server/services/seo.ts` checks blocklist before fetching OG images, returns null for blocked domains.
 
 ### Sync Behavior
