@@ -10,6 +10,7 @@ export * from "./internal/changes";
 export * from "./internal/icons";
 export * from "./internal/notifications";
 export * from "./internal/provider";
+export * from "./internal/provider-ref";
 export * from "./internal/sections";
 export * from "./internal/snapshot";
 export * from "./internal/stats";

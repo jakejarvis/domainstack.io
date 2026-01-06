@@ -4,6 +4,9 @@ import { RuleSchema } from "../../providers/rules";
 import { DnsRecordSchema } from "../domain/dns";
 import { RegistrationContactsSchema } from "../domain/registration";
 
+// Re-export ProviderRefSchema from its own file to avoid circular dependencies
+export { type ProviderRef, ProviderRefSchema } from "./provider-ref";
+
 export { ProviderCategorySchema };
 export type ProviderCategory = z.infer<typeof ProviderCategorySchema>;
 
@@ -38,10 +41,3 @@ export const ProviderInfoSchema = z.object({
   certificateExpiryDate: z.date().nullable().optional(),
 });
 export type ProviderInfo = z.infer<typeof ProviderInfoSchema>;
-
-export const ProviderRefSchema = z.object({
-  id: z.string().uuid().nullable().optional(),
-  name: z.string().nullable(),
-  domain: z.string().nullable(),
-});
-export type ProviderRef = z.infer<typeof ProviderRefSchema>;
