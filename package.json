@@ -140,6 +140,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@posthog/cli",
+      "@swc/core",
       "bufferutil",
       "core-js",
       "esbuild",

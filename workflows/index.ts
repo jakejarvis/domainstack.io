@@ -8,4 +8,7 @@
  * - Better resource utilization for heavy operations
  */
 
+export * from "./certificates";
+export * from "./favicon";
+export * from "./registration";
 export * from "./screenshot";
