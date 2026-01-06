@@ -1,10 +1,6 @@
 import { z } from "zod";
-import {
-  type Provider,
-  type ProviderCategory,
-  type Rule,
-  RuleSchema,
-} from "@/lib/schemas";
+import { type Rule, RuleSchema } from "@/lib/providers/rules";
+import type { Provider, ProviderCategory } from "@/lib/schemas";
 
 /**
  * Schema for a provider entry without category (category is inferred from the key).

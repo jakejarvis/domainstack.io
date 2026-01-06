@@ -1,11 +1,6 @@
 import { toRegistrableDomain } from "@/lib/domain-server";
-import type {
-  DetectionContext,
-  Header,
-  Provider,
-  ProviderRef,
-  Rule,
-} from "@/lib/schemas";
+import type { DetectionContext, Rule } from "@/lib/providers/rules";
+import type { Header, Provider, ProviderRef } from "@/lib/schemas";
 
 /**
  * A context object for header-based detection, pre-calculating values to

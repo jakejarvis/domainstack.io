@@ -5,7 +5,8 @@ import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 import { evalRule } from "@/lib/providers/detection";
-import type { DetectionContext, Provider } from "@/lib/schemas";
+import type { DetectionContext } from "@/lib/providers/rules";
+import type { Provider } from "@/lib/schemas";
 import { slugify } from "@/lib/slugify";
 
 const logger = createLogger({ source: "providers" });
