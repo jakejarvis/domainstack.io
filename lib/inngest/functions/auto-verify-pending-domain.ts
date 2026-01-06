@@ -1,12 +1,13 @@
 import "server-only";
 
+import { start } from "workflow/api";
 import {
   findTrackedDomainWithDomainName,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { tryAllVerificationMethods } from "@/server/services/verification";
+import { verificationWorkflow } from "@/workflows/verification";
 
 /**
  * Retry schedule for auto-verification attempts.
@@ -114,7 +115,10 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       }
 
       const result = await step.run(`verify-attempt-${attempt}`, async () => {
-        return await tryAllVerificationMethods(currentDomainName, currentToken);
+        const workflowRun = await start(verificationWorkflow, [
+          { domain: currentDomainName, token: currentToken },
+        ]);
+        return await workflowRun.returnValue;
       });
 
       if (result.verified && result.method) {

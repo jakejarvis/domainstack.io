@@ -2,6 +2,7 @@ import "server-only";
 
 import { differenceInDays } from "date-fns";
 import type { Logger } from "inngest";
+import { start } from "workflow/api";
 import { VerificationFailingEmail } from "@/emails/verification-failing";
 import { VerificationRevokedEmail } from "@/emails/verification-revoked";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@/lib/constants/verification";
@@ -23,10 +24,7 @@ import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { generateIdempotencyKey } from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
-import {
-  tryAllVerificationMethods,
-  verifyDomainOwnership,
-} from "@/server/services/verification";
+import { verificationWorkflow } from "@/workflows/verification";
 
 type VerificationFailureAction =
   | "marked_failing"
@@ -63,10 +61,10 @@ export const verifyPendingDomainCronWorker = inngest.createFunction(
 
     try {
       const result = await step.run("verify-ownership", async () => {
-        return await tryAllVerificationMethods(
-          domain.domainName,
-          domain.verificationToken,
-        );
+        const workflowRun = await start(verificationWorkflow, [
+          { domain: domain.domainName, token: domain.verificationToken },
+        ]);
+        return await workflowRun.returnValue;
       });
 
       if (result.verified && result.method) {
@@ -115,11 +113,14 @@ export const reverifyOwnershipWorker = inngest.createFunction(
 
     try {
       const result = await step.run("check-ownership", async () => {
-        return await verifyDomainOwnership(
-          domain.domainName,
-          domain.verificationToken,
-          domain.verificationMethod,
-        );
+        const workflowRun = await start(verificationWorkflow, [
+          {
+            domain: domain.domainName,
+            token: domain.verificationToken,
+            method: domain.verificationMethod,
+          },
+        ]);
+        return await workflowRun.returnValue;
       });
 
       if (result.verified) {

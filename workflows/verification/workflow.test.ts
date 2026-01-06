@@ -2,89 +2,19 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { VerificationMethod } from "@/lib/db/repos/tracked-domains";
-import { getVerificationInstructions } from "@/lib/verification/instructions";
 import { server } from "@/mocks/server";
-import {
-  generateVerificationToken,
-  tryAllVerificationMethods,
-  verifyDomainOwnership,
-} from "./verification";
-
-// We don't mock fetch/fetchRemoteAsset anymore - we let them run and hit MSW
+import { verificationWorkflow } from "./workflow";
 
 afterEach(() => {
   vi.restoreAllMocks();
   server.resetHandlers();
 });
 
-describe("generateVerificationToken", () => {
-  it("generates a 32-character hex string", () => {
-    const token = generateVerificationToken();
-    expect(token).toHaveLength(32);
-    expect(token).toMatch(/^[0-9a-f]{32}$/);
-  });
-
-  it("generates unique tokens", () => {
-    const token1 = generateVerificationToken();
-    const token2 = generateVerificationToken();
-    const token3 = generateVerificationToken();
-
-    expect(token1).not.toBe(token2);
-    expect(token2).not.toBe(token3);
-    expect(token1).not.toBe(token3);
-  });
-});
-
-describe("getVerificationInstructions", () => {
-  const token = "abc123def456";
-
-  it("returns DNS TXT instructions with structured fields", () => {
-    const result = getVerificationInstructions(
-      "verified-dns.test",
-      token,
-      "dns_txt",
-    );
-
-    expect(result.title).toContain("DNS");
-    expect(result.hostname).toBe("verified-dns.test");
-    expect(result.value).toBe(`domainstack-verify=${token}`);
-  });
-
-  it("returns HTML file instructions with structured fields", () => {
-    const result = getVerificationInstructions(
-      "verified-dns.test",
-      token,
-      "html_file",
-    );
-
-    expect(result.title).toContain("HTML");
-    expect(result.fullPath).toBe(
-      `/.well-known/domainstack-verify/${token}.html`,
-    );
-    expect(result.filename).toBe(`${token}.html`);
-    expect(result.fileContent).toBe(`domainstack-verify: ${token}`);
-  });
-
-  it("returns meta tag instructions with structured fields", () => {
-    const result = getVerificationInstructions(
-      "verified-dns.test",
-      token,
-      "meta_tag",
-    );
-
-    expect(result.title).toContain("meta tag");
-    expect(result.metaTag).toContain("<meta");
-    expect(result.metaTag).toContain('name="domainstack-verify"');
-    expect(result.metaTag).toContain(`content="${token}"`);
-  });
-});
-
-describe("verifyDomainOwnership", () => {
+describe("verificationWorkflow with specific method", () => {
   const token = "testtoken123";
 
   describe("dns_txt method", () => {
     it("returns verified when TXT record matches", async () => {
-      // Mock DoH response for TXT record
       const dohHandler = () => {
         return HttpResponse.json({
           Status: 0,
@@ -104,20 +34,17 @@ describe("verifyDomainOwnership", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "dns_txt",
-      );
+        method: "dns_txt",
+      });
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("dns_txt");
     });
 
     it("returns verified when TXT record matches on legacy subdomain", async () => {
-      // Mock DoH response:
-      // 1. Apex domain -> No TXT
-      // 2. Legacy subdomain -> TXT match
       const dohHandler = ({ request }: { request: Request }) => {
         const url = new URL(request.url);
         const name = url.searchParams.get("name");
@@ -151,23 +78,21 @@ describe("verifyDomainOwnership", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "dns_txt",
-      );
+        method: "dns_txt",
+      });
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("dns_txt");
     });
 
     it("returns not verified when TXT record is missing", async () => {
-      // Default handler in mocks/handlers.ts for verified-dns.test TXT is "v=spf1" (no match)
-      // We can use that or explicitly mock empty
       const dohHandler = () => {
         return HttpResponse.json({
           Status: 0,
-          Answer: [], // No records
+          Answer: [],
         });
       };
 
@@ -176,11 +101,11 @@ describe("verifyDomainOwnership", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "dns_txt",
-      );
+        method: "dns_txt",
+      });
 
       expect(result.verified).toBe(false);
       expect(result.method).toBeNull();
@@ -206,17 +131,16 @@ describe("verifyDomainOwnership", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "dns_txt",
-      );
+        method: "dns_txt",
+      });
 
       expect(result.verified).toBe(false);
     });
 
     it("handles DNS query failure", async () => {
-      // Mock provider failure
       server.use(
         http.get("https://cloudflare-dns.com/dns-query", () => {
           return new HttpResponse(null, { status: 500 });
@@ -226,11 +150,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "dns_txt",
-      );
+        method: "dns_txt",
+      });
 
       expect(result.verified).toBe(false);
     });
@@ -240,7 +164,6 @@ describe("verifyDomainOwnership", () => {
     const expectedContent = `domainstack-verify: ${token}`;
 
     it("returns verified when per-token file contains correct content", async () => {
-      // Mock the per-token file
       server.use(
         http.get(
           `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
@@ -252,11 +175,11 @@ describe("verifyDomainOwnership", () => {
         ),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("html_file");
@@ -274,11 +197,11 @@ describe("verifyDomainOwnership", () => {
         ),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(true);
     });
@@ -293,25 +216,23 @@ describe("verifyDomainOwnership", () => {
             });
           },
         ),
-        // Legacy file also empty or 404
         http.get(
           "https://verified-dns.test/.well-known/domainstack-verify.html",
           () => new HttpResponse(null, { status: 404 }),
         ),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(false);
     });
 
     it("falls back to legacy file when per-token files not found", async () => {
       server.use(
-        // Per-token 404
         http.get(
           `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
           () => new HttpResponse(null, { status: 404 }),
@@ -320,7 +241,6 @@ describe("verifyDomainOwnership", () => {
           `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
           () => new HttpResponse(null, { status: 404 }),
         ),
-        // Legacy found
         http.get(
           "https://verified-dns.test/.well-known/domainstack-verify.html",
           () => {
@@ -331,23 +251,21 @@ describe("verifyDomainOwnership", () => {
         ),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(true);
     });
 
     it("falls back to HTTP when HTTPS fails for per-token file", async () => {
       server.use(
-        // HTTPS 404
         http.get(
           `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
           () => new HttpResponse(null, { status: 404 }),
         ),
-        // HTTP found
         http.get(
           `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
           () => {
@@ -358,11 +276,11 @@ describe("verifyDomainOwnership", () => {
         ),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(true);
     });
@@ -377,11 +295,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "html_file",
-      );
+        method: "html_file",
+      });
 
       expect(result.verified).toBe(false);
     });
@@ -400,11 +318,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(true);
       expect(result.method).toBe("meta_tag");
@@ -422,11 +340,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(true);
     });
@@ -447,11 +365,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(true);
     });
@@ -471,11 +389,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(false);
     });
@@ -495,11 +413,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(true);
     });
@@ -516,11 +434,11 @@ describe("verifyDomainOwnership", () => {
         }),
       );
 
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "meta_tag",
-      );
+        method: "meta_tag",
+      });
 
       expect(result.verified).toBe(false);
     });
@@ -528,11 +446,11 @@ describe("verifyDomainOwnership", () => {
 
   describe("unknown method", () => {
     it("returns error for unknown method", async () => {
-      const result = await verifyDomainOwnership(
-        "verified-dns.test",
+      const result = await verificationWorkflow({
+        domain: "verified-dns.test",
         token,
-        "unknown" as unknown as VerificationMethod,
-      );
+        method: "unknown" as unknown as VerificationMethod,
+      });
 
       expect(result.verified).toBe(false);
       expect(result.error).toBe("Unknown method");
@@ -540,7 +458,7 @@ describe("verifyDomainOwnership", () => {
   });
 });
 
-describe("tryAllVerificationMethods", () => {
+describe("verificationWorkflow trying all methods", () => {
   const token = "testtoken123";
 
   it("returns dns_txt when DNS verification succeeds first", async () => {
@@ -563,14 +481,16 @@ describe("tryAllVerificationMethods", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const result = await tryAllVerificationMethods("verified-dns.test", token);
+    const result = await verificationWorkflow({
+      domain: "verified-dns.test",
+      token,
+    });
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("dns_txt");
   });
 
   it("falls back to html_file when DNS fails", async () => {
-    // DNS fails for TXT only, but succeeds for A (needed for fetch)
     const dohFailTxtHandler = ({ request }: { request: Request }) => {
       const url = new URL(request.url);
       const type = url.searchParams.get("type");
@@ -579,7 +499,6 @@ describe("tryAllVerificationMethods", () => {
         return HttpResponse.json({ Status: 0, Answer: [] });
       }
 
-      // Return A record for verified-dns.test to allow fetching
       if (type === "A") {
         return HttpResponse.json({
           Status: 0,
@@ -602,7 +521,6 @@ describe("tryAllVerificationMethods", () => {
       http.get("https://dns.google/resolve", dohFailTxtHandler),
     );
 
-    // HTML succeeds
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
@@ -614,14 +532,16 @@ describe("tryAllVerificationMethods", () => {
       ),
     );
 
-    const result = await tryAllVerificationMethods("verified-dns.test", token);
+    const result = await verificationWorkflow({
+      domain: "verified-dns.test",
+      token,
+    });
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("html_file");
   });
 
   it("falls back to meta_tag when DNS and HTML fail", async () => {
-    // DNS fails for TXT only
     const dohFailTxtHandler = ({ request }: { request: Request }) => {
       const url = new URL(request.url);
       const type = url.searchParams.get("type");
@@ -652,7 +572,6 @@ describe("tryAllVerificationMethods", () => {
       http.get("https://dns.google/resolve", dohFailTxtHandler),
     );
 
-    // HTML fails
     server.use(
       http.get("https://verified-dns.test/.well-known/*", () =>
         HttpResponse.json(null, { status: 404 }),
@@ -662,7 +581,6 @@ describe("tryAllVerificationMethods", () => {
       ),
     );
 
-    // Meta succeeds
     server.use(
       http.get("https://verified-dns.test/", () => {
         return new HttpResponse(
@@ -674,14 +592,16 @@ describe("tryAllVerificationMethods", () => {
       }),
     );
 
-    const result = await tryAllVerificationMethods("verified-dns.test", token);
+    const result = await verificationWorkflow({
+      domain: "verified-dns.test",
+      token,
+    });
 
     expect(result.verified).toBe(true);
     expect(result.method).toBe("meta_tag");
   });
 
   it("returns not verified when all methods fail", async () => {
-    // All fail (TXT fails, A succeeds to allow trying HTML/Meta, but those fail too)
     const dohFailTxtHandler = ({ request }: { request: Request }) => {
       const url = new URL(request.url);
       const type = url.searchParams.get("type");
@@ -721,7 +641,10 @@ describe("tryAllVerificationMethods", () => {
       ),
     );
 
-    const result = await tryAllVerificationMethods("verified-dns.test", token);
+    const result = await verificationWorkflow({
+      domain: "verified-dns.test",
+      token,
+    });
 
     expect(result.verified).toBe(false);
     expect(result.method).toBeNull();

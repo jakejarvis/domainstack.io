@@ -15,3 +15,4 @@ export * from "./provider-logo";
 export * from "./registration";
 export * from "./screenshot";
 export * from "./seo";
+export * from "./verification";

@@ -236,6 +236,7 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 | `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
 | `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
 | `seoWorkflow` | `{ domain }` | Fetch SEO meta and robots.txt | checkCache → fetchHtml → fetchRobots → processOgImage → persistSeo |
+| `verificationWorkflow` | `{ domain, token, method? }` | Verify domain ownership | verifyByDns → verifyByHtmlFile → verifyByMetaTag (or single method if specified) |
 
 **Usage Pattern:**
 ```typescript
