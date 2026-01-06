@@ -31,6 +31,7 @@
 - `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, icons, IP, pricing, registration, screenshot, SEO, verification).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
+- `workflows/` Vercel Workflow definitions for durable backend operations. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -210,6 +211,42 @@ Users can subscribe to domain expiration dates via iCalendar feed compatible wit
 - `initialize-snapshot`: Event-driven; creates baseline snapshot for newly verified domains (establishes state for change detection).
 - `section-revalidate`: Event-driven; background revalidation for individual domain+section combinations with rate limiting and concurrency control.
 - `sync-screenshot-blocklist`: Weekly on Sundays at 2:00 AM UTC; syncs external blocklists (e.g., OISD NSFW) to `blocked_domains` table for screenshot/OG image blocking.
+
+### Vercel Workflow (Durable Workflows)
+Vercel Workflow DevKit provides durable execution for heavy backend operations. Unlike Inngest (scheduled/event-driven jobs), Workflow is designed for long-running, resource-intensive operations that benefit from step-by-step durability and automatic retries.
+
+**Architecture:**
+- **Config:** `next.config.ts` wrapped with `withWorkflow()` for directive support.
+- **Instrumentation:** `instrumentation.ts` initializes the workflow world on server startup.
+- **Workflows:** `workflows/` directory contains workflow definitions.
+- **Steps:** Functions marked with `"use step"` directive run as durable, retryable steps.
+
+**Screenshot Workflow (`workflows/screenshot/workflow.ts`):**
+Durable screenshot generation that breaks down the heavy Puppeteer operation into retryable steps:
+1. **checkBlocklist** - Check if domain is on NSFW/malware blocklist
+2. **checkCache** - Check Postgres for cached screenshot
+3. **captureScreenshot** - Capture screenshot using Puppeteer (the heavy operation)
+4. **storeScreenshot** - Process image and store to Vercel Blob
+5. **persistSuccess/persistFailure** - Update database cache
+
+**API Endpoint:**
+- `POST /api/workflow/screenshot` - Start a screenshot workflow
+  - Body: `{ domain: string }`
+  - Response: `{ runId: string, domain: string, status: "started" }`
+- `GET /api/workflow/screenshot?runId=xxx` - Check workflow status
+  - Response: `{ runId: string, status: string, result?: { url, blocked, cached } }`
+
+**When to use Workflow vs Inngest:**
+- **Workflow:** Heavy, synchronous-feeling operations that need durability (screenshots, complex data processing)
+- **Inngest:** Scheduled jobs, event-driven background tasks, fan-out patterns
+
+**Observability:**
+```bash
+# Open the workflow Web UI
+npx workflow web
+# CLI inspection
+npx workflow inspect runs
+```
 
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.

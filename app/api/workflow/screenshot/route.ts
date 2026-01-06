@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { start, getRunStatus, getRunResult } from "workflow/api";
+import { getRun, start } from "workflow/api";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
 import {
-  screenshotWorkflow,
   type ScreenshotWorkflowResult,
+  screenshotWorkflow,
 } from "@/workflows/screenshot/workflow";
 
 const logger = createLogger({ source: "workflow-screenshot-api" });
@@ -14,7 +14,9 @@ const logger = createLogger({ source: "workflow-screenshot-api" });
  * Start a new screenshot workflow for a domain.
  *
  * Request body: { domain: string }
- * Response: { runId: string, status: string }
+ * Response: { runId: string, domain: string, status: string }
+ *
+ * The workflow runs asynchronously and can be polled for status.
  */
 export async function POST(request: Request) {
   try {
@@ -36,15 +38,17 @@ export async function POST(request: Request) {
     }
 
     // Start the screenshot workflow
-    const run = await start(screenshotWorkflow, [{ domain: registrableDomain }]);
+    const run = await start(screenshotWorkflow, [
+      { domain: registrableDomain },
+    ]);
 
     logger.info(
-      { domain: registrableDomain, runId: run.id },
+      { domain: registrableDomain, runId: run.runId },
       "screenshot workflow started",
     );
 
     return NextResponse.json({
-      runId: run.id,
+      runId: run.runId,
       domain: registrableDomain,
       status: "started",
     });
@@ -76,16 +80,15 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the status of the workflow run
-    const status = await getRunStatus(runId);
+    // Get the Run object for this runId
+    const run = getRun<ScreenshotWorkflowResult>(runId);
 
-    if (!status) {
-      return NextResponse.json({ error: "Run not found" }, { status: 404 });
-    }
+    // Get the status
+    const status = await run.status;
 
     // If completed, get the result
     if (status === "completed") {
-      const result = await getRunResult<ScreenshotWorkflowResult>(runId);
+      const result = await run.returnValue;
       return NextResponse.json({
         runId,
         status,

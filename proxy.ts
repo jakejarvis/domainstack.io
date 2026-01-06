@@ -94,6 +94,7 @@ export const config = {
   matcher: [
     // Exclude API and Next internals/static assets for performance and to avoid side effects
     // Static files use (?:[?#]|$) to match exactly (not as prefixes) so domains like "favicon.icon.com" are not excluded
-    "/((?!api/|_next/|_vercel/|_proxy/|(?:favicon.ico|icon.svg|robots.txt|sitemap.xml|manifest.webmanifest|opensearch.xml)(?:[?#]|$)).*)",
+    // Also exclude .well-known/workflow/* for Vercel Workflow internal paths
+    "/((?!api/|_next/|_vercel/|_proxy/|\\.well-known/workflow/|(?:favicon.ico|icon.svg|robots.txt|sitemap.xml|manifest.webmanifest|opensearch.xml)(?:[?#]|$)).*)",
   ],
 };

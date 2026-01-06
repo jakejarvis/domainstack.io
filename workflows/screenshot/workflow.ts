@@ -1,26 +1,11 @@
-import "server-only";
-import { step } from "workflow";
 import type { Browser, Page } from "puppeteer-core";
-import { USER_AGENT } from "@/lib/constants/app";
-import { isDomainBlocked } from "@/lib/db/repos/blocked-domains";
-import { ensureDomainRecord, findDomainByName } from "@/lib/db/repos/domains";
-import {
-  getScreenshotByDomainId,
-  upsertScreenshot,
-} from "@/lib/db/repos/screenshots";
-import { addWatermarkToScreenshot, optimizeImageCover } from "@/lib/image";
-import { createLogger } from "@/lib/logger/server";
-import { getBrowser } from "@/lib/puppeteer";
-import { storeImage } from "@/lib/storage";
-import { ttlForScreenshot } from "@/lib/ttl";
-
-const logger = createLogger({ source: "screenshot-workflow" });
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
 const NAV_TIMEOUT_MS = 8000;
 const IDLE_TIME_MS = 500;
 const IDLE_TIMEOUT_MS = 3000;
+const MAX_ATTEMPTS = 3;
 
 export interface ScreenshotWorkflowInput {
   domain: string;
@@ -31,6 +16,20 @@ export interface ScreenshotWorkflowResult {
   blocked: boolean;
   cached: boolean;
 }
+
+// Internal types for capture result
+interface CaptureSuccess {
+  success: true;
+  imageBuffer: string; // base64 encoded for serialization
+  source: "direct_https" | "direct_http";
+}
+
+interface CaptureFailure {
+  success: false;
+  isPermanentFailure: boolean;
+}
+
+type CaptureResult = CaptureSuccess | CaptureFailure;
 
 /**
  * Durable screenshot workflow that breaks down screenshot generation into
@@ -49,139 +48,113 @@ export async function screenshotWorkflow(
   const { domain } = input;
 
   // Step 1: Check if domain is blocked
-  const isBlocked = await step.run("check-blocklist", async () => {
-    return await isDomainBlocked(domain);
-  });
+  const isBlocked = await checkBlocklist(domain);
 
   if (isBlocked) {
-    logger.info({ domain }, "screenshot blocked by blocklist");
     return { url: null, blocked: true, cached: false };
   }
 
   // Step 2: Check cache in Postgres
-  const cachedResult = await step.run("check-cache", async () => {
-    const existingDomain = await findDomainByName(domain);
-    if (!existingDomain) {
-      return null;
-    }
+  const cachedResult = await checkCache(domain);
 
-    const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
-    if (!screenshotRecord) {
-      return null;
-    }
-
-    // Only treat as cache hit if we have a definitive result:
-    // - url is present (string), OR
-    // - url is null but marked as permanently not found
-    const isDefinitiveResult =
-      screenshotRecord.url !== null || screenshotRecord.notFound === true;
-
-    if (isDefinitiveResult) {
-      return { url: screenshotRecord.url };
-    }
-
-    return null;
-  });
-
-  if (cachedResult) {
+  if (cachedResult.found) {
     return { url: cachedResult.url, blocked: false, cached: true };
   }
 
   // Step 3: Capture screenshot using Puppeteer
   // This is the heavy operation that benefits most from durability
-  const captureResult = await step.run("capture-screenshot", async () => {
-    return await captureScreenshotWithRetry(domain);
-  });
+  const captureResult = await captureScreenshot(domain);
 
   if (!captureResult.success) {
     // Step 4a: Persist failure to cache
-    await step.run("persist-failure", async () => {
-      const domainRecord = await ensureDomainRecord(domain);
-      const now = new Date();
-      const expiresAt = ttlForScreenshot(now);
-
-      await upsertScreenshot({
-        domainId: domainRecord.id,
-        url: null,
-        pathname: null,
-        width: VIEWPORT_WIDTH,
-        height: VIEWPORT_HEIGHT,
-        source: null,
-        notFound: captureResult.isPermanentFailure,
-        fetchedAt: now,
-        expiresAt,
-      });
-    });
-
+    await persistFailure(domain, captureResult.isPermanentFailure);
     return { url: null, blocked: false, cached: false };
   }
 
   // Step 4b: Process and store image to Vercel Blob
-  const storageResult = await step.run("store-image", async () => {
-    // Apply watermark
-    const withWatermark = await addWatermarkToScreenshot(
-      captureResult.imageBuffer,
-      VIEWPORT_WIDTH,
-      VIEWPORT_HEIGHT,
-    );
-
-    // Store to Vercel Blob
-    const { url, pathname } = await storeImage({
-      kind: "screenshot",
-      domain,
-      buffer: withWatermark,
-      width: VIEWPORT_WIDTH,
-      height: VIEWPORT_HEIGHT,
-    });
-
-    return { url, pathname: pathname ?? null, source: captureResult.source };
-  });
+  const storageResult = await storeScreenshot(
+    domain,
+    captureResult.imageBuffer,
+    captureResult.source,
+  );
 
   // Step 5: Persist to database
-  await step.run("persist-to-db", async () => {
-    const domainRecord = await ensureDomainRecord(domain);
-    const now = new Date();
-    const expiresAt = ttlForScreenshot(now);
-
-    await upsertScreenshot({
-      domainId: domainRecord.id,
-      url: storageResult.url,
-      pathname: storageResult.pathname,
-      width: VIEWPORT_WIDTH,
-      height: VIEWPORT_HEIGHT,
-      source: storageResult.source,
-      notFound: false,
-      fetchedAt: now,
-      expiresAt,
-    });
-  });
+  await persistSuccess(
+    domain,
+    storageResult.url,
+    storageResult.pathname,
+    storageResult.source,
+  );
 
   return { url: storageResult.url, blocked: false, cached: false };
 }
 
-// Internal types for capture result
-interface CaptureSuccess {
-  success: true;
-  imageBuffer: Buffer;
-  source: "direct_https" | "direct_http";
-  isPermanentFailure: false;
-}
+/**
+ * Step: Check if domain is on blocklist
+ */
+async function checkBlocklist(domain: string): Promise<boolean> {
+  "use step";
 
-interface CaptureFailure {
-  success: false;
-  imageBuffer?: undefined;
-  source?: undefined;
-  isPermanentFailure: boolean;
-}
+  const { isDomainBlocked } = await import("@/lib/db/repos/blocked-domains");
+  const { createLogger } = await import("@/lib/logger/server");
+  const logger = createLogger({ source: "screenshot-workflow" });
 
-type CaptureResult = CaptureSuccess | CaptureFailure;
+  const blocked = await isDomainBlocked(domain);
+  if (blocked) {
+    logger.info({ domain }, "screenshot blocked by blocklist");
+  }
+  return blocked;
+}
 
 /**
- * Captures a screenshot with retry logic.
- * This function is designed to run within a workflow step.
+ * Step: Check Postgres cache for existing screenshot
  */
-async function captureScreenshotWithRetry(domain: string): Promise<CaptureResult> {
-  const MAX_ATTEMPTS = 3;
+async function checkCache(
+  domain: string,
+): Promise<{ found: true; url: string | null } | { found: false }> {
+  "use step";
+
+  const { findDomainByName } = await import("@/lib/db/repos/domains");
+  const { getScreenshotByDomainId } = await import(
+    "@/lib/db/repos/screenshots"
+  );
+
+  const existingDomain = await findDomainByName(domain);
+  if (!existingDomain) {
+    return { found: false };
+  }
+
+  const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
+  if (!screenshotRecord) {
+    return { found: false };
+  }
+
+  // Only treat as cache hit if we have a definitive result:
+  // - url is present (string), OR
+  // - url is null but marked as permanently not found
+  const isDefinitiveResult =
+    screenshotRecord.url !== null || screenshotRecord.notFound === true;
+
+  if (isDefinitiveResult) {
+    return { found: true, url: screenshotRecord.url };
+  }
+
+  return { found: false };
+}
+
+/**
+ * Step: Capture screenshot using Puppeteer
+ * This is the heavy operation that benefits from workflow durability
+ */
+async function captureScreenshot(domain: string): Promise<CaptureResult> {
+  "use step";
+
+  const { getBrowser } = await import("@/lib/puppeteer");
+  const { USER_AGENT } = await import("@/lib/constants/app");
+  const { optimizeImageCover } = await import("@/lib/image");
+  const { createLogger } = await import("@/lib/logger/server");
+
+  const logger = createLogger({ source: "screenshot-workflow" });
   const urls = [`https://${domain}`, `http://${domain}`];
   const permanentFailureUrls = new Set<string>();
 
@@ -246,11 +219,11 @@ async function captureScreenshotWithRetry(domain: string): Promise<CaptureResult
             ? ("direct_https" as const)
             : ("direct_http" as const);
 
+          // Encode as base64 for serialization between steps
           return {
             success: true,
-            imageBuffer: optimized,
+            imageBuffer: optimized.toString("base64"),
             source,
-            isPermanentFailure: false,
           };
         } catch (err) {
           logger.debug(
@@ -289,5 +262,113 @@ async function captureScreenshotWithRetry(domain: string): Promise<CaptureResult
       success: false,
       isPermanentFailure: false,
     };
+  }
+}
+
+/**
+ * Step: Store screenshot to Vercel Blob
+ */
+async function storeScreenshot(
+  domain: string,
+  imageBufferBase64: string,
+  source: "direct_https" | "direct_http",
+): Promise<{
+  url: string;
+  pathname: string | null;
+  source: "direct_https" | "direct_http";
+}> {
+  "use step";
+
+  const { addWatermarkToScreenshot } = await import("@/lib/image");
+  const { storeImage } = await import("@/lib/storage");
+
+  // Decode base64 back to Buffer
+  const imageBuffer = Buffer.from(imageBufferBase64, "base64");
+
+  // Apply watermark
+  const withWatermark = await addWatermarkToScreenshot(
+    imageBuffer,
+    VIEWPORT_WIDTH,
+    VIEWPORT_HEIGHT,
+  );
+
+  // Store to Vercel Blob
+  const { url, pathname } = await storeImage({
+    kind: "screenshot",
+    domain,
+    buffer: withWatermark,
+    width: VIEWPORT_WIDTH,
+    height: VIEWPORT_HEIGHT,
+  });
+
+  return { url, pathname: pathname ?? null, source };
+}
+
+/**
+ * Step: Persist successful screenshot to database
+ */
+async function persistSuccess(
+  domain: string,
+  url: string,
+  pathname: string | null,
+  source: "direct_https" | "direct_http",
+): Promise<void> {
+  "use step";
+
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
+  const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
+  const { ttlForScreenshot } = await import("@/lib/ttl");
+
+  const domainRecord = await ensureDomainRecord(domain);
+  const now = new Date();
+  const expiresAt = ttlForScreenshot(now);
+
+  await upsertScreenshot({
+    domainId: domainRecord.id,
+    url,
+    pathname,
+    width: VIEWPORT_WIDTH,
+    height: VIEWPORT_HEIGHT,
+    source,
+    notFound: false,
+    fetchedAt: now,
+    expiresAt,
+  });
+}
+
+/**
+ * Step: Persist failure to database cache
+ */
+async function persistFailure(
+  domain: string,
+  isPermanentFailure: boolean,
+): Promise<void> {
+  "use step";
+
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
+  const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
+  const { ttlForScreenshot } = await import("@/lib/ttl");
+  const { createLogger } = await import("@/lib/logger/server");
+
+  const logger = createLogger({ source: "screenshot-workflow" });
+
+  try {
+    const domainRecord = await ensureDomainRecord(domain);
+    const now = new Date();
+    const expiresAt = ttlForScreenshot(now);
+
+    await upsertScreenshot({
+      domainId: domainRecord.id,
+      url: null,
+      pathname: null,
+      width: VIEWPORT_WIDTH,
+      height: VIEWPORT_HEIGHT,
+      source: null,
+      notFound: isPermanentFailure,
+      fetchedAt: now,
+      expiresAt,
+    });
+  } catch (err) {
+    logger.error({ err, domain }, "failed to persist screenshot failure");
   }
 }
