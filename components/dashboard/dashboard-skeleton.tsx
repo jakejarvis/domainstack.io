@@ -5,24 +5,30 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       {/* Header skeleton - matches DashboardHeader */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="grid grid-cols-[1fr_auto] items-center gap-3 lg:flex lg:justify-between">
+        {/* Welcome message */}
         <div className="flex items-center gap-3">
-          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-8 w-48 sm:w-56" />
           <Skeleton className="h-5 w-12 rounded-md" />
         </div>
-        <div className="flex items-center justify-between gap-3">
-          {/* Progress bar + count */}
-          <div className="flex items-center gap-3">
+
+        {/* Add Domain button - top-right on mobile, far right on desktop */}
+        <div className="lg:order-last">
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
+
+        {/* Bottom row on mobile: quota + view controls */}
+        <div className="col-span-2 flex items-start justify-between gap-3 lg:col-auto lg:ml-auto lg:items-center lg:gap-4">
+          {/* Progress indicator */}
+          <div className="flex items-center gap-3 pr-1">
             <Skeleton className="h-2 w-24 rounded-full md:w-32" />
-            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-4 w-10" />
           </div>
 
-          {/* View toggle and Add Domain - always right aligned */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* View toggle - two connected buttons */}
-            <Skeleton className="h-9 w-20 rounded-md" />
-            {/* Add Domain button */}
-            <Skeleton className="h-9 w-32 rounded-md" />
+          {/* View toggle and Calendar */}
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-9 w-30 rounded-md lg:w-20" />
+            <Skeleton className="h-9 w-24 rounded-md lg:w-9" />
           </div>
         </div>
       </div>

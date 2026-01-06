@@ -17,6 +17,7 @@ interface NotificationListProps {
   loadMoreRef?: RefObject<HTMLDivElement | null>;
   scrollAreaRef?: RefObject<HTMLDivElement | null>;
   onNotificationClick?: (notification: NotificationData) => void;
+  onClosePopover?: () => void;
 }
 
 export function NotificationList({
@@ -29,6 +30,7 @@ export function NotificationList({
   loadMoreRef,
   scrollAreaRef,
   onNotificationClick,
+  onClosePopover,
 }: NotificationListProps) {
   return (
     <ScrollArea viewportRef={scrollAreaRef} className="min-h-0 flex-1 bg-card">
@@ -40,7 +42,10 @@ export function NotificationList({
           Failed to load notifications
         </div>
       ) : notifications.length === 0 ? (
-        <NotificationEmptyState variant={view} />
+        <NotificationEmptyState
+          variant={view}
+          onClosePopover={onClosePopover}
+        />
       ) : (
         <div className="divide-y">
           {notifications.map((notification) => (

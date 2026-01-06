@@ -320,9 +320,9 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
           </span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2.5 px-0 pt-1">
+      <CardContent className="px-0 pt-1">
         {/* Headers */}
-        <div className="hidden items-center justify-end gap-2 px-3 font-medium text-muted-foreground text-xs sm:flex sm:gap-6">
+        <div className="hidden items-center justify-end gap-2 font-medium text-muted-foreground text-xs sm:flex sm:gap-6">
           <div className="w-12 text-center sm:w-16">Web</div>
           <div className="w-12 text-center sm:w-16">Email</div>
         </div>
@@ -344,7 +344,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
         </div>
       </CardContent>
 
-      <Separator className="mt-4 mb-6 bg-muted" />
+      <Separator className="mt-3 mb-6 bg-muted" />
 
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
@@ -355,7 +355,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
           Override global notifications for individual verified domains.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2.5 px-0 pt-1">
+      <CardContent className="mt-1.5 px-0">
         {/* Per-Domain Overrides Section */}
         {verifiedDomains.length > 0 && (
           <div className="space-y-2">

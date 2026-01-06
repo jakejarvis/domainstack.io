@@ -7,6 +7,7 @@ import {
   Settings,
   XIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
@@ -112,11 +113,6 @@ export function NotificationsPopover() {
     }
   };
 
-  const handleOpenSettings = () => {
-    setOpen(false);
-    router.push("/settings/notifications");
-  };
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
@@ -183,12 +179,20 @@ export function NotificationsPopover() {
                     variant="outline"
                     size="sm"
                     className="h-7 text-xs"
-                    onClick={handleOpenSettings}
                     aria-label="Notification settings"
-                  >
-                    <Settings className="text-muted-foreground" />
-                    Settings
-                  </Button>
+                    nativeButton={false}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      router.push("/settings/notifications");
+                      setOpen(false);
+                    }}
+                    render={
+                      <Link href="/settings/notifications">
+                        <Settings className="text-muted-foreground" />
+                        Settings
+                      </Link>
+                    }
+                  />
                 </ButtonGroup>
 
                 <Button
@@ -234,6 +238,7 @@ export function NotificationsPopover() {
             loadMoreRef={loadMoreRef}
             scrollAreaRef={scrollAreaRef}
             onNotificationClick={handleNotificationClick}
+            onClosePopover={() => setOpen(false)}
           />
         </div>
       </PopoverContent>

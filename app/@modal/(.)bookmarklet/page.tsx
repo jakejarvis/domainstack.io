@@ -9,7 +9,7 @@ export default function InterceptedBookmarkletPage() {
       description="Discover shortcuts to investigate domains from anywhere."
       className="!max-w-lg p-5"
     >
-      <div className="flex items-center gap-2 font-medium text-lg">
+      <div className="mb-2 flex items-center gap-2 font-medium text-lg">
         <MousePointerClick className="h-4.5 w-4.5" />
         Bookmarklet
       </div>

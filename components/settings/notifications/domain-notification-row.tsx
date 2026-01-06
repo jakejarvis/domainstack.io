@@ -58,18 +58,18 @@ export function DomainNotificationRow({
       open={isOpen}
       onOpenChange={setIsOpen}
       className={cn(
-        "rounded-xl border border-border/40 bg-muted/20 transition-all",
+        "rounded-md border border-border/40 bg-muted/20 transition-all",
         isOpen ? "pb-2" : "",
         disabled && "pointer-events-none opacity-60",
       )}
     >
       <div className="flex items-center justify-between gap-2 pr-2">
-        <CollapsibleTrigger className="group flex h-11 flex-1 cursor-pointer items-center justify-between gap-4 pr-1.5 pl-4 text-left">
+        <CollapsibleTrigger className="group flex h-11 flex-1 cursor-pointer items-center justify-between gap-4 pr-1.5 pl-4 text-left hover:text-foreground/80">
           <div className="flex flex-1 items-center justify-between gap-4">
             <div className="flex w-full items-center justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Favicon domain={domainName} size={16} />
-                <span className="truncate font-semibold text-foreground text-sm">
+                <span className="truncate font-semibold text-sm">
                   {domainName}
                 </span>
                 {activeOverridesCount > 0 && (

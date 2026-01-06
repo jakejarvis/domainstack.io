@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
+  CalendarCheck2,
   CalendarOff,
-  CalendarPlus,
   ChevronDownIcon,
   Info,
   RefreshCw,
   ShieldAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import {
   AppleIcon,
@@ -34,7 +34,6 @@ import { CopyableField } from "@/components/ui/copyable-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -145,6 +144,44 @@ export function CalendarInstructions({ className }: { className?: string }) {
   const feed = feedQuery.data;
   const isEnabled = feed?.enabled && "feedUrl" in feed;
 
+  const getIntegrations = useCallback((feedUrl: string | undefined) => {
+    if (!feedUrl) {
+      return [];
+    }
+
+    return [
+      {
+        id: "google",
+        label: "Google",
+        icon: GoogleIcon,
+        // https://jamesdoc.com/blog/2024/webcal/
+        href: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl.replace("https://", "webcal://"))}`,
+      },
+      {
+        id: "apple",
+        label: "macOS/iOS",
+        icon: AppleIcon,
+        // Apple uses webcal:// protocol which opens natively
+        href: feedUrl.replace("https://", "webcal://"),
+      },
+      {
+        id: "outlook",
+        label: "Outlook",
+        icon: MicrosoftIcon,
+        href: `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl.replace("https://", "webcal://"))}`,
+      },
+      {
+        id: "proton",
+        label: "Proton",
+        icon: ProtonIcon,
+        // Proton doesn't support direct subscription URLs
+        href: "https://proton.me/support/subscribe-to-external-calendar#subscribe-external-link",
+      },
+    ];
+  }, []);
+
+  const integrations = getIntegrations(feed?.feedUrl);
+
   return (
     <>
       <div className={className}>
@@ -174,7 +211,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
             {/* Security warning */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
               <ShieldAlert className="size-4 shrink-0 translate-y-[3px]" />
-              <div className="space-y-0.5 text-[13px]">
+              <div className="space-y-[3px] text-[13px]">
                 <p className="font-semibold">Treat this URL like a password!</p>
                 <p>
                   Anyone with this link can view your verified domains. You can
@@ -207,9 +244,9 @@ export function CalendarInstructions({ className }: { className?: string }) {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <ButtonGroup className="w-full">
+            <div className="@container/actions">
+              <div className="grid @lg/actions:grid-cols-3 grid-cols-2 gap-2 pt-1">
+                <ButtonGroup className="@lg/actions:col-span-1 col-span-2 flex w-full">
                   <Button
                     variant="outline"
                     className="flex-1"
@@ -235,91 +272,54 @@ export function CalendarInstructions({ className }: { className?: string }) {
                         </Button>
                       }
                     />
-                    <DropdownMenuContent align="end" className="min-w-44">
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href={
-                                // https://jamesdoc.com/blog/2024/webcal/
-                                isEnabled
-                                  ? `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feed.feedUrl.replace("https://", "webcal://"))}`
-                                  : "https://support.google.com/calendar/answer/37100"
+                    <DropdownMenuContent align="end" className="p-1">
+                      {/* 2x2 Grid of calendar apps */}
+                      <div className="grid grid-cols-2 gap-1">
+                        {integrations.map((integration) => {
+                          const { id, label, icon: Icon, href } = integration;
+                          const opensNatively = href.startsWith("webcal://");
+
+                          return (
+                            <DropdownMenuItem
+                              key={id}
+                              render={
+                                <a
+                                  href={href}
+                                  target={opensNatively ? undefined : "_blank"}
+                                  rel={
+                                    opensNatively
+                                      ? undefined
+                                      : "noopener noreferrer"
+                                  }
+                                  data-disable-progress={
+                                    opensNatively ? true : undefined
+                                  }
+                                  className="flex h-[70px] w-[90px] flex-col items-center justify-center gap-2.5 rounded-md text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+                                >
+                                  <Icon className="size-5 text-foreground/90" />
+                                  <span className="text-foreground/75 text-xs leading-none">
+                                    {label}
+                                  </span>
+                                </a>
                               }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <GoogleIcon />
-                              Google Calendar
-                            </a>
-                          }
-                        />
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href={
-                                isEnabled
-                                  ? feed.feedUrl.replace(
-                                      "https://",
-                                      "webcal://",
-                                    )
-                                  : "https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
-                              }
-                              target={isEnabled ? undefined : "_blank"}
-                              rel={
-                                isEnabled ? undefined : "noopener noreferrer"
-                              }
-                              data-disable-progress={
-                                isEnabled ? true : undefined
-                              }
-                            >
-                              <AppleIcon />
-                              Apple Calendar
-                            </a>
-                          }
-                        />
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href={
-                                isEnabled
-                                  ? `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(feed.feedUrl.replace("https://", "webcal://"))}`
-                                  : "https://support.microsoft.com/en-us/office/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web-cff1429c-5af6-41ec-a5b4-74f2c278e98c"
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <MicrosoftIcon />
-                              Microsoft Outlook
-                            </a>
-                          }
-                        />
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href="https://proton.me/support/subscribe-to-external-calendar#subscribe-external-link"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ProtonIcon />
-                              Proton Calendar
-                            </a>
-                          }
-                        />
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          render={
-                            <a
-                              href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+a+.ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ChatGPTIcon />
-                              Other…
-                            </a>
-                          }
-                        />
-                      </DropdownMenuGroup>
+                            />
+                          );
+                        })}
+                      </div>
+                      <DropdownMenuSeparator className="mx-0" />
+                      <DropdownMenuItem
+                        render={
+                          <a
+                            href="https://chatgpt.com/?prompt=How+do+I+subscribe+to+an+ics+calendar+feed+in+%5Bmy+calendar+app%5D%3F"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="justify-center text-[13px] text-foreground/90"
+                          >
+                            <ChatGPTIcon />
+                            Other…
+                          </a>
+                        }
+                      />
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </ButtonGroup>
@@ -328,7 +328,6 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   variant="outline"
                   onClick={() => setShowRotateDialog(true)}
                   disabled={isPending}
-                  className="w-full"
                 >
                   {rotateMutation.isPending ? (
                     <Spinner />
@@ -337,45 +336,36 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   )}
                   Regenerate URL
                 </Button>
+
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isPending}
+                >
+                  {deleteMutation.isPending ? <Spinner /> : <CalendarOff />}
+                  Disable
+                </Button>
               </div>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isPending}
-                className="w-full"
-              >
-                {deleteMutation.isPending ? <Spinner /> : <CalendarOff />}
-                Disable
-              </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Description */}
-            <p className="text-[13px] text-muted-foreground leading-relaxed">
-              Subscribe to domain expiration dates in your favorite calendar app
-              (Google Calendar, Apple Calendar, Outlook, and more).
-            </p>
-
-            {/* Enable button */}
-            <Button
-              onClick={() => enableMutation.mutate()}
-              disabled={isPending}
-              className="w-full"
-            >
-              {enableMutation.isPending ? (
-                <>
-                  <Spinner />
-                  Enabling...
-                </>
-              ) : (
-                <>
-                  <CalendarPlus />
-                  Enable Calendar Feed
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            onClick={() => enableMutation.mutate()}
+            disabled={isPending}
+            className="w-full"
+          >
+            {enableMutation.isPending ? (
+              <>
+                <Spinner />
+                Enabling...
+              </>
+            ) : (
+              <>
+                <CalendarCheck2 />
+                Enable
+              </>
+            )}
+          </Button>
         )}
       </div>
 

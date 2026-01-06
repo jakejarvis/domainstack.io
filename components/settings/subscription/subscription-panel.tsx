@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CreditCard, Gauge, Gem, ShoppingCart } from "lucide-react";
+import { CreditCard, Gauge, Gem, Gift, ShoppingCart } from "lucide-react";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
@@ -65,11 +65,16 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
             : "Upgrade to Pro for more tracked domains."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 px-0 pt-1">
+      <CardContent className="space-y-4 px-0 pt-2">
         {/* Current plan info */}
-        <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
+        <div className="flex items-center justify-between rounded-md border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="mb-2 flex items-center gap-2">
+              {isPro ? (
+                <Gem className="size-4 text-foreground/80" />
+              ) : (
+                <Gift className="size-4 text-foreground/80" />
+              )}
               <span className="font-medium">{isPro ? "Pro" : "Free"} Plan</span>
               {isPro && (
                 <span
@@ -129,7 +134,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
             )}
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+          <div className="relative overflow-hidden rounded-md border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
             {/* Decorative elements - subtle warm glows */}
             <div
               aria-hidden
@@ -142,7 +147,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
 
             <div className="relative">
               <div className="mb-2 flex items-center gap-2 font-medium">
-                <Gem className="size-4" />
+                <Gem className="size-4 text-foreground/80" />
                 {PRO_TIER_INFO.name} Plan
               </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">

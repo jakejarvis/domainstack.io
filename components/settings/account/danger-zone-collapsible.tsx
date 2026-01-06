@@ -21,13 +21,13 @@ export function DangerZoneCollapsible({
   return (
     <>
       <Collapsible
-        className={cn("rounded-xl border border-destructive/20", className)}
+        className={cn("rounded-md border border-destructive/20", className)}
       >
         <CollapsibleTrigger
           render={
             <button
               type="button"
-              className="group flex w-full cursor-pointer items-center justify-between rounded-xl bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
+              className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
             >
               <div className="flex items-center gap-3">
                 <AlertTriangle className="size-5 text-destructive" />
@@ -40,7 +40,7 @@ export function DangerZoneCollapsible({
           }
         />
         <CollapsibleContent keepMounted>
-          <div className="rounded-b-xl bg-destructive/2 p-4">
+          <div className="rounded-b-md bg-destructive/2 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium text-sm">Delete account</p>

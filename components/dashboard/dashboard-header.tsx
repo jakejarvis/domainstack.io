@@ -33,7 +33,7 @@ export function DashboardHeader({
   onViewModeChange,
 }: DashboardHeaderProps) {
   return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-4 lg:flex lg:justify-between">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3 lg:flex lg:justify-between">
       {/* Welcome message */}
       <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
@@ -103,7 +103,7 @@ export function DashboardHeader({
       </div>
 
       {/* Bottom row on mobile: quota + view controls */}
-      <div className="col-span-2 flex items-start justify-between gap-3 lg:col-auto lg:ml-auto lg:items-center lg:gap-3">
+      <div className="col-span-2 flex items-start justify-between gap-3 lg:col-auto lg:ml-auto lg:items-center lg:gap-4">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
           <QuotaBar
@@ -117,7 +117,7 @@ export function DashboardHeader({
         </div>
 
         {/* View toggle and Calendar */}
-        <div className="flex items-center gap-3 lg:gap-2">
+        <div className="flex items-center gap-3">
           {/* View toggle - only show when there are domains */}
           {subscription?.activeCount && subscription.activeCount > 0 ? (
             <ToggleGroup
@@ -137,13 +137,16 @@ export function DashboardHeader({
                       type="button"
                       variant="secondary"
                       aria-label="Grid view"
+                      className="max-lg:!px-3"
                     >
-                      <LayoutGrid className="size-4 -translate-y-[1px]" />
-                      <span className="sr-only">Grid view</span>
+                      <LayoutGrid className="size-4" />
+                      <span className="lg:sr-only">Grid</span>
                     </ToggleGroupItem>
                   }
                 />
-                <TooltipContent>Grid view</TooltipContent>
+                <TooltipContent className="max-lg:hidden">
+                  Grid view
+                </TooltipContent>
               </Tooltip>
               <Separator orientation="vertical" />
               <Tooltip>
@@ -154,13 +157,16 @@ export function DashboardHeader({
                       type="button"
                       variant="secondary"
                       aria-label="Table view"
+                      className="max-lg:!px-3"
                     >
-                      <TableIcon className="size-4 -translate-y-[1px]" />
-                      <span className="sr-only">Table view</span>
+                      <TableIcon className="size-4" />
+                      <span className="lg:sr-only">Table</span>
                     </ToggleGroupItem>
                   }
                 />
-                <TooltipContent>Table view</TooltipContent>
+                <TooltipContent className="max-lg:hidden">
+                  Table view
+                </TooltipContent>
               </Tooltip>
             </ToggleGroup>
           ) : null}

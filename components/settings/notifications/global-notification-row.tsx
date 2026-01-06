@@ -38,8 +38,8 @@ export function GlobalNotificationRow({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-2 rounded-xl px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4",
-        "hover:bg-muted/50",
+        "group flex flex-col gap-2 pt-2 pb-4 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-3 sm:pb-3",
+        "border-border/40 border-b last:border-b-0",
         disabled && "pointer-events-none opacity-60",
       )}
     >
@@ -48,7 +48,7 @@ export function GlobalNotificationRow({
         {/* Icon indicator */}
         <div
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors sm:size-9",
+            "flex size-8 shrink-0 items-center justify-center rounded-md transition-colors sm:size-9",
             anyEnabled
               ? "bg-primary/10 text-primary"
               : "bg-muted text-muted-foreground",

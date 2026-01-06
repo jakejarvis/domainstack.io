@@ -52,7 +52,9 @@ export function Modal({
             />
           ) : null}
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1">{children}</ScrollArea>
+        <ScrollArea className="min-h-0 max-w-full flex-1 overflow-y-hidden">
+          {children}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,4 @@
 import { AlertCircle, Check, Gauge, Gem, ShoppingCart } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
@@ -96,7 +95,6 @@ export function AddDomainContent({
     isVerificationDataQueryError,
     isMissingVerificationData,
     isVerifying,
-    hasFailed,
   } = useDomainVerification({
     open: true,
     onOpenChange: (open) => {
@@ -282,7 +280,7 @@ export function AddDomainContent({
 
   return (
     <div className={className}>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 py-1">
         <h2 className="font-semibold text-lg leading-none tracking-tight">
           {isResuming ? "Complete Verification" : "Add Domain"}
         </h2>
@@ -302,7 +300,7 @@ export function AddDomainContent({
           loading: <Spinner className="size-4" />,
         }}
       >
-        <StepperNav className="py-5">
+        <StepperNav className="mb-1 py-5">
           <StepperItem step={1} loading={isAddingDomain}>
             <Tooltip>
               <TooltipTrigger
@@ -348,116 +346,106 @@ export function AddDomainContent({
         </StepperNav>
 
         <StepperPanel>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${step}-${hasFailed}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <StepperContent
-                value={1}
-                className="flex min-h-[200px] flex-col justify-between"
-              >
-                <StepEnterDomain
-                  domain={domain}
-                  setDomain={setDomain}
-                  error={hasAttemptedDomainSubmit ? domainError : ""}
-                  isLoading={isAddingDomain}
-                  onSubmit={handleNext}
-                  hasAttemptedSubmit={hasAttemptedDomainSubmit}
-                  readOnly={isPrefilled}
-                />
-                <div className="mt-6 flex w-full items-center justify-end">
-                  <Button onClick={handleNext} disabled={!canProceed}>
-                    {isAddingDomain && <Spinner />}
-                    Continue
-                  </Button>
-                </div>
-              </StepperContent>
+          <StepperContent
+            value={1}
+            className="flex min-h-[200px] flex-col justify-between"
+          >
+            <StepEnterDomain
+              domain={domain}
+              setDomain={setDomain}
+              error={hasAttemptedDomainSubmit ? domainError : ""}
+              isLoading={isAddingDomain}
+              onSubmit={handleNext}
+              hasAttemptedSubmit={hasAttemptedDomainSubmit}
+              readOnly={isPrefilled}
+            />
+            <div className="mt-6 flex w-full items-center justify-end">
+              <Button onClick={handleNext} disabled={!canProceed}>
+                {isAddingDomain && <Spinner />}
+                Continue
+              </Button>
+            </div>
+          </StepperContent>
 
-              <StepperContent value={2}>
-                {isLoadingVerificationData && (
-                  <div className="flex h-[200px] items-center justify-center">
-                    <Spinner className="size-6" />
-                  </div>
-                )}
-                {isMissingVerificationData && (
-                  <StepInstructionsError
-                    error={
-                      isVerificationDataQueryError
-                        ? verificationDataErrorMessage
-                        : "Verification details could not be loaded."
-                    }
-                    onRetry={() => refetchVerificationData()}
-                    isRetrying={isRefetchingVerificationData}
+          <StepperContent value={2}>
+            {isLoadingVerificationData && (
+              <div className="flex h-[200px] items-center justify-center">
+                <Spinner className="size-6" />
+              </div>
+            )}
+            {isMissingVerificationData && (
+              <StepInstructionsError
+                error={
+                  isVerificationDataQueryError
+                    ? verificationDataErrorMessage
+                    : "Verification details could not be loaded."
+                }
+                onRetry={() => refetchVerificationData()}
+                isRetrying={isRefetchingVerificationData}
+              />
+            )}
+            {verificationToken &&
+              !isLoadingVerificationData &&
+              (trackedDomainId ? (
+                <>
+                  <StepVerifyOwnership
+                    method={method}
+                    setMethod={setMethod}
+                    domain={domain}
+                    verificationToken={verificationToken}
+                    verificationState={verificationState}
+                    onVerify={handleVerify}
+                    onReturnLater={handleReturnLater}
                   />
-                )}
-                {verificationToken &&
-                  !isLoadingVerificationData &&
-                  (trackedDomainId ? (
-                    <>
-                      <StepVerifyOwnership
-                        method={method}
-                        setMethod={setMethod}
+
+                  <div className="mt-6 flex w-full items-center justify-between gap-2">
+                    <div className="flex-1">
+                      <ShareInstructionsDialog
                         domain={domain}
                         verificationToken={verificationToken}
-                        verificationState={verificationState}
-                        onVerify={handleVerify}
-                        onReturnLater={handleReturnLater}
+                        trackedDomainId={trackedDomainId}
                       />
-
-                      <div className="mt-6 flex w-full items-center justify-between gap-2">
-                        <div className="flex-1">
-                          <ShareInstructionsDialog
-                            domain={domain}
-                            verificationToken={verificationToken}
-                            trackedDomainId={trackedDomainId}
-                          />
-                        </div>
-                        <Button
-                          onClick={handleNext}
-                          disabled={
-                            !canProceed ||
-                            isLoadingVerificationData ||
-                            isMissingVerificationData
-                          }
-                        >
-                          {isVerifying ? <Spinner /> : <Check />}
-                          {isVerifying ? "Checking..." : "Check Now"}
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
-                      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                        <AlertCircle className="size-6 text-destructive" />
-                      </div>
-                      <div className="text-center" aria-live="polite">
-                        <h3 className="font-semibold">Something went wrong</h3>
-                        <p className="text-muted-foreground text-sm">
-                          Domain tracking ID is missing. Please try adding the
-                          domain again.
-                        </p>
-                      </div>
-                      {onClose && (
-                        <Button variant="outline" onClick={onClose}>
-                          Close
-                        </Button>
-                      )}
                     </div>
-                  ))}
-              </StepperContent>
-
-              <StepperContent value={3}>
-                <StepConfirmation domain={domain} />
-                <div className="mt-6 flex w-full items-center justify-end">
-                  <Button onClick={handleNext}>Done</Button>
+                    <Button
+                      onClick={handleNext}
+                      disabled={
+                        !canProceed ||
+                        isLoadingVerificationData ||
+                        isMissingVerificationData
+                      }
+                    >
+                      {isVerifying ? <Spinner /> : <Check />}
+                      {isVerifying ? "Checking..." : "Check Now"}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                    <AlertCircle className="size-6 text-destructive" />
+                  </div>
+                  <div className="text-center" aria-live="polite">
+                    <h3 className="font-semibold">Something went wrong</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Domain tracking ID is missing. Please try adding the
+                      domain again.
+                    </p>
+                  </div>
+                  {onClose && (
+                    <Button variant="outline" onClick={onClose}>
+                      Close
+                    </Button>
+                  )}
                 </div>
-              </StepperContent>
-            </motion.div>
-          </AnimatePresence>
+              ))}
+          </StepperContent>
+
+          <StepperContent value={3}>
+            <StepConfirmation domain={domain} />
+            <div className="mt-6 flex w-full items-center justify-end">
+              <Button onClick={handleNext}>Done</Button>
+            </div>
+          </StepperContent>
         </StepperPanel>
       </Stepper>
     </div>

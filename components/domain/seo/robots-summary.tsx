@@ -12,7 +12,7 @@ import {
   Signal,
   XIcon,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { PillCount } from "@/components/domain/pill-count";
 import {
@@ -398,50 +398,62 @@ function GroupsAccordion({
     [groups, isSearching],
   );
 
-  const content = groups.map((g, idx) => {
-    const allowN = g.rules.filter((r) => r.type === "allow").length;
-    const disallowN = g.rules.filter((r) => r.type === "disallow").length;
-    const showAllow = isSearching ? true : only !== "disallow";
-    const showDisallow = isSearching ? true : only !== "allow";
-    return (
-      <AccordionItem
-        key={`g-${g.userAgents.join(",")}-${allowN}-${disallowN}`}
-        value={`g-${idx}`}
-        className="border-border/65"
-      >
-        <AccordionTrigger className="group/accordion cursor-pointer px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
-          <RobotsGroupHeader
-            userAgents={g.userAgents}
-            allowN={allowN}
-            disallowN={disallowN}
-            showAllow={showAllow}
-            showDisallow={showDisallow}
-          />
-        </AccordionTrigger>
-        <AccordionContent className="pb-2">
-          <GroupContent
-            rules={g.rules}
-            query={query}
-            highlight={highlight}
-            only={only}
-            hasEmptyAllow={g.hasEmptyAllow}
-            hasEmptyDisallow={g.hasEmptyDisallow}
-          />
-        </AccordionContent>
-      </AccordionItem>
-    );
-  });
+  const renderItems = () => (
+    <AnimatePresence initial={false}>
+      {groups.map((g, idx) => {
+        const allowN = g.rules.filter((r) => r.type === "allow").length;
+        const disallowN = g.rules.filter((r) => r.type === "disallow").length;
+        const showAllow = isSearching ? true : only !== "disallow";
+        const showDisallow = isSearching ? true : only !== "allow";
+        // Stable key based on identity, not filtered counts
+        const stableKey = g.userAgents.join(",");
+
+        return (
+          <motion.div
+            key={stableKey}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <AccordionItem value={`g-${idx}`} className="border-border/65">
+              <AccordionTrigger className="group/accordion cursor-pointer px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+                <RobotsGroupHeader
+                  userAgents={g.userAgents}
+                  allowN={allowN}
+                  disallowN={disallowN}
+                  showAllow={showAllow}
+                  showDisallow={showDisallow}
+                />
+              </AccordionTrigger>
+              <AccordionContent className="pb-2">
+                <GroupContent
+                  rules={g.rules}
+                  query={query}
+                  highlight={highlight}
+                  only={only}
+                  hasEmptyAllow={g.hasEmptyAllow}
+                  hasEmptyDisallow={g.hasEmptyDisallow}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
+  );
 
   return isSearching ? (
     <Accordion key="accordion-search" multiple value={openValues}>
-      {content}
+      {renderItems()}
     </Accordion>
   ) : (
     <Accordion
       key={`accordion-default-${defaultValue}`}
       defaultValue={defaultValue ? [defaultValue] : []}
     >
-      {content}
+      {renderItems()}
     </Accordion>
   );
 }

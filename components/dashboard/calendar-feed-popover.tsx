@@ -29,18 +29,22 @@ export function CalendarFeedPopover() {
           render={
             <PopoverTrigger
               render={
-                <Button variant="outline" size="icon">
+                <Button variant="outline">
                   <CalendarSync className="-translate-y-[1px]" />
-                  <span className="sr-only">Subscribe</span>
+                  <span className="text-sm max-sm:sr-only lg:sr-only">
+                    Subscribe
+                  </span>
                 </Button>
               }
             />
           }
         />
-        <TooltipContent>Subscribe to updates</TooltipContent>
+        <TooltipContent className="max-lg:hidden">
+          Subscribe to updates
+        </TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[420px]"
+        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[370px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -50,12 +54,12 @@ export function CalendarFeedPopover() {
         collisionPadding={8}
       >
         <div className="flex flex-col">
-          <PopoverHeader className="p-4">
+          <PopoverHeader className="px-4 pt-5 pb-3">
             <PopoverTitle className="flex items-center gap-2">
               <CalendarFold className="size-4" />
               Calendar Feed
             </PopoverTitle>
-            <PopoverDescription>
+            <PopoverDescription className="mt-0.5">
               Subscribe to domain expiration dates in your favorite calendar
               app.
             </PopoverDescription>

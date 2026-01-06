@@ -56,7 +56,7 @@ async function AuthorizedSettingsModalLayout({
         navigationMode="modal"
         tabsListPortalId="settings-modal-tabs"
         tabsListClassName="h-auto"
-        panelsClassName="p-5"
+        panelsClassName="p-6"
       />
       {children}
     </>

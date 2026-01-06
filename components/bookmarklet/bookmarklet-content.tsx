@@ -67,10 +67,10 @@ export function BookmarkletContent({ className }: { className?: string }) {
       >
         <AccordionItem
           value="apple-shortcut"
-          className="border-border/30 border-b px-4 last:border-none"
+          className="border-border/30 border-b px-4"
         >
           <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <Layers2 className="size-4" />
               <span className="font-semibold leading-none">Apple Shortcut</span>
             </span>
@@ -141,10 +141,10 @@ export function BookmarkletContent({ className }: { className?: string }) {
 
         <AccordionItem
           value="raycast"
-          className="border-border/30 border-b px-4 last:border-none"
+          className="border-border/30 border-b px-4"
         >
           <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2.5">
               <RaycastIcon className="size-4" />
               <span className="font-semibold leading-none">Raycast</span>
             </span>
