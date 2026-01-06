@@ -28,10 +28,12 @@
 - `lib/schemas/` Zod schemas organized by domain.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
-- `server/services/` service layer for domain data fetching (DNS, headers, hosting, IP, pricing, SEO, verification). Note: Heavy operations (certificates, registration, screenshot, favicons, provider logos) use durable workflows in `workflows/`.
+- `server/services/` service layer for orchestration. Contains only `hosting.ts` which combines DNS, headers, and IP workflows to detect providers.
+- `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via ipwho.is API.
+- `lib/pricing.ts` Domain registration pricing aggregation from multiple registrars (Porkbun, Cloudflare, Dynadot).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
-- `workflows/` Vercel Workflow definitions for durable backend operations. Contains 5 workflows: `certificates/`, `favicon/`, `provider-logo/`, `registration/`, `screenshot/`. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
+- `workflows/` Vercel Workflow definitions for durable backend operations. Contains 10 workflows: `certificates/`, `dns/`, `favicon/`, `headers/`, `provider-logo/`, `registration/`, `screenshot/`, `seo/`, `verification/`. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -141,7 +143,7 @@ Users must verify domain ownership via one of three methods:
 2. **HTML file:** Upload `/.well-known/domainstack-verify.html` containing the token.
 3. **Meta tag:** Add `<meta name="domainstack-verify" content="token">` to homepage.
 
-Verification service: `server/services/verification.ts` with `tryAllVerificationMethods()` and `verifyDomainOwnership()`. Uses shared DoH utilities from `lib/dns-utils.ts` for redundant DNS verification across multiple providers (Cloudflare, Google).
+Verification workflow: `workflows/verification/` with durable steps for DNS TXT, HTML file, and meta tag verification. Uses shared DoH utilities from `lib/dns-utils.ts` for redundant DNS verification across multiple providers (Cloudflare, Google).
 
 ### Re-verification & Grace Period
 - Inngest function `reverifyDomains` runs daily at 4 AM UTC.
@@ -232,6 +234,7 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 | `certificatesWorkflow` | `{ domain }` | Fetch SSL/TLS certificate chain | checkCache → fetchCertificateChain → detectProvidersAndBuildResponse → persistCertificates |
 | `dnsWorkflow` | `{ domain }` | Resolve DNS records via DoH | checkCache → fetchFromProviders → persistRecords |
 | `faviconWorkflow` | `{ domain }` | Extract domain favicon | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
+| `headersWorkflow` | `{ domain }` | Probe HTTP headers | checkCache → fetchHeaders → persistHeaders |
 | `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
 | `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
 | `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |

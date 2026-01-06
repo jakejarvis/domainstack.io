@@ -83,13 +83,43 @@ const DNS_MOCK_DATA: Record<string, DnsRecord[]> = {
 
 // Mock workflow API
 vi.mock("workflow/api", () => ({
-  start: vi.fn((_workflow: unknown, args: unknown[]) => {
+  start: vi.fn((workflow: { name: string }, args: unknown[]) => {
     const { domain } = (args as [{ domain: string }])[0];
-    const records = DNS_MOCK_DATA[domain] ?? [];
+
+    // Handle DNS workflow
+    if (workflow.name === "dnsWorkflow") {
+      const records = DNS_MOCK_DATA[domain] ?? [];
+      return Promise.resolve({
+        runId: `mock-dns-run-${domain}`,
+        returnValue: Promise.resolve({
+          data: { records, resolver: "mock" },
+          cached: false,
+          success: true,
+        }),
+      });
+    }
+
+    // Handle headers workflow
+    if (workflow.name === "headersWorkflow") {
+      return Promise.resolve({
+        runId: `mock-headers-run-${domain}`,
+        returnValue: Promise.resolve({
+          data: {
+            headers: [{ name: "server", value: "nginx" }],
+            status: 200,
+            statusMessage: "OK",
+          },
+          cached: false,
+          success: true,
+        }),
+      });
+    }
+
+    // Default fallback
     return Promise.resolve({
       runId: `mock-run-${domain}`,
       returnValue: Promise.resolve({
-        data: { records, resolver: "mock" },
+        data: {},
         cached: false,
         success: true,
       }),
@@ -186,31 +216,42 @@ describe("getHosting", () => {
 
   it("skips headers probe when domain has no A or AAAA records", async () => {
     const { getHosting } = await import("@/server/services/hosting");
+    const workflowApi = await import("workflow/api");
+    const startSpy = vi.mocked(workflowApi.start);
 
-    // Spy on getHeaders to verify it wasn't called
-    const spy = vi.spyOn(
-      await import("@/server/services/headers"),
-      "getHeaders",
-    );
+    // Reset call count
+    startSpy.mockClear();
 
     // "email-only.example" has MX and NS but no A in handlers.ts
     await getHosting("email-only.example");
 
-    expect(spy).not.toHaveBeenCalled();
+    // Should only call dns workflow, not headers workflow
+    const calls = startSpy.mock.calls;
+    const workflowNames = calls.map((c) => {
+      const workflow = c[0] as { name: string };
+      return workflow.name;
+    });
+    expect(workflowNames).not.toContain("headersWorkflow");
   });
 
   it("calls headers probe when domain has A or AAAA records", async () => {
     const { getHosting } = await import("@/server/services/hosting");
+    const workflowApi = await import("workflow/api");
+    const startSpy = vi.mocked(workflowApi.start);
 
-    const spy = vi.spyOn(
-      await import("@/server/services/headers"),
-      "getHeaders",
-    );
+    // Reset call count
+    startSpy.mockClear();
 
     // "web-hosting.example" has A record
     await getHosting("web-hosting.example");
 
-    expect(spy).toHaveBeenCalledWith("web-hosting.example");
+    // Should call both dns and headers workflows
+    const calls = startSpy.mock.calls;
+    const workflowNames = calls.map((c) => {
+      const workflow = c[0] as { name: string };
+      return workflow.name;
+    });
+    expect(workflowNames).toContain("headersWorkflow");
   });
 
   it("falls back to IP owner when hosting is unknown and IP owner exists", async () => {

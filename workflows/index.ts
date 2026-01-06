@@ -11,6 +11,7 @@
 export * from "./certificates";
 export * from "./dns";
 export * from "./favicon";
+export * from "./headers";
 export * from "./provider-logo";
 export * from "./registration";
 export * from "./screenshot";

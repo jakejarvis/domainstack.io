@@ -4,10 +4,10 @@ import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type { Section } from "@/lib/schemas";
-import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
 import { registrationWorkflow } from "@/workflows/registration";
 import { seoWorkflow } from "@/workflows/seo";
 
@@ -21,9 +21,11 @@ async function runSingleSection(
       await run.returnValue;
       return;
     }
-    case "headers":
-      await getHeaders(domain);
+    case "headers": {
+      const run = await start(headersWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
     case "hosting":
       await getHosting(domain);
       return;

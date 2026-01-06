@@ -13,7 +13,6 @@ import {
   RegistrationResponseSchema,
   SeoResponseSchema,
 } from "@/lib/schemas";
-import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
 import {
   createTRPCRouter,
@@ -23,6 +22,7 @@ import {
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";
 import { faviconWorkflow } from "@/workflows/favicon";
+import { headersWorkflow } from "@/workflows/headers";
 import { registrationWorkflow } from "@/workflows/registration";
 import { screenshotWorkflow } from "@/workflows/screenshot";
 import { seoWorkflow } from "@/workflows/seo";
@@ -165,10 +165,35 @@ export const domainRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * Get HTTP headers for a domain using a durable workflow.
+   * Probes the domain with automatic retries.
+   */
   getHeaders: domainProcedure
     .input(DomainInputSchema)
     .output(HeadersResponseSchema)
-    .query(({ input }) => getHeaders(input.domain)),
+    .query(async ({ input }) => {
+      try {
+        const run = await start(headersWorkflow, [{ domain: input.domain }]);
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId },
+          "headers workflow started",
+        );
+
+        const result = await run.returnValue;
+
+        logger.debug(
+          { domain: input.domain, runId: run.runId, cached: result.cached },
+          "headers workflow completed",
+        );
+
+        return result.data;
+      } catch (err) {
+        logger.error({ err, domain: input.domain }, "headers workflow failed");
+        return { headers: [], status: 0, statusMessage: undefined };
+      }
+    }),
 
   /**
    * Get SEO data for a domain using a durable workflow.

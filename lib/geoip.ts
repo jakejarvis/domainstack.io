@@ -2,7 +2,7 @@ import { cache } from "react";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "ip" });
+const logger = createLogger({ source: "geoip" });
 
 /**
  * Lookup IP metadata including geolocation and ownership information.
@@ -11,7 +11,7 @@ const logger = createLogger({ source: "ip" });
  * ensuring multiple services can query the same IP without triggering
  * duplicate API calls to the upstream provider.
  */
-export const lookupIpMeta = cache(async function lookupIpMeta(
+export const lookupGeoIp = cache(async function lookupGeoIp(
   ip: string,
 ): Promise<{
   geo: {

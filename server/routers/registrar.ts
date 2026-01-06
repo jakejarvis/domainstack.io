@@ -1,6 +1,6 @@
 import z from "zod";
+import { getPricing } from "@/lib/pricing";
 import { PricingResponseSchema } from "@/lib/schemas";
-import { getPricing } from "@/server/services/pricing";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 export const registrarRouter = createTRPCRouter({

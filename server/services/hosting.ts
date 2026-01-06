@@ -15,6 +15,7 @@ import {
   providers as providersTable,
 } from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
+import { lookupGeoIp } from "@/lib/geoip";
 import { createLogger } from "@/lib/logger/server";
 import { getProviders } from "@/lib/providers/catalog";
 import {
@@ -25,9 +26,8 @@ import {
 import { scheduleRevalidation } from "@/lib/schedule";
 import type { HostingResponse, Provider } from "@/lib/schemas";
 import { ttlForHosting } from "@/lib/ttl";
-import { getHeaders } from "@/server/services/headers";
-import { lookupIpMeta } from "@/server/services/ip";
 import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
 
 const logger = createLogger({ source: "hosting" });
 
@@ -125,23 +125,26 @@ export const getHosting = cache(async function getHosting(
   const hasWebHosting = a !== undefined || aaaa !== undefined;
 
   // Parallelize headers probe and IP lookup when web hosting exists
-  const [headersResponse, meta] = await Promise.all([
+  const [headersResult, meta] = await Promise.all([
     hasWebHosting
-      ? getHeaders(domain).catch((err) => {
-          logger.error({ err, domain });
-          return {
-            headers: [] as { name: string; value: string }[],
-            status: 0,
-            statusMessage: undefined,
-          };
-        })
+      ? start(headersWorkflow, [{ domain }])
+          .then((run) => run.returnValue)
+          .then((result) => result.data)
+          .catch((err) => {
+            logger.error({ err, domain });
+            return {
+              headers: [] as { name: string; value: string }[],
+              status: 0,
+              statusMessage: undefined,
+            };
+          })
       : Promise.resolve({
           headers: [] as { name: string; value: string }[],
           status: 0,
           statusMessage: undefined,
         }),
     ip
-      ? lookupIpMeta(ip)
+      ? lookupGeoIp(ip)
       : Promise.resolve({
           geo: {
             city: "",
@@ -156,7 +159,7 @@ export const getHosting = cache(async function getHosting(
         }),
   ]);
 
-  const headers = headersResponse.headers;
+  const headers = headersResult.headers;
   const geo = meta.geo;
 
   // Fetch provider catalogs from Edge Config
