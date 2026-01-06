@@ -1,6 +1,7 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
+import { start } from "workflow/api";
 import { db } from "@/lib/db/client";
 import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains } from "@/lib/db/schema";
@@ -10,9 +11,9 @@ import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
 } from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
 import { getHosting } from "@/server/services/hosting";
-import { getRegistration } from "@/server/services/registration";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { registrationWorkflow } from "@/workflows/registration";
 
 /**
  * Initialize a snapshot for a newly verified tracked domain.
@@ -45,17 +46,32 @@ export const initializeSnapshot = inngest.createFunction(
 
     const domainName = domainRecord.name;
 
-    // Fetch fresh data for this domain
-    const [registrationData, hostingData, certificatesData] = await step.run(
-      "fetch-data",
-      async () => {
-        return await Promise.all([
-          getRegistration(domainName),
+    // Fetch fresh data for this domain using workflows
+    const [registrationResult, hostingData, certificatesResult] =
+      await step.run("fetch-data", async () => {
+        // Start workflows and fetch hosting in parallel
+        const [regRun, hostingPromise, certRun] = await Promise.all([
+          start(registrationWorkflow, [{ domain: domainName }]),
           getHosting(domainName),
-          getCertificates(domainName),
+          start(certificatesWorkflow, [{ domain: domainName }]),
         ]);
-      },
-    );
+
+        // Wait for workflow results
+        const [regResult, certsResult] = await Promise.all([
+          regRun.returnValue,
+          certRun.returnValue,
+        ]);
+
+        return [regResult, hostingPromise, certsResult] as const;
+      });
+
+    // Extract data from workflow results
+    const registrationData = registrationResult.success
+      ? registrationResult.data
+      : null;
+    const certificatesData = certificatesResult.success
+      ? certificatesResult.data
+      : { certificates: [] };
 
     // Build registration snapshot
     let registrationSnapshot: RegistrationSnapshotData = {
@@ -65,7 +81,7 @@ export const initializeSnapshot = inngest.createFunction(
       statuses: [],
     };
 
-    if (registrationData.status === "registered") {
+    if (registrationData?.status === "registered") {
       registrationSnapshot = {
         registrarProviderId: registrationData.registrarProvider.id ?? null,
         nameservers: registrationData.nameservers || [],

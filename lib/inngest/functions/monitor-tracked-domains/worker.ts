@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Logger } from "inngest";
+import { start } from "workflow/api";
 import { CertificateChangeEmail } from "@/emails/certificate-change";
 import { ProviderChangeEmail } from "@/emails/provider-change";
 import { RegistrationChangeEmail } from "@/emails/registration-change";
@@ -22,13 +23,15 @@ import {
 import type {
   CertificateChange,
   CertificateSnapshotData,
+  CertificatesResponse,
   ProviderChange,
   RegistrationChange,
+  RegistrationResponse,
   RegistrationSnapshotData,
 } from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
 import { getHosting } from "@/server/services/hosting";
-import { getRegistration } from "@/server/services/registration";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { registrationWorkflow } from "@/workflows/registration";
 
 /**
  * Worker function to monitor a single tracked domain.
@@ -59,16 +62,32 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
     const { domainName, userId, userName, userEmail } = snapshot;
 
     try {
-      // Fetch fresh data for this domain
+      // Fetch fresh data for this domain using workflows
       const [registrationData, hostingData, certificatesData] = await step.run(
         "fetch-live-data",
         async () => {
-          const opts = { skipScheduling: true };
-          return await Promise.all([
-            getRegistration(domainName, opts),
-            getHosting(domainName, opts),
-            getCertificates(domainName, opts),
+          // Start workflows and fetch hosting in parallel
+          const [regRun, hostingPromise, certRun] = await Promise.all([
+            start(registrationWorkflow, [{ domain: domainName }]),
+            getHosting(domainName, { skipScheduling: true }),
+            start(certificatesWorkflow, [{ domain: domainName }]),
           ]);
+
+          // Wait for workflow results
+          const [regResult, certsResult] = await Promise.all([
+            regRun.returnValue,
+            certRun.returnValue,
+          ]);
+
+          // Extract response data from workflow results
+          const registrationData: RegistrationResponse | null = regResult.success
+            ? regResult.data
+            : regResult.data; // Error responses still have data
+          const certificatesData: CertificatesResponse = certsResult.success
+            ? certsResult.data
+            : { certificates: [] };
+
+          return [registrationData, hostingPromise, certificatesData] as const;
         },
       );
 
@@ -79,7 +98,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       };
 
       // Check registration changes
-      if (registrationData.status === "registered") {
+      if (registrationData && registrationData.status === "registered") {
         const currentRegistration: RegistrationSnapshotData = {
           registrarProviderId: registrationData.registrarProvider?.id ?? null,
           nameservers: registrationData.nameservers || [],

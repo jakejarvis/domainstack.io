@@ -1,14 +1,15 @@
 import "server-only";
 
+import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type { Section } from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
 import { getDnsRecords } from "@/server/services/dns";
 import { getHeaders } from "@/server/services/headers";
 import { getHosting } from "@/server/services/hosting";
-import { getRegistration } from "@/server/services/registration";
 import { getSeo } from "@/server/services/seo";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { registrationWorkflow } from "@/workflows/registration";
 
 async function runSingleSection(
   domain: string,
@@ -24,15 +25,19 @@ async function runSingleSection(
     case "hosting":
       await getHosting(domain);
       return;
-    case "certificates":
-      await getCertificates(domain);
+    case "certificates": {
+      const run = await start(certificatesWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
     case "seo":
       await getSeo(domain);
       return;
-    case "registration":
-      await getRegistration(domain);
+    case "registration": {
+      const run = await start(registrationWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
   }
 }
 
