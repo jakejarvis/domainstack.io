@@ -14,7 +14,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
-import { UpgradePrompt } from "@/components/dashboard/upgrade-prompt";
+import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -369,7 +369,7 @@ export function DashboardClient() {
       <SubscriptionEndingBanner />
 
       {/* Upgrade prompt when free user is near or at limit */}
-      {<UpgradePrompt />}
+      {<UpgradeBanner />}
 
       {/* Active domains view */}
       {activeTab === "active" && (

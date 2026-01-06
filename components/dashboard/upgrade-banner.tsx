@@ -1,61 +1,82 @@
-import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
+import { Gauge, ShoppingCart, XIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export function UpgradeBanner() {
-  const { isPro, isSubscriptionLoading, handleCheckout, isCheckoutLoading } =
-    useSubscription();
+  const [isVisible, setIsVisible] = useState(true);
+  const {
+    subscription,
+    isPro,
+    isSubscriptionLoading,
+    handleCheckout,
+    isCheckoutLoading,
+  } = useSubscription();
 
-  // Don't show if already a Pro user or still loading
-  if (isSubscriptionLoading || isPro) {
+  if (!isVisible || !subscription || isSubscriptionLoading || isPro) {
     return null;
   }
 
+  // Show prompt when at 80% capacity or at limit
+  const nearLimit = subscription.activeCount >= subscription.planQuota * 0.8;
+  const atLimit = subscription.activeCount >= subscription.planQuota;
+
+  if (!nearLimit) return null;
+
   return (
-    <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.01] dark:via-transparent dark:to-white/[0.02]">
+    <Card className="group/upgrade-prompt relative overflow-hidden border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
+      {/* Dismiss button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/upgrade-prompt:visible sm:invisible"
+        onClick={() => setIsVisible(false)}
+        aria-label="Dismiss"
+      >
+        <XIcon />
+        <span className="sr-only">Dismiss</span>
+      </Button>
+
       {/* Decorative elements - subtle warm glows */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent-gold/8 blur-3xl"
+        className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/15 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-16 -left-16 size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
+        className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
       />
 
-      <div className="relative flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-        {/* Left side - Icon and text */}
-        <div className="flex items-center gap-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
-            <CircleFadingArrowUp className="size-5 text-accent-gold" />
-          </div>
-          <div>
-            <h3 className="font-semibold leading-snug">Upgrade to Pro</h3>
-            <span className="text-[13px] text-muted-foreground">
-              Track <span className="hidden sm:inline">up to </span>
-              {PLAN_QUOTAS.pro} domains
-              <span className="mx-1">•</span>
-              <span className="font-medium text-accent-gold">
-                {PRO_TIER_INFO.monthly.label}
-              </span>{" "}
-              or{" "}
-              <span className="font-medium text-accent-gold">
-                {PRO_TIER_INFO.yearly.label}
-              </span>
-            </span>
+      <CardHeader className="relative flex flex-col items-start justify-between gap-4 space-y-0 md:flex-row md:items-center">
+        <div className="flex-1 space-y-1.5">
+          <div className="flex items-start gap-5 md:items-center">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
+              <Gauge className="size-5 text-accent-gold" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">
+                {atLimit ? "Domain Limit Reached" : "Approaching Limit"}
+              </CardTitle>
+              <CardDescription>
+                {atLimit
+                  ? `You've reached your limit of ${subscription?.planQuota} tracked domains.`
+                  : `You're using ${subscription?.activeCount} of ${subscription?.planQuota} domain slots.`}{" "}
+                Upgrade to Pro for more capacity.
+              </CardDescription>
+            </div>
           </div>
         </div>
-
-        {/* Right side - CTA */}
         <Button
-          variant="outline"
-          size="lg"
           onClick={handleCheckout}
           disabled={isCheckoutLoading}
-          className="w-full shrink-0 md:w-auto"
+          className="w-full shrink-0 md:mr-2 md:w-auto"
         >
           {isCheckoutLoading ? (
             <>
@@ -65,11 +86,11 @@ export function UpgradeBanner() {
           ) : (
             <>
               <ShoppingCart />
-              Get Pro
+              Upgrade
             </>
           )}
         </Button>
-      </div>
-    </div>
+      </CardHeader>
+    </Card>
   );
 }

@@ -17,6 +17,8 @@ interface ModalProps {
   title?: string;
   description?: string;
   showHeader?: boolean;
+  headerSlotId?: string;
+  headerSlotClassName?: string;
 }
 
 export function Modal({
@@ -25,6 +27,8 @@ export function Modal({
   title = "Modal",
   description = "Modal content",
   showHeader = false,
+  headerSlotId,
+  headerSlotClassName,
 }: ModalProps) {
   const router = useRouter();
 
@@ -32,21 +36,23 @@ export function Modal({
     <Dialog open onOpenChange={() => router.back()}>
       <DialogContent
         className={cn(
-          "flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0",
+          "mx-auto flex max-h-[85vh] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl",
           className,
         )}
       >
         <DialogHeader
-          className={cn(
-            showHeader ? "border-muted border-b px-6 pt-6 pb-4" : "sr-only",
-          )}
+          className={cn(showHeader ? "border-muted border-b p-5" : "sr-only")}
         >
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
+          {showHeader && headerSlotId ? (
+            <div
+              id={headerSlotId}
+              className={cn("min-h-[1px]", headerSlotClassName)}
+            />
+          ) : null}
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="py-6">{children}</div>
-        </ScrollArea>
+        <ScrollArea className="min-h-0 flex-1">{children}</ScrollArea>
       </DialogContent>
     </Dialog>
   );

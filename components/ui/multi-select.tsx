@@ -186,12 +186,17 @@ export function MultiSelect<T extends string>({
       />
 
       <ComboboxPrimitive.Portal>
-        <ComboboxPrimitive.Positioner align="start" sideOffset={4}>
+        <ComboboxPrimitive.Positioner
+          align="start"
+          sideOffset={4}
+          // z-index must be on the Positioner (the positioned element), not just the Popup.
+          className="z-50"
+        >
           <ComboboxPrimitive.Popup
             className={cn(
               // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
               // Width auto-sizes to content; pass popoverWidth to constrain if needed.
-              "z-50 rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
+              "rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
               "origin-[var(--transform-origin)]",
               "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
               "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",

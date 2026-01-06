@@ -32,7 +32,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
 
   return (
     <div className={className}>
-      <div className="mb-6 space-y-3.5">
+      <div className="mb-4 space-y-3.5">
         <p className="text-muted-foreground text-sm">
           Drag the button below to your bookmarks bar. Then, press it on any
           site and the report for that domain will open in a new tab, like
@@ -41,6 +41,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         <div className="flex justify-center">
           <Button
             variant="outline"
+            size="lg"
             nativeButton={false}
             // biome-ignore lint/a11y/useValidAnchor: set by hrefScript above
             render={<a ref={hrefScript} />}
@@ -60,15 +61,21 @@ export function BookmarkletContent({ className }: { className?: string }) {
 
       <Separator className="my-4 bg-border/80 dark:bg-border/50" />
 
-      <Accordion className="w-full">
-        <AccordionItem value="apple-shortcut">
-          <AccordionTrigger className="-mx-2.5 cursor-pointer rounded-md px-2.5 py-2 hover:bg-muted/50 hover:no-underline [&>svg]:right-2.5">
+      <Accordion
+        multiple
+        className="w-full rounded-lg border border-border/50 bg-muted/20"
+      >
+        <AccordionItem
+          value="apple-shortcut"
+          className="border-border/30 border-b px-4 last:border-none"
+        >
+          <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2">
               <Layers2 className="size-4" />
               <span className="font-semibold leading-none">Apple Shortcut</span>
             </span>
           </AccordionTrigger>
-          <AccordionContent className="mt-2.5 pb-1">
+          <AccordionContent className="pt-1 text-foreground/90">
             <div className="space-y-3.5">
               <p className="text-muted-foreground text-sm">
                 On Apple devices, add a Shortcut via the button below. An{" "}
@@ -131,19 +138,18 @@ export function BookmarkletContent({ className }: { className?: string }) {
             </div>
           </AccordionContent>
         </AccordionItem>
-      </Accordion>
 
-      <Separator className="my-4 bg-border/80 dark:bg-border/50" />
-
-      <Accordion className="w-full">
-        <AccordionItem value="raycast" className="border-b-0">
-          <AccordionTrigger className="-mx-2.5 cursor-pointer rounded-md px-2.5 py-2 hover:bg-muted/50 hover:no-underline [&>svg]:right-2.5">
+        <AccordionItem
+          value="raycast"
+          className="border-border/30 border-b px-4 last:border-none"
+        >
+          <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2">
               <RaycastIcon className="size-4" />
               <span className="font-semibold leading-none">Raycast</span>
             </span>
           </AccordionTrigger>
-          <AccordionContent className="mt-2.5 pb-1">
+          <AccordionContent className="pt-1 text-foreground/90">
             <div className="space-y-3.5">
               <p className="text-muted-foreground text-sm">
                 If you&rsquo;re a{" "}

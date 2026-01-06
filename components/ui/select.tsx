@@ -69,12 +69,13 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         sideOffset={sideOffset}
-        className="outline-none"
+        // z-index must be on the Positioner (the positioned element), not just the Popup.
+        className="z-50 outline-none"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden",
+            "relative min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden",
             "max-h-[var(--available-height)] origin-[var(--transform-origin)]",
             "min-w-[var(--anchor-width)]",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",

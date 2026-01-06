@@ -1,6 +1,6 @@
 import { AlertTriangle, ChevronDown, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
+import { DeleteAccountDialog } from "@/components/settings/account/delete-account-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -9,13 +9,13 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-interface DangerZoneSettingsSectionProps {
+interface DangerZoneCollapsibleProps {
   className?: string;
 }
 
-export function DangerZoneSettingsSection({
+export function DangerZoneCollapsible({
   className,
-}: DangerZoneSettingsSectionProps) {
+}: DangerZoneCollapsibleProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (

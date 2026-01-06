@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FingerprintPattern } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { LinkedAccountRow } from "@/components/settings/linked-account-row";
+import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
@@ -28,14 +29,13 @@ import {
   type OAuthProviderConfig,
 } from "@/lib/constants/oauth-providers";
 import { useTRPC } from "@/lib/trpc/client";
+import { DangerZoneCollapsible } from "./danger-zone-collapsible";
 
-interface LinkedAccountsSectionProps {
+interface AccountPanelProps {
   className?: string;
 }
 
-export function LinkedAccountsSection({
-  className,
-}: LinkedAccountsSectionProps) {
+export function AccountPanel({ className }: AccountPanelProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
@@ -212,6 +212,10 @@ export function LinkedAccountsSection({
               );
             })}
         </CardContent>
+
+        <Separator className="my-6 bg-muted" />
+
+        <DangerZoneCollapsible />
       </div>
 
       <AlertDialog

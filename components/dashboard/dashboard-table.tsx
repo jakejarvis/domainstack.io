@@ -26,7 +26,7 @@ import { DashboardTablePagination } from "@/components/dashboard/dashboard-table
 import { DomainHealthBadge } from "@/components/dashboard/domain-health-badge";
 import { DomainStatusBadge } from "@/components/dashboard/domain-status-badge";
 import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
+import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { ProviderIcon } from "@/components/icons/provider-icon";
@@ -946,7 +946,7 @@ export function DashboardTable({
       )}
 
       {/* Upgrade CTA banner for free tier users */}
-      {<UpgradeBanner />}
+      {<UpgradeRow />}
     </div>
   );
 }

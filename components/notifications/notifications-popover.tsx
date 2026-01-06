@@ -1,5 +1,12 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Archive, Bell, CheckCheck, Inbox, XIcon } from "lucide-react";
+import {
+  Archive,
+  Bell,
+  CheckCheck,
+  Inbox,
+  Settings,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
@@ -15,10 +22,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
+import { useRouter } from "@/hooks/use-router";
 import type { NotificationData } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import { ButtonGroup } from "../ui/button-group";
 
 export function NotificationsPopover() {
+  const router = useRouter();
   const trpc = useTRPC();
   const { markRead, markAllRead } = useNotificationMutations();
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -102,6 +112,11 @@ export function NotificationsPopover() {
     }
   };
 
+  const handleOpenSettings = () => {
+    setOpen(false);
+    router.push("/settings/notifications");
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
@@ -150,29 +165,45 @@ export function NotificationsPopover() {
                 Notifications
               </h4>
               <div className="flex items-center gap-1.5">
-                {view === "inbox" && count > 0 && (
+                <ButtonGroup>
+                  {view === "inbox" && count > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => markAllRead.mutate()}
+                      disabled={markAllRead.isPending}
+                      aria-label="Clear All"
+                    >
+                      <CheckCheck className="text-muted-foreground" />
+                      Clear All
+                    </Button>
+                  )}
                   <Button
-                    variant="ghost"
-                    className="!p-2.5 h-6 w-fit gap-1.5 text-[13px]"
-                    onClick={() => markAllRead.mutate()}
-                    disabled={markAllRead.isPending}
-                    aria-label="Clear All"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={handleOpenSettings}
+                    aria-label="Notification settings"
                   >
-                    <CheckCheck className="size-3.5" />
-                    Clear All
+                    <Settings className="text-muted-foreground" />
+                    Settings
                   </Button>
-                )}
+                </ButtonGroup>
+
                 <Button
                   variant="ghost"
-                  className="!p-2.5 size-6"
+                  size="icon"
+                  className="-mr-1.5 size-7"
                   onClick={() => setOpen(false)}
                   aria-label="Close"
                 >
-                  <XIcon />
+                  <XIcon className="size-3.5" />
                   <span className="sr-only">Close</span>
                 </Button>
               </div>
             </div>
+
             <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="inbox" className="gap-2 text-[13px]">

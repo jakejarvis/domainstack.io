@@ -15,13 +15,11 @@ import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { cn } from "@/lib/utils";
 
-interface SubscriptionSettingsSectionProps {
+interface SubscriptionPanelProps {
   className?: string;
 }
 
-export function SubscriptionSettingsSection({
-  className,
-}: SubscriptionSettingsSectionProps) {
+export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
   // Subscription query and hooks
   const {
     subscription,

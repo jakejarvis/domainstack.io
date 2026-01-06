@@ -15,13 +15,11 @@ export default function InterceptedAddDomainPage({
     <Modal
       title="Add Domain"
       description="Track and monitor your domain"
-      className="max-w-lg"
+      className="max-w-lg p-5"
     >
-      <div className="px-6">
-        <Suspense fallback={<AddDomainSkeleton />}>
-          <AuthorizedAddDomainContent searchParams={searchParams} />
-        </Suspense>
-      </div>
+      <Suspense fallback={<AddDomainSkeleton />}>
+        <AuthorizedAddDomainContent searchParams={searchParams} />
+      </Suspense>
     </Modal>
   );
 }

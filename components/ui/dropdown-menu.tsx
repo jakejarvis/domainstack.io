@@ -33,12 +33,14 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="outline-none"
+        // Note: z-index must be on the *Positioner* (the positioned element), not just the Popup.
+        // Otherwise the menu can be painted under Base UI Dialog layers even if the Popup has a higher z-index.
+        className="z-[60] outline-none"
       >
         <Menu.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden",
+            "min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden",
             "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
@@ -235,12 +237,14 @@ function DropdownMenuSubContent({
       <Menu.Positioner
         sideOffset={sideOffset}
         alignOffset={alignOffset}
-        className="outline-none"
+        // Note: z-index must be on the *Positioner* (the positioned element), not just the Popup.
+        // Otherwise the menu can be painted under Base UI Dialog layers even if the Popup has a higher z-index.
+        className="z-50 outline-none"
       >
         <Menu.Popup
           data-slot="dropdown-menu-sub-content"
           className={cn(
-            "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-hidden",
+            "min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-hidden",
             "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",

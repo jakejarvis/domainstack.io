@@ -71,7 +71,7 @@ export function CalendarFeedPopover() {
             </Button>
           </PopoverHeader>
 
-          <Separator />
+          <Separator className="bg-muted" />
 
           <CalendarInstructions className="bg-background/25 p-4" />
         </div>

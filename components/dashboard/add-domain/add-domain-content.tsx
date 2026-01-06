@@ -302,7 +302,7 @@ export function AddDomainContent({
           loading: <Spinner className="size-4" />,
         }}
       >
-        <StepperNav className="py-4">
+        <StepperNav className="py-5">
           <StepperItem step={1} loading={isAddingDomain}>
             <Tooltip>
               <TooltipTrigger

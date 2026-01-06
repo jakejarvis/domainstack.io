@@ -1,6 +1,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "./button";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -68,11 +69,14 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 cursor-pointer rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
+            className="absolute top-2 right-2"
+            render={
+              <Button variant="ghost" size="icon-sm">
+                <XIcon />
+                <span className="sr-only">Close</span>
+              </Button>
+            }
+          />
         )}
       </DialogPrimitive.Popup>
     </DialogPortal>

@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CalendarFold, Globe, Info, ListTree } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { CalendarInstructions } from "@/components/calendar-instructions";
-import { DomainNotificationRow } from "@/components/settings/domain-notification-row";
-import { GlobalNotificationRow } from "@/components/settings/global-notification-row";
+import { DomainNotificationRow } from "@/components/settings/notifications/domain-notification-row";
+import { GlobalNotificationRow } from "@/components/settings/notifications/global-notification-row";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   CardContent,
@@ -26,17 +25,14 @@ import {
 import type { UserNotificationPreferences } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface NotificationSettingsSectionProps {
+interface NotificationsPanelProps {
   className?: string;
 }
 
-export function NotificationSettingsSection({
-  className,
-}: NotificationSettingsSectionProps) {
+export function NotificationsPanel({ className }: NotificationsPanelProps) {
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [_isPerDomainOpen, _setIsPerDomainOpen] = useState(false);
 
   // Query keys for cache manipulation
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
@@ -348,7 +344,7 @@ export function NotificationSettingsSection({
         </div>
       </CardContent>
 
-      <Separator className="mt-3 mb-6" />
+      <Separator className="mt-4 mb-6 bg-muted" />
 
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
@@ -391,7 +387,7 @@ export function NotificationSettingsSection({
         )}
       </CardContent>
 
-      <Separator className="my-6" />
+      <Separator className="my-6 bg-muted" />
 
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
@@ -402,7 +398,6 @@ export function NotificationSettingsSection({
           Subscribe to domain expiration dates in your calendar app.
         </CardDescription>
       </CardHeader>
-
       <CardContent className="px-0 pt-2">
         <CalendarInstructions />
       </CardContent>
