@@ -1,3 +1,5 @@
+import { RetryableError } from "workflow";
+
 export interface ProviderLogoWorkflowInput {
   providerId: string;
   providerDomain: string;
@@ -153,7 +155,19 @@ async function fetchFromSources(providerDomain: string): Promise<FetchResult> {
     }
   }
 
-  return { success: false, allNotFound };
+  // If all sources returned 404, it's a permanent failure (provider has no logo)
+  // Otherwise, it could be transient network issues - throw to retry
+  if (!allNotFound) {
+    logger.warn(
+      { domain: providerDomain },
+      "provider logo fetch failed with non-404 errors, will retry",
+    );
+    throw new RetryableError("Provider logo fetch failed", {
+      retryAfter: "10s",
+    });
+  }
+
+  return { success: false, allNotFound: true };
 }
 
 /**

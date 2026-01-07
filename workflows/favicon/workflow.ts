@@ -1,3 +1,5 @@
+import { RetryableError } from "workflow";
+
 export interface FaviconWorkflowInput {
   domain: string;
 }
@@ -137,7 +139,17 @@ async function fetchFromSources(domain: string): Promise<FetchResult> {
     }
   }
 
-  return { success: false, allNotFound };
+  // If all sources returned 404, it's a permanent failure (domain has no favicon)
+  // Otherwise, it could be transient network issues - throw to retry
+  if (!allNotFound) {
+    logger.warn(
+      { domain },
+      "favicon fetch failed with non-404 errors, will retry",
+    );
+    throw new RetryableError("Favicon fetch failed", { retryAfter: "10s" });
+  }
+
+  return { success: false, allNotFound: true };
 }
 
 /**

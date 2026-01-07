@@ -1,3 +1,4 @@
+import { RetryableError } from "workflow";
 import type { Header, HeadersResponse } from "@/lib/types";
 
 export interface HeadersWorkflowInput {
@@ -112,24 +113,28 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
     const isTlsError = isExpectedTlsError(err);
 
     if (isDnsError) {
-      // Fail silently for DNS errors
-    } else if (isTlsError) {
+      // Permanent failure - domain doesn't resolve, return graceful result
+      return {
+        success: false,
+        headers: [],
+        status: 0,
+        statusMessage: undefined,
+      };
+    }
+
+    if (isTlsError) {
+      // Permanent failure - cert is invalid, return graceful result
       return {
         success: false,
         headers: [],
         status: 0,
         statusMessage: "Invalid SSL certificate",
       };
-    } else {
-      logger.error({ err, domain }, "failed to fetch headers");
     }
 
-    return {
-      success: false,
-      headers: [],
-      status: 0,
-      statusMessage: undefined,
-    };
+    // Unknown/transient error - throw to trigger retry
+    logger.warn({ err, domain }, "failed to fetch headers, will retry");
+    throw new RetryableError("Headers fetch failed", { retryAfter: "5s" });
   }
 }
 

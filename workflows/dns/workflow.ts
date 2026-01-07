@@ -1,3 +1,4 @@
+import { RetryableError } from "workflow";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
 
@@ -11,8 +12,8 @@ export interface DnsWorkflowResult {
 }
 
 // Internal types for step-to-step transfer
-interface FetchSuccess {
-  success: true;
+// Note: Step throws RetryableError on failure, so only success type is needed
+interface FetchResult {
   resolver: string;
   records: DnsRecord[];
   // Records with expiry info for persistence
@@ -22,13 +23,6 @@ interface FetchSuccess {
     }
   >;
 }
-
-interface FetchFailure {
-  success: false;
-  error: string;
-}
-
-type FetchResult = FetchSuccess | FetchFailure;
 
 /**
  * Durable DNS workflow that breaks down DNS resolution into
@@ -43,15 +37,8 @@ export async function dnsWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Fetch from DoH providers
+  // Step 1: Fetch from DoH providers (throws RetryableError on failure)
   const fetchResult = await fetchFromProviders(domain);
-
-  if (!fetchResult.success) {
-    return {
-      success: false,
-      data: { records: [], resolver: null },
-    };
-  }
 
   // Step 2: Persist to database
   await persistRecords(
@@ -164,7 +151,6 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
       }));
 
       return {
-        success: true,
         records: sorted,
         resolver: provider.key,
         recordsWithExpiry,
@@ -175,8 +161,9 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
     }
   }
 
-  logger.error({ domain }, "all DoH providers failed");
-  return { success: false, error: "All DoH providers failed" };
+  // All providers failed - this is likely transient, throw to trigger retry
+  logger.warn({ domain }, "all DoH providers failed, will retry");
+  throw new RetryableError("All DoH providers failed", { retryAfter: "5s" });
 }
 
 /**

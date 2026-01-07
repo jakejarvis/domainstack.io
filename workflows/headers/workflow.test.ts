@@ -110,7 +110,7 @@ describe("fetchHeaders", () => {
     expect(result.statusMessage).toBe("Forbidden");
   });
 
-  it("returns failure on network error", async () => {
+  it("throws RetryableError on network error", async () => {
     mockDns("error.test");
     server.use(
       http.head("https://error.test/", () => {
@@ -122,11 +122,9 @@ describe("fetchHeaders", () => {
     );
 
     const { fetchHeaders } = await import("./workflow");
-    const result = await fetchHeaders("error.test");
+    const { RetryableError } = await import("workflow");
 
-    expect(result.success).toBe(false);
-    expect(result.headers).toEqual([]);
-    expect(result.status).toBe(0);
+    await expect(fetchHeaders("error.test")).rejects.toThrow(RetryableError);
   });
 
   it("normalizes and sorts headers correctly", async () => {

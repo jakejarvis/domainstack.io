@@ -100,7 +100,7 @@ describe("registrationWorkflow step functions", () => {
       }
     });
 
-    it("handles timeout gracefully", async () => {
+    it("throws RetryableError on timeout", async () => {
       rdapperMock.lookup.mockResolvedValue({
         ok: false,
         error: "WHOIS socket timeout",
@@ -108,16 +108,14 @@ describe("registrationWorkflow step functions", () => {
       });
 
       const { registrationWorkflow } = await import("./workflow");
-      const result = await registrationWorkflow({ domain: "slow.com" });
+      const { RetryableError } = await import("workflow");
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("timeout");
-        expect(result.data?.unavailableReason).toBe("timeout");
-      }
+      await expect(
+        registrationWorkflow({ domain: "slow.com" }),
+      ).rejects.toThrow(RetryableError);
     });
 
-    it("handles lookup failure with unknown error", async () => {
+    it("throws RetryableError on unknown error", async () => {
       rdapperMock.lookup.mockResolvedValue({
         ok: false,
         error: "Connection refused",
@@ -125,12 +123,11 @@ describe("registrationWorkflow step functions", () => {
       });
 
       const { registrationWorkflow } = await import("./workflow");
-      const result = await registrationWorkflow({ domain: "error.com" });
+      const { RetryableError } = await import("workflow");
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe("lookup_failed");
-      }
+      await expect(
+        registrationWorkflow({ domain: "error.com" }),
+      ).rejects.toThrow(RetryableError);
     });
   });
 

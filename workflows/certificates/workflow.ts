@@ -2,6 +2,7 @@ import type {
   DetailedPeerCertificate,
   Certificate as TlsCertificate,
 } from "node:tls";
+import { RetryableError } from "workflow";
 import type { Provider } from "@/lib/providers/parser";
 import type { Certificate, CertificatesResponse } from "@/lib/types";
 
@@ -31,7 +32,6 @@ interface TlsFetchFailure {
   success: false;
   isDnsError: boolean;
   isTlsError: boolean;
-  errorMessage?: string;
 }
 
 type TlsFetchResult = TlsFetchSuccess | TlsFetchFailure;
@@ -167,22 +167,24 @@ async function fetchCertificateChain(domain: string): Promise<TlsFetchResult> {
     return { success: true, chainJson: JSON.stringify(chain) };
   } catch (err) {
     if (isExpectedDnsError(err)) {
+      // Permanent failure - domain doesn't resolve, return graceful result
       logger.debug({ err, domain }, "DNS resolution failed");
       return { success: false, isDnsError: true, isTlsError: false };
     }
 
     if (isExpectedTlsError(err)) {
+      // Permanent failure - cert is invalid, return graceful result
       logger.debug({ err, domain }, "TLS handshake failed");
       return {
         success: false,
         isDnsError: false,
         isTlsError: true,
-        errorMessage: "Invalid SSL certificate",
       };
     }
 
-    logger.error({ err, domain }, "certificate fetch failed");
-    return { success: false, isDnsError: false, isTlsError: false };
+    // Unknown/transient error - throw to trigger retry
+    logger.warn({ err, domain }, "certificate fetch failed, will retry");
+    throw new RetryableError("Certificate fetch failed", { retryAfter: "5s" });
   }
 }
 

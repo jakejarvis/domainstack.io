@@ -1,3 +1,4 @@
+import { RetryableError } from "workflow";
 import type {
   Provider,
   RegistrationContacts,
@@ -28,8 +29,7 @@ interface RdapLookupSuccess {
 
 interface RdapLookupFailure {
   success: false;
-  isUnsupported: boolean;
-  isTimeout: boolean;
+  error: "unsupported_tld" | "timeout" | "lookup_failed";
 }
 
 type RdapLookupResult = RdapLookupSuccess | RdapLookupFailure;
@@ -49,25 +49,12 @@ export async function registrationWorkflow(
   const { domain } = input;
 
   // Step 1: Lookup via rdapper
-  const rdapResult = await lookupRdap(domain);
+  const rdapResult = await lookupWhois(domain);
 
   if (!rdapResult.success) {
     // Build response for failed lookup
-    const errorData = await buildErrorResponse(
-      domain,
-      rdapResult.isTimeout,
-      rdapResult.isUnsupported,
-    );
-
-    return {
-      success: false,
-      error: rdapResult.isTimeout
-        ? "timeout"
-        : rdapResult.isUnsupported
-          ? "unsupported_tld"
-          : "lookup_failed",
-      data: errorData,
-    };
+    const errorData = await buildErrorResponse(domain, rdapResult.error);
+    return { success: false, error: rdapResult.error, data: errorData };
   }
 
   // Step 2: Normalize registrar and build response
@@ -91,7 +78,7 @@ export async function registrationWorkflow(
  * Step: Lookup domain registration via rdapper (WHOIS/RDAP)
  * This is the slow operation that benefits from workflow durability.
  */
-async function lookupRdap(domain: string): Promise<RdapLookupResult> {
+async function lookupWhois(domain: string): Promise<RdapLookupResult> {
   "use step";
 
   const { lookup } = await import("rdapper");
@@ -112,23 +99,31 @@ async function lookupRdap(domain: string): Promise<RdapLookupResult> {
       const isUnsupported = isExpectedRegistrationError(error);
       const isTimeout = isTimeoutError(error);
 
-      if (isUnsupported || isTimeout) {
-        logger.info(
-          { domain, err: error },
-          isTimeout ? "timeout" : "unavailable",
-        );
-        return { success: false, isUnsupported, isTimeout };
+      if (isUnsupported) {
+        // Permanent failure - TLD not supported by RDAP, return graceful result
+        logger.info({ domain, err: error }, "unsupported TLD");
+        return { success: false, error: "unsupported_tld" };
       }
 
-      logger.error({ err: error, domain }, "rdap lookup failed");
-      return { success: false, isUnsupported: false, isTimeout: false };
+      if (isTimeout) {
+        // Transient failure - RDAP server timeout, throw to retry
+        logger.warn({ domain, err: error }, "RDAP timeout, will retry");
+        throw new RetryableError("RDAP lookup timed out", {
+          retryAfter: "10s",
+        });
+      }
+
+      // Unknown error - throw to trigger retry
+      logger.warn({ err: error, domain }, "rdap lookup failed, will retry");
+      throw new RetryableError("RDAP lookup failed", { retryAfter: "5s" });
     }
 
     // Serialize to JSON string for step-to-step transfer
     return { success: true, recordJson: JSON.stringify(record) };
   } catch (err) {
-    logger.error({ err, domain }, "rdap lookup threw");
-    return { success: false, isUnsupported: false, isTimeout: false };
+    // Unknown exception - throw to trigger retry
+    logger.warn({ err, domain }, "rdap lookup threw, will retry");
+    throw new RetryableError("RDAP lookup exception", { retryAfter: "5s" });
   }
 }
 
@@ -137,24 +132,21 @@ async function lookupRdap(domain: string): Promise<RdapLookupResult> {
  */
 async function buildErrorResponse(
   domain: string,
-  isTimeout: boolean,
-  isUnsupported: boolean,
+  error: RdapLookupFailure["error"],
 ): Promise<RegistrationResponse> {
   "use step";
 
   const { getDomainTld } = await import("rdapper");
 
-  const unavailableReason = isTimeout
-    ? ("timeout" as const)
-    : ("unsupported_tld" as const);
+  const unavailableReason =
+    error === "timeout" ? ("timeout" as const) : ("unsupported_tld" as const);
 
   return {
     domain,
     tld: getDomainTld(domain) ?? "",
     isRegistered: false,
     status: "unknown",
-    unavailableReason:
-      isUnsupported || isTimeout ? unavailableReason : undefined,
+    unavailableReason,
     source: null,
     registrarProvider: {
       id: null,

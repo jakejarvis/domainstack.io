@@ -1,4 +1,5 @@
 import type { Browser, Page } from "puppeteer-core";
+import { RetryableError } from "workflow";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
@@ -233,11 +234,11 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       isPermanentFailure,
     };
   } catch (err) {
-    logger.error({ err, domain }, "screenshot capture failed");
-    return {
-      success: false,
-      isPermanentFailure: false,
-    };
+    // Outer errors (browser init failures, etc.) are transient - throw to retry
+    logger.warn({ err, domain }, "screenshot capture failed, will retry");
+    throw new RetryableError("Screenshot capture failed", {
+      retryAfter: "10s",
+    });
   }
 }
 

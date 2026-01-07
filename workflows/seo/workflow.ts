@@ -1,3 +1,4 @@
+import { RetryableError } from "workflow";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -115,6 +116,8 @@ async function fetchHtml(domain: string): Promise<HtmlFetchResult> {
 
   const { fetchRemoteAsset } = await import("@/lib/fetch-remote-asset");
   const { parseHtmlMeta, selectPreview } = await import("@/lib/seo");
+  const { isExpectedDnsError } = await import("@/lib/dns-utils");
+  const { isExpectedTlsError } = await import("@/lib/fetch");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "seo-workflow" });
@@ -185,14 +188,35 @@ async function fetchHtml(domain: string): Promise<HtmlFetchResult> {
         : null,
     };
   } catch (err) {
-    logger.debug({ err, domain }, "HTML fetch failed");
-    return {
-      success: false,
-      finalUrl,
-      status,
-      meta: null,
-      preview: null,
-    };
+    if (isExpectedDnsError(err)) {
+      // Permanent failure - domain doesn't resolve, return graceful result
+      logger.debug({ err, domain }, "DNS resolution failed");
+      return {
+        success: false,
+        finalUrl,
+        status,
+        meta: null,
+        preview: null,
+        error: "DNS resolution failed",
+      };
+    }
+
+    if (isExpectedTlsError(err)) {
+      // Permanent failure - cert is invalid, return graceful result
+      logger.debug({ err, domain }, "TLS error");
+      return {
+        success: false,
+        finalUrl,
+        status,
+        meta: null,
+        preview: null,
+        error: "Invalid SSL certificate",
+      };
+    }
+
+    // Unknown/transient error - throw to trigger retry
+    logger.warn({ err, domain }, "HTML fetch failed, will retry");
+    throw new RetryableError("HTML fetch failed", { retryAfter: "5s" });
   }
 }
 
@@ -231,6 +255,8 @@ async function fetchRobots(domain: string): Promise<RobotsFetchResult> {
 
     return { robots: null, error: `HTTP ${robotsResult.status}` };
   } catch (err) {
+    // For robots.txt, we don't throw on transient errors - it's not critical
+    // The main SEO data (meta tags) is more important
     const isTlsError = isExpectedTlsError(err);
     if (isTlsError) {
       return { robots: null, error: "Invalid SSL certificate" };

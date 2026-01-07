@@ -111,16 +111,17 @@ describe("dnsWorkflow step functions", () => {
       expect(result.data.records.some((r) => r.type === "NS")).toBe(true);
     });
 
-    it("returns failure when all providers fail", async () => {
+    it("throws RetryableError when all providers fail", async () => {
       dnsUtilsMock.queryDohProvider.mockRejectedValue(
         new Error("Network error"),
       );
 
       const { dnsWorkflow } = await import("./workflow");
-      const result = await dnsWorkflow({ domain: "failing.com" });
+      const { RetryableError } = await import("workflow");
 
-      expect(result.success).toBe(false);
-      expect(result.data.records).toEqual([]);
+      await expect(dnsWorkflow({ domain: "failing.com" })).rejects.toThrow(
+        RetryableError,
+      );
     });
 
     it("falls back to second provider on first failure", async () => {
