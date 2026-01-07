@@ -1,8 +1,11 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
+import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
+import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
+import { findDomainByName } from "./domains";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
 
@@ -155,4 +158,142 @@ export async function replaceDns(params: UpsertDnsParams) {
         },
       });
   }
+}
+
+/**
+ * Get cached DNS records for a domain if fresh.
+ * Returns null if cache miss or stale.
+ */
+export async function getDnsCached(
+  domain: string,
+): Promise<DnsRecordsResponse | null> {
+  const nowMs = Date.now();
+  const types = DNS_RECORD_TYPES;
+
+  try {
+    const existingDomain = await findDomainByName(domain);
+
+    if (!existingDomain) {
+      return null;
+    }
+
+    const rows = await db
+      .select({
+        type: dnsRecords.type,
+        name: dnsRecords.name,
+        value: dnsRecords.value,
+        ttl: dnsRecords.ttl,
+        priority: dnsRecords.priority,
+        isCloudflare: dnsRecords.isCloudflare,
+        resolver: dnsRecords.resolver,
+        expiresAt: dnsRecords.expiresAt,
+      })
+      .from(dnsRecords)
+      .where(eq(dnsRecords.domainId, existingDomain.id));
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    // Group by type and check freshness
+    const rowsByType = rows.reduce(
+      (acc, r) => {
+        const t = r.type;
+        if (!acc[t]) acc[t] = [];
+        acc[t].push(r);
+        return acc;
+      },
+      {} as Record<DnsRecordType, typeof rows>,
+    );
+
+    const typeIsFresh = (t: DnsRecordType) => {
+      const arr = rowsByType[t] ?? [];
+      return (
+        arr.length > 0 &&
+        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
+      );
+    };
+
+    const allFresh = types.every((t) => typeIsFresh(t));
+
+    if (!allFresh) {
+      return null;
+    }
+
+    // Assemble cached records
+    const records: DnsRecord[] = rows.map((r) => ({
+      type: r.type,
+      name: r.name,
+      value: r.value,
+      ttl: r.ttl ?? undefined,
+      priority: r.priority ?? undefined,
+      isCloudflare: r.isCloudflare ?? undefined,
+    }));
+
+    // Deduplicate and sort
+    const deduplicated = deduplicateDnsRecords(records);
+    const sorted = sortDnsRecordsByType(deduplicated, types);
+
+    return {
+      records: sorted,
+      resolver: rows[0]?.resolver ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Helper functions for getDnsCached
+function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
+  const seen = new Set<string>();
+  const deduplicated: DnsRecord[] = [];
+
+  for (const r of records) {
+    const priorityPart = r.priority != null ? `|${r.priority}` : "";
+    const key = `${r.type}|${r.name.trim().toLowerCase()}|${r.value.trim().toLowerCase()}${priorityPart}`;
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated;
+}
+
+function sortDnsRecordsByType(
+  records: DnsRecord[],
+  order: readonly DnsRecordType[],
+): DnsRecord[] {
+  const byType: Record<DnsRecordType, DnsRecord[]> = {
+    A: [],
+    AAAA: [],
+    MX: [],
+    TXT: [],
+    NS: [],
+  };
+  for (const r of records) byType[r.type].push(r);
+
+  const sorted: DnsRecord[] = [];
+  for (const t of order) {
+    sorted.push(...sortDnsRecordsForType(byType[t], t));
+  }
+  return sorted;
+}
+
+function sortDnsRecordsForType(
+  arr: DnsRecord[],
+  type: DnsRecordType,
+): DnsRecord[] {
+  if (type === "MX") {
+    arr.sort((a, b) => {
+      const ap = a.priority ?? Number.MAX_SAFE_INTEGER;
+      const bp = b.priority ?? Number.MAX_SAFE_INTEGER;
+      if (ap !== bp) return ap - bp;
+      return a.value.localeCompare(b.value);
+    });
+    return arr;
+  }
+  arr.sort((a, b) => a.value.localeCompare(b.value));
+  return arr;
 }

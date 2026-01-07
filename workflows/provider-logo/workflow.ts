@@ -5,7 +5,6 @@ export interface ProviderLogoWorkflowInput {
 
 export interface ProviderLogoWorkflowResult {
   success: boolean;
-  cached: boolean;
   data: {
     url: string | null;
   };
@@ -32,10 +31,9 @@ const DEFAULT_SIZE = 64;
 /**
  * Durable provider logo workflow that breaks down icon fetching into
  * independently retryable steps:
- * 1. Check cache (Postgres)
- * 2. Fetch from multiple sources with fallbacks (including logo.dev)
- * 3. Process image (convert to WebP)
- * 4. Store to Vercel Blob and persist to database
+ * 1. Fetch from multiple sources with fallbacks (including logo.dev)
+ * 2. Process image (convert to WebP)
+ * 3. Store to Vercel Blob and persist to database
  */
 export async function providerLogoWorkflow(
   input: ProviderLogoWorkflowInput,
@@ -44,34 +42,22 @@ export async function providerLogoWorkflow(
 
   const { providerId, providerDomain } = input;
 
-  // Step 1: Check Postgres cache
-  const cachedResult = await checkCache(providerId);
-
-  if (cachedResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cachedResult.data,
-    };
-  }
-
-  // Step 2: Fetch from sources
+  // Step 1: Fetch from sources
   const fetchResult = await fetchFromSources(providerDomain);
 
   if (!fetchResult.success) {
-    // Step 3a: Persist failure
+    // Step 2a: Persist failure
     await persistFailure(providerId, fetchResult.allNotFound);
 
     return {
       success: false,
-      cached: false,
       data: {
         url: null,
       },
     };
   }
 
-  // Step 3b: Process image
+  // Step 2b: Process image
   const processedResult = await processImage(fetchResult.imageBase64);
 
   if (!processedResult.success) {
@@ -79,14 +65,13 @@ export async function providerLogoWorkflow(
     await persistFailure(providerId, false);
     return {
       success: false,
-      cached: false,
       data: {
         url: null,
       },
     };
   }
 
-  // Step 4: Store and persist
+  // Step 3: Store and persist
   const storeResult = await storeAndPersist(
     providerId,
     providerDomain,
@@ -96,49 +81,10 @@ export async function providerLogoWorkflow(
 
   return {
     success: true,
-    cached: false,
     data: {
       url: storeResult.url,
     },
   };
-}
-
-/**
- * Step: Check Postgres cache for existing provider logo
- */
-async function checkCache(
-  providerId: string,
-): Promise<{ found: true; data: { url: string | null } } | { found: false }> {
-  "use step";
-
-  const { getProviderLogoByProviderId } = await import(
-    "@/lib/db/repos/provider-logos"
-  );
-
-  try {
-    const cachedRecord = await getProviderLogoByProviderId(providerId);
-
-    if (cachedRecord) {
-      // Only treat as cache hit if we have a definitive result:
-      // - url is present (string), OR
-      // - url is null but marked as permanently not found
-      const isDefinitiveResult =
-        cachedRecord.url !== null || cachedRecord.notFound === true;
-
-      if (isDefinitiveResult) {
-        return {
-          found: true,
-          data: {
-            url: cachedRecord.url,
-          },
-        };
-      }
-    }
-  } catch {
-    // Cache check failed, fall through to fetch
-  }
-
-  return { found: false };
 }
 
 /**

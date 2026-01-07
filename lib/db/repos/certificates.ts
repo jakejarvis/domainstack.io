@@ -2,14 +2,17 @@ import "server-only";
 
 import type { InferInsertModel } from "drizzle-orm";
 import { and, asc, eq, isNull } from "drizzle-orm";
+import type { Certificate, CertificatesResponse } from "@/lib/types";
 import { db } from "@/lib/db/client";
 import {
   certificates,
   domains,
+  providers,
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
 import type { NotificationOverrides } from "@/lib/types";
+import { findDomainByName } from "./domains";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -43,6 +46,77 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
       );
     }
   });
+}
+
+/**
+ * Get cached certificates for a domain if fresh.
+ * Returns null if cache miss or stale.
+ */
+export async function getCertificatesCached(
+  domain: string,
+): Promise<CertificatesResponse | null> {
+  const now = new Date();
+  const nowMs = now.getTime();
+
+  try {
+    const existingDomain = await findDomainByName(domain);
+    if (!existingDomain) {
+      return null;
+    }
+
+    const existing = await db
+      .select({
+        issuer: certificates.issuer,
+        subject: certificates.subject,
+        altNames: certificates.altNames,
+        validFrom: certificates.validFrom,
+        validTo: certificates.validTo,
+        caProviderId: providers.id,
+        caProviderDomain: providers.domain,
+        caProviderName: providers.name,
+        expiresAt: certificates.expiresAt,
+      })
+      .from(certificates)
+      .leftJoin(providers, eq(certificates.caProviderId, providers.id))
+      .where(eq(certificates.domainId, existingDomain.id))
+      .orderBy(certificates.validTo);
+
+    if (existing.length === 0) {
+      return null;
+    }
+
+    const fresh = existing.every(
+      (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
+    );
+
+    if (!fresh) {
+      return null;
+    }
+
+    const certs: Certificate[] = existing.map((c) => ({
+      issuer: c.issuer,
+      subject: c.subject,
+      altNames: safeAltNamesArray(c.altNames),
+      validFrom: new Date(c.validFrom).toISOString(),
+      validTo: new Date(c.validTo).toISOString(),
+      caProvider: {
+        id: c.caProviderId ?? null,
+        domain: c.caProviderDomain ?? null,
+        name: c.caProviderName ?? null,
+      },
+    }));
+
+    return { certificates: certs };
+  } catch {
+    return null;
+  }
+}
+
+function safeAltNamesArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return [];
 }
 
 export type TrackedDomainCertificate = {

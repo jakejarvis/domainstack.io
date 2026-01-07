@@ -11,12 +11,10 @@ export interface RegistrationWorkflowInput {
 export type RegistrationWorkflowResult =
   | {
       success: true;
-      cached: boolean;
       data: RegistrationResponse;
     }
   | {
       success: false;
-      cached: false;
       error: "unsupported_tld" | "timeout" | "lookup_failed";
       data: RegistrationResponse | null;
     };
@@ -39,10 +37,9 @@ type RdapLookupResult = RdapLookupSuccess | RdapLookupFailure;
 /**
  * Durable registration workflow that breaks down WHOIS/RDAP lookup into
  * independently retryable steps:
- * 1. Check cache (Postgres)
- * 2. Lookup via rdapper (WHOIS/RDAP - the slow operation)
- * 3. Normalize registrar provider
- * 4. Persist to database
+ * 1. Lookup via rdapper (WHOIS/RDAP - the slow operation)
+ * 2. Normalize registrar provider
+ * 3. Persist to database
  */
 export async function registrationWorkflow(
   input: RegistrationWorkflowInput,
@@ -51,18 +48,7 @@ export async function registrationWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check Postgres cache
-  const cachedResult = await checkCache(domain);
-
-  if (cachedResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cachedResult.data,
-    };
-  }
-
-  // Step 2: Lookup via rdapper
+  // Step 1: Lookup via rdapper
   const rdapResult = await lookupRdap(domain);
 
   if (!rdapResult.success) {
@@ -75,7 +61,6 @@ export async function registrationWorkflow(
 
     return {
       success: false,
-      cached: false,
       error: rdapResult.isTimeout
         ? "timeout"
         : rdapResult.isUnsupported
@@ -85,106 +70,21 @@ export async function registrationWorkflow(
     };
   }
 
-  // Step 3: Normalize registrar and build response
+  // Step 2: Normalize registrar and build response
   const normalizedResult = await normalizeAndBuildResponse(
     domain,
     rdapResult.recordJson,
   );
 
-  // Step 4: Persist to database (only for registered domains)
+  // Step 3: Persist to database (only for registered domains)
   if (normalizedResult.isRegistered) {
     await persistRegistration(domain, rdapResult.recordJson, normalizedResult);
   }
 
   return {
     success: true,
-    cached: false,
     data: normalizedResult,
   };
-}
-
-/**
- * Step: Check Postgres cache for existing registration data
- */
-async function checkCache(
-  domain: string,
-): Promise<{ found: true; data: RegistrationResponse } | { found: false }> {
-  "use step";
-
-  const { eq } = await import("drizzle-orm");
-  const { db } = await import("@/lib/db/client");
-  const { domains, registrations, providers } = await import("@/lib/db/schema");
-
-  const now = new Date();
-
-  try {
-    const existing = await db
-      .select({
-        domainId: domains.id,
-        domainName: domains.name,
-        domainTld: domains.tld,
-        domainUnicodeName: domains.unicodeName,
-        registration: registrations,
-        providerId: providers.id,
-        providerName: providers.name,
-        providerDomain: providers.domain,
-      })
-      .from(domains)
-      .innerJoin(registrations, eq(registrations.domainId, domains.id))
-      .leftJoin(providers, eq(registrations.registrarProviderId, providers.id))
-      .where(eq(domains.name, domain))
-      .limit(1);
-
-    if (existing[0] && existing[0].registration.expiresAt > now) {
-      const row = existing[0];
-
-      const registrarProvider = row.providerName
-        ? {
-            id: row.providerId ?? null,
-            name: row.providerName,
-            domain: row.providerDomain ?? null,
-          }
-        : {
-            id: null,
-            name: null as string | null,
-            domain: null as string | null,
-          };
-
-      const contactsArray: RegistrationContacts =
-        row.registration.contacts ?? [];
-      const nameserversArray = row.registration.nameservers ?? [];
-
-      const response: RegistrationResponse = {
-        domain,
-        tld: row.domainTld,
-        isRegistered: row.registration.isRegistered,
-        status: row.registration.isRegistered ? "registered" : "unregistered",
-        unavailableReason: undefined,
-        privacyEnabled: row.registration.privacyEnabled ?? false,
-        unicodeName: row.domainUnicodeName,
-        punycodeName: row.domainName,
-        registry: row.registration.registry ?? undefined,
-        statuses: row.registration.statuses ?? undefined,
-        creationDate: row.registration.creationDate?.toISOString(),
-        updatedDate: row.registration.updatedDate?.toISOString(),
-        expirationDate: row.registration.expirationDate?.toISOString(),
-        deletionDate: row.registration.deletionDate?.toISOString(),
-        transferLock: row.registration.transferLock ?? undefined,
-        nameservers: nameserversArray.length > 0 ? nameserversArray : undefined,
-        contacts: contactsArray,
-        whoisServer: row.registration.whoisServer ?? undefined,
-        rdapServers: row.registration.rdapServers ?? undefined,
-        source: row.registration.source ?? null,
-        registrarProvider,
-      };
-
-      return { found: true, data: response };
-    }
-  } catch {
-    // Cache check failed, fall through to lookup
-  }
-
-  return { found: false };
 }
 
 /**
@@ -389,6 +289,7 @@ async function persistRegistration(
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
   const { getProviders } = await import("@/lib/providers/catalog");
   const { detectRegistrar } = await import("@/lib/providers/detection");
+  const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForRegistration } = await import("@/lib/ttl");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -474,6 +375,14 @@ async function persistRegistration(
         ipv6: n.ipv6 ?? [],
       })),
     });
+
+    // Schedule background revalidation
+    await scheduleRevalidation(
+      domain,
+      "registration",
+      expiresAt.getTime(),
+      domainRecord.lastAccessedAt ?? null,
+    );
 
     logger.debug({ domain }, "registration persisted");
   } catch (err) {

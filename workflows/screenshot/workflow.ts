@@ -19,12 +19,10 @@ export interface ScreenshotWorkflowData {
 export type ScreenshotWorkflowResult =
   | {
       success: true;
-      cached: boolean;
       data: ScreenshotWorkflowData;
     }
   | {
       success: false;
-      cached: false;
       error: "capture_error" | "not_found" | "blocked_domain";
       data: ScreenshotWorkflowData;
     };
@@ -47,10 +45,9 @@ type CaptureResult = CaptureSuccess | CaptureFailure;
  * Durable screenshot workflow that breaks down screenshot generation into
  * independently retryable steps:
  * 1. Check blocklist
- * 2. Check cache (Postgres)
- * 3. Capture screenshot (Puppeteer)
- * 4. Process and store image (Vercel Blob)
- * 5. Persist to database
+ * 2. Capture screenshot (Puppeteer)
+ * 3. Process and store image (Vercel Blob)
+ * 4. Persist to database
  */
 export async function screenshotWorkflow(
   input: ScreenshotWorkflowInput,
@@ -65,45 +62,32 @@ export async function screenshotWorkflow(
   if (isBlocked) {
     return {
       success: true,
-      cached: false,
       data: { url: null, blocked: true },
     };
   }
 
-  // Step 2: Check cache in Postgres
-  const cachedResult = await checkCache(domain);
-
-  if (cachedResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cachedResult.data,
-    };
-  }
-
-  // Step 3: Capture screenshot using Puppeteer
+  // Step 2: Capture screenshot using Puppeteer
   // This is the heavy operation that benefits most from durability
   const captureResult = await captureScreenshot(domain);
 
   if (!captureResult.success) {
-    // Step 4a: Persist failure to cache
+    // Step 3a: Persist failure to cache
     await persistFailure(domain, captureResult.isPermanentFailure);
     return {
       success: false,
-      cached: false,
       error: "capture_error",
       data: { url: null },
     };
   }
 
-  // Step 4b: Process and store image to Vercel Blob
+  // Step 3b: Process and store image to Vercel Blob
   const storageResult = await storeScreenshot(
     domain,
     captureResult.imageBuffer,
     captureResult.source,
   );
 
-  // Step 5: Persist to database
+  // Step 4: Persist to database
   await persistSuccess(
     domain,
     storageResult.url,
@@ -113,7 +97,6 @@ export async function screenshotWorkflow(
 
   return {
     success: true,
-    cached: false,
     data: { url: storageResult.url },
   };
 }
@@ -133,42 +116,6 @@ async function checkBlocklist(domain: string): Promise<boolean> {
     logger.info({ domain }, "screenshot blocked by blocklist");
   }
   return blocked;
-}
-
-/**
- * Step: Check Postgres cache for existing screenshot
- */
-async function checkCache(
-  domain: string,
-): Promise<{ found: true; data: ScreenshotWorkflowData } | { found: false }> {
-  "use step";
-
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
-  const { getScreenshotByDomainId } = await import(
-    "@/lib/db/repos/screenshots"
-  );
-
-  const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    return { found: false };
-  }
-
-  const screenshotRecord = await getScreenshotByDomainId(existingDomain.id);
-  if (!screenshotRecord) {
-    return { found: false };
-  }
-
-  // Only treat as cache hit if we have a definitive result:
-  // - url is present (string), OR
-  // - url is null but marked as permanently not found
-  const isDefinitiveResult =
-    screenshotRecord.url !== null || screenshotRecord.notFound === true;
-
-  if (isDefinitiveResult) {
-    return { found: true, data: { url: screenshotRecord.url } };
-  }
-
-  return { found: false };
 }
 
 /**

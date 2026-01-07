@@ -4,7 +4,6 @@ export interface FaviconWorkflowInput {
 
 export interface FaviconWorkflowResult {
   success: boolean;
-  cached: boolean;
   data: { url: string | null };
 }
 
@@ -29,10 +28,9 @@ const DEFAULT_SIZE = 32;
 /**
  * Durable favicon workflow that breaks down icon fetching into
  * independently retryable steps:
- * 1. Check cache (Postgres)
- * 2. Fetch from multiple sources with fallbacks
- * 3. Process image (convert to WebP)
- * 4. Store to Vercel Blob and persist to database
+ * 1. Fetch from multiple sources with fallbacks
+ * 2. Process image (convert to WebP)
+ * 3. Store to Vercel Blob and persist to database
  */
 export async function faviconWorkflow(
   input: FaviconWorkflowInput,
@@ -41,32 +39,20 @@ export async function faviconWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check Postgres cache
-  const cachedResult = await checkCache(domain);
-
-  if (cachedResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cachedResult.data,
-    };
-  }
-
-  // Step 2: Fetch from sources
+  // Step 1: Fetch from sources
   const fetchResult = await fetchFromSources(domain);
 
   if (!fetchResult.success) {
-    // Step 3a: Persist failure
+    // Step 2a: Persist failure
     await persistFailure(domain, fetchResult.allNotFound);
 
     return {
       success: true,
-      cached: false,
       data: { url: null },
     };
   }
 
-  // Step 3b: Process image
+  // Step 2b: Process image
   const processedResult = await processImage(fetchResult.imageBase64);
 
   if (!processedResult.success) {
@@ -74,12 +60,11 @@ export async function faviconWorkflow(
     await persistFailure(domain, false);
     return {
       success: false,
-      cached: false,
       data: { url: null },
     };
   }
 
-  // Step 4: Store and persist
+  // Step 3: Store and persist
   const storeResult = await storeAndPersist(
     domain,
     processedResult.imageBase64,
@@ -88,51 +73,10 @@ export async function faviconWorkflow(
 
   return {
     success: true,
-    cached: false,
     data: { url: storeResult.url },
   };
 }
 
-/**
- * Step: Check Postgres cache for existing favicon
- */
-async function checkCache(
-  domain: string,
-): Promise<
-  | { found: true; data: { url: string | null; notFound: boolean } }
-  | { found: false }
-> {
-  "use step";
-
-  const { getFaviconByDomain } = await import("@/lib/db/repos/favicons");
-
-  try {
-    const cachedRecord = await getFaviconByDomain(domain);
-
-    if (cachedRecord) {
-      // Only treat as cache hit if we have a definitive result:
-      // - url is present (string), OR
-      // - url is null but marked as permanently not found
-      const isDefinitiveResult =
-        cachedRecord.url !== null || cachedRecord.notFound === true;
-
-      if (isDefinitiveResult) {
-        return {
-          found: true,
-          data: {
-            url: cachedRecord.url,
-            notFound: cachedRecord.notFound,
-          },
-        };
-      }
-    }
-
-    return { found: false };
-  } catch {
-    // Cache check failed, fall through to fetch
-    return { found: false };
-  }
-}
 /**
  * Step: Fetch favicon from multiple sources with fallbacks
  * This is a potentially slow operation with multiple HTTP requests.

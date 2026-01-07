@@ -1,7 +1,9 @@
 import "server-only";
+import { eq } from "drizzle-orm";
+import type { Header, HeadersResponse } from "@/lib/types";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
-import type { Header } from "@/lib/types";
+import { findDomainByName } from "./domains";
 
 export type ReplaceHeadersParams = {
   domainId: string;
@@ -39,4 +41,79 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
         expiresAt,
       },
     });
+}
+
+/**
+ * Get cached headers for a domain if fresh.
+ * Returns null if cache miss or stale.
+ */
+export async function getHeadersCached(
+  domain: string,
+): Promise<HeadersResponse | null> {
+  const now = Date.now();
+
+  try {
+    const existingDomain = await findDomainByName(domain);
+    if (!existingDomain) {
+      return null;
+    }
+
+    const existing = await db
+      .select({
+        headers: httpHeaders.headers,
+        status: httpHeaders.status,
+        expiresAt: httpHeaders.expiresAt,
+      })
+      .from(httpHeaders)
+      .where(eq(httpHeaders.domainId, existingDomain.id))
+      .limit(1);
+
+    const row = existing[0];
+    if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
+      return null;
+    }
+
+    // Get status message
+    let statusMessage: string | undefined;
+    try {
+      const { getStatusCode } = await import("@readme/http-status-codes");
+      const statusInfo = getStatusCode(row.status);
+      statusMessage = statusInfo.message;
+    } catch {
+      statusMessage = undefined;
+    }
+
+    // Normalize headers
+    const { IMPORTANT_HEADERS } = await import("@/lib/constants/headers");
+    const normalized = normalizeHeaders(
+      row.headers as Header[],
+      IMPORTANT_HEADERS,
+    );
+
+    return {
+      headers: normalized,
+      status: row.status,
+      statusMessage,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Helper: Normalize header names (trim + lowercase) then sort important first.
+ */
+function normalizeHeaders(
+  h: Header[],
+  importantHeaders: ReadonlySet<string>,
+): Header[] {
+  const normalized = h.map((hdr) => ({
+    name: hdr.name.trim().toLowerCase(),
+    value: hdr.value,
+  }));
+  return normalized.sort(
+    (a, b) =>
+      Number(importantHeaders.has(b.name)) -
+        Number(importantHeaders.has(a.name)) || a.name.localeCompare(b.name),
+  );
 }

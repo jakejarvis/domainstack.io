@@ -8,13 +8,6 @@ import {
   domainProcedure,
   publicProcedure,
 } from "@/trpc/init";
-import { certificatesWorkflow } from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { faviconWorkflow } from "@/workflows/favicon";
-import { headersWorkflow } from "@/workflows/headers";
-import { registrationWorkflow } from "@/workflows/registration";
-import { screenshotWorkflow } from "@/workflows/screenshot";
-import { seoWorkflow } from "@/workflows/seo";
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -37,8 +30,29 @@ export const domainRouter = createTRPCRouter({
   getRegistration: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { getRegistrationCached } = await import(
+        "@/lib/db/repos/registrations"
+      );
+
+      // Check cache first
+      const cached = await getRegistrationCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { registrationWorkflow } = await import("@/workflows/registration");
       const run = await start(registrationWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 
   /**
@@ -48,8 +62,27 @@ export const domainRouter = createTRPCRouter({
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { getDnsCached } = await import("@/lib/db/repos/dns");
+
+      // Check cache first
+      const cached = await getDnsCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { dnsWorkflow } = await import("@/workflows/dns");
       const run = await start(dnsWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 
   getHosting: domainProcedure
@@ -63,8 +96,29 @@ export const domainRouter = createTRPCRouter({
   getCertificates: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { getCertificatesCached } = await import(
+        "@/lib/db/repos/certificates"
+      );
+
+      // Check cache first
+      const cached = await getCertificatesCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { certificatesWorkflow } = await import("@/workflows/certificates");
       const run = await start(certificatesWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 
   /**
@@ -74,8 +128,27 @@ export const domainRouter = createTRPCRouter({
   getHeaders: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { getHeadersCached } = await import("@/lib/db/repos/headers");
+
+      // Check cache first
+      const cached = await getHeadersCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { headersWorkflow } = await import("@/workflows/headers");
       const run = await start(headersWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 
   /**
@@ -83,8 +156,27 @@ export const domainRouter = createTRPCRouter({
    * Fetches HTML, robots.txt, and OG images with automatic retries.
    */
   getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
+    const { getSeoCached } = await import("@/lib/db/repos/seo");
+
+    // Check cache first
+    const cached = await getSeoCached(input.domain);
+    if (cached) {
+      return {
+        success: true,
+        cached: true,
+        data: cached,
+      };
+    }
+
+    // Cache miss - run workflow
+    const { seoWorkflow } = await import("@/workflows/seo");
     const run = await start(seoWorkflow, [{ domain: input.domain }]);
-    return await run.returnValue;
+    const result = await run.returnValue;
+
+    return {
+      ...result,
+      cached: false,
+    };
   }),
 
   /**
@@ -94,8 +186,38 @@ export const domainRouter = createTRPCRouter({
   getFavicon: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { getFaviconByDomain } = await import("@/lib/db/repos/favicons");
+
+      // Check cache first
+      const cachedRecord = await getFaviconByDomain(input.domain);
+
+      if (cachedRecord) {
+        // Only treat as cache hit if we have a definitive result:
+        // - url is present (string), OR
+        // - url is null but marked as permanently not found
+        const isDefinitiveResult =
+          cachedRecord.url !== null || cachedRecord.notFound === true;
+
+        if (isDefinitiveResult) {
+          return {
+            success: true,
+            cached: true,
+            data: {
+              url: cachedRecord.url,
+            },
+          };
+        }
+      }
+
+      // Cache miss - run workflow
+      const { faviconWorkflow } = await import("@/workflows/favicon");
       const run = await start(faviconWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 
   /**
@@ -105,7 +227,43 @@ export const domainRouter = createTRPCRouter({
   getScreenshot: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
+      const { findDomainByName } = await import("@/lib/db/repos/domains");
+      const { getScreenshotByDomainId } = await import(
+        "@/lib/db/repos/screenshots"
+      );
+
+      // Check cache first
+      const existingDomain = await findDomainByName(input.domain);
+      if (existingDomain) {
+        const screenshotRecord = await getScreenshotByDomainId(
+          existingDomain.id,
+        );
+
+        if (screenshotRecord) {
+          // Only treat as cache hit if we have a definitive result:
+          // - url is present (string), OR
+          // - url is null but marked as permanently not found
+          const isDefinitiveResult =
+            screenshotRecord.url !== null || screenshotRecord.notFound === true;
+
+          if (isDefinitiveResult) {
+            return {
+              success: true,
+              cached: true,
+              data: { url: screenshotRecord.url },
+            };
+          }
+        }
+      }
+
+      // Cache miss - run workflow
+      const { screenshotWorkflow } = await import("@/workflows/screenshot");
       const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
-      return await run.returnValue;
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
     }),
 });

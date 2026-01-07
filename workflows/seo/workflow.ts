@@ -12,23 +12,14 @@ export interface SeoWorkflowInput {
 
 export interface SeoWorkflowResult {
   success: boolean;
-  cached: boolean;
   data: SeoResponse;
 }
 
 // Internal types for step-to-step transfer
-interface CacheHit {
-  found: true;
-  data: SeoResponse;
-}
-
-interface CacheMiss {
-  found: false;
+interface DomainInfo {
   domainId: string | null;
   lastAccessedAt: Date | null;
 }
-
-type CacheResult = CacheHit | CacheMiss;
 
 interface HtmlFetchResult {
   success: boolean;
@@ -59,7 +50,7 @@ const SOCIAL_HEIGHT = 630;
 /**
  * Durable SEO workflow that breaks down SEO data fetching into
  * independently retryable steps:
- * 1. Check cache (Postgres)
+ * 1. Get domain info (for persistence)
  * 2. Fetch HTML and parse meta tags
  * 3. Fetch and parse robots.txt
  * 4. Fetch and store OG image (if present)
@@ -72,16 +63,8 @@ export async function seoWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check Postgres cache
-  const cacheResult = await checkCache(domain);
-
-  if (cacheResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cacheResult.data,
-    };
-  }
+  // Step 1: Get domain info
+  const domainInfo = await getDomainInfo(domain);
 
   // Step 2: Fetch HTML and parse meta
   const htmlResult = await fetchHtml(domain);
@@ -125,111 +108,43 @@ export async function seoWorkflow(
   };
 
   // Step 5: Persist to database
-  if (cacheResult.domainId) {
+  if (domainInfo.domainId) {
     await persistSeo(
-      cacheResult.domainId,
+      domainInfo.domainId,
       response,
       uploadedImageUrl,
-      cacheResult.lastAccessedAt?.toISOString() ?? null,
+      domainInfo.lastAccessedAt?.toISOString() ?? null,
       domain,
     );
   }
 
   return {
     success: true,
-    cached: false,
     data: response,
   };
 }
 
 /**
- * Step: Check Postgres cache for existing SEO data
+ * Step: Get domain info for persistence
  */
-async function checkCache(domain: string): Promise<CacheResult> {
+async function getDomainInfo(domain: string): Promise<DomainInfo> {
   "use step";
 
-  const { eq } = await import("drizzle-orm");
-  const { db } = await import("@/lib/db/client");
   const { findDomainByName } = await import("@/lib/db/repos/domains");
-  const { isDomainBlocked } = await import("@/lib/db/repos/blocked-domains");
-  const { seo: seoTable } = await import("@/lib/db/schema");
-
-  const nowMs = Date.now();
 
   try {
     const existingDomain = await findDomainByName(domain);
 
     if (!existingDomain) {
-      return { found: false, domainId: null, lastAccessedAt: null };
+      return { domainId: null, lastAccessedAt: null };
     }
 
-    const existing = await db
-      .select({
-        sourceFinalUrl: seoTable.sourceFinalUrl,
-        sourceStatus: seoTable.sourceStatus,
-        metaOpenGraph: seoTable.metaOpenGraph,
-        metaTwitter: seoTable.metaTwitter,
-        metaGeneral: seoTable.metaGeneral,
-        previewTitle: seoTable.previewTitle,
-        previewDescription: seoTable.previewDescription,
-        previewImageUrl: seoTable.previewImageUrl,
-        previewImageUploadedUrl: seoTable.previewImageUploadedUrl,
-        canonicalUrl: seoTable.canonicalUrl,
-        robots: seoTable.robots,
-        errors: seoTable.errors,
-        expiresAt: seoTable.expiresAt,
-      })
-      .from(seoTable)
-      .where(eq(seoTable.domainId, existingDomain.id));
-
-    const row = existing[0];
-    if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
-      return {
-        found: false,
-        domainId: existingDomain.id,
-        lastAccessedAt: existingDomain.lastAccessedAt,
-      };
-    }
-
-    // Check blocklist for cached OG images
-    const blocked =
-      row.previewImageUploadedUrl && (await isDomainBlocked(domain));
-
-    const preview = row.canonicalUrl
-      ? {
-          title: row.previewTitle ?? null,
-          description: row.previewDescription ?? null,
-          image: row.previewImageUrl ?? null,
-          imageUploaded: blocked ? null : row.previewImageUploadedUrl,
-          canonicalUrl: row.canonicalUrl,
-        }
-      : null;
-
-    // Normalize robots
-    const robotsData = row.robots as RobotsTxt;
-    const normalizedRobots: RobotsTxt =
-      robotsData && "fetched" in robotsData
-        ? robotsData
-        : { fetched: false, groups: [], sitemaps: [] };
-
-    const response: SeoResponse = {
-      meta: {
-        openGraph: row.metaOpenGraph as OpenGraphMeta,
-        twitter: row.metaTwitter as TwitterMeta,
-        general: row.metaGeneral as GeneralMeta,
-      },
-      robots: normalizedRobots,
-      preview,
-      source: {
-        finalUrl: row.sourceFinalUrl ?? null,
-        status: row.sourceStatus ?? null,
-      },
-      errors: row.errors as { html?: string; robots?: string },
+    return {
+      domainId: existingDomain.id,
+      lastAccessedAt: existingDomain.lastAccessedAt,
     };
-
-    return { found: true, data: response };
   } catch {
-    return { found: false, domainId: null, lastAccessedAt: null };
+    return { domainId: null, lastAccessedAt: null };
   }
 }
 

@@ -12,12 +12,10 @@ export interface CertificatesWorkflowInput {
 export type CertificatesWorkflowResult =
   | {
       success: true;
-      cached: boolean;
       data: CertificatesResponse;
     }
   | {
       success: false;
-      cached: false;
       error: "dns_error" | "tls_error" | "timeout" | "connection_failed";
       data: CertificatesResponse;
     };
@@ -50,10 +48,9 @@ interface RawCertificate {
 /**
  * Durable certificates workflow that breaks down TLS certificate fetching into
  * independently retryable steps:
- * 1. Check cache (Postgres)
- * 2. Fetch certificate chain (TLS handshake - the slow operation)
- * 3. Detect CA providers
- * 4. Persist to database
+ * 1. Fetch certificate chain (TLS handshake - the slow operation)
+ * 2. Detect CA providers
+ * 3. Persist to database
  */
 export async function certificatesWorkflow(
   input: CertificatesWorkflowInput,
@@ -62,18 +59,7 @@ export async function certificatesWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check Postgres cache
-  const cachedResult = await checkCache(domain);
-
-  if (cachedResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: cachedResult.data,
-    };
-  }
-
-  // Step 2: Fetch certificate chain via TLS handshake
+  // Step 1: Fetch certificate chain via TLS handshake
   const tlsResult = await fetchCertificateChain(domain);
 
   if (!tlsResult.success) {
@@ -85,7 +71,6 @@ export async function certificatesWorkflow(
 
     return {
       success: false,
-      cached: false,
       error: errorType,
       data: {
         certificates: [],
@@ -94,89 +79,18 @@ export async function certificatesWorkflow(
     };
   }
 
-  // Step 3: Detect CA providers and build response
+  // Step 2: Detect CA providers and build response
   const processedResult = await detectProvidersAndBuildResponse(
     tlsResult.chainJson,
   );
 
-  // Step 4: Persist to database
+  // Step 3: Persist to database
   await persistCertificates(domain, processedResult);
 
   return {
     success: true,
-    cached: false,
     data: { certificates: processedResult.certificates },
   };
-}
-
-/**
- * Step: Check Postgres cache for existing certificate data
- */
-async function checkCache(
-  domain: string,
-): Promise<{ found: true; data: CertificatesResponse } | { found: false }> {
-  "use step";
-
-  const { eq } = await import("drizzle-orm");
-  const { db } = await import("@/lib/db/client");
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
-  const { certificates: certTable, providers: providersTable } = await import(
-    "@/lib/db/schema"
-  );
-
-  const now = new Date();
-  const nowMs = now.getTime();
-
-  try {
-    const existingDomain = await findDomainByName(domain);
-    if (!existingDomain) {
-      return { found: false };
-    }
-
-    const existing = await db
-      .select({
-        issuer: certTable.issuer,
-        subject: certTable.subject,
-        altNames: certTable.altNames,
-        validFrom: certTable.validFrom,
-        validTo: certTable.validTo,
-        caProviderId: providersTable.id,
-        caProviderDomain: providersTable.domain,
-        caProviderName: providersTable.name,
-        expiresAt: certTable.expiresAt,
-      })
-      .from(certTable)
-      .leftJoin(providersTable, eq(certTable.caProviderId, providersTable.id))
-      .where(eq(certTable.domainId, existingDomain.id))
-      .orderBy(certTable.validTo);
-
-    if (existing.length > 0) {
-      const fresh = existing.every(
-        (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
-      );
-
-      if (fresh) {
-        const certificates: Certificate[] = existing.map((c) => ({
-          issuer: c.issuer,
-          subject: c.subject,
-          altNames: safeAltNamesArray(c.altNames),
-          validFrom: new Date(c.validFrom).toISOString(),
-          validTo: new Date(c.validTo).toISOString(),
-          caProvider: {
-            id: c.caProviderId ?? null,
-            domain: c.caProviderDomain ?? null,
-            name: c.caProviderName ?? null,
-          },
-        }));
-
-        return { found: true, data: { certificates } };
-      }
-    }
-  } catch {
-    // Cache check failed, fall through to TLS fetch
-  }
-
-  return { found: false };
 }
 
 /**
@@ -361,6 +275,7 @@ async function persistCertificates(
 
   const { findDomainByName } = await import("@/lib/db/repos/domains");
   const { replaceCertificates } = await import("@/lib/db/repos/certificates");
+  const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForCertificates } = await import("@/lib/ttl");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -391,6 +306,14 @@ async function persistCertificates(
       fetchedAt: now,
       expiresAt,
     });
+
+    // Schedule background revalidation
+    await scheduleRevalidation(
+      domain,
+      "certificates",
+      expiresAt.getTime(),
+      existingDomain.lastAccessedAt ?? null,
+    );
 
     logger.debug({ domain }, "certificates persisted");
   } catch (err) {
@@ -426,11 +349,4 @@ export function parseAltNames(subjectAltName: string | undefined): string[] {
       ([kind, value]) => !!value && (kind === "DNS" || kind === "IP ADDRESS"),
     )
     .map(([_, value]) => value);
-}
-
-function safeAltNamesArray(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === "string");
-  }
-  return [];
 }

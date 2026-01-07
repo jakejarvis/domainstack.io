@@ -7,24 +7,14 @@ export interface DnsWorkflowInput {
 
 export interface DnsWorkflowResult {
   success: boolean;
-  cached: boolean;
   data: DnsRecordsResponse;
 }
 
 // Internal types for step-to-step transfer
-interface CacheHit {
-  found: true;
-  records: DnsRecord[];
-  resolver: string | null;
-}
-
-interface CacheMiss {
-  found: false;
+interface DomainInfo {
   domainId: string | null;
   lastAccessedAt: Date | null;
 }
-
-type CacheResult = CacheHit | CacheMiss;
 
 interface FetchSuccess {
   success: true;
@@ -48,7 +38,7 @@ type FetchResult = FetchSuccess | FetchFailure;
 /**
  * Durable DNS workflow that breaks down DNS resolution into
  * independently retryable steps:
- * 1. Check cache (Postgres)
+ * 1. Get domain info (for persistence)
  * 2. Fetch from DoH providers with fallback
  * 3. Persist to database
  */
@@ -59,19 +49,8 @@ export async function dnsWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check Postgres cache
-  const cacheResult = await checkCache(domain);
-
-  if (cacheResult.found) {
-    return {
-      success: true,
-      cached: true,
-      data: {
-        records: cacheResult.records,
-        resolver: cacheResult.resolver,
-      },
-    };
-  }
+  // Step 1: Get domain info
+  const domainInfo = await getDomainInfo(domain);
 
   // Step 2: Fetch from DoH providers
   const fetchResult = await fetchFromProviders(domain);
@@ -79,25 +58,23 @@ export async function dnsWorkflow(
   if (!fetchResult.success) {
     return {
       success: false,
-      cached: false,
       data: { records: [], resolver: null },
     };
   }
 
   // Step 3: Persist to database (only if domain exists)
-  if (cacheResult.domainId) {
+  if (domainInfo.domainId) {
     await persistRecords(
-      cacheResult.domainId,
+      domainInfo.domainId,
       fetchResult.resolver,
       fetchResult.recordsWithExpiry,
-      cacheResult.lastAccessedAt?.toISOString() ?? null,
+      domainInfo.lastAccessedAt?.toISOString() ?? null,
       domain,
     );
   }
 
   return {
     success: true,
-    cached: false,
     data: {
       records: fetchResult.records,
       resolver: fetchResult.resolver,
@@ -106,99 +83,26 @@ export async function dnsWorkflow(
 }
 
 /**
- * Step: Check Postgres cache for existing DNS records
+ * Step: Get domain info for persistence
  */
-async function checkCache(domain: string): Promise<CacheResult> {
+async function getDomainInfo(domain: string): Promise<DomainInfo> {
   "use step";
 
-  const { eq } = await import("drizzle-orm");
-  const { db } = await import("@/lib/db/client");
   const { findDomainByName } = await import("@/lib/db/repos/domains");
-  const { dnsRecords } = await import("@/lib/db/schema");
-
-  const nowMs = Date.now();
-  const types = DNS_RECORD_TYPES;
 
   try {
     const existingDomain = await findDomainByName(domain);
 
     if (!existingDomain) {
-      return { found: false, domainId: null, lastAccessedAt: null };
+      return { domainId: null, lastAccessedAt: null };
     }
-
-    const rows = await db
-      .select({
-        type: dnsRecords.type,
-        name: dnsRecords.name,
-        value: dnsRecords.value,
-        ttl: dnsRecords.ttl,
-        priority: dnsRecords.priority,
-        isCloudflare: dnsRecords.isCloudflare,
-        resolver: dnsRecords.resolver,
-        expiresAt: dnsRecords.expiresAt,
-      })
-      .from(dnsRecords)
-      .where(eq(dnsRecords.domainId, existingDomain.id));
-
-    if (rows.length === 0) {
-      return {
-        found: false,
-        domainId: existingDomain.id,
-        lastAccessedAt: existingDomain.lastAccessedAt,
-      };
-    }
-
-    // Group by type and check freshness
-    const rowsByType = rows.reduce(
-      (acc, r) => {
-        const t = r.type;
-        if (!acc[t]) acc[t] = [];
-        acc[t].push(r);
-        return acc;
-      },
-      {} as Record<DnsRecordType, typeof rows>,
-    );
-
-    const typeIsFresh = (t: DnsRecordType) => {
-      const arr = rowsByType[t] ?? [];
-      return (
-        arr.length > 0 &&
-        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
-      );
-    };
-
-    const allFresh = types.every((t) => typeIsFresh(t));
-
-    if (!allFresh) {
-      return {
-        found: false,
-        domainId: existingDomain.id,
-        lastAccessedAt: existingDomain.lastAccessedAt,
-      };
-    }
-
-    // Assemble cached records
-    const records: DnsRecord[] = rows.map((r) => ({
-      type: r.type,
-      name: r.name,
-      value: r.value,
-      ttl: r.ttl ?? undefined,
-      priority: r.priority ?? undefined,
-      isCloudflare: r.isCloudflare ?? undefined,
-    }));
-
-    // Deduplicate and sort
-    const deduplicated = deduplicateDnsRecords(records);
-    const sorted = sortDnsRecordsByType(deduplicated, types);
 
     return {
-      found: true,
-      records: sorted,
-      resolver: rows[0]?.resolver ?? null,
+      domainId: existingDomain.id,
+      lastAccessedAt: existingDomain.lastAccessedAt,
     };
   } catch {
-    // Cache check failed, proceed to fetch
-    return { found: false, domainId: null, lastAccessedAt: null };
+    return { domainId: null, lastAccessedAt: null };
   }
 }
 
@@ -390,7 +294,7 @@ async function persistRecords(
   }
 }
 
-// Helper functions (same logic as original service)
+// Helper functions used in fetchFromProviders step
 function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
   const seen = new Set<string>();
   const deduplicated: DnsRecord[] = [];
