@@ -1,3 +1,4 @@
+import { getWorkflowMetadata } from "workflow";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -128,7 +129,8 @@ async function storeAndPersist(
 
     return { url };
   } catch (err) {
-    logger.error({ err, domain }, "failed to store favicon");
+    const { workflowRunId } = getWorkflowMetadata();
+    logger.error({ err, domain, workflowRunId }, "failed to store favicon");
     throw err; // Re-throw so workflow can retry
   }
 }

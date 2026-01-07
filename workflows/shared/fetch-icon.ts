@@ -1,4 +1,5 @@
 import { RetryableError } from "workflow";
+import { BASE_URL } from "@/lib/constants/app";
 
 export interface IconFetchSuccess {
   success: true;
@@ -30,6 +31,19 @@ export interface FetchIconOptions {
 }
 
 /**
+ * A source for fetching icons.
+ */
+export interface IconSource {
+  url: string;
+  /** Source identifier for logging (e.g., "duckduckgo", "logo_dev") */
+  name: string;
+  /** Optional custom headers for this source */
+  headers?: Record<string, string>;
+  /** Allow HTTP (default: false) */
+  allowHttp?: boolean;
+}
+
+/**
  * Shared step for fetching icons from multiple sources with fallbacks.
  * Used by favicon and provider-logo workflows.
  */
@@ -39,17 +53,48 @@ export async function fetchIconFromSources(
 ): Promise<IconFetchResult> {
   "use step";
 
-  const { buildIconSources } = await import("@/lib/icons/sources");
   const { fetchRemoteAsset, RemoteAssetError } = await import(
     "@/lib/fetch-remote-asset"
   );
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: options.loggerSource });
-  const sources = buildIconSources(domain, {
-    size: options.size,
-    useLogoDev: options.useLogoDev,
-  });
+
+  const { size = 32, useLogoDev = false } = options;
+  const sources: IconSource[] = [];
+
+  // Primary: Logo.dev API (only if requested and API key is configured)
+  const logoDevKey = process.env.LOGO_DEV_PUBLISHABLE_KEY;
+  if (useLogoDev && logoDevKey) {
+    sources.push({
+      url: `https://img.logo.dev/${domain}?token=${logoDevKey}&size=${size}&format=png&fallback=404`,
+      name: "logo_dev",
+      headers: {
+        Referer: BASE_URL,
+      },
+    });
+  }
+
+  // Fallback to standard favicon sources
+  sources.push(
+    {
+      url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      name: "duckduckgo",
+    },
+    {
+      url: `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
+      name: "google",
+    },
+    {
+      url: `https://${domain}/favicon.ico`,
+      name: "direct_https",
+    },
+    {
+      url: `http://${domain}/favicon.ico`,
+      name: "direct_http",
+      allowHttp: true,
+    },
+  );
 
   let allNotFound = true;
 
@@ -103,7 +148,7 @@ export async function fetchIconFromSources(
       `${options.errorPrefix} fetch failed with non-404 errors, will retry`,
     );
     throw new RetryableError(`${options.errorPrefix} fetch failed`, {
-      retryAfter: "10s",
+      retryAfter: "3s",
     });
   }
 

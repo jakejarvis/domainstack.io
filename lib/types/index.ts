@@ -5,7 +5,6 @@
 export * from "./changes";
 export * from "./domain";
 export * from "./domain-filters";
-export * from "./icons";
 export * from "./notifications";
 export * from "./pricing";
 export * from "./provider";

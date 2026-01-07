@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { after, NextResponse } from "next/server";
-import { generateCalendarFeed } from "@/lib/calendar/generate";
+import { generateCalendarFeed } from "@/lib/calendar";
 import {
   recordCalendarFeedAccess,
   validateCalendarFeedToken,

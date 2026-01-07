@@ -166,6 +166,9 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
   throw new RetryableError("All DoH providers failed", { retryAfter: "5s" });
 }
 
+// Allow more retries for DNS since DoH providers can be flaky
+fetchFromProviders.maxRetries = 5;
+
 /**
  * Step: Persist DNS records to database
  */

@@ -24,7 +24,6 @@
 - `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
 - `lib/resend.ts` Resend email client for sending notifications.
 - `lib/providers/` provider detection system with rule syntax and Edge Config catalog parsing.
-- `lib/icons/` icon pipeline for favicon extraction (pipeline.ts for multi-source extraction, sources.ts for source definitions).
 - `lib/types/` Plain TypeScript types - single source of truth for enums and internal data structures.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).

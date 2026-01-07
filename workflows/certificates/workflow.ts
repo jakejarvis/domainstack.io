@@ -188,6 +188,9 @@ async function fetchCertificateChain(domain: string): Promise<TlsFetchResult> {
   }
 }
 
+// TLS handshakes can be flaky - allow more retries
+fetchCertificateChain.maxRetries = 5;
+
 /**
  * Step: Detect CA providers from issuer names and build response
  */

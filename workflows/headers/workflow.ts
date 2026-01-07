@@ -138,6 +138,9 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
   }
 }
 
+// HTTP header probing can fail due to transient network issues - allow more retries
+fetchHeaders.maxRetries = 5;
+
 /**
  * Step 3: Persist headers to Postgres.
  */

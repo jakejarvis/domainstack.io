@@ -74,3 +74,17 @@ vi.mock("next/cache", async () => {
 
 // Make server-only a no-op so we can import server modules in tests
 vi.mock("server-only", () => ({}));
+
+// Mock Vercel Workflow metadata functions
+// These require the workflow runtime context which isn't available in unit tests
+vi.mock("workflow", async () => {
+  const actual = await vi.importActual<typeof import("workflow")>("workflow");
+  return {
+    ...actual,
+    getStepMetadata: vi.fn(() => ({
+      workflowRunId: `test-run-${Date.now()}`,
+      attempt: 1,
+      workflowStartedAt: new Date(),
+    })),
+  };
+});

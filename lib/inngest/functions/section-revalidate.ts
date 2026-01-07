@@ -11,6 +11,14 @@ import { headersWorkflow } from "@/workflows/headers";
 import { registrationWorkflow } from "@/workflows/registration";
 import { seoWorkflow } from "@/workflows/seo";
 
+/**
+ * Run a single section revalidation for a domain.
+ *
+ * Note: Intentionally skips cache checking - this function is called for
+ * scheduled revalidation when cached data has expired or is about to expire.
+ * The TTL-based scheduling in scheduleRevalidation() ensures we only call
+ * this when data actually needs refreshing.
+ */
 async function runSingleSection(
   domain: string,
   section: Section,
