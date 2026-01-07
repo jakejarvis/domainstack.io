@@ -4,11 +4,11 @@ import { createHash } from "node:crypto";
 import type {
   CertificateChange,
   CertificateSnapshotData,
-  ProviderChange,
+  HostingChange,
   ProviderSnapshotData,
   RegistrationChange,
   RegistrationSnapshotData,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 /**
  * Detect changes in registration data (registrar, nameservers, transfer lock, statuses).
@@ -70,7 +70,7 @@ export function detectRegistrationChanges(
 export function detectProviderChanges(
   snapshot: ProviderSnapshotData,
   current: ProviderSnapshotData,
-): ProviderChange | null {
+): HostingChange | null {
   const dnsProviderChanged = snapshot.dnsProviderId !== current.dnsProviderId;
   const hostingProviderChanged =
     snapshot.hostingProviderId !== current.hostingProviderId;

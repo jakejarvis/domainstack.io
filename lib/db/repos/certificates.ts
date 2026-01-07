@@ -6,11 +6,16 @@ import { db } from "@/lib/db/client";
 import {
   certificates,
   domains,
+  providers,
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { CertificateInsert as CertificateInsertSchema } from "@/lib/db/zod";
-import type { NotificationOverrides } from "@/lib/schemas";
+import type {
+  Certificate,
+  CertificatesResponse,
+  NotificationOverrides,
+} from "@/lib/types";
+import { findDomainByName } from "./domains";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -30,22 +35,91 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
     await tx.delete(certificates).where(eq(certificates.domainId, domainId));
     if (params.chain.length > 0) {
       await tx.insert(certificates).values(
-        params.chain.map((c) =>
-          CertificateInsertSchema.parse({
-            domainId,
-            issuer: c.issuer,
-            subject: c.subject,
-            altNames: c.altNames,
-            validFrom: c.validFrom as Date | string,
-            validTo: c.validTo as Date | string,
-            caProviderId: c.caProviderId ?? null,
-            fetchedAt: params.fetchedAt as Date | string,
-            expiresAt: params.expiresAt as Date | string,
-          }),
-        ),
+        params.chain.map((c) => ({
+          domainId,
+          issuer: c.issuer,
+          subject: c.subject,
+          altNames: c.altNames,
+          validFrom: c.validFrom,
+          validTo: c.validTo,
+          caProviderId: c.caProviderId ?? null,
+          fetchedAt: params.fetchedAt,
+          expiresAt: params.expiresAt,
+        })),
       );
     }
   });
+}
+
+/**
+ * Get cached certificates for a domain if fresh.
+ * Returns null if cache miss or stale.
+ */
+export async function getCertificatesCached(
+  domain: string,
+): Promise<CertificatesResponse | null> {
+  const now = new Date();
+  const nowMs = now.getTime();
+
+  try {
+    const existingDomain = await findDomainByName(domain);
+    if (!existingDomain) {
+      return null;
+    }
+
+    const existing = await db
+      .select({
+        issuer: certificates.issuer,
+        subject: certificates.subject,
+        altNames: certificates.altNames,
+        validFrom: certificates.validFrom,
+        validTo: certificates.validTo,
+        caProviderId: providers.id,
+        caProviderDomain: providers.domain,
+        caProviderName: providers.name,
+        expiresAt: certificates.expiresAt,
+      })
+      .from(certificates)
+      .leftJoin(providers, eq(certificates.caProviderId, providers.id))
+      .where(eq(certificates.domainId, existingDomain.id))
+      .orderBy(certificates.validTo);
+
+    if (existing.length === 0) {
+      return null;
+    }
+
+    const fresh = existing.every(
+      (c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs,
+    );
+
+    if (!fresh) {
+      return null;
+    }
+
+    const certs: Certificate[] = existing.map((c) => ({
+      issuer: c.issuer,
+      subject: c.subject,
+      altNames: safeAltNamesArray(c.altNames),
+      validFrom: new Date(c.validFrom).toISOString(),
+      validTo: new Date(c.validTo).toISOString(),
+      caProvider: {
+        id: c.caProviderId ?? null,
+        domain: c.caProviderDomain ?? null,
+        name: c.caProviderName ?? null,
+      },
+    }));
+
+    return { certificates: certs };
+  } catch {
+    return null;
+  }
+}
+
+function safeAltNamesArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string");
+  }
+  return [];
 }
 
 export type TrackedDomainCertificate = {
@@ -112,47 +186,4 @@ export async function getEarliestCertificate(
     .limit(1);
 
   return rows[0] ?? null;
-}
-
-/**
- * Get all certificates for verified, non-archived tracked domains.
- * Archived domains are excluded since archiving pauses monitoring.
- * Returns the earliest expiring certificate for each tracked domain.
- *
- * Uses PostgreSQL DISTINCT ON to efficiently get one certificate per tracked domain,
- * ordered by validTo ASC (earliest expiring first), avoiding in-memory grouping.
- * @deprecated Use getVerifiedTrackedDomainIdsWithCertificates and getEarliestCertificate in a fan-out pattern
- */
-export async function getVerifiedTrackedDomainsCertificates(): Promise<
-  TrackedDomainCertificate[]
-> {
-  // Use DISTINCT ON to get the earliest expiring certificate per tracked domain
-  // This is more efficient than fetching all certificates and grouping in JS
-  const rows = await db
-    .selectDistinctOn([userTrackedDomains.id], {
-      trackedDomainId: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      validTo: certificates.validTo,
-      issuer: certificates.issuer,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(certificates, eq(domains.id, certificates.domainId))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    )
-    // For DISTINCT ON, the first ORDER BY column(s) must match the DISTINCT ON columns
-    // Then order by validTo ASC to get the earliest expiring certificate
-    .orderBy(userTrackedDomains.id, asc(certificates.validTo));
-
-  return rows;
 }

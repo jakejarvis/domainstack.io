@@ -1,11 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type {
-  DnsRecordForTooltip,
-  ProviderInfo,
-} from "@/lib/db/repos/tracked-domains";
-import type { ProviderCategory } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { DnsRecord, ProviderCategory, ProviderInfo } from "@/lib/types";
 
 type UseProviderTooltipDataParams = {
   provider: ProviderInfo;
@@ -19,7 +15,7 @@ type ProviderTooltipData = {
   shouldShowTooltip: boolean;
   isLoading: boolean;
   providerId?: string | null;
-  records?: DnsRecordForTooltip[];
+  records?: DnsRecord[];
   certificateExpiryDate?: Date | null;
   whoisServer?: string | null;
   rdapServers?: string[] | null;
@@ -88,7 +84,7 @@ export function useProviderTooltipData({
   );
 
   // Extract records/certificate/registration data from lazy-loaded details
-  let lazyLoadedRecords: DnsRecordForTooltip[] | undefined;
+  let lazyLoadedRecords: DnsRecord[] | undefined;
   let lazyLoadedCertificateExpiry: Date | null | undefined;
   let lazyLoadedWhoisServer: string | null | undefined;
   let lazyLoadedRdapServers: string[] | null | undefined;

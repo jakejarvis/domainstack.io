@@ -11,15 +11,14 @@ import {
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "schedule" });
-
 import {
   applyDecayToTtl,
   getDecayMultiplier,
   shouldStopRevalidation,
 } from "@/lib/revalidation";
-import { type Section, SectionEnum } from "@/lib/schemas";
+import type { Section } from "@/lib/types";
+
+const logger = createLogger({ source: "schedule" });
 
 function minTtlSecondsForSection(section: Section): number {
   switch (section) {
@@ -36,10 +35,6 @@ function minTtlSecondsForSection(section: Section): number {
     case "registration":
       return REVALIDATE_MIN_REGISTRATION;
   }
-}
-
-export function allSections(): Section[] {
-  return SectionEnum.options as Section[];
 }
 
 /**

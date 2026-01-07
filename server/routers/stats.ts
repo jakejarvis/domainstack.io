@@ -1,5 +1,4 @@
 import { getPlatformStats } from "@/lib/db/repos/stats";
-import { PlatformStatsResponseSchema } from "@/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 /**
@@ -18,7 +17,5 @@ export const statsRouter = createTRPCRouter({
    * - Top providers by category (hosting, registrar, DNS, email, CA)
    * - Growth metrics (recent activity)
    */
-  getAll: publicProcedure
-    .output(PlatformStatsResponseSchema)
-    .query(() => getPlatformStats()),
+  getAll: publicProcedure.query(() => getPlatformStats()),
 });

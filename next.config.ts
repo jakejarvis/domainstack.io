@@ -1,5 +1,6 @@
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
+import { withWorkflow } from "workflow/next";
 
 let nextConfig: NextConfig = {
   reactCompiler: true,
@@ -60,4 +61,6 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-export default nextConfig;
+// Wrap with Vercel Workflow for durable backend operations
+// withWorkflow returns a phase function, which is the Next.js config format
+export default withWorkflow(nextConfig);

@@ -2,7 +2,7 @@ import { PinoInstrumentation } from "@opentelemetry/instrumentation-pino";
 import { registerOTel } from "@vercel/otel";
 import type { Instrumentation } from "next";
 
-export function register() {
+export async function register() {
   registerOTel({
     serviceName: "domainstack",
     instrumentations: [
@@ -10,6 +10,13 @@ export function register() {
       new PinoInstrumentation(),
     ],
   });
+
+  // Initialize Vercel Workflow world for durable backend operations
+  // Only runs in Node.js runtime (not Edge)
+  if (process.env.NEXT_RUNTIME !== "edge") {
+    const { getWorld } = await import("workflow/runtime");
+    await getWorld().start?.();
+  }
 }
 
 /**

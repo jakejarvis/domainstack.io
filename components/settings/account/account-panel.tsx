@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FingerprintPattern } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
@@ -24,12 +25,8 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
-import {
-  OAUTH_PROVIDERS,
-  type OAuthProviderConfig,
-} from "@/lib/constants/oauth-providers";
+import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
-import { DangerZoneCollapsible } from "./danger-zone-collapsible";
 
 interface AccountPanelProps {
   className?: string;
@@ -42,6 +39,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
     null,
   );
   const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+  const enabledProviders = getEnabledProviders();
 
   // Handle auth callback errors from URL params (account linking)
   useAuthCallback();
@@ -61,7 +59,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
   const canUnlink = linkedProviderIds.size > 1;
 
   // Handle linking a provider
-  const handleLink = async (provider: OAuthProviderConfig) => {
+  const handleLink = async (provider: OAuthProvider) => {
     setLinkingProvider(provider.id);
 
     // Reset loading state if user returns to page (e.g., via back button)
@@ -138,7 +136,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
       toast.error("Failed to unlink account. Please try again.");
     },
     onSuccess: (_data, providerId) => {
-      const provider = OAUTH_PROVIDERS.find((p) => p.id === providerId);
+      const provider = enabledProviders.find((p) => p.id === providerId);
       toast.success(`${provider?.name ?? "Account"} unlinked successfully`);
     },
     onSettled: () => {
@@ -153,7 +151,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
 
   // Get the provider config being unlinked for the dialog
   const providerToUnlink = unlinkingProvider
-    ? OAUTH_PROVIDERS.find((p) => p.id === unlinkingProvider)
+    ? enabledProviders.find((p) => p.id === unlinkingProvider)
     : null;
 
   if (linkedAccountsQuery.isLoading) {
@@ -186,7 +184,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 px-0 pt-1">
-          {[...OAUTH_PROVIDERS]
+          {[...enabledProviders]
             .sort((a, b) => {
               const aLinked = linkedProviderIds.has(a.id);
               const bLinked = linkedProviderIds.has(b.id);

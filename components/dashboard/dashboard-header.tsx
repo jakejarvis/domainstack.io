@@ -9,6 +9,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Tooltip,
@@ -16,8 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
-import type { Subscription } from "@/lib/schemas";
-import { Separator } from "../ui/separator";
+import type { Subscription } from "@/lib/types";
 
 type DashboardHeaderProps = {
   userName: string;

@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { TrackedDomainWithDetails } from "@/lib/types";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];

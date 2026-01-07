@@ -37,20 +37,20 @@ import {
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
+import { formatDateTimeUtc } from "@/lib/format";
 import type {
+  ProviderCategory,
   ProviderInfo,
   VerificationMethod,
-  VerificationStatusType,
-} from "@/lib/db/repos/tracked-domains";
-import { formatDateTimeUtc } from "@/lib/format";
-import type { ProviderCategory } from "@/lib/schemas";
+  VerificationStatus,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DashboardGridCardProps = {
   trackedDomainId: string;
   domainName: string;
   verified: boolean;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationMethod: VerificationMethod | null;
   verificationFailedAt?: Date | null;
   expirationDate: Date | null;

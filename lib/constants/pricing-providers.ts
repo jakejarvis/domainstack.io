@@ -3,20 +3,12 @@ import {
   DynadotIcon,
   PorkbunIcon,
 } from "@/components/brand-icons";
+import type { PricingProviderInfo } from "@/lib/types";
 
 /**
- * Provider configuration for domain pricing.
- * Shared between server-side pricing service and client-side CTA rendering.
+ * Provider constants for domain pricing.
+ * Types are in @/lib/types/pricing.ts.
  */
-
-export interface PricingProviderInfo {
-  /** Provider display name */
-  name: string;
-  /** Generate registration URL for a domain */
-  searchUrl: (domain: string) => string;
-  /** Provider icon component */
-  icon: React.ComponentType<{ className?: string }>;
-}
 
 /**
  * Registry of all supported pricing providers.

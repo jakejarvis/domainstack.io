@@ -29,6 +29,7 @@
 - **Better Auth** for authentication via OAuth
 - **Polar** for subscription payments
 - **Inngest** for scheduled and event-driven background jobs
+- [**Workflow DevKit**](https://useworkflow.dev/) for durable resource-intensive operations
 - **Resend** + **React Email** for transactional email notifications
 - **Vercel Edge Config** for runtime configuration (domain suggestions, provider detection, and other safeguards)
 - **Vercel Blob** for media storage

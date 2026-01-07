@@ -13,7 +13,18 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
+import { PLANS } from "@/lib/constants/plan-quotas";
+import {
+  PROVIDER_CATEGORIES,
+  PROVIDER_SOURCES,
+} from "@/lib/constants/providers";
+import { REGISTRATION_SOURCES } from "@/lib/constants/registration";
+import {
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
+} from "@/lib/constants/verification";
 import type {
   GeneralMeta,
   Header,
@@ -24,42 +35,28 @@ import type {
   RegistrationStatuses,
   RobotsTxt,
   TwitterMeta,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
-// Enums
-export const providerCategory = pgEnum("provider_category", [
-  "hosting",
-  "email",
-  "dns",
-  "ca",
-  "registrar",
-]);
-export const providerSource = pgEnum("provider_source", [
-  "catalog",
-  "discovered",
-]);
-export const dnsRecordType = pgEnum("dns_record_type", [
-  "A",
-  "AAAA",
-  "MX",
-  "TXT",
-  "NS",
-]);
-export const registrationSource = pgEnum("registration_source", [
-  "rdap",
-  "whois",
-]);
-export const verificationMethod = pgEnum("verification_method", [
-  "dns_txt",
-  "html_file",
-  "meta_tag",
-]);
-export const verificationStatus = pgEnum("verification_status", [
-  "verified",
-  "failing",
-  "unverified",
-]);
-export const userTier = pgEnum("user_tier", ["free", "pro"]);
+// Enums - const arrays define values; Drizzle pgEnums use them directly.
+export const providerCategory = pgEnum(
+  "provider_category",
+  PROVIDER_CATEGORIES,
+);
+export const providerSource = pgEnum("provider_source", PROVIDER_SOURCES);
+export const dnsRecordType = pgEnum("dns_record_type", DNS_RECORD_TYPES);
+export const registrationSource = pgEnum(
+  "registration_source",
+  REGISTRATION_SOURCES,
+);
+export const verificationMethod = pgEnum(
+  "verification_method",
+  VERIFICATION_METHODS,
+);
+export const verificationStatus = pgEnum(
+  "verification_status",
+  VERIFICATION_STATUSES,
+);
+export const userTier = pgEnum("user_tier", PLANS);
 
 // ============================================================================
 // Authentication Tables (better-auth)
@@ -446,7 +443,10 @@ export const dnsRecords = pgTable(
   (t) => [
     // Include priority in uniqueness for MX/SRV records
     // (same host with different priorities = different records)
-    unique("u_dns_record").on(t.domainId, t.type, t.name, t.value, t.priority),
+    // Use NULLS NOT DISTINCT so records with NULL priority are treated as duplicates
+    unique("u_dns_record")
+      .on(t.domainId, t.type, t.name, t.value, t.priority)
+      .nullsNotDistinct(),
     index("i_dns_type_value").on(t.type, t.value),
     index("i_dns_expires").on(t.expiresAt),
     index("i_dns_domain_expires").on(t.domainId, t.expiresAt),

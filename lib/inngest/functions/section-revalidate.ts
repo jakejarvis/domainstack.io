@@ -1,38 +1,74 @@
 import "server-only";
 
+import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import type { Section } from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
-import { getDnsRecords } from "@/server/services/dns";
-import { getHeaders } from "@/server/services/headers";
-import { getHosting } from "@/server/services/hosting";
-import { getRegistration } from "@/server/services/registration";
-import { getSeo } from "@/server/services/seo";
+import type { Section } from "@/lib/types";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
+import { registrationWorkflow } from "@/workflows/registration";
+import { seoWorkflow } from "@/workflows/seo";
 
+/**
+ * Run a single section revalidation for a domain.
+ *
+ * Note: Intentionally skips cache checking - this function is called for
+ * scheduled revalidation when cached data has expired or is about to expire.
+ * The TTL-based scheduling in scheduleRevalidation() ensures we only call
+ * this when data actually needs refreshing.
+ */
 async function runSingleSection(
   domain: string,
   section: Section,
 ): Promise<void> {
   switch (section) {
-    case "dns":
-      await getDnsRecords(domain);
+    case "dns": {
+      const run = await start(dnsWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
-    case "headers":
-      await getHeaders(domain);
+    }
+    case "headers": {
+      const run = await start(headersWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
-    case "hosting":
-      await getHosting(domain);
+    }
+    case "hosting": {
+      // Hosting requires DNS + headers data, fetch them first
+      const [dnsRun, headersRun] = await Promise.all([
+        start(dnsWorkflow, [{ domain }]),
+        start(headersWorkflow, [{ domain }]),
+      ]);
+      const [dnsResult, headersResult] = await Promise.all([
+        dnsRun.returnValue,
+        headersRun.returnValue,
+      ]);
+      const hostingRun = await start(hostingWorkflow, [
+        {
+          domain,
+          dnsRecords: dnsResult.data.records,
+          headers: headersResult.data.headers,
+        },
+      ]);
+      await hostingRun.returnValue;
       return;
-    case "certificates":
-      await getCertificates(domain);
+    }
+    case "certificates": {
+      const run = await start(certificatesWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
-    case "seo":
-      await getSeo(domain);
+    }
+    case "seo": {
+      const run = await start(seoWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
-    case "registration":
-      await getRegistration(domain);
+    }
+    case "registration": {
+      const run = await start(registrationWorkflow, [{ domain }]);
+      await run.returnValue;
       return;
+    }
   }
 }
 

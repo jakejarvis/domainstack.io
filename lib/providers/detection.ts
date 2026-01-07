@@ -1,11 +1,7 @@
 import { toRegistrableDomain } from "@/lib/domain-server";
-import type {
-  DetectionContext,
-  Header,
-  Provider,
-  ProviderRef,
-  Rule,
-} from "@/lib/schemas";
+import type { Header, ProviderRef } from "@/lib/types";
+import type { Provider } from "./parser";
+import type { DetectionContext, Rule } from "./rules";
 
 /**
  * A context object for header-based detection, pre-calculating values to
@@ -103,7 +99,7 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
 
 /**
  * Detect a provider from a list of providers using the provided context.
- * Returns the full Provider object for upsert, or null if not found.
+ * Returns the full CatalogProvider object for upsert, or null if not found.
  */
 function detectProviderFromList(
   providers: Provider[],
@@ -135,7 +131,7 @@ function detectProviderFromList(
 }
 
 /**
- * Convert a Provider to a ProviderRef (for backwards compatibility).
+ * Convert a CatalogProvider to a ProviderRef (for backwards compatibility).
  */
 function toProviderRef(provider: Provider | null): ProviderRef {
   if (!provider) {

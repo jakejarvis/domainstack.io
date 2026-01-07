@@ -3,25 +3,12 @@ import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
-import type { VerificationMethod } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { ResumeDomainData, VerificationMethod } from "@/lib/types";
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export type ResumeDomainData = {
-  id: string;
-  domainName: string;
-  verificationToken: string;
-  verificationMethod?: VerificationMethod | null;
-};
-
-/** Verification status for the current step (exposed for UI components) */
-export type VerificationState =
-  | { status: "idle" }
-  | { status: "verifying" }
-  | { status: "failed"; error?: string };
 
 type UseDomainVerificationOptions = {
   /** Whether the verification flow is open/visible (default: true for page usage) */
@@ -399,16 +386,15 @@ export function useDomainVerification({
         });
         onSuccess();
       } else {
-        dispatch({ type: "VERIFICATION_FAILED", error: result.error });
+        dispatch({ type: "VERIFICATION_FAILED" });
         analytics.track("domain_verification_failed", {
           domain: state.domain,
-          error: result.error,
         });
       }
     } catch {
       dispatch({
         type: "VERIFICATION_FAILED",
-        error: "Verification failed. Please try again.",
+        error: "Something went wrong. Please try again.",
       });
       analytics.track("domain_verification_failed", {
         domain: state.domain,

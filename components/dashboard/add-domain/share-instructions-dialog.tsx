@@ -27,7 +27,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/lib/trpc/client";
-import { buildVerificationInstructions } from "@/lib/verification/instructions";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 // ============================================================================
 // Types

@@ -37,10 +37,7 @@ import {
   findTrackedDomainById,
   findTrackedDomainWithDomainName,
   getArchivedDomainsForUser,
-  getPendingDomainsForAutoVerification,
   getTrackedDomainsForUser,
-  getVerifiedDomainsForReverification,
-  getVerifiedTrackedDomainsWithExpiry,
   markVerificationFailing,
   markVerificationSuccessful,
   resetNotificationOverrides,
@@ -387,77 +384,6 @@ describe("getTrackedDomainsForUser", () => {
   });
 });
 
-describe("getVerifiedDomainsForReverification", () => {
-  it("returns empty array when no verified domains", async () => {
-    await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-
-    const result = await getVerifiedDomainsForReverification();
-    expect(result).toEqual([]);
-  });
-
-  it("returns only verified domains with verification method", async () => {
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-    await verifyTrackedDomain(createdId, "dns_txt");
-
-    const result = await getVerifiedDomainsForReverification();
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      id: createdId,
-      userId: testUserId,
-      domainName: "example.test",
-      verificationToken: "test-token",
-      verificationMethod: "dns_txt",
-      verificationStatus: "verified",
-    });
-  });
-});
-
-describe("getPendingDomainsForAutoVerification", () => {
-  it("returns unverified domains", async () => {
-    await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-
-    const result = await getPendingDomainsForAutoVerification();
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      userId: testUserId,
-      domainName: "example.test",
-      verificationToken: "test-token",
-    });
-  });
-
-  it("excludes verified domains", async () => {
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-    await verifyTrackedDomain(createdId, "dns_txt");
-
-    const result = await getPendingDomainsForAutoVerification();
-    expect(result).toEqual([]);
-  });
-});
-
 describe("findTrackedDomainWithDomainName", () => {
   it("returns null when ID does not exist", async () => {
     const result = await findTrackedDomainWithDomainName(
@@ -571,114 +497,6 @@ describe("resetNotificationOverrides", () => {
       "00000000-0000-0000-0000-000000000000",
     );
     expect(result).toBeNull();
-  });
-});
-
-describe("getVerifiedTrackedDomainsWithExpiry", () => {
-  it("returns empty array when no verified domains with registration data", async () => {
-    // Create unverified domain
-    await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-
-    const result = await getVerifiedTrackedDomainsWithExpiry();
-    expect(result).toEqual([]);
-  });
-
-  it("excludes unverified domains", async () => {
-    await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-
-    const result = await getVerifiedTrackedDomainsWithExpiry();
-    expect(result).toEqual([]);
-  });
-
-  it("returns full structure with registration data and registrar", async () => {
-    // Create a registrar provider
-    const [registrar] = await db
-      .insert(providers)
-      .values({
-        category: "registrar",
-        name: "Test Registrar Inc",
-        slug: "test-registrar",
-        source: "catalog",
-      })
-      .returning();
-
-    // Create registration data with expiration date
-    const expirationDate = new Date("2025-12-31T00:00:00Z");
-    await db.insert(registrations).values({
-      domainId: testDomainId,
-      isRegistered: true,
-      expirationDate,
-      registrarProviderId: registrar.id,
-      source: "rdap",
-      fetchedAt: new Date(),
-      expiresAt: new Date(Date.now() + 86400000), // 1 day from now
-    });
-
-    // Create and verify tracked domain
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-    await verifyTrackedDomain(createdId, "dns_txt");
-
-    const result = await getVerifiedTrackedDomainsWithExpiry();
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      id: createdId,
-      userId: testUserId,
-      domainId: testDomainId,
-      domainName: "example.test",
-      notificationOverrides: {},
-      registrar: "Test Registrar Inc",
-      userEmail: "test@example.test",
-      userName: "Test User",
-    });
-    // Check expiration date separately due to Date comparison
-    expect(result[0].expirationDate).toEqual(expirationDate);
-  });
-
-  it("returns null registrar when no provider linked", async () => {
-    // Create registration data without registrar
-    const expirationDate = new Date("2026-06-15T00:00:00Z");
-    await db.insert(registrations).values({
-      domainId: testDomainId,
-      isRegistered: true,
-      expirationDate,
-      registrarProviderId: null,
-      source: "whois",
-      fetchedAt: new Date(),
-      expiresAt: new Date(Date.now() + 86400000),
-    });
-
-    // Create and verify tracked domain
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-    await verifyTrackedDomain(createdId, "html_file");
-
-    const result = await getVerifiedTrackedDomainsWithExpiry();
-
-    expect(result).toHaveLength(1);
-    expect(result[0].registrar).toBeNull();
-    expect(result[0].expirationDate).toEqual(expirationDate);
   });
 });
 

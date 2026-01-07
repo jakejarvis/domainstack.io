@@ -1,6 +1,5 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import type { Provider } from "@/lib/schemas";
 import {
   detectCertificateAuthority,
   detectDnsProvider,
@@ -8,6 +7,7 @@ import {
   detectHostingProvider,
   detectRegistrar,
 } from "./detection";
+import type { Provider } from "./parser";
 
 // Mock provider catalogs for testing
 const MOCK_HOSTING_PROVIDERS: Provider[] = [

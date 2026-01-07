@@ -12,7 +12,7 @@ import {
   REVALIDATE_MIN_REGISTRATION,
   REVALIDATE_MIN_SEO,
 } from "@/lib/constants/ttl";
-import type { Section } from "@/lib/schemas";
+import type { Section } from "@/lib/types";
 
 /**
  * Get the base revalidation interval (in seconds) for a section.

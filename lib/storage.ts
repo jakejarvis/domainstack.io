@@ -3,7 +3,6 @@ import "server-only";
 import { putBlob } from "@/lib/blob";
 import { deterministicHash } from "@/lib/hash";
 import { createLogger } from "@/lib/logger/server";
-import type { BlobKind } from "@/lib/schemas";
 
 const logger = createLogger({ source: "storage" });
 
@@ -12,7 +11,7 @@ const UPLOAD_BACKOFF_BASE_MS = 100;
 const UPLOAD_BACKOFF_MAX_MS = 2000;
 
 function makeBlobPathname(
-  kind: BlobKind,
+  kind: string,
   filename: string,
   extension = "bin",
   extraParts: Array<string | number>,
@@ -90,7 +89,7 @@ async function uploadWithRetry(
 }
 
 export async function storeBlob(options: {
-  kind: BlobKind;
+  kind: string;
   buffer: Buffer;
   pathname?: string;
   contentType?: string;
@@ -141,7 +140,7 @@ export async function storeBlob(options: {
 }
 
 export async function storeImage(options: {
-  kind: BlobKind;
+  kind: string;
   domain: string;
   buffer: Buffer;
   width?: number;

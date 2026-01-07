@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
-import { getEnabledProviders } from "@/lib/constants/oauth-providers";
+import { getEnabledProviders } from "@/lib/oauth";
 import { cn } from "@/lib/utils";
 
 interface LoginContentProps {

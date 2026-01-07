@@ -1,12 +1,13 @@
 import "server-only";
 
+import { start } from "workflow/api";
 import {
   findTrackedDomainWithDomainName,
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { tryAllVerificationMethods } from "@/server/services/verification";
+import { verificationWorkflow } from "@/workflows/verification";
 
 /**
  * Retry schedule for auto-verification attempts.
@@ -114,12 +115,15 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       }
 
       const result = await step.run(`verify-attempt-${attempt}`, async () => {
-        return await tryAllVerificationMethods(currentDomainName, currentToken);
+        const workflowRun = await start(verificationWorkflow, [
+          { domain: currentDomainName, token: currentToken },
+        ]);
+        return await workflowRun.returnValue;
       });
 
-      if (result.verified && result.method) {
+      if (result.success && result.data.verified && result.data.method) {
         // Success! Mark the domain as verified
-        const verifiedMethod = result.method;
+        const verifiedMethod = result.data.method;
         await step.run(`mark-verified-${attempt}`, async () => {
           return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
@@ -127,13 +131,13 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         return {
           result: "verified",
           domainName: currentDomainName,
-          verifiedMethod: result.method,
+          verifiedMethod: result.data.method,
           attempt: attempt + 1,
         };
       } else {
         inngestLogger.info("Verification attempt failed, will retry", {
           domainName: currentDomainName,
-          verifiedMethod: result.method,
+          verifiedMethod: result.data.method,
           attempt: attempt + 1,
           nextDelay: RETRY_DELAYS[attempt + 1] ?? "none (final attempt)",
         });

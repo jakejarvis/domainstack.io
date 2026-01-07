@@ -3,7 +3,7 @@ import { ReportSection } from "@/components/domain/report-section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
 import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
 import { RobotsSummary } from "@/components/domain/seo/robots-summary";
-import { SocialPreviewTabs } from "@/components/domain/seo/social-preview-tabs";
+import { SocialPreviews } from "@/components/domain/seo/social-previews";
 import {
   Empty,
   EmptyDescription,
@@ -12,7 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { SeoResponse } from "@/lib/schemas";
+import type { SeoResponse } from "@/lib/types";
 
 export function SeoSection({
   domain,
@@ -61,7 +61,7 @@ export function SeoSection({
           <MetaTagsGrid metaTagValues={metaTagValues} />
 
           {data?.preview ? (
-            <SocialPreviewTabs
+            <SocialPreviews
               preview={data.preview}
               twitterVariant={twitterVariant}
             />

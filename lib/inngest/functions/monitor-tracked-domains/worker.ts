@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Logger } from "inngest";
+import { start } from "workflow/api";
 import { CertificateChangeEmail } from "@/emails/certificate-change";
 import { ProviderChangeEmail } from "@/emails/provider-change";
 import { RegistrationChangeEmail } from "@/emails/registration-change";
@@ -22,13 +23,18 @@ import {
 import type {
   CertificateChange,
   CertificateSnapshotData,
-  ProviderChange,
+  CertificatesResponse,
+  HostingChange,
+  HostingResponse,
   RegistrationChange,
+  RegistrationResponse,
   RegistrationSnapshotData,
-} from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
-import { getHosting } from "@/server/services/hosting";
-import { getRegistration } from "@/server/services/registration";
+} from "@/lib/types";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
+import { registrationWorkflow } from "@/workflows/registration";
 
 /**
  * Worker function to monitor a single tracked domain.
@@ -59,16 +65,46 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
     const { domainName, userId, userName, userEmail } = snapshot;
 
     try {
-      // Fetch fresh data for this domain
+      // Fetch fresh data for this domain using workflows
       const [registrationData, hostingData, certificatesData] = await step.run(
         "fetch-live-data",
         async () => {
-          const opts = { skipScheduling: true };
-          return await Promise.all([
-            getRegistration(domainName, opts),
-            getHosting(domainName, opts),
-            getCertificates(domainName, opts),
+          // Start all independent workflows in parallel
+          const [regRun, dnsRun, headersRun, certRun] = await Promise.all([
+            start(registrationWorkflow, [{ domain: domainName }]),
+            start(dnsWorkflow, [{ domain: domainName }]),
+            start(headersWorkflow, [{ domain: domainName }]),
+            start(certificatesWorkflow, [{ domain: domainName }]),
           ]);
+
+          // Wait for all workflow results
+          const [regResult, dnsResult, headersResult, certsResult] =
+            await Promise.all([
+              regRun.returnValue,
+              dnsRun.returnValue,
+              headersRun.returnValue,
+              certRun.returnValue,
+            ]);
+
+          // Now compute hosting using the DNS + headers data (no duplicate fetches)
+          const hostingRun = await start(hostingWorkflow, [
+            {
+              domain: domainName,
+              dnsRecords: dnsResult.data.records,
+              headers: headersResult.data.headers,
+            },
+          ]);
+          const hostingResult = await hostingRun.returnValue;
+
+          // Extract response data from workflow results
+          const registrationData: RegistrationResponse | null =
+            regResult.success ? regResult.data : regResult.data; // Error responses still have data
+          const certificatesData: CertificatesResponse = certsResult.success
+            ? certsResult.data
+            : { certificates: [] };
+          const hostingData: HostingResponse = hostingResult.data;
+
+          return [registrationData, hostingData, certificatesData] as const;
         },
       );
 
@@ -79,8 +115,8 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       };
 
       // Check registration changes
-      if (registrationData.status === "registered") {
-        const currentRegistration: RegistrationSnapshotData = {
+      if (registrationData && registrationData.status === "registered") {
+        const currentRegistration = {
           registrarProviderId: registrationData.registrarProvider?.id ?? null,
           nameservers: registrationData.nameservers || [],
           transferLock: registrationData.transferLock ?? null,
@@ -90,7 +126,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
         };
 
         const registrationChange = detectRegistrationChanges(
-          snapshot.registration,
+          snapshot.registration as RegistrationSnapshotData,
           currentRegistration,
         );
 
@@ -159,7 +195,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
             },
           );
 
-          const enrichedChange: ProviderChange = {
+          const enrichedChange: HostingChange = {
             ...providerChange,
             previousDnsProvider: providerChange.previousDnsProviderId
               ? providerNames[providerChange.previousDnsProviderId] || null
@@ -210,7 +246,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       if (certificatesData.certificates.length > 0) {
         const leafCert = certificatesData.certificates[0]; // First cert is the leaf
 
-        const currentCertificate: CertificateSnapshotData = {
+        const currentCertificate = {
           caProviderId: leafCert.caProvider?.id ?? null,
           issuer: leafCert.issuer,
           validTo: new Date(leafCert.validTo).toISOString(),
@@ -218,7 +254,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
         };
 
         const certificateChange = detectCertificateChanges(
-          snapshot.certificate,
+          snapshot.certificate as CertificateSnapshotData,
           currentCertificate,
         );
 
@@ -433,7 +469,7 @@ async function handleProviderChange(
   userId: string,
   userName: string,
   userEmail: string,
-  change: ProviderChange,
+  change: HostingChange,
   logger: Logger,
 ): Promise<boolean> {
   const { shouldSendEmail, shouldSendInApp } =

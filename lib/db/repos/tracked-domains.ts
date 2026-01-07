@@ -22,69 +22,26 @@ import {
   registrations,
   users,
   userTrackedDomains,
-  type verificationMethod,
-  type verificationStatus,
 } from "@/lib/db/schema";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-import type { DnsRecord, NotificationOverrides } from "@/lib/schemas";
+import type {
+  DnsRecord,
+  NotificationOverrides,
+  ProviderInfo,
+  RegistrationContacts,
+  TrackedDomainWithDetails,
+  VerificationMethod,
+  VerificationStatus,
+} from "@/lib/types";
 
 const logger = createLogger({ source: "tracked-domains" });
-
-export type VerificationMethod = (typeof verificationMethod.enumValues)[number];
-export type VerificationStatusType =
-  (typeof verificationStatus.enumValues)[number];
 
 export type CreateTrackedDomainParams = {
   userId: string;
   domainId: string;
   verificationToken: string;
   verificationMethod?: VerificationMethod;
-};
-
-export type DnsRecordForTooltip = Pick<DnsRecord, "value" | "priority">;
-
-export type ProviderInfo = {
-  id: string | null;
-  name: string | null;
-  domain: string | null;
-  records?: DnsRecordForTooltip[];
-  // Registrar-specific verification data (WHOIS/RDAP)
-  whoisServer?: string | null;
-  rdapServers?: string[] | null;
-  registrationSource?: "rdap" | "whois" | null;
-  transferLock?: boolean | null;
-  registrantInfo?: {
-    privacyEnabled: boolean | null;
-    contacts: unknown;
-  };
-  // CA-specific verification data
-  certificateExpiryDate?: Date | null;
-};
-
-export type TrackedDomainWithDetails = {
-  id: string;
-  userId: string;
-  domainId: string;
-  domainName: string;
-  tld: string;
-  verified: boolean;
-  verificationMethod: VerificationMethod | null;
-  verificationToken: string;
-  verificationStatus: VerificationStatusType;
-  verificationFailedAt: Date | null;
-  lastVerifiedAt: Date | null;
-  notificationOverrides: NotificationOverrides;
-  createdAt: Date;
-  verifiedAt: Date | null;
-  archivedAt: Date | null;
-  expirationDate: Date | null;
-  registrationDate: Date | null;
-  registrar: ProviderInfo;
-  dns: ProviderInfo;
-  hosting: ProviderInfo;
-  email: ProviderInfo;
-  ca: ProviderInfo;
 };
 
 /**
@@ -211,7 +168,7 @@ export type TrackedDomainWithDomainName = {
   verificationToken: string;
   verificationMethod: VerificationMethod | null;
   verified: boolean;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
 };
 
 /**
@@ -249,7 +206,7 @@ type TrackedDomainRow = {
   verified: boolean;
   verificationMethod: VerificationMethod | null;
   verificationToken: string;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
   notificationOverrides: NotificationOverrides;
@@ -279,7 +236,7 @@ type TrackedDomainRow = {
   registrationSource: "rdap" | "whois" | null;
   registrationTransferLock: boolean | null;
   registrationPrivacyEnabled: boolean | null;
-  registrationContacts: unknown;
+  registrationContacts: RegistrationContacts | null;
 };
 
 /**
@@ -407,11 +364,9 @@ function transformToTrackedDomainWithDetails(
  * Deduplicate tooltip records by value and priority.
  * Case-insensitive comparison for consistent deduplication.
  */
-function deduplicateTooltipRecords(
-  records: DnsRecordForTooltip[],
-): DnsRecordForTooltip[] {
+function deduplicateTooltipRecords(records: DnsRecord[]): DnsRecord[] {
   const seen = new Set<string>();
-  const deduplicated: DnsRecordForTooltip[] = [];
+  const deduplicated: DnsRecord[] = [];
 
   for (const r of records) {
     const key = `${r.value.trim().toLowerCase()}|${r.priority ?? ""}`;
@@ -432,9 +387,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
   Map<
     string,
     {
-      hosting: DnsRecordForTooltip[];
-      email: DnsRecordForTooltip[];
-      dns: DnsRecordForTooltip[];
+      hosting: DnsRecord[];
+      email: DnsRecord[];
+      dns: DnsRecord[];
     }
   >
 > {
@@ -447,6 +402,7 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
     .select({
       domainId: dnsRecords.domainId,
       type: dnsRecords.type,
+      name: dnsRecords.name,
       value: dnsRecords.value,
       priority: dnsRecords.priority,
     })
@@ -462,9 +418,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
   const recordsByDomain = new Map<
     string,
     {
-      hosting: DnsRecordForTooltip[];
-      email: DnsRecordForTooltip[];
-      dns: DnsRecordForTooltip[];
+      hosting: DnsRecord[];
+      email: DnsRecord[];
+      dns: DnsRecord[];
     }
   >();
 
@@ -480,7 +436,9 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
       recordsByDomain.set(record.domainId, groups);
     }
 
-    const dnsRecord: DnsRecordForTooltip = {
+    const dnsRecord: DnsRecord = {
+      type: record.type,
+      name: record.name,
       value: record.value,
       ...(record.priority != null && { priority: record.priority }),
     };
@@ -827,16 +785,16 @@ export async function verifyTrackedDomain(
   // This is done in the background to avoid blocking the user
   if (updated[0]) {
     // Import dynamically to avoid circular dependencies
-    import("@/lib/inngest/client")
-      .then(({ inngest }) => {
+    void import("@/lib/inngest/client")
+      .then(({ inngest }) =>
         inngest.send({
           name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
           data: {
             trackedDomainId: updated[0].id,
             domainId: updated[0].domainId,
           },
-        });
-      })
+        }),
+      )
       .catch((err) => {
         logger.error(
           {
@@ -954,7 +912,7 @@ export type TrackedDomainForReverification = {
   domainName: string;
   verificationToken: string;
   verificationMethod: VerificationMethod;
-  verificationStatus: VerificationStatusType;
+  verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   notificationOverrides: NotificationOverrides;
   userEmail: string;
@@ -1078,125 +1036,6 @@ export async function getTrackedDomainForReverification(
   }
 
   return rows[0] as TrackedDomainForReverification;
-}
-
-/**
- * Get all verified tracked domains with expiration dates for notification processing.
- * Returns all verified, non-archived domains - filtering by notification preferences happens at processing time.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForNotification in a fan-out pattern
- */
-export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
-  TrackedDomainForNotification[]
-> {
-  const registrarProvider = alias(providers, "registrar_provider");
-
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      expirationDate: registrations.expirationDate,
-      registrar: registrarProvider.name,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(registrations, eq(domains.id, registrations.domainId))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  return rows;
-}
-
-/**
- * Get all verified domains for re-verification.
- * Only returns domains with a verification method set.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForReverification in a fan-out pattern
- */
-export async function getVerifiedDomainsForReverification(): Promise<
-  TrackedDomainForReverification[]
-> {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainName: domains.name,
-      verificationToken: userTrackedDomains.verificationToken,
-      verificationMethod: userTrackedDomains.verificationMethod,
-      verificationStatus: userTrackedDomains.verificationStatus,
-      verificationFailedAt: userTrackedDomains.verificationFailedAt,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  // Filter out domains without a verification method (shouldn't happen, but safe)
-  return rows.filter(
-    (row): row is TrackedDomainForReverification =>
-      row.verificationMethod !== null,
-  );
-}
-
-/**
- * Get all pending (unverified) domains that might have added verification.
- * These are domains where the user started the add flow but never clicked "Verify".
- *
- * Note: This excludes domains that were previously verified and then revoked
- * (those have verificationStatus = 'unverified' but may have had verificationFailedAt set).
- * We only want truly new pending domains that have never been verified.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getPendingTrackedDomainIds in a fan-out pattern
- */
-export async function getPendingDomainsForAutoVerification(): Promise<
-  PendingDomainForAutoVerification[]
-> {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainName: domains.name,
-      verificationToken: userTrackedDomains.verificationToken,
-      createdAt: userTrackedDomains.createdAt,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, false),
-        // Exclude revoked domains (those that were previously verified)
-        isNull(userTrackedDomains.verifiedAt),
-        // Exclude archived domains (archiving pauses monitoring)
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  return rows;
 }
 
 /**

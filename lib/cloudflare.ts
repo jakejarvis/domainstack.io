@@ -2,7 +2,6 @@ import "server-only";
 
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
-import { ipV4InCidr, ipV6InCidr } from "@/lib/ip";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "cloudflare-ips" });
@@ -47,6 +46,26 @@ async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   };
 }
 
+export function ipV4InCidr(addr: ipaddr.IPv4, cidr: string): boolean {
+  try {
+    const [net, prefix] = ipaddr.parseCIDR(cidr);
+    if (net.kind() !== "ipv4") return false;
+    return addr.match([net as ipaddr.IPv4, prefix]);
+  } catch {
+    return false;
+  }
+}
+
+export function ipV6InCidr(addr: ipaddr.IPv6, cidr: string): boolean {
+  try {
+    const [net, prefix] = ipaddr.parseCIDR(cidr);
+    if (net.kind() !== "ipv6") return false;
+    return addr.match([net as ipaddr.IPv6, prefix]);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Parse IP ranges into ipaddr.js objects for fast matching.
  * Updates module-level cache for synchronous access.
@@ -89,9 +108,6 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
 
 /**
  * Fetch Cloudflare IP ranges with Next.js Data Cache.
- *
- * The IP ranges change infrequently (when Cloudflare expands infrastructure),
- * so we cache for 1 week with stale-while-revalidate.
  */
 async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   try {

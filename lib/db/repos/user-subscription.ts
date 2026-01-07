@@ -5,7 +5,7 @@ import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { db } from "@/lib/db/client";
 import { userSubscriptions, users } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import type { Subscription } from "@/lib/schemas";
+import type { Subscription } from "@/lib/types";
 
 const logger = createLogger({ source: "user-subscription" });
 
@@ -207,40 +207,6 @@ export async function getUserWithEndingSubscription(
   }
 
   return row as UserWithEndingSubscription;
-}
-
-/**
- * Get all users with ending subscriptions (canceled but still active).
- * Returns users where endsAt is set and in the future.
- * Used by the check-subscription-expiry cron job to send reminder emails.
- * @deprecated Use getUserIdsWithEndingSubscriptions and getUserWithEndingSubscription in a fan-out pattern
- */
-export async function getUsersWithEndingSubscriptions(): Promise<
-  UserWithEndingSubscription[]
-> {
-  const now = new Date();
-
-  const rows = await db
-    .select({
-      userId: userSubscriptions.userId,
-      userName: users.name,
-      userEmail: users.email,
-      endsAt: userSubscriptions.endsAt,
-      lastExpiryNotification: userSubscriptions.lastExpiryNotification,
-    })
-    .from(userSubscriptions)
-    .innerJoin(users, eq(userSubscriptions.userId, users.id))
-    .where(
-      and(
-        isNotNull(userSubscriptions.endsAt),
-        gt(userSubscriptions.endsAt, now),
-      ),
-    );
-
-  // Filter out nulls (TypeScript doesn't narrow properly after isNotNull)
-  return rows.filter(
-    (row): row is UserWithEndingSubscription => row.endsAt !== null,
-  );
 }
 
 /**

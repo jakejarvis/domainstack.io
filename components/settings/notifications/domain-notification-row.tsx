@@ -12,12 +12,12 @@ import { Switch } from "@/components/ui/switch";
 import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_CATEGORY_INFO,
-  type NotificationCategory,
 } from "@/lib/constants/notifications";
 import type {
+  NotificationCategory,
   NotificationOverrides,
   UserNotificationPreferences,
-} from "@/lib/schemas";
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface DomainNotificationRowProps {

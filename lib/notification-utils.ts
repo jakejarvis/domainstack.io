@@ -12,8 +12,8 @@ import {
   CERTIFICATE_THRESHOLD_TO_TYPE,
   DOMAIN_EXPIRY_THRESHOLDS,
   DOMAIN_THRESHOLD_TO_TYPE,
-  type NotificationType,
 } from "@/lib/constants/notifications";
+import type { NotificationType } from "@/lib/types";
 
 /**
  * Generate a stable idempotency key for Resend.

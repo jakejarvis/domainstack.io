@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { getProviderCatalog } from "@/lib/edge-config";
-import type { Provider, ProviderCategory } from "@/lib/schemas";
-import { getProvidersFromCatalog } from "./parser";
+import type { ProviderCategory } from "@/lib/types";
+import { getProvidersFromCatalog, type Provider } from "./parser";
 
 /**
  * Cached fetch of the provider catalog from Edge Config.

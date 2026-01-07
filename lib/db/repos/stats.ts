@@ -9,17 +9,11 @@ import {
   providers,
   registrations,
 } from "@/lib/db/schema";
-import type {
-  GrowthStats,
-  ProviderStats,
-  ProviderStatsByCategory,
-  TldStats,
-} from "@/lib/schemas";
 
 /**
  * Get total count of unique domains in the database
  */
-export async function getTotalUniqueDomains(): Promise<number> {
+export async function getTotalUniqueDomains() {
   const result = await db.select({ count: count() }).from(domains);
   return result[0]?.count ?? 0;
 }
@@ -27,7 +21,7 @@ export async function getTotalUniqueDomains(): Promise<number> {
 /**
  * Get top TLDs by domain count
  */
-export async function getTopTlds(limit = 10): Promise<TldStats[]> {
+export async function getTopTlds(limit = 10) {
   const result = await db
     .select({
       tld: domains.tld,
@@ -50,7 +44,7 @@ export async function getTopTlds(limit = 10): Promise<TldStats[]> {
 async function getTopProvidersByCategory(
   category: "hosting" | "registrar" | "dns" | "email" | "ca",
   limit = 5,
-): Promise<ProviderStats[]> {
+) {
   // Build query based on category - each has different join table/column
   if (category === "hosting") {
     const result = await db
@@ -168,9 +162,7 @@ async function getTopProvidersByCategory(
 /**
  * Get top providers for all categories
  */
-export async function getTopProviders(
-  limit = 5,
-): Promise<ProviderStatsByCategory> {
+export async function getTopProviders(limit = 5) {
   const [hosting, registrar, dns, email, ca] = await Promise.all([
     getTopProvidersByCategory("hosting", limit),
     getTopProvidersByCategory("registrar", limit),
@@ -188,7 +180,7 @@ export async function getTopProviders(
  * Uses conditional aggregation to compute all time ranges in a single query,
  * reducing 3 sequential table scans to 1.
  */
-export async function getGrowthStats(): Promise<GrowthStats> {
+export async function getGrowthStats() {
   const now = new Date();
   const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

@@ -36,8 +36,8 @@ export function Screenshot({
     ),
   );
 
-  const url = data?.url ?? null;
-  const blocked = data?.blocked ?? false;
+  const url = data?.data.url ?? null;
+  const blocked = data?.data.blocked ?? false;
   const loading = isLoading || isFetching;
 
   return (

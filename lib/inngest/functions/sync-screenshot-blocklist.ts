@@ -41,64 +41,61 @@ export const syncScreenshotBlocklist = inngest.createFunction(
     // Fetch and parse all blocklists
     const allDomains: string[] = [];
 
-    for (const sourceUrl of sources) {
-      const domains = await step.run(
-        `fetch-blocklist-${sourceUrl}`,
-        async () => {
-          try {
-            const response = await fetchWithTimeoutAndRetry(
-              sourceUrl,
-              {},
-              { timeoutMs: 30_000, retries: 2 },
+    for (const [index, sourceUrl] of sources.entries()) {
+      const domains = await step.run(`fetch-blocklist-${index}`, async () => {
+        try {
+          const response = await fetchWithTimeoutAndRetry(
+            sourceUrl,
+            {},
+            { timeoutMs: 30_000, retries: 2 },
+          );
+
+          if (!response.ok) {
+            inngestLogger.warn(
+              `Failed to fetch blocklist from ${sourceUrl}: HTTP ${response.status}`,
             );
-
-            if (!response.ok) {
-              inngestLogger.warn(
-                `Failed to fetch blocklist from ${sourceUrl}: HTTP ${response.status}`,
-              );
-              return [];
-            }
-
-            const text = await response.text();
-            const lines = text.split("\n");
-
-            // Parse domains from blocklist format
-            // OISD uses wildcard format: *.example.com or example.com
-            const parsed: string[] = [];
-            for (const line of lines) {
-              const trimmed = line.trim();
-              // Skip empty lines and comments
-              if (!trimmed || trimmed.startsWith("#")) continue;
-
-              // Strip wildcard prefix if present (*.example.com -> example.com)
-              const domain = trimmed.startsWith("*.")
-                ? trimmed.slice(2)
-                : trimmed;
-
-              // Basic domain validation
-              if (
-                domain?.includes(".") &&
-                !domain.includes(" ") &&
-                domain.length <= 253 &&
-                !domain.startsWith(".") &&
-                !domain.endsWith(".")
-              ) {
-                parsed.push(domain.toLowerCase());
-              }
-            }
-
-            inngestLogger.info(
-              `Parsed ${parsed.length} domains from ${sourceUrl}`,
-            );
-            return parsed;
-          } catch (err) {
-            inngestLogger.error(`Error fetching blocklist from ${sourceUrl}`, {
-              error: err instanceof Error ? err.message : String(err),
-            });
             return [];
           }
-        },
-      );
+
+          const text = await response.text();
+          const lines = text.split("\n");
+
+          // Parse domains from blocklist format
+          // OISD uses wildcard format: *.example.com or example.com
+          const parsed: string[] = [];
+          for (const line of lines) {
+            const trimmed = line.trim();
+            // Skip empty lines and comments
+            if (!trimmed || trimmed.startsWith("#")) continue;
+
+            // Strip wildcard prefix if present (*.example.com -> example.com)
+            const domain = trimmed.startsWith("*.")
+              ? trimmed.slice(2)
+              : trimmed;
+
+            // Basic domain validation
+            if (
+              domain?.includes(".") &&
+              !domain.includes(" ") &&
+              domain.length <= 253 &&
+              !domain.startsWith(".") &&
+              !domain.endsWith(".")
+            ) {
+              parsed.push(domain.toLowerCase());
+            }
+          }
+
+          inngestLogger.info(
+            `Parsed ${parsed.length} domains from ${sourceUrl}`,
+          );
+          return parsed;
+        } catch (err) {
+          inngestLogger.error(`Error fetching blocklist from ${sourceUrl}`, {
+            error: err instanceof Error ? err.message : String(err),
+          });
+          return [];
+        }
+      });
 
       allDomains.push(...domains);
     }

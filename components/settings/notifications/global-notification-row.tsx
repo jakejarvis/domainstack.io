@@ -5,10 +5,8 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Switch } from "@/components/ui/switch";
-import {
-  NOTIFICATION_CATEGORY_INFO,
-  type NotificationCategory,
-} from "@/lib/constants/notifications";
+import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notifications";
+import type { NotificationCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface GlobalNotificationRowProps {

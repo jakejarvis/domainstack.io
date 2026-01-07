@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SeoResponse } from "@/lib/schemas";
+import type { SeoResponse } from "@/lib/types";
 import { render, screen } from "@/mocks/react";
 
 // Mock child components to isolate main component testing
@@ -7,9 +7,9 @@ vi.mock("@/components/domain/seo/meta-tags-grid", () => ({
   MetaTagsGrid: () => <div data-testid="meta-tags-grid" />,
 }));
 
-vi.mock("@/components/domain/seo/social-preview-tabs", () => ({
-  SocialPreviewTabs: ({ twitterVariant }: { twitterVariant: string }) => (
-    <div data-testid="social-preview-tabs" data-variant={twitterVariant} />
+vi.mock("@/components/domain/seo/social-previews", () => ({
+  SocialPreviews: ({ twitterVariant }: { twitterVariant: string }) => (
+    <div data-testid="social-previews" data-variant={twitterVariant} />
   ),
 }));
 
@@ -60,7 +60,7 @@ describe("SeoSection - Integration & Orchestration", () => {
       render(<SeoSection domain="example.com" data={data} />);
 
       expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
-      expect(screen.getByTestId("social-preview-tabs")).toBeInTheDocument();
+      expect(screen.getByTestId("social-previews")).toBeInTheDocument();
       expect(screen.getByTestId("robots-summary")).toBeInTheDocument();
     });
 
@@ -83,9 +83,7 @@ describe("SeoSection - Integration & Orchestration", () => {
       render(<SeoSection domain="example.com" data={data} />);
 
       expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
-      expect(
-        screen.queryByTestId("social-preview-tabs"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("social-previews")).not.toBeInTheDocument();
       expect(screen.getByTestId("robots-summary")).toBeInTheDocument();
     });
   });
@@ -107,7 +105,7 @@ describe("SeoSection - Integration & Orchestration", () => {
         },
       });
       render(<SeoSection domain="example.com" data={data} />);
-      const tabs = screen.getByTestId("social-preview-tabs");
+      const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "large");
     });
 
@@ -127,7 +125,7 @@ describe("SeoSection - Integration & Orchestration", () => {
         },
       });
       render(<SeoSection domain="example.com" data={data} />);
-      const tabs = screen.getByTestId("social-preview-tabs");
+      const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "compact");
     });
 
@@ -147,7 +145,7 @@ describe("SeoSection - Integration & Orchestration", () => {
         },
       });
       render(<SeoSection domain="example.com" data={data} />);
-      const tabs = screen.getByTestId("social-preview-tabs");
+      const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "large");
     });
 
@@ -167,7 +165,7 @@ describe("SeoSection - Integration & Orchestration", () => {
         },
       });
       render(<SeoSection domain="example.com" data={data} />);
-      const tabs = screen.getByTestId("social-preview-tabs");
+      const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "compact");
     });
   });

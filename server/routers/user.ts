@@ -22,11 +22,22 @@ import {
 } from "@/lib/db/repos/user-notification-preferences";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { accounts, userTrackedDomains } from "@/lib/db/schema";
-import {
-  NotificationOverridesSchema,
-  UpdateNotificationPreferencesSchema,
-} from "@/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+
+const NotificationChannelsSchema = z.object({
+  inApp: z.boolean(),
+  email: z.boolean(),
+});
+
+const UserNotificationPreferencesSchema = z
+  .object({
+    domainExpiry: NotificationChannelsSchema,
+    certificateExpiry: NotificationChannelsSchema,
+    registrationChanges: NotificationChannelsSchema,
+    providerChanges: NotificationChannelsSchema,
+    certificateChanges: NotificationChannelsSchema,
+  })
+  .partial();
 
 /**
  * Build the full calendar feed URL from a token.
@@ -91,7 +102,7 @@ export const userRouter = createTRPCRouter({
    * Accepts partial updates - only provided fields will be changed.
    */
   updateGlobalNotificationPreferences: protectedProcedure
-    .input(UpdateNotificationPreferencesSchema)
+    .input(UserNotificationPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
       const updated = await updateUserNotificationPreferences(
         ctx.user.id,
@@ -115,7 +126,7 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
-        overrides: NotificationOverridesSchema,
+        overrides: UserNotificationPreferencesSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {

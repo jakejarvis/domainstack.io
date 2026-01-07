@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { TrackedDomainWithDetails } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DashboardGridProps = {

@@ -42,7 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useProgressiveReveal } from "@/hooks/use-progressive-reveal";
-import type { SeoResponse } from "@/lib/schemas";
+import type { SeoResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function RobotsSummary({

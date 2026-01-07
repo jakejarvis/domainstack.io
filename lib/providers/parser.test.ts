@@ -1,10 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import {
-  getProvidersFromCatalog,
-  parseProviderCatalog,
-  toProvider,
-} from "./parser";
+import { getProvidersFromCatalog, parseProviderCatalog } from "./parser";
 
 describe("parseProviderCatalog", () => {
   it("parses a valid catalog", () => {
@@ -165,22 +161,6 @@ describe("parseProviderCatalog", () => {
 
     const catalog = parseProviderCatalog(raw);
     expect(catalog.hosting).toHaveLength(1);
-  });
-});
-
-describe("toProvider", () => {
-  it("converts catalog entry to full provider with category", () => {
-    const entry = {
-      name: "Test Provider",
-      domain: "test.com",
-      rule: { kind: "issuerIncludes" as const, substr: "test" },
-    };
-
-    const provider = toProvider(entry, "ca");
-    expect(provider.name).toBe("Test Provider");
-    expect(provider.domain).toBe("test.com");
-    expect(provider.category).toBe("ca");
-    expect(provider.rule).toEqual(entry.rule);
   });
 });
 

@@ -9,7 +9,7 @@
  * Error codes that better-auth returns in the callback URL query params.
  * These are the values of the `error` query parameter.
  */
-export const AUTH_CALLBACK_ERROR_CODES = {
+const AUTH_CALLBACK_ERROR_CODES = {
   // Account linking errors
   EMAIL_DOESNT_MATCH: "email_doesn't_match",
   ACCOUNT_ALREADY_LINKED: "account_already_linked_to_different_user",
@@ -28,7 +28,7 @@ export const AUTH_CALLBACK_ERROR_CODES = {
   EMAIL_NOT_FOUND: "email_not_found",
 } as const;
 
-export type AuthCallbackErrorCode =
+type AuthCallbackErrorCode =
   (typeof AUTH_CALLBACK_ERROR_CODES)[keyof typeof AUTH_CALLBACK_ERROR_CODES];
 
 /**

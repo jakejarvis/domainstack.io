@@ -1,7 +1,9 @@
 import { TRPCError } from "@trpc/server";
+import { start } from "workflow/api";
 import z from "zod";
 import { VerificationInstructionsEmail } from "@/emails/verification-instructions";
 import { analytics } from "@/lib/analytics/server";
+import { VERIFICATION_METHODS } from "@/lib/constants/verification";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
   archiveTrackedDomain,
@@ -23,14 +25,12 @@ import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
-import { VerificationMethodSchema } from "@/lib/schemas";
-import { buildVerificationInstructions } from "@/lib/verification/instructions";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   generateVerificationToken,
-  tryAllVerificationMethods,
-  verifyDomainOwnership,
-} from "@/server/services/verification";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+  verificationWorkflow,
+} from "@/workflows/verification";
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -210,7 +210,7 @@ export const trackingRouter = createTRPCRouter({
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
-        method: VerificationMethodSchema.optional(),
+        method: z.enum(VERIFICATION_METHODS).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -233,24 +233,21 @@ export const trackingRouter = createTRPCRouter({
         return { verified: true, method: tracked.verificationMethod };
       }
 
-      const result = method
-        ? // Verify with specific method
-          await verifyDomainOwnership(
-            tracked.domainName,
-            tracked.verificationToken,
-            method,
-          )
-        : // Try all methods
-          await tryAllVerificationMethods(
-            tracked.domainName,
-            tracked.verificationToken,
-          );
+      // Run verification workflow (specific method or try all)
+      const workflowRun = await start(verificationWorkflow, [
+        {
+          domain: tracked.domainName,
+          token: tracked.verificationToken,
+          method: method ?? undefined,
+        },
+      ]);
+      const result = await workflowRun.returnValue;
 
-      if (result.verified && result.method) {
+      if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified
         const updated = await verifyTrackedDomain(
           trackedDomainId,
-          result.method,
+          result.data.method,
         );
 
         if (!updated) {
@@ -260,13 +257,12 @@ export const trackingRouter = createTRPCRouter({
           });
         }
 
-        return { verified: true, method: result.method };
+        return { verified: true, method: result.data.method };
       }
 
       return {
         verified: false,
         method: null,
-        error: result.error || "Verification failed. Please check your setup.",
       };
     }),
 

@@ -6,15 +6,15 @@ import {
   type LucideIcon,
   ShieldAlert,
 } from "lucide-react";
+import type { NotificationCategory, NotificationType } from "@/lib/types";
 
 /**
- * Notification system constants and types.
- * Defines notification categories, thresholds, and type strings.
+ * Notification system constants.
+ * Types are in @/lib/types/notifications.ts.
  */
 
 // Valid notification channels
 export const NOTIFICATION_CHANNELS = ["in-app", "email"] as const;
-export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 // Notification categories for user preferences
 export const NOTIFICATION_CATEGORIES = [
@@ -24,8 +24,6 @@ export const NOTIFICATION_CATEGORIES = [
   "certificateExpiry",
   "certificateChanges",
 ] as const;
-
-export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 // Category metadata for UI display
 export const NOTIFICATION_CATEGORY_INFO: Record<
@@ -67,23 +65,9 @@ export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 // Dashboard "expiring soon" threshold (first notification threshold)
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 
-export type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
-export type CertificateExpiryThreshold =
-  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
-
-// Notification type strings (used in notifications table)
-export type NotificationType =
-  | `domain_expiry_${DomainExpiryThreshold}d`
-  | `certificate_expiry_${CertificateExpiryThreshold}d`
-  | "verification_failing"
-  | "verification_revoked"
-  | "registration_change"
-  | "provider_change"
-  | "certificate_change";
-
 // Mapping from threshold to notification type
 export const DOMAIN_THRESHOLD_TO_TYPE: Record<
-  DomainExpiryThreshold,
+  (typeof DOMAIN_EXPIRY_THRESHOLDS)[number],
   NotificationType
 > = {
   30: "domain_expiry_30d",
@@ -93,7 +77,7 @@ export const DOMAIN_THRESHOLD_TO_TYPE: Record<
 };
 
 export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<
-  CertificateExpiryThreshold,
+  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number],
   NotificationType
 > = {
   14: "certificate_expiry_14d",

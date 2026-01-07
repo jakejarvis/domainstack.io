@@ -1,26 +1,11 @@
-import type {
-  CertificatesResponse,
-  DnsRecordsResponse,
-  HeadersResponse,
-  HostingResponse,
-  RegistrationResponse,
-  SeoResponse,
-} from "@/lib/schemas";
+import type { DomainResponse } from "@/lib/types";
 
 export function exportDomainData(
   domain: string,
-  data: Record<string, unknown>,
+  data: Partial<DomainResponse>,
 ) {
-  // Manual transformation to remove Zod dependency
-  const registration = data.registration as RegistrationResponse | null;
-  const dns = data.dns as DnsRecordsResponse | null;
-  const hosting = data.hosting as HostingResponse | null;
-  const certificates = data.certificates as CertificatesResponse | null;
-  const headers = data.headers as HeadersResponse | null;
-  const seo = data.seo as SeoResponse | null;
-
-  let cleanedRegistration = null;
-  if (registration) {
+  let registration = null;
+  if (data.registration) {
     // omit domain, unicodeName, punycodeName, warnings, registrarProvider
     const {
       domain: _d,
@@ -29,61 +14,61 @@ export function exportDomainData(
       warnings: _w,
       registrarProvider: _rp,
       ...rest
-    } = registration;
-    cleanedRegistration = rest;
+    } = data.registration;
+    registration = rest;
   }
 
-  let cleanedDns = null;
-  if (dns) {
-    cleanedDns = {
-      records: dns.records?.map((r) => {
+  let dns = null;
+  if (data.dns) {
+    dns = {
+      records: data.dns.records?.map((r) => {
         // omit isCloudflare
         const { isCloudflare: _ic, ...rest } = r;
         return rest;
       }),
-      resolver: dns.resolver,
+      resolver: data.dns.resolver,
     };
   }
 
-  let cleanedHosting = null;
-  if (hosting) {
-    cleanedHosting = {
-      dns: hosting.dnsProvider?.name ?? "",
-      hosting: hosting.hostingProvider?.name ?? "",
-      email: hosting.emailProvider?.name ?? "",
-      geo: hosting.geo,
+  let hosting = null;
+  if (data.hosting) {
+    hosting = {
+      dns: data.hosting.dnsProvider?.name ?? "",
+      hosting: data.hosting.hostingProvider?.name ?? "",
+      email: data.hosting.emailProvider?.name ?? "",
+      geo: data.hosting.geo,
     };
   }
 
-  let cleanedCertificates = null;
-  if (certificates?.certificates) {
-    cleanedCertificates = certificates.certificates.map((c) => {
+  let certificates = null;
+  if (data.certificates?.certificates) {
+    certificates = data.certificates.certificates.map((c) => {
       // omit caProvider
       const { caProvider: _cp, ...rest } = c;
       return rest;
     });
   }
 
-  let cleanedHeaders = null;
-  if (headers) {
-    cleanedHeaders = headers.headers;
+  let headers = null;
+  if (data.headers) {
+    headers = data.headers.headers;
   }
 
-  let cleanedSeo = null;
-  if (seo) {
+  let seo = null;
+  if (data.seo) {
     // omit preview, source, errors
-    const { preview: _p, source: _s, errors: _e, ...rest } = seo;
-    cleanedSeo = rest;
+    const { preview: _p, source: _s, errors: _e, ...rest } = data.seo;
+    seo = rest;
   }
 
   const payload = {
     domain,
-    registration: cleanedRegistration,
-    dns: cleanedDns,
-    hosting: cleanedHosting,
-    certificates: cleanedCertificates,
-    headers: cleanedHeaders,
-    seo: cleanedSeo,
+    registration,
+    dns,
+    hosting,
+    certificates,
+    headers,
+    seo,
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], {

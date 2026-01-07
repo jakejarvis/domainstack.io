@@ -1,24 +1,7 @@
 import { TRPCError } from "@trpc/server";
+import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import {
-  BlobUrlResponseSchema,
-  BlobUrlWithBlockedFlagResponseSchema,
-  CertificatesResponseSchema,
-  DnsRecordsResponseSchema,
-  HeadersResponseSchema,
-  HostingResponseSchema,
-  RegistrationResponseSchema,
-  SeoResponseSchema,
-} from "@/lib/schemas";
-import { getCertificates } from "@/server/services/certificates";
-import { getDnsRecords } from "@/server/services/dns";
-import { getHeaders } from "@/server/services/headers";
-import { getHosting } from "@/server/services/hosting";
-import { getFavicon } from "@/server/services/icons";
-import { getRegistration } from "@/server/services/registration";
-import { getScreenshot } from "@/server/services/screenshot";
-import { getSeo } from "@/server/services/seo";
 import {
   createTRPCRouter,
   domainProcedure,
@@ -39,36 +22,297 @@ const DomainInputSchema = z
   });
 
 export const domainRouter = createTRPCRouter({
+  /**
+   * Get registration data for a domain using a durable workflow.
+   * Performs WHOIS/RDAP lookup with automatic retries.
+   */
   getRegistration: domainProcedure
     .input(DomainInputSchema)
-    .output(RegistrationResponseSchema)
-    .query(({ input }) => getRegistration(input.domain)),
+    .query(async ({ input }) => {
+      const { getRegistrationCached } = await import(
+        "@/lib/db/repos/registrations"
+      );
+
+      // Check cache first
+      const cached = await getRegistrationCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { registrationWorkflow } = await import("@/workflows/registration");
+      const run = await start(registrationWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get DNS records for a domain using a durable workflow.
+   * Queries multiple DoH providers with automatic fallback.
+   */
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
-    .output(DnsRecordsResponseSchema)
-    .query(({ input }) => getDnsRecords(input.domain)),
+    .query(async ({ input }) => {
+      const { getDnsCached } = await import("@/lib/db/repos/dns");
+
+      // Check cache first
+      const cached = await getDnsCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { dnsWorkflow } = await import("@/workflows/dns");
+      const run = await start(dnsWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get hosting, DNS, and email provider data for a domain.
+   * Detects providers from DNS records and HTTP headers.
+   *
+   * This procedure orchestrates DNS → headers → hosting to avoid
+   * duplicate workflow executions when these are fetched in parallel.
+   */
   getHosting: domainProcedure
     .input(DomainInputSchema)
-    .output(HostingResponseSchema)
-    .query(({ input }) => getHosting(input.domain)),
+    .query(async ({ input }) => {
+      const { getHostingCached } = await import("@/lib/db/repos/hosting");
+
+      // Check cache first
+      const cached = await getHostingCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - orchestrate DNS and headers first, then hosting
+      const { dnsWorkflow } = await import("@/workflows/dns");
+      const { headersWorkflow } = await import("@/workflows/headers");
+      const { hostingWorkflow } = await import("@/workflows/hosting");
+
+      // Phase 1: Fetch DNS and headers in parallel
+      const [dnsRun, headersRun] = await Promise.all([
+        start(dnsWorkflow, [{ domain: input.domain }]),
+        start(headersWorkflow, [{ domain: input.domain }]),
+      ]);
+
+      const [dnsResult, headersResult] = await Promise.all([
+        dnsRun.returnValue,
+        headersRun.returnValue,
+      ]);
+
+      // Phase 2: Hosting uses the already-fetched data
+      const hostingRun = await start(hostingWorkflow, [
+        {
+          domain: input.domain,
+          dnsRecords: dnsResult.data.records,
+          headers: headersResult.data.headers,
+        },
+      ]);
+      const result = await hostingRun.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get SSL certificates for a domain using a durable workflow.
+   * Performs TLS handshake with automatic retries.
+   */
   getCertificates: domainProcedure
     .input(DomainInputSchema)
-    .output(CertificatesResponseSchema)
-    .query(({ input }) => getCertificates(input.domain)),
+    .query(async ({ input }) => {
+      const { getCertificatesCached } = await import(
+        "@/lib/db/repos/certificates"
+      );
+
+      // Check cache first
+      const cached = await getCertificatesCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { certificatesWorkflow } = await import("@/workflows/certificates");
+      const run = await start(certificatesWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get HTTP headers for a domain using a durable workflow.
+   * Probes the domain with automatic retries.
+   */
   getHeaders: domainProcedure
     .input(DomainInputSchema)
-    .output(HeadersResponseSchema)
-    .query(({ input }) => getHeaders(input.domain)),
-  getSeo: domainProcedure
-    .input(DomainInputSchema)
-    .output(SeoResponseSchema)
-    .query(({ input }) => getSeo(input.domain)),
+    .query(async ({ input }) => {
+      const { getHeadersCached } = await import("@/lib/db/repos/headers");
+
+      // Check cache first
+      const cached = await getHeadersCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - run workflow
+      const { headersWorkflow } = await import("@/workflows/headers");
+      const run = await start(headersWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get SEO data for a domain using a durable workflow.
+   * Fetches HTML, robots.txt, and OG images with automatic retries.
+   */
+  getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
+    const { getSeoCached } = await import("@/lib/db/repos/seo");
+
+    // Check cache first
+    const cached = await getSeoCached(input.domain);
+    if (cached) {
+      return {
+        success: true,
+        cached: true,
+        data: cached,
+      };
+    }
+
+    // Cache miss - run workflow
+    const { seoWorkflow } = await import("@/workflows/seo");
+    const run = await start(seoWorkflow, [{ domain: input.domain }]);
+    const result = await run.returnValue;
+
+    return {
+      ...result,
+      cached: false,
+    };
+  }),
+
+  /**
+   * Get a favicon for a domain using a durable workflow.
+   * Fetches from multiple sources with automatic retries.
+   */
   getFavicon: publicProcedure
     .input(DomainInputSchema)
-    .output(BlobUrlResponseSchema)
-    .query(({ input }) => getFavicon(input.domain)),
+    .query(async ({ input }) => {
+      const { getFaviconByDomain } = await import("@/lib/db/repos/favicons");
+
+      // Check cache first
+      const cachedRecord = await getFaviconByDomain(input.domain);
+
+      if (cachedRecord) {
+        // Only treat as cache hit if we have a definitive result:
+        // - url is present (string), OR
+        // - url is null but marked as permanently not found
+        const isDefinitiveResult =
+          cachedRecord.url !== null || cachedRecord.notFound === true;
+
+        if (isDefinitiveResult) {
+          return {
+            success: true,
+            cached: true,
+            data: {
+              url: cachedRecord.url,
+            },
+          };
+        }
+      }
+
+      // Cache miss - run workflow
+      const { faviconWorkflow } = await import("@/workflows/favicon");
+      const run = await start(faviconWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
+
+  /**
+   * Get a screenshot for a domain using a durable workflow.
+   * Captures with Puppeteer with automatic retries.
+   */
   getScreenshot: publicProcedure
     .input(DomainInputSchema)
-    .output(BlobUrlWithBlockedFlagResponseSchema)
-    .query(({ input }) => getScreenshot(input.domain)),
+    .query(async ({ input }) => {
+      const { findDomainByName } = await import("@/lib/db/repos/domains");
+      const { getScreenshotByDomainId } = await import(
+        "@/lib/db/repos/screenshots"
+      );
+
+      // Check cache first
+      const existingDomain = await findDomainByName(input.domain);
+      if (existingDomain) {
+        const screenshotRecord = await getScreenshotByDomainId(
+          existingDomain.id,
+        );
+
+        if (screenshotRecord) {
+          // Only treat as cache hit if we have a definitive result:
+          // - url is present (string), OR
+          // - url is null but marked as permanently not found
+          const isDefinitiveResult =
+            screenshotRecord.url !== null || screenshotRecord.notFound === true;
+
+          if (isDefinitiveResult) {
+            return {
+              success: true,
+              cached: true,
+              data: { url: screenshotRecord.url, blocked: false },
+            };
+          }
+        }
+      }
+
+      // Cache miss - run workflow
+      const { screenshotWorkflow } = await import("@/workflows/screenshot");
+      const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
+      const result = await run.returnValue;
+
+      return {
+        ...result,
+        cached: false,
+      };
+    }),
 });

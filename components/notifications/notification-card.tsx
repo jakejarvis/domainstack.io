@@ -6,7 +6,7 @@ import {
   getSeverityColors,
   getUnreadIndicatorColor,
 } from "@/lib/notification-utils";
-import type { NotificationData } from "@/lib/schemas";
+import type { NotificationData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface NotificationCardProps {

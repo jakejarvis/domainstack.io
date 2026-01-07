@@ -1,7 +1,6 @@
 import "server-only";
 
 import type { Logger } from "pino";
-import type { NotificationType } from "@/lib/constants/notifications";
 import {
   createNotification,
   updateNotificationResendId,
@@ -9,7 +8,7 @@ import {
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { sendPrettyEmail } from "@/lib/resend";
-import type { NotificationOverrides } from "@/lib/schemas";
+import type { NotificationOverrides, NotificationType } from "@/lib/types";
 
 /**
  * Common configuration for sending notifications.

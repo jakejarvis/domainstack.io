@@ -1,19 +1,25 @@
 import { z } from "zod";
-import {
-  type Provider,
-  type ProviderCategory,
-  type Rule,
-  RuleSchema,
-} from "@/lib/schemas";
+import type { ProviderCategory } from "@/lib/types";
+import type { Rule } from "./rules";
+import { RuleSchema } from "./rules";
 
 /**
- * Schema for a provider entry without category (category is inferred from the key).
+ * A provider entry as stored in the catalog.
  */
-const CatalogProviderEntrySchema = z.object({
+const ProviderEntrySchema = z.object({
   name: z.string().min(1),
   domain: z.string().min(1),
   rule: RuleSchema,
 });
+
+export type ProviderEntry = z.infer<typeof ProviderEntrySchema>;
+
+/**
+ * A full provider entry with category.
+ */
+export interface Provider extends ProviderEntry {
+  category: ProviderCategory;
+}
 
 /**
  * Schema for the full provider catalog stored in Edge Config.
@@ -29,13 +35,13 @@ const CatalogProviderEntrySchema = z.object({
  * }
  * ```
  */
-export const ProviderCatalogSchema = z
+const ProviderCatalogSchema = z
   .object({
-    ca: z.array(CatalogProviderEntrySchema).default([]),
-    dns: z.array(CatalogProviderEntrySchema).default([]),
-    email: z.array(CatalogProviderEntrySchema).default([]),
-    hosting: z.array(CatalogProviderEntrySchema).default([]),
-    registrar: z.array(CatalogProviderEntrySchema).default([]),
+    ca: z.array(ProviderEntrySchema).default([]),
+    dns: z.array(ProviderEntrySchema).default([]),
+    email: z.array(ProviderEntrySchema).default([]),
+    hosting: z.array(ProviderEntrySchema).default([]),
+    registrar: z.array(ProviderEntrySchema).default([]),
   })
   .superRefine((catalog, ctx) => {
     // Validate all regex patterns at parse time
@@ -99,11 +105,6 @@ export const ProviderCatalogSchema = z
 export type ProviderCatalog = z.infer<typeof ProviderCatalogSchema>;
 
 /**
- * Type for the raw catalog entry (without category, as stored in Edge Config).
- */
-export type CatalogProviderEntry = z.infer<typeof CatalogProviderEntrySchema>;
-
-/**
  * Parse and validate a raw provider catalog from Edge Config.
  *
  * @param raw - Raw JSON object from Edge Config
@@ -130,19 +131,6 @@ export function safeParseProviderCatalog(
 }
 
 /**
- * Convert a catalog entry to a full Provider with category.
- */
-export function toProvider(
-  entry: CatalogProviderEntry,
-  category: ProviderCategory,
-): Provider {
-  return {
-    ...entry,
-    category,
-  };
-}
-
-/**
  * Extract providers of a specific category from a parsed catalog.
  */
 export function getProvidersFromCatalog(
@@ -150,5 +138,5 @@ export function getProvidersFromCatalog(
   category: ProviderCategory,
 ): Provider[] {
   const entries = catalog[category];
-  return entries.map((entry) => toProvider(entry, category));
+  return entries.map((entry) => ({ ...entry, category }));
 }

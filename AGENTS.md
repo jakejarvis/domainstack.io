@@ -23,14 +23,16 @@
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
 - `lib/resend.ts` Resend email client for sending notifications.
-- `lib/providers/` provider detection system (catalog.ts for Edge Config schema, detection.ts for pattern matching, parser.ts for catalog parsing).
-- `lib/icons/` icon pipeline for favicon extraction (pipeline.ts for multi-source extraction, sources.ts for source definitions).
-- `lib/schemas/` Zod schemas organized by domain.
+- `lib/providers/` provider detection system with rule syntax and Edge Config catalog parsing.
+- `lib/types/` Plain TypeScript types - single source of truth for enums and internal data structures.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
-- `server/services/` service layer for domain data fetching (DNS, certificates, headers, hosting, icons, IP, pricing, registration, screenshot, SEO, verification).
+- `server/services/` service layer for orchestration (currently empty - all services migrated to workflows).
+- `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via ipwho.is API.
+- `lib/pricing.ts` Domain registration pricing aggregation from multiple registrars (Porkbun, Cloudflare, Dynadot).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
+- `workflows/` Vercel Workflow definitions for durable backend operations. See the "Available Workflows" table below.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -54,11 +56,11 @@
 - 2-space indentation. Files/folders: kebab-case; exports: PascalCase; helpers: camelCase named exports.
 - Client components must begin with `"use client"`. Consolidate imports via `@/...`. Keep page roots lean.
 - Constants: Organize by domain in `lib/constants/` submodules.
-- Use `drizzle-zod` for DB boundary validation:
-  - Read schemas: `lib/db/zod.ts` `*Select` (strict `Date` types)
-  - Write schemas: `lib/db/zod.ts` `*Insert`/`*Update` (dates coerced)
-  - Reuse domain Zod types for JSON columns (SEO, registration) to avoid drift
-  - Reference: drizzle-zod docs [drizzle-zod](https://orm.drizzle.team/docs/zod)
+- Types and Schemas:
+  - **Plain TypeScript** (`lib/types/`): Use for internal data structures that don't need runtime validation. Simple enums are defined as `const` arrays with derived union types.
+  - **Single source of truth**: Enum const arrays live in `lib/types/primitives.ts`. Drizzle pgEnums derive from these arrays.
+  - **Importing types**: Prefer `@/lib/types` for types.
+  - Do NOT use Zod for simple enums or internal data structures from your own database.
 
 ## Testing Guidelines
 - Use **Vitest** with **Browser Mode** (Playwright) for component testing; config in `vitest.config.ts`.
@@ -75,9 +77,12 @@
   - Mock tRPC/React Query for components like `Favicon` and `Screenshot`.
 - Server tests:
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).
-  - Screenshot service (`server/services/screenshot.ts`) uses hoisted mocks for `puppeteer`/`puppeteer-core` and `@sparticuz/chromium`.
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
+- Workflow tests (`workflows/*/workflow.test.ts`):
+  - Test step functions directly by mocking their dependencies (dynamic imports).
+  - Use PGlite for database-backed tests, mock external services (`@/lib/storage`, `@/lib/fetch-remote-asset`).
+  - For steps with dynamic imports (Puppeteer, TLS), focus on cache and blocklist tests; integration tests cover the full flow.
 - Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
 - Commands: `pnpm test`, `pnpm test:run`, `pnpm test:coverage`.
 
@@ -137,7 +142,7 @@ Users must verify domain ownership via one of three methods:
 2. **HTML file:** Upload `/.well-known/domainstack-verify.html` containing the token.
 3. **Meta tag:** Add `<meta name="domainstack-verify" content="token">` to homepage.
 
-Verification service: `server/services/verification.ts` with `tryAllVerificationMethods()` and `verifyDomainOwnership()`. Uses shared DoH utilities from `lib/dns-utils.ts` for redundant DNS verification across multiple providers (Cloudflare, Google).
+Verification workflow: `workflows/verification/` with durable steps for DNS TXT, HTML file, and meta tag verification. Uses shared DoH utilities from `lib/dns-utils.ts` for redundant DNS verification across multiple providers (Cloudflare, Google).
 
 ### Re-verification & Grace Period
 - Inngest function `reverifyDomains` runs daily at 4 AM UTC.
@@ -211,6 +216,56 @@ Users can subscribe to domain expiration dates via iCalendar feed compatible wit
 - `section-revalidate`: Event-driven; background revalidation for individual domain+section combinations with rate limiting and concurrency control.
 - `sync-screenshot-blocklist`: Weekly on Sundays at 2:00 AM UTC; syncs external blocklists (e.g., OISD NSFW) to `blocked_domains` table for screenshot/OG image blocking.
 
+### Workflow DevKit (Durable Workflows)
+Vercel's Workflow DevKit provides durable execution for heavy backend operations. Unlike Inngest (scheduled/event-driven jobs), Workflow is designed for long-running, resource-intensive operations that benefit from step-by-step durability and automatic retries.
+
+**Architecture:**
+- **Config:** `next.config.ts` wrapped with `withWorkflow()` for directive support.
+- **Instrumentation:** `instrumentation.ts` initializes the workflow world on server startup.
+- **Workflows:** `workflows/` directory contains workflow definitions.
+- **Steps:** Functions marked with `"use step"` directive run as durable, retryable steps.
+- **Integration:** tRPC procedures in `server/routers/domain.ts` and `server/routers/provider.ts` call workflows via `start()` and await `run.returnValue`.
+
+**Available Workflows:**
+
+| Workflow | Input | Purpose | Steps |
+|----------|-------|---------|-------|
+| `certificatesWorkflow` | `{ domain }` | Fetch SSL/TLS certificate chain | checkCache → fetchCertificateChain → detectProvidersAndBuildResponse → persistCertificates |
+| `dnsWorkflow` | `{ domain }` | Resolve DNS records via DoH | checkCache → fetchFromProviders → persistRecords |
+| `faviconWorkflow` | `{ domain }` | Extract domain favicon | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
+| `headersWorkflow` | `{ domain }` | Probe HTTP headers | checkCache → fetchHeaders → persistHeaders |
+| `hostingWorkflow` | `{ domain, dnsRecords, headers }` | Detect hosting/email/DNS providers | lookupGeoIp → detectAndResolveProviders → persistHosting |
+| `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
+| `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
+| `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
+| `seoWorkflow` | `{ domain }` | Fetch SEO meta and robots.txt | checkCache → fetchHtml → fetchRobots → processOgImage → persistSeo |
+| `verificationWorkflow` | `{ domain, token, method? }` | Verify domain ownership | verifyByDns → verifyByHtmlFile → verifyByMetaTag (or single method if specified) |
+
+**Usage Pattern:**
+```typescript
+import { start } from "workflow/api";
+import { registrationWorkflow } from "@/workflows/registration";
+
+// Start workflow and wait for result
+const run = await start(registrationWorkflow, [{ domain: "example.com" }]);
+const result = await run.returnValue;
+```
+
+**When to use Workflow vs Inngest:**
+- **Workflow:** Heavy, request-triggered operations that need durability (screenshots, TLS handshakes, RDAP lookups, DNS resolution, SEO data fetching)
+- **Inngest:** Scheduled jobs, event-driven background tasks, fan-out patterns, multi-domain batch operations
+
+**Observability:**
+```bash
+# Open the workflow Web UI
+npx workflow web
+# CLI inspection
+npx workflow inspect runs
+```
+
+**Reference**
+[Workflow DevKit docs](https://useworkflow.dev/llms.txt)
+
 ## Email Notifications (Resend + React Email)
 - **Client:** `lib/resend.ts` exports `resend` client and `RESEND_FROM_EMAIL`.
 - **Templates:** `emails/` directory with React Email components:
@@ -242,7 +297,7 @@ Screenshots and OG image fetching are blocked for domains on external NSFW/malwa
 - **Inngest job:** `sync-screenshot-blocklist` runs weekly to fetch and sync blocklists.
 
 ### Integration Points
-- **Screenshot service:** `server/services/screenshot.ts` checks blocklist before capturing screenshots.
+- **Screenshot workflow:** `workflows/screenshot/workflow.ts` checks blocklist in `checkBlocklist` step before capturing.
 - **SEO service:** `server/services/seo.ts` checks blocklist before fetching OG images, returns null for blocked domains.
 
 ### Sync Behavior
@@ -302,7 +357,6 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
   - Consolidated into single localStorage key for efficiency
 - **Bulk actions:** Multi-select with floating toolbar for archive/delete. Hook: `hooks/use-selection.ts`. Component: `components/dashboard/bulk-actions-toolbar.tsx`.
 - **Health summary:** Clickable badges showing expiring/pending counts. Component: `components/dashboard/health-summary.tsx`.
-- **Filter constants:** `lib/constants/domain-filters.ts` defines `HEALTH_OPTIONS` and re-exports `ProviderCategory` from schemas.
 
 ### Environment variables
 - `POLAR_ACCESS_TOKEN`: API token from Polar dashboard.

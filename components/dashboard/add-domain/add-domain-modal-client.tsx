@@ -4,10 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-content";
-import type { ResumeDomainData } from "@/hooks/use-domain-verification";
 import { useRouter } from "@/hooks/use-router";
-import { isValidVerificationMethod } from "@/lib/constants/verification";
 import { useTRPC } from "@/lib/trpc/client";
+import type { ResumeDomainData } from "@/lib/types";
+import { isValidVerificationMethod } from "@/lib/verification-instructions";
 
 export function AddDomainModalClient({
   prefillDomain,

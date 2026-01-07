@@ -13,15 +13,12 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { NotificationType } from "@/lib/constants/notifications";
 import { db } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
+import type { NotificationType } from "@/lib/types";
 
 const logger = createLogger({ source: "notifications" });
-
-// Re-export for convenience
-export type { NotificationType } from "@/lib/constants/notifications";
 
 export type CreateNotificationParams = {
   userId: string;

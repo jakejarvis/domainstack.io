@@ -58,7 +58,6 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
-    "drizzle-zod": "^0.8.3",
     "file-type": "^21.3.0",
     "geist": "^1.5.1",
     "ical-generator": "10.0.1-develop.11",
@@ -94,6 +93,7 @@
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
     "vaul-base": "^1.0.0",
+    "workflow": "4.0.1-beta.41",
     "ws": "^8.19.0",
     "zod": "^4.3.5"
   },
@@ -138,6 +138,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@posthog/cli",
+      "@swc/core",
       "bufferutil",
       "core-js",
       "esbuild",
