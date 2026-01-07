@@ -319,6 +319,10 @@ async function persistRegistration(
     );
 
     // Resolve provider ID
+    // Guard: only call resolveOrCreateProviderId if we have name or domain to look up
+    const hasProviderInfo =
+      response.registrarProvider.name || response.registrarProvider.domain;
+
     const [domainRecord, registrarProviderId] = await Promise.all([
       upsertDomain({
         name: domain,
@@ -327,11 +331,13 @@ async function persistRegistration(
       }),
       matched
         ? upsertCatalogProviderRef(matched).then((r) => r.id)
-        : resolveOrCreateProviderId({
-            category: "registrar",
-            domain: response.registrarProvider.domain,
-            name: response.registrarProvider.name,
-          }),
+        : hasProviderInfo
+          ? resolveOrCreateProviderId({
+              category: "registrar",
+              domain: response.registrarProvider.domain,
+              name: response.registrarProvider.name,
+            })
+          : null,
     ]);
 
     const expiresAt = ttlForRegistration(
