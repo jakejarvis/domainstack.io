@@ -4,20 +4,13 @@
  * These are internal data structures, no runtime validation needed.
  */
 
-import type { USER_TIERS } from "@/lib/constants/plan-quotas";
-
-export type UserTier = (typeof USER_TIERS)[number];
-
-/**
- * Subscription plan type (alias for UserTier for clarity).
- */
-export type SubscriptionPlan = UserTier;
+import type { PLANS } from "@/lib/constants/plan-quotas";
 
 /**
  * User subscription data returned from API.
  */
 export interface Subscription {
-  plan: SubscriptionPlan;
+  plan: (typeof PLANS)[number];
   planQuota: number;
   endsAt: Date | null;
   activeCount: number;

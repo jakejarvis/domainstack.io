@@ -21,19 +21,6 @@ export const VERIFICATION_STATUSES = [
   "unverified",
 ] as const;
 
-/**
- * Type guard to check if a value is a valid VerificationMethod.
- * Client-safe runtime validation without Zod dependency.
- */
-export function isValidVerificationMethod(
-  value: unknown,
-): value is VerificationMethod {
-  return (
-    typeof value === "string" &&
-    VERIFICATION_METHODS.includes(value as VerificationMethod)
-  );
-}
-
 // ============================================================================
 // Grace Period
 // ============================================================================

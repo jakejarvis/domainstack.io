@@ -4,9 +4,13 @@
  * Constants and metadata are in @/lib/constants/sections.ts.
  */
 
-import type { SECTIONS } from "@/lib/constants/sections";
-
-export type Section = (typeof SECTIONS)[number];
+export type Section =
+  | "dns"
+  | "headers"
+  | "hosting"
+  | "certificates"
+  | "seo"
+  | "registration";
 
 export type SectionAccent =
   | "blue"

@@ -22,15 +22,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  type ResumeDomainData,
-  useDomainVerification,
-} from "@/hooks/use-domain-verification";
+import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
-
-export type { ResumeDomainData };
+import type { ResumeDomainData } from "@/lib/types";
 
 export type AddDomainContentProps = {
   /** Additional classes for the wrapper */

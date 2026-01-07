@@ -9,25 +9,6 @@ import {
 import type { Section, SectionAccent, SectionDef } from "@/lib/types";
 
 /**
- * Section keys for domain reports.
- */
-export const SECTIONS = [
-  "dns",
-  "headers",
-  "hosting",
-  "certificates",
-  "seo",
-  "registration",
-] as const;
-
-/**
- * Helper to get all sections as a mutable array.
- */
-export function allSections() {
-  return [...SECTIONS];
-}
-
-/**
  * Section metadata for UI.
  */
 export const sections: Record<Section, SectionDef> = {

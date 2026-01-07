@@ -7,7 +7,6 @@ export * from "./domain";
 export * from "./domain-filters";
 export * from "./icons";
 export * from "./notifications";
-export * from "./oauth";
 export * from "./pricing";
 export * from "./provider";
 export * from "./provider-ref";

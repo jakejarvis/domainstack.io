@@ -15,7 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
-import { USER_TIERS } from "@/lib/constants/plan-quotas";
+import { PLANS } from "@/lib/constants/plan-quotas";
 import {
   PROVIDER_CATEGORIES,
   PROVIDER_SOURCES,
@@ -56,7 +56,7 @@ export const verificationStatus = pgEnum(
   "verification_status",
   VERIFICATION_STATUSES,
 );
-export const userTier = pgEnum("user_tier", USER_TIERS);
+export const userTier = pgEnum("user_tier", PLANS);
 
 // ============================================================================
 // Authentication Tables (better-auth)

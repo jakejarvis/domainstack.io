@@ -5,6 +5,7 @@ import {
   HTML_FILE_CONTENT_PREFIX,
   HTML_FILE_DIR,
   META_TAG_NAME,
+  VERIFICATION_METHODS,
 } from "@/lib/constants/verification";
 import type {
   DnsInstructions,
@@ -84,4 +85,17 @@ export function buildVerificationInstructions(
     html_file: getVerificationInstructions(domain, token, "html_file"),
     meta_tag: getVerificationInstructions(domain, token, "meta_tag"),
   };
+}
+
+/**
+ * Type guard to check if a value is a valid VerificationMethod.
+ * Client-safe runtime validation without Zod dependency.
+ */
+export function isValidVerificationMethod(
+  value: unknown,
+): value is VerificationMethod {
+  return (
+    typeof value === "string" &&
+    VERIFICATION_METHODS.includes(value as VerificationMethod)
+  );
 }

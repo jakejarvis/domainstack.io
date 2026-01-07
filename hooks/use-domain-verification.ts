@@ -4,24 +4,11 @@ import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
 import { useTRPC } from "@/lib/trpc/client";
-import type { VerificationMethod } from "@/lib/types";
+import type { ResumeDomainData, VerificationMethod } from "@/lib/types";
 
 // ============================================================================
 // Types
 // ============================================================================
-
-export type ResumeDomainData = {
-  id: string;
-  domainName: string;
-  verificationToken: string;
-  verificationMethod?: VerificationMethod | null;
-};
-
-/** Verification status for the current step (exposed for UI components) */
-export type VerificationState =
-  | { status: "idle" }
-  | { status: "verifying" }
-  | { status: "failed"; error?: string };
 
 type UseDomainVerificationOptions = {
   /** Whether the verification flow is open/visible (default: true for page usage) */

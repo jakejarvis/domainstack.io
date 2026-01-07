@@ -1,5 +1,3 @@
-import type { SubscriptionPlan } from "@/lib/types";
-
 /**
  * Get Polar product IDs from environment variables with validation.
  * These are required and must be set for the application to function.
@@ -36,7 +34,7 @@ export const POLAR_PRODUCTS = {
       return getProductIds().monthlyId;
     },
     slug: "pro-monthly",
-    tier: "pro" as SubscriptionPlan,
+    tier: "pro",
     name: "Pro Monthly",
     interval: "month" as const,
     amount: 200, // $2/month
@@ -47,14 +45,14 @@ export const POLAR_PRODUCTS = {
       return getProductIds().yearlyId;
     },
     slug: "pro-yearly",
-    tier: "pro" as SubscriptionPlan,
+    tier: "pro",
     name: "Pro Yearly",
     interval: "year" as const,
     amount: 2000, // $20/year
     label: "$20/year",
     savings: "Save ~17%",
   },
-};
+} as const;
 
 export type ProductSlug = keyof typeof POLAR_PRODUCTS;
 
@@ -76,19 +74,10 @@ export function getProductsForCheckout() {
 }
 
 /**
- * Get all products for a specific tier.
- */
-export function getProductsForTier(tier: SubscriptionPlan) {
-  return Object.values(POLAR_PRODUCTS).filter((p) => p.tier === tier);
-}
-
-/**
  * Find the tier associated with a Polar product ID.
  * Used by webhooks to determine which tier to assign.
  */
-export function getTierForProductId(
-  productId: string,
-): SubscriptionPlan | null {
+export function getTierForProductId(productId: string): "pro" | null {
   const product = Object.values(POLAR_PRODUCTS).find(
     (p) => p.productId === productId,
   );

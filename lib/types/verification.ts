@@ -54,3 +54,16 @@ export interface VerificationInstructions {
   html_file: HtmlFileInstructions;
   meta_tag: MetaTagInstructions;
 }
+
+export type ResumeDomainData = {
+  id: string;
+  domainName: string;
+  verificationToken: string;
+  verificationMethod?: VerificationMethod | null;
+};
+
+/** Verification status for the current step (exposed for UI components) */
+export type VerificationState =
+  | { status: "idle" }
+  | { status: "verifying" }
+  | { status: "failed"; error?: string };

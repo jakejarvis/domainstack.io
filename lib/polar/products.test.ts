@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   getProduct,
   getProductsForCheckout,
-  getProductsForTier,
   getTierForProductId,
   POLAR_PRODUCTS,
   PRO_TIER_INFO,
@@ -47,19 +46,6 @@ describe("getProductsForCheckout", () => {
     const slugs = products.map((p) => p.slug);
     expect(slugs).toContain("pro-monthly");
     expect(slugs).toContain("pro-yearly");
-  });
-});
-
-describe("getProductsForTier", () => {
-  it("returns all products for pro tier", () => {
-    const products = getProductsForTier("pro");
-    expect(products.length).toBe(2);
-    expect(products.every((p) => p.tier === "pro")).toBe(true);
-  });
-
-  it("returns empty array for free tier (no products)", () => {
-    const products = getProductsForTier("free");
-    expect(products).toEqual([]);
   });
 });
 

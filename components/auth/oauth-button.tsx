@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
-import type { OAuthProviderConfig } from "@/lib/types";
+import type { OAuthProvider } from "@/lib/oauth";
 import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {
   /** Provider configuration */
-  provider: OAuthProviderConfig;
+  provider: OAuthProvider;
   /** URL to redirect to after successful sign-in */
   callbackURL?: string;
   /** Additional class names */
