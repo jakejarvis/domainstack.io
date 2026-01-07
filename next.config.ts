@@ -13,7 +13,9 @@ let nextConfig: NextConfig = {
   },
   productionBrowserSourceMaps: true,
   outputFileTracingIncludes: {
-    "/api/**": ["node_modules/@sparticuz/chromium/bin/**"],
+    "/.well-known/workflow/**/step": [
+      "node_modules/@sparticuz/chromium/bin/**",
+    ],
   },
   logging: {
     incomingRequests: {
