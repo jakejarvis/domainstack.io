@@ -23,20 +23,13 @@ import { headersWorkflow } from "@/workflows/headers";
 
 const logger = createLogger({ source: "hosting" });
 
-export type ServiceOptions = {
-  skipScheduling?: boolean;
-};
-
 /**
  * Fetch fresh hosting, email, and DNS provider data for a domain.
  *
  * This function always fetches fresh data (no cache checking).
  * Cache checking is done at the tRPC layer before calling this function.
  */
-export async function fetchHosting(
-  domain: string,
-  options: ServiceOptions = {},
-): Promise<HostingResponse> {
+export async function fetchHosting(domain: string): Promise<HostingResponse> {
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
 
@@ -228,16 +221,14 @@ export async function fetchHosting(
       expiresAt,
     });
 
-    if (!options.skipScheduling) {
-      after(() =>
-        scheduleRevalidation(
-          domain,
-          "hosting",
-          expiresAt.getTime(),
-          domainRecord.lastAccessedAt ?? null,
-        ),
-      );
-    }
+    after(() =>
+      scheduleRevalidation(
+        domain,
+        "hosting",
+        expiresAt.getTime(),
+        domainRecord.lastAccessedAt ?? null,
+      ),
+    );
   } catch (err) {
     logger.error({ err, domain }, "failed to persist hosting data");
     // Don't throw - persistence failure shouldn't fail the response

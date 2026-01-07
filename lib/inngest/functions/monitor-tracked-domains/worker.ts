@@ -69,7 +69,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
           // Start workflows and fetch hosting in parallel
           const [regRun, hostingPromise, certRun] = await Promise.all([
             start(registrationWorkflow, [{ domain: domainName }]),
-            fetchHosting(domainName, { skipScheduling: true }),
+            fetchHosting(domainName),
             start(certificatesWorkflow, [{ domain: domainName }]),
           ]);
 
