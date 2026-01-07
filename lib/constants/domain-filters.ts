@@ -1,8 +1,9 @@
-/** Filter types for domain verification status */
-export type StatusFilter = "verified" | "pending";
+import type { HealthFilter } from "@/lib/types";
 
-/** Filter types for domain health status */
-export type HealthFilter = "healthy" | "expiring" | "expired";
+/**
+ * Domain filter constants for dashboard.
+ * Types are in @/lib/types/domain-filters.ts.
+ */
 
 /** Filter options for domain health status */
 export const HEALTH_OPTIONS: { value: HealthFilter; label: string }[] = [

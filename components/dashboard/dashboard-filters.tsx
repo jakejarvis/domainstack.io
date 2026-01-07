@@ -41,11 +41,8 @@ import {
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import { SORT_OPTIONS, type SortOption } from "@/hooks/use-dashboard-sort";
-import {
-  HEALTH_OPTIONS,
-  type HealthFilter,
-  type StatusFilter,
-} from "@/lib/constants/domain-filters";
+import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
+import type { HealthFilter, StatusFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DashboardFiltersProps = {

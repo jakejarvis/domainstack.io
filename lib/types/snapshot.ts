@@ -25,21 +25,12 @@ export interface CertificateSnapshotData {
 }
 
 /**
- * Provider snapshot data (stored in separate columns, not JSONB).
+ * Provider snapshot data (stored in separate columns).
  */
 export interface ProviderSnapshotData {
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
-}
-
-/**
- * Complete snapshot data combining all sources.
- */
-export interface SnapshotData {
-  registration: RegistrationSnapshotData;
-  certificate: CertificateSnapshotData;
-  providers: ProviderSnapshotData;
 }
 
 /**

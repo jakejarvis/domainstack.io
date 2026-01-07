@@ -3,7 +3,6 @@ import "server-only";
 import { differenceInDays, format } from "date-fns";
 import type { Logger } from "inngest";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
-import type { NotificationType } from "@/lib/constants/notifications";
 import {
   clearDomainExpiryNotifications,
   createNotification,
@@ -19,6 +18,7 @@ import {
   getDomainExpiryNotificationType,
 } from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
+import type { NotificationType } from "@/lib/types";
 
 export const checkDomainExpiryWorker = inngest.createFunction(
   {

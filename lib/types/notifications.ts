@@ -5,6 +5,31 @@
  * no runtime validation needed.
  */
 
+import type {
+  CERTIFICATE_EXPIRY_THRESHOLDS,
+  DOMAIN_EXPIRY_THRESHOLDS,
+  NOTIFICATION_CATEGORIES,
+} from "@/lib/constants/notifications";
+
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
+type CertificateExpiryThreshold =
+  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
+
+export type NotificationType =
+  | `domain_expiry_${DomainExpiryThreshold}d`
+  | `certificate_expiry_${CertificateExpiryThreshold}d`
+  | "verification_failing"
+  | "verification_revoked"
+  | "registration_change"
+  | "provider_change"
+  | "certificate_change";
+
+// =============================================================================
+// Interfaces
+// =============================================================================
+
 /**
  * Data for a single notification item displayed in the UI.
  */
@@ -18,48 +43,32 @@ export interface NotificationData {
   readAt: Date | null;
 }
 
-/**
- * Notification channels - each category has toggles for in-app and email.
- */
-export interface NotificationChannels {
+/** Notification channel toggles for in-app and email. */
+interface ChannelToggles {
   inApp: boolean;
   email: boolean;
 }
 
 /**
  * User's global notification preferences.
- * All fields are required objects with channel booleans representing the default for all domains.
  * Note: Verification notifications are always sent and cannot be disabled.
  */
 export interface UserNotificationPreferences {
-  domainExpiry: NotificationChannels;
-  certificateExpiry: NotificationChannels;
-  registrationChanges: NotificationChannels;
-  providerChanges: NotificationChannels;
-  certificateChanges: NotificationChannels;
+  domainExpiry: ChannelToggles;
+  certificateExpiry: ChannelToggles;
+  registrationChanges: ChannelToggles;
+  providerChanges: ChannelToggles;
+  certificateChanges: ChannelToggles;
 }
 
 /**
  * Per-domain notification overrides.
- * All fields are optional - undefined means "inherit from global preferences".
- * Setting to an object with channel booleans explicitly overrides the global setting for that domain.
+ * undefined = inherit from global preferences.
  */
 export interface NotificationOverrides {
-  domainExpiry?: NotificationChannels;
-  certificateExpiry?: NotificationChannels;
-  registrationChanges?: NotificationChannels;
-  providerChanges?: NotificationChannels;
-  certificateChanges?: NotificationChannels;
-}
-
-/**
- * Input type for updating global notification preferences.
- * All fields optional to allow partial updates.
- */
-export interface UpdateNotificationPreferences {
-  domainExpiry?: NotificationChannels;
-  certificateExpiry?: NotificationChannels;
-  registrationChanges?: NotificationChannels;
-  providerChanges?: NotificationChannels;
-  certificateChanges?: NotificationChannels;
+  domainExpiry?: ChannelToggles;
+  certificateExpiry?: ChannelToggles;
+  registrationChanges?: ChannelToggles;
+  providerChanges?: ChannelToggles;
+  certificateChanges?: ChannelToggles;
 }

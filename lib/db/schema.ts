@@ -13,7 +13,18 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
+import { USER_TIERS } from "@/lib/constants/plan-quotas";
+import {
+  PROVIDER_CATEGORIES,
+  PROVIDER_SOURCES,
+} from "@/lib/constants/providers";
+import { REGISTRATION_SOURCES } from "@/lib/constants/registration";
+import {
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
+} from "@/lib/constants/verification";
 import type {
   GeneralMeta,
   Header,
@@ -25,18 +36,8 @@ import type {
   RobotsTxt,
   TwitterMeta,
 } from "@/lib/types";
-import {
-  DNS_RECORD_TYPES,
-  PROVIDER_CATEGORIES,
-  PROVIDER_SOURCES,
-  REGISTRATION_SOURCES,
-  USER_TIERS,
-  VERIFICATION_METHODS,
-  VERIFICATION_STATUSES,
-} from "@/lib/types";
 
-// Enums - derived from lib/types/primitives.ts (single source of truth).
-// The const arrays there define the values; Drizzle pgEnums use them directly.
+// Enums - const arrays define values; Drizzle pgEnums use them directly.
 export const providerCategory = pgEnum(
   "provider_category",
   PROVIDER_CATEGORIES,

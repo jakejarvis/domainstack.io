@@ -3,14 +3,16 @@
  */
 
 import type {
-  DnsRecord,
-  ProviderCategory,
-  RegistrationContact,
-} from "@/lib/types";
+  PROVIDER_CATEGORIES,
+  PROVIDER_SOURCES,
+} from "@/lib/constants/providers";
+import type { DnsRecord, RegistrationContact } from "@/lib/types";
+
+export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
+export type ProviderSource = (typeof PROVIDER_SOURCES)[number];
 
 /**
- * Provider without detection rule.
- * The rule is a catalog concern, not needed in most app code.
+ * Base provider shape for catalog/detection.
  */
 export interface Provider {
   name: string;

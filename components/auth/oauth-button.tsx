@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
-import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
+import type { OAuthProviderConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {

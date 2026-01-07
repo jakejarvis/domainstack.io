@@ -25,11 +25,9 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
-import {
-  OAUTH_PROVIDERS,
-  type OAuthProviderConfig,
-} from "@/lib/constants/oauth-providers";
+import { OAUTH_PROVIDERS } from "@/lib/constants/oauth-providers";
 import { useTRPC } from "@/lib/trpc/client";
+import type { OAuthProviderConfig } from "@/lib/types";
 
 interface AccountPanelProps {
   className?: string;

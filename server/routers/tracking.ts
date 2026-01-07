@@ -3,6 +3,7 @@ import { start } from "workflow/api";
 import z from "zod";
 import { VerificationInstructionsEmail } from "@/emails/verification-instructions";
 import { analytics } from "@/lib/analytics/server";
+import { VERIFICATION_METHODS } from "@/lib/constants/verification";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
   archiveTrackedDomain,
@@ -24,8 +25,7 @@ import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
-import { VERIFICATION_METHODS } from "@/lib/types";
-import { buildVerificationInstructions } from "@/lib/verification/instructions";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   generateVerificationToken,

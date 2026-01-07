@@ -2,17 +2,14 @@
  * DNS types - Plain TypeScript interfaces.
  */
 
-import { DNS_RECORD_TYPES, type DnsRecordType } from "../primitives";
+import type { DNS_RECORD_TYPES } from "@/lib/constants/dns";
+
+export type DnsRecordType = (typeof DNS_RECORD_TYPES)[number];
 
 /**
  * Alias for DnsRecordType (used in workflows).
  */
 export type DnsType = DnsRecordType;
-
-/**
- * Array of DNS record types (for iteration).
- */
-export const DNS_TYPES = DNS_RECORD_TYPES;
 
 /**
  * A single DNS record.

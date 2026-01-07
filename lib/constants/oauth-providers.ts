@@ -1,13 +1,14 @@
-import type { ComponentType } from "react";
 import {
   GitHubIcon,
   GitLabIcon,
   GoogleIcon,
   VercelIcon,
 } from "@/components/brand-icons";
+import type { OAuthProviderConfig } from "@/lib/types";
 
 /**
- * OAuth provider configuration for better-auth social providers.
+ * OAuth provider constants for better-auth social providers.
+ * Types are in @/lib/types/oauth.ts.
  *
  * To add a new provider:
  * 1. Add the provider config to OAUTH_PROVIDERS
@@ -16,17 +17,6 @@ import {
  * 4. Update lib/auth.ts socialProviders config
  * 5. Update env var validation in lib/auth.ts
  */
-
-export interface OAuthProviderConfig {
-  /** Provider ID used by better-auth (e.g., "github", "google") */
-  id: string;
-  /** Display name shown in UI */
-  name: string;
-  /** Icon component for the provider */
-  icon: ComponentType<{ className?: string }>;
-  /** Whether this provider is currently enabled */
-  enabled: boolean;
-}
 
 /**
  * All supported OAuth providers.

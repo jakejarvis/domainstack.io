@@ -11,18 +11,14 @@ import {
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "schedule" });
-
 import {
   applyDecayToTtl,
   getDecayMultiplier,
   shouldStopRevalidation,
 } from "@/lib/revalidation";
-import { allSections, type Section } from "@/lib/types";
+import type { Section } from "@/lib/types";
 
-// Re-export for backwards compatibility
-export { allSections };
+const logger = createLogger({ source: "schedule" });
 
 function minTtlSecondsForSection(section: Section): number {
   switch (section) {

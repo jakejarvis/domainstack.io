@@ -3,7 +3,6 @@ import "server-only";
 import { differenceInDays, format } from "date-fns";
 import type { Logger } from "inngest";
 import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
-import type { NotificationType } from "@/lib/constants/notifications";
 import { getEarliestCertificate } from "@/lib/db/repos/certificates";
 import {
   clearCertificateExpiryNotifications,
@@ -19,6 +18,7 @@ import {
   getCertificateExpiryNotificationType,
 } from "@/lib/notification-utils";
 import { sendPrettyEmail } from "@/lib/resend";
+import type { NotificationType } from "@/lib/types";
 
 export const checkCertificateExpiryWorker = inngest.createFunction(
   {

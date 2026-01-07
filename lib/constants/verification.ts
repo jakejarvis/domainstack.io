@@ -6,32 +6,31 @@
 import type { VerificationMethod } from "@/lib/types";
 
 // ============================================================================
-// Valid Verification Methods
+// Verification Methods & Statuses
 // ============================================================================
 
-/**
- * Valid verification method values.
- * Used for runtime validation on the client without shipping Zod.
- */
-const VALID_VERIFICATION_METHODS = [
+export const VERIFICATION_METHODS = [
   "dns_txt",
   "html_file",
   "meta_tag",
 ] as const;
 
+export const VERIFICATION_STATUSES = [
+  "verified",
+  "failing",
+  "unverified",
+] as const;
+
 /**
  * Type guard to check if a value is a valid VerificationMethod.
  * Client-safe runtime validation without Zod dependency.
- *
- * @param value - The value to validate
- * @returns True if the value is a valid VerificationMethod
  */
 export function isValidVerificationMethod(
   value: unknown,
 ): value is VerificationMethod {
   return (
     typeof value === "string" &&
-    VALID_VERIFICATION_METHODS.includes(value as VerificationMethod)
+    VERIFICATION_METHODS.includes(value as VerificationMethod)
   );
 }
 

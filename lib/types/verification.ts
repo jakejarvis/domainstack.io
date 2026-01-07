@@ -2,6 +2,14 @@
  * Verification types - Plain TypeScript interfaces.
  */
 
+import type {
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
+} from "@/lib/constants/verification";
+
+export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
+export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
+
 /**
  * Base verification instructions.
  */

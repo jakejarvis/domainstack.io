@@ -1,9 +1,5 @@
-import {
-  DNS_TYPES,
-  type DnsRecord,
-  type DnsRecordsResponse,
-  type DnsType,
-} from "@/lib/types";
+import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
+import type { DnsRecord, DnsRecordsResponse, DnsType } from "@/lib/types";
 
 export interface DnsWorkflowInput {
   domain: string;
@@ -125,7 +121,7 @@ async function checkCache(domain: string): Promise<CacheResult> {
   const { dnsRecords } = await import("@/lib/db/schema");
 
   const nowMs = Date.now();
-  const types = DNS_TYPES;
+  const types = DNS_RECORD_TYPES;
 
   try {
     const existingDomain = await findDomainByName(domain);
@@ -224,7 +220,7 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
 
   const logger = createLogger({ source: "dns-workflow" });
   const providers = providerOrderForLookup(domain);
-  const types = DNS_TYPES;
+  const types = DNS_RECORD_TYPES;
   const now = new Date();
 
   for (const provider of providers) {
@@ -345,7 +341,7 @@ async function persistRecords(
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "dns-workflow" });
-  const types = DNS_TYPES;
+  const types = DNS_RECORD_TYPES;
   const now = new Date();
 
   try {

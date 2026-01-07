@@ -15,7 +15,6 @@ vi.mock("@/lib/db/repos/domains", () => ({
 }));
 
 let scheduleRevalidation: typeof import("@/lib/schedule").scheduleRevalidation;
-let allSections: typeof import("@/lib/schedule").allSections;
 
 // Mock Inngest client
 const mockInngestSend = vi.fn();
@@ -29,7 +28,7 @@ describe("schedule", () => {
       },
     }));
 
-    ({ scheduleRevalidation, allSections } = await import("@/lib/schedule"));
+    ({ scheduleRevalidation } = await import("@/lib/schedule"));
   });
 
   beforeEach(() => {
@@ -250,20 +249,6 @@ describe("schedule", () => {
       // Should be scheduled at normal cadence (1 hour), not decayed
       expect(callArgs.ts).toBeGreaterThanOrEqual(baseDueMs);
       expect(callArgs.ts).toBeLessThanOrEqual(baseDueMs + 60 * 60 * 1000); // reasonable buffer
-    });
-  });
-
-  describe("helper functions", () => {
-    it("allSections returns all section types", () => {
-      const sections = allSections();
-
-      expect(sections).toContain("dns");
-      expect(sections).toContain("headers");
-      expect(sections).toContain("hosting");
-      expect(sections).toContain("certificates");
-      expect(sections).toContain("seo");
-      expect(sections).toContain("registration");
-      expect(sections).toHaveLength(6);
     });
   });
 });

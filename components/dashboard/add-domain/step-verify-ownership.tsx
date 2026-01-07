@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { VerificationState } from "@/hooks/use-domain-verification";
 import type { VerificationMethod } from "@/lib/types";
-import { buildVerificationInstructions } from "@/lib/verification/instructions";
+import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 type StepVerifyOwnershipProps = {
   domain: string;

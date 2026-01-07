@@ -6,26 +6,31 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
+import type { Section, SectionAccent, SectionDef } from "@/lib/types";
 
-export type SectionAccent =
-  | "blue"
-  | "purple"
-  | "green"
-  | "orange"
-  | "pink"
-  | "cyan";
+/**
+ * Section keys for domain reports.
+ */
+export const SECTIONS = [
+  "dns",
+  "headers",
+  "hosting",
+  "certificates",
+  "seo",
+  "registration",
+] as const;
 
-export type SectionDef = {
-  title: string;
-  accent: SectionAccent;
-  icon: React.ElementType;
-  description: string;
-  help: string;
-  // Stable slug to be used for Accordion values and linking
-  slug: string;
-};
+/**
+ * Helper to get all sections as a mutable array.
+ */
+export function allSections() {
+  return [...SECTIONS];
+}
 
-export const sections: Record<string, SectionDef> = {
+/**
+ * Section metadata for UI.
+ */
+export const sections: Record<Section, SectionDef> = {
   registration: {
     title: "Registration",
     accent: "purple" as SectionAccent,
@@ -75,5 +80,3 @@ export const sections: Record<string, SectionDef> = {
     slug: "seo",
   },
 } as const;
-
-export type SectionKey = keyof typeof sections;

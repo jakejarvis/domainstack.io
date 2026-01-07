@@ -13,7 +13,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Spinner } from "@/components/ui/spinner";
-import type { OAuthProviderConfig } from "@/lib/constants/oauth-providers";
+import type { OAuthProviderConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface LinkedAccountRowProps {

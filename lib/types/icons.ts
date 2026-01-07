@@ -1,8 +1,5 @@
 /**
  * Icon types - Plain TypeScript interfaces.
- *
- * These are configuration types for icon fetching,
- * no runtime validation needed.
  */
 
 /**
@@ -19,20 +16,12 @@ export interface IconSource {
 }
 
 /**
- * Cached icon record from database.
+ * Configuration for fetching an icon.
  */
-export interface CachedIconRecord {
-  url: string | null;
-  notFound?: boolean;
-}
-
-/**
- * Configuration for fetching an icon (without function callbacks).
- */
-export interface FetchIconConfigBase {
+export interface FetchIconConfig {
   /** Unique identifier for deduplication (e.g., domain, providerId) */
   identifier: string;
-  /** Kind of blob for storage (e.g., "favicon", "provider-logo") */
+  /** Kind of blob for storage */
   blobKind: "favicon" | "provider-logo";
   /** Domain for blob storage path */
   blobDomain: string;
@@ -44,14 +33,11 @@ export interface FetchIconConfigBase {
   timeoutMs?: number;
   /** Max icon size in bytes (default: 1MB) */
   maxBytes?: number;
-}
-
-/**
- * Full configuration for fetching an icon, including callbacks.
- */
-export interface FetchIconConfig extends FetchIconConfigBase {
   /** Function to check cache */
-  getCachedRecord: () => Promise<CachedIconRecord | null>;
+  getCachedRecord: () => Promise<{
+    url: string | null;
+    notFound?: boolean;
+  } | null>;
   /** Function to persist to database */
   persistRecord: (data: {
     url: string | null;
