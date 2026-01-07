@@ -241,10 +241,10 @@ async function persistRecords(
 
     logger.debug(
       { domain, recordCount: recordsWithExpiry.length },
-      "persisted",
+      "dns records persisted",
     );
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist DNS records");
+    logger.error({ err, domain }, "failed to persist dns records");
     throw new FatalError("Failed to persist DNS records");
   }
 }

@@ -60,19 +60,7 @@ export async function replaceDns(params: UpsertDnsParams) {
     .from(dnsRecords)
     .where(eq(dnsRecords.domainId, domainId));
 
-  // Build a map of existing records for quick lookup
-  const existingMap = new Map<string, string>();
-  for (const record of allExisting) {
-    const key = makeDnsRecordKey(
-      record.type,
-      record.name,
-      record.value,
-      record.priority,
-    );
-    existingMap.set(key, record.id);
-  }
-
-  // Collect all records to upsert and records to delete
+  // Collect all records to upsert
   const allRecordsToUpsert: DnsRecordInsert[] = [];
 
   const allNextKeys = new Set<string>();
@@ -195,26 +183,10 @@ export async function getDnsCached(
       return null;
     }
 
-    // Group by type and check freshness
-    const rowsByType = rows.reduce(
-      (acc, r) => {
-        const t = r.type;
-        if (!acc[t]) acc[t] = [];
-        acc[t].push(r);
-        return acc;
-      },
-      {} as Record<DnsRecordType, typeof rows>,
-    );
-
-    const typeIsFresh = (t: DnsRecordType) => {
-      const arr = rowsByType[t] ?? [];
-      return (
-        arr.length > 0 &&
-        arr.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs)
-      );
-    };
-
-    const allFresh = types.every((t) => typeIsFresh(t));
+    // Check if ALL records are still fresh
+    // A domain may not have all record types (e.g., no AAAA records) - that's fine.
+    // We just need all existing records to be fresh.
+    const allFresh = rows.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs);
 
     if (!allFresh) {
       return null;

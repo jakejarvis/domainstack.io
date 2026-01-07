@@ -443,7 +443,10 @@ export const dnsRecords = pgTable(
   (t) => [
     // Include priority in uniqueness for MX/SRV records
     // (same host with different priorities = different records)
-    unique("u_dns_record").on(t.domainId, t.type, t.name, t.value, t.priority),
+    // Use NULLS NOT DISTINCT so records with NULL priority are treated as duplicates
+    unique("u_dns_record")
+      .on(t.domainId, t.type, t.name, t.value, t.priority)
+      .nullsNotDistinct(),
     index("i_dns_type_value").on(t.type, t.value),
     index("i_dns_expires").on(t.expiresAt),
     index("i_dns_domain_expires").on(t.domainId, t.expiresAt),
