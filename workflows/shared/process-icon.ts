@@ -2,7 +2,7 @@
  * Shared step for processing icon images (favicon, provider-logo).
  * Converts image buffer to WebP format with specified dimensions.
  */
-export async function processIconImage(
+export async function processIcon(
   imageBase64: string,
   size: number,
 ): Promise<{ success: true; imageBase64: string } | { success: false }> {

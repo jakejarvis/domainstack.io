@@ -6,7 +6,7 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types";
-import { checkBlocklist } from "@/workflows/shared";
+import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 export interface SeoWorkflowInput {
   domain: string;

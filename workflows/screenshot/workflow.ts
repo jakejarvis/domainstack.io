@@ -1,6 +1,6 @@
 import type { Browser, Page } from "puppeteer-core";
 import { RetryableError } from "workflow";
-import { checkBlocklist } from "@/workflows/shared";
+import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;

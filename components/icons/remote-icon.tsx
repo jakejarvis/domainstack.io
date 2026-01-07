@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { simpleHash } from "@/lib/simple-hash";
 import { cn } from "@/lib/utils";
+import type { FaviconWorkflowResult } from "@/workflows/favicon";
+import type { ProviderLogoWorkflowResult } from "@/workflows/provider-logo";
 
 // Deterministic color palette - vibrant but not overwhelming
 // Using actual color values to avoid Tailwind purging issues
@@ -68,15 +70,17 @@ export function RemoteIcon({
 }: RemoteIconProps) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
-  const { data, isPending, isError } = useQuery({
+  const {
+    data: result,
+    isPending,
+    isError,
+  } = useQuery<FaviconWorkflowResult | ProviderLogoWorkflowResult>({
     ...queryOptions,
     // Prevent React Query from throwing/logging errors - we handle them gracefully
     throwOnError: false,
     retry: false,
     retryOnMount: false,
   });
-
-  const url = (data as { url: string | null } | undefined)?.url ?? null;
 
   const baseClassName = "pointer-events-none select-none rounded-xs";
 
@@ -89,6 +93,11 @@ export function RemoteIcon({
         style={{ ...style, width: size, height: size }}
       />
     );
+  }
+
+  let url = null;
+  if (result?.success && result?.data?.url) {
+    url = result.data.url;
   }
 
   // Query completed: show letter avatar if error, no icon found, or failed to load

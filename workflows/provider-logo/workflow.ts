@@ -1,8 +1,8 @@
 import {
   fetchIconFromSources,
   type IconFetchResult,
-  processIconImage,
-} from "@/workflows/shared";
+} from "@/workflows/shared/fetch-icon";
+import { processIcon } from "@/workflows/shared/process-icon";
 
 export interface ProviderLogoWorkflowInput {
   providerId: string;
@@ -58,7 +58,7 @@ export async function providerLogoWorkflow(
   }
 
   // Step 2b: Process image (shared step)
-  const processedResult = await processIconImage(
+  const processedResult = await processIcon(
     fetchResult.imageBase64,
     DEFAULT_SIZE,
   );
