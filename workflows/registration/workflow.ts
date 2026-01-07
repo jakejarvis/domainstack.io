@@ -1,9 +1,6 @@
 import { FatalError, RetryableError } from "workflow";
-import type {
-  Provider,
-  RegistrationContacts,
-  RegistrationResponse,
-} from "@/lib/types";
+import type { Provider } from "@/lib/providers/parser";
+import type { RegistrationContacts, RegistrationResponse } from "@/lib/types";
 
 export interface RegistrationWorkflowInput {
   domain: string;
@@ -167,6 +164,9 @@ async function normalizeAndBuildResponse(
 
   const { getProviders } = await import("@/lib/providers/catalog");
   const { detectRegistrar } = await import("@/lib/providers/detection");
+  const { upsertCatalogProviderRef, resolveOrCreateProviderId } = await import(
+    "@/lib/db/repos/providers"
+  );
 
   // Parse the serialized record
   const record = JSON.parse(recordJson) as {
@@ -207,13 +207,13 @@ async function normalizeAndBuildResponse(
   // Normalize registrar
   let registrarName = (record.registrar?.name || "").toString();
   let registrarDomain: string | null = null;
-  let _catalogProvider: Provider | null = null;
+  let catalogProvider: Provider | null = null;
 
   const matched = detectRegistrar(registrarName, registrarProviders);
   if (matched) {
     registrarName = matched.name;
     registrarDomain = matched.domain;
-    _catalogProvider = matched;
+    catalogProvider = matched;
   }
 
   // Fallback to URL hostname parsing
@@ -227,6 +227,26 @@ async function normalizeAndBuildResponse(
   }
 
   const status = record.isRegistered ? "registered" : "unregistered";
+
+  // Resolve provider ID for the response (needed for change detection)
+  // Only resolve if we have provider info to look up
+  const hasProviderInfo = registrarName.trim() || registrarDomain;
+  let registrarProviderId: string | null = null;
+
+  if (hasProviderInfo) {
+    if (catalogProvider) {
+      // Catalog provider: upsert to get/create the ID
+      const providerRef = await upsertCatalogProviderRef(catalogProvider);
+      registrarProviderId = providerRef.id;
+    } else {
+      // Discovered provider: resolve or create
+      registrarProviderId = await resolveOrCreateProviderId({
+        category: "registrar",
+        domain: registrarDomain,
+        name: registrarName.trim() || null,
+      });
+    }
+  }
 
   return {
     domain: record.domain,
@@ -255,8 +275,7 @@ async function normalizeAndBuildResponse(
     source: record.source ?? null,
     warnings: record.warnings,
     registrarProvider: {
-      // ID will be resolved during persistence, not during normalization
-      id: null,
+      id: registrarProviderId,
       name: registrarName.trim() || null,
       domain: registrarDomain,
     },
@@ -275,12 +294,7 @@ async function persistRegistration(
 
   const { getDomainTld } = await import("rdapper");
   const { upsertDomain } = await import("@/lib/db/repos/domains");
-  const { resolveOrCreateProviderId, upsertCatalogProviderRef } = await import(
-    "@/lib/db/repos/providers"
-  );
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
-  const { getProviders } = await import("@/lib/providers/catalog");
-  const { detectRegistrar } = await import("@/lib/providers/detection");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForRegistration } = await import("@/lib/ttl");
   const { createLogger } = await import("@/lib/logger/server");
@@ -311,34 +325,14 @@ async function persistRegistration(
   };
 
   try {
-    // Get registrar providers for matching
-    const registrarProviders = await getProviders("registrar");
-    const matched = detectRegistrar(
-      (record.registrar?.name || "").toString(),
-      registrarProviders,
-    );
+    // Use the provider ID already resolved in normalizeAndBuildResponse
+    const registrarProviderId = response.registrarProvider.id;
 
-    // Resolve provider ID
-    // Guard: only call resolveOrCreateProviderId if we have name or domain to look up
-    const hasProviderInfo =
-      response.registrarProvider.name || response.registrarProvider.domain;
-
-    const [domainRecord, registrarProviderId] = await Promise.all([
-      upsertDomain({
-        name: domain,
-        tld: getDomainTld(domain) ?? "",
-        unicodeName: record.unicodeName ?? domain,
-      }),
-      matched
-        ? upsertCatalogProviderRef(matched).then((r) => r.id)
-        : hasProviderInfo
-          ? resolveOrCreateProviderId({
-              category: "registrar",
-              domain: response.registrarProvider.domain,
-              name: response.registrarProvider.name,
-            })
-          : null,
-    ]);
+    const domainRecord = await upsertDomain({
+      name: domain,
+      tld: getDomainTld(domain) ?? "",
+      unicodeName: record.unicodeName ?? domain,
+    });
 
     const expiresAt = ttlForRegistration(
       now,
