@@ -87,6 +87,9 @@ export const domainRouter = createTRPCRouter({
   /**
    * Get hosting, DNS, and email provider data for a domain.
    * Detects providers from DNS records and HTTP headers.
+   *
+   * This procedure orchestrates DNS → headers → hosting to avoid
+   * duplicate workflow executions when these are fetched in parallel.
    */
   getHosting: domainProcedure
     .input(DomainInputSchema)
@@ -103,14 +106,35 @@ export const domainRouter = createTRPCRouter({
         };
       }
 
-      // Cache miss - fetch fresh data
-      const { fetchHosting } = await import("@/server/services/hosting");
-      const data = await fetchHosting(input.domain);
+      // Cache miss - orchestrate DNS and headers first, then hosting
+      const { dnsWorkflow } = await import("@/workflows/dns");
+      const { headersWorkflow } = await import("@/workflows/headers");
+      const { hostingWorkflow } = await import("@/workflows/hosting");
+
+      // Phase 1: Fetch DNS and headers in parallel
+      const [dnsRun, headersRun] = await Promise.all([
+        start(dnsWorkflow, [{ domain: input.domain }]),
+        start(headersWorkflow, [{ domain: input.domain }]),
+      ]);
+
+      const [dnsResult, headersResult] = await Promise.all([
+        dnsRun.returnValue,
+        headersRun.returnValue,
+      ]);
+
+      // Phase 2: Hosting uses the already-fetched data
+      const hostingRun = await start(hostingWorkflow, [
+        {
+          domain: input.domain,
+          dnsRecords: dnsResult.data.records,
+          headers: headersResult.data.headers,
+        },
+      ]);
+      const result = await hostingRun.returnValue;
 
       return {
-        success: true,
+        ...result,
         cached: false,
-        data,
       };
     }),
 

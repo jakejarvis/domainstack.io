@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import type {
   CertificateChange,
   CertificateSnapshotData,
-  ProviderChange,
+  HostingChange,
   ProviderSnapshotData,
   RegistrationChange,
   RegistrationSnapshotData,
@@ -70,7 +70,7 @@ export function detectRegistrationChanges(
 export function detectProviderChanges(
   snapshot: ProviderSnapshotData,
   current: ProviderSnapshotData,
-): ProviderChange | null {
+): HostingChange | null {
   const dnsProviderChanged = snapshot.dnsProviderId !== current.dnsProviderId;
   const hostingProviderChanged =
     snapshot.hostingProviderId !== current.hostingProviderId;

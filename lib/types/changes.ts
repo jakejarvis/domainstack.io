@@ -28,7 +28,7 @@ export interface RegistrationChange {
 /**
  * Provider change details.
  */
-export interface ProviderChange {
+export interface HostingChange {
   // What changed
   dnsProviderChanged: boolean;
   hostingProviderChanged: boolean;

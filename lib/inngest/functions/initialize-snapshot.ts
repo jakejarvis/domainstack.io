@@ -7,8 +7,10 @@ import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { fetchHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
 import { registrationWorkflow } from "@/workflows/registration";
 
 /**
@@ -43,22 +45,36 @@ export const initializeSnapshot = inngest.createFunction(
     const domainName = domainRecord.name;
 
     // Fetch fresh data for this domain using workflows
-    const [registrationResult, hostingData, certificatesResult] =
+    const [registrationResult, hostingResult, certificatesResult] =
       await step.run("fetch-data", async () => {
-        // Start workflows and fetch hosting in parallel
-        const [regRun, hostingPromise, certRun] = await Promise.all([
+        // Start all independent workflows in parallel
+        const [regRun, dnsRun, headersRun, certRun] = await Promise.all([
           start(registrationWorkflow, [{ domain: domainName }]),
-          fetchHosting(domainName),
+          start(dnsWorkflow, [{ domain: domainName }]),
+          start(headersWorkflow, [{ domain: domainName }]),
           start(certificatesWorkflow, [{ domain: domainName }]),
         ]);
 
-        // Wait for workflow results
-        const [regResult, certsResult] = await Promise.all([
-          regRun.returnValue,
-          certRun.returnValue,
-        ]);
+        // Wait for all workflow results
+        const [regResult, dnsResult, headersResult, certsResult] =
+          await Promise.all([
+            regRun.returnValue,
+            dnsRun.returnValue,
+            headersRun.returnValue,
+            certRun.returnValue,
+          ]);
 
-        return [regResult, hostingPromise, certsResult] as const;
+        // Now compute hosting using the DNS + headers data (no duplicate fetches)
+        const hostingRun = await start(hostingWorkflow, [
+          {
+            domain: domainName,
+            dnsRecords: dnsResult.data.records,
+            headers: headersResult.data.headers,
+          },
+        ]);
+        const hostingResult = await hostingRun.returnValue;
+
+        return [regResult, hostingResult, certsResult] as const;
       });
 
     // Extract data from workflow results
@@ -118,6 +134,7 @@ export const initializeSnapshot = inngest.createFunction(
     }
 
     // Resolve provider IDs from hosting data
+    const hostingData = hostingResult.success ? hostingResult.data : null;
     const providerIds = {
       dns: hostingData?.dnsProvider?.id ?? null,
       hosting: hostingData?.hostingProvider?.id ?? null,

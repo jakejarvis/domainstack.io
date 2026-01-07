@@ -4,10 +4,10 @@ import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type { Section } from "@/lib/types";
-import { fetchHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";
 import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
 import { registrationWorkflow } from "@/workflows/registration";
 import { seoWorkflow } from "@/workflows/seo";
 
@@ -34,9 +34,26 @@ async function runSingleSection(
       await run.returnValue;
       return;
     }
-    case "hosting":
-      await fetchHosting(domain);
+    case "hosting": {
+      // Hosting requires DNS + headers data, fetch them first
+      const [dnsRun, headersRun] = await Promise.all([
+        start(dnsWorkflow, [{ domain }]),
+        start(headersWorkflow, [{ domain }]),
+      ]);
+      const [dnsResult, headersResult] = await Promise.all([
+        dnsRun.returnValue,
+        headersRun.returnValue,
+      ]);
+      const hostingRun = await start(hostingWorkflow, [
+        {
+          domain,
+          dnsRecords: dnsResult.data.records,
+          headers: headersResult.data.headers,
+        },
+      ]);
+      await hostingRun.returnValue;
       return;
+    }
     case "certificates": {
       const run = await start(certificatesWorkflow, [{ domain }]);
       await run.returnValue;

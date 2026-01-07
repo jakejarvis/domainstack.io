@@ -24,13 +24,16 @@ import type {
   CertificateChange,
   CertificateSnapshotData,
   CertificatesResponse,
-  ProviderChange,
+  HostingChange,
+  HostingResponse,
   RegistrationChange,
   RegistrationResponse,
   RegistrationSnapshotData,
 } from "@/lib/types";
-import { fetchHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
 import { registrationWorkflow } from "@/workflows/registration";
 
 /**
@@ -66,18 +69,32 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       const [registrationData, hostingData, certificatesData] = await step.run(
         "fetch-live-data",
         async () => {
-          // Start workflows and fetch hosting in parallel
-          const [regRun, hostingPromise, certRun] = await Promise.all([
+          // Start all independent workflows in parallel
+          const [regRun, dnsRun, headersRun, certRun] = await Promise.all([
             start(registrationWorkflow, [{ domain: domainName }]),
-            fetchHosting(domainName),
+            start(dnsWorkflow, [{ domain: domainName }]),
+            start(headersWorkflow, [{ domain: domainName }]),
             start(certificatesWorkflow, [{ domain: domainName }]),
           ]);
 
-          // Wait for workflow results
-          const [regResult, certsResult] = await Promise.all([
-            regRun.returnValue,
-            certRun.returnValue,
+          // Wait for all workflow results
+          const [regResult, dnsResult, headersResult, certsResult] =
+            await Promise.all([
+              regRun.returnValue,
+              dnsRun.returnValue,
+              headersRun.returnValue,
+              certRun.returnValue,
+            ]);
+
+          // Now compute hosting using the DNS + headers data (no duplicate fetches)
+          const hostingRun = await start(hostingWorkflow, [
+            {
+              domain: domainName,
+              dnsRecords: dnsResult.data.records,
+              headers: headersResult.data.headers,
+            },
           ]);
+          const hostingResult = await hostingRun.returnValue;
 
           // Extract response data from workflow results
           const registrationData: RegistrationResponse | null =
@@ -85,8 +102,9 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
           const certificatesData: CertificatesResponse = certsResult.success
             ? certsResult.data
             : { certificates: [] };
+          const hostingData: HostingResponse = hostingResult.data;
 
-          return [registrationData, hostingPromise, certificatesData] as const;
+          return [registrationData, hostingData, certificatesData] as const;
         },
       );
 
@@ -177,7 +195,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
             },
           );
 
-          const enrichedChange: ProviderChange = {
+          const enrichedChange: HostingChange = {
             ...providerChange,
             previousDnsProvider: providerChange.previousDnsProviderId
               ? providerNames[providerChange.previousDnsProviderId] || null
@@ -451,7 +469,7 @@ async function handleProviderChange(
   userId: string,
   userName: string,
   userEmail: string,
-  change: ProviderChange,
+  change: HostingChange,
   logger: Logger,
 ): Promise<boolean> {
   const { shouldSendEmail, shouldSendInApp } =

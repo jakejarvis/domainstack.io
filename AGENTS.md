@@ -27,12 +27,12 @@
 - `lib/types/` Plain TypeScript types - single source of truth for enums and internal data structures.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
-- `server/services/` service layer for orchestration. Contains only `hosting.ts` which combines DNS, headers, and IP workflows to detect providers.
+- `server/services/` service layer for orchestration (currently empty - all services migrated to workflows).
 - `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via ipwho.is API.
 - `lib/pricing.ts` Domain registration pricing aggregation from multiple registrars (Porkbun, Cloudflare, Dynadot).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.
-- `workflows/` Vercel Workflow definitions for durable backend operations. Contains 10 workflows: `certificates/`, `dns/`, `favicon/`, `headers/`, `provider-logo/`, `registration/`, `screenshot/`, `seo/`, `verification/`. Use `"use workflow"` for workflow functions and `"use step"` for durable steps.
+- `workflows/` Vercel Workflow definitions for durable backend operations. See the "Available Workflows" table below.
 
 ## Build, Test, and Development Commands
 - `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
@@ -234,6 +234,7 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 | `dnsWorkflow` | `{ domain }` | Resolve DNS records via DoH | checkCache → fetchFromProviders → persistRecords |
 | `faviconWorkflow` | `{ domain }` | Extract domain favicon | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
 | `headersWorkflow` | `{ domain }` | Probe HTTP headers | checkCache → fetchHeaders → persistHeaders |
+| `hostingWorkflow` | `{ domain, dnsRecords, headers }` | Detect hosting/email/DNS providers | lookupGeoIp → detectAndResolveProviders → persistHosting |
 | `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
 | `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
 | `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
