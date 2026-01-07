@@ -170,31 +170,21 @@ describe("fetchHeaders", () => {
 
 describe("persistHeaders", () => {
   it("persists headers to database", async () => {
-    const { upsertDomain, findDomainByName } = await import(
-      "@/lib/db/repos/domains"
-    );
-    await upsertDomain({
-      name: "persist.test",
-      tld: "test",
-      unicodeName: "persist.test",
-    });
-
-    const domain = await findDomainByName("persist.test");
-    expect(domain).toBeTruthy();
-
     const { persistHeaders } = await import("./workflow");
     await persistHeaders(
-      domain?.id,
+      "persist.test",
       [
         { name: "server", value: "nginx" },
         { name: "content-type", value: "text/html" },
       ],
       200,
-      null,
-      "persist.test",
     );
 
-    // Verify persistence
+    // Verify persistence - domain should have been created
+    const { findDomainByName } = await import("@/lib/db/repos/domains");
+    const domain = await findDomainByName("persist.test");
+    expect(domain).toBeTruthy();
+
     const { db } = await import("@/lib/db/client");
     const { httpHeaders } = await import("@/lib/db/schema");
     const { eq } = await import("drizzle-orm");

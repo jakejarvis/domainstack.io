@@ -10,11 +10,6 @@ export interface HeadersWorkflowResult {
 }
 
 // Internal types for step-to-step transfer
-interface DomainInfo {
-  domainId: string | null;
-  lastAccessedAt: string | null;
-}
-
 interface FetchSuccess {
   success: true;
   headers: Header[];
@@ -34,9 +29,8 @@ type FetchResult = FetchSuccess | FetchFailure;
 /**
  * Durable headers workflow that breaks down HTTP header probing into
  * independently retryable steps:
- * 1. Get domain info (for persistence)
- * 2. Fetch headers from domain
- * 3. Persist to database
+ * 1. Fetch headers from domain
+ * 2. Persist to database (creates domain record if needed)
  */
 export async function headersWorkflow(
   input: HeadersWorkflowInput,
@@ -45,21 +39,12 @@ export async function headersWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Get domain info
-  const domainInfo = await getDomainInfo(domain);
-
-  // Step 2: Fetch headers from domain
+  // Step 1: Fetch headers from domain
   const fetchResult = await fetchHeaders(domain);
 
-  // Step 3: Persist to database (only if domain exists and fetch succeeded)
-  if (domainInfo.domainId && fetchResult.success) {
-    await persistHeaders(
-      domainInfo.domainId,
-      fetchResult.headers,
-      fetchResult.status,
-      domainInfo.lastAccessedAt,
-      domain,
-    );
+  // Step 2: Persist to database (only if fetch succeeded)
+  if (fetchResult.success) {
+    await persistHeaders(domain, fetchResult.headers, fetchResult.status);
   }
 
   return {
@@ -73,26 +58,7 @@ export async function headersWorkflow(
 }
 
 /**
- * Step 1: Get domain info for persistence.
- */
-export async function getDomainInfo(domain: string): Promise<DomainInfo> {
-  "use step";
-
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
-
-  const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    return { domainId: null, lastAccessedAt: null };
-  }
-
-  return {
-    domainId: existingDomain.id,
-    lastAccessedAt: existingDomain.lastAccessedAt?.toISOString() ?? null,
-  };
-}
-
-/**
- * Step 2: Fetch HTTP headers from the domain.
+ * Step: Fetch HTTP headers from the domain.
  */
 export async function fetchHeaders(domain: string): Promise<FetchResult> {
   "use step";
@@ -171,35 +137,43 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
  * Step 3: Persist headers to Postgres.
  */
 export async function persistHeaders(
-  domainId: string,
+  domain: string,
   headers: Header[],
   status: number,
-  lastAccessedAtIso: string | null,
-  domain: string,
 ): Promise<void> {
   "use step";
 
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceHeaders } = await import("@/lib/db/repos/headers");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForHeaders } = await import("@/lib/ttl");
+  const { createLogger } = await import("@/lib/logger/server");
 
+  const logger = createLogger({ source: "headers-workflow" });
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 
-  await replaceHeaders({
-    domainId,
-    headers,
-    status,
-    fetchedAt: now,
-    expiresAt,
-  });
+  try {
+    // Ensure domain record exists (creates if needed)
+    const domainRecord = await ensureDomainRecord(domain);
 
-  // Schedule background revalidation
-  const lastAccessedAt = lastAccessedAtIso ? new Date(lastAccessedAtIso) : null;
-  void scheduleRevalidation(
-    domain,
-    "headers",
-    expiresAt.getTime(),
-    lastAccessedAt,
-  );
+    await replaceHeaders({
+      domainId: domainRecord.id,
+      headers,
+      status,
+      fetchedAt: now,
+      expiresAt,
+    });
+
+    // Schedule background revalidation
+    await scheduleRevalidation(
+      domain,
+      "headers",
+      expiresAt.getTime(),
+      domainRecord.lastAccessedAt ?? null,
+    );
+  } catch (err) {
+    logger.error({ err, domain }, "failed to persist headers");
+    // Don't throw - persistence failure shouldn't fail the workflow
+  }
 }

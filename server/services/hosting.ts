@@ -1,6 +1,5 @@
 import { after } from "next/server";
 import { start } from "workflow/api";
-import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
 import {
   resolveOrCreateProviderId,
@@ -207,13 +206,15 @@ export async function fetchHosting(
   info.emailProvider.id = emailProviderId;
   info.dnsProvider.id = dnsProviderId;
 
-  // Persist to Postgres only if domain exists (i.e., is registered)
+  // Persist to Postgres - ensure domain record exists (creates if needed)
   const expiresAt = ttlForHosting(now);
-  const existingDomain = await findDomainByName(domain);
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
 
-  if (existingDomain) {
+  try {
+    const domainRecord = await ensureDomainRecord(domain);
+
     await upsertHosting({
-      domainId: existingDomain.id,
+      domainId: domainRecord.id,
       hostingProviderId,
       emailProviderId,
       dnsProviderId,
@@ -233,10 +234,13 @@ export async function fetchHosting(
           domain,
           "hosting",
           expiresAt.getTime(),
-          existingDomain.lastAccessedAt ?? null,
+          domainRecord.lastAccessedAt ?? null,
         ),
       );
     }
+  } catch (err) {
+    logger.error({ err, domain }, "failed to persist hosting data");
+    // Don't throw - persistence failure shouldn't fail the response
   }
 
   return info;

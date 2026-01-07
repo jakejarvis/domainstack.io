@@ -16,11 +16,6 @@ export interface SeoWorkflowResult {
 }
 
 // Internal types for step-to-step transfer
-interface DomainInfo {
-  domainId: string | null;
-  lastAccessedAt: Date | null;
-}
-
 interface HtmlFetchResult {
   success: boolean;
   finalUrl: string;
@@ -50,11 +45,10 @@ const SOCIAL_HEIGHT = 630;
 /**
  * Durable SEO workflow that breaks down SEO data fetching into
  * independently retryable steps:
- * 1. Get domain info (for persistence)
- * 2. Fetch HTML and parse meta tags
- * 3. Fetch and parse robots.txt
- * 4. Fetch and store OG image (if present)
- * 5. Persist to database
+ * 1. Fetch HTML and parse meta tags
+ * 2. Fetch and parse robots.txt
+ * 3. Fetch and store OG image (if present)
+ * 4. Persist to database (creates domain record if needed)
  */
 export async function seoWorkflow(
   input: SeoWorkflowInput,
@@ -63,16 +57,13 @@ export async function seoWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Get domain info
-  const domainInfo = await getDomainInfo(domain);
-
-  // Step 2: Fetch HTML and parse meta
+  // Step 1: Fetch HTML and parse meta
   const htmlResult = await fetchHtml(domain);
 
-  // Step 3: Fetch robots.txt
+  // Step 2: Fetch robots.txt
   const robotsResult = await fetchRobots(domain);
 
-  // Step 4: Process OG image (if present and not blocked)
+  // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
   if (htmlResult.preview?.image) {
     const imageResult = await processOgImage(
@@ -107,45 +98,13 @@ export async function seoWorkflow(
       : {}),
   };
 
-  // Step 5: Persist to database
-  if (domainInfo.domainId) {
-    await persistSeo(
-      domainInfo.domainId,
-      response,
-      uploadedImageUrl,
-      domainInfo.lastAccessedAt?.toISOString() ?? null,
-      domain,
-    );
-  }
+  // Step 4: Persist to database
+  await persistSeo(domain, response, uploadedImageUrl);
 
   return {
     success: true,
     data: response,
   };
-}
-
-/**
- * Step: Get domain info for persistence
- */
-async function getDomainInfo(domain: string): Promise<DomainInfo> {
-  "use step";
-
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
-
-  try {
-    const existingDomain = await findDomainByName(domain);
-
-    if (!existingDomain) {
-      return { domainId: null, lastAccessedAt: null };
-    }
-
-    return {
-      domainId: existingDomain.id,
-      lastAccessedAt: existingDomain.lastAccessedAt,
-    };
-  } catch {
-    return { domainId: null, lastAccessedAt: null };
-  }
 }
 
 /**
@@ -349,14 +308,13 @@ async function processOgImage(
  * Step: Persist SEO data to database
  */
 async function persistSeo(
-  domainId: string,
+  domain: string,
   response: SeoResponse,
   uploadedImageUrl: string | null,
-  lastAccessedAt: string | null,
-  domain: string,
 ): Promise<void> {
   "use step";
 
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertSeo } = await import("@/lib/db/repos/seo");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForSeo } = await import("@/lib/ttl");
@@ -367,8 +325,11 @@ async function persistSeo(
   const expiresAt = ttlForSeo(now);
 
   try {
+    // Ensure domain record exists (creates if needed)
+    const domainRecord = await ensureDomainRecord(domain);
+
     await upsertSeo({
-      domainId,
+      domainId: domainRecord.id,
       sourceFinalUrl: response.source.finalUrl ?? null,
       sourceStatus: response.source.status ?? null,
       metaOpenGraph:
@@ -391,7 +352,7 @@ async function persistSeo(
       domain,
       "seo",
       expiresAt.getTime(),
-      lastAccessedAt ? new Date(lastAccessedAt) : null,
+      domainRecord.lastAccessedAt ?? null,
     );
 
     logger.debug({ domain }, "SEO data persisted");

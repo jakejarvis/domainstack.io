@@ -11,11 +11,6 @@ export interface DnsWorkflowResult {
 }
 
 // Internal types for step-to-step transfer
-interface DomainInfo {
-  domainId: string | null;
-  lastAccessedAt: Date | null;
-}
-
 interface FetchSuccess {
   success: true;
   resolver: string;
@@ -38,9 +33,8 @@ type FetchResult = FetchSuccess | FetchFailure;
 /**
  * Durable DNS workflow that breaks down DNS resolution into
  * independently retryable steps:
- * 1. Get domain info (for persistence)
- * 2. Fetch from DoH providers with fallback
- * 3. Persist to database
+ * 1. Fetch from DoH providers with fallback
+ * 2. Persist to database (creates domain record if needed)
  */
 export async function dnsWorkflow(
   input: DnsWorkflowInput,
@@ -49,10 +43,7 @@ export async function dnsWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Get domain info
-  const domainInfo = await getDomainInfo(domain);
-
-  // Step 2: Fetch from DoH providers
+  // Step 1: Fetch from DoH providers
   const fetchResult = await fetchFromProviders(domain);
 
   if (!fetchResult.success) {
@@ -62,16 +53,12 @@ export async function dnsWorkflow(
     };
   }
 
-  // Step 3: Persist to database (only if domain exists)
-  if (domainInfo.domainId) {
-    await persistRecords(
-      domainInfo.domainId,
-      fetchResult.resolver,
-      fetchResult.recordsWithExpiry,
-      domainInfo.lastAccessedAt?.toISOString() ?? null,
-      domain,
-    );
-  }
+  // Step 2: Persist to database
+  await persistRecords(
+    domain,
+    fetchResult.resolver,
+    fetchResult.recordsWithExpiry,
+  );
 
   return {
     success: true,
@@ -80,30 +67,6 @@ export async function dnsWorkflow(
       resolver: fetchResult.resolver,
     },
   };
-}
-
-/**
- * Step: Get domain info for persistence
- */
-async function getDomainInfo(domain: string): Promise<DomainInfo> {
-  "use step";
-
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
-
-  try {
-    const existingDomain = await findDomainByName(domain);
-
-    if (!existingDomain) {
-      return { domainId: null, lastAccessedAt: null };
-    }
-
-    return {
-      domainId: existingDomain.id,
-      lastAccessedAt: existingDomain.lastAccessedAt,
-    };
-  } catch {
-    return { domainId: null, lastAccessedAt: null };
-  }
 }
 
 /**
@@ -220,14 +183,13 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
  * Step: Persist DNS records to database
  */
 async function persistRecords(
-  domainId: string,
+  domain: string,
   resolver: string,
   recordsWithExpiry: Array<DnsRecord & { expiresAt: string }>,
-  lastAccessedAt: string | null,
-  domain: string,
 ): Promise<void> {
   "use step";
 
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceDns } = await import("@/lib/db/repos/dns");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { createLogger } = await import("@/lib/logger/server");
@@ -237,6 +199,9 @@ async function persistRecords(
   const now = new Date();
 
   try {
+    // Ensure domain record exists (creates if needed)
+    const domainRecord = await ensureDomainRecord(domain);
+
     // Group records by type for replaceDns
     const recordsByType = Object.fromEntries(
       types.map((t) => [
@@ -265,7 +230,7 @@ async function persistRecords(
     >;
 
     await replaceDns({
-      domainId,
+      domainId: domainRecord.id,
       resolver,
       fetchedAt: now,
       recordsByType,
@@ -281,7 +246,7 @@ async function persistRecords(
       domain,
       "dns",
       soonest,
-      lastAccessedAt ? new Date(lastAccessedAt) : null,
+      domainRecord.lastAccessedAt ?? null,
     );
 
     logger.debug(

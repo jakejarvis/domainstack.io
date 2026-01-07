@@ -273,7 +273,7 @@ async function persistCertificates(
 ): Promise<void> {
   "use step";
 
-  const { findDomainByName } = await import("@/lib/db/repos/domains");
+  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceCertificates } = await import("@/lib/db/repos/certificates");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { ttlForCertificates } = await import("@/lib/ttl");
@@ -283,11 +283,8 @@ async function persistCertificates(
   const now = new Date();
 
   try {
-    const existingDomain = await findDomainByName(domain);
-    if (!existingDomain) {
-      logger.debug({ domain }, "domain not found, skipping persistence");
-      return;
-    }
+    // Ensure domain record exists (creates if needed)
+    const domainRecord = await ensureDomainRecord(domain);
 
     const chainWithIds = result.certificates.map((c, i) => ({
       issuer: c.issuer,
@@ -301,7 +298,7 @@ async function persistCertificates(
     const expiresAt = ttlForCertificates(now, result.earliestValidTo);
 
     await replaceCertificates({
-      domainId: existingDomain.id,
+      domainId: domainRecord.id,
       chain: chainWithIds,
       fetchedAt: now,
       expiresAt,
@@ -312,7 +309,7 @@ async function persistCertificates(
       domain,
       "certificates",
       expiresAt.getTime(),
-      existingDomain.lastAccessedAt ?? null,
+      domainRecord.lastAccessedAt ?? null,
     );
 
     logger.debug({ domain }, "certificates persisted");
