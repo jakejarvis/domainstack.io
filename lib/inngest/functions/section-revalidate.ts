@@ -4,7 +4,7 @@ import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import type { Section } from "@/lib/types";
-import { getHosting } from "@/server/services/hosting";
+import { fetchHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";
 import { headersWorkflow } from "@/workflows/headers";
@@ -27,7 +27,7 @@ async function runSingleSection(
       return;
     }
     case "hosting":
-      await getHosting(domain);
+      await fetchHosting(domain);
       return;
     case "certificates": {
       const run = await start(certificatesWorkflow, [{ domain }]);

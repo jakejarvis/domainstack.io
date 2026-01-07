@@ -99,67 +99,6 @@ describe("providerLogoWorkflow step functions", () => {
     await closePGliteDb();
   });
 
-  describe("checkCache step", () => {
-    it("returns cached provider logo when present", async () => {
-      await createTestProvider(TEST_PROVIDER_IDS.cached, "cloudflare.com");
-
-      const { upsertProviderLogo } = await import(
-        "@/lib/db/repos/provider-logos"
-      );
-
-      await upsertProviderLogo({
-        providerId: TEST_PROVIDER_IDS.cached,
-        url: "https://cached-logo.webp",
-        pathname: "cached.webp",
-        size: 64,
-        source: "logo-dev",
-        notFound: false,
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { providerLogoWorkflow } = await import("./workflow");
-      const result = await providerLogoWorkflow({
-        providerId: TEST_PROVIDER_IDS.cached,
-        providerDomain: "cloudflare.com",
-      });
-
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBe("https://cached-logo.webp");
-    });
-
-    it("returns cached notFound status", async () => {
-      await createTestProvider(
-        TEST_PROVIDER_IDS.missing,
-        "unknown-provider.com",
-      );
-
-      const { upsertProviderLogo } = await import(
-        "@/lib/db/repos/provider-logos"
-      );
-
-      await upsertProviderLogo({
-        providerId: TEST_PROVIDER_IDS.missing,
-        url: null,
-        pathname: null,
-        size: 64,
-        source: null,
-        notFound: true,
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { providerLogoWorkflow } = await import("./workflow");
-      const result = await providerLogoWorkflow({
-        providerId: TEST_PROVIDER_IDS.missing,
-        providerDomain: "unknown-provider.com",
-      });
-
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBeNull();
-    });
-  });
-
   describe("fetchFromSources step", () => {
     it("fetches logo from first successful source", async () => {
       await createTestProvider(TEST_PROVIDER_IDS.fresh, "newprovider.com");
@@ -177,7 +116,6 @@ describe("providerLogoWorkflow step functions", () => {
         providerDomain: "newprovider.com",
       });
 
-      expect(result.cached).toBe(false);
       expect(result.data.url).toBe(
         "https://blob.vercel-storage.com/provider-logo.webp",
       );

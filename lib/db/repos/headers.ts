@@ -1,8 +1,8 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import type { Header, HeadersResponse } from "@/lib/types";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
+import type { Header, HeadersResponse } from "@/lib/types";
 import { findDomainByName } from "./domains";
 
 export type ReplaceHeadersParams = {
@@ -103,7 +103,7 @@ export async function getHeadersCached(
 /**
  * Helper: Normalize header names (trim + lowercase) then sort important first.
  */
-function normalizeHeaders(
+export function normalizeHeaders(
   h: Header[],
   importantHeaders: ReadonlySet<string>,
 ): Header[] {

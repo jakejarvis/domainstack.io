@@ -197,26 +197,26 @@ afterAll(async () => {
   await closePGliteDb();
 });
 
-describe("getHosting", () => {
+describe("fetchHosting", () => {
   it("returns known providers when signals match (Vercel/Google/Cloudflare)", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
 
-    const result = await getHosting("web-hosting.example");
+    const result = await fetchHosting("web-hosting.example");
 
     expect(result.dnsProvider.name).toBe("Cloudflare");
     expect(result.dnsProvider.domain).toBe("cloudflare.com");
   });
 
   it("sets hosting to none when no A record is present", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
     // "no-a.example" has MX and NS but no A in handlers.ts
-    const result = await getHosting("no-a.example");
+    const result = await fetchHosting("no-a.example");
     expect(result.hostingProvider.name).toBeNull();
     expect(result.hostingProvider.domain).toBeNull();
   });
 
   it("skips headers probe when domain has no A or AAAA records", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
     const workflowApi = await import("workflow/api");
     const startSpy = vi.mocked(workflowApi.start);
 
@@ -224,7 +224,7 @@ describe("getHosting", () => {
     startSpy.mockClear();
 
     // "email-only.example" has MX and NS but no A in handlers.ts
-    await getHosting("email-only.example");
+    await fetchHosting("email-only.example");
 
     // Should only call dns workflow, not headers workflow
     const calls = startSpy.mock.calls;
@@ -236,7 +236,7 @@ describe("getHosting", () => {
   });
 
   it("calls headers probe when domain has A or AAAA records", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
     const workflowApi = await import("workflow/api");
     const startSpy = vi.mocked(workflowApi.start);
 
@@ -244,7 +244,7 @@ describe("getHosting", () => {
     startSpy.mockClear();
 
     // "web-hosting.example" has A record
-    await getHosting("web-hosting.example");
+    await fetchHosting("web-hosting.example");
 
     // Should call both dns and headers workflows
     const calls = startSpy.mock.calls;
@@ -256,15 +256,15 @@ describe("getHosting", () => {
   });
 
   it("falls back to IP owner when hosting is unknown and IP owner exists", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
     // "owner.example" resolves to 9.9.9.9 which mocks to "My ISP"
-    const result = await getHosting("owner.example");
+    const result = await fetchHosting("owner.example");
     expect(result.hostingProvider.name).toBe("My ISP");
     expect(result.hostingProvider.domain).toBe("isp.example");
   });
 
   it("creates provider rows for DNS and Email when missing and links them", async () => {
-    const { getHosting } = await import("@/server/services/hosting");
+    const { fetchHosting } = await import("@/server/services/hosting");
 
     // "provider-create.example" is set up in handlers.ts
     // Create domain record first
@@ -275,7 +275,7 @@ describe("getHosting", () => {
       unicodeName: "provider-create.example",
     });
 
-    await getHosting("provider-create.example");
+    await fetchHosting("provider-create.example");
 
     const { db } = await import("@/lib/db/client");
     const { domains, hosting, providers } = await import("@/lib/db/schema");

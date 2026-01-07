@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { getHosting } from "@/server/services/hosting";
 import {
   createTRPCRouter,
   domainProcedure,
@@ -85,9 +84,35 @@ export const domainRouter = createTRPCRouter({
       };
     }),
 
+  /**
+   * Get hosting, DNS, and email provider data for a domain.
+   * Detects providers from DNS records and HTTP headers.
+   */
   getHosting: domainProcedure
     .input(DomainInputSchema)
-    .query(({ input }) => getHosting(input.domain)),
+    .query(async ({ input }) => {
+      const { getHostingCached } = await import("@/lib/db/repos/hosting");
+
+      // Check cache first
+      const cached = await getHostingCached(input.domain);
+      if (cached) {
+        return {
+          success: true,
+          cached: true,
+          data: cached,
+        };
+      }
+
+      // Cache miss - fetch fresh data
+      const { fetchHosting } = await import("@/server/services/hosting");
+      const data = await fetchHosting(input.domain);
+
+      return {
+        success: true,
+        cached: false,
+        data,
+      };
+    }),
 
   /**
    * Get SSL certificates for a domain using a durable workflow.
@@ -250,7 +275,7 @@ export const domainRouter = createTRPCRouter({
             return {
               success: true,
               cached: true,
-              data: { url: screenshotRecord.url },
+              data: { url: screenshotRecord.url, blocked: false },
             };
           }
         }

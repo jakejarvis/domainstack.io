@@ -7,7 +7,7 @@ import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { getHosting } from "@/server/services/hosting";
+import { fetchHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { registrationWorkflow } from "@/workflows/registration";
 
@@ -48,7 +48,7 @@ export const initializeSnapshot = inngest.createFunction(
         // Start workflows and fetch hosting in parallel
         const [regRun, hostingPromise, certRun] = await Promise.all([
           start(registrationWorkflow, [{ domain: domainName }]),
-          getHosting(domainName),
+          fetchHosting(domainName),
           start(certificatesWorkflow, [{ domain: domainName }]),
         ]);
 

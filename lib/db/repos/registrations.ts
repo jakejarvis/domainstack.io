@@ -1,13 +1,13 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { domains, providers, registrations } from "@/lib/db/schema";
 import type {
   RegistrationContacts,
   RegistrationNameservers,
   RegistrationResponse,
 } from "@/lib/types";
-import { db } from "@/lib/db/client";
-import { domains, providers, registrations } from "@/lib/db/schema";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
 

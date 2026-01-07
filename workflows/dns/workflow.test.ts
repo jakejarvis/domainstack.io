@@ -61,150 +61,6 @@ describe("dnsWorkflow step functions", () => {
     await closePGliteDb();
   });
 
-  describe("checkCache step", () => {
-    it("returns cached DNS records when present and not expired", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { replaceDns } = await import("@/lib/db/repos/dns");
-
-      // Create a cached domain with DNS records
-      const domain = await upsertDomain({
-        name: "cached.com",
-        tld: "com",
-        unicodeName: "cached.com",
-      });
-
-      const futureDate = new Date(Date.now() + 86400000); // expires tomorrow
-      await replaceDns({
-        domainId: domain.id,
-        resolver: "cloudflare",
-        fetchedAt: new Date(),
-        recordsByType: {
-          A: [
-            {
-              name: "cached.com",
-              value: "1.2.3.4",
-              ttl: 3600,
-              priority: null,
-              isCloudflare: false,
-              expiresAt: futureDate,
-            },
-          ],
-          AAAA: [
-            {
-              name: "cached.com",
-              value: "::1",
-              ttl: 3600,
-              priority: null,
-              isCloudflare: false,
-              expiresAt: futureDate,
-            },
-          ],
-          MX: [
-            {
-              name: "cached.com",
-              value: "mail.cached.com",
-              ttl: 3600,
-              priority: 10,
-              isCloudflare: null,
-              expiresAt: futureDate,
-            },
-          ],
-          TXT: [
-            {
-              name: "cached.com",
-              value: "v=spf1 include:_spf.google.com ~all",
-              ttl: 3600,
-              priority: null,
-              isCloudflare: null,
-              expiresAt: futureDate,
-            },
-          ],
-          NS: [
-            {
-              name: "cached.com",
-              value: "ns1.cached.com",
-              ttl: 3600,
-              priority: null,
-              isCloudflare: null,
-              expiresAt: futureDate,
-            },
-          ],
-        },
-      });
-
-      // Import and test the workflow
-      const { dnsWorkflow } = await import("./workflow");
-      const result = await dnsWorkflow({ domain: "cached.com" });
-
-      expect(result.success).toBe(true);
-      expect(result.cached).toBe(true);
-      expect(result.data.resolver).toBe("cloudflare");
-      expect(result.data.records.length).toBeGreaterThan(0);
-      expect(result.data.records.some((r) => r.type === "A")).toBe(true);
-    });
-
-    it("returns cache miss when domain does not exist", async () => {
-      const { dnsWorkflow } = await import("./workflow");
-
-      // Mock DoH providers to return records
-      dnsUtilsMock.queryDohProvider.mockResolvedValue([
-        { type: 1, name: "unknown.com.", data: "1.2.3.4", TTL: 300 },
-      ]);
-
-      const result = await dnsWorkflow({ domain: "unknown.com" });
-
-      // Should not be cached since domain doesn't exist in DB
-      expect(result.cached).toBe(false);
-      expect(result.success).toBe(true);
-    });
-
-    it("returns cache miss when records are expired", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { replaceDns } = await import("@/lib/db/repos/dns");
-
-      const domain = await upsertDomain({
-        name: "expired.com",
-        tld: "com",
-        unicodeName: "expired.com",
-      });
-
-      const pastDate = new Date(Date.now() - 86400000); // expired yesterday
-      await replaceDns({
-        domainId: domain.id,
-        resolver: "cloudflare",
-        fetchedAt: new Date(Date.now() - 172800000),
-        recordsByType: {
-          A: [
-            {
-              name: "expired.com",
-              value: "1.2.3.4",
-              ttl: 3600,
-              priority: null,
-              isCloudflare: false,
-              expiresAt: pastDate,
-            },
-          ],
-          AAAA: [],
-          MX: [],
-          TXT: [],
-          NS: [],
-        },
-      });
-
-      // Mock DoH providers to return records
-      dnsUtilsMock.queryDohProvider.mockResolvedValue([
-        { type: 1, name: "expired.com.", data: "5.6.7.8", TTL: 300 },
-      ]);
-
-      const { dnsWorkflow } = await import("./workflow");
-      const result = await dnsWorkflow({ domain: "expired.com" });
-
-      // Should not be cached since records are expired
-      expect(result.cached).toBe(false);
-      expect(result.success).toBe(true);
-    });
-  });
-
   describe("fetchFromProviders step", () => {
     it("returns DNS records from DoH provider", async () => {
       const { upsertDomain } = await import("@/lib/db/repos/domains");
@@ -249,7 +105,6 @@ describe("dnsWorkflow step functions", () => {
       const result = await dnsWorkflow({ domain: "fetch.com" });
 
       expect(result.success).toBe(true);
-      expect(result.cached).toBe(false);
       expect(result.data.resolver).toBe("cloudflare");
       expect(result.data.records.some((r) => r.type === "A")).toBe(true);
       expect(result.data.records.some((r) => r.type === "MX")).toBe(true);
@@ -265,7 +120,6 @@ describe("dnsWorkflow step functions", () => {
       const result = await dnsWorkflow({ domain: "failing.com" });
 
       expect(result.success).toBe(false);
-      expect(result.cached).toBe(false);
       expect(result.data.records).toEqual([]);
     });
 

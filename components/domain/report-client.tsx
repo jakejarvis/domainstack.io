@@ -39,7 +39,7 @@ function HostingSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getHosting.queryOptions({ domain }),
   );
-  return <HostingSection domain={domain} data={data} />;
+  return <HostingSection domain={domain} data={data.data} />;
 }
 
 function DnsSectionContent({ domain }: { domain: string }) {

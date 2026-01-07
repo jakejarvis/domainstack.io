@@ -1,19 +1,11 @@
-import { eq } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { after } from "next/server";
-import { cache } from "react";
 import { start } from "workflow/api";
-import { db } from "@/lib/db/client";
 import { findDomainByName } from "@/lib/db/repos/domains";
 import { upsertHosting } from "@/lib/db/repos/hosting";
 import {
   resolveOrCreateProviderId,
   upsertCatalogProviderRef,
 } from "@/lib/db/repos/providers";
-import {
-  hosting as hostingTable,
-  providers as providersTable,
-} from "@/lib/db/schema";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { lookupGeoIp } from "@/lib/geoip";
 import { createLogger } from "@/lib/logger/server";
@@ -37,82 +29,17 @@ export type ServiceOptions = {
 };
 
 /**
- * Detect hosting, email, and DNS providers for a domain with Postgres caching.
+ * Fetch fresh hosting, email, and DNS provider data for a domain.
  *
- * Wrapped in React's cache() for per-request deduplication during SSR,
- * ensuring multiple components can query hosting without triggering duplicate
- * fetches of DNS and headers data.
+ * This function always fetches fresh data (no cache checking).
+ * Cache checking is done at the tRPC layer before calling this function.
  */
-export const getHosting = cache(async function getHosting(
+export async function fetchHosting(
   domain: string,
   options: ServiceOptions = {},
 ): Promise<HostingResponse> {
   // Generate single timestamp for access tracking and scheduling
   const now = new Date();
-  const nowMs = now.getTime();
-
-  // Fast path: Check Postgres for cached hosting data with providers in single query
-  const existingDomain = await findDomainByName(domain);
-  if (existingDomain) {
-    const hp = alias(providersTable, "hp");
-    const ep = alias(providersTable, "ep");
-    const dp = alias(providersTable, "dp");
-    const existing = await db
-      .select({
-        hostingProviderId: hp.id,
-        hostingProviderName: hp.name,
-        hostingProviderDomain: hp.domain,
-        emailProviderId: ep.id,
-        emailProviderName: ep.name,
-        emailProviderDomain: ep.domain,
-        dnsProviderId: dp.id,
-        dnsProviderName: dp.name,
-        dnsProviderDomain: dp.domain,
-        geoCity: hostingTable.geoCity,
-        geoRegion: hostingTable.geoRegion,
-        geoCountry: hostingTable.geoCountry,
-        geoCountryCode: hostingTable.geoCountryCode,
-        geoLat: hostingTable.geoLat,
-        geoLon: hostingTable.geoLon,
-        expiresAt: hostingTable.expiresAt,
-      })
-      .from(hostingTable)
-      .leftJoin(hp, eq(hp.id, hostingTable.hostingProviderId))
-      .leftJoin(ep, eq(ep.id, hostingTable.emailProviderId))
-      .leftJoin(dp, eq(dp.id, hostingTable.dnsProviderId))
-      .where(eq(hostingTable.domainId, existingDomain.id))
-      .limit(1);
-    const row = existing[0];
-    if (row && (row.expiresAt?.getTime?.() ?? 0) > nowMs) {
-      const info: HostingResponse = {
-        hostingProvider: {
-          id: row.hostingProviderId ?? null,
-          name: row.hostingProviderName ?? null,
-          domain: row.hostingProviderDomain ?? null,
-        },
-        emailProvider: {
-          id: row.emailProviderId ?? null,
-          name: row.emailProviderName ?? null,
-          domain: row.emailProviderDomain ?? null,
-        },
-        dnsProvider: {
-          id: row.dnsProviderId ?? null,
-          name: row.dnsProviderName ?? null,
-          domain: row.dnsProviderDomain ?? null,
-        },
-        geo: {
-          city: row.geoCity ?? "",
-          region: row.geoRegion ?? "",
-          country: row.geoCountry ?? "",
-          country_code: row.geoCountryCode ?? "",
-          lat: row.geoLat ?? null,
-          lon: row.geoLon ?? null,
-        },
-      };
-
-      return info;
-    }
-  }
 
   // Get DNS records via workflow
   const dnsRun = await start(dnsWorkflow, [{ domain }]);
@@ -282,6 +209,7 @@ export const getHosting = cache(async function getHosting(
 
   // Persist to Postgres only if domain exists (i.e., is registered)
   const expiresAt = ttlForHosting(now);
+  const existingDomain = await findDomainByName(domain);
 
   if (existingDomain) {
     await upsertHosting({
@@ -312,4 +240,4 @@ export const getHosting = cache(async function getHosting(
   }
 
   return info;
-});
+}

@@ -60,108 +60,6 @@ describe("registrationWorkflow step functions", () => {
     await closePGliteDb();
   });
 
-  describe("checkCache step", () => {
-    it("returns cached registration when present and not expired", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { upsertRegistration } = await import(
-        "@/lib/db/repos/registrations"
-      );
-
-      // Create a cached registration
-      const domain = await upsertDomain({
-        name: "cached.com",
-        tld: "com",
-        unicodeName: "cached.com",
-      });
-
-      await upsertRegistration({
-        domainId: domain.id,
-        isRegistered: true,
-        registry: "Verisign",
-        statuses: [],
-        contacts: [],
-        whoisServer: null,
-        rdapServers: [],
-        source: "rdap",
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000), // expires tomorrow
-        transferLock: null,
-        creationDate: null,
-        updatedDate: null,
-        expirationDate: null,
-        deletionDate: null,
-        registrarProviderId: null,
-        resellerProviderId: null,
-        nameservers: [],
-      });
-
-      // Import and test the workflow
-      const { registrationWorkflow } = await import("./workflow");
-      const result = await registrationWorkflow({ domain: "cached.com" });
-
-      expect(result.success).toBe(true);
-      expect(result.cached).toBe(true);
-      if (result.success) {
-        expect(result.data.domain).toBe("cached.com");
-        expect(result.data.isRegistered).toBe(true);
-      }
-    });
-
-    it("returns not found when cache is expired", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { upsertRegistration } = await import(
-        "@/lib/db/repos/registrations"
-      );
-
-      // Create an expired cached registration
-      const domain = await upsertDomain({
-        name: "expired.com",
-        tld: "com",
-        unicodeName: "expired.com",
-      });
-
-      await upsertRegistration({
-        domainId: domain.id,
-        isRegistered: true,
-        registry: "Verisign",
-        statuses: [],
-        contacts: [],
-        whoisServer: null,
-        rdapServers: [],
-        source: "rdap",
-        fetchedAt: new Date(Date.now() - 86400000),
-        expiresAt: new Date(Date.now() - 1000), // expired
-        transferLock: null,
-        creationDate: null,
-        updatedDate: null,
-        expirationDate: null,
-        deletionDate: null,
-        registrarProviderId: null,
-        resellerProviderId: null,
-        nameservers: [],
-      });
-
-      // Mock rdapper to return a result
-      rdapperMock.lookup.mockResolvedValue({
-        ok: true,
-        error: null,
-        record: {
-          domain: "expired.com",
-          tld: "com",
-          isRegistered: true,
-          source: "rdap",
-        },
-      });
-
-      const { registrationWorkflow } = await import("./workflow");
-      const result = await registrationWorkflow({ domain: "expired.com" });
-
-      expect(result.success).toBe(true);
-      expect(result.cached).toBe(false); // Should have fetched fresh data
-      expect(rdapperMock.lookup).toHaveBeenCalled();
-    });
-  });
-
   describe("lookupRdap step", () => {
     it("returns success with record when RDAP lookup succeeds", async () => {
       rdapperMock.lookup.mockResolvedValue({
@@ -180,7 +78,6 @@ describe("registrationWorkflow step functions", () => {
       const result = await registrationWorkflow({ domain: "example.com" });
 
       expect(result.success).toBe(true);
-      expect(result.cached).toBe(false);
       if (result.success) {
         expect(result.data.isRegistered).toBe(true);
       }

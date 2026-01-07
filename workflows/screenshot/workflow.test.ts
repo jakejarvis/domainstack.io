@@ -48,7 +48,6 @@ describe("screenshotWorkflow step functions", () => {
 
       expect(result.data.blocked).toBe(true);
       expect(result.data.url).toBeNull();
-      expect(result.cached).toBe(false);
     });
 
     it("verifies blocklist is checked for non-blocked domains", async () => {
@@ -88,72 +87,6 @@ describe("screenshotWorkflow step functions", () => {
     });
   });
 
-  describe("checkCache step", () => {
-    it("returns cached screenshot when present", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
-
-      const domain = await upsertDomain({
-        name: "cached-screenshot.com",
-        tld: "com",
-        unicodeName: "cached-screenshot.com",
-      });
-
-      await upsertScreenshot({
-        domainId: domain.id,
-        url: "https://cached-screenshot.webp",
-        pathname: "cached.webp",
-        width: 1200,
-        height: 630,
-        source: "direct_https",
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { screenshotWorkflow } = await import("./workflow");
-      const result = await screenshotWorkflow({
-        domain: "cached-screenshot.com",
-      });
-
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBe("https://cached-screenshot.webp");
-    });
-
-    it("returns null url for cached failure (negative cache)", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
-
-      const domain = await upsertDomain({
-        name: "failed-screenshot.com",
-        tld: "com",
-        unicodeName: "failed-screenshot.com",
-      });
-
-      // Simulate a cached failure by inserting a record with url: null
-      // and notFound: true to indicate it's a negative cache hit
-      await upsertScreenshot({
-        domainId: domain.id,
-        url: null, // Failed screenshot
-        pathname: null,
-        width: 1200,
-        height: 630,
-        source: null,
-        notFound: true, // Mark as negative cache
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { screenshotWorkflow } = await import("./workflow");
-      const result = await screenshotWorkflow({
-        domain: "failed-screenshot.com",
-      });
-
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBeNull();
-    });
-
-    // Note: Testing "cache expired → fetch fresh" requires mocking Puppeteer,
-    // which is difficult with dynamic imports. The captureScreenshot step
-    // is better tested via integration tests or manual verification.
-  });
+  // Note: checkCache step was moved to tRPC layer.
+  // Cache tests should be done at the router or integration level.
 });

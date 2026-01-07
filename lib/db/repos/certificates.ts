@@ -2,7 +2,6 @@ import "server-only";
 
 import type { InferInsertModel } from "drizzle-orm";
 import { and, asc, eq, isNull } from "drizzle-orm";
-import type { Certificate, CertificatesResponse } from "@/lib/types";
 import { db } from "@/lib/db/client";
 import {
   certificates,
@@ -11,7 +10,11 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import type { NotificationOverrides } from "@/lib/types";
+import type {
+  Certificate,
+  CertificatesResponse,
+  NotificationOverrides,
+} from "@/lib/types";
 import { findDomainByName } from "./domains";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;

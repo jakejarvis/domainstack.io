@@ -117,45 +117,6 @@ describe("certificatesWorkflow step functions", () => {
     await closePGliteDb();
   });
 
-  describe("checkCache step", () => {
-    it("returns cached certificates when present and not expired", async () => {
-      const { upsertDomain } = await import("@/lib/db/repos/domains");
-      const { replaceCertificates } = await import(
-        "@/lib/db/repos/certificates"
-      );
-
-      const domain = await upsertDomain({
-        name: "cached-cert.com",
-        tld: "com",
-        unicodeName: "cached-cert.com",
-      });
-
-      await replaceCertificates({
-        domainId: domain.id,
-        chain: [
-          {
-            issuer: "Let's Encrypt",
-            subject: "cached-cert.com",
-            altNames: ["cached-cert.com"],
-            validFrom: new Date("2039-01-01"),
-            validTo: new Date("2039-04-01"),
-            caProviderId: null,
-          },
-        ],
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000), // expires tomorrow
-      });
-
-      const { certificatesWorkflow } = await import("./workflow");
-      const result = await certificatesWorkflow({ domain: "cached-cert.com" });
-
-      expect(result.success).toBe(true);
-      expect(result.cached).toBe(true);
-      expect(result.data.certificates).toHaveLength(1);
-      expect(result.data.certificates[0].issuer).toBe("Let's Encrypt");
-    });
-  });
-
   describe("fetchCertificateChain step", () => {
     it("fetches and parses certificate chain", async () => {
       const leaf = makePeerCert({
@@ -196,7 +157,6 @@ describe("certificatesWorkflow step functions", () => {
       const result = await certificatesWorkflow({ domain: "tls-test.com" });
 
       expect(result.success).toBe(true);
-      expect(result.cached).toBe(false);
       expect(result.data.certificates.length).toBeGreaterThan(0);
       expect(result.data.certificates[0].subject).toBe("example.com");
     });

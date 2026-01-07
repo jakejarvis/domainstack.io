@@ -1,6 +1,8 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { seo as seoTable } from "@/lib/db/schema";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -8,8 +10,6 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types";
-import { db } from "@/lib/db/client";
-import { seo as seoTable } from "@/lib/db/schema";
 import { findDomainByName } from "./domains";
 
 type SeoInsert = InferInsertModel<typeof seoTable>;
@@ -25,7 +25,9 @@ export async function upsertSeo(params: SeoInsert) {
  * Get cached SEO data for a domain if fresh.
  * Returns null if cache miss or stale.
  */
-export async function getSeoCached(domain: string): Promise<SeoResponse | null> {
+export async function getSeoCached(
+  domain: string,
+): Promise<SeoResponse | null> {
   const nowMs = Date.now();
 
   try {

@@ -73,59 +73,6 @@ describe("faviconWorkflow step functions", () => {
     await closePGliteDb();
   });
 
-  describe("checkCache step", () => {
-    it("returns cached favicon when present", async () => {
-      const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-      const { upsertFavicon } = await import("@/lib/db/repos/favicons");
-
-      const domain = await ensureDomainRecord("cached-favicon.com");
-      await upsertFavicon({
-        domainId: domain.id,
-        url: "https://cached-favicon.webp",
-        pathname: null,
-        size: 32,
-        source: "direct",
-        notFound: false,
-        upstreamStatus: 200,
-        upstreamContentType: "image/webp",
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { faviconWorkflow } = await import("./workflow");
-      const result = await faviconWorkflow({ domain: "cached-favicon.com" });
-
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBe("https://cached-favicon.webp");
-    });
-
-    it("returns cached notFound status", async () => {
-      const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-      const { upsertFavicon } = await import("@/lib/db/repos/favicons");
-
-      const domain = await ensureDomainRecord("no-favicon.com");
-      await upsertFavicon({
-        domainId: domain.id,
-        url: null,
-        pathname: null,
-        size: 32,
-        source: null,
-        notFound: true,
-        upstreamStatus: null,
-        upstreamContentType: null,
-        fetchedAt: new Date(),
-        expiresAt: new Date(Date.now() + 86400000),
-      });
-
-      const { faviconWorkflow } = await import("./workflow");
-      const result = await faviconWorkflow({ domain: "no-favicon.com" });
-
-      expect(result.success).toBe(true);
-      expect(result.cached).toBe(true);
-      expect(result.data.url).toBeNull();
-    });
-  });
-
   describe("fetchFromSources step", () => {
     it("fetches favicon from first successful source", async () => {
       fetchRemoteAssetMock.fetchRemoteAsset.mockResolvedValue({
@@ -138,7 +85,6 @@ describe("faviconWorkflow step functions", () => {
       const { faviconWorkflow } = await import("./workflow");
       const result = await faviconWorkflow({ domain: "fresh-favicon.com" });
 
-      expect(result.cached).toBe(false);
       expect(result.data.url).toBe(
         "https://blob.vercel-storage.com/favicon.webp",
       );

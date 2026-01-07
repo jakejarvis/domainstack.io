@@ -98,6 +98,7 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
   "use step";
 
   const { getStatusCode } = await import("@readme/http-status-codes");
+  const { normalizeHeaders } = await import("@/lib/db/repos/headers");
   const { fetchRemoteAsset } = await import("@/lib/fetch-remote-asset");
   const { isExpectedDnsError } = await import("@/lib/dns-utils");
   const { isExpectedTlsError } = await import("@/lib/fetch");
