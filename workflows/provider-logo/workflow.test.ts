@@ -125,8 +125,7 @@ describe("providerLogoWorkflow step functions", () => {
       });
 
       expect(result.cached).toBe(true);
-      expect(result.url).toBe("https://cached-logo.webp");
-      expect(result.notFound).toBe(false);
+      expect(result.data.url).toBe("https://cached-logo.webp");
     });
 
     it("returns cached notFound status", async () => {
@@ -157,8 +156,7 @@ describe("providerLogoWorkflow step functions", () => {
       });
 
       expect(result.cached).toBe(true);
-      expect(result.url).toBeNull();
-      expect(result.notFound).toBe(true);
+      expect(result.data.url).toBeNull();
     });
   });
 
@@ -180,10 +178,9 @@ describe("providerLogoWorkflow step functions", () => {
       });
 
       expect(result.cached).toBe(false);
-      expect(result.url).toBe(
+      expect(result.data.url).toBe(
         "https://blob.vercel-storage.com/provider-logo.webp",
       );
-      expect(result.notFound).toBe(false);
     });
 
     it("tries fallback sources when first fails", async () => {
@@ -204,7 +201,7 @@ describe("providerLogoWorkflow step functions", () => {
         providerDomain: "fallback.com",
       });
 
-      expect(result.url).toBe(
+      expect(result.data.url).toBe(
         "https://blob.vercel-storage.com/provider-logo.webp",
       );
       expect(fetchRemoteAssetMock.fetchRemoteAsset).toHaveBeenCalledTimes(2);
@@ -224,8 +221,7 @@ describe("providerLogoWorkflow step functions", () => {
         providerDomain: "no-logo.com",
       });
 
-      expect(result.url).toBeNull();
-      expect(result.notFound).toBe(true);
+      expect(result.data.url).toBeNull();
     });
   });
 
@@ -259,7 +255,7 @@ describe("providerLogoWorkflow step functions", () => {
       );
       const cached = await getProviderLogoByProviderId(TEST_PROVIDER_IDS.store);
       expect(cached).not.toBeNull();
-      expect(cached?.url).toBe(
+      expect(cached.url).toBe(
         "https://blob.vercel-storage.com/provider-logo.webp",
       );
     });
@@ -285,8 +281,8 @@ describe("providerLogoWorkflow step functions", () => {
       );
       const cached = await getProviderLogoByProviderId(TEST_PROVIDER_IDS.fail);
       expect(cached).not.toBeNull();
-      expect(cached?.url).toBeNull();
-      expect(cached?.notFound).toBe(true);
+      expect(cached.url).toBeNull();
+      expect(cached.notFound).toBe(true);
     });
   });
 });

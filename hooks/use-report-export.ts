@@ -71,24 +71,16 @@ export function useReportExport(domain: string) {
 
     try {
       // Read data from cache using query keys
-      const registrationData = queryClient.getQueryData(queryKeys.registration);
-      const dnsData = queryClient.getQueryData(queryKeys.dns);
-      const hostingData = queryClient.getQueryData(queryKeys.hosting);
-      const certificatesData = queryClient.getQueryData(queryKeys.certificates);
-      const headersData = queryClient.getQueryData(queryKeys.headers);
-      const seoData = queryClient.getQueryData(queryKeys.seo);
+      const exportData: Record<string, unknown> = {};
+      for (const key of Object.keys(queryKeys)) {
+        const data = queryClient.getQueryData(
+          queryKeysRef.current[key as keyof typeof queryKeys],
+        );
+        if (data) {
+          exportData[key] = data;
+        }
+      }
 
-      // Aggregate into export format
-      const exportData = {
-        registration: registrationData ?? null,
-        dns: dnsData ?? null,
-        hosting: hostingData ?? null,
-        certificates: certificatesData ?? null,
-        headers: headersData ?? null,
-        seo: seoData ?? null,
-      };
-
-      // Export with partial data (graceful degradation)
       exportDomainData(domain, exportData);
     } catch (err) {
       toast.error(`Failed to export ${domain}`, {

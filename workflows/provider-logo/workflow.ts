@@ -4,9 +4,11 @@ export interface ProviderLogoWorkflowInput {
 }
 
 export interface ProviderLogoWorkflowResult {
-  url: string | null;
+  success: boolean;
   cached: boolean;
-  notFound: boolean;
+  data: {
+    url: string | null;
+  };
 }
 
 // Internal types for fetch result - serializable for step-to-step transfer
@@ -47,9 +49,9 @@ export async function providerLogoWorkflow(
 
   if (cachedResult.found) {
     return {
-      url: cachedResult.url,
+      success: true,
       cached: true,
-      notFound: cachedResult.notFound,
+      data: cachedResult.data,
     };
   }
 
@@ -61,9 +63,11 @@ export async function providerLogoWorkflow(
     await persistFailure(providerId, fetchResult.allNotFound);
 
     return {
-      url: null,
+      success: false,
       cached: false,
-      notFound: fetchResult.allNotFound,
+      data: {
+        url: null,
+      },
     };
   }
 
@@ -74,9 +78,11 @@ export async function providerLogoWorkflow(
     // Image processing failed
     await persistFailure(providerId, false);
     return {
-      url: null,
+      success: false,
       cached: false,
-      notFound: false,
+      data: {
+        url: null,
+      },
     };
   }
 
@@ -89,9 +95,11 @@ export async function providerLogoWorkflow(
   );
 
   return {
-    url: storeResult.url,
+    success: true,
     cached: false,
-    notFound: false,
+    data: {
+      url: storeResult.url,
+    },
   };
 }
 
@@ -100,9 +108,7 @@ export async function providerLogoWorkflow(
  */
 async function checkCache(
   providerId: string,
-): Promise<
-  { found: true; url: string | null; notFound: boolean } | { found: false }
-> {
+): Promise<{ found: true; data: { url: string | null } } | { found: false }> {
   "use step";
 
   const { getProviderLogoByProviderId } = await import(
@@ -122,8 +128,9 @@ async function checkCache(
       if (isDefinitiveResult) {
         return {
           found: true,
-          url: cachedRecord.url,
-          notFound: cachedRecord.notFound,
+          data: {
+            url: cachedRecord.url,
+          },
         };
       }
     }

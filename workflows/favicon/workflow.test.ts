@@ -96,8 +96,7 @@ describe("faviconWorkflow step functions", () => {
       const result = await faviconWorkflow({ domain: "cached-favicon.com" });
 
       expect(result.cached).toBe(true);
-      expect(result.url).toBe("https://cached-favicon.webp");
-      expect(result.notFound).toBe(false);
+      expect(result.data.url).toBe("https://cached-favicon.webp");
     });
 
     it("returns cached notFound status", async () => {
@@ -121,9 +120,9 @@ describe("faviconWorkflow step functions", () => {
       const { faviconWorkflow } = await import("./workflow");
       const result = await faviconWorkflow({ domain: "no-favicon.com" });
 
+      expect(result.success).toBe(true);
       expect(result.cached).toBe(true);
-      expect(result.url).toBeNull();
-      expect(result.notFound).toBe(true);
+      expect(result.data.url).toBeNull();
     });
   });
 
@@ -140,8 +139,9 @@ describe("faviconWorkflow step functions", () => {
       const result = await faviconWorkflow({ domain: "fresh-favicon.com" });
 
       expect(result.cached).toBe(false);
-      expect(result.url).toBe("https://blob.vercel-storage.com/favicon.webp");
-      expect(result.notFound).toBe(false);
+      expect(result.data.url).toBe(
+        "https://blob.vercel-storage.com/favicon.webp",
+      );
     });
 
     it("tries fallback sources when first fails", async () => {
@@ -157,7 +157,9 @@ describe("faviconWorkflow step functions", () => {
       const { faviconWorkflow } = await import("./workflow");
       const result = await faviconWorkflow({ domain: "fallback-favicon.com" });
 
-      expect(result.url).toBe("https://blob.vercel-storage.com/favicon.webp");
+      expect(result.data.url).toBe(
+        "https://blob.vercel-storage.com/favicon.webp",
+      );
       expect(fetchRemoteAssetMock.fetchRemoteAsset).toHaveBeenCalledTimes(2);
     });
 
@@ -170,8 +172,8 @@ describe("faviconWorkflow step functions", () => {
       const { faviconWorkflow } = await import("./workflow");
       const result = await faviconWorkflow({ domain: "missing-favicon.com" });
 
-      expect(result.url).toBeNull();
-      expect(result.notFound).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.data.url).toBeNull();
     });
   });
 
@@ -187,7 +189,7 @@ describe("faviconWorkflow step functions", () => {
       const { faviconWorkflow } = await import("./workflow");
       const result = await faviconWorkflow({ domain: "convert-favicon.com" });
 
-      expect(result.url).toContain(".webp");
+      expect(result.data.url).toContain(".webp");
     });
   });
 
@@ -215,7 +217,7 @@ describe("faviconWorkflow step functions", () => {
       const { getFaviconByDomain } = await import("@/lib/db/repos/favicons");
       const cached = await getFaviconByDomain("store-favicon.com");
       expect(cached).not.toBeNull();
-      expect(cached?.url).toBe("https://blob.vercel-storage.com/favicon.webp");
+      expect(cached.url).toBe("https://blob.vercel-storage.com/favicon.webp");
     });
   });
 
@@ -232,8 +234,8 @@ describe("faviconWorkflow step functions", () => {
       const { getFaviconByDomain } = await import("@/lib/db/repos/favicons");
       const cached = await getFaviconByDomain("failed-favicon.com");
       expect(cached).not.toBeNull();
-      expect(cached?.url).toBeNull();
-      expect(cached?.notFound).toBe(true);
+      expect(cached.url).toBeNull();
+      expect(cached.notFound).toBe(true);
     });
   });
 });

@@ -3,9 +3,9 @@ export interface FaviconWorkflowInput {
 }
 
 export interface FaviconWorkflowResult {
-  url: string | null;
+  success: boolean;
   cached: boolean;
-  notFound: boolean;
+  data: { url: string | null };
 }
 
 // Internal types for fetch result - serializable for step-to-step transfer
@@ -46,9 +46,9 @@ export async function faviconWorkflow(
 
   if (cachedResult.found) {
     return {
-      url: cachedResult.url,
+      success: true,
       cached: true,
-      notFound: cachedResult.notFound,
+      data: cachedResult.data,
     };
   }
 
@@ -60,9 +60,9 @@ export async function faviconWorkflow(
     await persistFailure(domain, fetchResult.allNotFound);
 
     return {
-      url: null,
+      success: true,
       cached: false,
-      notFound: fetchResult.allNotFound,
+      data: { url: null },
     };
   }
 
@@ -73,9 +73,9 @@ export async function faviconWorkflow(
     // Image processing failed
     await persistFailure(domain, false);
     return {
-      url: null,
+      success: false,
       cached: false,
-      notFound: false,
+      data: { url: null },
     };
   }
 
@@ -87,9 +87,9 @@ export async function faviconWorkflow(
   );
 
   return {
-    url: storeResult.url,
+    success: true,
     cached: false,
-    notFound: false,
+    data: { url: storeResult.url },
   };
 }
 
@@ -99,7 +99,8 @@ export async function faviconWorkflow(
 async function checkCache(
   domain: string,
 ): Promise<
-  { found: true; url: string | null; notFound: boolean } | { found: false }
+  | { found: true; data: { url: string | null; notFound: boolean } }
+  | { found: false }
 > {
   "use step";
 
@@ -118,18 +119,20 @@ async function checkCache(
       if (isDefinitiveResult) {
         return {
           found: true,
-          url: cachedRecord.url,
-          notFound: cachedRecord.notFound,
+          data: {
+            url: cachedRecord.url,
+            notFound: cachedRecord.notFound,
+          },
         };
       }
     }
+
+    return { found: false };
   } catch {
     // Cache check failed, fall through to fetch
+    return { found: false };
   }
-
-  return { found: false };
 }
-
 /**
  * Step: Fetch favicon from multiple sources with fallbacks
  * This is a potentially slow operation with multiple HTTP requests.

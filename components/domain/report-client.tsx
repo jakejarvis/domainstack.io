@@ -31,7 +31,7 @@ function RegistrationSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getRegistration.queryOptions({ domain }),
   );
-  return <RegistrationSection domain={domain} data={data} />;
+  return <RegistrationSection domain={domain} data={data.data} />;
 }
 
 function HostingSectionContent({ domain }: { domain: string }) {
@@ -47,7 +47,7 @@ function DnsSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getDnsRecords.queryOptions({ domain }),
   );
-  return <DnsSection domain={domain} data={data} />;
+  return <DnsSection domain={domain} data={data.data} />;
 }
 
 function CertificatesSectionContent({ domain }: { domain: string }) {
@@ -55,7 +55,7 @@ function CertificatesSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getCertificates.queryOptions({ domain }),
   );
-  return <CertificatesSection domain={domain} data={data} />;
+  return <CertificatesSection domain={domain} data={data.data} />;
 }
 
 function HeadersSectionContent({ domain }: { domain: string }) {
@@ -63,7 +63,7 @@ function HeadersSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getHeaders.queryOptions({ domain }),
   );
-  return <HeadersSection domain={domain} data={data} />;
+  return <HeadersSection domain={domain} data={data.data} />;
 }
 
 function SeoSectionContent({ domain }: { domain: string }) {
@@ -71,7 +71,7 @@ function SeoSectionContent({ domain }: { domain: string }) {
   const { data } = useSuspenseQuery(
     trpc.domain.getSeo.queryOptions({ domain }),
   );
-  return <SeoSection domain={domain} data={data} />;
+  return <SeoSection domain={domain} data={data.data} />;
 }
 
 /**
@@ -94,7 +94,8 @@ function DomainReportClientContent({ domain }: { domain: string }) {
 
   // Show unregistered state if confirmed unregistered
   const isConfirmedUnregistered =
-    registration.isRegistered === false && registration.source !== null;
+    registration.data?.isRegistered === false &&
+    registration.data?.source !== null;
 
   // Add to search history (only for registered domains)
   useDomainHistory(isConfirmedUnregistered ? "" : domain);

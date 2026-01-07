@@ -17,8 +17,6 @@ export const providerRouter = createTRPCRouter({
       const run = await start(providerLogoWorkflow, [
         { providerId: input.providerId, providerDomain: provider.domain },
       ]);
-      const result = await run.returnValue;
-
-      return { url: result.url };
+      return await run.returnValue;
     }),
 });

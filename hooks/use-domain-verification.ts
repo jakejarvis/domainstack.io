@@ -399,16 +399,15 @@ export function useDomainVerification({
         });
         onSuccess();
       } else {
-        dispatch({ type: "VERIFICATION_FAILED", error: result.error });
+        dispatch({ type: "VERIFICATION_FAILED" });
         analytics.track("domain_verification_failed", {
           domain: state.domain,
-          error: result.error,
         });
       }
     } catch {
       dispatch({
         type: "VERIFICATION_FAILED",
-        error: "Verification failed. Please try again.",
+        error: "Something went wrong. Please try again.",
       });
       analytics.track("domain_verification_failed", {
         domain: state.domain,

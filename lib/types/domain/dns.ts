@@ -4,12 +4,10 @@
 
 import type { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 
-export type DnsRecordType = (typeof DNS_RECORD_TYPES)[number];
-
 /**
- * Alias for DnsRecordType (used in workflows).
+ * Alias for DnsType (used in workflows).
  */
-export type DnsType = DnsRecordType;
+export type DnsRecordType = (typeof DNS_RECORD_TYPES)[number];
 
 /**
  * A single DNS record.

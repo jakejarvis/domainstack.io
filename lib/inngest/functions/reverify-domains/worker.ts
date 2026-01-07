@@ -67,8 +67,8 @@ export const verifyPendingDomainCronWorker = inngest.createFunction(
         return await workflowRun.returnValue;
       });
 
-      if (result.verified && result.method) {
-        const verifiedMethod = result.method;
+      if (result.success && result.data.verified && result.data.method) {
+        const verifiedMethod = result.data.method;
         await step.run("mark-verified", async () => {
           return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
@@ -123,11 +123,11 @@ export const reverifyOwnershipWorker = inngest.createFunction(
         return await workflowRun.returnValue;
       });
 
-      if (result.verified) {
+      if (result.success && result.data.verified) {
         await step.run("mark-success", async () => {
           return await markVerificationSuccessful(trackedDomainId);
         });
-        return { verified: true };
+        return { verified: true, method: result.data.method };
       } else {
         // Handle failure
         const domainWithDate = {

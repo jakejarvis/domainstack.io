@@ -243,11 +243,11 @@ export const trackingRouter = createTRPCRouter({
       ]);
       const result = await workflowRun.returnValue;
 
-      if (result.verified && result.method) {
+      if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified
         const updated = await verifyTrackedDomain(
           trackedDomainId,
-          result.method,
+          result.data.method,
         );
 
         if (!updated) {
@@ -257,13 +257,12 @@ export const trackingRouter = createTRPCRouter({
           });
         }
 
-        return { verified: true, method: result.method };
+        return { verified: true, method: result.data.method };
       }
 
       return {
         verified: false,
         method: null,
-        error: result.error || "Verification failed. Please check your setup.",
       };
     }),
 

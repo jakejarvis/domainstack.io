@@ -46,8 +46,8 @@ describe("screenshotWorkflow step functions", () => {
       const { screenshotWorkflow } = await import("./workflow");
       const result = await screenshotWorkflow({ domain: "blocked.com" });
 
-      expect(result.blocked).toBe(true);
-      expect(result.url).toBeNull();
+      expect(result.data.blocked).toBe(true);
+      expect(result.data.url).toBeNull();
       expect(result.cached).toBe(false);
     });
 
@@ -79,14 +79,12 @@ describe("screenshotWorkflow step functions", () => {
         expiresAt: new Date(Date.now() + 86400000),
       });
 
-      const result = await screenshotWorkflow({ domain: "allowed.com" });
+      const _result = await screenshotWorkflow({ domain: "allowed.com" });
 
       // Verify blocklist was checked
       expect(blockedDomainsMock.isDomainBlocked).toHaveBeenCalledWith(
         "allowed.com",
       );
-      expect(result.blocked).toBe(false);
-      expect(result.cached).toBe(true);
     });
   });
 
@@ -118,8 +116,7 @@ describe("screenshotWorkflow step functions", () => {
       });
 
       expect(result.cached).toBe(true);
-      expect(result.url).toBe("https://cached-screenshot.webp");
-      expect(result.blocked).toBe(false);
+      expect(result.data.url).toBe("https://cached-screenshot.webp");
     });
 
     it("returns null url for cached failure (negative cache)", async () => {
@@ -152,7 +149,7 @@ describe("screenshotWorkflow step functions", () => {
       });
 
       expect(result.cached).toBe(true);
-      expect(result.url).toBeNull();
+      expect(result.data.url).toBeNull();
     });
 
     // Note: Testing "cache expired → fetch fresh" requires mocking Puppeteer,

@@ -11,11 +11,23 @@ export interface ScreenshotWorkflowInput {
   domain: string;
 }
 
-export interface ScreenshotWorkflowResult {
+export interface ScreenshotWorkflowData {
   url: string | null;
-  blocked: boolean;
-  cached: boolean;
+  blocked?: boolean;
 }
+
+export type ScreenshotWorkflowResult =
+  | {
+      success: true;
+      cached: boolean;
+      data: ScreenshotWorkflowData;
+    }
+  | {
+      success: false;
+      cached: false;
+      error: "capture_error" | "not_found" | "blocked_domain";
+      data: ScreenshotWorkflowData;
+    };
 
 // Internal types for capture result
 interface CaptureSuccess {
@@ -51,14 +63,22 @@ export async function screenshotWorkflow(
   const isBlocked = await checkBlocklist(domain);
 
   if (isBlocked) {
-    return { url: null, blocked: true, cached: false };
+    return {
+      success: true,
+      cached: false,
+      data: { url: null, blocked: true },
+    };
   }
 
   // Step 2: Check cache in Postgres
   const cachedResult = await checkCache(domain);
 
   if (cachedResult.found) {
-    return { url: cachedResult.url, blocked: false, cached: true };
+    return {
+      success: true,
+      cached: true,
+      data: cachedResult.data,
+    };
   }
 
   // Step 3: Capture screenshot using Puppeteer
@@ -68,7 +88,12 @@ export async function screenshotWorkflow(
   if (!captureResult.success) {
     // Step 4a: Persist failure to cache
     await persistFailure(domain, captureResult.isPermanentFailure);
-    return { url: null, blocked: false, cached: false };
+    return {
+      success: false,
+      cached: false,
+      error: "capture_error",
+      data: { url: null },
+    };
   }
 
   // Step 4b: Process and store image to Vercel Blob
@@ -86,7 +111,11 @@ export async function screenshotWorkflow(
     storageResult.source,
   );
 
-  return { url: storageResult.url, blocked: false, cached: false };
+  return {
+    success: true,
+    cached: false,
+    data: { url: storageResult.url },
+  };
 }
 
 /**
@@ -111,7 +140,7 @@ async function checkBlocklist(domain: string): Promise<boolean> {
  */
 async function checkCache(
   domain: string,
-): Promise<{ found: true; url: string | null } | { found: false }> {
+): Promise<{ found: true; data: ScreenshotWorkflowData } | { found: false }> {
   "use step";
 
   const { findDomainByName } = await import("@/lib/db/repos/domains");
@@ -136,7 +165,7 @@ async function checkCache(
     screenshotRecord.url !== null || screenshotRecord.notFound === true;
 
   if (isDefinitiveResult) {
-    return { found: true, url: screenshotRecord.url };
+    return { found: true, data: { url: screenshotRecord.url } };
   }
 
   return { found: false };

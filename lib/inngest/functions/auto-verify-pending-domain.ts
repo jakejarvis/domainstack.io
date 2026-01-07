@@ -121,9 +121,9 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         return await workflowRun.returnValue;
       });
 
-      if (result.verified && result.method) {
+      if (result.success && result.data.verified && result.data.method) {
         // Success! Mark the domain as verified
-        const verifiedMethod = result.method;
+        const verifiedMethod = result.data.method;
         await step.run(`mark-verified-${attempt}`, async () => {
           return await verifyTrackedDomain(trackedDomainId, verifiedMethod);
         });
@@ -131,13 +131,13 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         return {
           result: "verified",
           domainName: currentDomainName,
-          verifiedMethod: result.method,
+          verifiedMethod: result.data.method,
           attempt: attempt + 1,
         };
       } else {
         inngestLogger.info("Verification attempt failed, will retry", {
           domainName: currentDomainName,
-          verifiedMethod: result.method,
+          verifiedMethod: result.data.method,
           attempt: attempt + 1,
           nextDelay: RETRY_DELAYS[attempt + 1] ?? "none (final attempt)",
         });

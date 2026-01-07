@@ -7,11 +7,16 @@ export interface VerificationWorkflowInput {
   method?: VerificationMethod;
 }
 
-export interface VerificationWorkflowResult {
-  verified: boolean;
-  method: VerificationMethod | null;
-  error?: string;
-}
+export type VerificationWorkflowResult =
+  | {
+      success: true;
+      data: { verified: boolean; method: VerificationMethod | null };
+    }
+  | {
+      success: false;
+      error?: string;
+      data: { verified: false; method: null };
+    };
 
 /**
  * Durable verification workflow that checks domain ownership
@@ -40,30 +45,37 @@ export async function verificationWorkflow(
       case "meta_tag":
         return await verifyByMetaTag(domain, token);
       default:
-        return { verified: false, method: null, error: "Unknown method" };
+        return {
+          success: false,
+          error: "Unknown method",
+          data: { verified: false, method: null },
+        };
     }
   }
 
   // Try all methods in order of reliability
   // DNS TXT first (most common/reliable)
   const dnsResult = await verifyByDns(domain, token);
-  if (dnsResult.verified) {
+  if (dnsResult.success && dnsResult.data.verified) {
     return dnsResult;
   }
 
   // HTML file next
   const htmlResult = await verifyByHtmlFile(domain, token);
-  if (htmlResult.verified) {
+  if (htmlResult.success && htmlResult.data.verified) {
     return htmlResult;
   }
 
   // Meta tag last
   const metaResult = await verifyByMetaTag(domain, token);
-  if (metaResult.verified) {
+  if (metaResult.success && metaResult.data.verified) {
     return metaResult;
   }
 
-  return { verified: false, method: null };
+  return {
+    success: true,
+    data: { verified: false, method: null },
+  };
 }
 
 /**
@@ -126,7 +138,10 @@ async function verifyByDns(
           if (answer.type === DNS_TYPE_NUMBERS.TXT) {
             const value = answer.data.replace(/^"|"$/g, "").trim();
             if (value === expectedValue) {
-              return { verified: true, method: "dns_txt" };
+              return {
+                success: true,
+                data: { verified: true, method: "dns_txt" },
+              };
             }
           }
         }
@@ -139,7 +154,10 @@ async function verifyByDns(
     }
   }
 
-  return { verified: false, method: null };
+  return {
+    success: true,
+    data: { verified: false, method: null },
+  };
 }
 
 /**
@@ -190,7 +208,10 @@ async function verifyByHtmlFile(
 
       const content = result.buffer.toString("utf-8").trim();
       if (content === expectedContent) {
-        return { verified: true, method: "html_file" };
+        return {
+          success: true,
+          data: { verified: true, method: "html_file" },
+        };
       }
     } catch (err) {
       logger.warn(
@@ -216,7 +237,10 @@ async function verifyByHtmlFile(
       }
 
       if (result.buffer.toString("utf-8").trim() === expectedContent) {
-        return { verified: true, method: "html_file" };
+        return {
+          success: true,
+          data: { verified: true, method: "html_file" },
+        };
       }
     } catch (err) {
       logger.warn(
@@ -226,7 +250,10 @@ async function verifyByHtmlFile(
     }
   }
 
-  return { verified: false, method: null };
+  return {
+    success: true,
+    data: { verified: false, method: null },
+  };
 }
 
 /**
@@ -284,14 +311,20 @@ async function verifyByMetaTag(
       });
 
       if (foundMatch) {
-        return { verified: true, method: "meta_tag" };
+        return {
+          success: true,
+          data: { verified: true, method: "meta_tag" },
+        };
       }
     } catch (err) {
       logger.warn({ err, domain, url: urlStr }, "Meta tag verification failed");
     }
   }
 
-  return { verified: false, method: null };
+  return {
+    success: true,
+    data: { verified: false, method: null },
+  };
 }
 
 /**

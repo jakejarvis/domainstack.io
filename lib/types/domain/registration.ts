@@ -8,18 +8,9 @@ import type { ProviderRef, RegistrationContact } from "@/lib/types";
 export type RegistrationSource = (typeof REGISTRATION_SOURCES)[number];
 
 /**
- * Registration status with description.
- */
-export interface RegistrationStatus {
-  status: string;
-  description?: string;
-  raw?: string;
-}
-
-/**
  * Nameserver information.
  */
-export interface RegistrationNameserver {
+interface RegistrationNameserver {
   host: string;
   ipv4?: string[];
   ipv6?: string[];
@@ -31,19 +22,18 @@ export interface RegistrationNameserver {
 export type RegistrationNameservers = RegistrationNameserver[];
 
 /**
+ * Registration status with description.
+ */
+interface RegistrationStatus {
+  status: string;
+  description?: string;
+  raw?: string;
+}
+
+/**
  * Array of registration statuses.
  */
 export type RegistrationStatuses = RegistrationStatus[];
-
-/**
- * Registration availability status.
- */
-export type RegistrationStatusEnum = "registered" | "unregistered" | "unknown";
-
-/**
- * Reason why registration status is unknown.
- */
-export type RegistrationUnavailableReason = "unsupported_tld" | "timeout";
 
 /**
  * Full registration response from WHOIS/RDAP lookup.
@@ -52,8 +42,14 @@ export interface RegistrationResponse {
   domain: string;
   tld: string;
   isRegistered: boolean;
-  status: RegistrationStatusEnum;
-  unavailableReason?: RegistrationUnavailableReason;
+  /**
+   * Registration availability status.
+   */
+  status: "registered" | "unregistered" | "unknown";
+  /**
+   * Reason why registration status is unknown.
+   */
+  unavailableReason?: "unsupported_tld" | "timeout";
   unicodeName?: string;
   punycodeName?: string;
   registry?: string;

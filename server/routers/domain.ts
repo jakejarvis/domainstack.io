@@ -2,7 +2,6 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
-import { createLogger } from "@/lib/logger/server";
 import { getHosting } from "@/server/services/hosting";
 import {
   createTRPCRouter,
@@ -16,8 +15,6 @@ import { headersWorkflow } from "@/workflows/headers";
 import { registrationWorkflow } from "@/workflows/registration";
 import { screenshotWorkflow } from "@/workflows/screenshot";
 import { seoWorkflow } from "@/workflows/seo";
-
-const logger = createLogger({ source: "domain-router" });
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
@@ -40,48 +37,8 @@ export const domainRouter = createTRPCRouter({
   getRegistration: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(registrationWorkflow, [
-          { domain: input.domain },
-        ]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "registration workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "registration workflow completed",
-        );
-
-        if (result.success) {
-          return result.data;
-        }
-
-        // Return error response for failed lookups
-        if (result.data) {
-          return result.data;
-        }
-
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Registration lookup failed: ${result.error}`,
-        });
-      } catch (err) {
-        if (err instanceof TRPCError) throw err;
-
-        logger.error(
-          { err, domain: input.domain },
-          "registration workflow failed",
-        );
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Registration lookup failed",
-        });
-      }
+      const run = await start(registrationWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 
   /**
@@ -91,26 +48,8 @@ export const domainRouter = createTRPCRouter({
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(dnsWorkflow, [{ domain: input.domain }]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "dns workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "dns workflow completed",
-        );
-
-        return result.data;
-      } catch (err) {
-        logger.error({ err, domain: input.domain }, "dns workflow failed");
-        return { records: [], resolver: null };
-      }
+      const run = await start(dnsWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 
   getHosting: domainProcedure
@@ -124,31 +63,8 @@ export const domainRouter = createTRPCRouter({
   getCertificates: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(certificatesWorkflow, [
-          { domain: input.domain },
-        ]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "certificates workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "certificates workflow completed",
-        );
-
-        return result.data;
-      } catch (err) {
-        logger.error(
-          { err, domain: input.domain },
-          "certificates workflow failed",
-        );
-        return { certificates: [] };
-      }
+      const run = await start(certificatesWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 
   /**
@@ -158,26 +74,8 @@ export const domainRouter = createTRPCRouter({
   getHeaders: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(headersWorkflow, [{ domain: input.domain }]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "headers workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "headers workflow completed",
-        );
-
-        return result.data;
-      } catch (err) {
-        logger.error({ err, domain: input.domain }, "headers workflow failed");
-        return { headers: [], status: 0, statusMessage: undefined };
-      }
+      const run = await start(headersWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 
   /**
@@ -185,31 +83,8 @@ export const domainRouter = createTRPCRouter({
    * Fetches HTML, robots.txt, and OG images with automatic retries.
    */
   getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
-    try {
-      const run = await start(seoWorkflow, [{ domain: input.domain }]);
-
-      logger.debug(
-        { domain: input.domain, runId: run.runId },
-        "seo workflow started",
-      );
-
-      const result = await run.returnValue;
-
-      logger.debug(
-        { domain: input.domain, runId: run.runId, cached: result.cached },
-        "seo workflow completed",
-      );
-
-      return result.data;
-    } catch (err) {
-      logger.error({ err, domain: input.domain }, "seo workflow failed");
-      return {
-        meta: null,
-        robots: null,
-        preview: null,
-        source: { finalUrl: null, status: null },
-      };
-    }
+    const run = await start(seoWorkflow, [{ domain: input.domain }]);
+    return await run.returnValue;
   }),
 
   /**
@@ -219,26 +94,8 @@ export const domainRouter = createTRPCRouter({
   getFavicon: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(faviconWorkflow, [{ domain: input.domain }]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "favicon workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "favicon workflow completed",
-        );
-
-        return { url: result.url };
-      } catch (err) {
-        logger.error({ err, domain: input.domain }, "favicon workflow failed");
-        return { url: null };
-      }
+      const run = await start(faviconWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 
   /**
@@ -248,31 +105,7 @@ export const domainRouter = createTRPCRouter({
   getScreenshot: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      try {
-        const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "screenshot workflow started",
-        );
-
-        const result = await run.returnValue;
-
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "screenshot workflow completed",
-        );
-
-        return {
-          url: result.url,
-          ...(result.blocked && { blocked: true as const }),
-        };
-      } catch (err) {
-        logger.error(
-          { err, domain: input.domain },
-          "screenshot workflow failed",
-        );
-        return { url: null };
-      }
+      const run = await start(screenshotWorkflow, [{ domain: input.domain }]);
+      return await run.returnValue;
     }),
 });

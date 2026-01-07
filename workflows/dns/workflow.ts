@@ -1,5 +1,5 @@
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
-import type { DnsRecord, DnsRecordsResponse, DnsType } from "@/lib/types";
+import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
 
 export interface DnsWorkflowInput {
   domain: string;
@@ -28,18 +28,14 @@ type CacheResult = CacheHit | CacheMiss;
 
 interface FetchSuccess {
   success: true;
-  records: DnsRecord[];
   resolver: string;
+  records: DnsRecord[];
   // Records with expiry info for persistence
-  recordsWithExpiry: Array<{
-    type: DnsType;
-    name: string;
-    value: string;
-    ttl: number | null;
-    priority: number | null;
-    isCloudflare: boolean | null;
-    expiresAt: string; // ISO string for serialization
-  }>;
+  recordsWithExpiry: Array<
+    DnsRecord & {
+      expiresAt: string; // ISO string for serialization
+    }
+  >;
 }
 
 interface FetchFailure {
@@ -155,15 +151,15 @@ async function checkCache(domain: string): Promise<CacheResult> {
     // Group by type and check freshness
     const rowsByType = rows.reduce(
       (acc, r) => {
-        const t = r.type as DnsType;
+        const t = r.type;
         if (!acc[t]) acc[t] = [];
         acc[t].push(r);
         return acc;
       },
-      {} as Record<DnsType, typeof rows>,
+      {} as Record<DnsRecordType, typeof rows>,
     );
 
-    const typeIsFresh = (t: DnsType) => {
+    const typeIsFresh = (t: DnsRecordType) => {
       const arr = rowsByType[t] ?? [];
       return (
         arr.length > 0 &&
@@ -183,7 +179,7 @@ async function checkCache(domain: string): Promise<CacheResult> {
 
     // Assemble cached records
     const records: DnsRecord[] = rows.map((r) => ({
-      type: r.type as DnsType,
+      type: r.type,
       name: r.name,
       value: r.value,
       ttl: r.ttl ?? undefined,
@@ -294,10 +290,10 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
         type: r.type,
         name: r.name,
         value: r.value,
-        ttl: r.ttl ?? null,
-        priority: r.priority ?? null,
-        isCloudflare: r.isCloudflare ?? null,
-        expiresAt: ttlForDnsRecord(now, r.ttl ?? null).toISOString(),
+        ttl: r.ttl ?? undefined,
+        priority: r.priority ?? undefined,
+        isCloudflare: r.isCloudflare ?? undefined,
+        expiresAt: ttlForDnsRecord(now, r.ttl ?? undefined).toISOString(),
       }));
 
       return {
@@ -322,15 +318,7 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
 async function persistRecords(
   domainId: string,
   resolver: string,
-  recordsWithExpiry: Array<{
-    type: DnsType;
-    name: string;
-    value: string;
-    ttl: number | null;
-    priority: number | null;
-    isCloudflare: boolean | null;
-    expiresAt: string;
-  }>,
+  recordsWithExpiry: Array<DnsRecord & { expiresAt: string }>,
   lastAccessedAt: string | null,
   domain: string,
 ): Promise<void> {
@@ -361,7 +349,7 @@ async function persistRecords(
           })),
       ]),
     ) as Record<
-      DnsType,
+      DnsRecordType,
       Array<{
         name: string;
         value: string;
@@ -422,9 +410,9 @@ function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
 
 function sortDnsRecordsByType(
   records: DnsRecord[],
-  order: readonly DnsType[],
+  order: readonly DnsRecordType[],
 ): DnsRecord[] {
-  const byType: Record<DnsType, DnsRecord[]> = {
+  const byType: Record<DnsRecordType, DnsRecord[]> = {
     A: [],
     AAAA: [],
     MX: [],
@@ -440,7 +428,10 @@ function sortDnsRecordsByType(
   return sorted;
 }
 
-function sortDnsRecordsForType(arr: DnsRecord[], type: DnsType): DnsRecord[] {
+function sortDnsRecordsForType(
+  arr: DnsRecord[],
+  type: DnsRecordType,
+): DnsRecord[] {
   if (type === "MX") {
     arr.sort((a, b) => {
       const ap = a.priority ?? Number.MAX_SAFE_INTEGER;

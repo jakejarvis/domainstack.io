@@ -40,8 +40,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "dns_txt",
       });
 
-      expect(result.verified).toBe(true);
-      expect(result.method).toBe("dns_txt");
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("dns_txt");
     });
 
     it("returns verified when TXT record matches on legacy subdomain", async () => {
@@ -85,8 +85,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "dns_txt",
       });
 
-      expect(result.verified).toBe(true);
-      expect(result.method).toBe("dns_txt");
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("dns_txt");
     });
 
     it("returns not verified when TXT record is missing", async () => {
@@ -109,8 +109,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "dns_txt",
       });
 
-      expect(result.verified).toBe(false);
-      expect(result.method).toBeNull();
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
 
     it("returns not verified when TXT record value is wrong", async () => {
@@ -140,7 +140,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "dns_txt",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
 
     it("handles DNS query failure", async () => {
@@ -160,7 +161,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "dns_txt",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
   });
 
@@ -186,8 +188,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(true);
-      expect(result.method).toBe("html_file");
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("html_file");
     });
 
     it("returns verified when per-token file has content with whitespace", async () => {
@@ -209,7 +211,7 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
     });
 
     it("returns not verified when per-token file is empty", async () => {
@@ -235,7 +237,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
 
     it("falls back to legacy file when per-token files not found", async () => {
@@ -265,7 +268,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("html_file");
     });
 
     it("falls back to HTTP when HTTPS fails for per-token file", async () => {
@@ -291,7 +295,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("html_file");
     });
 
     it("returns not verified when all files not found", async () => {
@@ -311,7 +316,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "html_file",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
   });
 
@@ -335,8 +341,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(true);
-      expect(result.method).toBe("meta_tag");
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("meta_tag");
     });
 
     it("handles meta tag with reversed attribute order", async () => {
@@ -358,7 +364,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("meta_tag");
     });
 
     it("finds correct token among multiple verification meta tags", async () => {
@@ -384,7 +391,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("meta_tag");
     });
 
     it("returns not verified when token not in any of multiple meta tags", async () => {
@@ -409,7 +417,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
 
     it("handles malformed HTML gracefully", async () => {
@@ -434,7 +443,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(true);
+      expect(result.data.verified).toBe(true);
+      expect(result.data.method).toBe("meta_tag");
     });
 
     it("returns not verified when meta tag is missing", async () => {
@@ -456,7 +466,8 @@ describe("verificationWorkflow with specific method", () => {
         method: "meta_tag",
       });
 
-      expect(result.verified).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
   });
 
@@ -469,8 +480,9 @@ describe("verificationWorkflow with specific method", () => {
         method: "unknown" as unknown as VerificationMethod,
       });
 
-      expect(result.verified).toBe(false);
-      expect(result.error).toBe("Unknown method");
+      expect(result.success).toBe(false);
+      expect(result.data.verified).toBe(false);
+      expect(result.data.method).toBeNull();
     });
   });
 });
@@ -504,8 +516,8 @@ describe("verificationWorkflow trying all methods", () => {
       token,
     });
 
-    expect(result.verified).toBe(true);
-    expect(result.method).toBe("dns_txt");
+    expect(result.data.verified).toBe(true);
+    expect(result.data.method).toBe("dns_txt");
   });
 
   it("falls back to html_file when DNS fails", async () => {
@@ -556,8 +568,8 @@ describe("verificationWorkflow trying all methods", () => {
       token,
     });
 
-    expect(result.verified).toBe(true);
-    expect(result.method).toBe("html_file");
+    expect(result.data.verified).toBe(true);
+    expect(result.data.method).toBe("html_file");
   });
 
   it("falls back to meta_tag when DNS and HTML fail", async () => {
@@ -617,8 +629,8 @@ describe("verificationWorkflow trying all methods", () => {
       token,
     });
 
-    expect(result.verified).toBe(true);
-    expect(result.method).toBe("meta_tag");
+    expect(result.data.verified).toBe(true);
+    expect(result.data.method).toBe("meta_tag");
   });
 
   it("returns not verified when all methods fail", async () => {
@@ -667,7 +679,7 @@ describe("verificationWorkflow trying all methods", () => {
       token,
     });
 
-    expect(result.verified).toBe(false);
-    expect(result.method).toBeNull();
+    expect(result.data.verified).toBe(false);
+    expect(result.data.method).toBeNull();
   });
 });
