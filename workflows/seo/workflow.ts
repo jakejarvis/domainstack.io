@@ -6,6 +6,7 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types";
+import { checkBlocklist } from "@/workflows/shared";
 
 export interface SeoWorkflowInput {
   domain: string;
@@ -67,12 +68,18 @@ export async function seoWorkflow(
   // Step 3: Process OG image (if present and not blocked)
   let uploadedImageUrl: string | null = null;
   if (htmlResult.preview?.image) {
-    const imageResult = await processOgImage(
-      domain,
-      htmlResult.preview.image,
-      htmlResult.finalUrl,
-    );
-    uploadedImageUrl = imageResult.url;
+    // Step 3a: Check blocklist (shared step)
+    const isBlocked = await checkBlocklist(domain, "seo-workflow");
+
+    if (!isBlocked) {
+      // Step 3b: Process and store image
+      const imageResult = await processOgImage(
+        domain,
+        htmlResult.preview.image,
+        htmlResult.finalUrl,
+      );
+      uploadedImageUrl = imageResult.url;
+    }
   }
 
   // Build response
@@ -275,18 +282,12 @@ async function processOgImage(
 ): Promise<{ url: string | null }> {
   "use step";
 
-  const { isDomainBlocked } = await import("@/lib/db/repos/blocked-domains");
   const { fetchRemoteAsset } = await import("@/lib/fetch-remote-asset");
   const { optimizeImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "seo-workflow" });
-
-  // Check blocklist first
-  if (await isDomainBlocked(domain)) {
-    return { url: null };
-  }
 
   try {
     const asset = await fetchRemoteAsset({

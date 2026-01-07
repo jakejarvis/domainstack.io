@@ -1,4 +1,8 @@
-import { RetryableError } from "workflow";
+import {
+  fetchIconFromSources,
+  type IconFetchResult,
+  processIconImage,
+} from "@/workflows/shared";
 
 export interface FaviconWorkflowInput {
   domain: string;
@@ -8,22 +12,6 @@ export interface FaviconWorkflowResult {
   success: boolean;
   data: { url: string | null };
 }
-
-// Internal types for fetch result - serializable for step-to-step transfer
-interface FetchSuccess {
-  success: true;
-  // Base64-encoded image buffer for serialization
-  imageBase64: string;
-  contentType: string | null;
-  sourceName: string;
-}
-
-interface FetchFailure {
-  success: false;
-  allNotFound: boolean;
-}
-
-type FetchResult = FetchSuccess | FetchFailure;
 
 const DEFAULT_SIZE = 32;
 
@@ -41,8 +29,15 @@ export async function faviconWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Fetch from sources
-  const fetchResult = await fetchFromSources(domain);
+  // Step 1: Fetch from sources (shared step)
+  const fetchResult: IconFetchResult = await fetchIconFromSources(domain, {
+    size: DEFAULT_SIZE,
+    maxBytes: 1 * 1024 * 1024, // 1MB
+    timeoutMs: 1500,
+    useLogoDev: false,
+    loggerSource: "favicon-workflow",
+    errorPrefix: "Favicon",
+  });
 
   if (!fetchResult.success) {
     // Step 2a: Persist failure
@@ -54,8 +49,11 @@ export async function faviconWorkflow(
     };
   }
 
-  // Step 2b: Process image
-  const processedResult = await processImage(fetchResult.imageBase64);
+  // Step 2b: Process image (shared step)
+  const processedResult = await processIconImage(
+    fetchResult.imageBase64,
+    DEFAULT_SIZE,
+  );
 
   if (!processedResult.success) {
     // Image processing failed
@@ -77,112 +75,6 @@ export async function faviconWorkflow(
     success: true,
     data: { url: storeResult.url },
   };
-}
-
-/**
- * Step: Fetch favicon from multiple sources with fallbacks
- * This is a potentially slow operation with multiple HTTP requests.
- */
-async function fetchFromSources(domain: string): Promise<FetchResult> {
-  "use step";
-
-  const { buildIconSources } = await import("@/lib/icons/sources");
-  const { fetchRemoteAsset, RemoteAssetError } = await import(
-    "@/lib/fetch-remote-asset"
-  );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "favicon-workflow" });
-  const sources = buildIconSources(domain, { size: DEFAULT_SIZE });
-
-  let allNotFound = true;
-
-  for (const source of sources) {
-    try {
-      const headers = {
-        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        ...source.headers,
-      };
-
-      const asset = await fetchRemoteAsset({
-        url: source.url,
-        headers,
-        maxBytes: 1 * 1024 * 1024, // 1MB
-        timeoutMs: 1500,
-        maxRedirects: 2,
-        allowHttp: source.allowHttp ?? false,
-      });
-
-      if (!asset.ok) {
-        // 404 is still considered a true "not found", other errors are not
-        if (asset.status !== 404) {
-          allNotFound = false;
-        }
-        continue;
-      }
-
-      allNotFound = false;
-
-      // Encode buffer as base64 for serialization
-      return {
-        success: true,
-        imageBase64: asset.buffer.toString("base64"),
-        contentType: asset.contentType ?? null,
-        sourceName: source.name,
-      };
-    } catch (err) {
-      if (!(err instanceof RemoteAssetError)) {
-        logger.warn({ err, domain, source: source.name }, "fetch failed");
-      }
-      // Infrastructure errors are not "not found"
-      allNotFound = false;
-    }
-  }
-
-  // If all sources returned 404, it's a permanent failure (domain has no favicon)
-  // Otherwise, it could be transient network issues - throw to retry
-  if (!allNotFound) {
-    logger.warn(
-      { domain },
-      "favicon fetch failed with non-404 errors, will retry",
-    );
-    throw new RetryableError("Favicon fetch failed", { retryAfter: "10s" });
-  }
-
-  return { success: false, allNotFound: true };
-}
-
-/**
- * Step: Process and convert image to WebP
- */
-async function processImage(
-  imageBase64: string,
-): Promise<{ success: true; imageBase64: string } | { success: false }> {
-  "use step";
-
-  const { convertBufferToImageCover } = await import("@/lib/image");
-
-  try {
-    const buffer = Buffer.from(imageBase64, "base64");
-
-    const webp = await convertBufferToImageCover(
-      buffer,
-      DEFAULT_SIZE,
-      DEFAULT_SIZE,
-      null, // contentType - let sharp detect
-    );
-
-    if (!webp || webp.length === 0) {
-      return { success: false };
-    }
-
-    return {
-      success: true,
-      imageBase64: webp.toString("base64"),
-    };
-  } catch {
-    return { success: false };
-  }
 }
 
 /**

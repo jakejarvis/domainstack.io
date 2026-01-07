@@ -1,5 +1,6 @@
 import type { Browser, Page } from "puppeteer-core";
 import { RetryableError } from "workflow";
+import { checkBlocklist } from "@/workflows/shared";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
@@ -57,8 +58,8 @@ export async function screenshotWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Check if domain is blocked
-  const isBlocked = await checkBlocklist(domain);
+  // Step 1: Check if domain is blocked (shared step)
+  const isBlocked = await checkBlocklist(domain, "screenshot-workflow");
 
   if (isBlocked) {
     return {
@@ -100,23 +101,6 @@ export async function screenshotWorkflow(
     success: true,
     data: { url: storageResult.url },
   };
-}
-
-/**
- * Step: Check if domain is on blocklist
- */
-async function checkBlocklist(domain: string): Promise<boolean> {
-  "use step";
-
-  const { isDomainBlocked } = await import("@/lib/db/repos/blocked-domains");
-  const { createLogger } = await import("@/lib/logger/server");
-  const logger = createLogger({ source: "screenshot-workflow" });
-
-  const blocked = await isDomainBlocked(domain);
-  if (blocked) {
-    logger.info({ domain }, "screenshot blocked by blocklist");
-  }
-  return blocked;
 }
 
 /**

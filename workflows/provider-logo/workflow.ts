@@ -1,4 +1,8 @@
-import { RetryableError } from "workflow";
+import {
+  fetchIconFromSources,
+  type IconFetchResult,
+  processIconImage,
+} from "@/workflows/shared";
 
 export interface ProviderLogoWorkflowInput {
   providerId: string;
@@ -11,22 +15,6 @@ export interface ProviderLogoWorkflowResult {
     url: string | null;
   };
 }
-
-// Internal types for fetch result - serializable for step-to-step transfer
-interface FetchSuccess {
-  success: true;
-  // Base64-encoded image buffer for serialization
-  imageBase64: string;
-  contentType: string | null;
-  sourceName: string;
-}
-
-interface FetchFailure {
-  success: false;
-  allNotFound: boolean;
-}
-
-type FetchResult = FetchSuccess | FetchFailure;
 
 const DEFAULT_SIZE = 64;
 
@@ -44,8 +32,18 @@ export async function providerLogoWorkflow(
 
   const { providerId, providerDomain } = input;
 
-  // Step 1: Fetch from sources
-  const fetchResult = await fetchFromSources(providerDomain);
+  // Step 1: Fetch from sources (shared step)
+  const fetchResult: IconFetchResult = await fetchIconFromSources(
+    providerDomain,
+    {
+      size: DEFAULT_SIZE,
+      maxBytes: 2 * 1024 * 1024, // 2MB for provider logos
+      timeoutMs: 2000,
+      useLogoDev: true, // Enable logo.dev for provider logos
+      loggerSource: "provider-logo-workflow",
+      errorPrefix: "Provider logo",
+    },
+  );
 
   if (!fetchResult.success) {
     // Step 2a: Persist failure
@@ -59,8 +57,11 @@ export async function providerLogoWorkflow(
     };
   }
 
-  // Step 2b: Process image
-  const processedResult = await processImage(fetchResult.imageBase64);
+  // Step 2b: Process image (shared step)
+  const processedResult = await processIconImage(
+    fetchResult.imageBase64,
+    DEFAULT_SIZE,
+  );
 
   if (!processedResult.success) {
     // Image processing failed
@@ -87,120 +88,6 @@ export async function providerLogoWorkflow(
       url: storeResult.url,
     },
   };
-}
-
-/**
- * Step: Fetch provider logo from multiple sources with fallbacks
- * This includes logo.dev for better quality provider logos.
- */
-async function fetchFromSources(providerDomain: string): Promise<FetchResult> {
-  "use step";
-
-  const { buildIconSources } = await import("@/lib/icons/sources");
-  const { fetchRemoteAsset, RemoteAssetError } = await import(
-    "@/lib/fetch-remote-asset"
-  );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "provider-logo-workflow" });
-  const sources = buildIconSources(providerDomain, {
-    size: DEFAULT_SIZE,
-    useLogoDev: true, // Enable logo.dev for provider logos
-  });
-
-  let allNotFound = true;
-
-  for (const source of sources) {
-    try {
-      const headers = {
-        Accept: "image/avif,image/webp,image/png,image/*;q=0.9,*/*;q=0.8",
-        ...source.headers,
-      };
-
-      const asset = await fetchRemoteAsset({
-        url: source.url,
-        headers,
-        maxBytes: 2 * 1024 * 1024, // 2MB for provider logos
-        timeoutMs: 2000,
-        maxRedirects: 2,
-        allowHttp: source.allowHttp ?? false,
-      });
-
-      if (!asset.ok) {
-        // 404 is still considered a true "not found", other errors are not
-        if (asset.status !== 404) {
-          allNotFound = false;
-        }
-        continue;
-      }
-
-      allNotFound = false;
-
-      // Encode buffer as base64 for serialization
-      return {
-        success: true,
-        imageBase64: asset.buffer.toString("base64"),
-        contentType: asset.contentType ?? null,
-        sourceName: source.name,
-      };
-    } catch (err) {
-      if (!(err instanceof RemoteAssetError)) {
-        logger.warn(
-          { err, domain: providerDomain, source: source.name },
-          "fetch failed",
-        );
-      }
-      // Infrastructure errors are not "not found"
-      allNotFound = false;
-    }
-  }
-
-  // If all sources returned 404, it's a permanent failure (provider has no logo)
-  // Otherwise, it could be transient network issues - throw to retry
-  if (!allNotFound) {
-    logger.warn(
-      { domain: providerDomain },
-      "provider logo fetch failed with non-404 errors, will retry",
-    );
-    throw new RetryableError("Provider logo fetch failed", {
-      retryAfter: "10s",
-    });
-  }
-
-  return { success: false, allNotFound: true };
-}
-
-/**
- * Step: Process and convert image to WebP
- */
-async function processImage(
-  imageBase64: string,
-): Promise<{ success: true; imageBase64: string } | { success: false }> {
-  "use step";
-
-  const { convertBufferToImageCover } = await import("@/lib/image");
-
-  try {
-    const buffer = Buffer.from(imageBase64, "base64");
-
-    const webp = await convertBufferToImageCover(
-      buffer,
-      DEFAULT_SIZE,
-      DEFAULT_SIZE,
-      null, // contentType - let sharp detect
-    );
-
-    if (!webp || webp.length === 0) {
-      return { success: false };
-    }
-
-    return {
-      success: true,
-      imageBase64: webp.toString("base64"),
-    };
-  } catch {
-    return { success: false };
-  }
 }
 
 /**
