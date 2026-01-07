@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type { DnsRecord, ProviderCategory, ProviderInfo } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { DnsRecord, ProviderCategory, ProviderInfo } from "@/lib/types";
 
 type UseProviderTooltipDataParams = {
   provider: ProviderInfo;

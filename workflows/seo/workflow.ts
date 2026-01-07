@@ -4,7 +4,7 @@ import type {
   RobotsTxt,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 export interface SeoWorkflowInput {
   domain: string;

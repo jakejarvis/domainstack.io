@@ -7,10 +7,10 @@ import {
   detectHostingProvider,
   detectRegistrar,
 } from "./detection";
-import type { CatalogProvider } from "./types";
+import type { Provider } from "./parser";
 
 // Mock provider catalogs for testing
-const MOCK_HOSTING_PROVIDERS: CatalogProvider[] = [
+const MOCK_HOSTING_PROVIDERS: Provider[] = [
   {
     name: "Vercel",
     domain: "vercel.com",
@@ -24,7 +24,7 @@ const MOCK_HOSTING_PROVIDERS: CatalogProvider[] = [
   },
 ];
 
-const MOCK_EMAIL_PROVIDERS: CatalogProvider[] = [
+const MOCK_EMAIL_PROVIDERS: Provider[] = [
   {
     name: "Google Workspace",
     domain: "google.com",
@@ -39,7 +39,7 @@ const MOCK_EMAIL_PROVIDERS: CatalogProvider[] = [
   },
 ];
 
-const MOCK_DNS_PROVIDERS: CatalogProvider[] = [
+const MOCK_DNS_PROVIDERS: Provider[] = [
   {
     name: "Cloudflare",
     domain: "cloudflare.com",
@@ -67,7 +67,7 @@ const MOCK_DNS_PROVIDERS: CatalogProvider[] = [
   },
 ];
 
-const MOCK_REGISTRAR_PROVIDERS: CatalogProvider[] = [
+const MOCK_REGISTRAR_PROVIDERS: Provider[] = [
   {
     name: "GoDaddy",
     domain: "godaddy.com",
@@ -82,7 +82,7 @@ const MOCK_REGISTRAR_PROVIDERS: CatalogProvider[] = [
   },
 ];
 
-const MOCK_CA_PROVIDERS: CatalogProvider[] = [
+const MOCK_CA_PROVIDERS: Provider[] = [
   {
     name: "Let's Encrypt",
     domain: "letsencrypt.org",

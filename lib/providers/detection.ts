@@ -1,7 +1,7 @@
 import { toRegistrableDomain } from "@/lib/domain-server";
-import type { Header, ProviderRef } from "@/lib/schemas";
+import type { Header, ProviderRef } from "@/lib/types";
+import type { Provider } from "./parser";
 import type { DetectionContext, Rule } from "./rules";
-import type { CatalogProvider } from "./types";
 
 /**
  * A context object for header-based detection, pre-calculating values to
@@ -102,13 +102,13 @@ export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
  * Returns the full CatalogProvider object for upsert, or null if not found.
  */
 function detectProviderFromList(
-  providers: CatalogProvider[],
+  providers: Provider[],
   headerContext?: HeaderDetectionContext,
   mxHosts?: string[],
   nsHosts?: string[],
   issuer?: string,
   registrar?: string,
-): CatalogProvider | null {
+): Provider | null {
   const headersObj: Record<string, string> = Object.fromEntries(
     (headerContext?.headers ?? []).map((h) => [
       h.name.toLowerCase(),
@@ -133,7 +133,7 @@ function detectProviderFromList(
 /**
  * Convert a CatalogProvider to a ProviderRef (for backwards compatibility).
  */
-function toProviderRef(provider: CatalogProvider | null): ProviderRef {
+function toProviderRef(provider: Provider | null): ProviderRef {
   if (!provider) {
     return { name: null, domain: null };
   }
@@ -153,8 +153,8 @@ function toProviderRef(provider: CatalogProvider | null): ProviderRef {
  */
 export function detectHostingProvider(
   headers: Header[],
-  providers: CatalogProvider[],
-): CatalogProvider | null {
+  providers: Provider[],
+): Provider | null {
   const context = createHeaderContext(headers);
   return detectProviderFromList(providers, context);
 }
@@ -164,7 +164,7 @@ export function detectHostingProvider(
  */
 export function detectHostingProviderRef(
   headers: Header[],
-  providers: CatalogProvider[],
+  providers: Provider[],
 ): ProviderRef {
   return toProviderRef(detectHostingProvider(headers, providers));
 }
@@ -178,8 +178,8 @@ export function detectHostingProviderRef(
  */
 export function detectEmailProvider(
   mxHosts: string[],
-  providers: CatalogProvider[],
-): CatalogProvider | null {
+  providers: Provider[],
+): Provider | null {
   return detectProviderFromList(providers, undefined, mxHosts);
 }
 
@@ -189,7 +189,7 @@ export function detectEmailProvider(
  */
 export function detectEmailProviderRef(
   mxHosts: string[],
-  providers: CatalogProvider[],
+  providers: Provider[],
 ): ProviderRef {
   const found = detectEmailProvider(mxHosts, providers);
   if (found) return toProviderRef(found);
@@ -212,8 +212,8 @@ export function detectEmailProviderRef(
  */
 export function detectDnsProvider(
   nsHosts: string[],
-  providers: CatalogProvider[],
-): CatalogProvider | null {
+  providers: Provider[],
+): Provider | null {
   return detectProviderFromList(providers, undefined, undefined, nsHosts);
 }
 
@@ -223,7 +223,7 @@ export function detectDnsProvider(
  */
 export function detectDnsProviderRef(
   nsHosts: string[],
-  providers: CatalogProvider[],
+  providers: Provider[],
 ): ProviderRef {
   const found = detectDnsProvider(nsHosts, providers);
   if (found) return toProviderRef(found);
@@ -246,8 +246,8 @@ export function detectDnsProviderRef(
  */
 export function detectRegistrar(
   registrarName: string,
-  providers: CatalogProvider[],
-): CatalogProvider | null {
+  providers: Provider[],
+): Provider | null {
   const name = (registrarName || "").toLowerCase();
   if (!name) return null;
   return detectProviderFromList(
@@ -265,7 +265,7 @@ export function detectRegistrar(
  */
 export function detectRegistrarRef(
   registrarName: string,
-  providers: CatalogProvider[],
+  providers: Provider[],
 ): ProviderRef {
   return toProviderRef(detectRegistrar(registrarName, providers));
 }
@@ -279,8 +279,8 @@ export function detectRegistrarRef(
  */
 export function detectCertificateAuthority(
   issuer: string,
-  providers: CatalogProvider[],
-): CatalogProvider | null {
+  providers: Provider[],
+): Provider | null {
   const name = (issuer || "").toLowerCase();
   if (!name) return null;
   return detectProviderFromList(
@@ -297,7 +297,7 @@ export function detectCertificateAuthority(
  */
 export function detectCertificateAuthorityRef(
   issuer: string,
-  providers: CatalogProvider[],
+  providers: Provider[],
 ): ProviderRef {
   return toProviderRef(detectCertificateAuthority(issuer, providers));
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SeoResponse } from "@/lib/schemas";
+import type { SeoResponse } from "@/lib/types";
 import { render, screen } from "@/mocks/react";
 import { RobotsSummary } from "./robots-summary";
 

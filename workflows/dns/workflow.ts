@@ -1,4 +1,9 @@
-import type { DnsRecord, DnsRecordsResponse, DnsType } from "@/lib/schemas";
+import {
+  DNS_TYPES,
+  type DnsRecord,
+  type DnsRecordsResponse,
+  type DnsType,
+} from "@/lib/types";
 
 export interface DnsWorkflowInput {
   domain: string;
@@ -118,10 +123,9 @@ async function checkCache(domain: string): Promise<CacheResult> {
   const { db } = await import("@/lib/db/client");
   const { findDomainByName } = await import("@/lib/db/repos/domains");
   const { dnsRecords } = await import("@/lib/db/schema");
-  const { DnsTypeSchema } = await import("@/lib/schemas");
 
   const nowMs = Date.now();
-  const types = DnsTypeSchema.options;
+  const types = DNS_TYPES;
 
   try {
     const existingDomain = await findDomainByName(domain);
@@ -171,7 +175,7 @@ async function checkCache(domain: string): Promise<CacheResult> {
       );
     };
 
-    const allFresh = (types as DnsType[]).every((t) => typeIsFresh(t));
+    const allFresh = types.every((t) => typeIsFresh(t));
 
     if (!allFresh) {
       return {
@@ -215,13 +219,12 @@ async function fetchFromProviders(domain: string): Promise<FetchResult> {
   const { DNS_TYPE_NUMBERS, providerOrderForLookup, queryDohProvider } =
     await import("@/lib/dns-utils");
   const { isCloudflareIp } = await import("@/lib/cloudflare");
-  const { DnsTypeSchema } = await import("@/lib/schemas");
   const { ttlForDnsRecord } = await import("@/lib/ttl");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "dns-workflow" });
   const providers = providerOrderForLookup(domain);
-  const types = DnsTypeSchema.options;
+  const types = DNS_TYPES;
   const now = new Date();
 
   for (const provider of providers) {
@@ -340,16 +343,15 @@ async function persistRecords(
   const { replaceDns } = await import("@/lib/db/repos/dns");
   const { scheduleRevalidation } = await import("@/lib/schedule");
   const { createLogger } = await import("@/lib/logger/server");
-  const { DnsTypeSchema } = await import("@/lib/schemas");
 
   const logger = createLogger({ source: "dns-workflow" });
-  const types = DnsTypeSchema.options;
+  const types = DNS_TYPES;
   const now = new Date();
 
   try {
     // Group records by type for replaceDns
     const recordsByType = Object.fromEntries(
-      (types as DnsType[]).map((t) => [
+      types.map((t) => [
         t,
         recordsWithExpiry
           .filter((r) => r.type === t)

@@ -14,7 +14,7 @@ import type {
   ProviderStats,
   ProviderStatsByCategory,
   TldStats,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 /**
  * Get total count of unique domains in the database

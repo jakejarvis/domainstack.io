@@ -23,10 +23,10 @@ import {
   detectEmailProvider,
   detectHostingProvider,
 } from "@/lib/providers/detection";
-import type { CatalogProvider } from "@/lib/providers/types";
+import type { Provider } from "@/lib/providers/parser";
 import { scheduleRevalidation } from "@/lib/schedule";
-import type { HostingResponse } from "@/lib/schemas";
 import { ttlForHosting } from "@/lib/ttl";
+import type { HostingResponse } from "@/lib/types";
 import { dnsWorkflow } from "@/workflows/dns";
 import { headersWorkflow } from "@/workflows/headers";
 
@@ -177,7 +177,7 @@ export const getHosting = cache(async function getHosting(
 
   let hostingName = hostingMatched?.name ?? null;
   let hostingIconDomain = hostingMatched?.domain ?? null;
-  let hostingCatalogProvider: CatalogProvider | null = hostingMatched;
+  let hostingCatalogProvider: Provider | null = hostingMatched;
   if (!ip) {
     hostingName = null;
     hostingIconDomain = null;
@@ -199,7 +199,7 @@ export const getHosting = cache(async function getHosting(
         );
   let emailName = emailMatched?.name ?? null;
   let emailIconDomain = emailMatched?.domain ?? null;
-  const emailCatalogProvider: CatalogProvider | null = emailMatched;
+  const emailCatalogProvider: Provider | null = emailMatched;
 
   // DNS provider from nameservers
   const dnsMatched = detectDnsProvider(
@@ -208,7 +208,7 @@ export const getHosting = cache(async function getHosting(
   );
   let dnsName = dnsMatched?.name ?? null;
   let dnsIconDomain = dnsMatched?.domain ?? null;
-  const dnsCatalogProvider: CatalogProvider | null = dnsMatched;
+  const dnsCatalogProvider: Provider | null = dnsMatched;
 
   // If no known match for email provider, fall back to the root domain of the first MX host
   if (!emailMatched && mx[0]?.value) {

@@ -5,8 +5,8 @@ import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 import { evalRule } from "@/lib/providers/detection";
+import type { Provider } from "@/lib/providers/parser";
 import type { DetectionContext } from "@/lib/providers/rules";
-import type { CatalogProvider } from "@/lib/providers/types";
 import { slugify } from "@/lib/slugify";
 
 const logger = createLogger({ source: "providers" });
@@ -424,7 +424,7 @@ type ProviderRow = typeof providers.$inferSelect;
  * - Returns true because the catalog rule matches the discovered name
  */
 function catalogRuleMatchesDiscovered(
-  catalogProvider: CatalogProvider,
+  catalogProvider: Provider,
   discoveredProvider: { name: string; domain: string | null },
 ): boolean {
   // Build detection context based on discovered provider's name/domain
@@ -496,7 +496,7 @@ function catalogRuleMatchesDiscovered(
  * @returns Provider row with database ID
  */
 export async function upsertCatalogProvider(
-  provider: CatalogProvider,
+  provider: Provider,
 ): Promise<ProviderRow> {
   const slug = slugify(provider.name);
   const lowerDomain = provider.domain?.toLowerCase() ?? null;
@@ -631,7 +631,7 @@ export async function upsertCatalogProvider(
  * expected by service layer callers.
  */
 export async function upsertCatalogProviderRef(
-  provider: CatalogProvider,
+  provider: Provider,
 ): Promise<{ id: string; name: string; domain: string | null }> {
   const row = await upsertCatalogProvider(provider);
   return {

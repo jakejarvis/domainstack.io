@@ -28,7 +28,7 @@ import type {
   RegistrationChange,
   RegistrationResponse,
   RegistrationSnapshotData,
-} from "@/lib/schemas";
+} from "@/lib/types";
 import { getHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { registrationWorkflow } from "@/workflows/registration";
@@ -98,7 +98,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
 
       // Check registration changes
       if (registrationData && registrationData.status === "registered") {
-        const currentRegistration: RegistrationSnapshotData = {
+        const currentRegistration = {
           registrarProviderId: registrationData.registrarProvider?.id ?? null,
           nameservers: registrationData.nameservers || [],
           transferLock: registrationData.transferLock ?? null,
@@ -108,7 +108,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
         };
 
         const registrationChange = detectRegistrationChanges(
-          snapshot.registration,
+          snapshot.registration as RegistrationSnapshotData,
           currentRegistration,
         );
 
@@ -228,7 +228,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
       if (certificatesData.certificates.length > 0) {
         const leafCert = certificatesData.certificates[0]; // First cert is the leaf
 
-        const currentCertificate: CertificateSnapshotData = {
+        const currentCertificate = {
           caProviderId: leafCert.caProvider?.id ?? null,
           issuer: leafCert.issuer,
           validTo: new Date(leafCert.validTo).toISOString(),
@@ -236,7 +236,7 @@ export const monitorTrackedDomainsWorker = inngest.createFunction(
         };
 
         const certificateChange = detectCertificateChanges(
-          snapshot.certificate,
+          snapshot.certificate as CertificateSnapshotData,
           currentCertificate,
         );
 

@@ -1,11 +1,25 @@
 import { z } from "zod";
-import type { ProviderCategory } from "@/lib/schemas/primitives";
+import type { ProviderCategory } from "@/lib/types";
 import type { Rule } from "./rules";
-import {
-  type CatalogProvider,
-  CatalogProviderEntrySchema,
-  toCatalogProvider,
-} from "./types";
+import { RuleSchema } from "./rules";
+
+/**
+ * A provider entry as stored in the catalog.
+ */
+const ProviderEntrySchema = z.object({
+  name: z.string().min(1),
+  domain: z.string().min(1),
+  rule: RuleSchema,
+});
+
+export type ProviderEntry = z.infer<typeof ProviderEntrySchema>;
+
+/**
+ * A full provider entry with category.
+ */
+export interface Provider extends ProviderEntry {
+  category: ProviderCategory;
+}
 
 /**
  * Schema for the full provider catalog stored in Edge Config.
@@ -21,13 +35,13 @@ import {
  * }
  * ```
  */
-export const ProviderCatalogSchema = z
+const ProviderCatalogSchema = z
   .object({
-    ca: z.array(CatalogProviderEntrySchema).default([]),
-    dns: z.array(CatalogProviderEntrySchema).default([]),
-    email: z.array(CatalogProviderEntrySchema).default([]),
-    hosting: z.array(CatalogProviderEntrySchema).default([]),
-    registrar: z.array(CatalogProviderEntrySchema).default([]),
+    ca: z.array(ProviderEntrySchema).default([]),
+    dns: z.array(ProviderEntrySchema).default([]),
+    email: z.array(ProviderEntrySchema).default([]),
+    hosting: z.array(ProviderEntrySchema).default([]),
+    registrar: z.array(ProviderEntrySchema).default([]),
   })
   .superRefine((catalog, ctx) => {
     // Validate all regex patterns at parse time
@@ -122,7 +136,7 @@ export function safeParseProviderCatalog(
 export function getProvidersFromCatalog(
   catalog: ProviderCatalog,
   category: ProviderCategory,
-): CatalogProvider[] {
+): Provider[] {
   const entries = catalog[category];
-  return entries.map((entry) => toCatalogProvider(entry, category));
+  return entries.map((entry) => ({ ...entry, category }));
 }

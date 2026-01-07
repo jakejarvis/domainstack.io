@@ -2,8 +2,8 @@ import type {
   DetailedPeerCertificate,
   Certificate as TlsCertificate,
 } from "node:tls";
-import type { CatalogProvider } from "@/lib/providers/types";
-import type { Certificate, CertificatesResponse } from "@/lib/schemas";
+import type { Provider } from "@/lib/providers/parser";
+import type { Certificate, CertificatesResponse } from "@/lib/types";
 
 export interface CertificatesWorkflowInput {
   domain: string;
@@ -294,7 +294,7 @@ async function detectProvidersAndBuildResponse(chainJson: string): Promise<{
   // Detect providers and upsert to get IDs
   const certificatesWithMatches: Array<{
     cert: Certificate;
-    catalogProvider: CatalogProvider | null;
+    catalogProvider: Provider | null;
   }> = chain.map((c) => {
     const matched = detectCertificateAuthority(c.issuer, caProviders);
     return {

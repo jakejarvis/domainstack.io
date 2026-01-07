@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
-import type { VerificationMethod } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { VerificationMethod } from "@/lib/types";
 
 // ============================================================================
 // Types

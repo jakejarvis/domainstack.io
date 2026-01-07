@@ -1,42 +1,55 @@
-import { z } from "zod";
+/**
+ * Icon types - Plain TypeScript interfaces.
+ *
+ * These are configuration types for icon fetching,
+ * no runtime validation needed.
+ */
 
-export const IconSourceSchema = z.object({
-  url: z.string().url(),
+/**
+ * A source for fetching icons.
+ */
+export interface IconSource {
+  url: string;
   /** Source identifier for logging (e.g., "duckduckgo", "logo_dev") */
-  name: z.string(),
+  name: string;
   /** Optional custom headers for this source */
-  headers: z.record(z.string(), z.string()).optional(),
+  headers?: Record<string, string>;
   /** Allow HTTP (default: false) */
-  allowHttp: z.boolean().optional(),
-});
+  allowHttp?: boolean;
+}
 
-export type IconSource = z.infer<typeof IconSourceSchema>;
+/**
+ * Cached icon record from database.
+ */
+export interface CachedIconRecord {
+  url: string | null;
+  notFound?: boolean;
+}
 
-export const CachedIconRecordSchema = z.object({
-  url: z.string().nullable(),
-  notFound: z.boolean().optional(),
-});
-
-export type CachedIconRecord = z.infer<typeof CachedIconRecordSchema>;
-
-export const FetchIconConfigSchema = z.object({
+/**
+ * Configuration for fetching an icon (without function callbacks).
+ */
+export interface FetchIconConfigBase {
   /** Unique identifier for deduplication (e.g., domain, providerId) */
-  identifier: z.string(),
+  identifier: string;
   /** Kind of blob for storage (e.g., "favicon", "provider-logo") */
-  blobKind: z.enum(["favicon", "provider-logo"]),
+  blobKind: "favicon" | "provider-logo";
   /** Domain for blob storage path */
-  blobDomain: z.string(),
+  blobDomain: string;
   /** Sources to try in order (first success wins) */
-  sources: z.array(IconSourceSchema),
+  sources: IconSource[];
   /** Icon size in pixels (default: 32) */
-  size: z.number().optional(),
+  size?: number;
   /** Request timeout per source in ms (default: 1500) */
-  timeoutMs: z.number().optional(),
+  timeoutMs?: number;
   /** Max icon size in bytes (default: 1MB) */
-  maxBytes: z.number().optional(),
-});
+  maxBytes?: number;
+}
 
-export type FetchIconConfig = z.infer<typeof FetchIconConfigSchema> & {
+/**
+ * Full configuration for fetching an icon, including callbacks.
+ */
+export interface FetchIconConfig extends FetchIconConfigBase {
   /** Function to check cache */
   getCachedRecord: () => Promise<CachedIconRecord | null>;
   /** Function to persist to database */
@@ -53,4 +66,4 @@ export type FetchIconConfig = z.infer<typeof FetchIconConfigSchema> & {
   }) => Promise<void>;
   /** TTL calculator */
   ttlFn: (now: Date) => Date;
-};
+}

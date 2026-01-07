@@ -22,8 +22,8 @@ import {
   NOTIFICATION_CATEGORIES,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
-import type { UserNotificationPreferences } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { UserNotificationPreferences } from "@/lib/types";
 
 interface NotificationsPanelProps {
   className?: string;

@@ -3,8 +3,8 @@ import "server-only";
 import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { convertBufferToImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
-import type { FetchIconConfig } from "@/lib/schemas";
 import { storeImage } from "@/lib/storage";
+import type { FetchIconConfig } from "@/lib/types";
 
 const logger = createLogger({ source: "icon-pipeline" });
 

@@ -1,14 +1,12 @@
 import { start } from "workflow/api";
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
-import { BlobUrlResponseSchema } from "@/lib/schemas";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 import { providerLogoWorkflow } from "@/workflows/provider-logo";
 
 export const providerRouter = createTRPCRouter({
   getProviderIcon: publicProcedure
     .input(z.object({ providerId: z.string().uuid() }))
-    .output(BlobUrlResponseSchema)
     .query(async ({ input }) => {
       const provider = await getProviderById(input.providerId);
       if (!provider?.domain) {

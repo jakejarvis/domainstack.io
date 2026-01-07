@@ -3,7 +3,7 @@ import "server-only";
 import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import type { Section } from "@/lib/schemas";
+import type { Section } from "@/lib/types";
 import { getHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { dnsWorkflow } from "@/workflows/dns";

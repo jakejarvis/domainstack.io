@@ -23,9 +23,9 @@
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
 - `lib/resend.ts` Resend email client for sending notifications.
-- `lib/providers/` provider detection system (catalog.ts for Edge Config schema, detection.ts for pattern matching, parser.ts for catalog parsing).
+- `lib/providers/` provider detection system with rule syntax and Edge Config catalog parsing.
 - `lib/icons/` icon pipeline for favicon extraction (pipeline.ts for multi-source extraction, sources.ts for source definitions).
-- `lib/schemas/` Zod schemas organized by domain.
+- `lib/types/` Plain TypeScript types - single source of truth for enums and internal data structures.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
 - `server/services/` service layer for orchestration. Contains only `hosting.ts` which combines DNS, headers, and IP workflows to detect providers.
@@ -57,11 +57,11 @@
 - 2-space indentation. Files/folders: kebab-case; exports: PascalCase; helpers: camelCase named exports.
 - Client components must begin with `"use client"`. Consolidate imports via `@/...`. Keep page roots lean.
 - Constants: Organize by domain in `lib/constants/` submodules.
-- Use `drizzle-zod` for DB boundary validation:
-  - Read schemas: `lib/db/zod.ts` `*Select` (strict `Date` types)
-  - Write schemas: `lib/db/zod.ts` `*Insert`/`*Update` (dates coerced)
-  - Reuse domain Zod types for JSON columns (SEO, registration) to avoid drift
-  - Reference: drizzle-zod docs [drizzle-zod](https://orm.drizzle.team/docs/zod)
+- Types and Schemas:
+  - **Plain TypeScript** (`lib/types/`): Use for internal data structures that don't need runtime validation. Simple enums are defined as `const` arrays with derived union types.
+  - **Single source of truth**: Enum const arrays live in `lib/types/primitives.ts`. Drizzle pgEnums derive from these arrays.
+  - **Importing types**: Prefer `@/lib/types` for types.
+  - Do NOT use Zod for simple enums or internal data structures from your own database.
 
 ## Testing Guidelines
 - Use **Vitest** with **Browser Mode** (Playwright) for component testing; config in `vitest.config.ts`.
@@ -357,7 +357,6 @@ Polar handles Pro tier subscriptions with automatic tier management via webhooks
   - Consolidated into single localStorage key for efficiency
 - **Bulk actions:** Multi-select with floating toolbar for archive/delete. Hook: `hooks/use-selection.ts`. Component: `components/dashboard/bulk-actions-toolbar.tsx`.
 - **Health summary:** Clickable badges showing expiring/pending counts. Component: `components/dashboard/health-summary.tsx`.
-- **Filter constants:** `lib/constants/domain-filters.ts` defines `HEALTH_OPTIONS` and re-exports `ProviderCategory` from schemas.
 
 ### Environment variables
 - `POLAR_ACCESS_TOKEN`: API token from Polar dashboard.

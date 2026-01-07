@@ -9,7 +9,7 @@ import {
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
 import { sendPrettyEmail } from "@/lib/resend";
-import type { NotificationOverrides } from "@/lib/schemas";
+import type { NotificationOverrides } from "@/lib/types";
 
 /**
  * Common configuration for sending notifications.

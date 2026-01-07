@@ -17,7 +17,7 @@ import {
 import type {
   NotificationOverrides,
   UserNotificationPreferences,
-} from "@/lib/schemas";
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface DomainNotificationRowProps {

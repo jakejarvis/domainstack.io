@@ -32,7 +32,7 @@ import type {
   RegistrationContacts,
   VerificationMethod,
   VerificationStatus,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 const logger = createLogger({ source: "tracked-domains" });
 
@@ -1060,125 +1060,6 @@ export async function getTrackedDomainForReverification(
   }
 
   return rows[0] as TrackedDomainForReverification;
-}
-
-/**
- * Get all verified tracked domains with expiration dates for notification processing.
- * Returns all verified, non-archived domains - filtering by notification preferences happens at processing time.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForNotification in a fan-out pattern
- */
-export async function getVerifiedTrackedDomainsWithExpiry(): Promise<
-  TrackedDomainForNotification[]
-> {
-  const registrarProvider = alias(providers, "registrar_provider");
-
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      expirationDate: registrations.expirationDate,
-      registrar: registrarProvider.name,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(registrations, eq(domains.id, registrations.domainId))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .leftJoin(
-      registrarProvider,
-      eq(registrations.registrarProviderId, registrarProvider.id),
-    )
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  return rows;
-}
-
-/**
- * Get all verified domains for re-verification.
- * Only returns domains with a verification method set.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getVerifiedTrackedDomainIds and getTrackedDomainForReverification in a fan-out pattern
- */
-export async function getVerifiedDomainsForReverification(): Promise<
-  TrackedDomainForReverification[]
-> {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainName: domains.name,
-      verificationToken: userTrackedDomains.verificationToken,
-      verificationMethod: userTrackedDomains.verificationMethod,
-      verificationStatus: userTrackedDomains.verificationStatus,
-      verificationFailedAt: userTrackedDomains.verificationFailedAt,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  // Filter out domains without a verification method (shouldn't happen, but safe)
-  return rows.filter(
-    (row): row is TrackedDomainForReverification =>
-      row.verificationMethod !== null,
-  );
-}
-
-/**
- * Get all pending (unverified) domains that might have added verification.
- * These are domains where the user started the add flow but never clicked "Verify".
- *
- * Note: This excludes domains that were previously verified and then revoked
- * (those have verificationStatus = 'unverified' but may have had verificationFailedAt set).
- * We only want truly new pending domains that have never been verified.
- * Archived domains are excluded since archiving pauses monitoring.
- * @deprecated Use getPendingTrackedDomainIds in a fan-out pattern
- */
-export async function getPendingDomainsForAutoVerification(): Promise<
-  PendingDomainForAutoVerification[]
-> {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainName: domains.name,
-      verificationToken: userTrackedDomains.verificationToken,
-      createdAt: userTrackedDomains.createdAt,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, false),
-        // Exclude revoked domains (those that were previously verified)
-        isNull(userTrackedDomains.verifiedAt),
-        // Exclude archived domains (archiving pauses monitoring)
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  return rows;
 }
 
 /**

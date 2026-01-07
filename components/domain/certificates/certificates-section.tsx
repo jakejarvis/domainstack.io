@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { CertificatesResponse } from "@/lib/schemas";
+import type { CertificatesResponse } from "@/lib/types";
 
 export function CertificatesSection({
   data,

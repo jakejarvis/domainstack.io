@@ -9,7 +9,7 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import type { NotificationOverrides } from "@/lib/schemas";
+import type { NotificationOverrides } from "@/lib/types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -109,47 +109,4 @@ export async function getEarliestCertificate(
     .limit(1);
 
   return rows[0] ?? null;
-}
-
-/**
- * Get all certificates for verified, non-archived tracked domains.
- * Archived domains are excluded since archiving pauses monitoring.
- * Returns the earliest expiring certificate for each tracked domain.
- *
- * Uses PostgreSQL DISTINCT ON to efficiently get one certificate per tracked domain,
- * ordered by validTo ASC (earliest expiring first), avoiding in-memory grouping.
- * @deprecated Use getVerifiedTrackedDomainIdsWithCertificates and getEarliestCertificate in a fan-out pattern
- */
-export async function getVerifiedTrackedDomainsCertificates(): Promise<
-  TrackedDomainCertificate[]
-> {
-  // Use DISTINCT ON to get the earliest expiring certificate per tracked domain
-  // This is more efficient than fetching all certificates and grouping in JS
-  const rows = await db
-    .selectDistinctOn([userTrackedDomains.id], {
-      trackedDomainId: userTrackedDomains.id,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
-      validTo: certificates.validTo,
-      issuer: certificates.issuer,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(userTrackedDomains)
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(certificates, eq(domains.id, certificates.domainId))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    )
-    // For DISTINCT ON, the first ORDER BY column(s) must match the DISTINCT ON columns
-    // Then order by validTo ASC to get the earliest expiring certificate
-    .orderBy(userTrackedDomains.id, asc(certificates.validTo));
-
-  return rows;
 }

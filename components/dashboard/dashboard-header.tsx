@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ViewMode } from "@/hooks/use-dashboard-preferences";
-import type { Subscription } from "@/lib/schemas";
+import type { Subscription } from "@/lib/types";
 import { Separator } from "../ui/separator";
 
 type DashboardHeaderProps = {

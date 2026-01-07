@@ -2,7 +2,7 @@ import type {
   Provider,
   RegistrationContacts,
   RegistrationResponse,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 export interface RegistrationWorkflowInput {
   domain: string;

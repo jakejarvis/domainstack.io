@@ -8,7 +8,7 @@ import type {
   ProviderSnapshotData,
   RegistrationChange,
   RegistrationSnapshotData,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 /**
  * Detect changes in registration data (registrar, nameservers, transfer lock, statuses).

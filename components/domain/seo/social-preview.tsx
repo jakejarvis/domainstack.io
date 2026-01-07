@@ -1,9 +1,6 @@
 import { ImageOff } from "lucide-react";
 import Image from "next/image";
-import type {
-  SocialPreviewProvider,
-  SocialPreviewVariant,
-} from "@/lib/schemas";
+import type { SocialPreviewProvider, SocialPreviewVariant } from "@/lib/types";
 
 export type SocialPreviewProps = {
   provider: SocialPreviewProvider;

@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/constants/app";
-import type { IconSource } from "@/lib/schemas";
+import type { IconSource } from "@/lib/types";
 
 /**
  * Build standard favicon sources (DuckDuckGo, Google, direct attempts)

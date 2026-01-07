@@ -7,10 +7,6 @@ import { createSnapshot } from "@/lib/db/repos/snapshots";
 import { domains } from "@/lib/db/schema";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import type {
-  CertificateSnapshotData,
-  RegistrationSnapshotData,
-} from "@/lib/schemas";
 import { getHosting } from "@/server/services/hosting";
 import { certificatesWorkflow } from "@/workflows/certificates";
 import { registrationWorkflow } from "@/workflows/registration";
@@ -74,7 +70,12 @@ export const initializeSnapshot = inngest.createFunction(
       : { certificates: [] };
 
     // Build registration snapshot
-    let registrationSnapshot: RegistrationSnapshotData = {
+    let registrationSnapshot: {
+      registrarProviderId: string | null;
+      nameservers: { host: string }[];
+      transferLock: boolean | null;
+      statuses: string[];
+    } = {
       registrarProviderId: null,
       nameservers: [],
       transferLock: null,
@@ -93,7 +94,12 @@ export const initializeSnapshot = inngest.createFunction(
     }
 
     // Build certificate snapshot
-    let certificateSnapshot: CertificateSnapshotData = {
+    let certificateSnapshot: {
+      caProviderId: string | null;
+      issuer: string;
+      validTo: string;
+      fingerprint: string | null;
+    } = {
       caProviderId: null,
       issuer: "",
       validTo: new Date().toISOString(),

@@ -7,7 +7,7 @@ import type {
   DnsRecord,
   ProviderCategory,
   RegistrationContacts,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;

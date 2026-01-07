@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { VerificationMethod } from "@/lib/schemas";
+import type { VerificationMethod } from "@/lib/types";
 import { server } from "@/mocks/server";
 import { verificationWorkflow } from "./workflow";
 

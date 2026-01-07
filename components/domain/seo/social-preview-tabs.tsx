@@ -8,7 +8,7 @@ import {
 } from "@/components/brand-icons";
 import { SocialPreview } from "@/components/domain/seo/social-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { SocialPreviewProvider } from "@/lib/schemas";
+import type { SocialPreviewProvider } from "@/lib/types";
 
 export function SocialPreviewTabs({
   preview,

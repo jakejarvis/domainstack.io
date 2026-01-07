@@ -24,8 +24,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useRouter } from "@/hooks/use-router";
-import type { NotificationData } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { NotificationData } from "@/lib/types";
 import { ButtonGroup } from "../ui/button-group";
 
 export function NotificationsPopover() {

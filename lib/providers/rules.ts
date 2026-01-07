@@ -98,12 +98,14 @@ export const RuleSchema: z.ZodType<Rule> = z.lazy(() =>
   ]),
 );
 
-// What the evaluator receives
-export const DetectionContextSchema = z.object({
-  headers: z.record(z.string(), z.string()),
-  mx: z.array(z.string()),
-  ns: z.array(z.string()),
-  issuer: z.string().optional(),
-  registrar: z.string().optional(),
-});
-export type DetectionContext = z.infer<typeof DetectionContextSchema>;
+/**
+ * Context passed to rule evaluation.
+ * This is internal data built from our own queries - no validation needed.
+ */
+export interface DetectionContext {
+  headers: Record<string, string>;
+  mx: string[];
+  ns: string[];
+  issuer?: string;
+  registrar?: string;
+}

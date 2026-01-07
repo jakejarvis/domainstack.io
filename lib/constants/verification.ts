@@ -3,7 +3,7 @@
  * Centralized configuration for verification methods, grace periods, and format strings.
  */
 
-import type { VerificationMethod } from "@/lib/schemas";
+import type { VerificationMethod } from "@/lib/types";
 
 // ============================================================================
 // Valid Verification Methods

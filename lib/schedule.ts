@@ -19,7 +19,10 @@ import {
   getDecayMultiplier,
   shouldStopRevalidation,
 } from "@/lib/revalidation";
-import { type Section, SectionEnum } from "@/lib/schemas";
+import { allSections, type Section } from "@/lib/types";
+
+// Re-export for backwards compatibility
+export { allSections };
 
 function minTtlSecondsForSection(section: Section): number {
   switch (section) {
@@ -36,10 +39,6 @@ function minTtlSecondsForSection(section: Section): number {
     case "registration":
       return REVALIDATE_MIN_REGISTRATION;
   }
-}
-
-export function allSections(): Section[] {
-  return SectionEnum.options as Section[];
 }
 
 /**

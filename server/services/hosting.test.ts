@@ -9,8 +9,8 @@ import {
   it,
   vi,
 } from "vitest";
-import type { CatalogProvider } from "@/lib/providers/types";
-import type { DnsRecord, ProviderCategory } from "@/lib/schemas";
+import type { Provider } from "@/lib/providers/parser";
+import type { DnsRecord, ProviderCategory } from "@/lib/types";
 
 // Mock DNS workflow responses by domain
 const DNS_MOCK_DATA: Record<string, DnsRecord[]> = {
@@ -129,7 +129,7 @@ vi.mock("workflow/api", () => ({
 }));
 
 // Mock provider catalog to return test providers
-const TEST_PROVIDERS: Record<ProviderCategory, CatalogProvider[]> = {
+const TEST_PROVIDERS: Record<ProviderCategory, Provider[]> = {
   hosting: [
     {
       name: "Vercel",

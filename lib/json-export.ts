@@ -5,7 +5,7 @@ import type {
   HostingResponse,
   RegistrationResponse,
   SeoResponse,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 export function exportDomainData(
   domain: string,

@@ -1,4 +1,4 @@
-import type { VerificationMethod } from "@/lib/schemas";
+import type { VerificationMethod } from "@/lib/types";
 
 export interface VerificationWorkflowInput {
   domain: string;

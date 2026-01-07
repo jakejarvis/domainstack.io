@@ -4,12 +4,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { userNotificationPreferences } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
+import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/types";
 
 const _logger = createLogger({ source: "user-notification-preferences" });
 
 // Re-export for convenience
-export type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/schemas";
+export type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/types";
 
 function mapPreferences(
   row: typeof userNotificationPreferences.$inferSelect,

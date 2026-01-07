@@ -9,13 +9,11 @@ import {
   userTrackedDomains,
 } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import {
-  CertificateSnapshotSchema,
-  type CreateSnapshotParams,
-  RegistrationSnapshotSchema,
-  type SnapshotForMonitoring,
-  type UpdateSnapshotParams,
-} from "@/lib/schemas";
+import type {
+  CreateSnapshotParams,
+  SnapshotForMonitoring,
+  UpdateSnapshotParams,
+} from "@/lib/types";
 
 const logger = createLogger({ source: "snapshots" });
 
@@ -239,107 +237,7 @@ export async function getSnapshot(
     return null;
   }
 
-  const row = rows[0];
-
-  // Validate JSONB data
-  const registration = RegistrationSnapshotSchema.safeParse(row.registration);
-  const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
-
-  if (!registration.success || !certificate.success) {
-    logger.error(
-      { trackedDomainId, errors: [registration.error, certificate.error] },
-      "invalid snapshot data",
-    );
-    return null;
-  }
-
-  return {
-    ...row,
-    registration: registration.data,
-    certificate: certificate.data,
-  };
-}
-
-/**
- * Get all snapshots for verified, non-archived tracked domains.
- * Used by the monitoring job to check for changes.
- * @deprecated Use getMonitoredSnapshotIds and getSnapshot in a fan-out pattern
- */
-export async function getSnapshotsForMonitoring(): Promise<
-  SnapshotForMonitoring[]
-> {
-  const rows = await db
-    .select({
-      id: domainSnapshots.id,
-      trackedDomainId: domainSnapshots.trackedDomainId,
-      userId: userTrackedDomains.userId,
-      domainId: userTrackedDomains.domainId,
-      domainName: domains.name,
-      registration: domainSnapshots.registration,
-      certificate: domainSnapshots.certificate,
-      dnsProviderId: domainSnapshots.dnsProviderId,
-      hostingProviderId: domainSnapshots.hostingProviderId,
-      emailProviderId: domainSnapshots.emailProviderId,
-      userEmail: users.email,
-      userName: users.name,
-    })
-    .from(domainSnapshots)
-    .innerJoin(
-      userTrackedDomains,
-      eq(domainSnapshots.trackedDomainId, userTrackedDomains.id),
-    )
-    .innerJoin(domains, eq(userTrackedDomains.domainId, domains.id))
-    .innerJoin(users, eq(userTrackedDomains.userId, users.id))
-    .where(
-      and(
-        eq(userTrackedDomains.verified, true),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  // Filter and validate rows, skipping any with invalid JSONB data
-  // This prevents one bad record from aborting the entire monitoring job
-  const validRows: SnapshotForMonitoring[] = [];
-  let skippedCount = 0;
-
-  for (const row of rows) {
-    // Validate JSONB data to ensure it matches expected shape
-    const registration = RegistrationSnapshotSchema.safeParse(row.registration);
-    const certificate = CertificateSnapshotSchema.safeParse(row.certificate);
-
-    if (!registration.success) {
-      logger.error(
-        { err: registration.error, trackedDomainId: row.trackedDomainId },
-        "invalid registration snapshot data, skipping domain",
-      );
-      skippedCount++;
-      continue;
-    }
-
-    if (!certificate.success) {
-      logger.error(
-        { err: certificate.error, trackedDomainId: row.trackedDomainId },
-        "invalid certificate snapshot data, skipping domain",
-      );
-      skippedCount++;
-      continue;
-    }
-
-    validRows.push({
-      ...row,
-      registration: registration.data,
-      certificate: certificate.data,
-    });
-  }
-
-  if (skippedCount > 0) {
-    logger.warn(
-      { skippedCount, totalCount: rows.length, validCount: validRows.length },
-      "skipped domains with invalid snapshot data",
-    );
-  }
-
-  return validRows;
+  return rows[0];
 }
 
 /**

@@ -3,16 +3,6 @@ import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/domain-server";
 import { createLogger } from "@/lib/logger/server";
-import {
-  BlobUrlResponseSchema,
-  BlobUrlWithBlockedFlagResponseSchema,
-  CertificatesResponseSchema,
-  DnsRecordsResponseSchema,
-  HeadersResponseSchema,
-  HostingResponseSchema,
-  RegistrationResponseSchema,
-  SeoResponseSchema,
-} from "@/lib/schemas";
 import { getHosting } from "@/server/services/hosting";
 import {
   createTRPCRouter,
@@ -49,7 +39,6 @@ export const domainRouter = createTRPCRouter({
    */
   getRegistration: domainProcedure
     .input(DomainInputSchema)
-    .output(RegistrationResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(registrationWorkflow, [
@@ -101,7 +90,6 @@ export const domainRouter = createTRPCRouter({
    */
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
-    .output(DnsRecordsResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(dnsWorkflow, [{ domain: input.domain }]);
@@ -127,7 +115,6 @@ export const domainRouter = createTRPCRouter({
 
   getHosting: domainProcedure
     .input(DomainInputSchema)
-    .output(HostingResponseSchema)
     .query(({ input }) => getHosting(input.domain)),
 
   /**
@@ -136,7 +123,6 @@ export const domainRouter = createTRPCRouter({
    */
   getCertificates: domainProcedure
     .input(DomainInputSchema)
-    .output(CertificatesResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(certificatesWorkflow, [
@@ -171,7 +157,6 @@ export const domainRouter = createTRPCRouter({
    */
   getHeaders: domainProcedure
     .input(DomainInputSchema)
-    .output(HeadersResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(headersWorkflow, [{ domain: input.domain }]);
@@ -199,36 +184,33 @@ export const domainRouter = createTRPCRouter({
    * Get SEO data for a domain using a durable workflow.
    * Fetches HTML, robots.txt, and OG images with automatic retries.
    */
-  getSeo: domainProcedure
-    .input(DomainInputSchema)
-    .output(SeoResponseSchema)
-    .query(async ({ input }) => {
-      try {
-        const run = await start(seoWorkflow, [{ domain: input.domain }]);
+  getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
+    try {
+      const run = await start(seoWorkflow, [{ domain: input.domain }]);
 
-        logger.debug(
-          { domain: input.domain, runId: run.runId },
-          "seo workflow started",
-        );
+      logger.debug(
+        { domain: input.domain, runId: run.runId },
+        "seo workflow started",
+      );
 
-        const result = await run.returnValue;
+      const result = await run.returnValue;
 
-        logger.debug(
-          { domain: input.domain, runId: run.runId, cached: result.cached },
-          "seo workflow completed",
-        );
+      logger.debug(
+        { domain: input.domain, runId: run.runId, cached: result.cached },
+        "seo workflow completed",
+      );
 
-        return result.data;
-      } catch (err) {
-        logger.error({ err, domain: input.domain }, "seo workflow failed");
-        return {
-          meta: null,
-          robots: null,
-          preview: null,
-          source: { finalUrl: null, status: null },
-        };
-      }
-    }),
+      return result.data;
+    } catch (err) {
+      logger.error({ err, domain: input.domain }, "seo workflow failed");
+      return {
+        meta: null,
+        robots: null,
+        preview: null,
+        source: { finalUrl: null, status: null },
+      };
+    }
+  }),
 
   /**
    * Get a favicon for a domain using a durable workflow.
@@ -236,7 +218,6 @@ export const domainRouter = createTRPCRouter({
    */
   getFavicon: publicProcedure
     .input(DomainInputSchema)
-    .output(BlobUrlResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(faviconWorkflow, [{ domain: input.domain }]);
@@ -266,7 +247,6 @@ export const domainRouter = createTRPCRouter({
    */
   getScreenshot: publicProcedure
     .input(DomainInputSchema)
-    .output(BlobUrlWithBlockedFlagResponseSchema)
     .query(async ({ input }) => {
       try {
         const run = await start(screenshotWorkflow, [{ domain: input.domain }]);

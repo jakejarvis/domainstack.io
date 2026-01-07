@@ -24,44 +24,38 @@ import type {
   RegistrationStatuses,
   RobotsTxt,
   TwitterMeta,
-} from "@/lib/schemas";
+} from "@/lib/types";
+import {
+  DNS_RECORD_TYPES,
+  PROVIDER_CATEGORIES,
+  PROVIDER_SOURCES,
+  REGISTRATION_SOURCES,
+  USER_TIERS,
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
+} from "@/lib/types";
 
-// Enums - values must match lib/schemas/primitives/* (source of truth for validation).
-// Drizzle requires literal tuples for proper type inference, so we duplicate the values here.
-// If you update these, also update the corresponding Zod schema in lib/schemas/primitives/.
-export const providerCategory = pgEnum("provider_category", [
-  "hosting",
-  "email",
-  "dns",
-  "ca",
-  "registrar",
-]);
-export const providerSource = pgEnum("provider_source", [
-  "catalog",
-  "discovered",
-]);
-export const dnsRecordType = pgEnum("dns_record_type", [
-  "A",
-  "AAAA",
-  "MX",
-  "TXT",
-  "NS",
-]);
-export const registrationSource = pgEnum("registration_source", [
-  "rdap",
-  "whois",
-]);
-export const verificationMethod = pgEnum("verification_method", [
-  "dns_txt",
-  "html_file",
-  "meta_tag",
-]);
-export const verificationStatus = pgEnum("verification_status", [
-  "verified",
-  "failing",
-  "unverified",
-]);
-export const userTier = pgEnum("user_tier", ["free", "pro"]);
+// Enums - derived from lib/types/primitives.ts (single source of truth).
+// The const arrays there define the values; Drizzle pgEnums use them directly.
+export const providerCategory = pgEnum(
+  "provider_category",
+  PROVIDER_CATEGORIES,
+);
+export const providerSource = pgEnum("provider_source", PROVIDER_SOURCES);
+export const dnsRecordType = pgEnum("dns_record_type", DNS_RECORD_TYPES);
+export const registrationSource = pgEnum(
+  "registration_source",
+  REGISTRATION_SOURCES,
+);
+export const verificationMethod = pgEnum(
+  "verification_method",
+  VERIFICATION_METHODS,
+);
+export const verificationStatus = pgEnum(
+  "verification_status",
+  VERIFICATION_STATUSES,
+);
+export const userTier = pgEnum("user_tier", USER_TIERS);
 
 // ============================================================================
 // Authentication Tables (better-auth)

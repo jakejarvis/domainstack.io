@@ -1,6 +1,6 @@
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
-import type { PricingResponse } from "@/lib/schemas";
+import type { PricingResponse } from "@/lib/types";
 
 const logger = createLogger({ source: "pricing" });
 

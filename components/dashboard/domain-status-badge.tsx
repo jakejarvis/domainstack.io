@@ -6,7 +6,7 @@ import {
   VERIFICATION_GRACE_PERIOD_DAYS,
   VERIFICATION_METHOD_LABELS,
 } from "@/lib/constants/verification";
-import type { VerificationMethod, VerificationStatus } from "@/lib/schemas";
+import type { VerificationMethod, VerificationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DomainStatusBadgeProps = {

@@ -1,4 +1,4 @@
-import type { Header, HeadersResponse } from "@/lib/schemas";
+import type { Header, HeadersResponse } from "@/lib/types";
 
 export interface HeadersWorkflowInput {
   domain: string;

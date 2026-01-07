@@ -52,7 +52,7 @@ import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
-import type { ProviderCategory, ProviderInfo } from "@/lib/schemas";
+import type { ProviderCategory, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**

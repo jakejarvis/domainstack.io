@@ -3,7 +3,7 @@ import "server-only";
 import { putBlob } from "@/lib/blob";
 import { deterministicHash } from "@/lib/hash";
 import { createLogger } from "@/lib/logger/server";
-import type { BlobKind } from "@/lib/schemas";
+import type { BlobKind } from "@/lib/types";
 
 const logger = createLogger({ source: "storage" });
 

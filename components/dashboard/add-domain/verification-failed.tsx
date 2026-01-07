@@ -1,7 +1,7 @@
 import { AlertTriangle, Clock, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import type { VerificationMethod } from "@/lib/schemas";
+import type { VerificationMethod } from "@/lib/types";
 
 type VerificationFailedProps = {
   method: VerificationMethod;

@@ -10,7 +10,7 @@ import type {
 } from "@/lib/constants/domain-filters";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import type { ProviderCategory } from "@/lib/schemas";
+import type { ProviderCategory } from "@/lib/types";
 
 export type AvailableProvider = {
   id: string;

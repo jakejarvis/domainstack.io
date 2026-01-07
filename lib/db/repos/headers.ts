@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
-import type { Header } from "@/lib/schemas";
+import type { Header } from "@/lib/types";
 
 export type ReplaceHeadersParams = {
   domainId: string;

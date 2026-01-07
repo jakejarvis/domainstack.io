@@ -2,7 +2,7 @@ import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { registrations } from "@/lib/db/schema";
-import type { RegistrationNameservers } from "@/lib/schemas";
+import type { RegistrationNameservers } from "@/lib/types";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
 

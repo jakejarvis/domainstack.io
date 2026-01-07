@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { checkoutEmbed, customer } from "@/lib/auth-client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
-import type { Subscription } from "@/lib/schemas";
 import { useTRPC } from "@/lib/trpc/client";
+import type { Subscription } from "@/lib/types";
 
 export type UseSubscriptionOptions = {
   /** Whether to enable the query (defaults to true) */

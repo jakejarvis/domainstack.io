@@ -12,7 +12,7 @@ import type {
   MetaTagInstructions,
   VerificationInstructions,
   VerificationMethod,
-} from "@/lib/schemas";
+} from "@/lib/types";
 
 /**
  * Build verification instructions for a single method.

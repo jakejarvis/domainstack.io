@@ -1,4 +1,4 @@
-import type { SubscriptionPlan } from "@/lib/schemas";
+import type { SubscriptionPlan } from "@/lib/types";
 
 /**
  * Get Polar product IDs from environment variables with validation.

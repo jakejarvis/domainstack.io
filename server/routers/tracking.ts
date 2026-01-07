@@ -24,7 +24,7 @@ import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
 import { sendPrettyEmail } from "@/lib/resend";
-import { VerificationMethodSchema } from "@/lib/schemas";
+import { VERIFICATION_METHODS } from "@/lib/types";
 import { buildVerificationInstructions } from "@/lib/verification/instructions";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
@@ -210,7 +210,7 @@ export const trackingRouter = createTRPCRouter({
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
-        method: VerificationMethodSchema.optional(),
+        method: z.enum(VERIFICATION_METHODS).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

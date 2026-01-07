@@ -43,7 +43,7 @@ import type {
   ProviderInfo,
   VerificationMethod,
   VerificationStatus,
-} from "@/lib/schemas";
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DashboardGridCardProps = {
