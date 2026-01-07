@@ -1,9 +1,9 @@
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@/mocks/react";
-import { SocialPreviewTabs } from "./social-preview-tabs";
+import { SocialPreviews } from "./social-previews";
 
-describe("SocialPreviewTabs", () => {
+describe("SocialPreviews", () => {
   const mockPreview = {
     title: "Test Title",
     description: "Test Description",
@@ -15,9 +15,7 @@ describe("SocialPreviewTabs", () => {
   describe("tab switching", () => {
     it("switches between social preview providers", async () => {
       const user = userEvent.setup();
-      render(
-        <SocialPreviewTabs preview={mockPreview} twitterVariant="compact" />,
-      );
+      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
 
       // Initial state: Twitter tab active
       const twitterPreview = screen.getByRole("link", {
@@ -60,9 +58,7 @@ describe("SocialPreviewTabs", () => {
 
     it("renders correct active tab content", async () => {
       const user = userEvent.setup();
-      render(
-        <SocialPreviewTabs preview={mockPreview} twitterVariant="compact" />,
-      );
+      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
 
       // Check initial Twitter content
       expect(
@@ -79,9 +75,7 @@ describe("SocialPreviewTabs", () => {
 
   describe("Twitter card variants", () => {
     it("renders compact variant for Twitter when specified", () => {
-      render(
-        <SocialPreviewTabs preview={mockPreview} twitterVariant="compact" />,
-      );
+      render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
       const preview = screen.getByRole("link", {
         name: /open example.com in a new tab/i,
       });
@@ -90,9 +84,7 @@ describe("SocialPreviewTabs", () => {
     });
 
     it("renders large variant for Twitter when specified", () => {
-      render(
-        <SocialPreviewTabs preview={mockPreview} twitterVariant="large" />,
-      );
+      render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
       const preview = screen.getByRole("link", {
         name: /open example.com in a new tab/i,
       });
@@ -102,9 +94,7 @@ describe("SocialPreviewTabs", () => {
 
     it("does not apply variant to non-Twitter providers", async () => {
       const user = userEvent.setup();
-      render(
-        <SocialPreviewTabs preview={mockPreview} twitterVariant="large" />,
-      );
+      render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
 
       // Switch to Facebook - should not have variant attribute or should not be "large"
       await user.click(screen.getByRole("tab", { name: /facebook/i }));
@@ -138,9 +128,7 @@ describe("SocialPreviewTabs", () => {
           imageUploaded: `https://example.com/${provider}-uploaded.png`,
           canonicalUrl: "https://example.com",
         };
-        render(
-          <SocialPreviewTabs preview={preview} twitterVariant="compact" />,
-        );
+        render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
         // Switch to the provider's tab
         const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
@@ -162,9 +150,7 @@ describe("SocialPreviewTabs", () => {
           imageUploaded: null,
           canonicalUrl: "https://example.com",
         };
-        render(
-          <SocialPreviewTabs preview={preview} twitterVariant="compact" />,
-        );
+        render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
         const tab = screen.getByRole("tab", { name: new RegExp(tabName, "i") });
         await user.click(tab);
@@ -189,7 +175,7 @@ describe("SocialPreviewTabs", () => {
         imageUploaded: uploadedImageUrl,
         canonicalUrl: "https://example.com",
       };
-      render(<SocialPreviewTabs preview={preview} twitterVariant="compact" />);
+      render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
       // Twitter preview should be visible by default
       const twitterPreview = screen.getByRole("link", {

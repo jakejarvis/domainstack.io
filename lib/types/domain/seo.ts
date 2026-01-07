@@ -2,14 +2,6 @@
  * SEO types - Plain TypeScript interfaces.
  */
 
-import type {
-  SOCIAL_PREVIEW_PROVIDERS,
-  SOCIAL_PREVIEW_VARIANTS,
-} from "@/lib/constants/seo";
-
-export type SocialPreviewProvider = (typeof SOCIAL_PREVIEW_PROVIDERS)[number];
-export type SocialPreviewVariant = (typeof SOCIAL_PREVIEW_VARIANTS)[number];
-
 /**
  * Robots.txt rule.
  */
