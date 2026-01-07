@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FingerprintPattern } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
@@ -29,7 +30,6 @@ import {
   type OAuthProviderConfig,
 } from "@/lib/constants/oauth-providers";
 import { useTRPC } from "@/lib/trpc/client";
-import { DangerZoneCollapsible } from "./danger-zone-collapsible";
 
 interface AccountPanelProps {
   className?: string;

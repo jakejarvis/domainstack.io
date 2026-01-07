@@ -4,7 +4,7 @@ import type { SortingState } from "@tanstack/react-table";
 import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { TrackedDomainWithDetails } from "@/lib/types";
 
 /**
  * Sort option using table column format: "columnId.direction"

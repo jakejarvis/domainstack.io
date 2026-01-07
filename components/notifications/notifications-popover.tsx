@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Popover,
   PopoverContent,
@@ -26,7 +27,6 @@ import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import type { NotificationData } from "@/lib/types";
-import { ButtonGroup } from "../ui/button-group";
 
 export function NotificationsPopover() {
   const router = useRouter();

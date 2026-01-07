@@ -226,12 +226,6 @@ describe("getUserNotifications", () => {
     expect(new Set(allIds).size).toBe(5);
 
     // Verify sorting (should be by ID desc since timestamps are equal)
-    // Note: UUIDs are not ordered by insertion, so we just check consistency
-    const _sortedIds = [...allIds].sort().reverse();
-    // This assertion assumes UUID v4, which aren't time-ordered.
-    // The query sorts by sentAt DESC, id DESC.
-    // So the result should strictly follow that order.
-
     for (let i = 0; i < allIds.length - 1; i++) {
       const curr = allIds[i];
       const next = allIds[i + 1];

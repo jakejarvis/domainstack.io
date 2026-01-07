@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback } from "react";
 import { toast } from "sonner";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { useTRPC } from "@/lib/trpc/client";
+import type { TrackedDomainWithDetails } from "@/lib/types";
 import type { AppRouter } from "@/server/routers/_app";
 
 /**

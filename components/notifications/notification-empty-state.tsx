@@ -1,7 +1,7 @@
 import { ArrowRight, PartyPopper } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "@/hooks/use-router";
-import { Button } from "../ui/button";
 
 interface NotificationEmptyStateProps {
   variant: "inbox" | "archive";

@@ -3,7 +3,6 @@ import { HttpResponse, http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { VerificationMethod } from "@/lib/types";
 import { server } from "@/mocks/server";
-import { verificationWorkflow } from "./workflow";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -34,6 +33,7 @@ describe("verificationWorkflow with specific method", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -78,6 +78,7 @@ describe("verificationWorkflow with specific method", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -101,6 +102,7 @@ describe("verificationWorkflow with specific method", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -131,6 +133,7 @@ describe("verificationWorkflow with specific method", () => {
         http.get("https://dns.google/resolve", dohHandler),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -150,6 +153,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -175,6 +179,7 @@ describe("verificationWorkflow with specific method", () => {
         ),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -197,6 +202,7 @@ describe("verificationWorkflow with specific method", () => {
         ),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -222,6 +228,7 @@ describe("verificationWorkflow with specific method", () => {
         ),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -251,6 +258,7 @@ describe("verificationWorkflow with specific method", () => {
         ),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -276,6 +284,7 @@ describe("verificationWorkflow with specific method", () => {
         ),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -295,6 +304,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -318,6 +328,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -340,6 +351,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -365,6 +377,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -389,6 +402,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -413,6 +427,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -434,6 +449,7 @@ describe("verificationWorkflow with specific method", () => {
         }),
       );
 
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -446,6 +462,7 @@ describe("verificationWorkflow with specific method", () => {
 
   describe("unknown method", () => {
     it("returns error for unknown method", async () => {
+      const { verificationWorkflow } = await import("./workflow");
       const result = await verificationWorkflow({
         domain: "verified-dns.test",
         token,
@@ -481,6 +498,7 @@ describe("verificationWorkflow trying all methods", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
+    const { verificationWorkflow } = await import("./workflow");
     const result = await verificationWorkflow({
       domain: "verified-dns.test",
       token,
@@ -532,6 +550,7 @@ describe("verificationWorkflow trying all methods", () => {
       ),
     );
 
+    const { verificationWorkflow } = await import("./workflow");
     const result = await verificationWorkflow({
       domain: "verified-dns.test",
       token,
@@ -592,6 +611,7 @@ describe("verificationWorkflow trying all methods", () => {
       }),
     );
 
+    const { verificationWorkflow } = await import("./workflow");
     const result = await verificationWorkflow({
       domain: "verified-dns.test",
       token,
@@ -641,6 +661,7 @@ describe("verificationWorkflow trying all methods", () => {
       ),
     );
 
+    const { verificationWorkflow } = await import("./workflow");
     const result = await verificationWorkflow({
       domain: "verified-dns.test",
       token,

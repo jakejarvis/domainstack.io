@@ -30,6 +30,7 @@ import type {
   NotificationOverrides,
   ProviderInfo,
   RegistrationContacts,
+  TrackedDomainWithDetails,
   VerificationMethod,
   VerificationStatus,
 } from "@/lib/types";
@@ -41,31 +42,6 @@ export type CreateTrackedDomainParams = {
   domainId: string;
   verificationToken: string;
   verificationMethod?: VerificationMethod;
-};
-
-export type TrackedDomainWithDetails = {
-  id: string;
-  userId: string;
-  domainId: string;
-  domainName: string;
-  tld: string;
-  verified: boolean;
-  verificationMethod: VerificationMethod | null;
-  verificationToken: string;
-  verificationStatus: VerificationStatus;
-  verificationFailedAt: Date | null;
-  lastVerifiedAt: Date | null;
-  notificationOverrides: NotificationOverrides;
-  createdAt: Date;
-  verifiedAt: Date | null;
-  archivedAt: Date | null;
-  expirationDate: Date | null;
-  registrationDate: Date | null;
-  registrar: ProviderInfo;
-  dns: ProviderInfo;
-  hosting: ProviderInfo;
-  email: ProviderInfo;
-  ca: ProviderInfo;
 };
 
 /**

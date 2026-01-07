@@ -50,9 +50,12 @@ import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences
 import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
 import { formatDateTimeUtc } from "@/lib/format";
-import type { ProviderCategory, ProviderInfo } from "@/lib/types";
+import type {
+  ProviderCategory,
+  ProviderInfo,
+  TrackedDomainWithDetails,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**

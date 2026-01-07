@@ -2,9 +2,6 @@ import "server-only";
 
 import type { BootstrapData } from "rdapper";
 import { USER_AGENT } from "@/lib/constants/app";
-import { createLogger } from "@/lib/logger/server";
-
-const _logger = createLogger({ source: "rdap-bootstrap" });
 
 /**
  * RDAP Bootstrap Registry URL from IANA.

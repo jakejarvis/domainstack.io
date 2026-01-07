@@ -3,7 +3,7 @@ import "server-only";
 import crypto from "node:crypto";
 import ical, { ICalCalendarMethod } from "ical-generator";
 import { BASE_URL } from "@/lib/constants/app";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
+import type { TrackedDomainWithDetails } from "@/lib/types";
 
 /**
  * Result of generating a calendar feed.

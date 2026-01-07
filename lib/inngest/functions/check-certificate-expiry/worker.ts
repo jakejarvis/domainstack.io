@@ -3,12 +3,12 @@ import "server-only";
 import { differenceInDays, format } from "date-fns";
 import type { Logger } from "inngest";
 import { CertificateExpiryEmail } from "@/emails/certificate-expiry";
+import type { NotificationType } from "@/lib/constants/notifications";
 import { getEarliestCertificate } from "@/lib/db/repos/certificates";
 import {
   clearCertificateExpiryNotifications,
   createNotification,
   hasRecentNotification,
-  type NotificationType,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";

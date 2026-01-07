@@ -20,9 +20,6 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "notifications" });
 
-// Re-export for convenience
-export type { NotificationType } from "@/lib/constants/notifications";
-
 export type CreateNotificationParams = {
   userId: string;
   trackedDomainId?: string;

@@ -1,14 +1,11 @@
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import * as schema from "@/lib/db/schema";
-import { createLogger } from "@/lib/logger/server";
 
 // Dynamic import via require pattern is recommended in community examples
 // to access drizzle-kit/api in Vitest.
 const { pushSchema } =
   require("drizzle-kit/api") as typeof import("drizzle-kit/api");
-
-const _logger = createLogger({ source: "pglite" });
 
 type DbBundle = { db: ReturnType<typeof drizzle>; client: PGlite };
 let cached: DbBundle | null = null;

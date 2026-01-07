@@ -3,11 +3,11 @@ import "server-only";
 import { differenceInDays, format } from "date-fns";
 import type { Logger } from "inngest";
 import { DomainExpiryEmail } from "@/emails/domain-expiry";
+import type { NotificationType } from "@/lib/constants/notifications";
 import {
   clearDomainExpiryNotifications,
   createNotification,
   hasRecentNotification,
-  type NotificationType,
   updateNotificationResendId,
 } from "@/lib/db/repos/notifications";
 import { getTrackedDomainForNotification } from "@/lib/db/repos/tracked-domains";

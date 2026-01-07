@@ -14,4 +14,5 @@ export * from "./registration-contacts";
 export * from "./snapshot";
 export * from "./stats";
 export * from "./subscription";
+export * from "./tracked-domain";
 export * from "./verification";

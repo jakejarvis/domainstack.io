@@ -9,8 +9,7 @@ import type {
   StatusFilter,
 } from "@/lib/constants/domain-filters";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
-import type { TrackedDomainWithDetails } from "@/lib/db/repos/tracked-domains";
-import type { ProviderCategory } from "@/lib/types";
+import type { ProviderCategory, TrackedDomainWithDetails } from "@/lib/types";
 
 export type AvailableProvider = {
   id: string;
