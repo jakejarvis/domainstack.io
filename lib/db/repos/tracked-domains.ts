@@ -785,16 +785,16 @@ export async function verifyTrackedDomain(
   // This is done in the background to avoid blocking the user
   if (updated[0]) {
     // Import dynamically to avoid circular dependencies
-    import("@/lib/inngest/client")
-      .then(({ inngest }) => {
+    void import("@/lib/inngest/client")
+      .then(({ inngest }) =>
         inngest.send({
           name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
           data: {
             trackedDomainId: updated[0].id,
             domainId: updated[0].domainId,
           },
-        });
-      })
+        }),
+      )
       .catch((err) => {
         logger.error(
           {

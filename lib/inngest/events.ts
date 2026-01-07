@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { Section } from "@/lib/types";
+
 /**
  * Centralized event type definitions for Inngest functions.
  * Provides type-safe event names and payload types.
@@ -50,8 +52,8 @@ export type SnapshotInitializeEvent = {
 
 export type SectionRevalidateEvent = {
   data: {
-    domainId: string;
-    section: string;
+    domain: string;
+    section: Section;
   };
 };
 

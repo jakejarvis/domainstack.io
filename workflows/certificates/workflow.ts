@@ -2,7 +2,7 @@ import type {
   DetailedPeerCertificate,
   Certificate as TlsCertificate,
 } from "node:tls";
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import type { Provider } from "@/lib/providers/parser";
 import type { Certificate, CertificatesResponse } from "@/lib/types";
 
@@ -320,7 +320,7 @@ async function persistCertificates(
     logger.debug({ domain }, "certificates persisted");
   } catch (err) {
     logger.error({ err, domain }, "failed to persist certificates");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    throw new FatalError("Failed to persist certificates");
   }
 }
 

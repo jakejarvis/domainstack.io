@@ -1,4 +1,4 @@
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import type { Header, HeadersResponse } from "@/lib/types";
 
 export interface HeadersWorkflowInput {
@@ -182,6 +182,6 @@ export async function persistHeaders(
     );
   } catch (err) {
     logger.error({ err, domain }, "failed to persist headers");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    throw new FatalError("Failed to persist headers");
   }
 }

@@ -1,4 +1,4 @@
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import type {
   Provider,
   RegistrationContacts,
@@ -379,7 +379,7 @@ async function persistRegistration(
     logger.debug({ domain }, "registration persisted");
   } catch (err) {
     logger.error({ err, domain }, "failed to persist registration");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    throw new FatalError("Failed to persist registration");
   }
 }
 

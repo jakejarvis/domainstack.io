@@ -1,4 +1,4 @@
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
 
@@ -245,7 +245,7 @@ async function persistRecords(
     );
   } catch (err) {
     logger.error({ err, domain }, "failed to persist DNS records");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    throw new FatalError("Failed to persist DNS records");
   }
 }
 

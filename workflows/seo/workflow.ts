@@ -1,4 +1,4 @@
-import { RetryableError } from "workflow";
+import { FatalError, RetryableError } from "workflow";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -385,6 +385,6 @@ async function persistSeo(
     logger.debug({ domain }, "SEO data persisted");
   } catch (err) {
     logger.error({ err, domain }, "failed to persist SEO data");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    throw new FatalError("Failed to persist SEO data");
   }
 }
