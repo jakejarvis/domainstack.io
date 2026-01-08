@@ -24,7 +24,8 @@ export async function GET(request: Request) {
   try {
     logger.info("Starting check certificate expiry cron job");
 
-    const trackedDomainIds = await getVerifiedTrackedDomainIdsWithCertificates();
+    const trackedDomainIds =
+      await getVerifiedTrackedDomainIdsWithCertificates();
 
     if (trackedDomainIds.length === 0) {
       logger.info("No domains with certificates to check");

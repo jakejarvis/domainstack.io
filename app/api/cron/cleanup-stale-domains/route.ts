@@ -1,13 +1,22 @@
+import { subDays } from "date-fns";
 import { NextResponse } from "next/server";
-import { start } from "workflow/api";
+import {
+  deleteStaleUnverifiedDomains,
+  getStaleUnverifiedDomains,
+} from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
-import { cleanupStaleDomainsWorkflow } from "@/workflows/cleanup-stale-domains";
 
 const logger = createLogger({ source: "cron/cleanup-stale-domains" });
+
+// Domains that remain unverified after this many days will be deleted
+const STALE_DOMAIN_DAYS = 30;
 
 /**
  * Cron job to clean up stale unverified domains.
  * Schedule: Weekly on Sundays at 3:00 AM UTC
+ *
+ * Domains that have been added but never verified for more than 30 days
+ * are deleted to prevent database bloat.
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
@@ -20,15 +29,31 @@ export async function GET(request: Request) {
   try {
     logger.info("Starting cleanup stale domains cron job");
 
-    const run = await start(cleanupStaleDomainsWorkflow, [{}]);
-    const result = await run.returnValue;
+    const cutoffDate = subDays(new Date(), STALE_DOMAIN_DAYS);
+    const staleDomains = await getStaleUnverifiedDomains(cutoffDate);
+
+    if (staleDomains.length === 0) {
+      logger.info("No stale domains to cleanup");
+      return NextResponse.json({
+        total: 0,
+        deleted: 0,
+        cutoffDate: cutoffDate.toISOString(),
+      });
+    }
+
+    const ids = staleDomains.map((d) => d.id);
+    const deletedCount = await deleteStaleUnverifiedDomains(ids);
 
     logger.info(
-      { total: result.total, deleted: result.deleted },
+      { total: staleDomains.length, deleted: deletedCount },
       "Cleanup stale domains completed",
     );
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      total: staleDomains.length,
+      deleted: deletedCount,
+      cutoffDate: cutoffDate.toISOString(),
+    });
   } catch (err) {
     logger.error({ err }, "Cleanup stale domains failed");
     return NextResponse.json(
