@@ -1,4 +1,8 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Archive,
   Bell,
@@ -31,11 +35,14 @@ import type { NotificationData } from "@/lib/types";
 export function NotificationsPopover() {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { markRead, markAllRead } = useNotificationMutations();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
   const [open, setOpen] = useState(false);
+  const autoMarkedThisOpenRef = useRef(false);
+  const unreadCountQueryKey = trpc.notifications.unreadCount.queryKey();
 
   // Get unread count for inbox
   const { data: count = 0 } = useQuery({
@@ -64,9 +71,39 @@ export function NotificationsPopover() {
     refetchOnWindowFocus: true,
     // Always refetch on mount/access to ensure fresh data
     staleTime: 0,
+    // Base UI popover keeps content mounted for close animations; gate fetching on open
+    enabled: open,
   });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
+
+  // Avoid duplicate auto-mark calls within a single open session.
+  useEffect(() => {
+    if (open) {
+      autoMarkedThisOpenRef.current = false;
+    }
+  }, [open]);
+
+  const getLatestUnreadCount = () => {
+    return queryClient.getQueryData<number>(unreadCountQueryKey) ?? count;
+  };
+
+  const maybeAutoMarkAllRead = () => {
+    if (autoMarkedThisOpenRef.current) return;
+    if (markAllRead.isPending) return;
+    if (view !== "inbox") return;
+
+    const latestUnreadCount = getLatestUnreadCount();
+    if (latestUnreadCount <= 0) return;
+
+    autoMarkedThisOpenRef.current = true;
+    markAllRead.mutate(undefined, {
+      onError: () => {
+        // Allow retry within this open session if the mutation fails.
+        autoMarkedThisOpenRef.current = false;
+      },
+    });
+  };
 
   // Note: Refetch on popover open is handled automatically by TanStack Query
   // since staleTime: 0 ensures fresh data on each mount/query key change.
@@ -85,7 +122,7 @@ export function NotificationsPopover() {
     const scrollContainer = scrollAreaRef.current;
     const loadMoreElement = loadMoreRef.current;
 
-    if (!loadMoreElement || !hasNextPage || isFetchingNextPage) return;
+    if (!open || !loadMoreElement || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -103,7 +140,7 @@ export function NotificationsPopover() {
     observer.observe(loadMoreElement);
 
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, open]);
 
   const handleNotificationClick = (notification: NotificationData) => {
     setOpen(false);
@@ -114,7 +151,16 @@ export function NotificationsPopover() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        // When closing from Inbox with unread notifications, mark them all as read.
+        if (!nextOpen) {
+          maybeAutoMarkAllRead();
+        }
+        setOpen(nextOpen);
+      }}
+    >
       <Tooltip>
         <TooltipTrigger
           render={
@@ -208,7 +254,19 @@ export function NotificationsPopover() {
               </div>
             </div>
 
-            <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
+            <Tabs
+              value={view}
+              onValueChange={(v) => {
+                const nextView = v as typeof view;
+
+                // When switching away from Inbox with unread notifications, mark them all as read.
+                if (view === "inbox" && nextView === "archive") {
+                  maybeAutoMarkAllRead();
+                }
+
+                setView(nextView);
+              }}
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="inbox" className="gap-2 text-[13px]">
                   <Inbox />

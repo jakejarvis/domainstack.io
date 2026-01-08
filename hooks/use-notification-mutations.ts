@@ -26,77 +26,98 @@ type MutationContext = {
  * Shared mutations for notifications (mark as read, mark all as read).
  * Handles optimistic updates for the notification bell's infinite query.
  *
- * Strategy: Instead of trying to perfectly maintain cache consistency
- * (adding to archive, removing from inbox), we:
- * 1. Do minimal optimistic updates for immediate visual feedback
- * 2. Mark queries stale so they refetch on next access
- * 3. This is simpler and avoids complex cache manipulation bugs
+ * Strategy:
+ * - Optimistically update the unread count
+ * - Optimistically remove/clear items from the Inbox (filter=unread)
+ * - Let invalidation/refetch populate the Archive (filter=read)
  */
 export function useNotificationMutations() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Query keys (prefix for all list queries)
-  const listQueryKey = trpc.notifications.list.queryKey();
+  // NOTE: `notifications.list` is ONLY used as an infinite query in the popover.
+  // We key against the same infinite-query keys to ensure optimistic updates and
+  // invalidation actually hit the active cache entries.
+  const pageSize = 20;
+  const inboxListQueryKey = trpc.notifications.list.infiniteQueryOptions({
+    limit: pageSize,
+    filter: "unread",
+  }).queryKey;
+  const archiveListQueryKey = trpc.notifications.list.infiniteQueryOptions({
+    limit: pageSize,
+    filter: "read",
+  }).queryKey;
   const countQueryKey = trpc.notifications.unreadCount.queryKey();
 
   const markRead = useMutation({
     mutationFn: trpc.notifications.markRead.mutationOptions().mutationFn,
     onMutate: async ({ id }): Promise<MutationContext> => {
       // Cancel queries to prevent race conditions
-      await queryClient.cancelQueries({ queryKey: listQueryKey });
+      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
+      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
       await queryClient.cancelQueries({ queryKey: countQueryKey });
 
       // Snapshot previous state for rollback
       const previousCount = queryClient.getQueryData<number>(countQueryKey);
-      const previousQueries =
-        queryClient.getQueriesData<InfiniteNotificationData>({
-          queryKey: listQueryKey,
-        });
+      const previousQueries: MutationContext["previousQueries"] = [
+        [
+          inboxListQueryKey,
+          queryClient.getQueryData<InfiniteNotificationData>(inboxListQueryKey),
+        ],
+        [
+          archiveListQueryKey,
+          queryClient.getQueryData<InfiniteNotificationData>(
+            archiveListQueryKey,
+          ),
+        ],
+      ];
 
       // Check if notification is already read to avoid double-decrement
-      let isAlreadyRead = false;
-      for (const [, data] of previousQueries) {
-        if (!data?.pages) continue;
-        for (const page of data.pages) {
-          const notification = page.items.find((n) => n.id === id);
-          if (notification?.readAt) {
-            isAlreadyRead = true;
-            break;
-          }
-        }
-        if (isAlreadyRead) break;
-      }
+      const previousInbox = previousQueries[0]?.[1];
+      const wasInInbox = !!previousInbox?.pages?.some((page) =>
+        page.items.some((n) => n.id === id),
+      );
 
-      // Optimistically update count only if not already read
-      if (!isAlreadyRead) {
-        queryClient.setQueryData<number>(countQueryKey, (old) =>
-          old ? Math.max(0, old - 1) : 0,
-        );
-      }
-
-      // Optimistically update all list queries - just set readAt on the notification
-      // Don't try to add/remove from different views - let invalidation handle that
-      for (const [key, old] of previousQueries) {
-        if (!old?.pages) continue;
-
-        queryClient.setQueryData<InfiniteNotificationData>(key, {
-          ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            items: page.items.map((n) =>
-              n.id === id ? { ...n, readAt: new Date() } : n,
-            ),
-          })),
+      // Optimistically update count only if it was actually unread/in the inbox list
+      if (wasInInbox) {
+        queryClient.setQueryData<number>(countQueryKey, (old) => {
+          if (typeof old !== "number") return old;
+          return Math.max(0, old - 1);
         });
       }
 
-      // Mark all list queries as stale (but don't refetch yet)
-      // This ensures they'll refetch when the user switches views
-      void queryClient.invalidateQueries({
-        queryKey: listQueryKey,
-        refetchType: "none",
-      });
+      // Optimistically remove from inbox (since inbox is filter=unread)
+      queryClient.setQueryData<InfiniteNotificationData>(
+        inboxListQueryKey,
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((n) => n.id !== id),
+            })),
+          };
+        },
+      );
+
+      // If the item already exists in archive cache (unlikely), ensure readAt is set
+      queryClient.setQueryData<InfiniteNotificationData>(
+        archiveListQueryKey,
+        (old) => {
+          if (!old?.pages) return old;
+          const now = new Date();
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((n) =>
+                n.id === id ? { ...n, readAt: n.readAt ?? now } : n,
+              ),
+            })),
+          };
+        },
+      );
 
       return { previousCount, previousQueries };
     },
@@ -114,7 +135,8 @@ export function useNotificationMutations() {
     },
     onSettled: () => {
       // Invalidate to ensure consistency with server
-      void queryClient.invalidateQueries({ queryKey: listQueryKey });
+      void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: archiveListQueryKey });
       void queryClient.invalidateQueries({ queryKey: countQueryKey });
     },
   });
@@ -122,40 +144,63 @@ export function useNotificationMutations() {
   const markAllRead = useMutation({
     mutationFn: trpc.notifications.markAllRead.mutationOptions().mutationFn,
     onMutate: async (): Promise<MutationContext> => {
-      await queryClient.cancelQueries({ queryKey: listQueryKey });
+      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
+      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
       await queryClient.cancelQueries({ queryKey: countQueryKey });
 
       // Snapshot previous state for rollback
       const previousCount = queryClient.getQueryData<number>(countQueryKey);
-      const previousQueries =
-        queryClient.getQueriesData<InfiniteNotificationData>({
-          queryKey: listQueryKey,
-        });
+      const previousQueries: MutationContext["previousQueries"] = [
+        [
+          inboxListQueryKey,
+          queryClient.getQueryData<InfiniteNotificationData>(inboxListQueryKey),
+        ],
+        [
+          archiveListQueryKey,
+          queryClient.getQueryData<InfiniteNotificationData>(
+            archiveListQueryKey,
+          ),
+        ],
+      ];
 
       // Optimistically clear count
       queryClient.setQueryData<number>(countQueryKey, 0);
 
-      // Optimistically update all list queries - mark everything as read
-      for (const [key, old] of previousQueries) {
-        if (!old?.pages) continue;
+      const now = new Date();
 
-        queryClient.setQueryData<InfiniteNotificationData>(key, {
-          ...old,
-          pages: old.pages.map((page) => ({
-            ...page,
-            items: page.items.map((n) => ({
-              ...n,
-              readAt: n.readAt ?? new Date(),
+      // Optimistically clear inbox completely (filter=unread)
+      queryClient.setQueryData<InfiniteNotificationData>(
+        inboxListQueryKey,
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              nextCursor: undefined,
+              items: [],
             })),
-          })),
-        });
-      }
+          };
+        },
+      );
 
-      // Mark all list queries as stale
-      void queryClient.invalidateQueries({
-        queryKey: listQueryKey,
-        refetchType: "none",
-      });
+      // For archive cache, ensure any loaded items are marked read
+      queryClient.setQueryData<InfiniteNotificationData>(
+        archiveListQueryKey,
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map((n) => ({
+                ...n,
+                readAt: n.readAt ?? now,
+              })),
+            })),
+          };
+        },
+      );
 
       return { previousCount, previousQueries };
     },
@@ -173,7 +218,8 @@ export function useNotificationMutations() {
     },
     onSettled: () => {
       // Invalidate to trigger refetch and ensure server sync
-      void queryClient.invalidateQueries({ queryKey: listQueryKey });
+      void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: archiveListQueryKey });
       void queryClient.invalidateQueries({ queryKey: countQueryKey });
     },
   });
