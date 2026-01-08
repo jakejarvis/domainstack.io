@@ -97,6 +97,9 @@ function DomainReportClientContent({ domain }: { domain: string }) {
     registration.data?.isRegistered === false &&
     registration.data?.source !== null;
 
+  // Extract domainId for screenshot API (only available for registered domains)
+  const domainId = registration.data?.domainId;
+
   // Add to search history (only for registered domains)
   useDomainHistory(isConfirmedUnregistered ? "" : domain);
 
@@ -112,6 +115,7 @@ function DomainReportClientContent({ domain }: { domain: string }) {
       {/* Page header - observed for visibility to trigger context injection */}
       <DomainReportHeader
         domain={domain}
+        domainId={domainId}
         onExport={handleExport}
         exportDisabled={!allDataLoaded}
         ref={headerRef}

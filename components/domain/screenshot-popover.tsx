@@ -9,6 +9,7 @@ import { usePointerCapability } from "@/hooks/use-pointer-capability";
 
 export function ScreenshotPopover({
   domain,
+  domainId,
   children,
   align,
   alignOffset,
@@ -16,6 +17,7 @@ export function ScreenshotPopover({
   sideOffset,
 }: {
   domain: string;
+  domainId?: string;
   children: React.ReactElement;
 } & Pick<
   React.ComponentProps<typeof PopoverContent>,
@@ -94,7 +96,11 @@ export function ScreenshotPopover({
 
             {/* Content Area */}
             <div className="bg-white dark:bg-zinc-950">
-              <Screenshot domain={domain} enabled={hasOpened} />
+              <Screenshot
+                domain={domain}
+                domainId={domainId}
+                enabled={hasOpened}
+              />
             </div>
           </div>
         </div>

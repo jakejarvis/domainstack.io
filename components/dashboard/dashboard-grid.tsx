@@ -72,6 +72,7 @@ const GridItem = memo(function GridItem({
       {/* The actual card with integrated checkbox */}
       <DashboardGridCard
         trackedDomainId={domain.id}
+        domainId={domain.domainId}
         domainName={domain.domainName}
         verified={domain.verified}
         verificationStatus={domain.verificationStatus}
