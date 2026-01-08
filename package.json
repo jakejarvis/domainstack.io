@@ -93,7 +93,7 @@
     "use-local-storage-state": "^19.5.0",
     "uuid": "^13.0.0",
     "vaul-base": "^1.0.0",
-    "workflow": "4.0.1-beta.42",
+    "workflow": "4.0.1-beta.43",
     "ws": "^8.19.0",
     "zod": "^4.3.5"
   },
