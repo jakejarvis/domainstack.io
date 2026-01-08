@@ -20,7 +20,7 @@ let nextConfig: NextConfig = {
   },
   logging: {
     incomingRequests: {
-      ignore: [/\/api\/inngest/],
+      ignore: [/\/api\/inngest/, /\/api\/trpc/, /\/.well-known\/workflow/],
     },
   },
   rewrites: async () => {

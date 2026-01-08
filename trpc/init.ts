@@ -84,7 +84,7 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
     // Track slow requests (>5s threshold) in PostHog
     const durationMs = Math.round(performance.now() - start);
     if (durationMs > 5000) {
-      procedureLogger.warn({ durationMs }, "slow request");
+      procedureLogger.info({ durationMs }, "slow request");
 
       const { analytics } = await import("@/lib/analytics/server");
       // Explicitly void the promise to avoid unhandled rejection warnings
