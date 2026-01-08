@@ -34,7 +34,7 @@
     "@opentelemetry/instrumentation-pino": "^0.55.1",
     "@polar-sh/better-auth": "^1.6.3",
     "@polar-sh/sdk": "^0.42.1",
-    "@posthog/nextjs-config": "^1.7.4",
+    "@posthog/nextjs-config": "^1.7.5",
     "@react-email/components": "^1.0.4",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "143.0.0",
