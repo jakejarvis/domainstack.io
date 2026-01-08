@@ -165,6 +165,12 @@ export function useScreenshot({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ domainId: id }),
       });
+
+      // Check for HTTP errors
+      if (!response.ok) {
+        throw new Error(`Screenshot request failed: ${response.status}`);
+      }
+
       return parseStartResponse(await response.json());
     },
     onSuccess: (data) => {
@@ -172,6 +178,12 @@ export function useScreenshot({
         queryClient.setQueryData(screenshotQueryKey, data.data);
       } else if (data.status === "running") {
         setRunId(data.runId);
+      } else if (data.status === "error") {
+        // Cache failure state to stop loading
+        queryClient.setQueryData(screenshotQueryKey, {
+          url: null,
+          blocked: false,
+        });
       }
     },
   });
@@ -181,6 +193,12 @@ export function useScreenshot({
     queryKey: ["screenshot-status", runId],
     queryFn: async (): Promise<ScreenshotStatusResponse> => {
       const response = await fetch(`/api/screenshot?runId=${runId}`);
+
+      // Check for HTTP errors
+      if (!response.ok) {
+        throw new Error(`Screenshot status poll failed: ${response.status}`);
+      }
+
       return parseStatusResponse(await response.json());
     },
     enabled: !!runId,
@@ -274,6 +292,16 @@ export function useScreenshot({
       blocked: false,
       isLoading: false,
       error: new Error(statusData.error),
+    };
+  }
+
+  // Handle status query HTTP/network errors
+  if (statusQuery.error) {
+    return {
+      url: null,
+      blocked: false,
+      isLoading: false,
+      error: statusQuery.error,
     };
   }
 
