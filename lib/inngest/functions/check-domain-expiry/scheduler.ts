@@ -1,7 +1,8 @@
 import "server-only";
+import { start } from "workflow/api";
 import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
 import { inngest } from "@/lib/inngest/client";
-import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
 /**
  * Cron job to schedule domain expiry checks.
@@ -16,7 +17,7 @@ export const checkDomainExpiryScheduler = inngest.createFunction(
     },
   },
   { cron: "0 9 * * *" },
-  async ({ step }) => {
+  async ({ step, logger: inngestLogger }) => {
     const verifiedDomainIds = await step.run("fetch-verified-ids", async () => {
       return await getVerifiedTrackedDomainIds();
     });
@@ -25,15 +26,39 @@ export const checkDomainExpiryScheduler = inngest.createFunction(
       return { scheduled: 0 };
     }
 
-    const events = verifiedDomainIds.map((id) => ({
-      name: INNGEST_EVENTS.CHECK_DOMAIN_EXPIRY,
-      data: {
-        trackedDomainId: id,
-      },
-    }));
+    // Start all workflows in parallel (in batches to avoid overwhelming the system)
+    const BATCH_SIZE = 50;
+    const results: { id: string; success: boolean }[] = [];
 
-    await step.sendEvent("dispatch-expiry-events", events);
+    for (let i = 0; i < verifiedDomainIds.length; i += BATCH_SIZE) {
+      const batch = verifiedDomainIds.slice(i, i + BATCH_SIZE);
 
-    return { scheduled: events.length };
+      const batchResults = await step.run(`process-batch-${i}`, async () => {
+        const workflowPromises = batch.map(async (id) => {
+          try {
+            const run = await start(domainExpiryWorkflow, [
+              { trackedDomainId: id },
+            ]);
+            await run.returnValue;
+            return { id, success: true };
+          } catch (err) {
+            inngestLogger.error("Failed to run domain expiry workflow", {
+              trackedDomainId: id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            return { id, success: false };
+          }
+        });
+
+        return await Promise.all(workflowPromises);
+      });
+
+      results.push(...batchResults);
+    }
+
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
+    return { scheduled: verifiedDomainIds.length, successful, failed };
   },
 );

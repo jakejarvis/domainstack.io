@@ -1,12 +1,13 @@
 import "server-only";
+import { start } from "workflow/api";
 import { getMonitoredSnapshotIds } from "@/lib/db/repos/snapshots";
 import { inngest } from "@/lib/inngest/client";
-import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { monitorDomainWorkflow } from "@/workflows/monitor-domain";
 
 /**
  * Cron job to schedule monitoring for tracked domains.
  * Runs every 4 hours.
- * Fetches all monitored domain IDs and dispatches events for parallel processing.
+ * Fetches all monitored domain IDs and starts workflows for parallel processing.
  */
 export const monitorTrackedDomainsScheduler = inngest.createFunction(
   {
@@ -17,9 +18,8 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
     },
   },
   { cron: "0 */4 * * *" }, // Every 4 hours
-  async ({ step }) => {
+  async ({ step, logger: inngestLogger }) => {
     // Fetch all tracked domain IDs for verified, non-archived domains
-    // This is a lightweight query that just returns UUIDs
     const trackedDomainIds = await step.run(
       "fetch-tracked-domain-ids",
       async () => {
@@ -31,17 +31,39 @@ export const monitorTrackedDomainsScheduler = inngest.createFunction(
       return { scheduled: 0 };
     }
 
-    // Dispatch events for each domain
-    // Inngest handles batching these events efficiently
-    const events = trackedDomainIds.map((id) => ({
-      name: INNGEST_EVENTS.MONITOR_CHANGES,
-      data: {
-        trackedDomainId: id,
-      },
-    }));
+    // Start all workflows in parallel (in batches to avoid overwhelming the system)
+    const BATCH_SIZE = 25; // Smaller batch for monitoring due to heavier workload
+    const results: { id: string; success: boolean }[] = [];
 
-    await step.sendEvent("dispatch-monitoring-events", events);
+    for (let i = 0; i < trackedDomainIds.length; i += BATCH_SIZE) {
+      const batch = trackedDomainIds.slice(i, i + BATCH_SIZE);
 
-    return { scheduled: events.length };
+      const batchResults = await step.run(`process-batch-${i}`, async () => {
+        const workflowPromises = batch.map(async (id) => {
+          try {
+            const run = await start(monitorDomainWorkflow, [
+              { trackedDomainId: id },
+            ]);
+            await run.returnValue;
+            return { id, success: true };
+          } catch (err) {
+            inngestLogger.error("Failed to run monitor domain workflow", {
+              trackedDomainId: id,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            return { id, success: false };
+          }
+        });
+
+        return await Promise.all(workflowPromises);
+      });
+
+      results.push(...batchResults);
+    }
+
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
+    return { scheduled: trackedDomainIds.length, successful, failed };
   },
 );

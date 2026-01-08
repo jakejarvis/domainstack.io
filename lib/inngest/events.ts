@@ -6,43 +6,27 @@ import type { Section } from "@/lib/types";
  * Centralized event type definitions for Inngest functions.
  * Provides type-safe event names and payload types.
  *
- * Naming convention follows Inngest's recommendation: prefix/noun.verb
+ * Note: Most worker events have been migrated to Vercel Workflows.
+ * These remaining events are for:
+ * - Event-driven triggers (domain added, domain verified)
+ * - Section revalidation requests
+ *
  * @see https://www.inngest.com/docs/reference/events/send
  */
 export const INNGEST_EVENTS = {
-  // Monitoring
-  MONITOR_CHANGES: "domain/check.all",
-
-  // Expiry checks
-  CHECK_DOMAIN_EXPIRY: "domain/check.registration",
-  CHECK_CERTIFICATE_EXPIRY: "domain/check.certificates",
-
-  // Verification
-  VERIFY_PENDING_CRON: "domain/verification.pending",
+  // Verification (event-driven)
   AUTO_VERIFY_PENDING_DOMAIN: "domain/verification.new",
-  REVERIFY_OWNERSHIP: "domain/verification.recheck",
 
-  // Snapshots
+  // Snapshots (event-driven)
   SNAPSHOT_INITIALIZE: "domain/snapshot.initialize",
 
-  // Section revalidation
+  // Section revalidation (event-driven)
   SECTION_REVALIDATE: "domain/section.revalidate",
-
-  // User
-  CHECK_SUBSCRIPTION_EXPIRY: "user/subscription.expiring",
 } as const;
 
 /**
  * Event payload types
  */
-export type TrackedDomainEvent = {
-  data: { trackedDomainId: string };
-};
-
-export type SubscriptionExpiryEvent = {
-  data: { userId: string };
-};
-
 export type SnapshotInitializeEvent = {
   data: {
     trackedDomainId: string;
