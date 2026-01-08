@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface DomainReportHeaderProps {
   domain: string;
+  domainId?: string;
   onExport: () => void;
   exportDisabled: boolean;
 }
@@ -18,6 +19,7 @@ interface DomainReportHeaderProps {
  */
 export function DomainReportHeader({
   domain,
+  domainId,
   onExport,
   exportDisabled,
   className,
@@ -33,6 +35,7 @@ export function DomainReportHeader({
     >
       <ScreenshotPopover
         domain={domain}
+        domainId={domainId}
         align="start"
         side="bottom"
         sideOffset={8}

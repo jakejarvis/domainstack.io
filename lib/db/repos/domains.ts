@@ -84,6 +84,19 @@ export async function ensureDomainRecord(domain: string) {
 }
 
 /**
+ * Find an existing domain record by ID.
+ * Returns null if the domain doesn't exist.
+ */
+export async function getDomainById(id: string) {
+  const rows = await db
+    .select()
+    .from(domains)
+    .where(eq(domains.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
  * Update lastAccessedAt timestamp for a domain.
  * Only updates if the domain hasn't been accessed in the last 5 minutes
  * to reduce unnecessary writes.

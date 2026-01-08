@@ -1,7 +1,5 @@
 import "server-only";
 
-import sharp from "sharp";
-
 function isIcoBuffer(buf: Buffer): boolean {
   return (
     buf.length >= 4 &&
@@ -72,6 +70,7 @@ export async function optimizeImageCover(
   width: number,
   height: number,
 ): Promise<Buffer> {
+  const sharp = (await import("sharp")).default;
   return await sharp(buffer)
     .resize(width, height, { fit: "cover" })
     .webp({})
@@ -105,6 +104,7 @@ export async function addWatermarkToScreenshot(
 
   const watermarkBuffer = Buffer.from(watermarkSvg);
 
+  const sharp = (await import("sharp")).default;
   return await sharp(buffer)
     .resize(width, height, { fit: "cover" })
     .composite([

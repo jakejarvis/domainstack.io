@@ -39,6 +39,11 @@ export type RegistrationStatuses = RegistrationStatus[];
  * Full registration response from WHOIS/RDAP lookup.
  */
 export interface RegistrationResponse {
+  /**
+   * Internal domain ID from database. Only present for registered domains
+   * that have been persisted. Used for screenshot API requests.
+   */
+  domainId?: string;
   domain: string;
   tld: string;
   isRegistered: boolean;

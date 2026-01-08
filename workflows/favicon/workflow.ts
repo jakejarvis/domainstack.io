@@ -171,7 +171,11 @@ async function persistFailure(
 
     logger.debug({ domain, isNotFound }, "favicon failure persisted");
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist favicon failure");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    const { workflowRunId } = getWorkflowMetadata();
+    logger.error(
+      { err, domain, workflowRunId },
+      "failed to persist favicon failure",
+    );
+    throw err; // Re-throw so workflow can retry
   }
 }

@@ -10,15 +10,15 @@
 - `components/dashboard/` Dashboard components (grid cards, grid/table views, add domain dialog, upgrade prompt, archived domains view, bulk actions toolbar, filters, health summary, domain status badges, provider tooltips).
 - `components/settings/` Settings page components (subscription section, notification settings, linked accounts, calendar feed, danger zone/account deletion).
 - `emails/` React Email templates for notifications (domain expiry, certificate expiry, verification status, subscription lifecycle).
-- `hooks/` shared stateful helpers (camelCase named exports): `useAuthCallback`, `useDashboardFilters`, `useDashboardPagination`, `useDashboardPreferences`, `useDashboardSelection`, `useDashboardSort`, `useDomainHistory`, `useDomainSearch`, `useDomainVerification`, `useIsMac`, `useMediaQuery`, `useMobile`, `useNotificationMutations`, `usePointerCapability`, `useProgressiveReveal`, `useProviderTooltipData`, `useReportExport`, `useReportSectionObserver`, `useRouter`, `useSubscription`, `useTheme`, `useTrackedDomains`, `useTruncation`.
+- `hooks/` shared stateful helpers (camelCase named exports).
 - `lib/` domain utilities and shared modules; import via `@/...` aliases.
 - `lib/auth.ts` better-auth server configuration with Drizzle adapter.
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
-- `lib/constants/` modular constants organized by domain (app, auth-errors, decay, domain-filters, domain-validation, email, gdpr, headers, notifications, oauth-providers, plan-quotas, pricing-providers, sections, ttl, verification).
+- `lib/constants/` modular constants organized by domain.
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
-- `lib/db/repos/` repository layer for each table (blocked-domains, calendar-feeds, domains, certificates, dns, favicons, headers, hosting, notifications, providers, provider-logos, registrations, screenshots, seo, snapshots, stats, tracked-domains, user-notification-preferences, user-subscription, users).
+- `lib/db/repos/` repository layer for each table.
 - `lib/logger/` Pino-based server-side logging system with JSON output in production and pretty-printing in development.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
@@ -26,7 +26,7 @@
 - `lib/providers/` provider detection system with rule syntax and Edge Config catalog parsing.
 - `lib/types/` Plain TypeScript types - single source of truth for enums and internal data structures.
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
-- `server/routers/` tRPC router definitions (`_app.ts`, `domain.ts`, `notifications.ts`, `provider.ts`, `registrar.ts`, `stats.ts`, `tracking.ts`, `user.ts`).
+- `server/routers/` tRPC router definitions (`_app.ts` is the main "app" router, consumes all other routers).
 - `server/services/` service layer for orchestration (currently empty - all services migrated to workflows).
 - `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via ipwho.is API.
 - `lib/pricing.ts` Domain registration pricing aggregation from multiple registrars (Porkbun, Cloudflare, Dynadot).
@@ -204,6 +204,29 @@ Users can subscribe to domain expiration dates via iCalendar feed compatible wit
 - Same error message for "not found" and "disabled" to prevent enumeration.
 - UI warns users to treat feed URL as a password.
 
+### Screenshot API
+Screenshots use a polling-based API pattern instead of tRPC for long-running Puppeteer operations.
+
+**API endpoint:** `app/api/screenshot/route.ts`
+- `POST /api/screenshot` - Start screenshot workflow
+  - Request: `{ domainId: string }` (requires valid domain ID from database)
+  - Response: `{ status: "completed", data }` (cache hit) or `{ status: "running", runId }` (workflow started)
+- `GET /api/screenshot?runId=xxx` - Poll for workflow status
+  - Response: `{ status: "running" }`, `{ status: "completed", data }`, or `{ status: "failed", error }`
+
+**Client hook:** `hooks/use-screenshot.ts`
+- Encapsulates the polling pattern with TanStack Query
+- Polls every 2 seconds until workflow completes
+- Caches results for subsequent renders
+
+**Security:** Requires `domainId` instead of domain name. Domain must exist in the database (created by registration workflow), preventing arbitrary screenshot requests.
+
+**Data flow:**
+1. `registrationWorkflow` returns `domainId` in response
+2. Report page extracts `domainId` and passes to `Screenshot` component
+3. `useScreenshot` hook POSTs to start workflow, then polls for result
+4. Dashboard components already have `domainId` from tracked domain data
+
 ### Inngest Background Jobs
 - `check-domain-expiry`: Daily at 9:00 AM UTC; sends domain expiration notifications. Uses fan-out pattern (scheduler + worker).
 - `check-certificate-expiry`: Daily at 9:15 AM UTC; sends certificate expiration notifications. Uses fan-out pattern (scheduler + worker).
@@ -236,8 +259,8 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 | `headersWorkflow` | `{ domain }` | Probe HTTP headers | checkCache → fetchHeaders → persistHeaders |
 | `hostingWorkflow` | `{ domain, dnsRecords, headers }` | Detect hosting/email/DNS providers | lookupGeoIp → detectAndResolveProviders → persistHosting |
 | `providerLogoWorkflow` | `{ providerId, providerDomain }` | Extract provider logo | checkCache → fetchFromSources → processImage → storeAndPersist / persistFailure |
-| `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
-| `screenshotWorkflow` | `{ domain }` | Capture domain screenshot | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
+| `registrationWorkflow` | `{ domain }` | WHOIS/RDAP lookup (returns `domainId` for registered domains) | checkCache → lookupRdap → normalizeAndBuildResponse → persistRegistration |
+| `screenshotWorkflow` | `{ domain }` | Capture domain screenshot (called via `/api/screenshot` polling API) | checkBlocklist → checkCache → captureScreenshot → storeScreenshot → persistSuccess/persistFailure |
 | `seoWorkflow` | `{ domain }` | Fetch SEO meta and robots.txt | checkCache → fetchHtml → fetchRobots → processOgImage → persistSeo |
 | `verificationWorkflow` | `{ domain, token, method? }` | Verify domain ownership | verifyByDns → verifyByHtmlFile → verifyByMetaTag (or single method if specified) |
 

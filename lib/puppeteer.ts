@@ -1,10 +1,9 @@
 import "server-only";
-import type { Browser } from "puppeteer-core";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "puppeteer" });
 
-let browserPromise: Promise<Browser> | null = null;
+let browserPromise: Promise<import("puppeteer-core").Browser> | null = null;
 
 async function createBrowser(
   overrides: Record<string, unknown> = {},
@@ -115,7 +114,7 @@ async function createBrowser(
 
 export function getBrowser(
   overrides: Record<string, unknown> = {},
-): Promise<Browser> {
+): Promise<import("puppeteer-core").Browser> {
   if (!browserPromise) {
     browserPromise = createBrowser(overrides).catch((err) => {
       logger.error(err, "failed to create browser");

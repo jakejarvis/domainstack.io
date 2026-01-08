@@ -293,7 +293,10 @@ export function DashboardTable({
         accessorKey: "domainName",
         header: "Domain",
         cell: ({ row }) => (
-          <ScreenshotPopover domain={row.original.domainName}>
+          <ScreenshotPopover
+            domain={row.original.domainName}
+            domainId={row.original.domainId}
+          >
             <Link
               href={`/${encodeURIComponent(row.original.domainName)}`}
               prefetch={false}

@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 
 type DashboardGridCardProps = {
   trackedDomainId: string;
+  domainId: string;
   domainName: string;
   verified: boolean;
   verificationStatus: VerificationStatus;
@@ -70,6 +71,7 @@ type DashboardGridCardProps = {
 
 export function DashboardGridCard({
   trackedDomainId,
+  domainId,
   domainName,
   verified,
   verificationStatus,
@@ -139,7 +141,7 @@ export function DashboardGridCard({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <ScreenshotPopover domain={domainName}>
+            <ScreenshotPopover domain={domainName} domainId={domainId}>
               <Link
                 href={`/${encodeURIComponent(domainName)}`}
                 prefetch={false}

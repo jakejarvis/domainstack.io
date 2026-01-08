@@ -1,13 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+"use client";
+
 import { BrickWallShield, CircleX } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import { useTRPC } from "@/lib/trpc/client";
+import { useScreenshot } from "@/hooks/use-screenshot";
 import { cn } from "@/lib/utils";
 
 export function Screenshot({
   domain,
+  domainId,
   enabled = true,
   className,
   width = 1200,
@@ -16,6 +18,7 @@ export function Screenshot({
   aspectClassName = "aspect-[1200/630]",
 }: {
   domain: string;
+  domainId?: string;
   enabled?: boolean;
   className?: string;
   width?: number;
@@ -23,22 +26,13 @@ export function Screenshot({
   imageClassName?: string;
   aspectClassName?: string;
 }) {
-  const trpc = useTRPC();
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
-  const { data, isLoading, isFetching } = useQuery(
-    trpc.domain.getScreenshot.queryOptions(
-      { domain },
-      {
-        enabled,
-        retry: 5,
-      },
-    ),
-  );
-
-  const url = data?.data.url ?? null;
-  const blocked = data?.data.blocked ?? false;
-  const loading = isLoading || isFetching;
+  const { url, blocked, isLoading } = useScreenshot({
+    domainId,
+    domain,
+    enabled,
+  });
 
   return (
     <div className={className}>
@@ -69,7 +63,7 @@ export function Screenshot({
             className="flex items-center gap-2 text-muted-foreground text-xs [&_svg]:size-4"
             aria-live="polite"
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <Spinner />
                 Taking screenshot...

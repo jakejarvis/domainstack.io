@@ -61,13 +61,18 @@ export async function registrationWorkflow(
   );
 
   // Step 3: Persist to database (only for registered domains)
+  let domainId: string | undefined;
   if (normalizedResult.isRegistered) {
-    await persistRegistration(domain, rdapResult.recordJson, normalizedResult);
+    domainId = await persistRegistration(
+      domain,
+      rdapResult.recordJson,
+      normalizedResult,
+    );
   }
 
   return {
     success: true,
-    data: normalizedResult,
+    data: { ...normalizedResult, domainId },
   };
 }
 
@@ -284,12 +289,13 @@ async function normalizeAndBuildResponse(
 
 /**
  * Step: Persist registration to database
+ * @returns The domain ID from the persisted domain record
  */
 async function persistRegistration(
   domain: string,
   recordJson: string,
   response: RegistrationResponse,
-): Promise<void> {
+): Promise<string> {
   "use step";
 
   const { getDomainTld } = await import("rdapper");
@@ -377,6 +383,8 @@ async function persistRegistration(
     );
 
     logger.debug({ domain }, "registration persisted");
+
+    return domainRecord.id;
   } catch (err) {
     logger.error({ err, domain }, "failed to persist registration");
     throw new FatalError("Failed to persist registration");

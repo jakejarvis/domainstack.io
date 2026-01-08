@@ -1,4 +1,5 @@
 import { withPostHogConfig } from "@posthog/nextjs-config";
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
@@ -19,7 +20,7 @@ let nextConfig: NextConfig = {
   },
   logging: {
     incomingRequests: {
-      ignore: [/\/api\/inngest/],
+      ignore: [/\/api\/inngest/, /\/api\/trpc/, /\/.well-known\/workflow/],
     },
   },
   rewrites: async () => {
@@ -63,6 +64,4 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-// Wrap with Vercel Workflow for durable backend operations
-// withWorkflow returns a phase function, which is the Next.js config format
-export default withWorkflow(nextConfig);
+export default withWorkflow(withBotId(nextConfig));

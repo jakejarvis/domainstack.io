@@ -1,3 +1,4 @@
+import { getWorkflowMetadata } from "workflow";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -175,7 +176,11 @@ async function persistFailure(
 
     logger.debug({ providerId, isNotFound }, "provider logo failure persisted");
   } catch (err) {
-    logger.error({ err, providerId }, "failed to persist logo failure");
-    // Don't throw - persistence failure shouldn't fail the workflow
+    const { workflowRunId } = getWorkflowMetadata();
+    logger.error(
+      { err, providerId, workflowRunId },
+      "failed to persist logo failure",
+    );
+    throw err; // Re-throw so workflow can retry
   }
 }
