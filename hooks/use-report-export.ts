@@ -71,13 +71,16 @@ export function useReportExport(domain: string) {
 
     try {
       // Read data from cache using query keys
+      // tRPC responses are wrapped in { success, cached, data }, so we unwrap the .data property
       const exportData: Record<string, unknown> = {};
       for (const key of Object.keys(queryKeys)) {
-        const data = queryClient.getQueryData(
+        const response = queryClient.getQueryData(
           queryKeysRef.current[key as keyof typeof queryKeys],
-        );
-        if (data) {
-          exportData[key] = data;
+        ) as { success?: boolean; data?: unknown } | undefined;
+
+        // Extract the nested .data property from the tRPC response wrapper
+        if (response?.data) {
+          exportData[key] = response.data;
         }
       }
 
