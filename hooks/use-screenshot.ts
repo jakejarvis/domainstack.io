@@ -230,11 +230,13 @@ export function useScreenshot({
 
   // Reset hasStarted when domain changes
   const prevDomainRef = useRef(domain);
-  if (prevDomainRef.current !== domain) {
-    prevDomainRef.current = domain;
-    setHasStarted(false);
-    setRunId(null);
-  }
+  useEffect(() => {
+    if (prevDomainRef.current !== domain) {
+      prevDomainRef.current = domain;
+      setHasStarted(false);
+      setRunId(null);
+    }
+  }, [domain]);
 
   // Derive the result
   if (cachedData) {

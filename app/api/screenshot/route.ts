@@ -88,10 +88,28 @@ export async function POST(
         cachedScreenshot.url !== null || cachedScreenshot.notFound === true;
 
       if (isDefinitiveResult) {
+        // Check current block status dynamically
+        let blocked = false;
+        if (cachedScreenshot.url) {
+          try {
+            // We already have the domain name, no need to parse URL
+            const domainName = domain.name;
+
+            // Import and check block status
+            const { isDomainBlocked } = await import(
+              "@/lib/db/repos/blocked-domains"
+            );
+            blocked = await isDomainBlocked(domainName);
+          } catch {
+            // Fall back to false if check fails
+            blocked = false;
+          }
+        }
+
         return NextResponse.json({
           status: "completed",
           cached: true,
-          data: { url: cachedScreenshot.url, blocked: false },
+          data: { url: cachedScreenshot.url, blocked },
         });
       }
     }

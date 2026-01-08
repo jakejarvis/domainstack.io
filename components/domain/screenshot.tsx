@@ -1,3 +1,5 @@
+"use client";
+
 import { BrickWallShield, CircleX } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -32,8 +34,6 @@ export function Screenshot({
     enabled,
   });
 
-  const loading = isLoading;
-
   return (
     <div className={className}>
       {url && failedUrl !== url ? (
@@ -63,7 +63,7 @@ export function Screenshot({
             className="flex items-center gap-2 text-muted-foreground text-xs [&_svg]:size-4"
             aria-live="polite"
           >
-            {loading ? (
+            {isLoading ? (
               <>
                 <Spinner />
                 Taking screenshot...
