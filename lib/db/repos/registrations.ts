@@ -89,6 +89,7 @@ export async function getRegistrationCached(
     const nameserversArray = row.registration.nameservers ?? [];
 
     const response: RegistrationResponse = {
+      domainId: row.domainId,
       domain,
       tld: row.domainTld,
       isRegistered: row.registration.isRegistered,

@@ -14,9 +14,14 @@ import { useSession } from "@/lib/auth-client";
 
 type TrackDomainButtonProps = {
   domain: string;
+  /** Whether the button is enabled. Defaults to true. */
+  enabled?: boolean;
 };
 
-export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
+export function TrackDomainButton({
+  domain,
+  enabled = true,
+}: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
 
@@ -59,9 +64,10 @@ export function TrackDomainButton({ domain }: TrackDomainButtonProps) {
     }
   }, [session?.user, isPendingVerification, trackedDomain, domain, router]);
 
-  // Show loading state during SSR, initial hydration, or while data is loading
+  // Show loading state during SSR, initial hydration, while data is loading,
+  // or while the button is disabled (e.g., waiting for registration confirmation)
   // This ensures consistent rendering between server and client
-  if (isSessionPending || (session?.user && isLoadingDomains)) {
+  if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled>
         <Spinner />

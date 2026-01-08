@@ -1,7 +1,7 @@
-import { checkBotId } from "botid/server";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRun, start } from "workflow/api";
+import { analytics } from "@/lib/analytics/server";
 import { getDomainById } from "@/lib/db/repos/domains";
 import { getScreenshotByDomainId } from "@/lib/db/repos/screenshots";
 import { createLogger } from "@/lib/logger/server";
@@ -50,14 +50,6 @@ type ScreenshotStatusResponse =
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<ScreenshotStartResponse | { error: string }>> {
-  // Verify request is from a legitimate browser
-  // Returns a 403 response if the request is from a bot
-  const verification = await checkBotId();
-  if (verification.isBot) {
-    logger.warn({ verification }, "bot detected, blocking screenshot request");
-    return NextResponse.json({ error: "Access denied" }, { status: 403 });
-  }
-
   try {
     const body = await request.json();
     const { domainId } = body as { domainId?: string };
@@ -106,6 +98,10 @@ export async function POST(
           }
         }
 
+        analytics.track("screenshot_api_cache_hit", {
+          domain: domain.name,
+        });
+
         return NextResponse.json({
           status: "completed",
           cached: true,
@@ -121,6 +117,11 @@ export async function POST(
       { domainId, domain: domain.name, runId: run.runId },
       "screenshot workflow started",
     );
+
+    analytics.track("screenshot_api_workflow_started", {
+      domain: domain.name,
+      runId: run.runId,
+    });
 
     return NextResponse.json({
       status: "running",
@@ -157,6 +158,11 @@ export async function GET(
     if (status === "completed") {
       const result = (await run.returnValue) as ScreenshotWorkflowResult;
 
+      analytics.track("screenshot_api_workflow_completed", {
+        runId,
+        success: result.success,
+      });
+
       return NextResponse.json({
         status: "completed",
         cached: false,
@@ -167,6 +173,8 @@ export async function GET(
     }
 
     if (status === "failed") {
+      analytics.track("screenshot_api_workflow_failed", { runId });
+
       return NextResponse.json({
         status: "failed",
         error: "workflow_failed",

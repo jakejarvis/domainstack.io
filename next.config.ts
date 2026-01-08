@@ -1,5 +1,4 @@
 import { withPostHogConfig } from "@posthog/nextjs-config";
-import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 import { withWorkflow } from "workflow/next";
 
@@ -64,4 +63,4 @@ if (process.env.POSTHOG_API_KEY && process.env.POSTHOG_ENV_ID) {
   });
 }
 
-export default withWorkflow(withBotId(nextConfig));
+export default withWorkflow(nextConfig);

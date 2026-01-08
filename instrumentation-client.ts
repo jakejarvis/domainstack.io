@@ -1,4 +1,3 @@
-import { initBotId } from "botid/client/core";
 import posthog from "posthog-js";
 
 // PostHog
@@ -10,14 +9,4 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
   debug: process.env.NODE_ENV === "development",
   // GDPR: Don't set cookies until user consents - switches to cookieless tracking mode on reject
   cookieless_mode: "on_reject",
-});
-
-// BotID
-initBotId({
-  protect: [
-    {
-      path: "/api/screenshot",
-      method: "POST",
-    },
-  ],
 });

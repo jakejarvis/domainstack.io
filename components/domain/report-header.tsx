@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 interface DomainReportHeaderProps {
   domain: string;
   domainId?: string;
+  /** Whether the domain is confirmed registered. Undefined = still loading. */
+  isRegistered?: boolean;
   onExport: () => void;
   exportDisabled: boolean;
 }
@@ -20,6 +22,7 @@ interface DomainReportHeaderProps {
 export function DomainReportHeader({
   domain,
   domainId,
+  isRegistered,
   onExport,
   exportDisabled,
   className,
@@ -61,7 +64,7 @@ export function DomainReportHeader({
       </ScreenshotPopover>
 
       <div className="flex flex-shrink-0 items-center gap-2">
-        <TrackDomainButton domain={domain} />
+        <TrackDomainButton domain={domain} enabled={isRegistered} />
 
         <ExportButton onExport={onExport} disabled={exportDisabled} />
 

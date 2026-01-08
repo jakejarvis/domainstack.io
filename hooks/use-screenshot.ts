@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { analytics } from "@/lib/analytics/client";
 
 /**
  * Response type from POST /api/screenshot
@@ -58,7 +59,6 @@ const POLL_INTERVAL_MS = 2000;
 
 /**
  * Parse the raw API response into our clean typed format.
- * This handles the messy server response normalization in one place.
  */
 function parseStartResponse(raw: unknown): ScreenshotStartResponse {
   if (!raw || typeof raw !== "object") {
@@ -67,17 +67,14 @@ function parseStartResponse(raw: unknown): ScreenshotStartResponse {
 
   const obj = raw as Record<string, unknown>;
 
-  // Error response (no status)
   if ("error" in obj && !("status" in obj)) {
     return { status: "error", error: String(obj.error) };
   }
 
-  // Running
   if (obj.status === "running" && typeof obj.runId === "string") {
     return { status: "running", runId: obj.runId };
   }
 
-  // Completed with cached data
   if (obj.status === "completed" && obj.data) {
     const data = obj.data as Record<string, unknown>;
     return {
@@ -102,22 +99,18 @@ function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
 
   const obj = raw as Record<string, unknown>;
 
-  // Error response (no status)
   if ("error" in obj && !("status" in obj)) {
     return { status: "error", error: String(obj.error) };
   }
 
-  // Running
   if (obj.status === "running") {
     return { status: "running" };
   }
 
-  // Failed
   if (obj.status === "failed") {
     return { status: "failed", error: String(obj.error ?? "Workflow failed") };
   }
 
-  // Completed
   if (obj.status === "completed" && obj.data) {
     const data = obj.data as Record<string, unknown>;
     return {
@@ -134,12 +127,6 @@ function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
 
 /**
  * Hook for fetching domain screenshots using the polling-based API.
- *
- * This hook:
- * 1. POSTs to /api/screenshot with the domainId to start the workflow
- * 2. If the response is cached, returns immediately
- * 3. If the workflow is running, polls GET /api/screenshot?runId=xxx until complete
- * 4. Caches the final result in TanStack Query for subsequent renders
  */
 export function useScreenshot({
   domainId,
@@ -148,115 +135,126 @@ export function useScreenshot({
 }: UseScreenshotOptions): UseScreenshotResult {
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
-  const [hasStarted, setHasStarted] = useState(false);
+  // Store the completed screenshot data in state to ensure re-renders
+  const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(
+    null,
+  );
+  const hasStartedRef = useRef(false);
+  const startedForDomainRef = useRef<string | null>(null);
 
-  // Cache key for the final screenshot result (memoized to avoid recreating on every render)
   const screenshotQueryKey = useMemo(() => ["screenshot", domain], [domain]);
 
-  // Check if we already have cached data
+  // Check for cached data from previous sessions
   const cachedData =
     queryClient.getQueryData<ScreenshotData>(screenshotQueryKey);
 
+  // Stable callback for the mutation
+  const startScreenshot = useCallback(async (id: string) => {
+    const response = await fetch("/api/screenshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domainId: id }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Screenshot request failed: ${response.status}`);
+    }
+
+    return parseStartResponse(await response.json());
+  }, []);
+
   // Mutation to start the screenshot workflow
   const startMutation = useMutation({
-    mutationFn: async (id: string): Promise<ScreenshotStartResponse> => {
-      const response = await fetch("/api/screenshot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domainId: id }),
-      });
-
-      // Check for HTTP errors
-      if (!response.ok) {
-        throw new Error(`Screenshot request failed: ${response.status}`);
-      }
-
-      return parseStartResponse(await response.json());
-    },
+    mutationFn: startScreenshot,
     onSuccess: (data) => {
       if (data.status === "completed") {
+        // Store in state to trigger re-render
+        setScreenshotData(data.data);
+        // Also cache for future visits
         queryClient.setQueryData(screenshotQueryKey, data.data);
+        // Track cache hit
+        analytics.track("screenshot_loaded_from_cache", { domain });
       } else if (data.status === "running") {
         setRunId(data.runId);
-      } else if (data.status === "error") {
-        // Cache failure state to stop loading
-        queryClient.setQueryData(screenshotQueryKey, {
-          url: null,
-          blocked: false,
-        });
+        analytics.track("screenshot_requested", { domain });
       }
+    },
+    onError: (error) => {
+      analytics.trackException(error, { domain });
     },
   });
 
-  // Query to poll for workflow status
+  // Query to poll for workflow status (only when we have a runId)
   const statusQuery = useQuery({
     queryKey: ["screenshot-status", runId],
     queryFn: async (): Promise<ScreenshotStatusResponse> => {
       const response = await fetch(`/api/screenshot?runId=${runId}`);
-
-      // Check for HTTP errors
       if (!response.ok) {
         throw new Error(`Screenshot status poll failed: ${response.status}`);
       }
-
       return parseStatusResponse(await response.json());
     },
     enabled: !!runId,
     refetchInterval: (query) => {
       const data = query.state.data;
-      if (!data) return POLL_INTERVAL_MS;
-
-      // Stop polling when not running
-      if (data.status !== "running") {
-        return false;
+      if (data && data.status !== "running") {
+        return false; // Stop polling
       }
-
       return POLL_INTERVAL_MS;
     },
   });
 
-  // Handle poll completion - update cache and clear runId
+  // Handle polling completion
   useEffect(() => {
     const data = statusQuery.data;
-    if (!data) return;
+    if (!data || data.status === "running") return;
 
     if (data.status === "completed") {
+      setScreenshotData(data.data);
       queryClient.setQueryData(screenshotQueryKey, data.data);
-      setRunId(null);
-    } else if (data.status === "failed" || data.status === "error") {
-      queryClient.setQueryData(screenshotQueryKey, {
-        url: null,
-        blocked: false,
-      });
+      analytics.track("screenshot_loaded_from_api", { domain });
+    }
+    setRunId(null);
+  }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
+
+  // Reset and auto-start when domain/enabled/domainId changes
+  useEffect(() => {
+    // Reset if domain changed
+    if (startedForDomainRef.current !== domain) {
+      hasStartedRef.current = false;
+      startedForDomainRef.current = domain;
+      setScreenshotData(null);
       setRunId(null);
     }
-  }, [statusQuery.data, queryClient, screenshotQueryKey]);
 
-  // Auto-start the workflow when enabled and domainId is available
-  useEffect(() => {
+    // Skip if already started, disabled, no domainId, or have cached/current data
     if (
-      enabled &&
-      domainId &&
-      !cachedData &&
-      !hasStarted &&
-      !startMutation.isPending
+      hasStartedRef.current ||
+      !enabled ||
+      !domainId ||
+      cachedData ||
+      screenshotData
     ) {
-      setHasStarted(true);
-      startMutation.mutate(domainId);
+      return;
     }
-  }, [enabled, domainId, cachedData, hasStarted, startMutation]);
 
-  // Reset hasStarted when domain changes
-  const prevDomainRef = useRef(domain);
-  useEffect(() => {
-    if (prevDomainRef.current !== domain) {
-      prevDomainRef.current = domain;
-      setHasStarted(false);
-      setRunId(null);
-    }
-  }, [domain]);
+    hasStartedRef.current = true;
+    startMutation.mutate(domainId);
+  }, [domain, enabled, domainId, cachedData, screenshotData, startMutation]);
 
-  // Derive the result
+  // --- Derive the result ---
+
+  // 1. Check screenshot data from state (from current session)
+  if (screenshotData) {
+    return {
+      url: screenshotData.url,
+      blocked: screenshotData.blocked,
+      isLoading: false,
+      error: null,
+    };
+  }
+
+  // 2. Check cached data from query client (from previous page loads)
   if (cachedData) {
     return {
       url: cachedData.url,
@@ -266,45 +264,7 @@ export function useScreenshot({
     };
   }
 
-  const statusData = statusQuery.data;
-
-  if (statusData?.status === "completed") {
-    return {
-      url: statusData.data.url,
-      blocked: statusData.data.blocked,
-      isLoading: false,
-      error: null,
-    };
-  }
-
-  if (statusData?.status === "failed") {
-    return {
-      url: null,
-      blocked: false,
-      isLoading: false,
-      error: new Error(statusData.error),
-    };
-  }
-
-  if (statusData?.status === "error") {
-    return {
-      url: null,
-      blocked: false,
-      isLoading: false,
-      error: new Error(statusData.error),
-    };
-  }
-
-  // Handle status query HTTP/network errors
-  if (statusQuery.error) {
-    return {
-      url: null,
-      blocked: false,
-      isLoading: false,
-      error: statusQuery.error,
-    };
-  }
-
+  // 3. Check for errors
   if (startMutation.error) {
     return {
       url: null,
@@ -314,11 +274,27 @@ export function useScreenshot({
     };
   }
 
-  // Still loading
+  if (statusQuery.error) {
+    return {
+      url: null,
+      blocked: false,
+      isLoading: false,
+      error: statusQuery.error,
+    };
+  }
+
+  if (statusQuery.data?.status === "failed") {
+    return {
+      url: null,
+      blocked: false,
+      isLoading: false,
+      error: new Error(statusQuery.data.error),
+    };
+  }
+
+  // 4. Still loading
   const isLoading =
-    enabled &&
-    !!domainId &&
-    (startMutation.isPending || !!runId || !hasStarted);
+    enabled && (domainId === undefined || startMutation.isPending || !!runId);
 
   return {
     url: null,
