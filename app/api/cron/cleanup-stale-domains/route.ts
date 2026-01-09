@@ -11,6 +11,9 @@ const logger = createLogger({ source: "cron/cleanup-stale-domains" });
 // Domains that remain unverified after this many days will be deleted
 const STALE_DOMAIN_DAYS = 30;
 
+// Maximum number of IDs to delete in a single batch to avoid huge IN clauses
+const DELETE_BATCH_SIZE = 500;
+
 /**
  * Cron job to clean up stale unverified domains.
  * Schedule: Weekly on Sundays at 3:00 AM UTC
@@ -42,7 +45,14 @@ export async function GET(request: Request) {
     }
 
     const ids = staleDomains.map((d) => d.id);
-    const deletedCount = await deleteStaleUnverifiedDomains(ids);
+
+    // Delete in batches to avoid huge IN clauses
+    let deletedCount = 0;
+    for (let i = 0; i < ids.length; i += DELETE_BATCH_SIZE) {
+      const batch = ids.slice(i, i + DELETE_BATCH_SIZE);
+      const batchDeleted = await deleteStaleUnverifiedDomains(batch);
+      deletedCount += batchDeleted;
+    }
 
     logger.info(
       { total: staleDomains.length, deleted: deletedCount },

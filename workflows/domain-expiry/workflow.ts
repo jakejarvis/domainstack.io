@@ -35,8 +35,8 @@ export async function domainExpiryWorkflow(
   }
 
   // Step 2: Calculate days remaining and check for renewal
-  const expirationDate = new Date(domain.expirationDate);
-  const daysRemaining = differenceInDays(expirationDate, new Date());
+  // Note: We get current time in a step to ensure deterministic replay
+  const daysRemaining = await calculateDaysRemaining(domain.expirationDate);
   const MAX_THRESHOLD_DAYS = 30;
 
   // Detect renewal: If expiration is now beyond our notification window,
@@ -79,7 +79,7 @@ export async function domainExpiryWorkflow(
     userId: domain.userId,
     userName: domain.userName,
     userEmail: domain.userEmail,
-    expirationDate,
+    expirationDate: new Date(domain.expirationDate),
     daysRemaining,
     registrar: domain.registrar ?? undefined,
     notificationType,
@@ -127,6 +127,21 @@ async function fetchDomain(
   );
 
   return await getTrackedDomainForNotification(trackedDomainId);
+}
+
+async function calculateDaysRemaining(
+  expirationDate: Date | string,
+): Promise<number> {
+  "use step";
+
+  // Getting current time inside a step ensures deterministic replay
+  const now = new Date();
+  const expDate =
+    typeof expirationDate === "string"
+      ? new Date(expirationDate)
+      : expirationDate;
+
+  return differenceInDays(expDate, now);
 }
 
 async function clearRenewedNotifications(
@@ -221,7 +236,6 @@ async function sendExpiryNotification(params: {
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:send-expiry-notification`;
 
   const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
@@ -265,7 +279,7 @@ async function sendExpiryNotification(params: {
             registrar,
           }),
         },
-        { idempotencyKey },
+        { idempotencyKey: workflowRunId },
       );
 
       if (error) throw new Error(`Resend error: ${error.message}`);
@@ -279,7 +293,7 @@ async function sendExpiryNotification(params: {
     return true;
   } catch (err) {
     logger.error(
-      { err, domainName, userId, idempotencyKey },
+      { err, domainName, userId, workflowRunId },
       "Error sending expiry notification",
     );
     throw err;

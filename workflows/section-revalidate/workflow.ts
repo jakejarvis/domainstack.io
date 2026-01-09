@@ -16,6 +16,7 @@ export interface SectionRevalidateWorkflowResult {
   success: boolean;
   domain: string;
   section: Section;
+  error?: string;
 }
 
 /**
@@ -31,24 +32,39 @@ export async function sectionRevalidateWorkflow(
 
   const { domain, section } = input;
 
-  await runSection(domain, section);
+  const result = await runSection(domain, section);
+
+  if (!result.success) {
+    return { success: false, domain, section, error: result.error };
+  }
 
   return { success: true, domain, section };
 }
 
-async function runSection(domain: string, section: Section): Promise<void> {
+type RunSectionResult = { success: true } | { success: false; error: string };
+
+async function runSection(
+  domain: string,
+  section: Section,
+): Promise<RunSectionResult> {
   "use step";
 
   switch (section) {
     case "dns": {
       const run = await start(dnsWorkflow, [{ domain }]);
-      await run.returnValue;
-      return;
+      const result = await run.returnValue;
+      if (!result.success) {
+        return { success: false, error: "DNS workflow failed" };
+      }
+      return { success: true };
     }
     case "headers": {
       const run = await start(headersWorkflow, [{ domain }]);
-      await run.returnValue;
-      return;
+      const result = await run.returnValue;
+      if (!result.success) {
+        return { success: false, error: "Headers workflow failed" };
+      }
+      return { success: true };
     }
     case "hosting": {
       // Hosting requires DNS + headers data, fetch them first
@@ -60,6 +76,17 @@ async function runSection(domain: string, section: Section): Promise<void> {
         dnsRun.returnValue,
         headersRun.returnValue,
       ]);
+
+      // Check DNS workflow success
+      if (!dnsResult.success) {
+        return { success: false, error: "DNS workflow failed" };
+      }
+
+      // Check headers workflow success
+      if (!headersResult.success) {
+        return { success: false, error: "Headers workflow failed" };
+      }
+
       const hostingRun = await start(hostingWorkflow, [
         {
           domain,
@@ -68,22 +95,36 @@ async function runSection(domain: string, section: Section): Promise<void> {
         },
       ]);
       await hostingRun.returnValue;
-      return;
+      return { success: true };
     }
     case "certificates": {
       const run = await start(certificatesWorkflow, [{ domain }]);
-      await run.returnValue;
-      return;
+      const result = await run.returnValue;
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      return { success: true };
     }
     case "seo": {
       const run = await start(seoWorkflow, [{ domain }]);
-      await run.returnValue;
-      return;
+      const result = await run.returnValue;
+      if (!result.success) {
+        return { success: false, error: "SEO workflow failed" };
+      }
+      return { success: true };
     }
     case "registration": {
       const run = await start(registrationWorkflow, [{ domain }]);
-      await run.returnValue;
-      return;
+      const result = await run.returnValue;
+      if (!result.success) {
+        return { success: false, error: result.error };
+      }
+      return { success: true };
+    }
+    default: {
+      // Exhaustiveness check - TypeScript will error if a Section case is missing
+      const _exhaustive: never = section;
+      return { success: false, error: `Unhandled section: ${_exhaustive}` };
     }
   }
 }

@@ -58,6 +58,9 @@ export async function GET(request: Request) {
         const text = await response.text();
         const lines = text.split("\n");
 
+        // Track per-source count for accurate logging
+        const countBefore = allDomains.length;
+
         // Parse domains from blocklist format
         // OISD uses wildcard format: *.example.com or example.com
         for (const line of lines) {
@@ -77,10 +80,8 @@ export async function GET(request: Request) {
           }
         }
 
-        logger.info(
-          { sourceUrl, count: allDomains.length },
-          "Parsed blocklist",
-        );
+        const parsedCount = allDomains.length - countBefore;
+        logger.info({ sourceUrl, count: parsedCount }, "Parsed blocklist");
       } catch (err) {
         logger.error({ err, sourceUrl }, "Error fetching blocklist");
       }

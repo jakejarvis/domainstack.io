@@ -219,7 +219,6 @@ async function sendCertificateExpiryNotification(params: {
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:send-certificate-expiry-notification`;
 
   const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;
@@ -263,7 +262,7 @@ async function sendCertificateExpiryNotification(params: {
             issuer,
           }),
         },
-        { idempotencyKey },
+        { idempotencyKey: workflowRunId },
       );
 
       if (error) throw new Error(`Resend error: ${error.message}`);
@@ -277,7 +276,7 @@ async function sendCertificateExpiryNotification(params: {
     return true;
   } catch (err) {
     logger.error(
-      { err, domainName, userId, idempotencyKey },
+      { err, domainName, userId, workflowRunId },
       "Error sending certificate expiry notification",
     );
     throw err;

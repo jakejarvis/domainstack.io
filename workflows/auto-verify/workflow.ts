@@ -5,7 +5,8 @@ import { verificationWorkflow } from "@/workflows/verification";
 
 export interface AutoVerifyWorkflowInput {
   trackedDomainId: string;
-  domainName: string;
+  /** @deprecated Not used - domain name is fetched from database */
+  domainName?: string;
 }
 
 export type AutoVerifyWorkflowResult =
@@ -163,5 +164,10 @@ async function markVerified(
     "@/lib/db/repos/tracked-domains"
   );
 
-  await verifyTrackedDomain(trackedDomainId, method);
+  const result = await verifyTrackedDomain(trackedDomainId, method);
+  if (!result) {
+    throw new Error(
+      `Failed to mark domain as verified: trackedDomainId=${trackedDomainId}, method=${method}`,
+    );
+  }
 }

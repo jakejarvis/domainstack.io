@@ -35,6 +35,11 @@ export async function verifyPendingWorkflow(
     return { skipped: true, reason: "already_verified" };
   }
 
+  // Guard against missing verification token
+  if (!domain.verificationToken) {
+    return { skipped: true, reason: "missing_verification_token" };
+  }
+
   // Step 2: Verify ownership
   const result = await verifyOwnership(
     domain.domainName,
@@ -53,7 +58,7 @@ export async function verifyPendingWorkflow(
 
 interface DomainData {
   domainName: string;
-  verificationToken: string;
+  verificationToken: string | null;
   verified: boolean;
 }
 
@@ -94,5 +99,10 @@ async function markVerified(
     "@/lib/db/repos/tracked-domains"
   );
 
-  await verifyTrackedDomain(trackedDomainId, method);
+  const result = await verifyTrackedDomain(trackedDomainId, method);
+  if (!result) {
+    throw new Error(
+      `Failed to mark domain as verified: trackedDomainId=${trackedDomainId}, method=${method}`,
+    );
+  }
 }

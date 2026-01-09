@@ -285,7 +285,7 @@ async function fetchLiveData(
   // Extract response data from workflow results
   const registrationData: RegistrationResponse | null = regResult.success
     ? regResult.data
-    : regResult.data;
+    : null;
   const certificatesData: CertificatesResponse = certsResult.success
     ? certsResult.data
     : { certificates: [] };
@@ -441,7 +441,6 @@ async function handleRegistrationChange(
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:handle-registration-change`;
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -521,7 +520,7 @@ async function handleRegistrationChange(
       notificationType: "registration_change",
       title,
       message,
-      idempotencyKey,
+      idempotencyKey: workflowRunId,
       emailSubject: subject,
       emailComponent: RegistrationChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -577,7 +576,6 @@ async function handleProviderChange(
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:handle-provider-change`;
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -644,7 +642,7 @@ async function handleProviderChange(
       notificationType: "provider_change",
       title,
       message,
-      idempotencyKey,
+      idempotencyKey: workflowRunId,
       emailSubject: subject,
       emailComponent: ProviderChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -709,7 +707,6 @@ async function handleCertificateChange(
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:handle-certificate-change`;
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -757,7 +754,7 @@ async function handleCertificateChange(
       notificationType: "certificate_change",
       title,
       message,
-      idempotencyKey,
+      idempotencyKey: workflowRunId,
       emailSubject: subject,
       emailComponent: CertificateChangeEmail({
         userName: userName.split(" ")[0] || "there",

@@ -174,12 +174,17 @@ async function sendSubscriptionExpiryNotification(params: {
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "subscription-expiry-workflow" });
-  const { userId, userName, userEmail, endsAt, daysRemaining, threshold: _ } =
-    params;
+  const {
+    userId,
+    userName,
+    userEmail,
+    endsAt,
+    daysRemaining,
+    threshold: _,
+  } = params;
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:send-subscription-expiry-notification`;
 
   try {
     const firstName = getFirstName(userName);
@@ -202,13 +207,13 @@ async function sendSubscriptionExpiryNotification(params: {
         }),
       },
       {
-        idempotencyKey,
+        idempotencyKey: workflowRunId,
       },
     );
 
     if (error) {
       logger.error(
-        { err: error, userId, idempotencyKey },
+        { err: error, userId, workflowRunId },
         "Failed to send subscription expiry email",
       );
       // Don't throw - we don't want to retry and potentially spam users
@@ -218,7 +223,7 @@ async function sendSubscriptionExpiryNotification(params: {
     return true;
   } catch (err) {
     logger.error(
-      { err, userId, idempotencyKey },
+      { err, userId, workflowRunId },
       "Error sending subscription expiry notification",
     );
     return false;

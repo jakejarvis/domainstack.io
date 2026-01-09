@@ -174,11 +174,10 @@ async function handleFailure(
   return "in_grace_period";
 }
 
+// Note: Not a step function - called from within handleFailure step
 async function sendVerificationFailingEmail(
   domain: DomainForFailureHandling,
 ): Promise<boolean> {
-  "use step";
-
   const { VerificationFailingEmail } = await import(
     "@/emails/verification-failing"
   );
@@ -203,7 +202,6 @@ async function sendVerificationFailingEmail(
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:send-verification-failing-email`;
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
@@ -244,7 +242,7 @@ async function sendVerificationFailingEmail(
           gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
         }),
       },
-      { idempotencyKey },
+      { idempotencyKey: workflowRunId },
     );
 
     if (error) throw new Error(`Resend error: ${error.message}`);
@@ -261,7 +259,7 @@ async function sendVerificationFailingEmail(
         err,
         domainName: domain.domainName,
         userId: domain.userId,
-        idempotencyKey,
+        workflowRunId,
       },
       "Error sending verification failing email",
     );
@@ -269,11 +267,10 @@ async function sendVerificationFailingEmail(
   }
 }
 
+// Note: Not a step function - called from within handleFailure step
 async function sendVerificationRevokedEmail(
   domain: DomainForFailureHandling,
 ): Promise<boolean> {
-  "use step";
-
   const { VerificationRevokedEmail } = await import(
     "@/emails/verification-revoked"
   );
@@ -295,7 +292,6 @@ async function sendVerificationRevokedEmail(
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
-  const idempotencyKey = `${workflowRunId}:send-verification-revoked-email`;
 
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
@@ -334,7 +330,7 @@ async function sendVerificationRevokedEmail(
           domainName: domain.domainName,
         }),
       },
-      { idempotencyKey },
+      { idempotencyKey: workflowRunId },
     );
 
     if (error) throw new Error(`Resend error: ${error.message}`);
@@ -351,7 +347,7 @@ async function sendVerificationRevokedEmail(
         err,
         domainName: domain.domainName,
         userId: domain.userId,
-        idempotencyKey,
+        workflowRunId,
       },
       "Error sending verification revoked email",
     );
