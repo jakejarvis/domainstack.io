@@ -65,8 +65,8 @@ describe("upsertFavicon", () => {
 
     const rows = await db.select().from(favicons);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.test/favicon.webp");
-    expect(rows[0]?.source).toBe("duckduckgo");
+    expect(rows[0].url).toBe("https://example.test/favicon.webp");
+    expect(rows[0].source).toBe("duckduckgo");
   });
 
   it("updates an existing favicon record", async () => {
@@ -104,8 +104,8 @@ describe("upsertFavicon", () => {
 
     const rows = await db.select().from(favicons);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.test/favicon-new.webp");
-    expect(rows[0]?.source).toBe("duckduckgo");
+    expect(rows[0].url).toBe("https://example.test/favicon-new.webp");
+    expect(rows[0].source).toBe("duckduckgo");
   });
 
   it("handles notFound flag", async () => {
@@ -127,8 +127,8 @@ describe("upsertFavicon", () => {
 
     const rows = await db.select().from(favicons);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.notFound).toBe(true);
-    expect(rows[0]?.url).toBeNull();
+    expect(rows[0].notFound).toBe(true);
+    expect(rows[0].url).toBeNull();
   });
 });
 
@@ -157,7 +157,9 @@ describe("getFaviconByDomainId", () => {
 
     const result = await getFaviconByDomainId(testDomainId);
     expect(result).not.toBeNull();
-    expect(result?.url).toBe("https://example.test/favicon.webp");
+    if (!result) throw new Error("Expected result");
+
+    expect(result.url).toBe("https://example.test/favicon.webp");
   });
 
   it("returns null when favicon is expired", async () => {

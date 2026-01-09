@@ -108,8 +108,10 @@ describe("provider detection", () => {
     ];
     const res = detectHostingProvider(headers, MOCK_HOSTING_PROVIDERS);
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Vercel");
-    expect(res?.domain).toBe("vercel.com");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Vercel");
+    expect(res.domain).toBe("vercel.com");
   });
 
   it("returns null when no hosting provider matches", () => {
@@ -124,8 +126,10 @@ describe("provider detection", () => {
       MOCK_EMAIL_PROVIDERS,
     );
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Google Workspace");
-    expect(res?.domain).toBe("google.com");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Google Workspace");
+    expect(res.domain).toBe("google.com");
   });
 
   it("returns null when no email provider matches", () => {
@@ -142,8 +146,10 @@ describe("provider detection", () => {
       MOCK_DNS_PROVIDERS,
     );
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Cloudflare");
-    expect(res?.domain).toBe("cloudflare.com");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Cloudflare");
+    expect(res.domain).toBe("cloudflare.com");
   });
 
   it("detects DNS from NS (Amazon Route 53)", () => {
@@ -152,8 +158,10 @@ describe("provider detection", () => {
       MOCK_DNS_PROVIDERS,
     );
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Amazon Route 53");
-    expect(res?.domain).toBe("aws.amazon.com");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Amazon Route 53");
+    expect(res.domain).toBe("aws.amazon.com");
   });
 
   it("returns null when no DNS provider matches", () => {
@@ -164,8 +172,10 @@ describe("provider detection", () => {
   it("detects registrar from name (GoDaddy)", () => {
     const res = detectRegistrar("GoDaddy Inc.", MOCK_REGISTRAR_PROVIDERS);
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("GoDaddy");
-    expect(res?.domain).toBe("godaddy.com");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("GoDaddy");
+    expect(res.domain).toBe("godaddy.com");
   });
 
   it("returns null for unknown registrar", () => {
@@ -184,15 +194,19 @@ describe("provider detection", () => {
       MOCK_CA_PROVIDERS,
     );
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Let's Encrypt");
-    expect(res?.domain).toBe("letsencrypt.org");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Let's Encrypt");
+    expect(res.domain).toBe("letsencrypt.org");
   });
 
   it("detects CA from issuer string (Let's Encrypt R10)", () => {
     const res = detectCertificateAuthority("R10", MOCK_CA_PROVIDERS);
     expect(res).not.toBeNull();
-    expect(res?.name).toBe("Let's Encrypt");
-    expect(res?.domain).toBe("letsencrypt.org");
+    if (!res) throw new Error("Expected result");
+
+    expect(res.name).toBe("Let's Encrypt");
+    expect(res.domain).toBe("letsencrypt.org");
   });
 
   it("returns null for unknown CA", () => {

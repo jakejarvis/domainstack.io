@@ -39,7 +39,10 @@ describe("seo html/meta parsing", () => {
     expect(meta.openGraph.description).toBe("OG Desc");
     expect(meta.openGraph.url).toBe("https://example.test/about");
     expect(meta.openGraph.siteName).toBe("Site");
-    expect(meta.openGraph.images?.[0]).toBe("https://example.test/img.png");
+    expect(meta.openGraph.images).toBeDefined();
+    if (!meta.openGraph.images) throw new Error("Expected images");
+
+    expect(meta.openGraph.images[0]).toBe("https://example.test/img.png");
 
     expect(meta.twitter.card).toBe("summary_large_image");
     expect(meta.twitter.title).toBe("TW Title");
