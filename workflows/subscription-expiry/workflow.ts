@@ -1,5 +1,4 @@
 import { differenceInDays, format } from "date-fns";
-import { getWorkflowMetadata } from "workflow";
 
 export interface SubscriptionExpiryWorkflowInput {
   userId: string;
@@ -170,62 +169,29 @@ async function sendSubscriptionExpiryNotification(params: {
   const SubscriptionCancelingEmail = (
     await import("@/emails/subscription-canceling")
   ).default;
-  const { sendPrettyEmail } = await import("@/lib/resend");
-  const { createLogger } = await import("@/lib/logger/server");
+  const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const logger = createLogger({ source: "subscription-expiry-workflow" });
-  const {
-    userId,
-    userName,
-    userEmail,
-    endsAt,
-    daysRemaining,
-    threshold: _,
-  } = params;
+  const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;
 
-  // Use workflow run ID as idempotency key - ensures exactly-once delivery
-  const { workflowRunId } = getWorkflowMetadata();
+  const firstName = getFirstName(userName);
+  const endDate = format(endsAt, "MMMM d, yyyy");
 
-  try {
-    const firstName = getFirstName(userName);
-    const endDate = format(endsAt, "MMMM d, yyyy");
+  // Determine urgency for subject line
+  const isUrgent = daysRemaining <= 3;
+  const title = isUrgent
+    ? `Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
+    : `Pro subscription ends on ${endDate}`;
+  const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
 
-    // Determine urgency for subject line
-    const isUrgent = daysRemaining <= 3;
-    const title = isUrgent
-      ? `Pro subscription ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`
-      : `Pro subscription ends on ${endDate}`;
-    const subject = isUrgent ? `⚠️ Your ${title}` : `Your ${title}`;
+  // Send email using shared step (handles error classification)
+  await sendEmail({
+    to: userEmail,
+    subject,
+    react: SubscriptionCancelingEmail({
+      userName: firstName,
+      endDate,
+    }),
+  });
 
-    const { error } = await sendPrettyEmail(
-      {
-        to: userEmail,
-        subject,
-        react: SubscriptionCancelingEmail({
-          userName: firstName,
-          endDate,
-        }),
-      },
-      {
-        idempotencyKey: workflowRunId,
-      },
-    );
-
-    if (error) {
-      logger.error(
-        { err: error, userId, workflowRunId },
-        "Failed to send subscription expiry email",
-      );
-      // Don't throw - we don't want to retry and potentially spam users
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    logger.error(
-      { err, userId, workflowRunId },
-      "Error sending subscription expiry notification",
-    );
-    return false;
-  }
+  return true;
 }

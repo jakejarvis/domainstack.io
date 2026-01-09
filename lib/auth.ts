@@ -19,7 +19,7 @@ import {
   handleSubscriptionRevoked,
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
-import { addContact, removeContact, sendPrettyEmail } from "@/lib/resend";
+import { addContact, removeContact, sendEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "auth" });
 
@@ -161,7 +161,7 @@ export const auth = betterAuth({
       sendDeleteAccountVerification: async ({ user, url }) => {
         // Use after() to reduce risk of timing attacks
         after(() =>
-          sendPrettyEmail({
+          sendEmail({
             to: user.email,
             subject: "Confirm your account deletion",
             react: DeleteAccountVerifyEmail({

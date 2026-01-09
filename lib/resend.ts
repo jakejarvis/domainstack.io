@@ -29,7 +29,7 @@ export const resend = apiKey ? new Resend(apiKey) : null;
  * @param options - Optional Resend options (e.g., idempotencyKey)
  * @returns Promise with Resend response
  */
-export async function sendPrettyEmail(
+export async function sendEmail(
   params: Omit<Parameters<typeof Resend.prototype.emails.send>[0], "from">,
   options?: Parameters<typeof Resend.prototype.emails.send>[1],
 ) {

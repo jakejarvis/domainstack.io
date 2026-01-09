@@ -1,5 +1,5 @@
 import { differenceInDays, format } from "date-fns";
-import { getWorkflowMetadata } from "workflow";
+import { FatalError } from "workflow";
 import type { NotificationType } from "@/lib/types";
 
 export interface DomainExpiryWorkflowInput {
@@ -72,14 +72,13 @@ export async function domainExpiryWorkflow(
     return { skipped: true, reason: "already_sent" };
   }
 
-  // Step 6: Send notification
-  const sent = await sendExpiryNotification({
+  // Step 6: Create notification record
+  const expirationDate = new Date(domain.expirationDate);
+  const { notificationId, subject } = await createNotificationRecord({
     trackedDomainId,
     domainName: domain.domainName,
     userId: domain.userId,
-    userName: domain.userName,
-    userEmail: domain.userEmail,
-    expirationDate: new Date(domain.expirationDate),
+    expirationDate,
     daysRemaining,
     registrar: domain.registrar ?? undefined,
     notificationType,
@@ -87,7 +86,23 @@ export async function domainExpiryWorkflow(
     shouldSendInApp: prefs.shouldSendInApp,
   });
 
-  return { skipped: false, sent };
+  // Step 7: Send email if enabled
+  if (prefs.shouldSendEmail) {
+    const { emailId } = await sendDomainExpiryEmail({
+      userEmail: domain.userEmail,
+      userName: domain.userName,
+      domainName: domain.domainName,
+      expirationDate,
+      daysRemaining,
+      registrar: domain.registrar ?? undefined,
+      subject,
+    });
+
+    // Step 8: Update notification with email ID
+    await updateNotificationWithEmailId(notificationId, emailId);
+  }
+
+  return { skipped: false, sent: true };
 }
 
 // Domain expiry thresholds (days before expiration)
@@ -197,35 +212,25 @@ async function checkAlreadySent(
   return await hasRecentNotification(trackedDomainId, notificationType);
 }
 
-async function sendExpiryNotification(params: {
+async function createNotificationRecord(params: {
   trackedDomainId: string;
   domainName: string;
   userId: string;
-  userName: string;
-  userEmail: string;
   expirationDate: Date;
   daysRemaining: number;
   registrar?: string;
   notificationType: NotificationType;
   shouldSendEmail: boolean;
   shouldSendInApp: boolean;
-}): Promise<boolean> {
+}): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
-  const { DomainExpiryEmail } = await import("@/emails/domain-expiry");
-  const { createNotification, updateNotificationResendId } = await import(
-    "@/lib/db/repos/notifications"
-  );
-  const { sendPrettyEmail } = await import("@/lib/resend");
-  const { createLogger } = await import("@/lib/logger/server");
+  const { createNotification } = await import("@/lib/db/repos/notifications");
 
-  const logger = createLogger({ source: "domain-expiry-workflow" });
   const {
     trackedDomainId,
     domainName,
     userId,
-    userName,
-    userEmail,
     expirationDate,
     daysRemaining,
     registrar,
@@ -233,9 +238,6 @@ async function sendExpiryNotification(params: {
     shouldSendEmail,
     shouldSendInApp,
   } = params;
-
-  // Use workflow run ID as idempotency key - ensures exactly-once delivery
-  const { workflowRunId } = getWorkflowMetadata();
 
   const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;
@@ -245,57 +247,73 @@ async function sendExpiryNotification(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  try {
-    // Create notification record (logs the event and handles in-app display)
-    const notification = await createNotification({
-      userId,
-      trackedDomainId,
-      type: notificationType,
-      title,
-      message,
-      data: { domainName },
-      channels,
-    });
+  const notification = await createNotification({
+    userId,
+    trackedDomainId,
+    type: notificationType,
+    title,
+    message,
+    data: { domainName },
+    channels,
+  });
 
-    if (!notification) {
-      logger.error(
-        { trackedDomainId, notificationType, domainName },
-        "Failed to create notification record",
-      );
-      throw new Error("Failed to create notification record in database");
-    }
-
-    // Send email notification if enabled
-    if (shouldSendEmail) {
-      const { data, error } = await sendPrettyEmail(
-        {
-          to: userEmail,
-          subject,
-          react: DomainExpiryEmail({
-            userName: userName.split(" ")[0] || "there",
-            domainName,
-            expirationDate: format(expirationDate, "MMMM d, yyyy"),
-            daysRemaining,
-            registrar,
-          }),
-        },
-        { idempotencyKey: workflowRunId },
-      );
-
-      if (error) throw new Error(`Resend error: ${error.message}`);
-
-      // Update notification with email ID
-      if (data?.id) {
-        await updateNotificationResendId(notification.id, data.id);
-      }
-    }
-
-    return true;
-  } catch (err) {
-    logger.error(
-      { err, domainName, userId, workflowRunId },
-      "Error sending expiry notification",
+  if (!notification) {
+    throw new FatalError(
+      `Failed to create notification record: ${notificationType} for ${domainName}`,
     );
-    throw err;
   }
+
+  return { notificationId: notification.id, title, subject };
+}
+
+async function sendDomainExpiryEmail(params: {
+  userEmail: string;
+  userName: string;
+  domainName: string;
+  expirationDate: Date;
+  daysRemaining: number;
+  registrar?: string;
+  subject: string;
+}): Promise<{ emailId: string }> {
+  "use step";
+
+  const { DomainExpiryEmail } = await import("@/emails/domain-expiry");
+  const { sendEmail } = await import("@/workflows/shared/send-email");
+
+  const {
+    userEmail,
+    userName,
+    domainName,
+    expirationDate,
+    daysRemaining,
+    registrar,
+    subject,
+  } = params;
+
+  const result = await sendEmail({
+    to: userEmail,
+    subject,
+    react: DomainExpiryEmail({
+      userName: userName.split(" ")[0] || "there",
+      domainName,
+      expirationDate: format(expirationDate, "MMMM d, yyyy"),
+      daysRemaining,
+      registrar,
+    }),
+  });
+
+  return { emailId: result.emailId };
+}
+
+async function updateNotificationWithEmailId(
+  notificationId: string,
+  emailId: string,
+): Promise<void> {
+  "use step";
+
+  const { updateNotificationResendId } = await import(
+    "@/lib/db/repos/notifications"
+  );
+
+  await updateNotificationResendId(notificationId, emailId);
 }

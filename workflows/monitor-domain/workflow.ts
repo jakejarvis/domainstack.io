@@ -1,4 +1,4 @@
-import { getWorkflowMetadata } from "workflow";
+import { getStepMetadata } from "workflow";
 import { start } from "workflow/api";
 import type {
   CertificateChange,
@@ -445,8 +445,8 @@ async function handleRegistrationChange(
     }
   }
 
-  // Use workflow run ID as idempotency key - ensures exactly-once delivery
-  const { workflowRunId } = getWorkflowMetadata();
+  // Use step ID as idempotency key - ensures exactly-once delivery
+  const { stepId } = getStepMetadata();
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -526,7 +526,7 @@ async function handleRegistrationChange(
       notificationType: "registration_change",
       title,
       message,
-      idempotencyKey: `${workflowRunId}:registration-change`,
+      idempotencyKey: stepId,
       emailSubject: subject,
       emailComponent: RegistrationChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -580,8 +580,8 @@ async function handleProviderChange(
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
-  // Use workflow run ID as idempotency key - ensures exactly-once delivery
-  const { workflowRunId } = getWorkflowMetadata();
+  // Use step ID as idempotency key - ensures exactly-once delivery
+  const { stepId } = getStepMetadata();
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -648,7 +648,7 @@ async function handleProviderChange(
       notificationType: "provider_change",
       title,
       message,
-      idempotencyKey: `${workflowRunId}:provider-change`,
+      idempotencyKey: stepId,
       emailSubject: subject,
       emailComponent: ProviderChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -711,8 +711,8 @@ async function handleCertificateChange(
     }
   }
 
-  // Use workflow run ID as idempotency key - ensures exactly-once delivery
-  const { workflowRunId } = getWorkflowMetadata();
+  // Use step ID as idempotency key - ensures exactly-once delivery
+  const { stepId } = getStepMetadata();
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -760,7 +760,7 @@ async function handleCertificateChange(
       notificationType: "certificate_change",
       title,
       message,
-      idempotencyKey: `${workflowRunId}:certificate-change`,
+      idempotencyKey: stepId,
       emailSubject: subject,
       emailComponent: CertificateChangeEmail({
         userName: userName.split(" ")[0] || "there",
