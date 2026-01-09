@@ -124,8 +124,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       inngest:
-        specifier: ^3.49.0
-        version: 3.49.0(@opentelemetry/core@2.3.0(@opentelemetry/api@1.9.0))(next@16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)(zod@4.3.5)
+        specifier: ^3.49.1
+        version: 3.49.1(@opentelemetry/core@2.3.0(@opentelemetry/api@1.9.0))(next@16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)(zod@4.3.5)
       ipaddr.js:
         specifier: ^2.3.0
         version: 2.3.0
@@ -5281,8 +5281,8 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
 
-  inngest@3.49.0:
-    resolution: {integrity: sha512-ISGTioh945GyumcS8s9kwgbW4CjadGKJJb3oqVmjHKMj0QKmdKKIZ35h+vKe8RNK+rPZDlGA49unNIV/HUeGYw==}
+  inngest@3.49.1:
+    resolution: {integrity: sha512-HQabIHSDnaFyvpO0ClGXp5JFgw3FWCiTRyo33DNW6bZeyyN66ooCz3PL842n1qGM2BWEMcvv1V7WhzRtjn5KCQ==}
     engines: {node: '>=20'}
     peerDependencies:
       '@sveltejs/kit': '>=1.27.3'
@@ -12616,7 +12616,7 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  inngest@3.49.0(@opentelemetry/core@2.3.0(@opentelemetry/api@1.9.0))(next@16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)(zod@4.3.5):
+  inngest@3.49.1(@opentelemetry/core@2.3.0(@opentelemetry/api@1.9.0))(next@16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(typescript@5.9.3)(zod@4.3.5):
     dependencies:
       '@bufbuild/protobuf': 2.10.2
       '@inngest/ai': 0.1.7
