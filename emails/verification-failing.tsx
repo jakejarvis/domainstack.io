@@ -24,7 +24,7 @@ const METHOD_DESCRIPTIONS: Record<VerificationMethod, string> = {
   meta_tag: "meta tag",
 };
 
-export function VerificationFailingEmail({
+function VerificationFailingEmail({
   userName,
   domainName,
   verificationMethod,

@@ -39,9 +39,12 @@ import {
   type MultiSelectOption,
 } from "@/components/ui/multi-select";
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
-import type { ViewMode } from "@/hooks/use-dashboard-preferences";
-import { SORT_OPTIONS, type SortOption } from "@/hooks/use-dashboard-sort";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
+import {
+  type DashboardViewModeOptions,
+  SORT_OPTIONS,
+  type SortOption,
+} from "@/lib/dashboard-utils";
 import type { HealthFilter, StatusFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +68,7 @@ type DashboardFiltersProps = {
   filteredDomainName?: string | null;
   onClearDomainId?: () => void;
   // Sort (only shown in grid view)
-  viewMode: ViewMode;
+  viewMode: DashboardViewModeOptions;
   sortOption?: SortOption;
   onSortChange?: (sort: SortOption) => void;
   // Table instance (for column visibility in table view)
@@ -412,22 +415,20 @@ export function DashboardFilters({
                   /** Optional provider ID for provider logo rendering */
                   id?: string | null;
                 },
-              ) => {
-                return (
-                  <div className="flex items-center gap-1.5 px-0.5 py-[3px]">
-                    <ProviderIcon
-                      providerId={option.id}
-                      providerName={option.label}
-                      providerDomain={option.domain}
-                      size={14}
-                      className="shrink-0"
-                    />
-                    <span className="max-w-[240px] truncate leading-none">
-                      {option.label}
-                    </span>
-                  </div>
-                );
-              }}
+              ) => (
+                <div className="flex items-center gap-1.5 px-0.5 py-[3px]">
+                  <ProviderIcon
+                    providerId={option.id}
+                    providerName={option.label}
+                    providerDomain={option.domain}
+                    size={14}
+                    className="shrink-0"
+                  />
+                  <span className="max-w-[240px] truncate leading-none">
+                    {option.label}
+                  </span>
+                </div>
+              )}
             />
           )}
         </div>

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/input-group";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { type Source, useDomainSearch } from "@/hooks/use-domain-search";
+import { useDomainSearch } from "@/hooks/use-domain-search";
 import { useIsMac } from "@/hooks/use-is-mac";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ export type SearchClientVariant = "sm" | "lg";
 export type SearchClientProps = {
   variant?: SearchClientVariant;
   initialValue?: string;
-  externalNavigation?: { domain: string; source: Source } | null;
+  value?: string | null;
   onNavigationCompleteAction?: () => void;
   onFocusChangeAction?: (isFocused: boolean) => void;
 };
@@ -29,14 +29,13 @@ export type SearchClientProps = {
 export function SearchClient({
   variant = "lg",
   initialValue = "",
-  externalNavigation,
+  value: externalValue,
   onNavigationCompleteAction,
   onFocusChangeAction,
 }: SearchClientProps) {
   const { value, setValue, loading, inputRef, submit, navigateToDomain } =
     useDomainSearch({
       initialValue,
-      source: variant === "lg" ? "form" : "header",
       showInvalidToast: true,
       enableShortcut: variant === "sm", // header supports ⌘/Ctrl + K
       prefillFromRoute: variant === "sm", // header derives initial from route
@@ -57,15 +56,15 @@ export function SearchClient({
 
   // Handle external navigation requests (e.g., from suggestion clicks)
   useEffect(() => {
-    if (externalNavigation) {
+    if (externalValue) {
       // Mirror the selected domain in the input so the form appears submitted
-      setValue(externalNavigation.domain);
+      setValue(externalValue);
       // Trigger navigation using ref to avoid dependency issues
-      navigateRef.current(externalNavigation.domain, externalNavigation.source);
+      navigateRef.current(externalValue);
       // Notify parent that navigation was handled
       onCompleteRef.current?.();
     }
-  }, [externalNavigation, setValue]);
+  }, [externalValue, setValue]);
 
   // Select all on first focus from keyboard or first click; allow precise cursor on next click.
   const pointerDownRef = useRef(false);

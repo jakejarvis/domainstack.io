@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+  "ignoreDependencies": [
+    "pino-pretty",
+    "postcss",
+    "bufferutil",
+    "ws",
+    "@types/ws",
+    "@workflow/core",
+    "@workflow/utils"
+  ],
+  "ignoreFiles": ["components/ui/**", "app/.well-known/workflow/**"],
+  "ignoreIssues": {
+    "components/ui/**": ["exports"]
+  },
+  "tags": ["-lintignore"]
+}

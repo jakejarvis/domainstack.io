@@ -74,17 +74,6 @@ export async function updateUserTier(
 }
 
 /**
- * Check if user can add more domains based on their limits.
- */
-export async function canUserAddDomain(
-  userId: string,
-  currentCount: number,
-): Promise<boolean> {
-  const subscription = await getUserSubscription(userId);
-  return currentCount < subscription.planQuota;
-}
-
-/**
  * Set subscription end date (user canceled but still has access until this date).
  */
 export async function setSubscriptionEndsAt(

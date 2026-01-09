@@ -18,99 +18,57 @@ import type {
 const logger = createLogger({ source: "snapshots" });
 
 /**
- * Get or create a snapshot for a tracked domain.
- * Returns the existing snapshot or creates an empty one.
- * Uses onConflictDoNothing to handle concurrent creation gracefully.
- */
-export async function getOrCreateSnapshot(
-  trackedDomainId: string,
-  retryCount = 0,
-) {
-  // Try to get existing snapshot
-  const existing = await db
-    .select()
-    .from(domainSnapshots)
-    .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))
-    .limit(1);
-
-  if (existing.length > 0) {
-    return existing[0];
-  }
-
-  // Create new empty snapshot
-  const inserted = await db
-    .insert(domainSnapshots)
-    .values({
-      trackedDomainId,
-      registration: {},
-      certificate: {},
-      dnsProviderId: null,
-      hostingProviderId: null,
-      emailProviderId: null,
-    })
-    .onConflictDoNothing()
-    .returning();
-
-  if (inserted.length > 0) {
-    return inserted[0];
-  }
-
-  // Race condition: another process created it, fetch again
-  const [snapshot] = await db
-    .select()
-    .from(domainSnapshots)
-    .where(eq(domainSnapshots.trackedDomainId, trackedDomainId))
-    .limit(1);
-
-  // Edge case: snapshot was deleted between conflict and re-fetch
-  // This should be extremely rare but possible if a domain is removed during creation
-  if (!snapshot) {
-    if (retryCount >= 1) {
-      logger.warn(
-        { trackedDomainId, attempt: retryCount },
-        "snapshot creation failed after retry",
-      );
-      const error = new Error(
-        `Failed to create snapshot for tracked domain ${trackedDomainId} after retry`,
-      );
-      throw error;
-    }
-
-    logger.warn(
-      { trackedDomainId, attempt: retryCount },
-      "snapshot disappeared after conflict, recreating",
-    );
-    // Recursively retry once - if this fails, let it throw
-    return getOrCreateSnapshot(trackedDomainId, retryCount + 1);
-  }
-
-  return snapshot;
-}
-
-/**
  * Create a new snapshot with initial data.
  * Returns the created snapshot.
+ *
+ * @param params - Snapshot data (all fields optional except trackedDomainId)
+ * @param updateExisting - Conflict resolution strategy:
+ *   - true: Update existing snapshot (default)
+ *   - false: Return null if snapshot already exists
  */
-export async function createSnapshot(params: CreateSnapshotParams) {
+export async function createSnapshot(
+  params: CreateSnapshotParams,
+): Promise<typeof domainSnapshots.$inferSelect>;
+export async function createSnapshot(
+  params: CreateSnapshotParams,
+  updateExisting: false,
+): Promise<typeof domainSnapshots.$inferSelect | null>;
+export async function createSnapshot(
+  params: CreateSnapshotParams,
+  updateExisting?: boolean,
+): Promise<typeof domainSnapshots.$inferSelect | null> {
   const {
+    trackedDomainId,
+    registration = {},
+    certificate = {},
+    dnsProviderId = null,
+    hostingProviderId = null,
+    emailProviderId = null,
+  } = params;
+
+  const values = {
     trackedDomainId,
     registration,
     certificate,
     dnsProviderId,
     hostingProviderId,
     emailProviderId,
-  } = params;
+  };
 
+  if (updateExisting === false) {
+    const inserted = await db
+      .insert(domainSnapshots)
+      .values(values)
+      .onConflictDoNothing()
+      .returning();
+
+    return inserted.length > 0 ? inserted[0] : null;
+  }
+
+  // Default: onConflictDoUpdate
   const inserted = await db
     .insert(domainSnapshots)
-    .values({
-      trackedDomainId,
-      registration,
-      certificate,
-      dnsProviderId,
-      hostingProviderId,
-      emailProviderId,
-    })
+    .values(values)
     .onConflictDoUpdate({
       target: domainSnapshots.trackedDomainId,
       set: {
@@ -238,24 +196,4 @@ export async function getSnapshot(
   }
 
   return rows[0];
-}
-
-/**
- * Delete a snapshot for a tracked domain.
- * Used when a tracked domain is removed.
- */
-export async function deleteSnapshot(trackedDomainId: string) {
-  try {
-    await db
-      .delete(domainSnapshots)
-      .where(eq(domainSnapshots.trackedDomainId, trackedDomainId));
-
-    return true;
-  } catch (err) {
-    logger.error(
-      { err, trackedDomainId },
-      "failed to delete snapshot for domain",
-    );
-    return false;
-  }
 }

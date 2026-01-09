@@ -63,6 +63,7 @@ export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
 export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
 
 // Dashboard "expiring soon" threshold (first notification threshold)
+// biome-ignore lint/nursery/useDestructuring: This is a constant
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 
 // Mapping from threshold to notification type

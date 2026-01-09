@@ -166,9 +166,9 @@ async function sendSubscriptionExpiryNotification(params: {
 }): Promise<boolean> {
   "use step";
 
-  const SubscriptionCancelingEmail = (
-    await import("@/emails/subscription-canceling")
-  ).default;
+  const { default: SubscriptionCancelingEmail } = await import(
+    "@/emails/subscription-canceling"
+  );
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const { userName, userEmail, endsAt, daysRemaining, threshold: _ } = params;

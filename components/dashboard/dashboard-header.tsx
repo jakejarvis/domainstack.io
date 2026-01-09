@@ -16,14 +16,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ViewMode } from "@/hooks/use-dashboard-preferences";
+import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
 import type { Subscription } from "@/lib/types";
 
 type DashboardHeaderProps = {
   userName: string;
   subscription?: Subscription;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
+  viewMode: DashboardViewModeOptions;
+  onViewModeChange: (mode: DashboardViewModeOptions) => void;
 };
 
 export function DashboardHeader({
@@ -128,7 +128,9 @@ export function DashboardHeader({
               multiple={false}
               value={[viewMode]}
               onValueChange={(groupValue) => {
-                const next = groupValue[0] as ViewMode | undefined;
+                const next = groupValue[0] as
+                  | DashboardViewModeOptions
+                  | undefined;
                 if (next) onViewModeChange(next);
               }}
               className="relative h-9 gap-0 overflow-hidden rounded-md border border-border bg-transparent p-0 shadow-xs dark:border-input"

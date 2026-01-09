@@ -9,12 +9,12 @@ import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
 import type { Subscription } from "@/lib/types";
 
-export type UseSubscriptionOptions = {
+type UseSubscriptionOptions = {
   /** Whether to enable the query (defaults to true) */
   enabled?: boolean;
 };
 
-export type UseSubscriptionResult = {
+type UseSubscriptionResult = {
   /** Subscription data (undefined while loading) */
   subscription: Subscription | undefined;
   /** True if user has Pro subscription */

@@ -15,7 +15,7 @@ type SubscriptionCancelingEmailProps = {
   endDate: string;
 };
 
-export function SubscriptionCancelingEmail({
+function SubscriptionCancelingEmail({
   userName,
   endDate,
 }: SubscriptionCancelingEmailProps) {

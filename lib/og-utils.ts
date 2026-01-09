@@ -37,7 +37,7 @@ export async function loadGoogleFont(
 
   const cssResponse = await fetch(url, {
     next: {
-      revalidate: 31536000, // 1 year
+      revalidate: 31_536_000, // 1 year
     },
   });
   const css = await cssResponse.text();
@@ -48,7 +48,7 @@ export async function loadGoogleFont(
   if (resource) {
     const fontResponse = await fetch(resource[1], {
       next: {
-        revalidate: 31536000, // 1 year
+        revalidate: 31_536_000, // 1 year
       },
     });
     if (fontResponse.status === 200) {

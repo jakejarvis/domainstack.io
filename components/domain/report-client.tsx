@@ -137,7 +137,7 @@ function ReportContent({ domain }: { domain: string }) {
   const isConfirmedUnregistered =
     registration.data?.isRegistered === false &&
     registration.data?.source !== null;
-  useDomainHistory(isConfirmedUnregistered ? "" : domain);
+  useDomainHistory(domain, { enabled: !isConfirmedUnregistered });
 
   // Parent handles unregistered case, but we still check here as a safeguard
   // (this component may briefly render before parent re-renders)

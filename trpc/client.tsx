@@ -15,7 +15,7 @@ import { makeQueryClient } from "@/trpc/query-client";
 
 let browserQueryClient: ReturnType<typeof makeQueryClient> | undefined;
 
-export function getQueryClient() {
+function getQueryClient() {
   // Server: always make a new query client
   if (isServer) return makeQueryClient();
   // Browser: make a new query client if we don't already have one

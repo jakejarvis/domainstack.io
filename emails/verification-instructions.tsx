@@ -28,7 +28,7 @@ type VerificationInstructionsEmailProps = {
   metaTag: string;
 };
 
-export function VerificationInstructionsEmail({
+function VerificationInstructionsEmail({
   domain,
   senderName,
   senderEmail,

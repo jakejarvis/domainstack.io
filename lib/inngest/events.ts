@@ -1,7 +1,5 @@
 import "server-only";
 
-import type { Section } from "@/lib/types";
-
 /**
  * Centralized event type definitions for Inngest functions.
  * Provides type-safe event names and payload types.
@@ -23,27 +21,3 @@ export const INNGEST_EVENTS = {
   // Section revalidation (event-driven)
   SECTION_REVALIDATE: "domain/section.revalidate",
 } as const;
-
-/**
- * Event payload types
- */
-export type SnapshotInitializeEvent = {
-  data: {
-    trackedDomainId: string;
-    domainId: string;
-  };
-};
-
-export type SectionRevalidateEvent = {
-  data: {
-    domain: string;
-    section: Section;
-  };
-};
-
-export type AutoVerifyPendingDomainEvent = {
-  data: {
-    trackedDomainId: string;
-    domainName: string;
-  };
-};

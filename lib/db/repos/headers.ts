@@ -2,7 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
-import { normalizeHeaders } from "@/lib/domain/headers-lookup";
+import { normalizeHeaders } from "@/lib/headers-utils";
 import type { Header, HeadersResponse } from "@/lib/types";
 import { findDomainByName } from "./domains";
 
@@ -69,7 +69,7 @@ export async function getHeadersCached(
       .where(eq(httpHeaders.domainId, existingDomain.id))
       .limit(1);
 
-    const row = existing[0];
+    const [row] = existing;
     if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
       return null;
     }

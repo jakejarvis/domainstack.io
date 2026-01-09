@@ -2,121 +2,113 @@
 
 import { useCallback } from "react";
 import useLocalStorageState from "use-local-storage-state";
-
-export type ViewMode = "grid" | "table";
-export type PageSize = 10 | 25 | 50 | 100;
-export type ColumnVisibility = Record<string, boolean>;
-
-export const PAGE_SIZE_OPTIONS: PageSize[] = [10, 25, 50, 100];
+import {
+  DASHBOARD_PAGE_SIZE_OPTIONS,
+  DASHBOARD_PREFERENCES_DEFAULT,
+  DASHBOARD_PREFERENCES_STORAGE_KEY,
+  DASHBOARD_VIEW_MODE_OPTIONS,
+  type DashboardPageSizeOptions,
+  type DashboardViewModeOptions,
+} from "@/lib/dashboard-utils";
 
 type DashboardPreferences = {
-  viewMode: ViewMode;
-  pageSize: PageSize;
-  columnVisibility: ColumnVisibility;
+  viewMode: DashboardViewModeOptions;
+  pageSize: DashboardPageSizeOptions;
+  columnVisibility: Record<string, boolean>;
 };
 
-const STORAGE_KEY = "dashboard-preferences";
-const DEFAULT_PREFERENCES: DashboardPreferences = {
-  viewMode: "grid",
-  pageSize: 10,
-  columnVisibility: {}, // Empty means all columns visible (default)
-};
+/**
+ * Validates that a value is in the allowed options array.
+ * Returns the value if valid, or the default if invalid.
+ */
+function validateOption<T>(
+  value: T | undefined,
+  validOptions: readonly T[],
+  defaultValue: T,
+): T {
+  if (value !== undefined && validOptions.includes(value)) {
+    return value;
+  }
+  return defaultValue;
+}
 
 /**
  * Hook to manage dashboard preferences with localStorage persistence.
  * Stores view mode (grid/table), page size, and column visibility in a single localStorage entry.
  *
- * This hook consolidates all dashboard-related localStorage preferences
- * to avoid multiple storage keys and provide a consistent API.
+ * Values are validated against allowed options to prevent invalid data from localStorage corruption.
  */
-export function useDashboardPreferences() {
+export function useDashboardPreferences(): DashboardPreferences & {
+  setViewMode: (viewMode: DashboardViewModeOptions) => void;
+  setPageSize: (pageSize: DashboardPageSizeOptions) => void;
+  setColumnVisibility: (
+    updaterOrValue:
+      | Record<string, boolean>
+      | ((prev: Record<string, boolean>) => Record<string, boolean>),
+  ) => void;
+} {
+  const defaultPreferences =
+    DASHBOARD_PREFERENCES_DEFAULT as DashboardPreferences;
   const [preferences, setPreferences] =
-    useLocalStorageState<DashboardPreferences>(STORAGE_KEY, {
-      defaultValue: DEFAULT_PREFERENCES,
-    });
+    useLocalStorageState<DashboardPreferences>(
+      DASHBOARD_PREFERENCES_STORAGE_KEY,
+      {
+        defaultValue: defaultPreferences,
+      },
+    );
 
   const setViewMode = useCallback(
-    (viewMode: ViewMode) => {
+    (viewMode: DashboardViewModeOptions) => {
       setPreferences((prev) => ({ ...prev, viewMode }));
     },
     [setPreferences],
   );
 
   const setPageSize = useCallback(
-    (pageSize: PageSize) => {
+    (pageSize: DashboardPageSizeOptions) => {
       setPreferences((prev) => ({ ...prev, pageSize }));
     },
     [setPreferences],
   );
 
   const setColumnVisibility = useCallback(
-    (columnVisibility: ColumnVisibility) => {
-      setPreferences((prev) => ({ ...prev, columnVisibility }));
+    (
+      updaterOrValue:
+        | Record<string, boolean>
+        | ((prev: Record<string, boolean>) => Record<string, boolean>),
+    ) => {
+      setPreferences((prev) => {
+        const currentVisibility = prev.columnVisibility;
+        const newVisibility =
+          typeof updaterOrValue === "function"
+            ? updaterOrValue(currentVisibility)
+            : updaterOrValue;
+        return { ...prev, columnVisibility: newVisibility };
+      });
     },
     [setPreferences],
   );
 
+  // Validate stored values to handle localStorage corruption
+  const viewMode = validateOption<DashboardViewModeOptions>(
+    preferences?.viewMode,
+    DASHBOARD_VIEW_MODE_OPTIONS,
+    defaultPreferences.viewMode,
+  );
+
+  const pageSize = validateOption<DashboardPageSizeOptions>(
+    preferences?.pageSize,
+    DASHBOARD_PAGE_SIZE_OPTIONS,
+    defaultPreferences.pageSize,
+  );
+
   return {
-    viewMode: preferences?.viewMode ?? DEFAULT_PREFERENCES.viewMode,
-    pageSize: preferences?.pageSize ?? DEFAULT_PREFERENCES.pageSize,
+    viewMode,
+    pageSize,
     columnVisibility:
-      preferences?.columnVisibility ?? DEFAULT_PREFERENCES.columnVisibility,
+      preferences?.columnVisibility ?? defaultPreferences.columnVisibility,
     setViewMode,
     setPageSize,
     setColumnVisibility,
   };
-}
-
-/**
- * Convenience hook for components that only need view mode preference.
- * Returns a tuple for backward compatibility with useViewPreference.
- */
-export function useViewPreference(): [ViewMode, (mode: ViewMode) => void] {
-  const { viewMode, setViewMode } = useDashboardPreferences();
-  return [viewMode, setViewMode];
-}
-
-/**
- * Convenience hook for components that only need page size preference.
- * Returns a tuple for backward compatibility with usePageSizePreference.
- */
-export function usePageSizePreference(): [PageSize, (size: PageSize) => void] {
-  const { pageSize, setPageSize } = useDashboardPreferences();
-  return [pageSize, setPageSize];
-}
-
-/**
- * Convenience hook for components that only need column visibility preference.
- * Returns a setter compatible with TanStack Table's onColumnVisibilityChange
- * (accepts both direct values and updater functions).
- */
-export function useColumnVisibilityPreference(): [
-  ColumnVisibility,
-  (
-    updaterOrValue:
-      | ColumnVisibility
-      | ((prev: ColumnVisibility) => ColumnVisibility),
-  ) => void,
-] {
-  const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
-
-  const setVisibility = useCallback(
-    (
-      updaterOrValue:
-        | ColumnVisibility
-        | ((prev: ColumnVisibility) => ColumnVisibility),
-    ) => {
-      if (typeof updaterOrValue === "function") {
-        // Handle updater function pattern (TanStack Table uses this)
-        const newValue = updaterOrValue(columnVisibility);
-        setColumnVisibility(newValue);
-      } else {
-        // Handle direct value pattern
-        setColumnVisibility(updaterOrValue);
-      }
-    },
-    [columnVisibility, setColumnVisibility],
-  );
-
-  return [columnVisibility, setVisibility];
 }

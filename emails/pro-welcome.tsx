@@ -15,7 +15,7 @@ type ProWelcomeEmailProps = {
   userName: string;
 };
 
-export function ProWelcomeEmail({ userName }: ProWelcomeEmailProps) {
+function ProWelcomeEmail({ userName }: ProWelcomeEmailProps) {
   const previewText = "Get the most out of Domainstack Pro";
 
   return (

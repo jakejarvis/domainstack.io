@@ -3,7 +3,8 @@
  */
 
 import type { REGISTRATION_SOURCES } from "@/lib/constants/registration";
-import type { ProviderRef, RegistrationContact } from "@/lib/types";
+import type { ProviderRef } from "../provider-ref";
+import type { RegistrationContact } from "../rdap";
 
 type RegistrationSource = (typeof REGISTRATION_SOURCES)[number];
 

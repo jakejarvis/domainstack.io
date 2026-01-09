@@ -201,7 +201,7 @@ export async function monitorDomainWorkflow(
 
   // Step 5: Check certificate changes
   if (certificatesData && certificatesData.certificates.length > 0) {
-    const leafCert = certificatesData.certificates[0];
+    const [leafCert] = certificatesData.certificates;
 
     const currentCertificate = {
       caProviderId: leafCert.caProvider?.id ?? null,
@@ -382,7 +382,7 @@ async function handleRegistrationChange(
 ): Promise<boolean> {
   "use step";
 
-  const { RegistrationChangeEmail } = await import(
+  const { default: RegistrationChangeEmail } = await import(
     "@/emails/registration-change"
   );
   const { getProviderNames } = await import("@/lib/db/repos/providers");
@@ -403,8 +403,7 @@ async function handleRegistrationChange(
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
   // Resolve provider names without mutating the input
-  let previousRegistrar = change.previousRegistrar;
-  let newRegistrar = change.newRegistrar;
+  let { previousRegistrar, newRegistrar } = change;
 
   if (change.registrarChanged) {
     const ids = [change.previousRegistrar, change.newRegistrar].filter(
@@ -539,7 +538,9 @@ async function handleProviderChange(
 ): Promise<boolean> {
   "use step";
 
-  const { ProviderChangeEmail } = await import("@/emails/provider-change");
+  const { default: ProviderChangeEmail } = await import(
+    "@/emails/provider-change"
+  );
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
@@ -649,7 +650,7 @@ async function handleCertificateChange(
 ): Promise<boolean> {
   "use step";
 
-  const { CertificateChangeEmail } = await import(
+  const { default: CertificateChangeEmail } = await import(
     "@/emails/certificate-change"
   );
   const { getProviderNames } = await import("@/lib/db/repos/providers");
@@ -670,8 +671,7 @@ async function handleCertificateChange(
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
   // Resolve CA provider names without mutating the input
-  let previousCaProvider = change.previousCaProvider;
-  let newCaProvider = change.newCaProvider;
+  let { previousCaProvider, newCaProvider } = change;
 
   if (change.caProviderChanged) {
     const ids = [change.previousCaProviderId, change.newCaProviderId].filter(

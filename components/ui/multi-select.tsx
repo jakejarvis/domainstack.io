@@ -79,15 +79,18 @@ export function MultiSelect<T extends string>({
     multiple: true,
   });
 
-  const flatOptions = useMemo(() => {
-    return sections
-      ? sections.flatMap((section) => section.options)
-      : (options ?? []);
-  }, [options, sections]);
+  const flatOptions = useMemo(
+    () =>
+      sections
+        ? sections.flatMap((section) => section.options)
+        : (options ?? []),
+    [options, sections],
+  );
 
-  const optionByValue = useMemo(() => {
-    return new Map(flatOptions.map((opt) => [opt.value, opt]));
-  }, [flatOptions]);
+  const optionByValue = useMemo(
+    () => new Map(flatOptions.map((opt) => [opt.value, opt])),
+    [flatOptions],
+  );
 
   const selectedItems = selected
     .map((v) => optionByValue.get(v))

@@ -217,5 +217,3 @@ export function DashboardBanner({
     </div>
   );
 }
-
-export { bannerVariants };

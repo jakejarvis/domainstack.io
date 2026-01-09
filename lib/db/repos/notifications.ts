@@ -107,7 +107,7 @@ export async function getUserNotifications(
       case "read":
         return isNotNull(notifications.readAt);
       case "all":
-        return undefined;
+        return;
     }
   };
 

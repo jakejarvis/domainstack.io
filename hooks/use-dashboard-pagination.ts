@@ -3,19 +3,17 @@
 import type { PaginationState } from "@tanstack/react-table";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useCallback, useMemo } from "react";
-import {
-  type PageSize,
-  usePageSizePreference,
-} from "@/hooks/use-dashboard-preferences";
+import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
+import type { DashboardPageSizeOptions } from "@/lib/dashboard-utils";
 
 /**
  * Hook for table pagination - syncs page index with URL, keeps page size in localStorage
  */
 export function useDashboardPagination(): {
   pagination: PaginationState;
-  pageSize: PageSize;
+  pageSize: DashboardPageSizeOptions;
   setPageIndex: (pageIndex: number) => void;
-  setPageSize: (pageSize: PageSize) => void;
+  setPageSize: (pageSize: DashboardPageSizeOptions) => void;
   resetPage: () => void;
 } {
   // Page index in URL (1-indexed for user-facing URLs, converted to 0-indexed internally)
@@ -28,7 +26,8 @@ export function useDashboardPagination(): {
   );
 
   // Page size in localStorage
-  const [pageSize, setPageSizePreference] = usePageSizePreference();
+  const { pageSize, setPageSize: setPageSizePreference } =
+    useDashboardPreferences();
 
   // Convert 1-indexed URL param to 0-indexed internal state
   const pageIndex = Math.max(0, pageParam - 1);
@@ -50,7 +49,7 @@ export function useDashboardPagination(): {
   );
 
   const setPageSize = useCallback(
-    (newSize: PageSize) => {
+    (newSize: DashboardPageSizeOptions) => {
       setPageSizePreference(newSize);
       // Reset to first page when changing page size
       setPageParam(1);

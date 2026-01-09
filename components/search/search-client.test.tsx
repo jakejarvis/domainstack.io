@@ -63,7 +63,7 @@ describe("DomainSearch (form variant)", () => {
     rerender(
       <SearchClient
         variant="lg"
-        externalNavigation={{ domain: "example.com", source: "suggestion" }}
+        value="example.com"
         onNavigationCompleteAction={onComplete}
       />,
     );

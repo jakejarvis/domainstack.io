@@ -105,13 +105,13 @@ describe("robots.txt parsing", () => {
     expect(robots.fetched).toBe(true);
     expect(robots.sitemaps[0]).toBe("https://example.test/sitemap.xml");
     expect(robots.groups.length).toBe(2);
-    const any = robots.groups[0];
+    const [any] = robots.groups;
     expect(any.userAgents).toContain("*");
     expect(any.rules.find((r) => r.type === "allow")?.value).toBe("/");
     expect(any.rules.find((r) => r.type === "disallow")?.value).toBe("/admin");
     expect(any.rules.find((r) => r.type === "crawlDelay")?.value).toBe("10");
 
-    const google = robots.groups[1];
+    const [, google] = robots.groups;
     expect(google.userAgents).toContain("Googlebot");
     expect(google.rules[0]).toEqual({ type: "disallow", value: "/private" });
   });
@@ -129,7 +129,7 @@ describe("robots.txt parsing", () => {
     ].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     expect(g.rules.find((r) => r.type === "allow")?.value).toBe("/public");
     expect(g.rules.find((r) => r.type === "disallow")?.value).toBe("/private");
@@ -148,11 +148,11 @@ describe("robots.txt parsing", () => {
     ].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(2);
-    const g1 = robots.groups[0];
+    const [g1] = robots.groups;
     expect(g1.userAgents).toEqual(["Googlebot", "Bingbot"]);
     expect(g1.rules.find((r) => r.type === "disallow")?.value).toBe("/private");
     expect(g1.rules.find((r) => r.type === "allow")?.value).toBe("/public");
-    const g2 = robots.groups[1];
+    const [, g2] = robots.groups;
     expect(g2.userAgents).toEqual(["DuckDuckBot"]);
     expect(g2.rules[0]).toEqual({ type: "disallow", value: "/ducks" });
   });
@@ -170,13 +170,13 @@ describe("robots.txt parsing", () => {
     const robots = parseRobotsTxt(text);
     expect(robots.fetched).toBe(true);
     expect(robots.groups.length).toBe(2);
-    const any = robots.groups[0];
+    const [any] = robots.groups;
     expect(any.userAgents).toContain("*");
     expect(any.rules.find((r) => r.type === "contentSignal")?.value).toBe(
       "https://example.test/content-signal.json",
     );
 
-    const google = robots.groups[1];
+    const [, google] = robots.groups;
     expect(google.userAgents).toContain("Googlebot");
     expect(google.rules.find((r) => r.type === "contentSignal")?.value).toBe(
       "no-ai-training",
@@ -187,7 +187,7 @@ describe("robots.txt parsing", () => {
     const text = ["uSeR-AgEnT :*", "DISALLOW:   /Admin", "allow:/"].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     expect(
       g.rules.some((r) => r.type === "disallow" && r.value === "/Admin"),
@@ -202,7 +202,7 @@ describe("robots.txt parsing", () => {
       "\n",
     );
     const robots = parseRobotsTxt(text);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.rules.length).toBe(1);
     expect(g.rules[0]).toEqual({ type: "disallow", value: "/x" });
   });
@@ -278,7 +278,7 @@ describe("robots.txt parsing", () => {
       "\n",
     );
     const robots = parseRobotsTxt(text);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(
       g.rules.some((r) => r.type === "disallow" && r.value === "/*.php$"),
     ).toBe(true);
@@ -294,7 +294,7 @@ describe("robots.txt parsing", () => {
       "Disallow: /private\u200B",
     ].join("\n");
     const robots = parseRobotsTxt(text);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(
       g.rules.some(
         (r) => r.type === "allow" && r.value === "/caf3/\u8DEF\u5F84",
@@ -319,7 +319,7 @@ describe("robots.txt parsing", () => {
     ].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.rules.length).toBe(1);
     expect(g.rules[0]).toEqual({ type: "disallow", value: "/y" });
   });
@@ -330,7 +330,7 @@ describe("robots.txt parsing", () => {
       baseUrl: "https://e.test/robots.txt",
     });
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     expect(
       g.rules.some((r) => r.type === "allow" && r.value === "/public"),
@@ -359,7 +359,7 @@ describe("robots.txt parsing", () => {
     });
     expect(robots.sitemaps).toContain("https://wordpress.org/sitemap.xml");
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     // Should contain all rules from the three groups
     expect(
@@ -398,7 +398,7 @@ describe("robots.txt parsing", () => {
       baseUrl: "https://dup.example/robots.txt",
     });
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     const disallows = g.rules.filter((r) => r.type === "disallow");
     const allows = g.rules.filter((r) => r.type === "allow");
     expect(disallows.length).toBe(1);
@@ -431,7 +431,7 @@ describe("robots.txt parsing", () => {
     expect(robots.fetched).toBe(true);
     expect(robots.sitemaps).toContain("https://vercel.test/sitemap.xml");
     expect(robots.groups.length).toBe(1);
-    const any = robots.groups[0];
+    const [any] = robots.groups;
     expect(any.userAgents).toEqual(["*"]);
     // empty Disallow captured as a rule with empty value
     expect(any.rules.some((r) => r.type === "disallow" && r.value === "")).toBe(
@@ -454,7 +454,7 @@ describe("robots.txt parsing", () => {
       "Allow: /",
     ].join("\n");
     const robots = parseRobotsTxt(text);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     const empty = g.rules.find((r) => r.type === "disallow" && r.value === "");
     expect(empty).toBeTruthy();
     expect(
@@ -466,7 +466,7 @@ describe("robots.txt parsing", () => {
     const text = ["\uFEFFUser-agent: *", "Disallow: /private"].join("\n");
     const robots = parseRobotsTxt(text);
     expect(robots.groups.length).toBe(1);
-    const g = robots.groups[0];
+    const [g] = robots.groups;
     expect(g.userAgents).toEqual(["*"]);
     expect(g.rules[0]).toEqual({ type: "disallow", value: "/private" });
   });

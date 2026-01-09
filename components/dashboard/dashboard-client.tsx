@@ -27,13 +27,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
-import { useViewPreference } from "@/hooks/use-dashboard-preferences";
+import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
-import { sortDomains, useGridSortPreference } from "@/hooks/use-dashboard-sort";
+import { useDashboardGridSort } from "@/hooks/use-dashboard-sort";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
+import { sortDomains } from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails } from "@/lib/types";
 
 type ConfirmAction =
@@ -50,8 +51,8 @@ export function DashboardClient() {
   const [isBulkArchiving, setIsBulkArchiving] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
-  const [viewMode, setViewMode] = useViewPreference();
-  const [sortOption, setSortOption] = useGridSortPreference();
+  const { viewMode, setViewMode } = useDashboardPreferences();
+  const [sortOption, setSortOption] = useDashboardGridSort();
   const [tableInstance, setTableInstance] =
     useState<Table<TrackedDomainWithDetails> | null>(null);
   const { data: session, isPending: sessionLoading } = useSession();

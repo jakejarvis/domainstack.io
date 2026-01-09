@@ -202,7 +202,7 @@ describe("persistDnsRecords", () => {
         name: "persist.com",
         value: "1.2.3.4",
         ttl: 300,
-        expiresAt: new Date(Date.now() + 300000).toISOString(),
+        expiresAt: new Date(Date.now() + 300_000).toISOString(),
       },
     ]);
 

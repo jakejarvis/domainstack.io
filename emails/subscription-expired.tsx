@@ -17,7 +17,7 @@ type SubscriptionExpiredEmailProps = {
   archivedCount: number;
 };
 
-export function SubscriptionExpiredEmail({
+function SubscriptionExpiredEmail({
   userName,
   archivedCount,
 }: SubscriptionExpiredEmailProps) {

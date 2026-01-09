@@ -5,7 +5,6 @@ import {
   getUserNotifications,
   markAllAsRead,
   markAsRead,
-  type NotificationFilter,
 } from "@/lib/db/repos/notifications";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
@@ -28,9 +27,7 @@ export const notificationsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const limit = input.limit;
-      const cursor = input.cursor;
-      const filter: NotificationFilter = input.filter;
+      const { limit, cursor, filter } = input;
 
       // Fetch one extra to determine if there's a next page
       const items = await getUserNotifications(
@@ -55,9 +52,9 @@ export const notificationsRouter = createTRPCRouter({
   /**
    * Get unread notification count for badge display.
    */
-  unreadCount: protectedProcedure.query(async ({ ctx }) => {
-    return getUnreadCount(ctx.user.id);
-  }),
+  unreadCount: protectedProcedure.query(async ({ ctx }) =>
+    getUnreadCount(ctx.user.id),
+  ),
 
   /**
    * Mark a single notification as read.

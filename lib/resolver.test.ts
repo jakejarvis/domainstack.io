@@ -121,11 +121,7 @@ describe("dohLookup", () => {
   it("throws error when all DoH providers fail", async () => {
     // Force network error on all providers
     server.use(
-      ...DOH_PROVIDERS.map((p) =>
-        http.get(p.url, () => {
-          return HttpResponse.error();
-        }),
-      ),
+      ...DOH_PROVIDERS.map((p) => http.get(p.url, () => HttpResponse.error())),
     );
 
     const { dohLookup } = await import("./resolver");
@@ -183,8 +179,7 @@ describe("dohLookup", () => {
     // Identify primary and secondary providers for the domain
     // dohLookup uses providerOrderForLookup internally
     const providers = providerOrderForLookup("example.test");
-    const primary = providers[0];
-    const secondary = providers[1];
+    const [primary, secondary] = providers;
 
     server.use(
       // Primary fails

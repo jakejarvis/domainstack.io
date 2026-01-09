@@ -1,4 +1,5 @@
 /* @vitest-environment node */
+import { eq } from "drizzle-orm";
 import {
   afterAll,
   beforeAll,
@@ -166,7 +167,7 @@ describe("handleDowngrade", () => {
         domainId: testDomainIds[i],
         verificationToken: `token-${i}`,
         verified: true,
-        createdAt: new Date(baseDate.getTime() + i * 86400000), // Each day later
+        createdAt: new Date(baseDate.getTime() + i * 86_400_000), // Each day later
       });
     }
 
@@ -217,9 +218,7 @@ describe("handleDowngrade", () => {
     const [subscription] = await db
       .select()
       .from(userSubscriptions)
-      .where(
-        (await import("drizzle-orm")).eq(userSubscriptions.userId, newUser.id),
-      );
+      .where(eq(userSubscriptions.userId, newUser.id));
     expect(subscription).toBeDefined();
     expect(subscription.tier).toBe("free");
   });

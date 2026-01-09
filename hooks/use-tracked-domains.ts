@@ -47,12 +47,6 @@ export type UseTrackedDomainsOptions = {
 };
 
 /**
- * Return type for useTrackedDomains hook.
- * Uses ReturnType to capture the exact inferred type from the hook.
- */
-export type UseTrackedDomainsReturn = ReturnType<typeof useTrackedDomains>;
-
-/**
  * Helper to update subscription cache for removing domains from active list.
  */
 function updateSubscriptionForRemoval(

@@ -16,11 +16,11 @@ import {
 } from "@/lib/constants/ttl";
 
 // Helper functions
-export function addSeconds(base: Date, seconds: number): Date {
+function addSeconds(base: Date, seconds: number): Date {
   return new Date(base.getTime() + seconds * 1000);
 }
 
-export function clampFuture(min: Date, max: Date, now: Date): Date {
+function clampFuture(min: Date, max: Date, now: Date): Date {
   const nowMs = now.getTime();
   const minMs = min.getTime();
   const maxMs = max.getTime();

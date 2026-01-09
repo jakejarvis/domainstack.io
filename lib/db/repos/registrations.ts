@@ -71,7 +71,7 @@ export async function getRegistrationCached(
       return null;
     }
 
-    const row = existing[0];
+    const [row] = existing;
 
     const registrarProvider = row.providerName
       ? {

@@ -227,7 +227,7 @@ async function sendVerificationFailingEmail(
 ): Promise<boolean> {
   "use step";
 
-  const { VerificationFailingEmail } = await import(
+  const { default: VerificationFailingEmail } = await import(
     "@/emails/verification-failing"
   );
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
@@ -292,7 +292,7 @@ async function sendVerificationRevokedEmail(
 ): Promise<boolean> {
   "use step";
 
-  const { VerificationRevokedEmail } = await import(
+  const { default: VerificationRevokedEmail } = await import(
     "@/emails/verification-revoked"
   );
   const {

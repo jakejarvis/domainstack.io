@@ -90,9 +90,8 @@ export function NotificationsPopover() {
     }
   }, [open]);
 
-  const getLatestUnreadCount = () => {
-    return queryClient.getQueryData<number>(unreadCountQueryKey) ?? count;
-  };
+  const getLatestUnreadCount = () =>
+    queryClient.getQueryData<number>(unreadCountQueryKey) ?? count;
 
   const maybeAutoMarkAllRead = () => {
     if (autoMarkedThisOpenRef.current) return;

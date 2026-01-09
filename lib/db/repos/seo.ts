@@ -56,7 +56,7 @@ export async function getSeoCached(
       .from(seoTable)
       .where(eq(seoTable.domainId, existingDomain.id));
 
-    const row = existing[0];
+    const [row] = existing;
     if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
       return null;
     }

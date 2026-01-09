@@ -45,7 +45,7 @@ vi.mock("@/lib/schedule", () => ({
 // Mock providers repo for normalizeRdapRecord tests
 vi.mock("@/lib/db/repos/providers", () => ({
   resolveOrCreateProviderId: vi.fn().mockResolvedValue(null),
-  upsertCatalogProviderRef: vi.fn().mockResolvedValue({ id: "test-id" }),
+  upsertCatalogProvider: vi.fn().mockResolvedValue({ id: "test-id" }),
 }));
 
 describe("lookupRdap", () => {

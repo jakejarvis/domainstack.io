@@ -257,7 +257,7 @@ async function sendCertificateExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { CertificateExpiryEmail } = await import(
+  const { default: CertificateExpiryEmail } = await import(
     "@/emails/certificate-expiry"
   );
   const { sendEmail } = await import("@/workflows/shared/send-email");

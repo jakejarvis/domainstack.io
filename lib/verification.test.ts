@@ -12,8 +12,8 @@ describe("verifyByDns", () => {
   const token = "testtoken123";
 
   it("returns verified when TXT record matches", async () => {
-    const dohHandler = () => {
-      return HttpResponse.json({
+    const dohHandler = () =>
+      HttpResponse.json({
         Status: 0,
         Answer: [
           {
@@ -24,7 +24,6 @@ describe("verifyByDns", () => {
           },
         ],
       });
-    };
 
     server.use(
       http.get("https://cloudflare-dns.com/dns-query", dohHandler),
@@ -80,12 +79,11 @@ describe("verifyByDns", () => {
   });
 
   it("returns not verified when TXT record is missing", async () => {
-    const dohHandler = () => {
-      return HttpResponse.json({
+    const dohHandler = () =>
+      HttpResponse.json({
         Status: 0,
         Answer: [],
       });
-    };
 
     server.use(
       http.get("https://cloudflare-dns.com/dns-query", dohHandler),
@@ -100,8 +98,8 @@ describe("verifyByDns", () => {
   });
 
   it("returns not verified when TXT record value is wrong", async () => {
-    const dohHandler = () => {
-      return HttpResponse.json({
+    const dohHandler = () =>
+      HttpResponse.json({
         Status: 0,
         Answer: [
           {
@@ -112,7 +110,6 @@ describe("verifyByDns", () => {
           },
         ],
       });
-    };
 
     server.use(
       http.get("https://cloudflare-dns.com/dns-query", dohHandler),
@@ -128,12 +125,14 @@ describe("verifyByDns", () => {
 
   it("handles DNS query failure gracefully", async () => {
     server.use(
-      http.get("https://cloudflare-dns.com/dns-query", () => {
-        return new HttpResponse(null, { status: 500 });
-      }),
-      http.get("https://dns.google/resolve", () => {
-        return new HttpResponse(null, { status: 500 });
-      }),
+      http.get(
+        "https://cloudflare-dns.com/dns-query",
+        () => new HttpResponse(null, { status: 500 }),
+      ),
+      http.get(
+        "https://dns.google/resolve",
+        () => new HttpResponse(null, { status: 500 }),
+      ),
     );
 
     const { verifyByDns } = await import("./verification");
@@ -152,11 +151,10 @@ describe("verifyByHtmlFile", () => {
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse(expectedContent, {
+        () =>
+          new HttpResponse(expectedContent, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -171,11 +169,10 @@ describe("verifyByHtmlFile", () => {
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse(`  ${expectedContent}  \n`, {
+        () =>
+          new HttpResponse(`  ${expectedContent}  \n`, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -189,11 +186,10 @@ describe("verifyByHtmlFile", () => {
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse("", {
+        () =>
+          new HttpResponse("", {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
       http.get(
         "https://verified-dns.test/.well-known/domainstack-verify.html",
@@ -220,11 +216,10 @@ describe("verifyByHtmlFile", () => {
       ),
       http.get(
         "https://verified-dns.test/.well-known/domainstack-verify.html",
-        () => {
-          return new HttpResponse(expectedContent, {
+        () =>
+          new HttpResponse(expectedContent, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -243,11 +238,10 @@ describe("verifyByHtmlFile", () => {
       ),
       http.get(
         `http://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse(expectedContent, {
+        () =>
+          new HttpResponse(expectedContent, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -260,12 +254,14 @@ describe("verifyByHtmlFile", () => {
 
   it("returns not verified when all files not found", async () => {
     server.use(
-      http.get("https://verified-dns.test/*", () => {
-        return new HttpResponse(null, { status: 404 });
-      }),
-      http.get("http://verified-dns.test/*", () => {
-        return new HttpResponse(null, { status: 404 });
-      }),
+      http.get(
+        "https://verified-dns.test/*",
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+      http.get(
+        "http://verified-dns.test/*",
+        () => new HttpResponse(null, { status: 404 }),
+      ),
     );
 
     const { verifyByHtmlFile } = await import("./verification");
@@ -281,14 +277,16 @@ describe("verifyByMetaTag", () => {
 
   it("returns verified when meta tag with correct content exists", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -300,14 +298,16 @@ describe("verifyByMetaTag", () => {
 
   it("handles meta tag with reversed attribute order", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head><meta content="${token}" name="domainstack-verify"></head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head><meta content="${token}" name="domainstack-verify"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -319,18 +319,20 @@ describe("verifyByMetaTag", () => {
 
   it("finds correct token among multiple verification meta tags", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head>
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head>
             <meta name="domainstack-verify" content="otheruser1token">
             <meta name="domainstack-verify" content="${token}">
             <meta name="domainstack-verify" content="otheruser2token">
           </head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -342,17 +344,19 @@ describe("verifyByMetaTag", () => {
 
   it("returns not verified when token not in any of multiple meta tags", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head>
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head>
             <meta name="domainstack-verify" content="otheruser1token">
             <meta name="domainstack-verify" content="otheruser2token">
           </head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -364,17 +368,19 @@ describe("verifyByMetaTag", () => {
 
   it("handles malformed HTML gracefully", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head>
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head>
             <meta name="domainstack-verify" content="${token}"
             <meta name="description" content="test">
           </head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -386,14 +392,16 @@ describe("verifyByMetaTag", () => {
 
   it("returns not verified when meta tag is missing", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          "<html><head><title>Test</title></head><body></body></html>",
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            "<html><head><title>Test</title></head><body></body></html>",
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyByMetaTag } = await import("./verification");
@@ -408,8 +416,8 @@ describe("verifyDomain (all methods)", () => {
   const token = "testtoken123";
 
   it("returns dns_txt when DNS verification succeeds first", async () => {
-    const dohHandler = () => {
-      return HttpResponse.json({
+    const dohHandler = () =>
+      HttpResponse.json({
         Status: 0,
         Answer: [
           {
@@ -420,7 +428,6 @@ describe("verifyDomain (all methods)", () => {
           },
         ],
       });
-    };
 
     server.use(
       http.get("https://cloudflare-dns.com/dns-query", dohHandler),
@@ -468,11 +475,10 @@ describe("verifyDomain (all methods)", () => {
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse(`domainstack-verify: ${token}`, {
+        () =>
+          new HttpResponse(`domainstack-verify: ${token}`, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -524,14 +530,16 @@ describe("verifyDomain (all methods)", () => {
     );
 
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyDomain } = await import("./verification");
@@ -593,8 +601,8 @@ describe("verifyDomainByMethod", () => {
   const token = "testtoken123";
 
   it("uses only dns_txt method when specified", async () => {
-    const dohHandler = () => {
-      return HttpResponse.json({
+    const dohHandler = () =>
+      HttpResponse.json({
         Status: 0,
         Answer: [
           {
@@ -605,7 +613,6 @@ describe("verifyDomainByMethod", () => {
           },
         ],
       });
-    };
 
     server.use(
       http.get("https://cloudflare-dns.com/dns-query", dohHandler),
@@ -627,11 +634,10 @@ describe("verifyDomainByMethod", () => {
     server.use(
       http.get(
         `https://verified-dns.test/.well-known/domainstack-verify/${token}.html`,
-        () => {
-          return new HttpResponse(`domainstack-verify: ${token}`, {
+        () =>
+          new HttpResponse(`domainstack-verify: ${token}`, {
             headers: { "Content-Type": "text/html" },
-          });
-        },
+          }),
       ),
     );
 
@@ -648,14 +654,16 @@ describe("verifyDomainByMethod", () => {
 
   it("uses only meta_tag method when specified", async () => {
     server.use(
-      http.get("https://verified-dns.test/", () => {
-        return new HttpResponse(
-          `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
-          {
-            headers: { "Content-Type": "text/html" },
-          },
-        );
-      }),
+      http.get(
+        "https://verified-dns.test/",
+        () =>
+          new HttpResponse(
+            `<html><head><meta name="domainstack-verify" content="${token}"></head></html>`,
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          ),
+      ),
     );
 
     const { verifyDomainByMethod } = await import("./verification");

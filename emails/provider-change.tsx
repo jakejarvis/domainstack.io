@@ -27,7 +27,7 @@ type ProviderChangeEmailProps = {
   };
 };
 
-export function ProviderChangeEmail({
+function ProviderChangeEmail({
   userName,
   domainName,
   changes,

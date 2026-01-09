@@ -33,6 +33,9 @@
     },
     "rules": {
       "recommended": true,
+      "correctness": {
+        "useExhaustiveDependencies": "warn"
+      },
       "suspicious": {
         "noUnknownAtRules": "off"
       },
@@ -50,7 +53,9 @@
           }
         },
         "noFloatingPromises": "error",
-        "noMisusedPromises": "error"
+        "noMisusedPromises": "error",
+        "useConsistentArrowReturn": "error",
+        "useDestructuring": "error"
       }
     }
   },

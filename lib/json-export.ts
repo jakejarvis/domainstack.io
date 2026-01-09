@@ -51,6 +51,7 @@ export function exportDomainData(
 
   let headers = null;
   if (data.headers) {
+    // biome-ignore lint/nursery/useDestructuring: might be null
     headers = data.headers.headers;
   }
 

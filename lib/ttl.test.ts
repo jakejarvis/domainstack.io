@@ -1,11 +1,6 @@
 /* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import {
-  clampFuture,
-  ttlForCertificates,
-  ttlForDnsRecord,
-  ttlForRegistration,
-} from "./ttl";
+import { ttlForCertificates, ttlForDnsRecord, ttlForRegistration } from "./ttl";
 
 describe("TTL policy", () => {
   it("registration: 24h when far from expiry", () => {
@@ -76,29 +71,5 @@ describe("TTL policy", () => {
     const validTo = new Date("2024-01-01T02:00:00.000Z");
     const d = ttlForCertificates(now, validTo);
     expect(d.getTime() - now.getTime()).toBe(60 * 60 * 1000);
-  });
-
-  it("clampFuture returns candidate when inside window", () => {
-    const now = new Date("2024-01-01T00:00:00.000Z");
-    const min = new Date("2024-01-01T01:00:00.000Z");
-    const max = new Date("2024-01-01T03:00:00.000Z");
-    const result = clampFuture(min, max, now);
-    expect(result.toISOString()).toBe(min.toISOString());
-  });
-
-  it("clampFuture returns max when candidate exceeds max but max >= min", () => {
-    const now = new Date("2024-01-01T00:00:00.000Z");
-    const min = new Date("2024-01-01T00:00:10.000Z");
-    const max = new Date("2024-01-01T00:00:45.000Z");
-    const result = clampFuture(min, max, now);
-    expect(result.toISOString()).toBe(max.toISOString());
-  });
-
-  it("clampFuture never schedules earlier than min when max < min", () => {
-    const now = new Date("2024-01-01T00:00:00.000Z");
-    const min = new Date("2024-01-01T01:00:00.000Z");
-    const max = new Date("2023-12-31T23:30:00.000Z");
-    const result = clampFuture(min, max, now);
-    expect(result.toISOString()).toBe(min.toISOString());
   });
 });

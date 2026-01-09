@@ -135,7 +135,7 @@ export async function processCertificateChain(
   const { detectCertificateAuthority } = await import(
     "@/lib/providers/detection"
   );
-  const { upsertCatalogProviderRef } = await import("@/lib/db/repos/providers");
+  const { upsertCatalogProvider } = await import("@/lib/db/repos/providers");
 
   const caProviders = await getProviders("ca");
 
@@ -163,7 +163,7 @@ export async function processCertificateChain(
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
       if (catalogProvider) {
-        const ref = await upsertCatalogProviderRef(catalogProvider);
+        const ref = await upsertCatalogProvider(catalogProvider);
         return ref.id;
       }
       return null;
@@ -186,7 +186,7 @@ export async function processCertificateChain(
       ? new Date(
           Math.min(...certificates.map((c) => new Date(c.validTo).getTime())),
         )
-      : new Date(Date.now() + 3600_000);
+      : new Date(Date.now() + 3_600_000);
 
   return { certificates, providerIds, earliestValidTo };
 }

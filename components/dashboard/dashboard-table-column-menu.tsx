@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
+import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 
 type DashboardTableColumnMenuProps<TData> = {
   table: Table<TData>;
@@ -20,17 +20,15 @@ export function DashboardTableColumnMenu<TData>({
   table,
 }: DashboardTableColumnMenuProps<TData>) {
   // Read visibility state directly from localStorage hook (not stale table API)
-  const [columnVisibility, setColumnVisibility] =
-    useColumnVisibilityPreference();
+  const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
 
   const allColumns = table
     .getAllColumns()
     .filter((column) => column.getCanHide());
 
   // Check visibility from our state, not the table API
-  const isColumnVisible = (columnId: string) => {
-    return columnVisibility[columnId] !== false;
-  };
+  const isColumnVisible = (columnId: string) =>
+    columnVisibility[columnId] !== false;
 
   const hiddenCount = allColumns.filter(
     (column) => !isColumnVisible(column.id),
@@ -75,7 +73,7 @@ export function DashboardTableColumnMenu<TData>({
         <ScrollArea className="h-auto min-h-0 flex-1">
           <div className="p-1">
             {allColumns.map((column) => {
-              const columnDef = column.columnDef;
+              const { columnDef } = column;
               const header =
                 typeof columnDef.header === "string"
                   ? columnDef.header

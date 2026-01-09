@@ -126,7 +126,7 @@ export function getBrowser(
   return browserPromise;
 }
 
-export async function closeBrowser(): Promise<void> {
+async function closeBrowser(): Promise<void> {
   if (!browserPromise) {
     return;
   }

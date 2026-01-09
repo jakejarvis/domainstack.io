@@ -9,9 +9,7 @@ import { getProvidersFromCatalog, type Provider } from "./parser";
  * Uses React cache() for request-level deduplication - multiple calls
  * within the same request will only fetch from Edge Config once.
  */
-const getCachedCatalog = cache(async () => {
-  return getProviderCatalog();
-});
+const getCachedCatalog = cache(async () => getProviderCatalog());
 
 /**
  * Get providers for a specific category from Edge Config.
@@ -34,35 +32,4 @@ export async function getProviders(
   }
 
   return getProvidersFromCatalog(catalog, category);
-}
-
-/**
- * Get all providers from all categories from Edge Config.
- *
- * Useful for bulk operations or when multiple categories are needed.
- *
- * @returns Record of category to providers array
- */
-export async function getAllProviders(): Promise<
-  Record<ProviderCategory, Provider[]>
-> {
-  const catalog = await getCachedCatalog();
-
-  if (!catalog) {
-    return {
-      ca: [],
-      dns: [],
-      email: [],
-      hosting: [],
-      registrar: [],
-    };
-  }
-
-  return {
-    ca: getProvidersFromCatalog(catalog, "ca"),
-    dns: getProvidersFromCatalog(catalog, "dns"),
-    email: getProvidersFromCatalog(catalog, "email"),
-    hosting: getProvidersFromCatalog(catalog, "hosting"),
-    registrar: getProvidersFromCatalog(catalog, "registrar"),
-  };
 }

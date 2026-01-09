@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -20,20 +19,25 @@ export function detectRegistrationChanges(
   const registrarChanged =
     snapshot.registrarProviderId !== current.registrarProviderId;
 
+  // Defensive: Handle potential empty objects from createSnapshot defaults
+  const snapshotNameservers = snapshot.nameservers ?? [];
+  const currentNameservers = current.nameservers ?? [];
   const nameserversChanged = !arraysEqual(
-    [...snapshot.nameservers]
+    [...snapshotNameservers]
       .map((ns) => ns.host)
       .sort((a, b) => a.localeCompare(b)),
-    [...current.nameservers]
+    [...currentNameservers]
       .map((ns) => ns.host)
       .sort((a, b) => a.localeCompare(b)),
   );
 
   const transferLockChanged = snapshot.transferLock !== current.transferLock;
 
+  const snapshotStatuses = snapshot.statuses ?? [];
+  const currentStatuses = current.statuses ?? [];
   const statusesChanged = !arraysEqual(
-    [...snapshot.statuses].sort((a, b) => a.localeCompare(b)),
-    [...current.statuses].sort((a, b) => a.localeCompare(b)),
+    [...snapshotStatuses].sort((a, b) => a.localeCompare(b)),
+    [...currentStatuses].sort((a, b) => a.localeCompare(b)),
   );
 
   // If nothing changed, return null
@@ -53,13 +57,13 @@ export function detectRegistrationChanges(
     transferLockChanged,
     statusesChanged,
     previousRegistrar: snapshot.registrarProviderId,
-    previousNameservers: snapshot.nameservers,
+    previousNameservers: snapshotNameservers,
     previousTransferLock: snapshot.transferLock,
-    previousStatuses: snapshot.statuses,
+    previousStatuses: snapshotStatuses,
     newRegistrar: current.registrarProviderId,
-    newNameservers: current.nameservers,
+    newNameservers: currentNameservers,
     newTransferLock: current.transferLock,
-    newStatuses: current.statuses,
+    newStatuses: currentStatuses,
   };
 }
 
@@ -130,13 +134,6 @@ export function detectCertificateChanges(
     previousCaProviderId: snapshot.caProviderId,
     newCaProviderId: current.caProviderId,
   };
-}
-
-export function generateChangeHash(change: unknown): string {
-  return createHash("sha256")
-    .update(JSON.stringify(change))
-    .digest("hex")
-    .slice(0, 16);
 }
 
 /**

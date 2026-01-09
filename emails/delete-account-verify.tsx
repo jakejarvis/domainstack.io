@@ -15,7 +15,7 @@ type DeleteAccountVerifyEmailProps = {
   confirmUrl: string;
 };
 
-export function DeleteAccountVerifyEmail({
+function DeleteAccountVerifyEmail({
   userName,
   confirmUrl,
 }: DeleteAccountVerifyEmailProps) {

@@ -64,7 +64,7 @@ export interface PricingProvider {
 /**
  * Factory function to create a pricing provider with default configuration.
  */
-export function createPricingProvider(
+function createPricingProvider(
   name: string,
   implementation: {
     fetchPricing: (

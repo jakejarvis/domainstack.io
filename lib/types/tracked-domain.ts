@@ -4,12 +4,9 @@
  * These types are used across client and server code for tracked domains.
  */
 
-import type {
-  NotificationOverrides,
-  ProviderInfo,
-  VerificationMethod,
-  VerificationStatus,
-} from "@/lib/types";
+import type { NotificationOverrides } from "./notifications";
+import type { ProviderInfo } from "./provider";
+import type { VerificationMethod, VerificationStatus } from "./verification";
 
 /**
  * A tracked domain with all provider details attached.

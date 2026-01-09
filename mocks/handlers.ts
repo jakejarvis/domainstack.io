@@ -52,7 +52,7 @@ const DNS_RECORDS: Record<string, Record<string, unknown[]>> = {
       {
         name: "cname-chain.test.",
         type: 5,
-        TTL: 21600,
+        TTL: 21_600,
         data: "alias.cname-chain.test.",
       },
       {
@@ -327,7 +327,7 @@ const ipWhoIsHandler = ({ params }: { params: { ip: string } }) => {
       emoji_unicode: "U+1F1FA U+1F1F8",
     },
     connection: {
-      asn: 15169,
+      asn: 15_169,
       org: "Google LLC",
       isp: "Google LLC",
       domain: "google.com",
@@ -336,7 +336,7 @@ const ipWhoIsHandler = ({ params }: { params: { ip: string } }) => {
       id: "America/Los_Angeles",
       abbr: "PST",
       is_dst: false,
-      offset: -28800,
+      offset: -28_800,
       utc: "-08:00",
       current_time: "2024-01-01T12:00:00-08:00",
     },
@@ -361,8 +361,8 @@ const ipWhoIsHandler = ({ params }: { params: { ip: string } }) => {
   return HttpResponse.json(response);
 };
 
-const rdapBootstrapHandler = () => {
-  return HttpResponse.json({
+const rdapBootstrapHandler = () =>
+  HttpResponse.json({
     version: "1.0",
     publication: "2024-01-01T00:00:00Z",
     services: [
@@ -376,7 +376,6 @@ const rdapBootstrapHandler = () => {
       [["io"], ["https://rdap.nic.io/domain/"]],
     ],
   });
-};
 
 // Mock RDAP server responses
 const rdapDomainHandler = ({ params }: { params: { domain: string } }) => {
@@ -413,8 +412,8 @@ const rdapDomainHandler = ({ params }: { params: { domain: string } }) => {
 };
 
 // Pricing Providers Mocks
-const porkbunPricingHandler = () => {
-  return HttpResponse.json({
+const porkbunPricingHandler = () =>
+  HttpResponse.json({
     status: "SUCCESS",
     pricing: {
       com: {
@@ -434,18 +433,16 @@ const porkbunPricingHandler = () => {
       },
     },
   });
-};
 
-const cloudflarePricingHandler = () => {
-  return HttpResponse.json({
+const cloudflarePricingHandler = () =>
+  HttpResponse.json({
     com: { registration: 9.15, renewal: 9.15 },
     net: { registration: 10.15, renewal: 10.15 },
     io: { registration: 40.0, renewal: 40.0 },
   });
-};
 
-const dynadotPricingHandler = () => {
-  return HttpResponse.json({
+const dynadotPricingHandler = () =>
+  HttpResponse.json({
     code: 200,
     message: "success",
     data: {
@@ -456,7 +453,6 @@ const dynadotPricingHandler = () => {
       ],
     },
   });
-};
 
 // Generic Domain Content (SEO/Verification)
 const genericDomainHandler = ({ request }: { request: Request }) => {
@@ -494,11 +490,10 @@ const genericDomainHandler = ({ request }: { request: Request }) => {
   });
 };
 
-const verificationFileHandler = () => {
-  return new HttpResponse("domainstack-verify=mock-token-123", {
+const verificationFileHandler = () =>
+  new HttpResponse("domainstack-verify=mock-token-123", {
     headers: { "Content-Type": "text/html" },
   });
-};
 
 // Mock 1x1 transparent PNG
 const iconHandler = () => {
@@ -515,30 +510,27 @@ const iconHandler = () => {
 };
 
 // Resend API Mocks
-const resendApiHandler = () => {
-  return HttpResponse.json({
+const resendApiHandler = () =>
+  HttpResponse.json({
     id: "re_mock_123456789",
     object: "email",
     created_at: new Date().toISOString(),
   });
-};
 
-const resendContactHandler = () => {
-  return HttpResponse.json({
+const resendContactHandler = () =>
+  HttpResponse.json({
     object: "contact",
     id: "c_mock_123456789",
   });
-};
 
-const cloudflareIpsHandler = () => {
-  return HttpResponse.json({
+const cloudflareIpsHandler = () =>
+  HttpResponse.json({
     success: true,
     result: {
       ipv4_cidrs: ["173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22"],
       ipv6_cidrs: ["2400:cb00::/32", "2606:4700::/32"],
     },
   });
-};
 
 // Generic handlers
 export const handlers = [

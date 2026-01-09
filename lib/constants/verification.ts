@@ -3,8 +3,6 @@
  * Centralized configuration for verification methods, grace periods, and format strings.
  */
 
-import type { VerificationMethod } from "@/lib/types";
-
 // ============================================================================
 // Verification Methods & Statuses
 // ============================================================================
@@ -30,31 +28,6 @@ export const VERIFICATION_STATUSES = [
  * During this grace period, users can fix their verification setup.
  */
 export const VERIFICATION_GRACE_PERIOD_DAYS = 7;
-
-// ============================================================================
-// Verification Method Labels
-// ============================================================================
-
-/**
- * Human-readable labels for verification methods (used in UI badges and tooltips).
- */
-export const VERIFICATION_METHOD_LABELS: Record<VerificationMethod, string> = {
-  dns_txt: "TXT record",
-  html_file: "file",
-  meta_tag: "meta tag",
-} as const;
-
-/**
- * Longer descriptive labels for verification methods (used in tabs and headings).
- */
-export const VERIFICATION_METHOD_DESCRIPTIONS: Record<
-  VerificationMethod,
-  string
-> = {
-  dns_txt: "DNS Record",
-  html_file: "HTML File",
-  meta_tag: "Meta Tag",
-} as const;
 
 // ============================================================================
 // DNS Verification

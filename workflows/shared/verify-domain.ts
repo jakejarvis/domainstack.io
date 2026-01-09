@@ -14,7 +14,7 @@ export interface VerificationResult {
 export async function verifyDomainOwnership(
   domain: string,
   token: string,
-): Promise<{ verified: boolean; method: VerificationMethod | null }> {
+): Promise<VerificationResult> {
   "use step";
 
   const { verifyDomain } = await import("@/lib/verification");
@@ -30,7 +30,7 @@ export async function verifyDomainOwnershipByMethod(
   domain: string,
   token: string,
   method: VerificationMethod,
-): Promise<{ verified: boolean; method: VerificationMethod | null }> {
+): Promise<VerificationResult> {
   "use step";
 
   const { verifyDomainByMethod } = await import("@/lib/verification");

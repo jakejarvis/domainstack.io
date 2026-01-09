@@ -76,7 +76,7 @@ function getDistinctId(): string | undefined {
   try {
     return posthog.get_distinct_id();
   } catch {
-    return undefined;
+    return;
   }
 }
 

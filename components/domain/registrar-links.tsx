@@ -13,7 +13,7 @@ import { extractTldClient } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
-export function RegistrarLinksSkeleton({ className }: { className?: string }) {
+function RegistrarLinksSkeleton({ className }: { className?: string }) {
   const providerCount = Object.keys(PRICING_PROVIDERS ?? {}).length;
 
   return (

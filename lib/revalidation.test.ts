@@ -25,8 +25,11 @@ describe("revalidation", () => {
 
   beforeAll(async () => {
     const revalidationModule = await import("./revalidation");
+    // biome-ignore lint/nursery/useDestructuring: dynamic import
     getDecayMultiplier = revalidationModule.getDecayMultiplier;
+    // biome-ignore lint/nursery/useDestructuring: dynamic import
     shouldStopRevalidation = revalidationModule.shouldStopRevalidation;
+    // biome-ignore lint/nursery/useDestructuring: dynamic import
     applyDecayToTtl = revalidationModule.applyDecayToTtl;
   });
 

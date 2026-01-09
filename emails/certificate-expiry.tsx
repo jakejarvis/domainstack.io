@@ -18,7 +18,7 @@ type CertificateExpiryEmailProps = {
   issuer: string;
 };
 
-export function CertificateExpiryEmail({
+function CertificateExpiryEmail({
   userName,
   domainName,
   expirationDate,

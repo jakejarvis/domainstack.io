@@ -19,11 +19,7 @@ describe("lookupGeoIp", () => {
 
   it("returns defaults on error", async () => {
     // Force network error
-    server.use(
-      http.get("https://ipwho.is/:ip", () => {
-        return HttpResponse.error();
-      }),
-    );
+    server.use(http.get("https://ipwho.is/:ip", () => HttpResponse.error()));
 
     const res = await lookupGeoIp("1.2.3.4");
     expect(res.owner).toBeNull();

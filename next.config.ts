@@ -12,7 +12,11 @@ let nextConfig: NextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: true,
-  serverExternalPackages: ["@silvia-odwyer/photon-node"],
+  serverExternalPackages: [
+    "@silvia-odwyer/photon-node",
+    // https://github.com/resend/react-email/issues/2426
+    "prettier",
+  ],
   outputFileTracingIncludes: {
     "/.well-known/workflow/**/step": [
       "node_modules/@sparticuz/chromium/bin/**",
@@ -21,35 +25,33 @@ let nextConfig: NextConfig = {
   },
   logging: {
     incomingRequests: {
-      ignore: [/\/api\/inngest/, /\/api\/trpc/, /\/.well-known\/workflow/],
+      ignore: [/\/api\/trpc/, /\/.well-known\/workflow/],
     },
   },
-  rewrites: async () => {
-    return [
-      {
-        source: "/dashboard/feed.ics",
-        has: [
-          {
-            type: "query",
-            key: "token",
-          },
-        ],
-        destination: "/api/calendar/user?token=:token",
-      },
-      {
-        source: "/_proxy/ingest/static/:path*",
-        destination: "https://us-assets.i.posthog.com/static/:path*",
-      },
-      {
-        source: "/_proxy/ingest/:path*",
-        destination: "https://us.i.posthog.com/:path*",
-      },
-      {
-        source: "/healthz",
-        destination: "/api/healthz",
-      },
-    ];
-  },
+  rewrites: async () => [
+    {
+      source: "/dashboard/feed.ics",
+      has: [
+        {
+          type: "query",
+          key: "token",
+        },
+      ],
+      destination: "/api/calendar/user?token=:token",
+    },
+    {
+      source: "/_proxy/ingest/static/:path*",
+      destination: "https://us-assets.i.posthog.com/static/:path*",
+    },
+    {
+      source: "/_proxy/ingest/:path*",
+      destination: "https://us.i.posthog.com/:path*",
+    },
+    {
+      source: "/healthz",
+      destination: "/api/healthz",
+    },
+  ],
   skipTrailingSlashRedirect: true,
 };
 

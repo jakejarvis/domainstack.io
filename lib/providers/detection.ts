@@ -1,5 +1,4 @@
-import { toRegistrableDomain } from "@/lib/normalize-domain";
-import type { Header, ProviderRef } from "@/lib/types";
+import type { Header } from "@/lib/types";
 import type { Provider } from "./parser";
 import type { DetectionContext, Rule } from "./rules";
 
@@ -130,16 +129,6 @@ function detectProviderFromList(
   return null;
 }
 
-/**
- * Convert a CatalogProvider to a ProviderRef (for backwards compatibility).
- */
-function toProviderRef(provider: Provider | null): ProviderRef {
-  if (!provider) {
-    return { name: null, domain: null };
-  }
-  return { name: provider.name, domain: provider.domain };
-}
-
 // ============================================================================
 // Detection functions that accept providers as a parameter
 // ============================================================================
@@ -160,16 +149,6 @@ export function detectHostingProvider(
 }
 
 /**
- * Detect hosting provider and return ProviderRef (backwards compatibility).
- */
-export function detectHostingProviderRef(
-  headers: Header[],
-  providers: Provider[],
-): ProviderRef {
-  return toProviderRef(detectHostingProvider(headers, providers));
-}
-
-/**
  * Detect email provider from MX records.
  *
  * @param mxHosts - MX record hostnames
@@ -184,26 +163,6 @@ export function detectEmailProvider(
 }
 
 /**
- * Detect email provider and return ProviderRef with fallback.
- * Falls back to extracting the root domain from the first MX host if no catalog match.
- */
-export function detectEmailProviderRef(
-  mxHosts: string[],
-  providers: Provider[],
-): ProviderRef {
-  const found = detectEmailProvider(mxHosts, providers);
-  if (found) return toProviderRef(found);
-
-  // Fallback: extract root domain from first MX host
-  const first = mxHosts[0];
-  if (first) {
-    const root = toRegistrableDomain(first);
-    return { name: root || first, domain: root || null };
-  }
-  return { name: null, domain: null };
-}
-
-/**
  * Detect DNS provider from NS records.
  *
  * @param nsHosts - NS record hostnames
@@ -215,26 +174,6 @@ export function detectDnsProvider(
   providers: Provider[],
 ): Provider | null {
   return detectProviderFromList(providers, undefined, undefined, nsHosts);
-}
-
-/**
- * Detect DNS provider and return ProviderRef with fallback.
- * Falls back to extracting the root domain from the first NS host if no catalog match.
- */
-export function detectDnsProviderRef(
-  nsHosts: string[],
-  providers: Provider[],
-): ProviderRef {
-  const found = detectDnsProvider(nsHosts, providers);
-  if (found) return toProviderRef(found);
-
-  // Fallback: extract root domain from first NS host
-  const first = nsHosts[0];
-  if (first) {
-    const root = toRegistrableDomain(first);
-    return { name: root || first, domain: root || null };
-  }
-  return { name: null, domain: null };
 }
 
 /**
@@ -261,16 +200,6 @@ export function detectRegistrar(
 }
 
 /**
- * Detect registrar provider and return ProviderRef (backwards compatibility).
- */
-export function detectRegistrarRef(
-  registrarName: string,
-  providers: Provider[],
-): ProviderRef {
-  return toProviderRef(detectRegistrar(registrarName, providers));
-}
-
-/**
  * Detect certificate authority from an issuer string.
  *
  * @param issuer - Certificate issuer string
@@ -290,14 +219,4 @@ export function detectCertificateAuthority(
     undefined,
     name,
   );
-}
-
-/**
- * Detect certificate authority and return ProviderRef (backwards compatibility).
- */
-export function detectCertificateAuthorityRef(
-  issuer: string,
-  providers: Provider[],
-): ProviderRef {
-  return toProviderRef(detectCertificateAuthority(issuer, providers));
 }

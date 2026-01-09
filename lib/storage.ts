@@ -167,7 +167,9 @@ export async function storeImage(options: {
     try {
       const { imageSize } = await import("image-size");
       const dim = imageSize(buffer);
+      // biome-ignore lint/nursery/useDestructuring: might be null
       if (!width && typeof dim.width === "number") width = dim.width;
+      // biome-ignore lint/nursery/useDestructuring: might be null
       if (!height && typeof dim.height === "number") height = dim.height;
     } catch {
       // ignore; width/height remain undefined

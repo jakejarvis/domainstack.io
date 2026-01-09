@@ -103,8 +103,8 @@ export const analytics = {
       await client.identifyImmediate({
         distinctId: userId,
         properties: {
-          ...(properties && { $set: properties }),
-          ...(setOnceProperties && { $set_once: setOnceProperties }),
+          $set: properties,
+          $set_once: setOnceProperties,
         },
       });
     };

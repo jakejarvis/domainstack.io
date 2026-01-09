@@ -31,14 +31,14 @@ type ProviderTooltipContentProps = {
  * Extract domain from URL or hostname string
  */
 function extractDomain(input: string | undefined | null): string | undefined {
-  if (!input) return undefined;
+  if (!input) return;
   const value = String(input).trim();
-  if (!value) return undefined;
+  if (!value) return;
   try {
     const url = new URL(value.includes("://") ? value : `https://${value}`);
     return url.hostname || undefined;
   } catch {
-    return undefined;
+    return;
   }
 }
 

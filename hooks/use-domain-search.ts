@@ -9,11 +9,8 @@ import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 
-export type Source = "form" | "header" | "suggestion";
-
-export type UseDomainSearchOptions = {
+type UseDomainSearchOptions = {
   initialValue?: string;
-  source?: Exclude<Source, "suggestion">;
   showInvalidToast?: boolean;
   enableShortcut?: boolean;
   shortcutKey?: string; // default: "k"
@@ -23,7 +20,6 @@ export type UseDomainSearchOptions = {
 export function useDomainSearch(options: UseDomainSearchOptions = {}) {
   const {
     initialValue = "",
-    source = "form",
     showInvalidToast = false,
     enableShortcut = false,
     shortcutKey = "k",
@@ -68,11 +64,10 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
     [enableShortcut, shortcutKey],
   );
 
-  function navigateToDomain(domain: string, navigateSource: Source = source) {
+  function navigateToDomain(domain: string) {
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", {
       domain: target,
-      source: navigateSource,
     });
 
     const current = params?.domain
@@ -106,7 +101,7 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
       }
       return;
     }
-    navigateToDomain(normalized, source);
+    navigateToDomain(normalized);
   }
 
   return {

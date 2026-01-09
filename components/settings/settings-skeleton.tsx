@@ -1,6 +1,7 @@
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Separator } from "../ui/separator";
 
 /**
  * Skeleton for the subscription section.
@@ -57,7 +58,7 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
  * Skeleton for a single notification row.
  * Shows placeholder for icon, label, and toggle.
  */
-export function NotificationRowSkeleton({ className }: { className?: string }) {
+function NotificationRowSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn("flex items-center gap-3 rounded-xl px-3 py-3", className)}
@@ -73,6 +74,27 @@ export function NotificationRowSkeleton({ className }: { className?: string }) {
 
       {/* Toggle placeholder */}
       <Skeleton className="h-5 w-9 rounded-full" />
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the calendar feed section.
+ * Shows placeholders for header, description, and enable button.
+ */
+function CalendarFeedSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <CardHeader className="mb-2 px-0 pt-0 pb-2">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-5 rounded" />
+          <Skeleton className="h-6 w-28" />
+        </div>
+        <Skeleton className="mt-1 h-4 w-80" />
+      </CardHeader>
+      <CardContent className="space-y-4 px-0 pt-1">
+        <Skeleton className="h-10 w-44 rounded-lg" />
+      </CardContent>
     </div>
   );
 }
@@ -97,12 +119,13 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
           <NotificationRowSkeleton />
           <NotificationRowSkeleton />
         </div>
-
-        {/* Per-domain overrides trigger placeholder */}
+        <Separator className="my-6 bg-muted" />
         <div className="flex w-full items-center justify-between rounded-lg px-3 py-3">
           <Skeleton className="h-4 w-36" />
           <Skeleton className="size-4 rounded-sm" />
         </div>
+        <Separator className="my-6 bg-muted" />
+        <CalendarFeedSkeleton />
       </CardContent>
     </div>
   );
@@ -112,11 +135,7 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
  * Skeleton for a single linked account row.
  * Shows placeholder for provider icon, name, and action button.
  */
-export function LinkedAccountRowSkeleton({
-  className,
-}: {
-  className?: string;
-}) {
+function LinkedAccountRowSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
@@ -129,6 +148,30 @@ export function LinkedAccountRowSkeleton({
         <Skeleton className="h-4 w-16" />
       </div>
       <Skeleton className="h-8 w-16 rounded-md" />
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the danger zone section.
+ * Shows a collapsed danger zone trigger placeholder.
+ */
+function DangerZoneSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-4 bg-destructive/20" />
+        <div className="space-y-1">
+          <Skeleton className="h-4 w-24 bg-destructive/20" />
+          <Skeleton className="h-3 w-40 bg-destructive/10" />
+        </div>
+      </div>
+      <Skeleton className="size-4 bg-destructive/20" />
     </div>
   );
 }
@@ -149,31 +192,9 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
+        <Separator className="my-6 bg-muted" />
+        <DangerZoneSkeleton />
       </CardContent>
-    </div>
-  );
-}
-
-/**
- * Skeleton for the danger zone section.
- * Shows a collapsed danger zone trigger placeholder.
- */
-export function DangerZoneSkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Skeleton className="size-4 bg-destructive/20" />
-        <div className="space-y-1">
-          <Skeleton className="h-4 w-24 bg-destructive/20" />
-          <Skeleton className="h-3 w-40 bg-destructive/10" />
-        </div>
-      </div>
-      <Skeleton className="size-4 bg-destructive/20" />
     </div>
   );
 }
@@ -220,27 +241,6 @@ export function SettingsSkeletonPanels({ className }: { className?: string }) {
   return (
     <div className={className}>
       <SubscriptionSkeleton />
-    </div>
-  );
-}
-
-/**
- * Skeleton for the calendar feed section.
- * Shows placeholders for header, description, and enable button.
- */
-export function CalendarFeedSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={className}>
-      <CardHeader className="mb-2 px-0 pt-0 pb-2">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-5 rounded" />
-          <Skeleton className="h-6 w-28" />
-        </div>
-        <Skeleton className="mt-1 h-4 w-80" />
-      </CardHeader>
-      <CardContent className="space-y-4 px-0 pt-1">
-        <Skeleton className="h-10 w-44 rounded-lg" />
-      </CardContent>
     </div>
   );
 }

@@ -92,7 +92,7 @@ export function useReportSectionObserver({
         if (!targetEl || now > programmaticLockUntilRef.current) {
           programmaticTargetIdRef.current = null;
         } else {
-          const top = targetEl.getBoundingClientRect().top;
+          const { top } = targetEl.getBoundingClientRect();
           const isLanded = Math.abs(top - scrollMarginPx) <= 2;
           if (!isLanded) {
             setActiveSection((prev) => (prev === targetId ? prev : targetId));
@@ -112,7 +112,7 @@ export function useReportSectionObserver({
       // the previous section remains partially visible.
       let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
       for (const el of sectionEls) {
-        const top = el.getBoundingClientRect().top;
+        const { top } = el.getBoundingClientRect();
         if (top - scrollMarginPx <= 1) {
           nextActive = el.id;
         } else {

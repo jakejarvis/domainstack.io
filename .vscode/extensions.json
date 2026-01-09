@@ -2,6 +2,7 @@
   "recommendations": [
     "biomejs.biome",
     "bradlc.vscode-tailwindcss",
-    "vitest.explorer"
+    "vitest.explorer",
+    "webpro.vscode-knip"
   ]
 }

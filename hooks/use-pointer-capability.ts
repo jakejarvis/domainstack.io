@@ -1,6 +1,6 @@
 import { useMediaQuery } from "@/hooks/use-media-query";
 
-export type PointerCapability = {
+type PointerCapability = {
   supportsHover: boolean;
   isCoarsePointer: boolean;
   isTouchDevice: boolean;

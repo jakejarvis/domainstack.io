@@ -8,18 +8,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  PAGE_SIZE_OPTIONS,
-  type PageSize,
-} from "@/hooks/use-dashboard-preferences";
+  DASHBOARD_PAGE_SIZE_OPTIONS,
+  type DashboardPageSizeOptions,
+} from "@/lib/dashboard-utils";
 
 type DashboardTablePaginationProps = {
   pageIndex: number;
-  pageSize: PageSize;
+  pageSize: DashboardPageSizeOptions;
   pageCount: number;
   canPreviousPage: boolean;
   canNextPage: boolean;
   onPageChange: (pageIndex: number) => void;
-  onPageSizeChange: (pageSize: PageSize) => void;
+  onPageSizeChange: (pageSize: DashboardPageSizeOptions) => void;
 };
 
 /**
@@ -42,13 +42,15 @@ export function DashboardTablePagination({
         <span className="text-muted-foreground text-xs">Show</span>
         <Select
           value={String(pageSize)}
-          onValueChange={(value) => onPageSizeChange(Number(value) as PageSize)}
+          onValueChange={(value) =>
+            onPageSizeChange(Number(value) as DashboardPageSizeOptions)
+          }
         >
           <SelectTrigger className="!h-8 cursor-pointer gap-1.5 px-2 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PAGE_SIZE_OPTIONS.map((size) => (
+            {DASHBOARD_PAGE_SIZE_OPTIONS.map((size) => (
               <SelectItem
                 key={size}
                 value={String(size)}

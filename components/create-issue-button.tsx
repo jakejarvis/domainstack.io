@@ -80,5 +80,3 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
     />
   );
 }
-
-export default CreateIssueButton;

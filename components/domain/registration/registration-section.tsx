@@ -211,7 +211,7 @@ export function formatRegistrant(reg: {
   return parts.join(" — ");
 }
 
-export function extractRegistrantView(
+function extractRegistrantView(
   record: RegistrationResponse,
 ): RegistrantView | null {
   const registrant = record.contacts?.find((c) => c.type === "registrant");
@@ -223,16 +223,16 @@ export function extractRegistrantView(
   return { organization, country, state };
 }
 
-export function extractSourceDomain(
+function extractSourceDomain(
   input: string | undefined | null,
 ): string | undefined {
-  if (!input) return undefined;
+  if (!input) return;
   const value = String(input).trim();
-  if (!value) return undefined;
+  if (!value) return;
   try {
     const url = new URL(value.includes("://") ? value : `https://${value}`);
     return url.hostname || undefined;
   } catch {
-    return undefined;
+    return;
   }
 }

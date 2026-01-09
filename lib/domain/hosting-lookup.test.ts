@@ -19,8 +19,8 @@ function mockGeoIp(
   data: { city?: string; country?: string; org?: string } = {},
 ) {
   server.use(
-    http.get(`https://ipwho.is/${ip}`, () => {
-      return HttpResponse.json({
+    http.get(`https://ipwho.is/${ip}`, () =>
+      HttpResponse.json({
         success: true,
         ip,
         city: data.city ?? "San Francisco",
@@ -34,8 +34,8 @@ function mockGeoIp(
           isp: data.org ?? "Cloudflare, Inc.",
           domain: "cloudflare.com",
         },
-      });
-    }),
+      }),
+    ),
   );
 }
 
@@ -142,7 +142,12 @@ describe("detectAndResolveProviders", () => {
   it("detects Vercel hosting from x-vercel-id header", async () => {
     const dnsRecords: DnsRecord[] = [
       { type: "A", name: "test.com", value: "1.2.3.4", ttl: 300 },
-      { type: "NS", name: "test.com", value: "ns1.cloudflare.com", ttl: 86400 },
+      {
+        type: "NS",
+        name: "test.com",
+        value: "ns1.cloudflare.com",
+        ttl: 86_400,
+      },
     ];
 
     const headers: Header[] = [
@@ -217,8 +222,18 @@ describe("detectAndResolveProviders", () => {
   it("detects Cloudflare DNS from NS records", async () => {
     const dnsRecords: DnsRecord[] = [
       { type: "A", name: "test.com", value: "1.2.3.4", ttl: 300 },
-      { type: "NS", name: "test.com", value: "ns1.cloudflare.com", ttl: 86400 },
-      { type: "NS", name: "test.com", value: "ns2.cloudflare.com", ttl: 86400 },
+      {
+        type: "NS",
+        name: "test.com",
+        value: "ns1.cloudflare.com",
+        ttl: 86_400,
+      },
+      {
+        type: "NS",
+        name: "test.com",
+        value: "ns2.cloudflare.com",
+        ttl: 86_400,
+      },
     ];
 
     const headers: Header[] = [];

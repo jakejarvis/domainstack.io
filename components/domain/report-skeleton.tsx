@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * Skeleton for the header area (favicon, domain name, action buttons).
  * Used by loading.tsx when we don't have the domain name yet.
  */
-export function HeaderSkeleton() {
+function HeaderSkeleton() {
   return (
     <div className="flex min-w-0 items-center justify-between gap-4">
       {/* Left: favicon + domain name */}
@@ -38,7 +38,7 @@ export function HeaderSkeleton() {
  * Skeleton for the section navigation tabs.
  * Used by loading.tsx when we don't have the domain name yet.
  */
-export function SectionNavSkeleton() {
+function SectionNavSkeleton() {
   return (
     <div
       aria-hidden

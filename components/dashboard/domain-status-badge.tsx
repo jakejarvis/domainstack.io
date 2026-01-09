@@ -2,10 +2,7 @@ import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import {
-  VERIFICATION_GRACE_PERIOD_DAYS,
-  VERIFICATION_METHOD_LABELS,
-} from "@/lib/constants/verification";
+import { VERIFICATION_GRACE_PERIOD_DAYS } from "@/lib/constants/verification";
 import type { VerificationMethod, VerificationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +68,7 @@ export function DomainStatusBadge({
         )}
         tooltipContent={
           verificationMethod
-            ? `Using ${VERIFICATION_METHOD_LABELS[verificationMethod]}`
+            ? `Using ${verificationMethod === "dns_txt" ? "TXT record" : verificationMethod === "html_file" ? "file" : "meta tag"}`
             : undefined
         }
       />

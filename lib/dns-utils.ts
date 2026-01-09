@@ -21,14 +21,6 @@ export const DOH_PROVIDERS = [
 export type DohProvider = (typeof DOH_PROVIDERS)[number];
 
 /**
- * Common HTTP headers for all DoH requests.
- * Use application/dns-json instead of application/dns-message for simpler parsing.
- */
-export const DOH_HEADERS = {
-  Accept: "application/dns-json",
-} as const;
-
-/**
  * DNS record type numbers (RFC 1035 and extensions).
  */
 export const DNS_TYPE_NUMBERS = {
@@ -65,11 +57,7 @@ export type DnsJson = {
 /**
  * Build a DoH query URL for a given provider, domain, and record type.
  */
-export function buildDohUrl(
-  provider: DohProvider,
-  domain: string,
-  type: string,
-): URL {
+function buildDohUrl(provider: DohProvider, domain: string, type: string): URL {
   const url = new URL(provider.url);
   url.searchParams.set("name", domain);
   url.searchParams.set("type", type);
@@ -127,7 +115,10 @@ export async function queryDohProvider(
   const res = await fetchWithTimeoutAndRetry(
     url,
     {
-      headers: { ...DOH_HEADERS, ...provider.headers },
+      headers: {
+        Accept: "application/dns-json",
+        ...provider.headers,
+      },
     },
     { timeoutMs, retries, backoffMs },
   );
@@ -177,7 +168,7 @@ export function isExpectedDnsError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
 
   // Check for ENOTFOUND (getaddrinfo failure)
-  const cause = (err as Error & { cause?: Error }).cause;
+  const { cause } = err as Error & { cause?: Error };
   if (cause && "code" in cause && cause.code === "ENOTFOUND") {
     return true;
   }

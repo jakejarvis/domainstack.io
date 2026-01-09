@@ -6,8 +6,8 @@
  */
 
 import { getStatusCode } from "@readme/http-status-codes";
-import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { isExpectedDnsError } from "@/lib/dns-utils";
+import { normalizeHeaders } from "@/lib/headers-utils";
 import { createLogger } from "@/lib/logger/server";
 import { safeFetch } from "@/lib/safe-fetch";
 import { isExpectedTlsError } from "@/lib/tls-utils";
@@ -179,19 +179,4 @@ export async function lookupAndPersistHeaders(
     status: result.status,
     statusMessage: result.statusMessage,
   };
-}
-
-/**
- * Normalize header names (trim + lowercase) then sort important headers first.
- */
-export function normalizeHeaders(h: Header[]): Header[] {
-  const normalized = h.map((hdr) => ({
-    name: hdr.name.trim().toLowerCase(),
-    value: hdr.value,
-  }));
-  return normalized.sort(
-    (a, b) =>
-      Number(IMPORTANT_HEADERS.has(b.name)) -
-        Number(IMPORTANT_HEADERS.has(a.name)) || a.name.localeCompare(b.name),
-  );
 }

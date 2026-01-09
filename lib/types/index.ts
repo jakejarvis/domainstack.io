@@ -9,7 +9,7 @@ export * from "./notifications";
 export * from "./pricing";
 export * from "./provider";
 export * from "./provider-ref";
-export * from "./registration-contacts";
+export * from "./rdap";
 export * from "./sections";
 export * from "./snapshot";
 export * from "./subscription";

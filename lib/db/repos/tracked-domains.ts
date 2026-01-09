@@ -919,16 +919,6 @@ export type TrackedDomainForReverification = {
   userName: string;
 };
 
-export type PendingDomainForAutoVerification = {
-  id: string;
-  userId: string;
-  domainName: string;
-  verificationToken: string;
-  createdAt: Date;
-  userEmail: string;
-  userName: string;
-};
-
 /**
  * Get verified tracked domain IDs.
  * Used by the reverification scheduler.

@@ -27,7 +27,7 @@ export function UserMenu() {
     return null;
   }
 
-  const user = session.user;
+  const { user } = session;
   const avatarUrl = `/api/avatar/${user.id}`;
   const initials =
     (user.name || "")

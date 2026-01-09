@@ -54,7 +54,7 @@ export async function GET(
     }
 
     // Validate content type is a safe image format (block SVGs which can contain scripts)
-    const contentType = asset.contentType;
+    const { contentType } = asset;
     if (!contentType?.startsWith("image/") || contentType === "image/svg+xml") {
       logger.warn(
         { userId, contentType },

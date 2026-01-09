@@ -46,14 +46,12 @@ describe("pricing service", () => {
     it("should handle provider failures gracefully", async () => {
       // Force Porkbun and Dynadot to fail, let Cloudflare succeed
       server.use(
-        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () => {
-          return HttpResponse.error();
-        }),
+        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () =>
+          HttpResponse.error(),
+        ),
         http.get(
           "https://api.dynadot.com/restful/v1/domains/get_tld_price",
-          () => {
-            return HttpResponse.error();
-          },
+          () => HttpResponse.error(),
         ),
       );
 
@@ -66,17 +64,15 @@ describe("pricing service", () => {
     it("should return empty providers array when no providers have pricing", async () => {
       // Mock all providers to return no pricing or fail
       server.use(
-        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () => {
-          return HttpResponse.json({ status: "SUCCESS", pricing: {} });
-        }),
-        http.get("https://cfdomainpricing.com/prices.json", () => {
-          return HttpResponse.json({});
-        }),
+        http.post("https://api.porkbun.com/api/json/v3/pricing/get", () =>
+          HttpResponse.json({ status: "SUCCESS", pricing: {} }),
+        ),
+        http.get("https://cfdomainpricing.com/prices.json", () =>
+          HttpResponse.json({}),
+        ),
         http.get(
           "https://api.dynadot.com/restful/v1/domains/get_tld_price",
-          () => {
-            return HttpResponse.json({ code: 200, data: { tldPriceList: [] } });
-          },
+          () => HttpResponse.json({ code: 200, data: { tldPriceList: [] } }),
         ),
       );
 

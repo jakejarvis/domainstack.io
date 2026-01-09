@@ -136,7 +136,7 @@ export async function normalizeRdapRecord(
   recordJson: string,
 ): Promise<RegistrationResponse> {
   // Dynamic imports for database operations
-  const { resolveOrCreateProviderId, upsertCatalogProviderRef } = await import(
+  const { resolveOrCreateProviderId, upsertCatalogProvider } = await import(
     "@/lib/db/repos/providers"
   );
 
@@ -173,7 +173,7 @@ export async function normalizeRdapRecord(
 
   if (hasProviderInfo) {
     if (catalogProvider) {
-      const providerRef = await upsertCatalogProviderRef(catalogProvider);
+      const providerRef = await upsertCatalogProvider(catalogProvider);
       registrarProviderId = providerRef.id;
     } else {
       registrarProviderId = await resolveOrCreateProviderId({

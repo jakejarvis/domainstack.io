@@ -47,15 +47,17 @@ describe("fetchHttpHeaders", () => {
   it("fetches headers successfully via HEAD request", async () => {
     mockDns("success.test");
     server.use(
-      http.head("https://success.test/", () => {
-        return new HttpResponse(null, {
-          status: 200,
-          headers: {
-            server: "vercel",
-            "x-vercel-id": "abc123",
-          },
-        });
-      }),
+      http.head(
+        "https://success.test/",
+        () =>
+          new HttpResponse(null, {
+            status: 200,
+            headers: {
+              server: "vercel",
+              "x-vercel-id": "abc123",
+            },
+          }),
+      ),
     );
 
     const { fetchHttpHeaders } = await import("./headers-lookup");
@@ -70,15 +72,17 @@ describe("fetchHttpHeaders", () => {
   it("captures non-2xx responses correctly", async () => {
     mockDns("forbidden.test");
     server.use(
-      http.head("https://forbidden.test/", () => {
-        return new HttpResponse(null, {
-          status: 403,
-          headers: {
-            server: "nginx",
-            "x-frame-options": "DENY",
-          },
-        });
-      }),
+      http.head(
+        "https://forbidden.test/",
+        () =>
+          new HttpResponse(null, {
+            status: 403,
+            headers: {
+              server: "nginx",
+              "x-frame-options": "DENY",
+            },
+          }),
+      ),
     );
 
     const { fetchHttpHeaders } = await import("./headers-lookup");
@@ -92,12 +96,8 @@ describe("fetchHttpHeaders", () => {
   it("returns fetch_error on network error", async () => {
     mockDns("error.test");
     server.use(
-      http.head("https://error.test/", () => {
-        return HttpResponse.error();
-      }),
-      http.get("https://error.test/", () => {
-        return HttpResponse.error();
-      }),
+      http.head("https://error.test/", () => HttpResponse.error()),
+      http.get("https://error.test/", () => HttpResponse.error()),
     );
 
     const { fetchHttpHeaders } = await import("./headers-lookup");

@@ -66,7 +66,7 @@ export async function fetchHtmlMeta(domain: string): Promise<HtmlFetchResult> {
     const htmlResult = await safeFetch({
       url: finalUrl,
       allowHttp: true,
-      timeoutMs: 10000,
+      timeoutMs: 10_000,
       maxBytes: 512 * 1024,
       maxRedirects: 5,
       truncateOnLimit: true,
@@ -77,7 +77,9 @@ export async function fetchHtmlMeta(domain: string): Promise<HtmlFetchResult> {
       },
     });
 
+    // biome-ignore lint/nursery/useDestructuring: might be null
     status = htmlResult.status;
+    // biome-ignore lint/nursery/useDestructuring: might be null
     finalUrl = htmlResult.finalUrl;
 
     if (!htmlResult.ok) {

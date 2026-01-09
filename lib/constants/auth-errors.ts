@@ -35,10 +35,7 @@ type AuthCallbackErrorCode =
  * User-friendly error messages for auth callback errors.
  * Maps error codes to messages that can be displayed in the UI.
  */
-export const AUTH_CALLBACK_ERROR_MESSAGES: Record<
-  AuthCallbackErrorCode,
-  string
-> = {
+const AUTH_CALLBACK_ERROR_MESSAGES: Record<AuthCallbackErrorCode, string> = {
   // Account linking errors - most common for users
   [AUTH_CALLBACK_ERROR_CODES.EMAIL_DOESNT_MATCH]:
     "The account you tried to link uses a different email address. Both accounts must use the same email.",

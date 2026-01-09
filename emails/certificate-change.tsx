@@ -25,7 +25,7 @@ type CertificateChangeEmailProps = {
   newValidTo?: string; // ISO date string
 };
 
-export function CertificateChangeEmail({
+function CertificateChangeEmail({
   userName,
   domainName,
   changes,

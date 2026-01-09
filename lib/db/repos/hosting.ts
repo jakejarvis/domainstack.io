@@ -56,7 +56,7 @@ export async function getHostingCached(
     .where(eq(hostingTable.domainId, existingDomain.id))
     .limit(1);
 
-  const row = existing[0];
+  const [row] = existing;
 
   if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
     return null;

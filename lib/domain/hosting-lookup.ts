@@ -85,7 +85,7 @@ export async function detectAndResolveProviders(
   ip: string | null,
 ): Promise<ProviderDetectionResult> {
   // Dynamic imports for database operations
-  const { resolveOrCreateProviderId, upsertCatalogProviderRef } = await import(
+  const { resolveOrCreateProviderId, upsertCatalogProvider } = await import(
     "@/lib/db/repos/providers"
   );
 
@@ -163,7 +163,7 @@ export async function detectAndResolveProviders(
     [
       // Hosting provider
       hostingCatalogProvider
-        ? upsertCatalogProviderRef(hostingCatalogProvider).then((r) => r.id)
+        ? upsertCatalogProvider(hostingCatalogProvider).then((r) => r.id)
         : hostingName
           ? resolveOrCreateProviderId({
               category: "hosting",
@@ -173,7 +173,7 @@ export async function detectAndResolveProviders(
           : Promise.resolve(null),
       // Email provider
       emailCatalogProvider
-        ? upsertCatalogProviderRef(emailCatalogProvider).then((r) => r.id)
+        ? upsertCatalogProvider(emailCatalogProvider).then((r) => r.id)
         : emailName
           ? resolveOrCreateProviderId({
               category: "email",
@@ -183,7 +183,7 @@ export async function detectAndResolveProviders(
           : Promise.resolve(null),
       // DNS provider
       dnsCatalogProvider
-        ? upsertCatalogProviderRef(dnsCatalogProvider).then((r) => r.id)
+        ? upsertCatalogProvider(dnsCatalogProvider).then((r) => r.id)
         : dnsName
           ? resolveOrCreateProviderId({
               category: "dns",

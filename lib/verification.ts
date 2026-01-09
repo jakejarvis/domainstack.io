@@ -174,7 +174,7 @@ export async function verifyByMetaTag(
         url: urlStr,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
-        timeoutMs: 10000,
+        timeoutMs: 10_000,
         maxBytes: MAX_HTML_BYTES,
         maxRedirects: 5,
       });

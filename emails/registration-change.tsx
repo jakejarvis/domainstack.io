@@ -30,7 +30,7 @@ type RegistrationChangeEmailProps = {
   };
 };
 
-export function RegistrationChangeEmail({
+function RegistrationChangeEmail({
   userName,
   domainName,
   changes,

@@ -15,12 +15,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { ViewMode } from "@/hooks/use-dashboard-preferences";
 import type { SelectionState } from "@/hooks/use-dashboard-selection";
+import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails } from "@/lib/types";
 
 type DashboardContentProps = {
-  viewMode: ViewMode;
+  viewMode: DashboardViewModeOptions;
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
@@ -28,8 +28,8 @@ type DashboardContentProps = {
   onAddDomain?: () => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
-  onArchive?: (id: string, domainName: string) => void;
-  onClearFilters?: () => void;
+  onArchive: (id: string, domainName: string) => void;
+  onClearFilters: () => void;
   onBulkArchive: () => void;
   onBulkDelete: () => void;
   // Table instance callback (table view only)

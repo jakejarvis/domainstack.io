@@ -28,7 +28,7 @@ export async function getRdapBootstrapData(): Promise<BootstrapData> {
       "User-Agent": USER_AGENT,
     },
     next: {
-      revalidate: 604800, // 1 week
+      revalidate: 604_800, // 1 week
     },
   });
 

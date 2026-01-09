@@ -62,7 +62,7 @@ type DashboardGridCardProps = {
   ca: ProviderInfo;
   onVerify: () => void;
   onRemove: () => void;
-  onArchive?: () => void;
+  onArchive: () => void;
   className?: string;
   // Selection props - when provided, enables checkbox functionality
   isSelected?: boolean;
@@ -205,21 +205,14 @@ export function DashboardGridCard({
                 }
               />
               <DropdownMenuSeparator />
-              {onArchive && (
-                <DropdownMenuItem
-                  onClick={onArchive}
-                  className="cursor-pointer"
-                >
-                  <Archive />
-                  Archive
-                </DropdownMenuItem>
-              )}
-              {onRemove && (
-                <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
-                  <Trash2 className="text-danger-foreground" />
-                  Remove
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem onClick={onArchive} className="cursor-pointer">
+                <Archive />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+                <Trash2 className="text-danger-foreground" />
+                Remove
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

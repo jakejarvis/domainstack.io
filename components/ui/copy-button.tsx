@@ -19,14 +19,14 @@ export function CopyButton({
   className,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
-  const resetTimerRef = useRef<number | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear the reset timer on unmount to prevent setState on unmounted component
+  // biome-ignore lint/nursery/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
-      if (resetTimerRef.current) {
-        window.clearTimeout(resetTimerRef.current);
-        resetTimerRef.current = null;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
   }, []);
@@ -36,8 +36,8 @@ export function CopyButton({
     setCopied(true);
 
     // Clear any existing timer before starting new one
-    if (resetTimerRef.current) {
-      window.clearTimeout(resetTimerRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
 
     try {
@@ -49,9 +49,9 @@ export function CopyButton({
       });
 
       // Start reset timer after successful copy
-      resetTimerRef.current = window.setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setCopied(false);
-        resetTimerRef.current = null;
+        timeoutRef.current = null;
       }, 1200);
     } catch {
       // Revert optimistic update on failure

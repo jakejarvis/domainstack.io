@@ -158,7 +158,7 @@ function createClientRand(): () => number {
       const buf = new Uint32Array(1);
       return () => {
         cryptoObj.getRandomValues(buf);
-        return (buf[0] ?? 0) / 4294967296;
+        return (buf[0] ?? 0) / 4_294_967_296;
       };
     }
   }

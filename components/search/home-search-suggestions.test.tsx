@@ -23,7 +23,7 @@ function renderWithProvider(
   onSuggestionClick?: (domain: string) => void,
 ) {
   return render(
-    <HomeSearchProvider onSuggestionClick={onSuggestionClick || vi.fn()}>
+    <HomeSearchProvider onSuggestionClick={onSuggestionClick ?? vi.fn()}>
       {ui}
     </HomeSearchProvider>,
   );

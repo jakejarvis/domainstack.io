@@ -18,7 +18,7 @@ type DomainExpiryEmailProps = {
   registrar?: string;
 };
 
-export function DomainExpiryEmail({
+function DomainExpiryEmail({
   userName,
   domainName,
   expirationDate,

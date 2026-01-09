@@ -66,7 +66,6 @@ export const t = initTRPC
   });
 
 export const createTRPCRouter = t.router;
-export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.

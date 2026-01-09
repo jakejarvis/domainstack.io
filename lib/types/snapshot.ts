@@ -35,14 +35,15 @@ export interface ProviderSnapshotData {
 
 /**
  * Parameters for creating a new snapshot.
+ * All fields except trackedDomainId are optional and will use default values if not provided.
  */
 export interface CreateSnapshotParams {
   trackedDomainId: string;
-  registration: RegistrationSnapshotData;
-  certificate: CertificateSnapshotData;
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
+  registration?: RegistrationSnapshotData;
+  certificate?: CertificateSnapshotData;
+  dnsProviderId?: string | null;
+  hostingProviderId?: string | null;
+  emailProviderId?: string | null;
 }
 
 /**

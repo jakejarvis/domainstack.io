@@ -4,11 +4,23 @@ import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 
 const STORAGE_KEY = "search-history";
 
+type UseDomainHistoryOptions = {
+  /**
+   * Whether to add the domain to history. When false, the hook only returns
+   * the current history without modifying it. Useful when you can't
+   * conditionally call the hook.
+   *
+   * @default true
+   */
+  enabled?: boolean;
+};
+
 /**
  * Hook for managing domain search history in localStorage.
  *
- * @param domain - Optional domain to add to history. When provided, the domain
- *                 is added to the front of the list, deduplicating if it already exists.
+ * @param domain - Optional domain to add to history. When provided and enabled=true,
+ *                 the domain is added to the front of the list, deduplicating if it already exists.
+ * @param options - Configuration options
  *
  * @returns Object containing:
  * - `history`: Array of domain strings in order (most recent first)
@@ -26,12 +38,20 @@ const STORAGE_KEY = "search-history";
  * // Add a domain to history
  * const { history } = useDomainHistory("example.com");
  *
+ * // Conditionally add to history
+ * const { history } = useDomainHistory(domain, { enabled: isRegistered });
+ *
  * // Clear history
  * const { clearHistory } = useDomainHistory();
  * <button onClick={clearHistory}>Clear</button>
  * ```
  */
-export function useDomainHistory(domain?: string) {
+export function useDomainHistory(
+  domain?: string,
+  options: UseDomainHistoryOptions = {},
+) {
+  const { enabled = true } = options;
+
   const [history, setHistory, { removeItem, isPersistent }] =
     useLocalStorageState<string[]>(STORAGE_KEY, {
       defaultValue: [],
@@ -46,11 +66,11 @@ export function useDomainHistory(domain?: string) {
     setIsHistoryLoaded(true);
   }, []);
 
-  // Add domain to history when provided
+  // Add domain to history when provided and enabled
   useEffect(() => {
-    // Only update if we have a domain and storage is synchronized/persistent
+    // Only update if we have a domain, it's enabled, and storage is synchronized/persistent
     // This prevents overwriting storage with a partial list if not yet loaded
-    if (!domain || !isPersistent) return;
+    if (!domain || !enabled || !isPersistent) return;
 
     // Use functional setState to avoid race conditions and ensure we work with latest state
     setHistory((currentHistory) => {
@@ -65,7 +85,7 @@ export function useDomainHistory(domain?: string) {
         MAX_HISTORY_ITEMS,
       );
     });
-  }, [domain, isPersistent, setHistory]);
+  }, [domain, enabled, isPersistent, setHistory]);
 
   // Clear history function
   const clearHistory = useCallback(() => {

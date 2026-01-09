@@ -149,6 +149,7 @@ function generateCancellationIdempotencyKey(
   userId: string,
   endsAt: Date,
 ): string {
+  // biome-ignore lint/nursery/useDestructuring: this is a constant
   const dateStr = endsAt.toISOString().split("T")[0];
   return `subscription_cancel_immediate:${userId}:${dateStr}`;
 }

@@ -21,22 +21,22 @@ import type {
  * IMPORTANT: This must remain client-safe and deterministic.
  * It should never fetch or depend on server-only modules.
  */
-export function getVerificationInstructions(
+function getVerificationInstructions(
   domain: string,
   token: string,
   method: "dns_txt",
 ): DnsInstructions;
-export function getVerificationInstructions(
+function getVerificationInstructions(
   domain: string,
   token: string,
   method: "html_file",
 ): HtmlFileInstructions;
-export function getVerificationInstructions(
+function getVerificationInstructions(
   domain: string,
   token: string,
   method: "meta_tag",
 ): MetaTagInstructions;
-export function getVerificationInstructions(
+function getVerificationInstructions(
   domain: string,
   token: string,
   method: VerificationMethod,

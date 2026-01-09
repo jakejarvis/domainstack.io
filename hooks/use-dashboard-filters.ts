@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
+import { getHealthStatus } from "@/lib/dashboard-utils";
 import type {
   HealthFilter,
   ProviderCategory,
@@ -22,25 +22,6 @@ export type AvailableProvidersByCategory = Record<
   ProviderCategory,
   AvailableProvider[]
 >;
-
-/**
- * Determine health status based on expiration date
- */
-function getHealthStatus(
-  expirationDate: Date | null,
-  verified: boolean,
-  now: Date,
-): HealthFilter | null {
-  if (!verified || !expirationDate) return null;
-
-  const daysUntilExpiry = Math.ceil(
-    (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (daysUntilExpiry <= 0) return "expired";
-  if (daysUntilExpiry <= EXPIRING_SOON_DAYS) return "expiring";
-  return "healthy";
-}
 
 /**
  * Hook for managing dashboard filter state with URL persistence using nuqs.

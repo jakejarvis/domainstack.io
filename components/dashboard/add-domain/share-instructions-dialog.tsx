@@ -210,11 +210,12 @@ export function ShareInstructionsDialog({
   trackedDomainId,
 }: ShareInstructionsDialogProps) {
   const [state, dispatch] = useReducer(shareDialogReducer, initialState);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const trpc = useTRPC();
 
   // Cleanup timeout on unmount
+  // biome-ignore lint/nursery/useConsistentArrowReturn: nesting is intentional
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {

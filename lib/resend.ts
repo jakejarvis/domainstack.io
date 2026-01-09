@@ -16,7 +16,7 @@ if (!apiKey) {
   );
 }
 
-export const resend = apiKey ? new Resend(apiKey) : null;
+const resend = apiKey ? new Resend(apiKey) : null;
 
 /**
  * Send an email with automatic logo attachment and from field.
@@ -71,7 +71,7 @@ export async function addContact(
 
   // Parse name into first/last (best-effort)
   const nameParts = fullName?.trim().split(/\s+/) ?? [];
-  const firstName = nameParts[0];
+  const [firstName] = nameParts;
   const lastName =
     nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined;
 

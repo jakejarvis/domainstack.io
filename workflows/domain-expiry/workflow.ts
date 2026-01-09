@@ -277,7 +277,7 @@ async function sendDomainExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
-  const { DomainExpiryEmail } = await import("@/emails/domain-expiry");
+  const { default: DomainExpiryEmail } = await import("@/emails/domain-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
   const {

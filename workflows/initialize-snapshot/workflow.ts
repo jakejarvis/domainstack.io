@@ -32,7 +32,7 @@ export async function initializeSnapshotWorkflow(
   const { trackedDomainId, domainId } = input;
 
   // Step 1: Fetch domain name
-  const domainRecord = await fetchDomainName(domainId);
+  const domainRecord = await fetchDomainStep(domainId);
 
   if (!domainRecord) {
     return { success: false, error: "domain_not_found" };
@@ -103,7 +103,7 @@ export async function initializeSnapshotWorkflow(
   };
 
   if (certificatesData && certificatesData.certificates.length > 0) {
-    const leafCert = certificatesData.certificates[0];
+    const [leafCert] = certificatesData.certificates;
 
     certificateSnapshot = {
       caProviderId: leafCert.caProvider.id ?? null,
@@ -121,7 +121,7 @@ export async function initializeSnapshotWorkflow(
   };
 
   // Step 3: Create the snapshot
-  const snapshot = await createSnapshotRecord({
+  const snapshot = await createSnapshotStep({
     trackedDomainId,
     registration: registrationSnapshot,
     certificate: certificateSnapshot,
@@ -133,7 +133,7 @@ export async function initializeSnapshotWorkflow(
   return { success: true, snapshotId: snapshot.id };
 }
 
-async function fetchDomainName(
+async function fetchDomainStep(
   domainId: string,
 ): Promise<{ name: string } | null> {
   "use step";
@@ -151,7 +151,7 @@ async function fetchDomainName(
   return result[0] ?? null;
 }
 
-async function createSnapshotRecord(params: {
+async function createSnapshotStep(params: {
   trackedDomainId: string;
   registration: {
     registrarProviderId: string | null;

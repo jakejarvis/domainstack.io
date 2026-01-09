@@ -15,7 +15,7 @@ const TOKEN_PREFIX = "ck_";
  * Generate a cryptographically secure calendar feed token.
  * Format: prefix + 32-byte base64url
  */
-export function generateCalendarFeedToken(): string {
+function generateCalendarFeedToken(): string {
   const bytes = crypto.randomBytes(32);
   return `${TOKEN_PREFIX}${bytes.toString("base64url")}`;
 }

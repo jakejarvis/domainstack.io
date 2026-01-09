@@ -196,8 +196,8 @@ export function useScreenshot({
     },
     enabled: !!runId,
     refetchInterval: (query) => {
-      const data = query.state.data;
-      if (data && data.status !== "running") {
+      const { data } = query.state;
+      if (data?.status !== "running") {
         return false; // Stop polling
       }
       return POLL_INTERVAL_MS;
@@ -206,12 +206,11 @@ export function useScreenshot({
 
   // Handle polling completion
   useEffect(() => {
-    const data = statusQuery.data;
-    if (!data || data.status === "running") return;
+    if (!statusQuery.data || statusQuery.data.status === "running") return;
 
-    if (data.status === "completed") {
-      setScreenshotData(data.data);
-      queryClient.setQueryData(screenshotQueryKey, data.data);
+    if (statusQuery.data.status === "completed") {
+      setScreenshotData(statusQuery.data.data);
+      queryClient.setQueryData(screenshotQueryKey, statusQuery.data.data);
       analytics.track("screenshot_loaded_from_api", { domain });
     }
     setRunId(null);

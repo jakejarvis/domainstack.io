@@ -15,7 +15,7 @@ type VerificationRevokedEmailProps = {
   domainName: string;
 };
 
-export function VerificationRevokedEmail({
+function VerificationRevokedEmail({
   userName,
   domainName,
 }: VerificationRevokedEmailProps) {

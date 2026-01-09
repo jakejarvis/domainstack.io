@@ -78,7 +78,9 @@ function VideoPlayerSeekBackwardButton({
   className,
   ...props
 }: React.ComponentProps<typeof MediaSeekBackwardButton>) {
-  <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />;
+  return (
+    <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />
+  );
 }
 
 function VideoPlayerSeekForwardButton({

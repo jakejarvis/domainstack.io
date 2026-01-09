@@ -2,7 +2,7 @@
  * Hosting types - Plain TypeScript interfaces.
  */
 
-import type { ProviderRef } from "@/lib/types";
+import type { ProviderRef } from "../provider-ref";
 
 /**
  * Geo location data for hosting.

@@ -113,7 +113,7 @@ describe("schedule", () => {
       expect(scheduled).toBe(true);
       expect(mockInngestSend).toHaveBeenCalled();
 
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
       // Should be adjusted to at least now + minTTL (6 hours for headers)
       const minTtlMs = 6 * 60 * 60 * 1000; // 6 hours
       expect(callArgs.ts).toBeGreaterThan(now);
@@ -128,7 +128,7 @@ describe("schedule", () => {
       expect(scheduled).toBe(true);
       expect(mockInngestSend).toHaveBeenCalled();
 
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
       // Should be adjusted to now + minTTL (1 hour for dns)
       const minTtlMs = 60 * 60 * 1000; // 1 hour
       expect(callArgs.ts).toBeGreaterThan(now);
@@ -147,7 +147,7 @@ describe("schedule", () => {
         }),
       );
 
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
       // Should be scheduled at least minTTL in the future
       expect(callArgs.ts).toBeGreaterThanOrEqual(now + 60 * 60 * 1000); // 1 hour min for dns
     });
@@ -176,7 +176,7 @@ describe("schedule", () => {
       await scheduleRevalidation("example.test", "dns", baseDueMs, fiveDaysAgo);
 
       expect(mockInngestSend).toHaveBeenCalled();
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
 
       // Should be scheduled ~3x later due to decay (3 hours instead of 1 hour)
       const expectedMs = now + 3 * 60 * 60 * 1000;
@@ -198,7 +198,7 @@ describe("schedule", () => {
       );
 
       expect(mockInngestSend).toHaveBeenCalled();
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
 
       // Should be scheduled ~50x later due to decay (50 days instead of 1 day)
       const expectedMs = now + 50 * 24 * 60 * 60 * 1000;
@@ -244,7 +244,7 @@ describe("schedule", () => {
       await scheduleRevalidation("example.test", "dns", baseDueMs, null);
 
       expect(mockInngestSend).toHaveBeenCalled();
-      const callArgs = mockInngestSend.mock.calls[0][0];
+      const [callArgs] = mockInngestSend.mock.calls[0];
 
       // Should be scheduled at normal cadence (1 hour), not decayed
       expect(callArgs.ts).toBeGreaterThanOrEqual(baseDueMs);

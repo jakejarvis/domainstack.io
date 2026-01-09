@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "@/hooks/use-router";
 import { cn } from "@/lib/utils";
 
-export const SETTINGS_TABS = [
+const SETTINGS_TABS = [
   {
     value: "subscription",
     label: "Subscription",
@@ -41,7 +41,7 @@ export const SETTINGS_TABS = [
   },
 ] as const;
 
-export type SettingsTabValue = (typeof SETTINGS_TABS)[number]["value"];
+type SettingsTabValue = (typeof SETTINGS_TABS)[number]["value"];
 
 function isSettingsTabValue(value: unknown): value is SettingsTabValue {
   return (
@@ -49,7 +49,7 @@ function isSettingsTabValue(value: unknown): value is SettingsTabValue {
   );
 }
 
-export function SettingsTabsList({ className }: { className?: string }) {
+function SettingsTabsList({ className }: { className?: string }) {
   return (
     <TabsList className={cn("h-auto justify-start", className)}>
       {SETTINGS_TABS.map((tab) => {
@@ -80,7 +80,7 @@ export function SettingsTabsList({ className }: { className?: string }) {
   );
 }
 
-export function SettingsPanels({ className }: { className?: string }) {
+function SettingsPanels({ className }: { className?: string }) {
   return (
     <>
       <TabsContent value="subscription" className={className}>

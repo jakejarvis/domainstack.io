@@ -46,8 +46,8 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
-import { useColumnVisibilityPreference } from "@/hooks/use-dashboard-preferences";
-import { useTableSortPreference } from "@/hooks/use-dashboard-sort";
+import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
+import { useDashboardTableSort } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import { formatDateTimeUtc } from "@/lib/format";
@@ -112,7 +112,7 @@ type DashboardTableProps = {
   onToggleSelect?: (id: string) => void;
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
-  onArchive?: (id: string, domainName: string) => void;
+  onArchive: (id: string, domainName: string) => void;
   onTableReady?: (
     table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
   ) => void;
@@ -227,11 +227,10 @@ export function DashboardTable({
 
   const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPagination();
-  const { sorting, setSorting } = useTableSortPreference({
+  const [sorting, setSorting] = useDashboardTableSort({
     onSortChange: resetPage,
   });
-  const [columnVisibility, setColumnVisibility] =
-    useColumnVisibilityPreference();
+  const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
 
   // Use refs to store current state so columns can be memoized
   // without being recreated on every selection/sort change
@@ -336,13 +335,12 @@ export function DashboardTable({
         },
         size: 100,
         // Sort verified domains first (verified = -1, unverified = 1)
-        sortingFn: (rowA, rowB) => {
-          return rowA.original.verified === rowB.original.verified
+        sortingFn: (rowA, rowB) =>
+          rowA.original.verified === rowB.original.verified
             ? 0
             : rowA.original.verified
               ? -1
-              : 1;
-        },
+              : 1,
       },
       {
         id: "health",
@@ -553,12 +551,8 @@ export function DashboardTable({
           );
         },
         size: 110,
-        sortingFn: (rowA, rowB) => {
-          return (
-            rowA.original.createdAt.getTime() -
-            rowB.original.createdAt.getTime()
-          );
-        },
+        sortingFn: (rowA, rowB) =>
+          rowA.original.createdAt.getTime() - rowB.original.createdAt.getTime(),
       },
       {
         id: "actions",
@@ -600,28 +594,24 @@ export function DashboardTable({
                 }
               />
               <DropdownMenuSeparator />
-              {onArchive && (
-                <DropdownMenuItem
-                  onClick={() =>
-                    onArchive(row.original.id, row.original.domainName)
-                  }
-                  className="cursor-pointer"
-                >
-                  <Archive />
-                  Archive
-                </DropdownMenuItem>
-              )}
-              {onRemove && (
-                <DropdownMenuItem
-                  onClick={() =>
-                    onRemove(row.original.id, row.original.domainName)
-                  }
-                  className="cursor-pointer"
-                >
-                  <Trash2 className="text-danger-foreground" />
-                  Remove
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                onClick={() =>
+                  onArchive(row.original.id, row.original.domainName)
+                }
+                className="cursor-pointer"
+              >
+                <Archive />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  onRemove(row.original.id, row.original.domainName)
+                }
+                className="cursor-pointer"
+              >
+                <Trash2 className="text-danger-foreground" />
+                Remove
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -910,22 +900,20 @@ export function DashboardTable({
                         "[&>td]:h-11 [&>td]:pr-2.5 [&>td]:pl-2.5 [&>td]:align-middle",
                       )}
                     >
-                      {cells.map((cell) => {
-                        return (
-                          <td
-                            key={cell.id}
-                            style={{
-                              width: cell.column.getSize(),
-                            }}
-                            className={cell.column.columnDef.meta?.className}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </td>
-                        );
-                      })}
+                      {cells.map((cell) => (
+                        <td
+                          key={cell.id}
+                          style={{
+                            width: cell.column.getSize(),
+                          }}
+                          className={cell.column.columnDef.meta?.className}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
                     </motion.tr>
                   );
                 })}

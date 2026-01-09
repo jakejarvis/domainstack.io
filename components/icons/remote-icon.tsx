@@ -97,6 +97,7 @@ export function RemoteIcon({
 
   let url = null;
   if (result?.success && result?.data?.url) {
+    // biome-ignore lint/nursery/useDestructuring: might be null
     url = result.data.url;
   }
 

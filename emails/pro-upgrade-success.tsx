@@ -15,9 +15,7 @@ type ProUpgradeSuccessEmailProps = {
   userName: string;
 };
 
-export function ProUpgradeSuccessEmail({
-  userName,
-}: ProUpgradeSuccessEmailProps) {
+function ProUpgradeSuccessEmail({ userName }: ProUpgradeSuccessEmailProps) {
   const previewText = "Welcome to Domainstack Pro!";
 
   return (

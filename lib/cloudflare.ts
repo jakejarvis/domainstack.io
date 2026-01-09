@@ -30,7 +30,7 @@ async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
       "User-Agent": USER_AGENT,
     },
     next: {
-      revalidate: 604800, // 1 week
+      revalidate: 604_800, // 1 week
     },
   });
 
@@ -46,7 +46,7 @@ async function fetchCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   };
 }
 
-export function ipV4InCidr(addr: ipaddr.IPv4, cidr: string): boolean {
+function ipV4InCidr(addr: ipaddr.IPv4, cidr: string): boolean {
   try {
     const [net, prefix] = ipaddr.parseCIDR(cidr);
     if (net.kind() !== "ipv4") return false;
@@ -56,7 +56,7 @@ export function ipV4InCidr(addr: ipaddr.IPv4, cidr: string): boolean {
   }
 }
 
-export function ipV6InCidr(addr: ipaddr.IPv6, cidr: string): boolean {
+function ipV6InCidr(addr: ipaddr.IPv6, cidr: string): boolean {
   try {
     const [net, prefix] = ipaddr.parseCIDR(cidr);
     if (net.kind() !== "ipv6") return false;
@@ -77,10 +77,10 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
       .map((cidr) => {
         try {
           const [net, prefix] = ipaddr.parseCIDR(cidr);
-          if (net.kind() !== "ipv4") return undefined;
-          return [net as ipaddr.IPv4, prefix] as [ipaddr.IPv4, number];
+          if (net.kind() !== "ipv4") return false;
+          return [net as ipaddr.IPv4, prefix] as const;
         } catch {
-          return undefined;
+          return false;
         }
       })
       .filter(Boolean) as Array<[ipaddr.IPv4, number]>;
@@ -94,10 +94,10 @@ function parseAndCacheRanges(ranges: CloudflareIpRanges): void {
       .map((cidr) => {
         try {
           const [net, prefix] = ipaddr.parseCIDR(cidr);
-          if (net.kind() !== "ipv6") return undefined;
+          if (net.kind() !== "ipv6") return false;
           return [net as ipaddr.IPv6, prefix] as [ipaddr.IPv6, number];
         } catch {
-          return undefined;
+          return false;
         }
       })
       .filter(Boolean) as Array<[ipaddr.IPv6, number]>;

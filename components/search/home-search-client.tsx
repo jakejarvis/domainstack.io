@@ -3,12 +3,6 @@
 import { useCallback, useState } from "react";
 import { HomeSearchProvider } from "@/components/search/home-search-context";
 import { SearchClient } from "@/components/search/search-client";
-import type { Source } from "@/hooks/use-domain-search";
-
-type NavigationTrigger = {
-  domain: string;
-  source: Source;
-};
 
 /**
  * Client wrapper that coordinates between the search box and suggestions.
@@ -21,11 +15,10 @@ type NavigationTrigger = {
  * Accepts server components (like DomainSuggestionsServer) as children.
  */
 export function HomeSearchClient({ children }: { children: React.ReactNode }) {
-  const [domainToNavigate, setDomainToNavigate] =
-    useState<NavigationTrigger | null>(null);
+  const [domainToNavigate, setDomainToNavigate] = useState<string | null>(null);
 
   const handleSuggestionClick = useCallback((domain: string) => {
-    setDomainToNavigate({ domain, source: "suggestion" });
+    setDomainToNavigate(domain);
   }, []);
 
   const handleNavigationComplete = useCallback(() => {
@@ -37,7 +30,7 @@ export function HomeSearchClient({ children }: { children: React.ReactNode }) {
       <div className="mx-auto w-full max-w-3xl space-y-5">
         <SearchClient
           variant="lg"
-          externalNavigation={domainToNavigate}
+          value={domainToNavigate}
           onNavigationCompleteAction={handleNavigationComplete}
         />
         {children}
