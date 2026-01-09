@@ -57,7 +57,11 @@ Create `.env.local` and populate [required variables](.env.example):
 cp .env.example .env.local
 ```
 
-### 3. Apply Drizzle database migrations to local Postgres database
+At minimum, you'll need `DATABASE_URL` pointing to a PostgreSQL database.
+
+### 3. Set up the database
+
+Apply Drizzle migrations to initialize the database schema:
 
 ```bash
 pnpm db:migrate
@@ -65,36 +69,16 @@ pnpm db:migrate
 
 ### 4. Start development
 
-The `dev` script uses `concurrently` to automatically start all local services and the Next.js dev server together:
-
 ```bash
 pnpm dev
 ```
 
-This single command boots:
-- **Next.js dev server** on `http://localhost:3000`
-- **Inngest dev server** on `http://localhost:8288`
-- **Postgres** on `localhost:5432`
-- **ngrok tunnel** with public HTTPS URL (for webhook testing) and web UI on `http://localhost:4040`
-
-Open [http://localhost:3000](http://localhost:3000). Press `Ctrl+C` to stop all services at once.
-
-> [!NOTE]
-> The ngrok URL can be used for testing public endpoints (like [sandboxed Polar webhooks](https://polar.sh/docs/integrate/webhooks/endpoints#get-started)) during local development.
->
-> **For persistent ngrok URLs:** Set both `NGROK_AUTHTOKEN` and `NGROK_URL` in `.env.local`. Get your auth token and create a free static domain at https://dashboard.ngrok.com/domains. This ensures the same URL every time you restart services.
-
-> [!NOTE]
-> On Linux, if `host.docker.internal` isn't available, add `extra_hosts` to the services in [`docker-compose.yml`](docker-compose.yml):
->
-> ```yaml
-> extra_hosts: ["host.docker.internal:host-gateway"]
-> ```
+Open [http://localhost:3000](http://localhost:3000).
 
 ## 🧰 Useful Commands
 
 ```bash
-pnpm dev           # start all local services (Docker) + Next.js dev server
+pnpm dev           # start Next.js dev server
 pnpm build         # compile production bundle
 pnpm start         # serve compiled output for smoke tests
 pnpm lint          # Biome lint/format checks

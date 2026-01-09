@@ -35,7 +35,7 @@
 - `workflows/` Vercel Workflow definitions for durable backend operations. See the "Available Workflows" table below.
 
 ## Build, Test, and Development Commands
-- `pnpm dev` — start all local services (Postgres, Inngest, ngrok, etc.) and Next.js dev server at http://localhost:3000 using `concurrently`.
+- `pnpm dev` — start Next.js dev server at http://localhost:3000.
 - `pnpm build` — compile production bundle.
 - `pnpm start` — serve compiled output for smoke tests.
 - `pnpm lint` — run Biome lint + type-aware checks (`--write` to fix).
@@ -49,7 +49,6 @@
 - `pnpm db:migrate` — apply migrations to the database.
 - `pnpm db:studio` — open Drizzle Studio.
 - Requires Node.js >= 24 (see `package.json` engines).
-- Local development includes ngrok tunnel for webhook testing; public URL displayed in terminal output.
 
 ## Coding Style & Naming Conventions
 - TypeScript only, `strict` enabled; prefer small, pure modules (≈≤300 LOC).
