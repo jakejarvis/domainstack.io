@@ -7,7 +7,7 @@ import {
 } from "@/lib/db/repos/notifications";
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
-import { sendPrettyEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 import type { NotificationOverrides, NotificationType } from "@/lib/types";
 
 /**
@@ -143,7 +143,7 @@ export async function sendNotification(
 
     // Send email notification if enabled and component provided
     if (shouldSendEmail && emailComponent && emailSubject) {
-      const { data, error } = await sendPrettyEmail(
+      const { data, error } = await sendEmail(
         {
           to: userEmail,
           subject: emailSubject,

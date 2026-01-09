@@ -98,6 +98,8 @@ export type DohQueryOptions = {
   timeoutMs?: number;
   retries?: number;
   backoffMs?: number;
+  /** Add timestamp parameter to bypass HTTP caches (useful for verification) */
+  cacheBust?: boolean;
 };
 
 /**
@@ -105,8 +107,8 @@ export type DohQueryOptions = {
  * Returns parsed DNS answers or empty array if no records found.
  *
  * This is the shared primitive used by both:
- * - `server/services/dns.ts` for full DNS lookups
- * - `lib/dns-lookup.ts` for SSRF protection IP resolution
+ * - `lib/domain/dns-lookup.ts` for full DNS lookups
+ * - `lib/resolver.ts` for SSRF protection IP resolution
  */
 export async function queryDohProvider(
   provider: DohProvider,
@@ -115,6 +117,9 @@ export async function queryDohProvider(
   options: DohQueryOptions = {},
 ): Promise<DnsAnswer[]> {
   const url = buildDohUrl(provider, domain, type);
+  if (options.cacheBust) {
+    url.searchParams.set("t", Date.now().toString());
+  }
   const timeoutMs = options.timeoutMs ?? 2000;
   const retries = options.retries ?? 1;
   const backoffMs = options.backoffMs ?? 150;

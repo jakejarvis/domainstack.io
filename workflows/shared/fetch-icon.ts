@@ -53,9 +53,7 @@ export async function fetchIconFromSources(
 ): Promise<IconFetchResult> {
   "use step";
 
-  const { fetchRemoteAsset, RemoteAssetError } = await import(
-    "@/lib/fetch-remote-asset"
-  );
+  const { safeFetch, RemoteAssetError } = await import("@/lib/safe-fetch");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: options.loggerSource });
@@ -105,7 +103,7 @@ export async function fetchIconFromSources(
         ...source.headers,
       };
 
-      const asset = await fetchRemoteAsset({
+      const asset = await safeFetch({
         url: source.url,
         headers,
         maxBytes: options.maxBytes,

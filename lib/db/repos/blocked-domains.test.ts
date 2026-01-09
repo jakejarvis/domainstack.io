@@ -73,7 +73,7 @@ describe("syncBlockedDomains", () => {
 
     const rows = await db.select().from(blockedDomains);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.domain).toBe("domain.com");
+    expect(rows[0].domain).toBe("domain.com");
   });
 
   it("preserves existing domains and their addedAt timestamps", async () => {
@@ -113,7 +113,7 @@ describe("syncBlockedDomains", () => {
 
     const rows = await db.select().from(blockedDomains);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.domain).toBe("keep.com");
+    expect(rows[0].domain).toBe("keep.com");
   });
 
   it("does nothing when given empty array", async () => {

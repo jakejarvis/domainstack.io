@@ -5,10 +5,17 @@ export interface HeadersWorkflowInput {
   domain: string;
 }
 
-export interface HeadersWorkflowResult {
-  success: boolean;
-  data: HeadersResponse;
-}
+export type HeadersWorkflowResult =
+  | {
+      success: true;
+      data: HeadersResponse;
+    }
+  | {
+      success: false;
+      // Note: fetch_error is thrown as RetryableError in fetchHeadersStep and never returned
+      error: "dns_error" | "tls_error";
+      data: HeadersResponse | null;
+    };
 
 // Internal types for step-to-step transfer
 interface FetchSuccess {
@@ -20,12 +27,17 @@ interface FetchSuccess {
 
 interface FetchFailure {
   success: false;
+  error: "dns_error" | "tls_error" | "fetch_error";
   headers: Header[];
   status: number;
   statusMessage: string | undefined;
 }
 
-type FetchResult = FetchSuccess | FetchFailure;
+// After fetchHeadersStep processes the result, fetch_error is thrown as RetryableError
+// so only dns_error and tls_error are returned to the workflow caller
+type FetchResult =
+  | FetchSuccess
+  | (Omit<FetchFailure, "error"> & { error: "dns_error" | "tls_error" });
 
 /**
  * Durable headers workflow that breaks down HTTP header probing into
@@ -41,15 +53,29 @@ export async function headersWorkflow(
   const { domain } = input;
 
   // Step 1: Fetch headers from domain
-  const fetchResult = await fetchHeaders(domain);
+  const fetchResult = await fetchHeadersStep(domain);
 
   // Step 2: Persist to database (only if fetch succeeded)
   if (fetchResult.success) {
-    await persistHeaders(domain, fetchResult.headers, fetchResult.status);
+    await persistHeadersStep(domain, fetchResult.headers, fetchResult.status);
+  }
+
+  if (!fetchResult.success) {
+    // Note: fetch_error is thrown as RetryableError in fetchHeadersStep,
+    // so it never reaches here. Only dns_error and tls_error are returned.
+    return {
+      success: false,
+      error: fetchResult.error,
+      data: {
+        headers: fetchResult.headers,
+        status: fetchResult.status,
+        statusMessage: fetchResult.statusMessage,
+      },
+    };
   }
 
   return {
-    success: fetchResult.success,
+    success: true,
     data: {
       headers: fetchResult.headers,
       status: fetchResult.status,
@@ -60,126 +86,46 @@ export async function headersWorkflow(
 
 /**
  * Step: Fetch HTTP headers from the domain.
+ *
+ * Note: fetch_error is thrown as RetryableError and never returned,
+ * so the return type is narrowed to exclude it.
  */
-export async function fetchHeaders(domain: string): Promise<FetchResult> {
+async function fetchHeadersStep(domain: string): Promise<FetchResult> {
   "use step";
 
-  const { getStatusCode } = await import("@readme/http-status-codes");
-  const { normalizeHeaders } = await import("@/lib/db/repos/headers");
-  const { fetchRemoteAsset } = await import("@/lib/fetch-remote-asset");
-  const { isExpectedDnsError } = await import("@/lib/dns-utils");
-  const { isExpectedTlsError } = await import("@/lib/fetch");
-  const { createLogger } = await import("@/lib/logger/server");
-  const { IMPORTANT_HEADERS } = await import("@/lib/constants/headers");
+  const { fetchHttpHeaders } = await import("@/lib/domain/headers-lookup");
 
-  const logger = createLogger({ source: "headers-workflow" });
-  const REQUEST_TIMEOUT_MS = 5000;
-  const allowedHosts = [domain, `www.${domain}`];
+  const result = await fetchHttpHeaders(domain);
 
-  try {
-    const final = await fetchRemoteAsset({
-      url: `https://${domain}/`,
-      allowHttp: true,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      maxRedirects: 5,
-      allowedHosts,
-      method: "HEAD",
-      fallbackToGetOnHeadFailure: true,
-      returnOnDisallowedRedirect: true,
-    });
-
-    const headers: Header[] = Object.entries(final.headers).map(
-      ([name, value]) => ({ name, value }),
-    );
-    const normalized = normalizeHeaders(headers, IMPORTANT_HEADERS);
-
-    // Get status message
-    let statusMessage: string | undefined;
-    try {
-      const statusInfo = getStatusCode(final.status);
-      statusMessage = statusInfo.message;
-    } catch {
-      statusMessage = undefined;
-    }
-
-    return {
-      success: true,
-      headers: normalized,
-      status: final.status,
-      statusMessage,
-    };
-  } catch (err) {
-    const isDnsError = isExpectedDnsError(err);
-    const isTlsError = isExpectedTlsError(err);
-
-    if (isDnsError) {
-      // Permanent failure - domain doesn't resolve, return graceful result
-      return {
-        success: false,
-        headers: [],
-        status: 0,
-        statusMessage: undefined,
-      };
-    }
-
-    if (isTlsError) {
-      // Permanent failure - cert is invalid, return graceful result
-      return {
-        success: false,
-        headers: [],
-        status: 0,
-        statusMessage: "Invalid SSL certificate",
-      };
-    }
-
-    // Unknown/transient error - throw to trigger retry
-    logger.warn({ err, domain }, "failed to fetch headers, will retry");
+  // fetch_error is retryable, others are permanent
+  if (!result.success && result.error === "fetch_error") {
     throw new RetryableError("Headers fetch failed", { retryAfter: "5s" });
   }
+
+  // After the check above, fetch_error is filtered out
+  return result as FetchResult;
 }
 
 // HTTP header probing can fail due to transient network issues - allow more retries
-fetchHeaders.maxRetries = 5;
+fetchHeadersStep.maxRetries = 5;
 
 /**
- * Step 3: Persist headers to Postgres.
+ * Step: Persist headers to Postgres.
  */
-export async function persistHeaders(
+async function persistHeadersStep(
   domain: string,
   headers: Header[],
   status: number,
 ): Promise<void> {
   "use step";
 
-  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-  const { replaceHeaders } = await import("@/lib/db/repos/headers");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
-  const { ttlForHeaders } = await import("@/lib/ttl");
+  const { persistHttpHeaders } = await import("@/lib/domain/headers-lookup");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "headers-workflow" });
-  const now = new Date();
-  const expiresAt = ttlForHeaders(now);
 
   try {
-    // Ensure domain record exists (creates if needed)
-    const domainRecord = await ensureDomainRecord(domain);
-
-    await replaceHeaders({
-      domainId: domainRecord.id,
-      headers,
-      status,
-      fetchedAt: now,
-      expiresAt,
-    });
-
-    // Schedule background revalidation
-    await scheduleRevalidation(
-      domain,
-      "headers",
-      expiresAt.getTime(),
-      domainRecord.lastAccessedAt ?? null,
-    );
+    await persistHttpHeaders(domain, headers, status);
   } catch (err) {
     logger.error({ err, domain }, "failed to persist headers");
     throw new FatalError("Failed to persist headers");

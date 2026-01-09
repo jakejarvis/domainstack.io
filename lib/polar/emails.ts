@@ -7,7 +7,7 @@ import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import SubscriptionExpiredEmail from "@/emails/subscription-expired";
 import { getUserById } from "@/lib/db/repos/users";
 import { createLogger } from "@/lib/logger/server";
-import { sendPrettyEmail } from "@/lib/resend";
+import { sendEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "polar-emails" });
 
@@ -66,7 +66,7 @@ export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
   try {
     const firstName = getFirstName(user.name);
 
-    const { error } = await sendPrettyEmail(
+    const { error } = await sendEmail(
       {
         to: user.email,
         subject: "🎉 Welcome to Domainstack Pro!",
@@ -113,7 +113,7 @@ async function sendProWelcomeEmail(
   try {
     const firstName = getFirstName(userName);
 
-    const { error } = await sendPrettyEmail(
+    const { error } = await sendEmail(
       {
         to: userEmail,
         subject: "Getting the most out of Domainstack Pro",
@@ -175,7 +175,7 @@ export async function sendSubscriptionCancelingEmail(
     const firstName = getFirstName(user.name);
     const endDate = format(endsAt, "MMMM d, yyyy");
 
-    const { error } = await sendPrettyEmail(
+    const { error } = await sendEmail(
       {
         to: user.email,
         subject: `Your Pro subscription ends on ${endDate}`,
@@ -234,7 +234,7 @@ export async function sendSubscriptionExpiredEmail(
   try {
     const firstName = getFirstName(user.name);
 
-    const { error } = await sendPrettyEmail(
+    const { error } = await sendEmail(
       {
         to: user.email,
         subject: "Your Pro subscription has ended",

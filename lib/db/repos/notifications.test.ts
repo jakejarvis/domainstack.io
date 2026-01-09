@@ -99,13 +99,15 @@ describe("createNotification", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.userId).toBe(testUserId);
-    expect(result?.trackedDomainId).toBe(testTrackedDomainId);
-    expect(result?.type).toBe("domain_expiry_30d");
-    expect(result?.title).toBe("Domain expiring soon");
-    expect(result?.message).toBe("Your domain expires in 30 days");
-    expect(result?.sentAt).toBeInstanceOf(Date);
-    expect(result?.readAt).toBeNull();
+    if (!result) throw new Error("Expected result");
+
+    expect(result.userId).toBe(testUserId);
+    expect(result.trackedDomainId).toBe(testTrackedDomainId);
+    expect(result.type).toBe("domain_expiry_30d");
+    expect(result.title).toBe("Domain expiring soon");
+    expect(result.message).toBe("Your domain expires in 30 days");
+    expect(result.sentAt).toBeInstanceOf(Date);
+    expect(result.readAt).toBeNull();
   });
 
   it("creates multiple notifications of same type (history)", async () => {
@@ -138,11 +140,14 @@ describe("createNotification", () => {
       data: { domainName: "notif.test", url: "/dashboard" },
     });
 
-    expect(result?.data).toEqual({
+    expect(result).not.toBeNull();
+    if (!result) throw new Error("Expected result");
+
+    expect(result.data).toEqual({
       domainName: "notif.test",
       url: "/dashboard",
     });
-    expect(result?.channels).toEqual(["in-app", "email"]);
+    expect(result.channels).toEqual(["in-app", "email"]);
   });
 });
 
@@ -420,9 +425,10 @@ describe("markAsRead", () => {
       message: "Test message",
     });
 
-    expect(notif?.readAt).toBeNull();
-
+    expect(notif).not.toBeNull();
     if (!notif) throw new Error("Notification not created");
+
+    expect(notif.readAt).toBeNull();
 
     const success = await markAsRead(notif.id, testUserId);
     expect(success).toBe(true);

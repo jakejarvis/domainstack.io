@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/empty";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { sections } from "@/lib/constants/sections";
-import { normalizeDomainInput } from "@/lib/domain";
+import { normalizeDomainInput } from "@/lib/domain-utils";
 import type { HeadersResponse } from "@/lib/types";
 
 /**

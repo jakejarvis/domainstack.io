@@ -1,0 +1,345 @@
+import { FatalError } from "workflow";
+import type { VerificationMethod } from "@/lib/types";
+import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
+
+export interface ReverifyOwnershipWorkflowInput {
+  trackedDomainId: string;
+}
+
+type VerificationFailureAction =
+  | "marked_failing"
+  | "revoked"
+  | "in_grace_period";
+
+export type ReverifyOwnershipWorkflowResult =
+  | { skipped: true; reason: string }
+  | { verified: true; method: VerificationMethod }
+  | { verified: false; action: VerificationFailureAction };
+
+/**
+ * Durable workflow to re-verify domain ownership.
+ *
+ * Checks if a verified domain still passes verification and handles
+ * failures with a grace period before revoking verification.
+ */
+export async function reverifyOwnershipWorkflow(
+  input: ReverifyOwnershipWorkflowInput,
+): Promise<ReverifyOwnershipWorkflowResult> {
+  "use workflow";
+
+  const { trackedDomainId } = input;
+
+  // Step 1: Fetch domain data
+  const domain = await fetchDomain(trackedDomainId);
+
+  if (!domain) {
+    return { skipped: true, reason: "invalid_state" };
+  }
+
+  // Step 2: Check ownership using the existing verification method
+  const result = await checkOwnership(
+    domain.domainName,
+    domain.verificationToken,
+    domain.verificationMethod,
+  );
+
+  if (result.verified && result.method) {
+    // Step 3a: Mark as successful
+    await markSuccess(trackedDomainId);
+    return { verified: true, method: result.method };
+  }
+
+  // Step 3b: Determine failure action (database update only)
+  const failureResult = await determineFailureAction({
+    id: domain.id,
+    verificationStatus: domain.verificationStatus,
+    verificationFailedAt: domain.verificationFailedAt
+      ? new Date(domain.verificationFailedAt)
+      : null,
+  });
+
+  // Step 4: Send notification email based on the action (separate steps for retry isolation)
+  if (failureResult.shouldSendEmail) {
+    if (failureResult.emailType === "failing") {
+      await sendVerificationFailingEmail({
+        id: domain.id,
+        domainName: domain.domainName,
+        userId: domain.userId,
+        userName: domain.userName,
+        userEmail: domain.userEmail,
+        verificationMethod: domain.verificationMethod,
+      });
+    } else {
+      await sendVerificationRevokedEmail({
+        id: domain.id,
+        domainName: domain.domainName,
+        userId: domain.userId,
+        userName: domain.userName,
+        userEmail: domain.userEmail,
+        verificationMethod: domain.verificationMethod,
+      });
+    }
+  }
+
+  return { verified: false, action: failureResult.action };
+}
+
+interface DomainData {
+  id: string;
+  domainName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  verificationToken: string;
+  verificationMethod: VerificationMethod;
+  verificationStatus: "verified" | "failing" | "unverified";
+  verificationFailedAt: Date | null;
+}
+
+async function fetchDomain(
+  trackedDomainId: string,
+): Promise<DomainData | null> {
+  "use step";
+
+  const { getTrackedDomainForReverification } = await import(
+    "@/lib/db/repos/tracked-domains"
+  );
+
+  return await getTrackedDomainForReverification(trackedDomainId);
+}
+
+async function checkOwnership(
+  domainName: string,
+  token: string,
+  method: VerificationMethod,
+): Promise<{ verified: boolean; method: VerificationMethod | null }> {
+  "use step";
+
+  // Call the shared verification step directly - no child workflow needed
+  // Use the specific method since we're re-verifying with the original method
+  return await verifyDomainOwnershipByMethod(domainName, token, method);
+}
+
+async function markSuccess(trackedDomainId: string): Promise<void> {
+  "use step";
+
+  const { markVerificationSuccessful } = await import(
+    "@/lib/db/repos/tracked-domains"
+  );
+
+  await markVerificationSuccessful(trackedDomainId);
+}
+
+interface DomainForFailureCheck {
+  id: string;
+  verificationStatus: "verified" | "failing" | "unverified";
+  verificationFailedAt: Date | null;
+}
+
+interface FailureActionResult {
+  action: VerificationFailureAction;
+  shouldSendEmail: boolean;
+  emailType: "failing" | "revoked";
+}
+
+/**
+ * Determines the failure action and updates database state.
+ * Does NOT send emails - that's handled in a separate step for proper isolation.
+ */
+async function determineFailureAction(
+  domain: DomainForFailureCheck,
+): Promise<FailureActionResult> {
+  "use step";
+
+  const { differenceInDays: diffInDays } = await import("date-fns");
+  const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
+    "@/lib/constants/verification"
+  );
+  const { markVerificationFailing, revokeVerification } = await import(
+    "@/lib/db/repos/tracked-domains"
+  );
+
+  const now = new Date();
+
+  if (domain.verificationStatus === "verified") {
+    // First failure - mark as failing
+    await markVerificationFailing(domain.id);
+    return {
+      action: "marked_failing",
+      shouldSendEmail: true,
+      emailType: "failing",
+    };
+  }
+
+  if (domain.verificationStatus === "failing") {
+    // Already failing - check if grace period exceeded
+    const failedAt = domain.verificationFailedAt;
+    if (!failedAt) {
+      // Shouldn't happen, but mark failing time now
+      await markVerificationFailing(domain.id);
+      return {
+        action: "marked_failing",
+        shouldSendEmail: false,
+        emailType: "failing",
+      };
+    }
+
+    const daysFailing = diffInDays(now, failedAt);
+
+    if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
+      // Grace period exceeded - revoke verification
+      await revokeVerification(domain.id);
+      return {
+        action: "revoked",
+        shouldSendEmail: true,
+        emailType: "revoked",
+      };
+    }
+
+    return {
+      action: "in_grace_period",
+      shouldSendEmail: false,
+      emailType: "failing",
+    };
+  }
+
+  return {
+    action: "in_grace_period",
+    shouldSendEmail: false,
+    emailType: "failing",
+  };
+}
+
+interface DomainForEmail {
+  id: string;
+  domainName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  verificationMethod: VerificationMethod;
+}
+
+/**
+ * Step: Send verification failing notification email.
+ */
+async function sendVerificationFailingEmail(
+  domain: DomainForEmail,
+): Promise<boolean> {
+  "use step";
+
+  const { VerificationFailingEmail } = await import(
+    "@/emails/verification-failing"
+  );
+  const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
+    "@/lib/constants/verification"
+  );
+  const {
+    createNotification,
+    hasRecentNotification,
+    updateNotificationResendId,
+  } = await import("@/lib/db/repos/notifications");
+  const { sendEmail } = await import("@/workflows/shared/send-email");
+
+  const alreadySent = await hasRecentNotification(
+    domain.id,
+    "verification_failing",
+  );
+  if (alreadySent) return false;
+
+  const title = `Verification failing for ${domain.domainName}`;
+  const subject = `⚠️ ${title}`;
+  const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
+
+  // Create in-app notification first
+  const notification = await createNotification({
+    userId: domain.userId,
+    trackedDomainId: domain.id,
+    type: "verification_failing",
+    title,
+    message,
+    data: { domainName: domain.domainName },
+  });
+
+  if (!notification) {
+    throw new FatalError(
+      `Failed to create notification record: verification_failing for ${domain.domainName}`,
+    );
+  }
+
+  // Send email notification using shared step (handles error classification)
+  const result = await sendEmail({
+    to: domain.userEmail,
+    subject,
+    react: VerificationFailingEmail({
+      userName: domain.userName.split(" ")[0] || "there",
+      domainName: domain.domainName,
+      verificationMethod: domain.verificationMethod,
+      gracePeriodDays: VERIFICATION_GRACE_PERIOD_DAYS,
+    }),
+  });
+
+  // Update notification with email ID
+  await updateNotificationResendId(notification.id, result.emailId);
+
+  return true;
+}
+
+/**
+ * Step: Send verification revoked notification email.
+ */
+async function sendVerificationRevokedEmail(
+  domain: DomainForEmail,
+): Promise<boolean> {
+  "use step";
+
+  const { VerificationRevokedEmail } = await import(
+    "@/emails/verification-revoked"
+  );
+  const {
+    createNotification,
+    hasRecentNotification,
+    updateNotificationResendId,
+  } = await import("@/lib/db/repos/notifications");
+  const { sendEmail } = await import("@/workflows/shared/send-email");
+
+  const alreadySent = await hasRecentNotification(
+    domain.id,
+    "verification_revoked",
+  );
+  if (alreadySent) return false;
+
+  const title = `Verification revoked for ${domain.domainName}`;
+  const subject = `❌ ${title}`;
+  const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
+
+  // Create in-app notification first
+  const notification = await createNotification({
+    userId: domain.userId,
+    trackedDomainId: domain.id,
+    type: "verification_revoked",
+    title,
+    message,
+    data: { domainName: domain.domainName },
+  });
+
+  if (!notification) {
+    throw new FatalError(
+      `Failed to create notification record: verification_revoked for ${domain.domainName}`,
+    );
+  }
+
+  // Send email notification using shared step (handles error classification)
+  const result = await sendEmail({
+    to: domain.userEmail,
+    subject,
+    react: VerificationRevokedEmail({
+      userName: domain.userName.split(" ")[0] || "there",
+      domainName: domain.domainName,
+    }),
+  });
+
+  // Update notification with email ID
+  await updateNotificationResendId(notification.id, result.emailId);
+
+  return true;
+}

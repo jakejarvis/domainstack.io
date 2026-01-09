@@ -20,11 +20,11 @@ import {
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
-import { toRegistrableDomain } from "@/lib/domain-server";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { logger } from "@/lib/logger/server";
-import { sendPrettyEmail } from "@/lib/resend";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
+import { sendEmail } from "@/lib/resend";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
@@ -536,7 +536,7 @@ export const trackingRouter = createTRPCRouter({
       const senderEmail = ctx.user.email;
 
       try {
-        const { error } = await sendPrettyEmail({
+        const { error } = await sendEmail({
           to: recipientEmail,
           subject: `Domain verification instructions for ${tracked.domainName}`,
           react: VerificationInstructionsEmail({

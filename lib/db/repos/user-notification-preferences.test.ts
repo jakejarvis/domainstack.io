@@ -113,11 +113,13 @@ describe("getUserNotificationPreferences", () => {
     const result = await getUserNotificationPreferences(testUserId);
 
     expect(result).not.toBeNull();
-    expect(result?.domainExpiry).toEqual({ inApp: true, email: true });
-    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
-    expect(result?.registrationChanges).toEqual({ inApp: true, email: false });
-    expect(result?.providerChanges).toEqual({ inApp: false, email: false });
-    expect(result?.certificateChanges).toEqual({ inApp: true, email: false });
+    if (!result) throw new Error("Expected result");
+
+    expect(result.domainExpiry).toEqual({ inApp: true, email: true });
+    expect(result.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result.registrationChanges).toEqual({ inApp: true, email: false });
+    expect(result.providerChanges).toEqual({ inApp: false, email: false });
+    expect(result.certificateChanges).toEqual({ inApp: true, email: false });
   });
 });
 
@@ -129,9 +131,9 @@ describe("updateUserNotificationPreferences", () => {
       domainExpiry: { inApp: false, email: true },
     });
 
-    expect(result?.domainExpiry).toEqual({ inApp: false, email: true });
-    expect(result?.certificateExpiry).toEqual({ inApp: true, email: true }); // Unchanged
-    expect(result?.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
+    expect(result.domainExpiry).toEqual({ inApp: false, email: true });
+    expect(result.certificateExpiry).toEqual({ inApp: true, email: true }); // Unchanged
+    expect(result.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
   });
 
   it("updates multiple preferences", async () => {
@@ -142,9 +144,9 @@ describe("updateUserNotificationPreferences", () => {
       certificateExpiry: { inApp: false, email: true },
     });
 
-    expect(result?.domainExpiry).toEqual({ inApp: false, email: false });
-    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
-    expect(result?.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
+    expect(result.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(result.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result.registrationChanges).toEqual({ inApp: true, email: true }); // Unchanged
   });
 
   it("updates all preferences", async () => {
@@ -158,11 +160,11 @@ describe("updateUserNotificationPreferences", () => {
       certificateChanges: { inApp: false, email: false },
     });
 
-    expect(result?.domainExpiry).toEqual({ inApp: false, email: false });
-    expect(result?.certificateExpiry).toEqual({ inApp: false, email: true });
-    expect(result?.registrationChanges).toEqual({ inApp: false, email: false });
-    expect(result?.providerChanges).toEqual({ inApp: false, email: true });
-    expect(result?.certificateChanges).toEqual({ inApp: false, email: false });
+    expect(result.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(result.certificateExpiry).toEqual({ inApp: false, email: true });
+    expect(result.registrationChanges).toEqual({ inApp: false, email: false });
+    expect(result.providerChanges).toEqual({ inApp: false, email: true });
+    expect(result.certificateChanges).toEqual({ inApp: false, email: false });
   });
 
   it("creates preferences if they do not exist", async () => {
@@ -185,6 +187,9 @@ describe("updateUserNotificationPreferences", () => {
 
     // Verify via direct query
     const stored = await getUserNotificationPreferences(testUserId);
-    expect(stored?.domainExpiry).toEqual({ inApp: false, email: false });
+    expect(stored).not.toBeNull();
+    if (!stored) throw new Error("Expected stored result");
+
+    expect(stored.domainExpiry).toEqual({ inApp: false, email: false });
   });
 });

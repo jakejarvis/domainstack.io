@@ -26,7 +26,7 @@ export type ScreenshotWorkflowResult =
   | {
       success: false;
       error: "capture_error" | "not_found" | "blocked_domain";
-      data: ScreenshotWorkflowData;
+      data: ScreenshotWorkflowData | null;
     };
 
 // Internal types for capture result

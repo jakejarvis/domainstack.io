@@ -64,9 +64,9 @@ describe("upsertScreenshot", () => {
 
     const rows = await db.select().from(screenshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.test/screenshot.webp");
-    expect(rows[0]?.width).toBe(1200);
-    expect(rows[0]?.height).toBe(630);
+    expect(rows[0].url).toBe("https://example.test/screenshot.webp");
+    expect(rows[0].width).toBe(1200);
+    expect(rows[0].height).toBe(630);
   });
 
   it("updates an existing screenshot record", async () => {
@@ -102,8 +102,8 @@ describe("upsertScreenshot", () => {
 
     const rows = await db.select().from(screenshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.url).toBe("https://example.test/screenshot-new.webp");
-    expect(rows[0]?.source).toBe("direct_https");
+    expect(rows[0].url).toBe("https://example.test/screenshot-new.webp");
+    expect(rows[0].source).toBe("direct_https");
   });
 
   it("handles notFound flag", async () => {
@@ -124,8 +124,8 @@ describe("upsertScreenshot", () => {
 
     const rows = await db.select().from(screenshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.notFound).toBe(true);
-    expect(rows[0]?.url).toBeNull();
+    expect(rows[0].notFound).toBe(true);
+    expect(rows[0].url).toBeNull();
   });
 });
 
@@ -153,7 +153,9 @@ describe("getScreenshotByDomainId", () => {
 
     const result = await getScreenshotByDomainId(testDomainId);
     expect(result).not.toBeNull();
-    expect(result?.url).toBe("https://example.test/screenshot.webp");
+    if (!result) throw new Error("Expected result");
+
+    expect(result.url).toBe("https://example.test/screenshot.webp");
   });
 
   it("returns null when screenshot is expired", async () => {

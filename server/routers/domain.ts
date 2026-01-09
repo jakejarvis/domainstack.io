@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
-import { toRegistrableDomain } from "@/lib/domain-server";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
 import {
   createTRPCRouter,
   domainProcedure,
@@ -123,11 +123,25 @@ export const domainRouter = createTRPCRouter({
       ]);
 
       // Phase 2: Hosting uses the already-fetched data
+      // If both upstream workflows failed, we have no data to detect providers from
+      if (!dnsResult.success && !headersResult.success) {
+        return {
+          success: false,
+          cached: false,
+          error: "Failed to fetch DNS records and HTTP headers",
+          data: null,
+        };
+      }
+
+      // Guard against null data from failed workflows (partial data is okay)
+      const dnsRecords = dnsResult.data?.records ?? [];
+      const headers = headersResult.data?.headers ?? [];
+
       const hostingRun = await start(hostingWorkflow, [
         {
           domain: input.domain,
-          dnsRecords: dnsResult.data.records,
-          headers: headersResult.data.headers,
+          dnsRecords,
+          headers,
         },
       ]);
       const result = await hostingRun.returnValue;

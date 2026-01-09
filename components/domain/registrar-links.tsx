@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/lib/analytics/client";
 import { PRICING_PROVIDERS } from "@/lib/constants/pricing-providers";
-import { extractTldClient } from "@/lib/domain";
+import { extractTldClient } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 

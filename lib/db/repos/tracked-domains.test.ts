@@ -98,11 +98,13 @@ describe("createTrackedDomain", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.userId).toBe(testUserId);
-    expect(result?.domainId).toBe(testDomainId);
-    expect(result?.verificationToken).toBe("test-token-123");
-    expect(result?.verified).toBe(false);
-    expect(result?.verificationStatus).toBe("unverified");
+    if (!result) throw new Error("Expected result");
+
+    expect(result.userId).toBe(testUserId);
+    expect(result.domainId).toBe(testDomainId);
+    expect(result.verificationToken).toBe("test-token-123");
+    expect(result.verified).toBe(false);
+    expect(result.verificationStatus).toBe("unverified");
   });
 
   it("creates with verification method if provided", async () => {
@@ -114,7 +116,9 @@ describe("createTrackedDomain", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.verificationMethod).toBe("dns_txt");
+    if (!result) throw new Error("Expected result");
+
+    expect(result.verificationMethod).toBe("dns_txt");
   });
 });
 
@@ -133,8 +137,10 @@ describe("findTrackedDomain", () => {
 
     const result = await findTrackedDomain(testUserId, testDomainId);
     expect(result).toBeDefined();
-    expect(result?.userId).toBe(testUserId);
-    expect(result?.domainId).toBe(testDomainId);
+    if (!result) throw new Error("Expected result");
+
+    expect(result.userId).toBe(testUserId);
+    expect(result.domainId).toBe(testDomainId);
   });
 });
 
@@ -158,7 +164,9 @@ describe("findTrackedDomainById", () => {
 
     const result = await findTrackedDomainById(createdId);
     expect(result).toBeDefined();
-    expect(result?.id).toBe(createdId);
+    if (!result) throw new Error("Expected result");
+
+    expect(result.id).toBe(createdId);
   });
 });
 
@@ -223,9 +231,11 @@ describe("markVerificationFailing", () => {
     await verifyTrackedDomain(createdId, "dns_txt");
 
     const result = await markVerificationFailing(createdId);
+    expect(result).toBeDefined();
+    if (!result) throw new Error("Expected result");
 
-    expect(result?.verificationStatus).toBe("failing");
-    expect(result?.verificationFailedAt).toBeInstanceOf(Date);
+    expect(result.verificationStatus).toBe("failing");
+    expect(result.verificationFailedAt).toBeInstanceOf(Date);
   });
 
   it("does not overwrite existing failure time on subsequent calls", async () => {
@@ -405,10 +415,12 @@ describe("findTrackedDomainWithDomainName", () => {
     const result = await findTrackedDomainWithDomainName(createdId);
 
     expect(result).not.toBeNull();
-    expect(result?.id).toBe(createdId);
-    expect(result?.userId).toBe(testUserId);
-    expect(result?.domainName).toBe("example.test");
-    expect(result?.verificationToken).toBe("test-token");
+    if (!result) throw new Error("Expected result");
+
+    expect(result.id).toBe(createdId);
+    expect(result.userId).toBe(testUserId);
+    expect(result.domainName).toBe("example.test");
+    expect(result.verificationToken).toBe("test-token");
   });
 });
 
@@ -428,7 +440,9 @@ describe("updateNotificationOverrides", () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result?.notificationOverrides).toEqual({
+    if (!result) throw new Error("Expected result");
+
+    expect(result.notificationOverrides).toEqual({
       domainExpiry: { inApp: false, email: true },
     });
   });
@@ -453,7 +467,10 @@ describe("updateNotificationOverrides", () => {
       certificateExpiry: { inApp: true, email: true },
     });
 
-    expect(result?.notificationOverrides).toEqual({
+    expect(result).not.toBeNull();
+    if (!result) throw new Error("Expected result");
+
+    expect(result.notificationOverrides).toEqual({
       domainExpiry: { inApp: false, email: false },
       certificateExpiry: { inApp: true, email: true },
     });
@@ -489,7 +506,9 @@ describe("resetNotificationOverrides", () => {
     const result = await resetNotificationOverrides(createdId);
 
     expect(result).not.toBeNull();
-    expect(result?.notificationOverrides).toEqual({});
+    if (!result) throw new Error("Expected result");
+
+    expect(result.notificationOverrides).toEqual({});
   });
 
   it("returns null for non-existent domain", async () => {
@@ -515,7 +534,9 @@ describe("archiveTrackedDomain", () => {
     const result = await archiveTrackedDomain(createdId);
 
     expect(result).not.toBeNull();
-    expect(result?.archivedAt).toBeInstanceOf(Date);
+    if (!result) throw new Error("Expected result");
+
+    expect(result.archivedAt).toBeInstanceOf(Date);
   });
 
   it("returns null for non-existent ID", async () => {
@@ -544,7 +565,9 @@ describe("unarchiveTrackedDomain", () => {
     const result = await unarchiveTrackedDomain(createdId);
 
     expect(result).not.toBeNull();
-    expect(result?.archivedAt).toBeNull();
+    if (!result) throw new Error("Expected result");
+
+    expect(result.archivedAt).toBeNull();
   });
 
   it("returns null for non-existent ID", async () => {
