@@ -66,7 +66,10 @@ export function DomainReportHeader({
       <div className="flex flex-shrink-0 items-center gap-2">
         <TrackDomainButton domain={domain} enabled={isRegistered} />
 
-        <ExportButton onExport={onExport} disabled={exportDisabled} />
+        <ExportButton
+          onExport={onExport}
+          disabled={!isRegistered || exportDisabled}
+        />
 
         <ToolsDropdown domain={domain} />
       </div>

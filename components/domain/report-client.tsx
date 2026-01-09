@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useRef } from "react";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -14,7 +14,6 @@ import { RegistrationSection } from "@/components/domain/registration/registrati
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
 import { DomainReportHeader } from "@/components/domain/report-header";
 import { SectionErrorBoundary } from "@/components/domain/report-section-error-boundary";
-import { SectionsSkeleton } from "@/components/domain/report-skeleton";
 import { SectionNav } from "@/components/domain/section-nav";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
@@ -121,34 +120,6 @@ function ReportSections({ domain }: { domain: string }) {
 }
 
 /**
- * Report content area wrapped in Suspense.
- * The parent component handles the unregistered case, so this just renders sections.
- * We still need to wait for registration to resolve before showing sections
- * (to avoid flashing sections that will be replaced by unregistered card).
- */
-function ReportContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  // Wait for registration to resolve - parent will switch to unregistered card if needed
-  const { data: registration } = useSuspenseQuery(
-    trpc.domain.getRegistration.queryOptions({ domain }),
-  );
-
-  // Add to search history (only for registered domains)
-  const isConfirmedUnregistered =
-    registration.data?.isRegistered === false &&
-    registration.data?.source !== null;
-  useDomainHistory(domain, { enabled: !isConfirmedUnregistered });
-
-  // Parent handles unregistered case, but we still check here as a safeguard
-  // (this component may briefly render before parent re-renders)
-  if (isConfirmedUnregistered) {
-    return null;
-  }
-
-  return <ReportSections domain={domain} />;
-}
-
-/**
  * Main client component for domain reports.
  * Header and nav render immediately with the domain name.
  * Content area loads progressively with individual section suspense boundaries.
@@ -159,10 +130,7 @@ function ReportContent({ domain }: { domain: string }) {
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
 
-  // Non-suspending query to get registration data for:
-  // 1. domainId (for screenshot popover)
-  // 2. Checking if domain is confirmed unregistered (to hide header/nav)
-  const { data: registration } = useQuery(
+  const { data: registration } = useSuspenseQuery(
     trpc.domain.getRegistration.queryOptions({ domain }),
   );
   const domainId = registration?.data?.domainId;
@@ -179,6 +147,9 @@ export function DomainReportClient({ domain }: { domain: string }) {
       sectionIds: Object.keys(sections),
       headerRef,
     });
+
+  // Add to search history for registered domains
+  useDomainHistory(domain, { enabled: !isConfirmedUnregistered });
 
   // Track export state and get export handler
   const { handleExport, allDataLoaded } = useReportExport(domain);
@@ -209,10 +180,8 @@ export function DomainReportClient({ domain }: { domain: string }) {
         onSectionClick={scrollToSection}
       />
 
-      {/* Content area with suspense boundary for registration check */}
-      <Suspense fallback={<SectionsSkeleton />}>
-        <ReportContent domain={domain} />
-      </Suspense>
+      {/* Content area - individual sections have their own Suspense boundaries */}
+      <ReportSections domain={domain} />
     </div>
   );
 }

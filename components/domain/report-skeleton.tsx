@@ -81,7 +81,7 @@ function SectionNavSkeleton() {
  * Skeleton for just the report sections (no header/nav).
  * Used as fallback when header/nav are already rendered with real data.
  */
-export function SectionsSkeleton() {
+function SectionsSkeleton() {
   return (
     <div className="space-y-4">
       <RegistrationSectionSkeleton />

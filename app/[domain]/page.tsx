@@ -1,4 +1,3 @@
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportClient } from "@/components/domain/report-client";
@@ -59,32 +58,28 @@ export default async function DomainPage({
   // This eliminates waterfall while allowing the page to stream immediately
   // Use getQueryClient() to ensure consistent query client across the request
   const queryClient = getQueryClient();
-  void Promise.all([
-    queryClient.prefetchQuery(
-      trpc.domain.getRegistration.queryOptions({ domain: registrable }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getHosting.queryOptions({ domain: registrable }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getDnsRecords.queryOptions({ domain: registrable }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getCertificates.queryOptions({ domain: registrable }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getHeaders.queryOptions({ domain: registrable }),
-    ),
-    queryClient.prefetchQuery(
-      trpc.domain.getSeo.queryOptions({ domain: registrable }),
-    ),
-  ]);
+  void queryClient.prefetchQuery(
+    trpc.domain.getRegistration.queryOptions({ domain: registrable }),
+  );
+  void queryClient.prefetchQuery(
+    trpc.domain.getHosting.queryOptions({ domain: registrable }),
+  );
+  void queryClient.prefetchQuery(
+    trpc.domain.getDnsRecords.queryOptions({ domain: registrable }),
+  );
+  void queryClient.prefetchQuery(
+    trpc.domain.getCertificates.queryOptions({ domain: registrable }),
+  );
+  void queryClient.prefetchQuery(
+    trpc.domain.getHeaders.queryOptions({ domain: registrable }),
+  );
+  void queryClient.prefetchQuery(
+    trpc.domain.getSeo.queryOptions({ domain: registrable }),
+  );
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <DomainReportClient domain={registrable} />
-      </HydrationBoundary>
+      <DomainReportClient domain={registrable} />
     </div>
   );
 }
