@@ -1,5 +1,5 @@
-import { start } from "workflow/api";
 import { getWorkflowMetadata } from "workflow";
+import { start } from "workflow/api";
 import type { VerificationMethod } from "@/lib/types";
 import { verificationWorkflow } from "@/workflows/verification";
 

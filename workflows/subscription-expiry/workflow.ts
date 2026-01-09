@@ -157,7 +157,6 @@ function getFirstName(name: string | null | undefined): string {
   return trimmed.split(/\s+/)[0];
 }
 
-
 async function sendSubscriptionExpiryNotification(params: {
   userId: string;
   userName: string;
@@ -175,7 +174,7 @@ async function sendSubscriptionExpiryNotification(params: {
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "subscription-expiry-workflow" });
-  const { userId, userName, userEmail, endsAt, daysRemaining, threshold } =
+  const { userId, userName, userEmail, endsAt, daysRemaining, threshold: _ } =
     params;
 
   // Use workflow run ID as idempotency key - ensures exactly-once delivery

@@ -1,3 +1,4 @@
+import { sleep } from "workflow";
 import { start } from "workflow/api";
 import type { VerificationMethod } from "@/lib/types";
 import { verificationWorkflow } from "@/workflows/verification";
@@ -99,13 +100,6 @@ export async function autoVerifyWorkflow(
     result: "exhausted",
     message: "Verification schedule complete. Daily cron will retry.",
   };
-}
-
-async function sleep(delayMs: number): Promise<void> {
-  "use step";
-
-  // Simple sleep implementation using Promise
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
 type DomainStatus =

@@ -1,5 +1,5 @@
-import { start } from "workflow/api";
 import { getWorkflowMetadata } from "workflow";
+import { start } from "workflow/api";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -442,10 +442,6 @@ async function handleRegistrationChange(
   // Use workflow run ID as idempotency key - ensures exactly-once delivery
   const { workflowRunId } = getWorkflowMetadata();
   const idempotencyKey = `${workflowRunId}:handle-registration-change`;
-    trackedDomainId,
-    "registration_change",
-    generateChangeHash(change),
-  );
 
   // Build descriptive change details
   const changeDetails: string[] = [];
