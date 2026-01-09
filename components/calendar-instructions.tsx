@@ -272,7 +272,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-[var(--anchor-width)] max-w-[235px] p-1"
+                    className="w-[var(--anchor-width)] max-w-[215px] p-1"
                   >
                     {/* 2x2 Grid of calendar apps */}
                     <div className="grid w-full grid-cols-2 gap-1">
@@ -295,7 +295,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                                 data-disable-progress={
                                   opensNatively ? true : undefined
                                 }
-                                className="flex aspect-3/2 w-full flex-col items-center justify-center gap-2.5 rounded-md text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+                                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-md py-4 text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
                               >
                                 <Icon className="size-5 text-foreground/90" />
                                 <span className="text-foreground/75 text-xs leading-none">

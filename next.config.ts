@@ -12,9 +12,11 @@ let nextConfig: NextConfig = {
     unoptimized: true,
   },
   productionBrowserSourceMaps: true,
+  serverExternalPackages: ["@silvia-odwyer/photon-node"],
   outputFileTracingIncludes: {
     "/.well-known/workflow/**/step": [
       "node_modules/@sparticuz/chromium/bin/**",
+      "node_modules/@silvia-odwyer/photon-node/**",
     ],
   },
   logging: {

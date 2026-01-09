@@ -70,7 +70,7 @@ export function ScreenshotPopover({
         side={side}
         sideOffset={sideOffset}
       >
-        <div className="w-[300px] sm:w-[360px] md:w-[420px]">
+        <div className="w-[360px] md:w-[420px]">
           <div className="inline-block h-auto w-full select-none overflow-hidden rounded-lg border shadow-xl">
             {/* Top Chrome Bar */}
             <div

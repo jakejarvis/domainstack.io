@@ -240,14 +240,14 @@ async function storeScreenshot(
 }> {
   "use step";
 
-  const { addWatermarkToScreenshot } = await import("@/lib/image");
+  const { optimizeImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
 
   // Decode base64 back to Buffer
   const imageBuffer = Buffer.from(imageBufferBase64, "base64");
 
-  // Apply watermark
-  const withWatermark = await addWatermarkToScreenshot(
+  // Optimize and convert to WebP
+  const optimized = await optimizeImageCover(
     imageBuffer,
     VIEWPORT_WIDTH,
     VIEWPORT_HEIGHT,
@@ -257,7 +257,7 @@ async function storeScreenshot(
   const { url, pathname } = await storeImage({
     kind: "screenshot",
     domain,
-    buffer: withWatermark,
+    buffer: optimized,
     width: VIEWPORT_WIDTH,
     height: VIEWPORT_HEIGHT,
   });

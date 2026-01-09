@@ -3,7 +3,6 @@ import {
   fetchIconFromSources,
   type IconFetchResult,
 } from "@/workflows/shared/fetch-icon";
-import { processIcon } from "@/workflows/shared/process-icon";
 
 export interface FaviconWorkflowInput {
   domain: string;
@@ -17,11 +16,9 @@ export interface FaviconWorkflowResult {
 const DEFAULT_SIZE = 32;
 
 /**
- * Durable favicon workflow that breaks down icon fetching into
- * independently retryable steps:
+ * Durable favicon workflow with two main steps:
  * 1. Fetch from multiple sources with fallbacks
- * 2. Process image (convert to WebP)
- * 3. Store to Vercel Blob and persist to database
+ * 2. Process, store, and persist (combined to avoid serializing large buffers)
  */
 export async function faviconWorkflow(
   input: FaviconWorkflowInput,
@@ -50,14 +47,15 @@ export async function faviconWorkflow(
     };
   }
 
-  // Step 2b: Process image (shared step)
-  const processedResult = await processIcon(
+  // Step 2b: Process, store, and persist in one step
+  // (avoids serializing processed image between steps)
+  const result = await processAndStore(
+    domain,
     fetchResult.imageBase64,
-    DEFAULT_SIZE,
+    fetchResult.sourceName,
   );
 
-  if (!processedResult.success) {
-    // Image processing failed
+  if (!result.success) {
     await persistFailure(domain, false);
     return {
       success: false,
@@ -65,29 +63,24 @@ export async function faviconWorkflow(
     };
   }
 
-  // Step 3: Store and persist
-  const storeResult = await storeAndPersist(
-    domain,
-    processedResult.imageBase64,
-    fetchResult.sourceName,
-  );
-
   return {
     success: true,
-    data: { url: storeResult.url },
+    data: { url: result.url },
   };
 }
 
 /**
- * Step: Store to Vercel Blob and persist to database
+ * Step: Process image, store to Vercel Blob, and persist to database.
+ * Combined into one step to avoid serializing large image buffers between steps.
  */
-async function storeAndPersist(
+async function processAndStore(
   domain: string,
   imageBase64: string,
   sourceName: string,
-): Promise<{ url: string }> {
+): Promise<{ success: true; url: string } | { success: false }> {
   "use step";
 
+  const { optimizeImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertFavicon } = await import("@/lib/db/repos/favicons");
@@ -95,19 +88,34 @@ async function storeAndPersist(
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "favicon-workflow" });
-  const buffer = Buffer.from(imageBase64, "base64");
 
   try {
-    // Store to Vercel Blob
+    // 1. Process image
+    const inputBuffer = Buffer.from(imageBase64, "base64");
+    const processedBuffer = await optimizeImageCover(
+      inputBuffer,
+      DEFAULT_SIZE,
+      DEFAULT_SIZE,
+    );
+
+    if (!processedBuffer || processedBuffer.length === 0) {
+      logger.warn(
+        { domain, inputSize: inputBuffer.length },
+        "image processing returned empty result",
+      );
+      return { success: false };
+    }
+
+    // 2. Store to Vercel Blob
     const { url, pathname } = await storeImage({
       kind: "favicon",
       domain,
-      buffer,
+      buffer: processedBuffer,
       width: DEFAULT_SIZE,
       height: DEFAULT_SIZE,
     });
 
-    // Persist to database
+    // 3. Persist to database
     const domainRecord = await ensureDomainRecord(domain);
     const now = new Date();
     const expiresAt = ttlForFavicon(now);
@@ -125,12 +133,12 @@ async function storeAndPersist(
       expiresAt,
     });
 
-    logger.debug({ domain }, "favicon stored and persisted");
+    logger.debug({ domain }, "favicon processed and stored");
 
-    return { url };
+    return { success: true, url };
   } catch (err) {
     const { workflowRunId } = getWorkflowMetadata();
-    logger.error({ err, domain, workflowRunId }, "failed to store favicon");
+    logger.error({ err, domain, workflowRunId }, "failed to process favicon");
     throw err; // Re-throw so workflow can retry
   }
 }

@@ -3,7 +3,6 @@ import {
   fetchIconFromSources,
   type IconFetchResult,
 } from "@/workflows/shared/fetch-icon";
-import { processIcon } from "@/workflows/shared/process-icon";
 
 export interface ProviderLogoWorkflowInput {
   providerId: string;
@@ -20,11 +19,9 @@ export interface ProviderLogoWorkflowResult {
 const DEFAULT_SIZE = 64;
 
 /**
- * Durable provider logo workflow that breaks down icon fetching into
- * independently retryable steps:
+ * Durable provider logo workflow with two main steps:
  * 1. Fetch from multiple sources with fallbacks (including logo.dev)
- * 2. Process image (convert to WebP)
- * 3. Store to Vercel Blob and persist to database
+ * 2. Process, store, and persist (combined to avoid serializing large buffers)
  */
 export async function providerLogoWorkflow(
   input: ProviderLogoWorkflowInput,
@@ -52,75 +49,80 @@ export async function providerLogoWorkflow(
 
     return {
       success: false,
-      data: {
-        url: null,
-      },
+      data: { url: null },
     };
   }
 
-  // Step 2b: Process image (shared step)
-  const processedResult = await processIcon(
-    fetchResult.imageBase64,
-    DEFAULT_SIZE,
-  );
-
-  if (!processedResult.success) {
-    // Image processing failed
-    await persistFailure(providerId, false);
-    return {
-      success: false,
-      data: {
-        url: null,
-      },
-    };
-  }
-
-  // Step 3: Store and persist
-  const storeResult = await storeAndPersist(
+  // Step 2b: Process, store, and persist in one step
+  // (avoids serializing processed image between steps)
+  const result = await processAndStore(
     providerId,
     providerDomain,
-    processedResult.imageBase64,
+    fetchResult.imageBase64,
     fetchResult.sourceName,
   );
 
+  if (!result.success) {
+    await persistFailure(providerId, false);
+    return {
+      success: false,
+      data: { url: null },
+    };
+  }
+
   return {
     success: true,
-    data: {
-      url: storeResult.url,
-    },
+    data: { url: result.url },
   };
 }
 
 /**
- * Step: Store to Vercel Blob and persist to database
+ * Step: Process image, store to Vercel Blob, and persist to database.
+ * Combined into one step to avoid serializing large image buffers between steps.
  */
-async function storeAndPersist(
+async function processAndStore(
   providerId: string,
   providerDomain: string,
   imageBase64: string,
   sourceName: string,
-): Promise<{ url: string }> {
+): Promise<{ success: true; url: string } | { success: false }> {
   "use step";
 
+  const { optimizeImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "provider-logo-workflow" });
-  const buffer = Buffer.from(imageBase64, "base64");
 
   try {
-    // Store to Vercel Blob
+    // 1. Process image
+    const inputBuffer = Buffer.from(imageBase64, "base64");
+    const processedBuffer = await optimizeImageCover(
+      inputBuffer,
+      DEFAULT_SIZE,
+      DEFAULT_SIZE,
+    );
+
+    if (!processedBuffer || processedBuffer.length === 0) {
+      logger.warn(
+        { providerId, providerDomain, inputSize: inputBuffer.length },
+        "image processing returned empty result",
+      );
+      return { success: false };
+    }
+
+    // 2. Store to Vercel Blob
     const { url, pathname } = await storeImage({
       kind: "provider-logo",
       domain: providerDomain,
-      buffer,
+      buffer: processedBuffer,
       width: DEFAULT_SIZE,
       height: DEFAULT_SIZE,
     });
 
-    // Persist to database
+    // 3. Persist to database
     const now = new Date();
     const expiresAt = ttlForProviderIcon(now);
 
@@ -137,9 +139,13 @@ async function storeAndPersist(
 
     logger.debug({ providerId, providerDomain }, "provider logo stored");
 
-    return { url };
+    return { success: true, url };
   } catch (err) {
-    logger.error({ err, providerId, providerDomain }, "failed to store logo");
+    const { workflowRunId } = getWorkflowMetadata();
+    logger.error(
+      { err, providerId, providerDomain, workflowRunId },
+      "failed to process provider logo",
+    );
     throw err; // Re-throw so workflow can retry
   }
 }
