@@ -123,7 +123,17 @@ export const domainRouter = createTRPCRouter({
       ]);
 
       // Phase 2: Hosting uses the already-fetched data
-      // Guard against null data from failed workflows
+      // If both upstream workflows failed, we have no data to detect providers from
+      if (!dnsResult.success && !headersResult.success) {
+        return {
+          success: false,
+          cached: false,
+          error: "Failed to fetch DNS records and HTTP headers",
+          data: null,
+        };
+      }
+
+      // Guard against null data from failed workflows (partial data is okay)
       const dnsRecords = dnsResult.data?.records ?? [];
       const headers = headersResult.data?.headers ?? [];
 

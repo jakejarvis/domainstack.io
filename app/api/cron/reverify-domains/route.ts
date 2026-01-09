@@ -15,12 +15,12 @@ const BATCH_SIZE = 25;
 
 /**
  * Cron job to verify pending and re-verify existing domains.
- * Schedule: Twice daily at 4:00 AM and 4:00 PM UTC
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (
+    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

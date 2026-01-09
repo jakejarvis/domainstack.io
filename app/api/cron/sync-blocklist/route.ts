@@ -8,15 +8,15 @@ const logger = createLogger({ source: "cron/sync-blocklist" });
 
 /**
  * Cron job to sync the screenshot blocklist from external sources.
- * Schedule: Weekly on Sundays at 2:00 AM UTC
  *
  * Fetches blocklist URLs from Edge Config, downloads each list,
  * parses domains, and syncs to the blocked_domains table.
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (
+    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

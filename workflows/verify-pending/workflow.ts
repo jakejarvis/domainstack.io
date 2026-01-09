@@ -1,3 +1,4 @@
+import { FatalError } from "workflow";
 import { start } from "workflow/api";
 import type { VerificationMethod } from "@/lib/types";
 import { verificationWorkflow } from "@/workflows/verification";
@@ -101,7 +102,8 @@ async function markVerified(
 
   const result = await verifyTrackedDomain(trackedDomainId, method);
   if (!result) {
-    throw new Error(
+    // Domain doesn't exist or can't be updated - permanent failure, don't retry
+    throw new FatalError(
       `Failed to mark domain as verified: trackedDomainId=${trackedDomainId}, method=${method}`,
     );
   }

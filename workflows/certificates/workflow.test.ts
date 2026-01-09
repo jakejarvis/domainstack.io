@@ -157,8 +157,10 @@ describe("certificatesWorkflow step functions", () => {
       const result = await certificatesWorkflow({ domain: "tls-test.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data?.certificates.length).toBeGreaterThan(0);
-      expect(result.data?.certificates[0].subject).toBe("example.com");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.certificates.length).toBeGreaterThan(0);
+      expect(result.data.certificates[0].subject).toBe("example.com");
     });
 
     it("handles DNS errors gracefully", async () => {

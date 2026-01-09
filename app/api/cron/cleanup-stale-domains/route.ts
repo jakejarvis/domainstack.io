@@ -16,15 +16,15 @@ const DELETE_BATCH_SIZE = 500;
 
 /**
  * Cron job to clean up stale unverified domains.
- * Schedule: Weekly on Sundays at 3:00 AM UTC
  *
  * Domains that have been added but never verified for more than 30 days
  * are deleted to prevent database bloat.
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (
+    request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
+  ) {
     logger.warn("Unauthorized cron request");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -526,7 +526,7 @@ async function handleRegistrationChange(
       notificationType: "registration_change",
       title,
       message,
-      idempotencyKey: workflowRunId,
+      idempotencyKey: `${workflowRunId}:registration-change`,
       emailSubject: subject,
       emailComponent: RegistrationChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -648,7 +648,7 @@ async function handleProviderChange(
       notificationType: "provider_change",
       title,
       message,
-      idempotencyKey: workflowRunId,
+      idempotencyKey: `${workflowRunId}:provider-change`,
       emailSubject: subject,
       emailComponent: ProviderChangeEmail({
         userName: userName.split(" ")[0] || "there",
@@ -760,7 +760,7 @@ async function handleCertificateChange(
       notificationType: "certificate_change",
       title,
       message,
-      idempotencyKey: workflowRunId,
+      idempotencyKey: `${workflowRunId}:certificate-change`,
       emailSubject: subject,
       emailComponent: CertificateChangeEmail({
         userName: userName.split(" ")[0] || "there",

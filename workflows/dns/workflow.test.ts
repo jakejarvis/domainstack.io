@@ -105,10 +105,12 @@ describe("dnsWorkflow step functions", () => {
       const result = await dnsWorkflow({ domain: "fetch.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data?.resolver).toBe("cloudflare");
-      expect(result.data?.records.some((r) => r.type === "A")).toBe(true);
-      expect(result.data?.records.some((r) => r.type === "MX")).toBe(true);
-      expect(result.data?.records.some((r) => r.type === "NS")).toBe(true);
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.resolver).toBe("cloudflare");
+      expect(result.data.records.some((r) => r.type === "A")).toBe(true);
+      expect(result.data.records.some((r) => r.type === "MX")).toBe(true);
+      expect(result.data.records.some((r) => r.type === "NS")).toBe(true);
     });
 
     it("throws RetryableError when all providers fail", async () => {
@@ -142,7 +144,9 @@ describe("dnsWorkflow step functions", () => {
       const result = await dnsWorkflow({ domain: "fallback.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data?.resolver).toBe("google");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.resolver).toBe("google");
     });
   });
 
@@ -206,8 +210,11 @@ describe("dnsWorkflow step functions", () => {
       const { dnsWorkflow } = await import("./workflow");
       const result = await dnsWorkflow({ domain: "dupes.com" });
 
-      const aRecords = result.data?.records.filter((r) => r.type === "A");
-      expect(aRecords?.length).toBe(2); // Should have 2 unique records
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected success");
+
+      const aRecords = result.data.records.filter((r) => r.type === "A");
+      expect(aRecords.length).toBe(2); // Should have 2 unique records
     });
 
     it("sorts MX records by priority", async () => {
@@ -242,11 +249,14 @@ describe("dnsWorkflow step functions", () => {
       const { dnsWorkflow } = await import("./workflow");
       const result = await dnsWorkflow({ domain: "mx.com" });
 
-      const mxRecords = result.data?.records.filter((r) => r.type === "MX");
-      expect(mxRecords?.length).toBe(3);
-      expect(mxRecords?.[0].priority).toBe(10);
-      expect(mxRecords?.[1].priority).toBe(20);
-      expect(mxRecords?.[2].priority).toBe(30);
+      expect(result.success).toBe(true);
+      if (!result.success) throw new Error("Expected success");
+
+      const mxRecords = result.data.records.filter((r) => r.type === "MX");
+      expect(mxRecords.length).toBe(3);
+      expect(mxRecords[0].priority).toBe(10);
+      expect(mxRecords[1].priority).toBe(20);
+      expect(mxRecords[2].priority).toBe(30);
     });
   });
 });

@@ -9,10 +9,6 @@
   },
   "crons": [
     {
-      "path": "/api/cron/sync-blocklist",
-      "schedule": "0 2 * * 0"
-    },
-    {
       "path": "/api/cron/cleanup-stale-domains",
       "schedule": "0 3 * * 0"
     },
@@ -34,7 +30,11 @@
     },
     {
       "path": "/api/cron/monitor-domains",
-      "schedule": "0 */4 * * *"
+      "schedule": "25 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-blocklist",
+      "schedule": "0 2 * * 0"
     }
   ]
 }

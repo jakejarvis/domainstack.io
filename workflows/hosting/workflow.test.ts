@@ -135,7 +135,9 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.hostingProvider.name).toBe("Vercel");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.hostingProvider.name).toBe("Vercel");
     });
 
     it("detects Cloudflare hosting from cf-ray header", async () => {
@@ -158,7 +160,9 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.hostingProvider.name).toBe("Cloudflare");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.hostingProvider.name).toBe("Cloudflare");
     });
 
     it("detects Google Workspace email from MX records", async () => {
@@ -192,7 +196,9 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.emailProvider.name).toBe("Google Workspace");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.emailProvider.name).toBe("Google Workspace");
     });
 
     it("detects Cloudflare DNS from NS records", async () => {
@@ -224,7 +230,9 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.dnsProvider.name).toBe("Cloudflare");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.dnsProvider.name).toBe("Cloudflare");
     });
 
     it("returns null providers when no IP available", async () => {
@@ -239,8 +247,10 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.hostingProvider.name).toBeNull();
-      expect(result.data?.geo.city).toBe("");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.hostingProvider.name).toBeNull();
+      expect(result.data.geo.city).toBe("");
     });
 
     it("falls back to GeoIP owner for unknown hosting", async () => {
@@ -262,7 +272,9 @@ describe("hostingWorkflow", () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data?.hostingProvider.name).toBe("DigitalOcean, LLC");
+      if (!result.success) throw new Error("Expected success");
+
+      expect(result.data.hostingProvider.name).toBe("DigitalOcean, LLC");
     });
   });
 
