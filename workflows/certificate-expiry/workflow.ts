@@ -1,4 +1,5 @@
 import { differenceInDays, format } from "date-fns";
+import { getWorkflowMetadata } from "workflow";
 import type { NotificationType } from "@/lib/types";
 
 export interface CertificateExpiryWorkflowInput {
@@ -198,7 +199,6 @@ async function sendCertificateExpiryNotification(params: {
   const { createNotification, updateNotificationResendId } = await import(
     "@/lib/db/repos/notifications"
   );
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { sendPrettyEmail } = await import("@/lib/resend");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -217,10 +217,9 @@ async function sendCertificateExpiryNotification(params: {
     shouldSendInApp,
   } = params;
 
-  const idempotencyKey = generateIdempotencyKey(
-    trackedDomainId,
-    notificationType,
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:send-certificate-expiry-notification`;
 
   const title = `SSL certificate for ${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 3 ? "🔒⚠️ " : "🔒 "}${title}`;

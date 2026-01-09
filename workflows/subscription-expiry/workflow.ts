@@ -1,4 +1,5 @@
 import { differenceInDays, format } from "date-fns";
+import { getWorkflowMetadata } from "workflow";
 
 export interface SubscriptionExpiryWorkflowInput {
   userId: string;
@@ -156,26 +157,6 @@ function getFirstName(name: string | null | undefined): string {
   return trimmed.split(/\s+/)[0];
 }
 
-/**
- * Generate idempotency key for subscription expiry email.
- * Format: subscription_expiry:{userId}:{threshold}d:{endsAtDate}
- *
- * Includes the endsAt date to handle the case where a user:
- * 1. Cancels subscription → gets 7-day notification
- * 2. Resubscribes (clears lastExpiryNotification)
- * 3. Cancels again with a new endsAt date
- *
- * Without the date, if steps 2-3 happen within Resend's idempotency window
- * (~24-48 hours), the new notification would be suppressed.
- */
-function generateSubscriptionIdempotencyKey(
-  userId: string,
-  threshold: SubscriptionExpiryThreshold,
-  endsAt: Date,
-): string {
-  const dateStr = endsAt.toISOString().split("T")[0];
-  return `subscription_expiry:${userId}:${threshold}d:${dateStr}`;
-}
 
 async function sendSubscriptionExpiryNotification(params: {
   userId: string;
@@ -197,11 +178,9 @@ async function sendSubscriptionExpiryNotification(params: {
   const { userId, userName, userEmail, endsAt, daysRemaining, threshold } =
     params;
 
-  const idempotencyKey = generateSubscriptionIdempotencyKey(
-    userId,
-    threshold,
-    endsAt,
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:send-subscription-expiry-notification`;
 
   try {
     const firstName = getFirstName(userName);

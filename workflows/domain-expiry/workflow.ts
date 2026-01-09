@@ -1,4 +1,5 @@
 import { differenceInDays, format } from "date-fns";
+import { getWorkflowMetadata } from "workflow";
 import type { NotificationType } from "@/lib/types";
 
 export interface DomainExpiryWorkflowInput {
@@ -200,7 +201,6 @@ async function sendExpiryNotification(params: {
   const { createNotification, updateNotificationResendId } = await import(
     "@/lib/db/repos/notifications"
   );
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { sendPrettyEmail } = await import("@/lib/resend");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -219,10 +219,9 @@ async function sendExpiryNotification(params: {
     shouldSendInApp,
   } = params;
 
-  const idempotencyKey = generateIdempotencyKey(
-    trackedDomainId,
-    notificationType,
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:send-expiry-notification`;
 
   const title = `${domainName} expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}`;
   const subject = `${daysRemaining <= 7 ? "⚠️ " : ""}${title}`;

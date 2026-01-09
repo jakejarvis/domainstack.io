@@ -1,4 +1,5 @@
 import { start } from "workflow/api";
+import { getWorkflowMetadata } from "workflow";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -402,9 +403,7 @@ async function handleRegistrationChange(
   const { RegistrationChangeEmail } = await import(
     "@/emails/registration-change"
   );
-  const { generateChangeHash } = await import("@/lib/change-detection");
   const { getProviderNames } = await import("@/lib/db/repos/providers");
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
@@ -440,7 +439,9 @@ async function handleRegistrationChange(
     }
   }
 
-  const idempotencyKey = generateIdempotencyKey(
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:handle-registration-change`;
     trackedDomainId,
     "registration_change",
     generateChangeHash(change),
@@ -562,8 +563,6 @@ async function handleProviderChange(
   "use step";
 
   const { ProviderChangeEmail } = await import("@/emails/provider-change");
-  const { generateChangeHash } = await import("@/lib/change-detection");
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
@@ -580,11 +579,9 @@ async function handleProviderChange(
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
-  const idempotencyKey = generateIdempotencyKey(
-    trackedDomainId,
-    "provider_change",
-    generateChangeHash(change),
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:handle-provider-change`;
 
   // Build descriptive change details
   const changeDetails: string[] = [];
@@ -679,9 +676,7 @@ async function handleCertificateChange(
   const { CertificateChangeEmail } = await import(
     "@/emails/certificate-change"
   );
-  const { generateChangeHash } = await import("@/lib/change-detection");
   const { getProviderNames } = await import("@/lib/db/repos/providers");
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
@@ -716,11 +711,9 @@ async function handleCertificateChange(
     }
   }
 
-  const idempotencyKey = generateIdempotencyKey(
-    trackedDomainId,
-    "certificate_change",
-    generateChangeHash(change),
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:handle-certificate-change`;
 
   // Build descriptive change details
   const changeDetails: string[] = [];

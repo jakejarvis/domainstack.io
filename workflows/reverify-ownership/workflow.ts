@@ -1,4 +1,5 @@
 import { start } from "workflow/api";
+import { getWorkflowMetadata } from "workflow";
 import type { VerificationMethod } from "@/lib/types";
 import { verificationWorkflow } from "@/workflows/verification";
 
@@ -189,7 +190,6 @@ async function sendVerificationFailingEmail(
     hasRecentNotification,
     updateNotificationResendId,
   } = await import("@/lib/db/repos/notifications");
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { sendPrettyEmail } = await import("@/lib/resend");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -201,10 +201,9 @@ async function sendVerificationFailingEmail(
   );
   if (alreadySent) return false;
 
-  const idempotencyKey = generateIdempotencyKey(
-    domain.id,
-    "verification_failing",
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:send-verification-failing-email`;
 
   const title = `Verification failing for ${domain.domainName}`;
   const subject = `⚠️ ${title}`;
@@ -283,7 +282,6 @@ async function sendVerificationRevokedEmail(
     hasRecentNotification,
     updateNotificationResendId,
   } = await import("@/lib/db/repos/notifications");
-  const { generateIdempotencyKey } = await import("@/lib/notification-utils");
   const { sendPrettyEmail } = await import("@/lib/resend");
   const { createLogger } = await import("@/lib/logger/server");
 
@@ -295,10 +293,9 @@ async function sendVerificationRevokedEmail(
   );
   if (alreadySent) return false;
 
-  const idempotencyKey = generateIdempotencyKey(
-    domain.id,
-    "verification_revoked",
-  );
+  // Use workflow run ID as idempotency key - ensures exactly-once delivery
+  const { workflowRunId } = getWorkflowMetadata();
+  const idempotencyKey = `${workflowRunId}:send-verification-revoked-email`;
 
   const title = `Verification revoked for ${domain.domainName}`;
   const subject = `❌ ${title}`;
