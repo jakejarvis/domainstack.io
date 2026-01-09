@@ -50,21 +50,29 @@ export async function reverifyOwnershipWorkflow(
     return { verified: true, method: result.data.method as VerificationMethod };
   }
 
-  // Step 3b: Handle failure
-  const action = await handleFailure({
+  // Step 3b: Determine failure action (database update only)
+  const failureResult = await determineFailureAction({
     id: domain.id,
-    domainName: domain.domainName,
-    userId: domain.userId,
-    userName: domain.userName,
-    userEmail: domain.userEmail,
     verificationStatus: domain.verificationStatus,
-    verificationMethod: domain.verificationMethod,
     verificationFailedAt: domain.verificationFailedAt
       ? new Date(domain.verificationFailedAt)
       : null,
   });
 
-  return { verified: false, action };
+  // Step 4: Send notification email based on the action (separate step for retry isolation)
+  if (failureResult.shouldSendEmail) {
+    await sendFailureEmail({
+      id: domain.id,
+      domainName: domain.domainName,
+      userId: domain.userId,
+      userName: domain.userName,
+      userEmail: domain.userEmail,
+      verificationMethod: domain.verificationMethod,
+      emailType: failureResult.emailType,
+    });
+  }
+
+  return { verified: false, action: failureResult.action };
 }
 
 interface DomainData {
@@ -117,20 +125,27 @@ async function markSuccess(trackedDomainId: string): Promise<void> {
   await markVerificationSuccessful(trackedDomainId);
 }
 
-interface DomainForFailureHandling {
+interface DomainForFailureCheck {
   id: string;
-  domainName: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
   verificationStatus: "verified" | "failing" | "unverified";
-  verificationMethod: VerificationMethod;
   verificationFailedAt: Date | null;
 }
 
-async function handleFailure(
-  domain: DomainForFailureHandling,
-): Promise<VerificationFailureAction> {
+type FailureEmailType = "failing" | "revoked";
+
+interface FailureActionResult {
+  action: VerificationFailureAction;
+  shouldSendEmail: boolean;
+  emailType: FailureEmailType;
+}
+
+/**
+ * Determines the failure action and updates database state.
+ * Does NOT send emails - that's handled in a separate step for proper isolation.
+ */
+async function determineFailureAction(
+  domain: DomainForFailureCheck,
+): Promise<FailureActionResult> {
   "use step";
 
   const { differenceInDays: diffInDays } = await import("date-fns");
@@ -144,10 +159,13 @@ async function handleFailure(
   const now = new Date();
 
   if (domain.verificationStatus === "verified") {
-    // First failure - mark as failing and send warning
+    // First failure - mark as failing
     await markVerificationFailing(domain.id);
-    await sendVerificationFailingEmail(domain);
-    return "marked_failing";
+    return {
+      action: "marked_failing",
+      shouldSendEmail: true,
+      emailType: "failing",
+    };
   }
 
   if (domain.verificationStatus === "failing") {
@@ -156,7 +174,11 @@ async function handleFailure(
     if (!failedAt) {
       // Shouldn't happen, but mark failing time now
       await markVerificationFailing(domain.id);
-      return "marked_failing";
+      return {
+        action: "marked_failing",
+        shouldSendEmail: false,
+        emailType: "failing",
+      };
     }
 
     const daysFailing = diffInDays(now, failedAt);
@@ -164,19 +186,52 @@ async function handleFailure(
     if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification
       await revokeVerification(domain.id);
-      await sendVerificationRevokedEmail(domain);
-      return "revoked";
+      return {
+        action: "revoked",
+        shouldSendEmail: true,
+        emailType: "revoked",
+      };
     }
 
-    return "in_grace_period";
+    return {
+      action: "in_grace_period",
+      shouldSendEmail: false,
+      emailType: "failing",
+    };
   }
 
-  return "in_grace_period";
+  return {
+    action: "in_grace_period",
+    shouldSendEmail: false,
+    emailType: "failing",
+  };
 }
 
-// Note: Not a step function - called from within handleFailure step
-async function sendVerificationFailingEmail(
-  domain: DomainForFailureHandling,
+interface DomainForEmail {
+  id: string;
+  domainName: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  verificationMethod: VerificationMethod;
+  emailType: FailureEmailType;
+}
+
+/**
+ * Sends the appropriate failure notification email.
+ * Separated as its own step for proper retry isolation.
+ */
+async function sendFailureEmail(domain: DomainForEmail): Promise<boolean> {
+  "use step";
+
+  if (domain.emailType === "failing") {
+    return await sendVerificationFailingEmailImpl(domain);
+  }
+  return await sendVerificationRevokedEmailImpl(domain);
+}
+
+async function sendVerificationFailingEmailImpl(
+  domain: Omit<DomainForEmail, "emailType">,
 ): Promise<boolean> {
   const { VerificationFailingEmail } = await import(
     "@/emails/verification-failing"
@@ -267,9 +322,8 @@ async function sendVerificationFailingEmail(
   }
 }
 
-// Note: Not a step function - called from within handleFailure step
-async function sendVerificationRevokedEmail(
-  domain: DomainForFailureHandling,
+async function sendVerificationRevokedEmailImpl(
+  domain: Omit<DomainForEmail, "emailType">,
 ): Promise<boolean> {
   const { VerificationRevokedEmail } = await import(
     "@/emails/verification-revoked"

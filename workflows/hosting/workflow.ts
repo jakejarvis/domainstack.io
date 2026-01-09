@@ -16,10 +16,16 @@ export interface HostingWorkflowInput {
   headers: Header[];
 }
 
-export interface HostingWorkflowResult {
-  success: boolean;
-  data: HostingResponse;
-}
+export type HostingWorkflowResult =
+  | {
+      success: true;
+      data: HostingResponse;
+    }
+  | {
+      success: false;
+      error: string;
+      data: HostingResponse | null;
+    };
 
 // Internal types for step-to-step transfer
 interface GeoIpResult {

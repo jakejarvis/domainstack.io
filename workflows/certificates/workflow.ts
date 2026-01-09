@@ -18,7 +18,7 @@ export type CertificatesWorkflowResult =
   | {
       success: false;
       error: "dns_error" | "tls_error" | "timeout" | "connection_failed";
-      data: CertificatesResponse;
+      data: CertificatesResponse | null;
     };
 
 // Internal types for TLS result - serializable for step-to-step transfer

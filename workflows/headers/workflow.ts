@@ -5,10 +5,16 @@ export interface HeadersWorkflowInput {
   domain: string;
 }
 
-export interface HeadersWorkflowResult {
-  success: boolean;
-  data: HeadersResponse;
-}
+export type HeadersWorkflowResult =
+  | {
+      success: true;
+      data: HeadersResponse;
+    }
+  | {
+      success: false;
+      error: "dns_error" | "tls_error";
+      data: HeadersResponse | null;
+    };
 
 // Internal types for step-to-step transfer
 interface FetchSuccess {
@@ -20,6 +26,7 @@ interface FetchSuccess {
 
 interface FetchFailure {
   success: false;
+  error: "dns_error" | "tls_error";
   headers: Header[];
   status: number;
   statusMessage: string | undefined;
@@ -48,8 +55,20 @@ export async function headersWorkflow(
     await persistHeaders(domain, fetchResult.headers, fetchResult.status);
   }
 
+  if (!fetchResult.success) {
+    return {
+      success: false,
+      error: fetchResult.error,
+      data: {
+        headers: fetchResult.headers,
+        status: fetchResult.status,
+        statusMessage: fetchResult.statusMessage,
+      },
+    };
+  }
+
   return {
-    success: fetchResult.success,
+    success: true,
     data: {
       headers: fetchResult.headers,
       status: fetchResult.status,
@@ -116,6 +135,7 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
       // Permanent failure - domain doesn't resolve, return graceful result
       return {
         success: false,
+        error: "dns_error",
         headers: [],
         status: 0,
         statusMessage: undefined,
@@ -126,6 +146,7 @@ export async function fetchHeaders(domain: string): Promise<FetchResult> {
       // Permanent failure - cert is invalid, return graceful result
       return {
         success: false,
+        error: "tls_error",
         headers: [],
         status: 0,
         statusMessage: "Invalid SSL certificate",

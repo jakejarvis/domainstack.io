@@ -54,7 +54,7 @@ async function runSection(
       const run = await start(dnsWorkflow, [{ domain }]);
       const result = await run.returnValue;
       if (!result.success) {
-        return { success: false, error: "DNS workflow failed" };
+        return { success: false, error: result.error };
       }
       return { success: true };
     }
@@ -62,7 +62,7 @@ async function runSection(
       const run = await start(headersWorkflow, [{ domain }]);
       const result = await run.returnValue;
       if (!result.success) {
-        return { success: false, error: "Headers workflow failed" };
+        return { success: false, error: result.error };
       }
       return { success: true };
     }
@@ -79,12 +79,12 @@ async function runSection(
 
       // Check DNS workflow success
       if (!dnsResult.success) {
-        return { success: false, error: "DNS workflow failed" };
+        return { success: false, error: dnsResult.error };
       }
 
       // Check headers workflow success
       if (!headersResult.success) {
-        return { success: false, error: "Headers workflow failed" };
+        return { success: false, error: headersResult.error };
       }
 
       const hostingRun = await start(hostingWorkflow, [
@@ -94,7 +94,10 @@ async function runSection(
           headers: headersResult.data.headers,
         },
       ]);
-      await hostingRun.returnValue;
+      const hostingResult = await hostingRun.returnValue;
+      if (!hostingResult.success) {
+        return { success: false, error: hostingResult.error };
+      }
       return { success: true };
     }
     case "certificates": {
@@ -109,7 +112,7 @@ async function runSection(
       const run = await start(seoWorkflow, [{ domain }]);
       const result = await run.returnValue;
       if (!result.success) {
-        return { success: false, error: "SEO workflow failed" };
+        return { success: false, error: result.error };
       }
       return { success: true };
     }

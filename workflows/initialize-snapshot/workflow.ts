@@ -26,7 +26,7 @@ export interface InitializeSnapshotWorkflowInput {
 
 export type InitializeSnapshotWorkflowResult =
   | { success: true; snapshotId: string }
-  | { success: false; reason: string };
+  | { success: false; error: string };
 
 /**
  * Durable workflow to initialize a snapshot for a newly verified tracked domain.
@@ -45,7 +45,7 @@ export async function initializeSnapshotWorkflow(
   const domainRecord = await fetchDomainName(domainId);
 
   if (!domainRecord) {
-    return { success: false, reason: "domain_not_found" };
+    return { success: false, error: "domain_not_found" };
   }
 
   const domainName = domainRecord.name;

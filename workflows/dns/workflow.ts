@@ -6,10 +6,16 @@ export interface DnsWorkflowInput {
   domain: string;
 }
 
-export interface DnsWorkflowResult {
-  success: boolean;
-  data: DnsRecordsResponse;
-}
+export type DnsWorkflowResult =
+  | {
+      success: true;
+      data: DnsRecordsResponse;
+    }
+  | {
+      success: false;
+      error: string;
+      data: DnsRecordsResponse | null;
+    };
 
 // Internal types for step-to-step transfer
 // Note: Step throws RetryableError on failure, so only success type is needed

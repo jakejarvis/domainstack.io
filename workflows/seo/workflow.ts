@@ -12,10 +12,16 @@ export interface SeoWorkflowInput {
   domain: string;
 }
 
-export interface SeoWorkflowResult {
-  success: boolean;
-  data: SeoResponse;
-}
+export type SeoWorkflowResult =
+  | {
+      success: true;
+      data: SeoResponse;
+    }
+  | {
+      success: false;
+      error: string;
+      data: SeoResponse | null;
+    };
 
 // Internal types for step-to-step transfer
 interface HtmlFetchResult {
