@@ -59,6 +59,7 @@ export function NotificationsPopover() {
     data,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
     isLoading,
     isError: isNotificationsError,
@@ -76,6 +77,11 @@ export function NotificationsPopover() {
   });
 
   const notifications = data?.pages.flatMap((page) => page.items) ?? [];
+
+  // Show loading skeleton when initially loading OR when fetching a tab that
+  // has never been viewed (no cached data). Once a tab has cached data (even
+  // if empty), show that cached state while refetching in the background.
+  const showLoading = isLoading || (isFetching && data === undefined);
 
   // Avoid duplicate auto-mark calls within a single open session.
   useEffect(() => {
@@ -288,7 +294,7 @@ export function NotificationsPopover() {
           {/* Notification list */}
           <NotificationList
             notifications={notifications}
-            isLoading={isLoading}
+            isLoading={showLoading}
             isError={isNotificationsError}
             view={view}
             hasNextPage={hasNextPage}
