@@ -91,8 +91,8 @@ async function lookupWhoisStep(domain: string): Promise<RdapLookupResult> {
     if (result.error === "timeout") {
       throw new RetryableError("RDAP lookup timed out", { retryAfter: "10s" });
     }
-    // Unsupported TLD is a permanent failure
-    return { success: false, error: "unsupported_tld" };
+    // Permanent failure - preserve the actual error
+    return { success: false, error: result.error };
   }
 
   return result;

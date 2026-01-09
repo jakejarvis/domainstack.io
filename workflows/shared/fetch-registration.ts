@@ -1,3 +1,4 @@
+import { RetryableError } from "workflow";
 import type { RegistrationResponse } from "@/lib/types";
 
 export interface FetchRegistrationResult {
@@ -24,7 +25,8 @@ export async function fetchRegistrationData(
   const result = await lookupAndPersistRegistration(domain);
 
   if (!result) {
-    return { success: false, data: null, error: "RDAP lookup failed" };
+    // null indicates a retryable condition - throw to leverage durable step retry semantics
+    throw new RetryableError("RDAP lookup failed", { retryAfter: "5s" });
   }
 
   return {

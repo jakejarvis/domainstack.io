@@ -1,3 +1,4 @@
+import { VERIFICATION_METHODS } from "@/lib/constants/verification";
 import type { VerificationMethod } from "@/lib/types";
 import {
   verifyDomainOwnership,
@@ -41,12 +42,7 @@ export async function verificationWorkflow(
   // If a specific method is requested, only try that one
   if (method) {
     // Validate method before attempting verification
-    const validMethods: VerificationMethod[] = [
-      "dns_txt",
-      "html_file",
-      "meta_tag",
-    ];
-    if (!validMethods.includes(method)) {
+    if (!VERIFICATION_METHODS.includes(method)) {
       return {
         success: false,
         error: "Unknown method",

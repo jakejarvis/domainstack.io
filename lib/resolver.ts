@@ -49,6 +49,9 @@ export async function dohLookup(
             records.push({ address: answer.data.trim(), family: 4 });
           }
         }
+      } else {
+        // Capture rejected promise error for debugging
+        lastError = aResults.reason;
       }
 
       if (aaaaResults.status === "fulfilled") {
@@ -62,6 +65,9 @@ export async function dohLookup(
             records.push({ address: answer.data.trim(), family: 6 });
           }
         }
+      } else {
+        // Capture rejected promise error for debugging
+        lastError = aaaaResults.reason;
       }
 
       if (records.length > 0) {

@@ -38,7 +38,7 @@ export async function sectionRevalidateWorkflow(
     case "dns": {
       const result = await fetchDnsData(domain);
       if (!result.success) {
-        return { success: false, domain, section, error: "dns_fetch_failed" };
+        return { success: false, domain, section, error: result.error };
       }
       return { success: true, domain, section };
     }

@@ -105,8 +105,8 @@ export async function fetchDnsRecords(
       const deduplicated = deduplicateDnsRecords(flat);
       const sorted = sortDnsRecordsByType(deduplicated, types);
 
-      // Build records with expiry for persistence
-      const recordsWithExpiry = flat.map((r) => ({
+      // Build records with expiry for persistence (use deduplicated to avoid storing duplicates)
+      const recordsWithExpiry = deduplicated.map((r) => ({
         type: r.type,
         name: r.name,
         value: r.value,

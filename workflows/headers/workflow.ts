@@ -12,6 +12,7 @@ export type HeadersWorkflowResult =
     }
   | {
       success: false;
+      // Note: fetch_error is thrown as RetryableError in fetchHeadersStep and never returned
       error: "dns_error" | "tls_error";
       data: HeadersResponse | null;
     };
@@ -32,7 +33,11 @@ interface FetchFailure {
   statusMessage: string | undefined;
 }
 
-type FetchResult = FetchSuccess | FetchFailure;
+// After fetchHeadersStep processes the result, fetch_error is thrown as RetryableError
+// so only dns_error and tls_error are returned to the workflow caller
+type FetchResult =
+  | FetchSuccess
+  | (Omit<FetchFailure, "error"> & { error: "dns_error" | "tls_error" });
 
 /**
  * Durable headers workflow that breaks down HTTP header probing into
@@ -56,12 +61,11 @@ export async function headersWorkflow(
   }
 
   if (!fetchResult.success) {
-    // Map fetch_error to tls_error for backwards compatibility
-    const error =
-      fetchResult.error === "fetch_error" ? "tls_error" : fetchResult.error;
+    // Note: fetch_error is thrown as RetryableError in fetchHeadersStep,
+    // so it never reaches here. Only dns_error and tls_error are returned.
     return {
       success: false,
-      error,
+      error: fetchResult.error,
       data: {
         headers: fetchResult.headers,
         status: fetchResult.status,
@@ -82,6 +86,9 @@ export async function headersWorkflow(
 
 /**
  * Step: Fetch HTTP headers from the domain.
+ *
+ * Note: fetch_error is thrown as RetryableError and never returned,
+ * so the return type is narrowed to exclude it.
  */
 async function fetchHeadersStep(domain: string): Promise<FetchResult> {
   "use step";
@@ -95,7 +102,8 @@ async function fetchHeadersStep(domain: string): Promise<FetchResult> {
     throw new RetryableError("Headers fetch failed", { retryAfter: "5s" });
   }
 
-  return result;
+  // After the check above, fetch_error is filtered out
+  return result as FetchResult;
 }
 
 // HTTP header probing can fail due to transient network issues - allow more retries

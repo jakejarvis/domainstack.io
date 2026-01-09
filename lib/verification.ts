@@ -101,6 +101,9 @@ export async function verifyByHtmlFile(
         url: urlStr,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
+        timeoutMs: 5000,
+        maxBytes: 1024,
+        maxRedirects: 3,
       });
 
       if (!result.ok) {
@@ -125,6 +128,7 @@ export async function verifyByHtmlFile(
       const result = await safeFetch({
         url: urlStr,
         allowHttp: true,
+        allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
         maxBytes: 1024,
         maxRedirects: 3,
@@ -169,6 +173,7 @@ export async function verifyByMetaTag(
       const result = await safeFetch({
         url: urlStr,
         allowHttp: true,
+        allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 10000,
         maxBytes: MAX_HTML_BYTES,
         maxRedirects: 5,
