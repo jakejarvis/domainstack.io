@@ -8,8 +8,8 @@
 import { getStatusCode } from "@readme/http-status-codes";
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { isExpectedDnsError } from "@/lib/dns-utils";
-import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
+import { safeFetch } from "@/lib/safe-fetch";
 import { isExpectedTlsError } from "@/lib/tls-utils";
 import { ttlForHeaders } from "@/lib/ttl";
 import type { Header, HeadersResponse } from "@/lib/types";
@@ -48,7 +48,7 @@ export async function fetchHttpHeaders(
   const allowedHosts = [domain, `www.${domain}`];
 
   try {
-    const final = await fetchRemoteAsset({
+    const final = await safeFetch({
       url: `https://${domain}/`,
       allowHttp: true,
       timeoutMs: REQUEST_TIMEOUT_MS,

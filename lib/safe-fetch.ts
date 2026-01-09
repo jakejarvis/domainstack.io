@@ -3,7 +3,7 @@ import { USER_AGENT } from "@/lib/constants/app";
 import { isExpectedDnsError } from "@/lib/dns-utils";
 import { type FetchOptions, fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
-import { dnsLookupViaHttps } from "@/lib/resolver";
+import { dohLookup } from "@/lib/resolver";
 
 const logger = createLogger({ source: "remote-asset" });
 
@@ -40,7 +40,7 @@ export class RemoteAssetError extends Error {
   }
 }
 
-type BaseFetchRemoteAssetOptions = FetchOptions & {
+type BaseSafeFetchOptions = FetchOptions & {
   /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
@@ -61,23 +61,21 @@ type BaseFetchRemoteAssetOptions = FetchOptions & {
   returnOnDisallowedRedirect?: boolean;
 };
 
-type FetchRemoteAssetOptionsWithGet = BaseFetchRemoteAssetOptions & {
+type SafeFetchOptionsWithGet = BaseSafeFetchOptions & {
   /** HTTP method to use (defaults to GET). */
   method?: "GET";
 };
 
-type FetchRemoteAssetOptionsWithHead = BaseFetchRemoteAssetOptions & {
+type SafeFetchOptionsWithHead = BaseSafeFetchOptions & {
   /** HTTP method to use. */
   method: "HEAD";
   /** If true, automatically retry with GET when HEAD fails with 405 (Method Not Allowed). */
   fallbackToGetOnHeadFailure?: boolean;
 };
 
-export type FetchRemoteAssetOptions =
-  | FetchRemoteAssetOptionsWithGet
-  | FetchRemoteAssetOptionsWithHead;
+type SafeFetchOptions = SafeFetchOptionsWithGet | SafeFetchOptionsWithHead;
 
-export type RemoteAssetResult = {
+type SafeFetchResult = {
   buffer: Buffer;
   contentType: string | null;
   finalUrl: string;
@@ -90,9 +88,9 @@ export type RemoteAssetResult = {
  * Fetch a user-controlled asset while protecting against SSRF, redirect-based
  * host swapping, and unbounded memory usage.
  */
-export async function fetchRemoteAsset(
-  opts: FetchRemoteAssetOptions,
-): Promise<RemoteAssetResult> {
+export async function safeFetch(
+  opts: SafeFetchOptions,
+): Promise<SafeFetchResult> {
   const initialUrl = toUrl(opts.url, opts.currentUrl);
   let method = opts.method ?? "GET";
   let retryingWithGet = false;
@@ -295,7 +293,7 @@ async function ensureUrlAllowed(
   try {
     // Use DoH-based DNS lookup to avoid blocking Node.js threadpool.
     // This prevents EBUSY errors under high concurrency.
-    const result = await dnsLookupViaHttps(hostname, { all: true });
+    const result = await dohLookup(hostname, { all: true });
     records = Array.isArray(result) ? result : [result];
   } catch (err) {
     // DNS failures are expected for non-existent domains - log at info level

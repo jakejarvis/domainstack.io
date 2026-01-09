@@ -1,25 +1,22 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  fetchRemoteAsset,
-  type RemoteAssetError,
-} from "@/lib/fetch-remote-asset";
+import { type RemoteAssetError, safeFetch } from "@/lib/safe-fetch";
 
 // Each test replaces the global fetch/DNS lookup so we can simulate edge cases deterministically.
 const fetchMock = vi.hoisted(() => vi.fn());
-const dnsLookupMock = vi.hoisted(() =>
+const dohLookupMock = vi.hoisted(() =>
   vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
 );
 
 vi.mock("@/lib/resolver", () => ({
-  dnsLookupViaHttps: dnsLookupMock,
+  dohLookup: dohLookupMock,
 }));
 
-describe("fetchRemoteAsset", () => {
+describe("safeFetch", () => {
   beforeEach(() => {
     fetchMock.mockReset();
-    dnsLookupMock.mockReset();
-    dnsLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+    dohLookupMock.mockReset();
+    dohLookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
@@ -32,7 +29,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/image.png",
       maxBytes: 1024,
     });
@@ -47,7 +44,7 @@ describe("fetchRemoteAsset", () => {
 
   it("rejects http URLs when allowHttp not set", async () => {
     await expect(
-      fetchRemoteAsset({ url: "http://example.test/file.png" }),
+      safeFetch({ url: "http://example.test/file.png" }),
     ).rejects.toMatchObject({
       code: "protocol_not_allowed",
     } satisfies Partial<RemoteAssetError>);
@@ -57,7 +54,7 @@ describe("fetchRemoteAsset", () => {
     fetchMock.mockResolvedValueOnce(
       new Response(new Uint8Array([1]), { status: 200 }),
     );
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "http://example.test/icon.png",
       allowHttp: true,
     });
@@ -65,9 +62,9 @@ describe("fetchRemoteAsset", () => {
   });
 
   it("blocks hosts that resolve to private IPs", async () => {
-    dnsLookupMock.mockResolvedValueOnce([{ address: "10.0.0.5", family: 4 }]);
+    dohLookupMock.mockResolvedValueOnce([{ address: "10.0.0.5", family: 4 }]);
     await expect(
-      fetchRemoteAsset({ url: "https://private.example/icon.png" }),
+      safeFetch({ url: "https://private.example/icon.png" }),
     ).rejects.toMatchObject({
       code: "private_ip",
     } satisfies Partial<RemoteAssetError>);
@@ -87,11 +84,11 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(redirectResponse)
       .mockResolvedValueOnce(finalResponse);
 
-    dnsLookupMock
+    dohLookupMock
       .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }])
       .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/img.png",
       maxRedirects: 2,
     });
@@ -109,7 +106,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     await expect(
-      fetchRemoteAsset({
+      safeFetch({
         url: "https://example.test/large.png",
         maxBytes: 10,
       }),
@@ -127,7 +124,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/large.html",
       maxBytes: 100,
       truncateOnLimit: true,
@@ -147,7 +144,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/small.html",
       maxBytes: 100,
       truncateOnLimit: true,
@@ -170,7 +167,7 @@ describe("fetchRemoteAsset", () => {
     );
 
     // With truncateOnLimit, should not throw based on content-length header
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/page.html",
       maxBytes: 100,
       truncateOnLimit: true,
@@ -190,7 +187,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/image.png",
       method: "HEAD",
     });
@@ -216,7 +213,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    await fetchRemoteAsset({
+    await safeFetch({
       url: "https://example.test/image.png",
       maxBytes: 1024,
     });
@@ -242,7 +239,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/image.png",
       maxBytes: 1024,
     });
@@ -271,7 +268,7 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(headResponse)
       .mockResolvedValueOnce(getResponse);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
@@ -304,7 +301,7 @@ describe("fetchRemoteAsset", () => {
 
     fetchMock.mockResolvedValueOnce(headResponse);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: false,
@@ -324,7 +321,7 @@ describe("fetchRemoteAsset", () => {
 
     fetchMock.mockResolvedValueOnce(getResponse);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "GET",
     });
@@ -352,12 +349,12 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(redirectResponse) // GET -> 302
       .mockResolvedValueOnce(finalResponse); // GET after redirect -> 200
 
-    dnsLookupMock
+    dohLookupMock
       .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.test for HEAD
       .mockResolvedValueOnce([{ address: "93.184.216.34", family: 4 }]) // example.test for GET retry
       .mockResolvedValueOnce([{ address: "93.184.216.35", family: 4 }]); // cdn.example.test for redirect
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
@@ -385,7 +382,7 @@ describe("fetchRemoteAsset", () => {
       .mockResolvedValueOnce(head405Response)
       .mockResolvedValueOnce(get405Response);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "HEAD",
       fallbackToGetOnHeadFailure: true,
@@ -410,7 +407,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/protected",
     });
 
@@ -435,7 +432,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/not-found",
     });
 
@@ -457,7 +454,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/error",
     });
 
@@ -479,7 +476,7 @@ describe("fetchRemoteAsset", () => {
       }),
     );
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://example.test/",
       method: "HEAD",
     });
@@ -499,11 +496,11 @@ describe("fetchRemoteAsset", () => {
     });
 
     fetchMock.mockResolvedValueOnce(redirectResponse);
-    dnsLookupMock.mockResolvedValueOnce([
+    dohLookupMock.mockResolvedValueOnce([
       { address: "93.184.216.34", family: 4 },
     ]);
 
-    const result = await fetchRemoteAsset({
+    const result = await safeFetch({
       url: "https://allowed.test/",
       allowedHosts: ["allowed.test"],
       returnOnDisallowedRedirect: true,
@@ -522,12 +519,12 @@ describe("fetchRemoteAsset", () => {
     });
 
     fetchMock.mockResolvedValueOnce(redirectResponse);
-    dnsLookupMock.mockResolvedValueOnce([
+    dohLookupMock.mockResolvedValueOnce([
       { address: "93.184.216.34", family: 4 },
     ]);
 
     await expect(
-      fetchRemoteAsset({
+      safeFetch({
         url: "https://allowed.test/",
         allowedHosts: ["allowed.test"],
         returnOnDisallowedRedirect: false,

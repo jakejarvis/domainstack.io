@@ -5,8 +5,8 @@ import {
   TTL_AVATAR_STALE,
 } from "@/lib/constants/ttl";
 import { getUserAvatarUrl } from "@/lib/db/repos/users";
-import { fetchRemoteAsset, RemoteAssetError } from "@/lib/fetch-remote-asset";
 import { createLogger } from "@/lib/logger/server";
+import { RemoteAssetError, safeFetch } from "@/lib/safe-fetch";
 
 const logger = createLogger({ source: "avatar-api" });
 
@@ -36,12 +36,12 @@ export async function GET(
   }
 
   // Fetch the avatar from the OAuth provider
-  // fetchRemoteAsset handles:
+  // safeFetch handles:
   // - SSRF protection (private IP blocking, DNS validation)
   // - Redirect re-validation against allowlist
   // - Streaming size limits
   try {
-    const asset = await fetchRemoteAsset({
+    const asset = await safeFetch({
       url: avatarUrl,
       headers: { Accept: "image/*" },
       maxBytes: MAX_AVATAR_BYTES,

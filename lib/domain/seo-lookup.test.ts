@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/mocks/server";
 
 // Hoist mocks for external dependencies
-const fetchRemoteAssetMock = vi.hoisted(() => vi.fn());
+const safeFetchMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/fetch-remote-asset", () => ({
-  fetchRemoteAsset: fetchRemoteAssetMock,
+vi.mock("@/lib/safe-fetch", () => ({
+  safeFetch: safeFetchMock,
 }));
 
 // Mock fetch utilities
@@ -43,7 +43,7 @@ afterEach(() => {
 
 describe("fetchHtmlMeta", () => {
   it("parses HTML meta tags correctly", async () => {
-    fetchRemoteAssetMock.mockImplementation(({ url }: { url: string }) => {
+    safeFetchMock.mockImplementation(({ url }: { url: string }) => {
       if (url.includes("robots.txt")) {
         return Promise.resolve({
           ok: true,
@@ -88,7 +88,7 @@ describe("fetchHtmlMeta", () => {
   });
 
   it("returns error for non-HTML content", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: true,
       status: 200,
       contentType: "application/json",
@@ -105,7 +105,7 @@ describe("fetchHtmlMeta", () => {
   });
 
   it("returns error for HTTP error status", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: false,
       status: 404,
       contentType: "text/html",
@@ -124,7 +124,7 @@ describe("fetchHtmlMeta", () => {
 
 describe("fetchRobotsTxt", () => {
   it("parses robots.txt correctly", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: true,
       status: 200,
       contentType: "text/plain",
@@ -146,7 +146,7 @@ Sitemap: https://example.com/sitemap.xml`),
   });
 
   it("returns null robots for 404", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: false,
       status: 404,
       contentType: "text/html",
@@ -165,7 +165,7 @@ Sitemap: https://example.com/sitemap.xml`),
 
 describe("processOgImageUpload", () => {
   it("fetches and processes OG image", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: true,
       status: 200,
       contentType: "image/jpeg",
@@ -185,7 +185,7 @@ describe("processOgImageUpload", () => {
   });
 
   it("returns null URL on fetch failure", async () => {
-    fetchRemoteAssetMock.mockResolvedValue({
+    safeFetchMock.mockResolvedValue({
       ok: false,
       status: 404,
       contentType: "text/html",

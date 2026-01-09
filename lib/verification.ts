@@ -7,15 +7,9 @@ import {
   HTML_FILE_PATH_LEGACY,
   META_TAG_NAME,
 } from "@/lib/constants/verification";
-import {
-  buildDohUrl,
-  DNS_TYPE_NUMBERS,
-  DOH_HEADERS,
-  providerOrderForLookup,
-} from "@/lib/dns-utils";
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
+import { providerOrderForLookup, queryDohProvider } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
+import { safeFetch } from "@/lib/safe-fetch";
 import type { VerificationMethod } from "@/lib/types";
 
 const logger = createLogger({ source: "verification" });
@@ -50,33 +44,17 @@ export async function verifyByDns(
   for (const hostname of hostsToCheck) {
     for (const provider of providers) {
       try {
-        const url = buildDohUrl(provider, hostname, "TXT");
-        // Add random parameter to bypass HTTP caches
-        url.searchParams.set("t", Date.now().toString());
-
-        const res = await fetchWithTimeoutAndRetry(
-          url,
-          {
-            headers: { ...DOH_HEADERS, ...provider.headers },
-          },
-          { timeoutMs: 5000, retries: 1, backoffMs: 200 },
-        );
-
-        if (!res.ok) {
-          continue;
-        }
-
-        const json = (await res.json()) as {
-          Answer?: Array<{ type: number; data: string }>;
-        };
-        const answers = json.Answer ?? [];
+        const answers = await queryDohProvider(provider, hostname, "TXT", {
+          timeoutMs: 5000,
+          retries: 1,
+          backoffMs: 200,
+          cacheBust: true, // Bypass caches to check freshly added records
+        });
 
         for (const answer of answers) {
-          if (answer.type === DNS_TYPE_NUMBERS.TXT) {
-            const value = answer.data.replace(/^"|"$/g, "").trim();
-            if (value === expectedValue) {
-              return { verified: true, method: "dns_txt" };
-            }
+          const value = answer.data.replace(/^"|"$/g, "").trim();
+          if (value === expectedValue) {
+            return { verified: true, method: "dns_txt" };
           }
         }
       } catch (err) {
@@ -119,7 +97,7 @@ export async function verifyByHtmlFile(
   // Try per-token file first (new multi-user method)
   for (const urlStr of perTokenUrls) {
     try {
-      const result = await fetchRemoteAsset({
+      const result = await safeFetch({
         url: urlStr,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
@@ -144,7 +122,7 @@ export async function verifyByHtmlFile(
   // Fall back to legacy single file method
   for (const urlStr of legacyUrls) {
     try {
-      const result = await fetchRemoteAsset({
+      const result = await safeFetch({
         url: urlStr,
         allowHttp: true,
         timeoutMs: 5000,
@@ -188,7 +166,7 @@ export async function verifyByMetaTag(
 
   for (const urlStr of urls) {
     try {
-      const result = await fetchRemoteAsset({
+      const result = await safeFetch({
         url: urlStr,
         allowHttp: true,
         timeoutMs: 10000,

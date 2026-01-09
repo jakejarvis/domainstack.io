@@ -16,6 +16,8 @@
 - `lib/auth-client.ts` better-auth client for React hooks (`useSession`, `signIn`, `signOut`).
 - `lib/constants/` modular constants organized by domain.
 - `lib/dns-utils.ts` shared DNS over HTTPS (DoH) utilities: provider list, header constants, URL builder, and deterministic provider ordering for cache consistency.
+- `lib/domain/` Core domain lookup implementations (DNS, registration, headers, hosting, SEO, certificates). Contains the business logic used by workflows and shared steps. Uses dynamic imports for database operations to enable isolated testing.
+- `lib/verification.ts` Domain ownership verification via DNS TXT, HTML file, or meta tag methods. Pure functions used by verification workflow and shared steps.
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table.
@@ -79,10 +81,18 @@
   - Prefer `vi.hoisted` for ESM module mocks (e.g., `node:tls`).
   - Vercel Blob storage: mock `@vercel/blob` (`put` and `del` functions). Set `BLOB_READ_WRITE_TOKEN` via `vi.stubEnv` in suites that touch uploads/deletes.
   - Repository tests (`lib/db/repos/*.test.ts`): Use PGlite for isolated in-memory database testing.
-- Workflow tests (`workflows/*/workflow.test.ts`):
-  - Test step functions directly by mocking their dependencies (dynamic imports).
-  - Use PGlite for database-backed tests, mock external services (`@/lib/storage`, `@/lib/fetch-remote-asset`).
-  - For steps with dynamic imports (Puppeteer, TLS), focus on cache and blocklist tests; integration tests cover the full flow.
+- Domain lookup tests (`lib/domain/*.test.ts`):
+  - Tests live next to the code they test, not in workflow directories.
+  - Mock external services (`@/lib/safe-fetch`, `@/lib/geoip`) and provider catalogs.
+  - For functions that persist to DB, use PGlite in `beforeAll`; for fetch-only tests, mock DB repos.
+  - `lib/domain/` files use dynamic imports for DB operations, enabling tests without DB initialization.
+- Verification tests (`lib/verification.test.ts`):
+  - Tests DNS TXT, HTML file, and meta tag verification methods.
+  - Uses MSW to mock DoH providers and HTTP endpoints.
+- Workflows:
+  - Workflows are thin orchestration wrappers around `lib/domain/` functions.
+  - No dedicated workflow test files; business logic is tested via `lib/domain/*.test.ts`.
+  - Workflow-specific behavior (error classification, step retries) is covered by integration tests.
 - Browser APIs: Mock `URL.createObjectURL`/`revokeObjectURL` with `vi.fn()` in tests that need them.
 - Commands: `pnpm test`, `pnpm test:run`, `pnpm test:coverage`.
 
@@ -245,8 +255,10 @@ Vercel's Workflow DevKit provides durable execution for heavy backend operations
 **Architecture:**
 - **Config:** `next.config.ts` wrapped with `withWorkflow()` for directive support.
 - **Instrumentation:** `instrumentation.ts` initializes the workflow world on server startup.
-- **Workflows:** `workflows/` directory contains workflow definitions.
-- **Steps:** Functions marked with `"use step"` directive run as durable, retryable steps.
+- **Workflows:** `workflows/` directory contains thin orchestration wrappers.
+- **Business Logic:** Core fetch/parse/persist logic lives in `lib/domain/` (e.g., `dns-lookup.ts`, `registration-lookup.ts`). Workflows call these functions via steps.
+- **Steps:** Functions marked with `"use step"` directive run as durable, retryable steps. Steps use dynamic imports to call `lib/domain/` functions.
+- **Shared Steps:** `workflows/shared/` contains reusable steps (e.g., `send-email.ts`, `verify-domain.ts`) used across multiple workflows.
 - **Integration:** tRPC procedures in `server/routers/domain.ts` and `server/routers/provider.ts` call workflows via `start()` and await `run.returnValue`.
 
 **Available Workflows:**

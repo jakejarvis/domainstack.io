@@ -6,9 +6,9 @@ import {
 } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "dns-lookup" });
+const logger = createLogger({ source: "resolver" });
 
-export type DnsLookupResult = {
+type DohLookupResult = {
   address: string;
   family: 4 | 6;
 };
@@ -18,10 +18,10 @@ export type DnsLookupResult = {
  * This avoids blocking Node.js's limited threadpool (UV_THREADPOOL_SIZE)
  * that is used by the native getaddrinfo() function.
  */
-export async function dnsLookupViaHttps(
+export async function dohLookup(
   hostname: string,
   options?: { all?: boolean },
-): Promise<DnsLookupResult | DnsLookupResult[]> {
+): Promise<DohLookupResult | DohLookupResult[]> {
   const all = options?.all ?? false;
 
   // Try DoH providers in order
@@ -36,7 +36,7 @@ export async function dnsLookupViaHttps(
         queryDohProvider(provider, hostname, "AAAA"),
       ]);
 
-      const records: DnsLookupResult[] = [];
+      const records: DohLookupResult[] = [];
 
       if (aResults.status === "fulfilled") {
         // Collect A records (IPv4)

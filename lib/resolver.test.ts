@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DOH_PROVIDERS } from "@/lib/dns-utils";
 import { server } from "@/mocks/server";
 
-describe("dnsLookupViaHttps", () => {
+describe("dohLookup", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -38,8 +38,8 @@ describe("dnsLookupViaHttps", () => {
       ],
     }));
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    const result = await dnsLookupViaHttps("example.test");
+    const { dohLookup } = await import("./resolver");
+    const result = await dohLookup("example.test");
 
     expect(result).toEqual({
       address: "93.184.216.34",
@@ -79,8 +79,8 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 0, Answer: [] };
     });
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    const result = await dnsLookupViaHttps("example.test", { all: true });
+    const { dohLookup } = await import("./resolver");
+    const result = await dohLookup("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(2);
@@ -110,8 +110,8 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 3 }; // NXDOMAIN or error
     });
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    const result = await dnsLookupViaHttps("example.test", { all: true });
+    const { dohLookup } = await import("./resolver");
+    const result = await dohLookup("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(1);
@@ -128,19 +128,19 @@ describe("dnsLookupViaHttps", () => {
       ),
     );
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    await expect(dnsLookupViaHttps("example.test")).rejects.toThrow();
+    const { dohLookup } = await import("./resolver");
+    await expect(dohLookup("example.test")).rejects.toThrow();
   });
 
   it("returns empty array when hostname does not exist (NXDOMAIN)", async () => {
     mockAllProviders(() => ({ Status: 3 })); // NXDOMAIN
 
-    const { dnsLookupViaHttps } = await import("./resolver");
+    const { dohLookup } = await import("./resolver");
 
     // Should try next provider and eventually fail with last error or throw generic
-    // dnsLookupViaHttps throws if all providers fail/return no records for what it needs
+    // dohLookup throws if all providers fail/return no records for what it needs
     await expect(
-      dnsLookupViaHttps("nonexistent.invalid", { all: true }),
+      dohLookup("nonexistent.invalid", { all: true }),
     ).rejects.toThrow();
   });
 
@@ -169,8 +169,8 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 0, Answer: [] };
     });
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    const result = await dnsLookupViaHttps("example.test", { all: true });
+    const { dohLookup } = await import("./resolver");
+    const result = await dohLookup("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(1);
@@ -181,7 +181,7 @@ describe("dnsLookupViaHttps", () => {
     const { providerOrderForLookup } = await import("@/lib/dns-utils");
 
     // Identify primary and secondary providers for the domain
-    // dnsLookupViaHttps uses providerOrderForLookup internally
+    // dohLookup uses providerOrderForLookup internally
     const providers = providerOrderForLookup("example.test");
     const primary = providers[0];
     const secondary = providers[1];
@@ -211,8 +211,8 @@ describe("dnsLookupViaHttps", () => {
       }),
     );
 
-    const { dnsLookupViaHttps } = await import("./resolver");
-    const result = await dnsLookupViaHttps("example.test", { all: true });
+    const { dohLookup } = await import("./resolver");
+    const result = await dohLookup("example.test", { all: true });
 
     expect(result).toEqual([{ address: "93.184.216.34", family: 4 }]);
   });

@@ -7,9 +7,9 @@
 
 import { USER_AGENT } from "@/lib/constants/app";
 import { isExpectedDnsError } from "@/lib/dns-utils";
-import { fetchRemoteAsset } from "@/lib/fetch-remote-asset";
 import { optimizeImageCover } from "@/lib/image";
 import { createLogger } from "@/lib/logger/server";
+import { safeFetch } from "@/lib/safe-fetch";
 import { parseHtmlMeta, parseRobotsTxt, selectPreview } from "@/lib/seo";
 import { storeImage } from "@/lib/storage";
 import { isExpectedTlsError } from "@/lib/tls-utils";
@@ -63,7 +63,7 @@ export async function fetchHtmlMeta(domain: string): Promise<HtmlFetchResult> {
   let status: number | null = null;
 
   try {
-    const htmlResult = await fetchRemoteAsset({
+    const htmlResult = await safeFetch({
       url: finalUrl,
       allowHttp: true,
       timeoutMs: 10000,
@@ -172,7 +172,7 @@ export async function fetchRobotsTxt(
   const robotsUrl = `https://${domain}/robots.txt`;
 
   try {
-    const robotsResult = await fetchRemoteAsset({
+    const robotsResult = await safeFetch({
       url: robotsUrl,
       allowHttp: true,
       timeoutMs: 8000,
@@ -210,7 +210,7 @@ export async function processOgImageUpload(
   currentUrl: string,
 ): Promise<OgImageResult> {
   try {
-    const asset = await fetchRemoteAsset({
+    const asset = await safeFetch({
       url: imageUrl,
       currentUrl,
       headers: {
