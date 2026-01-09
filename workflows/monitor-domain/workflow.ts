@@ -12,7 +12,10 @@ import type {
 import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
 import { fetchDnsData } from "@/workflows/shared/fetch-dns";
 import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
-import { fetchHostingData } from "@/workflows/shared/fetch-hosting";
+import {
+  type FetchHostingResult,
+  fetchHostingData,
+} from "@/workflows/shared/fetch-hosting";
 import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
 
 export interface MonitorDomainWorkflowInput {
@@ -67,19 +70,23 @@ export async function monitorDomainWorkflow(
     ]);
 
   // Then compute hosting using DNS + headers data (depends on previous results)
-  const dnsRecords = dnsResult.data?.records ?? [];
-  const headers = headersResult.data?.headers ?? [];
-  const hostingResult = await fetchHostingData(domainName, dnsRecords, headers);
+  let hostingResult: FetchHostingResult | null = null;
+  if (dnsResult.data && headersResult.data) {
+    hostingResult = await fetchHostingData(
+      domainName,
+      dnsResult.data.records,
+      headersResult.data.headers,
+    );
+  }
 
   // Extract response data
   const registrationData: RegistrationResponse | null =
     registrationResult.success ? registrationResult.data : null;
-  const hostingData: HostingResponse | null = hostingResult.success
+  const certificatesData: CertificatesResponse | null =
+    certificatesResult.success ? certificatesResult.data : null;
+  const hostingData: HostingResponse | null = hostingResult?.success
     ? hostingResult.data
     : null;
-  const certificatesData: CertificatesResponse = certificatesResult.success
-    ? certificatesResult.data
-    : { certificates: [] };
 
   const results = {
     registrationChanges: false,
@@ -193,7 +200,7 @@ export async function monitorDomainWorkflow(
   }
 
   // Step 5: Check certificate changes
-  if (certificatesData.certificates.length > 0) {
+  if (certificatesData && certificatesData.certificates.length > 0) {
     const leafCert = certificatesData.certificates[0];
 
     const currentCertificate = {

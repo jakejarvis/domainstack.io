@@ -58,9 +58,8 @@ export async function initializeSnapshotWorkflow(
   // Extract data from step results
   const registrationData: RegistrationResponse | null =
     registrationResult.success ? registrationResult.data : null;
-  const certificatesData: CertificatesResponse = certificatesResult.success
-    ? certificatesResult.data
-    : { certificates: [] };
+  const certificatesData: CertificatesResponse | null =
+    certificatesResult.success ? certificatesResult.data : null;
   const hostingData: HostingResponse | null = hostingResult.success
     ? hostingResult.data
     : null;
@@ -103,7 +102,7 @@ export async function initializeSnapshotWorkflow(
     fingerprint: null,
   };
 
-  if (certificatesData.certificates.length > 0) {
+  if (certificatesData && certificatesData.certificates.length > 0) {
     const leafCert = certificatesData.certificates[0];
 
     certificateSnapshot = {

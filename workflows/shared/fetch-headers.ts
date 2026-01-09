@@ -2,7 +2,7 @@ import type { HeadersResponse } from "@/lib/types";
 
 export interface FetchHeadersResult {
   success: boolean;
-  data: HeadersResponse;
+  data: HeadersResponse | null;
   error?: string;
 }
 

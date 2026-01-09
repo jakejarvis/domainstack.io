@@ -2,7 +2,7 @@ import type { CertificatesResponse } from "@/lib/types";
 
 export interface FetchCertificatesResult {
   success: boolean;
-  data: CertificatesResponse;
+  data: CertificatesResponse | null;
   error?: string;
 }
 
