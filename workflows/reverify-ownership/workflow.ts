@@ -1,7 +1,6 @@
 import { FatalError } from "workflow";
-import { start } from "workflow/api";
 import type { VerificationMethod } from "@/lib/types";
-import { verificationWorkflow } from "@/workflows/verification";
+import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
 
 export interface ReverifyOwnershipWorkflowInput {
   trackedDomainId: string;
@@ -44,10 +43,10 @@ export async function reverifyOwnershipWorkflow(
     domain.verificationMethod,
   );
 
-  if (result.success && result.data.verified) {
+  if (result.verified && result.method) {
     // Step 3a: Mark as successful
     await markSuccess(trackedDomainId);
-    return { verified: true, method: result.data.method as VerificationMethod };
+    return { verified: true, method: result.method };
   }
 
   // Step 3b: Determine failure action (database update only)
@@ -113,16 +112,12 @@ async function checkOwnership(
   domainName: string,
   token: string,
   method: VerificationMethod,
-): Promise<{
-  success: boolean;
-  data: { verified: boolean; method: VerificationMethod | null };
-}> {
+): Promise<{ verified: boolean; method: VerificationMethod | null }> {
   "use step";
 
-  const workflowRun = await start(verificationWorkflow, [
-    { domain: domainName, token, method },
-  ]);
-  return await workflowRun.returnValue;
+  // Call the shared verification step directly - no child workflow needed
+  // Use the specific method since we're re-verifying with the original method
+  return await verifyDomainOwnershipByMethod(domainName, token, method);
 }
 
 async function markSuccess(trackedDomainId: string): Promise<void> {

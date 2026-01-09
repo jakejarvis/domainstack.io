@@ -1,7 +1,6 @@
 import { FatalError } from "workflow";
-import { start } from "workflow/api";
 import type { VerificationMethod } from "@/lib/types";
-import { verificationWorkflow } from "@/workflows/verification";
+import { verifyDomainOwnership } from "@/workflows/shared/verify-domain";
 
 export interface VerifyPendingWorkflowInput {
   trackedDomainId: string;
@@ -47,11 +46,10 @@ export async function verifyPendingWorkflow(
     domain.verificationToken,
   );
 
-  if (result.success && result.data.verified && result.data.method) {
+  if (result.verified && result.method) {
     // Step 3: Mark as verified
-    const verifiedMethod = result.data.method;
-    await markVerified(trackedDomainId, verifiedMethod);
-    return { verified: true, method: verifiedMethod };
+    await markVerified(trackedDomainId, result.method);
+    return { verified: true, method: result.method };
   }
 
   return { verified: false };
@@ -78,16 +76,11 @@ async function fetchDomain(
 async function verifyOwnership(
   domainName: string,
   token: string,
-): Promise<{
-  success: boolean;
-  data: { verified: boolean; method: VerificationMethod | null };
-}> {
+): Promise<{ verified: boolean; method: VerificationMethod | null }> {
   "use step";
 
-  const workflowRun = await start(verificationWorkflow, [
-    { domain: domainName, token },
-  ]);
-  return await workflowRun.returnValue;
+  // Call the shared verification step directly - no child workflow needed
+  return await verifyDomainOwnership(domainName, token);
 }
 
 async function markVerified(
