@@ -46,8 +46,8 @@ describe("screenshotWorkflow step functions", () => {
       const { screenshotWorkflow } = await import("./workflow");
       const result = await screenshotWorkflow({ domain: "blocked.com" });
 
-      expect(result.data.blocked).toBe(true);
-      expect(result.data.url).toBeNull();
+      expect(result.data?.blocked).toBe(true);
+      expect(result.data?.url).toBeNull();
     });
 
     it("calls isDomainBlocked for non-blocked domains", async () => {

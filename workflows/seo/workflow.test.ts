@@ -105,10 +105,10 @@ describe("seoWorkflow step functions", () => {
       const result = await seoWorkflow({ domain: "meta.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.meta?.openGraph.title).toBe("OG Title");
-      expect(result.data.meta?.openGraph.description).toBe("OG Description");
-      expect(result.data.meta?.general.description).toBe("Page description");
-      expect(result.data.preview?.title).toBe("OG Title");
+      expect(result.data?.meta?.openGraph.title).toBe("OG Title");
+      expect(result.data?.meta?.openGraph.description).toBe("OG Description");
+      expect(result.data?.meta?.general.description).toBe("Page description");
+      expect(result.data?.preview?.title).toBe("OG Title");
     });
 
     it("handles non-HTML content type", async () => {
@@ -135,7 +135,7 @@ describe("seoWorkflow step functions", () => {
       const result = await seoWorkflow({ domain: "json.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.errors?.html).toContain("Non-HTML content-type");
+      expect(result.data?.errors?.html).toContain("Non-HTML content-type");
     });
 
     it("handles HTTP errors", async () => {
@@ -162,7 +162,7 @@ describe("seoWorkflow step functions", () => {
       const result = await seoWorkflow({ domain: "error.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.errors?.html).toBe("HTTP 500");
+      expect(result.data?.errors?.html).toBe("HTTP 500");
     });
   });
 
@@ -199,8 +199,8 @@ Sitemap: https://robots.com/sitemap.xml
       const result = await seoWorkflow({ domain: "robots.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.robots?.fetched).toBe(true);
-      expect(result.data.robots?.sitemaps).toContain(
+      expect(result.data?.robots?.fetched).toBe(true);
+      expect(result.data?.robots?.sitemaps).toContain(
         "https://robots.com/sitemap.xml",
       );
     });
@@ -231,8 +231,8 @@ Sitemap: https://robots.com/sitemap.xml
       const result = await seoWorkflow({ domain: "norobots.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.robots).toBeNull();
-      expect(result.data.errors?.robots).toBe("HTTP 404");
+      expect(result.data?.robots).toBeNull();
+      expect(result.data?.errors?.robots).toBe("HTTP 404");
     });
   });
 
@@ -280,7 +280,7 @@ Sitemap: https://robots.com/sitemap.xml
       const result = await seoWorkflow({ domain: "ogimage.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.preview?.imageUploaded).toBe(
+      expect(result.data?.preview?.imageUploaded).toBe(
         "https://blob.vercel-storage.com/og-test.webp",
       );
     });
@@ -324,7 +324,7 @@ Sitemap: https://robots.com/sitemap.xml
       const result = await seoWorkflow({ domain: "blocked.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.preview?.imageUploaded).toBeNull();
+      expect(result.data?.preview?.imageUploaded).toBeNull();
     });
   });
 

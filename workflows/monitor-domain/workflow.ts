@@ -273,11 +273,15 @@ async function fetchLiveData(
   ]);
 
   // Now compute hosting using the DNS + headers data (no duplicate fetches)
+  // Guard against null data from failed workflows
+  const dnsRecords = dnsResult.data?.records ?? [];
+  const headers = headersResult.data?.headers ?? [];
+
   const hostingRun = await start(hostingWorkflow, [
     {
       domain: domainName,
-      dnsRecords: dnsResult.data.records,
-      headers: headersResult.data.headers,
+      dnsRecords,
+      headers,
     },
   ]);
   const hostingResult = await hostingRun.returnValue;
@@ -289,7 +293,9 @@ async function fetchLiveData(
   const certificatesData: CertificatesResponse = certsResult.success
     ? certsResult.data
     : { certificates: [] };
-  const hostingData: HostingResponse | null = hostingResult.data;
+  const hostingData: HostingResponse | null = hostingResult.success
+    ? hostingResult.data
+    : null;
 
   return [registrationData, hostingData, certificatesData];
 }

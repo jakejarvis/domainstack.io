@@ -157,8 +157,8 @@ describe("certificatesWorkflow step functions", () => {
       const result = await certificatesWorkflow({ domain: "tls-test.com" });
 
       expect(result.success).toBe(true);
-      expect(result.data.certificates.length).toBeGreaterThan(0);
-      expect(result.data.certificates[0].subject).toBe("example.com");
+      expect(result.data?.certificates.length).toBeGreaterThan(0);
+      expect(result.data?.certificates[0].subject).toBe("example.com");
     });
 
     it("handles DNS errors gracefully", async () => {
@@ -194,7 +194,7 @@ describe("certificatesWorkflow step functions", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe("dns_error");
-        expect(result.data.certificates).toHaveLength(0);
+        expect(result.data?.certificates).toHaveLength(0);
       }
     });
 
@@ -230,7 +230,7 @@ describe("certificatesWorkflow step functions", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toBe("tls_error");
-        expect(result.data.error).toBe("Invalid SSL certificate");
+        expect(result.data?.error).toBe("Invalid SSL certificate");
       }
     });
   });

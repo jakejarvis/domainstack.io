@@ -179,11 +179,15 @@ async function fetchData(
   ]);
 
   // Now compute hosting using the DNS + headers data (no duplicate fetches)
+  // Guard against null data from failed workflows
+  const dnsRecords = dnsResult.data?.records ?? [];
+  const headers = headersResult.data?.headers ?? [];
+
   const hostingRun = await start(hostingWorkflow, [
     {
       domain: domainName,
-      dnsRecords: dnsResult.data.records,
-      headers: headersResult.data.headers,
+      dnsRecords,
+      headers,
     },
   ]);
   const hostingResult = await hostingRun.returnValue;
