@@ -357,7 +357,7 @@ export function DashboardClient() {
       {/* Pro upgrade success banner */}
       {showUpgradedBanner && (
         <DashboardBannerDismissable
-          variant="gold"
+          variant="success"
           icon={HeartHandshake}
           title="Welcome to Pro!"
           description={`You now have access to track up to ${subscription?.planQuota} domains. Thank you for upgrading!`}

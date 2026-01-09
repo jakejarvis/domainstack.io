@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
@@ -26,8 +27,6 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
     isPro,
     isSubscriptionLoading,
     isSubscriptionError,
-    handleCheckout,
-    isCheckoutLoading,
     handleCustomerPortal,
     isCustomerPortalLoading,
   } = useSubscription();
@@ -167,23 +166,10 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
                   ({PRO_TIER_INFO.yearly.savings})
                 </span>
               </div>
-              <Button
-                onClick={handleCheckout}
-                disabled={isCheckoutLoading}
-                className="w-full"
-              >
-                {isCheckoutLoading ? (
-                  <>
-                    <Spinner />
-                    Loading...
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart />
-                    Upgrade to Pro
-                  </>
-                )}
-              </Button>
+              <UpgradeButton className="w-full">
+                <ShoppingCart />
+                Upgrade to Pro
+              </UpgradeButton>
             </div>
           </div>
         )}

@@ -15,7 +15,7 @@ export default function InterceptedAddDomainPage({
     <Modal
       title="Add Domain"
       description="Track and monitor your domain"
-      className="max-w-lg p-5"
+      className="p-5"
     >
       <Suspense fallback={<AddDomainSkeleton />}>
         <AuthorizedAddDomainContent searchParams={searchParams} />

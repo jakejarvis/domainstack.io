@@ -31,9 +31,7 @@ export function CalendarFeedPopover() {
               render={
                 <Button variant="outline">
                   <CalendarSync className="-translate-y-[1px]" />
-                  <span className="text-sm max-sm:sr-only lg:sr-only">
-                    Subscribe
-                  </span>
+                  <span className="sr-only">Subscribe</span>
                 </Button>
               }
             />
@@ -44,7 +42,7 @@ export function CalendarFeedPopover() {
         </TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[370px]"
+        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -77,7 +75,7 @@ export function CalendarFeedPopover() {
 
           <Separator className="bg-muted" />
 
-          <CalendarInstructions className="bg-background/25 p-4" />
+          <CalendarInstructions className="bg-background/50 p-4" />
         </div>
       </PopoverContent>
     </Popover>

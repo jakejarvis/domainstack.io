@@ -74,7 +74,7 @@ function VerificationInstructionsLayout({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-input bg-card p-4">
+      <div className="space-y-3 rounded-lg border border-input bg-muted/30 p-4">
         {children}
       </div>
     </div>

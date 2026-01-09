@@ -254,12 +254,12 @@ export function CalendarInstructions({ className }: { className?: string }) {
 
             {/* Actions */}
             <div className="@container/actions">
-              <div className="grid @lg/actions:grid-cols-3 grid-cols-2 gap-2 pt-1">
+              <div className="grid @md/actions:grid-cols-3 grid-cols-2 gap-2 pt-1">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     nativeButton={false}
                     render={
-                      <ButtonGroup className="@lg/actions:col-span-1 col-span-2 flex w-full">
+                      <ButtonGroup className="@md/actions:col-span-1 col-span-2 flex w-full">
                         <Button variant="outline" className="flex-1">
                           <AppStoreIcon className="text-muted-foreground" />
                           Open In…

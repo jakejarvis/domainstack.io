@@ -143,16 +143,14 @@ export function DashboardHeader({
                       type="button"
                       variant="secondary"
                       aria-label="Grid view"
-                      className="max-lg:!px-3"
+                      className="!px-3"
                     >
                       <LayoutGrid className="size-4" />
-                      <span className="lg:sr-only">Grid</span>
+                      <span className="sr-only">Grid</span>
                     </ToggleGroupItem>
                   }
                 />
-                <TooltipContent className="max-lg:hidden">
-                  Grid view
-                </TooltipContent>
+                <TooltipContent>Grid view</TooltipContent>
               </Tooltip>
               <Separator orientation="vertical" />
               <Tooltip>
@@ -163,16 +161,14 @@ export function DashboardHeader({
                       type="button"
                       variant="secondary"
                       aria-label="Table view"
-                      className="max-lg:!px-3"
+                      className="!px-3"
                     >
                       <TableIcon className="size-4" />
-                      <span className="lg:sr-only">Table</span>
+                      <span className="sr-only">Table</span>
                     </ToggleGroupItem>
                   }
                 />
-                <TooltipContent className="max-lg:hidden">
-                  Table view
-                </TooltipContent>
+                <TooltipContent>Table view</TooltipContent>
               </Tooltip>
             </ToggleGroup>
           ) : null}

@@ -16,7 +16,7 @@ function TabsList({ className, children, ...props }: TabsPrimitive.List.Props) {
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "relative inline-flex h-9 w-full items-center justify-center rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm dark:border-white/10",
+        "relative inline-flex h-9 w-full items-center justify-center rounded-lg border border-black/8 bg-muted/40 p-1 text-muted-foreground backdrop-blur-sm dark:border-white/10",
         className,
       )}
       {...props}
@@ -27,8 +27,8 @@ function TabsList({ className, children, ...props }: TabsPrimitive.List.Props) {
         renderBeforeHydration
         className={cn(
           "pointer-events-none absolute top-0 left-0 z-0 rounded-md",
-          "bg-background/90 shadow-sm ring-1 ring-black/10",
-          "dark:bg-white/10 dark:shadow-none dark:ring-white/15",
+          "bg-muted shadow-sm ring-1 ring-black/5",
+          "dark:shadow-none dark:ring-white/10",
           "will-change-[transform,width,height]",
           "transition-[width,height,top,left] duration-200 ease-out",
           "top-[var(--active-tab-top)] left-[var(--active-tab-left)]",

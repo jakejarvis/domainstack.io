@@ -40,7 +40,7 @@ function DropdownMenuContent({
         <Menu.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden",
+            "min-w-[8rem] overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-md outline-hidden",
             "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",

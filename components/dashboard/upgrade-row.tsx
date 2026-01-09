@@ -1,13 +1,11 @@
 import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export function UpgradeRow() {
-  const { isPro, isSubscriptionLoading, handleCheckout, isCheckoutLoading } =
-    useSubscription();
+  const { isPro, isSubscriptionLoading } = useSubscription();
 
   // Don't show if already a Pro user or still loading
   if (isSubscriptionLoading || isPro) {
@@ -16,14 +14,14 @@ export function UpgradeRow() {
 
   return (
     <div className="relative overflow-hidden border-black/10 border-t bg-gradient-to-r from-black/[0.02] via-transparent to-black/[0.03] p-4 dark:border-white/10 dark:from-white/[0.01] dark:via-transparent dark:to-white/[0.02]">
-      {/* Decorative elements - subtle warm glows */}
+      {/* Decorative elements - subtle ambient glows */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent-gold/8 blur-3xl"
+        className="pointer-events-none absolute -top-20 -right-8 size-40 rounded-full bg-accent-gold/10 blur-[80px]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-16 -left-16 size-24 rounded-full bg-accent-gold-muted/15 blur-3xl"
+        className="pointer-events-none absolute -bottom-20 left-8 size-32 rounded-full bg-accent-gold-muted/8 blur-[80px]"
       />
 
       <div className="relative flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
@@ -50,25 +48,14 @@ export function UpgradeRow() {
         </div>
 
         {/* Right side - CTA */}
-        <Button
+        <UpgradeButton
           variant="outline"
           size="lg"
-          onClick={handleCheckout}
-          disabled={isCheckoutLoading}
           className="w-full shrink-0 md:w-auto"
         >
-          {isCheckoutLoading ? (
-            <>
-              <Spinner />
-              Loading...
-            </>
-          ) : (
-            <>
-              <ShoppingCart />
-              Get Pro
-            </>
-          )}
-        </Button>
+          <ShoppingCart />
+          Get Pro
+        </UpgradeButton>
       </div>
     </div>
   );

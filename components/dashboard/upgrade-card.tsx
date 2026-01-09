@@ -1,14 +1,12 @@
 import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
+import { UpgradeButton } from "../upgrade-button";
 
 export function UpgradeCard() {
-  const { isPro, isSubscriptionLoading, handleCheckout, isCheckoutLoading } =
-    useSubscription();
+  const { isPro, isSubscriptionLoading } = useSubscription();
 
   // Don't show if already a Pro user or still loading
   if (isSubscriptionLoading || isPro) {
@@ -17,14 +15,14 @@ export function UpgradeCard() {
 
   return (
     <Card className="relative flex h-full flex-col overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] via-transparent to-black/[0.03] py-0 dark:border-white/10 dark:from-white/[0.03] dark:via-transparent dark:to-white/[0.02]">
-      {/* Decorative elements - subtle warm glows */}
+      {/* Decorative elements - subtle ambient glows */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/15 blur-3xl"
+        className="pointer-events-none absolute -top-12 -right-20 size-48 rounded-full bg-accent-gold/8 blur-[60px]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
+        className="pointer-events-none absolute -bottom-8 left-4 size-28 rounded-full bg-accent-gold-muted/8 blur-[60px]"
       />
 
       <CardContent className="relative flex h-full flex-1 flex-col items-center gap-6 p-6 text-center">
@@ -55,24 +53,10 @@ export function UpgradeCard() {
         </div>
 
         {/* CTA Button - pushed to bottom */}
-        <Button
-          onClick={handleCheckout}
-          disabled={isCheckoutLoading}
-          variant="outline"
-          className="w-full"
-        >
-          {isCheckoutLoading ? (
-            <>
-              <Spinner />
-              Loading...
-            </>
-          ) : (
-            <>
-              <ShoppingCart />
-              Get Pro
-            </>
-          )}
-        </Button>
+        <UpgradeButton variant="outline" className="w-full">
+          <ShoppingCart />
+          Get Pro
+        </UpgradeButton>
       </CardContent>
     </Card>
   );

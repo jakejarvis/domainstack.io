@@ -22,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UpgradeButton } from "@/components/upgrade-button";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
@@ -55,8 +56,6 @@ export function AddDomainContent({
     isSubscriptionLoading,
     isSubscriptionError,
     refetchSubscription,
-    handleCheckout,
-    isCheckoutLoading,
   } = useSubscription();
 
   const {
@@ -239,23 +238,10 @@ export function AddDomainContent({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={handleCheckout}
-                  disabled={isCheckoutLoading}
-                  className="w-full"
-                >
-                  {isCheckoutLoading ? (
-                    <>
-                      <Spinner />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart />
-                      Upgrade to Pro
-                    </>
-                  )}
-                </Button>
+                <UpgradeButton className="w-full">
+                  <ShoppingCart />
+                  Upgrade to Pro
+                </UpgradeButton>
                 {onClose && (
                   <Button
                     variant="outline"
