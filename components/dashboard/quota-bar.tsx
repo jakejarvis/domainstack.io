@@ -3,24 +3,20 @@ import { cn } from "@/lib/utils";
 
 interface QuotaBarProps
   extends Omit<React.ComponentProps<typeof Meter>, "value"> {
-  activeCount?: number;
-  planQuota?: number;
+  used: number;
+  planQuota: number;
 }
 
 export function QuotaBar({
-  activeCount,
+  used,
   planQuota,
   className,
   ...props
 }: QuotaBarProps) {
-  if (!activeCount || !planQuota) {
-    return null;
-  }
-
   const percentage =
-    planQuota > 0 ? Math.min((activeCount / planQuota) * 100, 100) : 0;
-  const isAtLimit = activeCount >= planQuota;
-  const isNearLimit = !isAtLimit && activeCount >= planQuota * 0.8;
+    planQuota > 0 ? Math.min((used / planQuota) * 100, 100) : 0;
+  const isAtLimit = used >= planQuota;
+  const isNearLimit = !isAtLimit && used >= planQuota * 0.8;
 
   return (
     <Meter
@@ -33,6 +29,8 @@ export function QuotaBar({
         isNearLimit && "[&_[data-slot=meter-indicator]]:bg-accent-orange",
         className,
       )}
+      aria-label="Domain usage"
+      aria-valuetext={`${used} of ${planQuota} domains used`}
       {...props}
     />
   );

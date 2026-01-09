@@ -179,12 +179,13 @@ export function AddDomainContent({
                 used
               </p>
             </div>
-            <QuotaBar
-              activeCount={subscription?.activeCount}
-              planQuota={subscription?.planQuota}
-              className="w-24"
-              aria-label="Domain usage"
-            />
+            {subscription && (
+              <QuotaBar
+                used={subscription.activeCount}
+                planQuota={subscription.planQuota}
+                className="w-24"
+              />
+            )}
           </div>
 
           {isPro ? (

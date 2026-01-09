@@ -106,14 +106,18 @@ export function DashboardHeader({
       <div className="col-span-2 flex items-start justify-between gap-3 lg:col-auto lg:ml-auto lg:items-center lg:gap-4">
         {/* Progress indicator */}
         <div className="flex items-center gap-3 pr-1">
-          <QuotaBar
-            activeCount={subscription?.activeCount}
-            planQuota={subscription?.planQuota}
-            className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
-          />
-          <span className="text-[13px] text-muted-foreground tabular-nums">
-            {subscription?.activeCount}/{subscription?.planQuota}
-          </span>
+          {subscription && (
+            <>
+              <QuotaBar
+                used={subscription.activeCount}
+                planQuota={subscription.planQuota}
+                className="w-24 bg-primary/12 md:w-32 dark:bg-primary/20"
+              />
+              <span className="text-[13px] text-muted-foreground tabular-nums">
+                {subscription.activeCount}/{subscription.planQuota}
+              </span>
+            </>
+          )}
         </div>
 
         {/* View toggle and Calendar */}

@@ -96,13 +96,13 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
               used
             </p>
           </div>
-          <QuotaBar
-            activeCount={subscription?.activeCount}
-            planQuota={subscription?.planQuota}
-            className="w-24"
-            aria-label="Domain usage"
-            aria-valuetext={`${subscription?.activeCount} of ${subscription?.planQuota} domains used`}
-          />
+          {subscription && (
+            <QuotaBar
+              used={subscription.activeCount}
+              planQuota={subscription.planQuota}
+              className="w-24"
+            />
+          )}
         </div>
 
         {/* Actions */}
