@@ -38,7 +38,7 @@ describe("dnsLookupViaHttps", () => {
       ],
     }));
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     const result = await dnsLookupViaHttps("example.test");
 
     expect(result).toEqual({
@@ -79,7 +79,7 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 0, Answer: [] };
     });
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     const result = await dnsLookupViaHttps("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
@@ -110,7 +110,7 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 3 }; // NXDOMAIN or error
     });
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     const result = await dnsLookupViaHttps("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
@@ -128,14 +128,14 @@ describe("dnsLookupViaHttps", () => {
       ),
     );
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     await expect(dnsLookupViaHttps("example.test")).rejects.toThrow();
   });
 
   it("returns empty array when hostname does not exist (NXDOMAIN)", async () => {
     mockAllProviders(() => ({ Status: 3 })); // NXDOMAIN
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
 
     // Should try next provider and eventually fail with last error or throw generic
     // dnsLookupViaHttps throws if all providers fail/return no records for what it needs
@@ -169,7 +169,7 @@ describe("dnsLookupViaHttps", () => {
       return { Status: 0, Answer: [] };
     });
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     const result = await dnsLookupViaHttps("example.test", { all: true });
 
     expect(Array.isArray(result)).toBe(true);
@@ -211,7 +211,7 @@ describe("dnsLookupViaHttps", () => {
       }),
     );
 
-    const { dnsLookupViaHttps } = await import("./dns-lookup");
+    const { dnsLookupViaHttps } = await import("./resolver");
     const result = await dnsLookupViaHttps("example.test", { all: true });
 
     expect(result).toEqual([{ address: "93.184.216.34", family: 4 }]);

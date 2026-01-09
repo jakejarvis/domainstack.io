@@ -11,7 +11,7 @@ const dnsLookupMock = vi.hoisted(() =>
   vi.fn(async () => [{ address: "93.184.216.34", family: 4 }]),
 );
 
-vi.mock("@/lib/dns-lookup", () => ({
+vi.mock("@/lib/resolver", () => ({
   dnsLookupViaHttps: dnsLookupMock,
 }));
 

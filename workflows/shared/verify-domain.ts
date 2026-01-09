@@ -1,6 +1,9 @@
 import type { VerificationMethod } from "@/lib/types";
 
-export type { VerificationResult } from "@/lib/verification";
+export interface VerificationResult {
+  verified: boolean;
+  method: VerificationMethod | null;
+}
 
 /**
  * Step: Verify domain ownership by trying all methods in order.

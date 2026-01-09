@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
-import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
+import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
 import type { ResumeDomainData, VerificationMethod } from "@/lib/types";
 

@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
-import { toRegistrableDomain } from "@/lib/domain-server";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
 import {
   createTRPCRouter,
   domainProcedure,

@@ -10,61 +10,40 @@ import {
   it,
   vi,
 } from "vitest";
-import { DOH_PROVIDERS } from "@/lib/dns-utils";
 import { server } from "@/mocks/server";
 
-// Helper to mock DNS resolution for a domain
-function mockDns(domain: string, ip = "1.2.3.4") {
+// Mock DNS for domain resolution
+function mockDns(domain: string) {
   server.use(
-    ...DOH_PROVIDERS.map((provider) =>
-      http.get(provider.url, ({ request }) => {
-        const url = new URL(request.url);
-        const name = url.searchParams.get("name");
-        const type = url.searchParams.get("type");
+    http.get("https://cloudflare-dns.com/dns-query", ({ request }) => {
+      const url = new URL(request.url);
+      const name = url.searchParams.get("name");
 
-        // Allow matching with or without trailing dot
-        const normalizedName = name?.endsWith(".") ? name.slice(0, -1) : name;
-        const normalizedDomain = domain.endsWith(".")
-          ? domain.slice(0, -1)
-          : domain;
+      if (name === domain) {
+        return HttpResponse.json({
+          Status: 0,
+          Answer: [
+            {
+              name: `${domain}.`,
+              type: 1,
+              TTL: 60,
+              data: "1.2.3.4",
+            },
+          ],
+        });
+      }
 
-        if (
-          normalizedName === normalizedDomain &&
-          (type === "A" || type === "AAAA")
-        ) {
-          return HttpResponse.json({
-            Status: 0,
-            Answer: [{ name: `${domain}.`, type: 1, TTL: 60, data: ip }],
-          });
-        }
-        return HttpResponse.json({ Status: 0, Answer: [] });
-      }),
-    ),
+      return HttpResponse.json({ Status: 0, Answer: [] });
+    }),
   );
 }
 
-beforeAll(async () => {
-  const { makePGliteDb } = await import("@/lib/db/pglite");
-  const { db } = await makePGliteDb();
-  vi.doMock("@/lib/db/client", () => ({ db }));
-});
-
-beforeEach(async () => {
-  const { resetPGliteDb } = await import("@/lib/db/pglite");
-  await resetPGliteDb();
-});
-
-afterEach(async () => {
+afterEach(() => {
   vi.restoreAllMocks();
   server.resetHandlers();
 });
 
-afterAll(async () => {
-  const { closePGliteDb } = await import("@/lib/db/pglite");
-  await closePGliteDb();
-});
-
-describe("fetchHeaders", () => {
+describe("fetchHttpHeaders", () => {
   it("fetches headers successfully via HEAD request", async () => {
     mockDns("success.test");
     server.use(
@@ -79,8 +58,8 @@ describe("fetchHeaders", () => {
       }),
     );
 
-    const { fetchHeaders } = await import("./workflow");
-    const result = await fetchHeaders("success.test");
+    const { fetchHttpHeaders } = await import("./headers-lookup");
+    const result = await fetchHttpHeaders("success.test");
 
     expect(result.success).toBe(true);
     expect(result.headers.length).toBeGreaterThan(0);
@@ -102,15 +81,15 @@ describe("fetchHeaders", () => {
       }),
     );
 
-    const { fetchHeaders } = await import("./workflow");
-    const result = await fetchHeaders("forbidden.test");
+    const { fetchHttpHeaders } = await import("./headers-lookup");
+    const result = await fetchHttpHeaders("forbidden.test");
 
     expect(result.success).toBe(true);
     expect(result.status).toBe(403);
     expect(result.statusMessage).toBe("Forbidden");
   });
 
-  it("throws RetryableError on network error", async () => {
+  it("returns fetch_error on network error", async () => {
     mockDns("error.test");
     server.use(
       http.head("https://error.test/", () => {
@@ -121,10 +100,13 @@ describe("fetchHeaders", () => {
       }),
     );
 
-    const { fetchHeaders } = await import("./workflow");
-    const { RetryableError } = await import("workflow");
+    const { fetchHttpHeaders } = await import("./headers-lookup");
+    const result = await fetchHttpHeaders("error.test");
 
-    await expect(fetchHeaders("error.test")).rejects.toThrow(RetryableError);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("fetch_error");
+    }
   });
 
   it("normalizes and sorts headers correctly", async () => {
@@ -143,8 +125,8 @@ describe("fetchHeaders", () => {
       }),
     );
 
-    const { fetchHeaders } = await import("./workflow");
-    const result = await fetchHeaders("sorted.test");
+    const { fetchHttpHeaders } = await import("./headers-lookup");
+    const result = await fetchHttpHeaders("sorted.test");
 
     expect(result.success).toBe(true);
 
@@ -166,10 +148,33 @@ describe("fetchHeaders", () => {
   });
 });
 
-describe("persistHeaders", () => {
+describe("persistHttpHeaders", () => {
+  // Setup PGlite for database tests
+  beforeAll(async () => {
+    const { makePGliteDb } = await import("@/lib/db/pglite");
+    const { db } = await makePGliteDb();
+    vi.doMock("@/lib/db/client", () => ({ db }));
+  });
+
+  beforeEach(async () => {
+    const { resetPGliteDb } = await import("@/lib/db/pglite");
+    await resetPGliteDb();
+    vi.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    const { closePGliteDb } = await import("@/lib/db/pglite");
+    await closePGliteDb();
+  });
+
   it("persists headers to database", async () => {
-    const { persistHeaders } = await import("./workflow");
-    await persistHeaders(
+    // Mock schedule revalidation for this test
+    vi.doMock("@/lib/schedule", () => ({
+      scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
+    }));
+
+    const { persistHttpHeaders } = await import("./headers-lookup");
+    await persistHttpHeaders(
       "persist.test",
       [
         { name: "server", value: "nginx" },

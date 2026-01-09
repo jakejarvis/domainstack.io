@@ -1,9 +1,9 @@
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
-import { dnsLookupViaHttps } from "@/lib/dns-lookup";
 import { isExpectedDnsError } from "@/lib/dns-utils";
 import { type FetchOptions, fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
+import { dnsLookupViaHttps } from "@/lib/resolver";
 
 const logger = createLogger({ source: "remote-asset" });
 

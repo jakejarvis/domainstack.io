@@ -2,6 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
+import { normalizeHeaders } from "@/lib/domain/headers-lookup";
 import type { Header, HeadersResponse } from "@/lib/types";
 import { findDomainByName } from "./domains";
 
@@ -84,11 +85,7 @@ export async function getHeadersCached(
     }
 
     // Normalize headers
-    const { IMPORTANT_HEADERS } = await import("@/lib/constants/headers");
-    const normalized = normalizeHeaders(
-      row.headers as Header[],
-      IMPORTANT_HEADERS,
-    );
+    const normalized = normalizeHeaders(row.headers as Header[]);
 
     return {
       headers: normalized,
@@ -98,22 +95,4 @@ export async function getHeadersCached(
   } catch {
     return null;
   }
-}
-
-/**
- * Helper: Normalize header names (trim + lowercase) then sort important first.
- */
-export function normalizeHeaders(
-  h: Header[],
-  importantHeaders: ReadonlySet<string>,
-): Header[] {
-  const normalized = h.map((hdr) => ({
-    name: hdr.name.trim().toLowerCase(),
-    value: hdr.value,
-  }));
-  return normalized.sort(
-    (a, b) =>
-      Number(importantHeaders.has(b.name)) -
-        Number(importantHeaders.has(a.name)) || a.name.localeCompare(b.name),
-  );
 }

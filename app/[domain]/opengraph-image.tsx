@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { LogoSimple } from "@/components/logo";
-import { normalizeDomainInput } from "@/lib/domain";
+import { normalizeDomainInput } from "@/lib/domain-utils";
 import {
   BRAND,
   CHIPS,

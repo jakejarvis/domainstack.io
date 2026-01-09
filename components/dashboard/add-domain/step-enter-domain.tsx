@@ -6,7 +6,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
+import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 
 type StepEnterDomainProps = {
   domain: string;

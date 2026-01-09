@@ -1,23 +1,13 @@
-import { start } from "workflow/api";
 import type {
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
 } from "@/lib/types";
-import {
-  type CertificatesWorkflowResult,
-  certificatesWorkflow,
-} from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { headersWorkflow } from "@/workflows/headers";
-import {
-  type HostingWorkflowResult,
-  hostingWorkflow,
-} from "@/workflows/hosting";
-import {
-  type RegistrationWorkflowResult,
-  registrationWorkflow,
-} from "@/workflows/registration";
+import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
+import { fetchDnsData } from "@/workflows/shared/fetch-dns";
+import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
+import { fetchHostingData } from "@/workflows/shared/fetch-hosting";
+import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
 
 export interface InitializeSnapshotWorkflowInput {
   trackedDomainId: string;
@@ -50,11 +40,22 @@ export async function initializeSnapshotWorkflow(
 
   const domainName = domainRecord.name;
 
-  // Step 2: Fetch fresh data for this domain using workflows
-  const [registrationResult, hostingResult, certificatesResult] =
-    await fetchData(domainName);
+  // Step 2: Fetch fresh data for this domain using shared steps (parallel where possible)
+  // First, fetch the independent data sources in parallel
+  const [registrationResult, dnsResult, headersResult, certificatesResult] =
+    await Promise.all([
+      fetchRegistrationData(domainName),
+      fetchDnsData(domainName),
+      fetchHeadersData(domainName),
+      fetchCertificatesData(domainName),
+    ]);
 
-  // Extract data from workflow results
+  // Then compute hosting using DNS + headers data (depends on previous results)
+  const dnsRecords = dnsResult.data?.records ?? [];
+  const headers = headersResult.data?.headers ?? [];
+  const hostingResult = await fetchHostingData(domainName, dnsRecords, headers);
+
+  // Extract data from step results
   const registrationData: RegistrationResponse | null =
     registrationResult.success ? registrationResult.data : null;
   const certificatesData: CertificatesResponse = certificatesResult.success
@@ -149,50 +150,6 @@ async function fetchDomainName(
     .limit(1);
 
   return result[0] ?? null;
-}
-
-async function fetchData(
-  domainName: string,
-): Promise<
-  [
-    RegistrationWorkflowResult,
-    HostingWorkflowResult,
-    CertificatesWorkflowResult,
-  ]
-> {
-  "use step";
-
-  // Start all independent workflows in parallel
-  const [regRun, dnsRun, headersRun, certRun] = await Promise.all([
-    start(registrationWorkflow, [{ domain: domainName }]),
-    start(dnsWorkflow, [{ domain: domainName }]),
-    start(headersWorkflow, [{ domain: domainName }]),
-    start(certificatesWorkflow, [{ domain: domainName }]),
-  ]);
-
-  // Wait for all workflow results
-  const [regResult, dnsResult, headersResult, certsResult] = await Promise.all([
-    regRun.returnValue,
-    dnsRun.returnValue,
-    headersRun.returnValue,
-    certRun.returnValue,
-  ]);
-
-  // Now compute hosting using the DNS + headers data (no duplicate fetches)
-  // Guard against null data from failed workflows
-  const dnsRecords = dnsResult.data?.records ?? [];
-  const headers = headersResult.data?.headers ?? [];
-
-  const hostingRun = await start(hostingWorkflow, [
-    {
-      domain: domainName,
-      dnsRecords,
-      headers,
-    },
-  ]);
-  const hostingResult = await hostingRun.returnValue;
-
-  return [regResult, hostingResult, certsResult];
 }
 
 async function createSnapshotRecord(params: {

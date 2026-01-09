@@ -1,5 +1,4 @@
 import { getStepMetadata } from "workflow";
-import { start } from "workflow/api";
 import type {
   CertificateChange,
   CertificateSnapshotData,
@@ -10,11 +9,11 @@ import type {
   RegistrationResponse,
   RegistrationSnapshotData,
 } from "@/lib/types";
-import { certificatesWorkflow } from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { headersWorkflow } from "@/workflows/headers";
-import { hostingWorkflow } from "@/workflows/hosting";
-import { registrationWorkflow } from "@/workflows/registration";
+import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
+import { fetchDnsData } from "@/workflows/shared/fetch-dns";
+import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
+import { fetchHostingData } from "@/workflows/shared/fetch-hosting";
+import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
 
 export interface MonitorDomainWorkflowInput {
   trackedDomainId: string;
@@ -57,9 +56,30 @@ export async function monitorDomainWorkflow(
 
   const { domainName, userId, userName, userEmail } = snapshot;
 
-  // Step 2: Fetch fresh data for this domain using workflows
-  const [registrationData, hostingData, certificatesData] =
-    await fetchLiveData(domainName);
+  // Step 2: Fetch fresh data for this domain using shared steps (parallel where possible)
+  // First, fetch the independent data sources in parallel
+  const [registrationResult, dnsResult, headersResult, certificatesResult] =
+    await Promise.all([
+      fetchRegistrationData(domainName),
+      fetchDnsData(domainName),
+      fetchHeadersData(domainName),
+      fetchCertificatesData(domainName),
+    ]);
+
+  // Then compute hosting using DNS + headers data (depends on previous results)
+  const dnsRecords = dnsResult.data?.records ?? [];
+  const headers = headersResult.data?.headers ?? [];
+  const hostingResult = await fetchHostingData(domainName, dnsRecords, headers);
+
+  // Extract response data
+  const registrationData: RegistrationResponse | null =
+    registrationResult.success ? registrationResult.data : null;
+  const hostingData: HostingResponse | null = hostingResult.success
+    ? hostingResult.data
+    : null;
+  const certificatesData: CertificatesResponse = certificatesResult.success
+    ? certificatesResult.data
+    : { certificates: [] };
 
   const results = {
     registrationChanges: false,
@@ -247,57 +267,6 @@ async function fetchSnapshot(
 
   const { getSnapshot } = await import("@/lib/db/repos/snapshots");
   return await getSnapshot(trackedDomainId);
-}
-
-async function fetchLiveData(
-  domainName: string,
-): Promise<
-  [RegistrationResponse | null, HostingResponse | null, CertificatesResponse]
-> {
-  "use step";
-
-  // Start all independent workflows in parallel
-  const [regRun, dnsRun, headersRun, certRun] = await Promise.all([
-    start(registrationWorkflow, [{ domain: domainName }]),
-    start(dnsWorkflow, [{ domain: domainName }]),
-    start(headersWorkflow, [{ domain: domainName }]),
-    start(certificatesWorkflow, [{ domain: domainName }]),
-  ]);
-
-  // Wait for all workflow results
-  const [regResult, dnsResult, headersResult, certsResult] = await Promise.all([
-    regRun.returnValue,
-    dnsRun.returnValue,
-    headersRun.returnValue,
-    certRun.returnValue,
-  ]);
-
-  // Now compute hosting using the DNS + headers data (no duplicate fetches)
-  // Guard against null data from failed workflows
-  const dnsRecords = dnsResult.data?.records ?? [];
-  const headers = headersResult.data?.headers ?? [];
-
-  const hostingRun = await start(hostingWorkflow, [
-    {
-      domain: domainName,
-      dnsRecords,
-      headers,
-    },
-  ]);
-  const hostingResult = await hostingRun.returnValue;
-
-  // Extract response data from workflow results
-  const registrationData: RegistrationResponse | null = regResult.success
-    ? regResult.data
-    : null;
-  const certificatesData: CertificatesResponse = certsResult.success
-    ? certsResult.data
-    : { certificates: [] };
-  const hostingData: HostingResponse | null = hostingResult.success
-    ? hostingResult.data
-    : null;
-
-  return [registrationData, hostingData, certificatesData];
 }
 
 async function detectRegistrationChange(

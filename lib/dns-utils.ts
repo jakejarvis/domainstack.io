@@ -106,7 +106,7 @@ export type DohQueryOptions = {
  *
  * This is the shared primitive used by both:
  * - `server/services/dns.ts` for full DNS lookups
- * - `lib/dns-lookup.ts` for SSRF protection IP resolution
+ * - `lib/resolver.ts` for SSRF protection IP resolution
  */
 export async function queryDohProvider(
   provider: DohProvider,

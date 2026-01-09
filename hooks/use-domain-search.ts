@@ -7,7 +7,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
-import { isValidDomain, normalizeDomainInput } from "@/lib/domain";
+import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 
 export type Source = "form" | "header" | "suggestion";
 

@@ -1,11 +1,10 @@
-import { start } from "workflow/api";
 import type { Section } from "@/lib/types";
-import { certificatesWorkflow } from "@/workflows/certificates";
-import { dnsWorkflow } from "@/workflows/dns";
-import { headersWorkflow } from "@/workflows/headers";
-import { hostingWorkflow } from "@/workflows/hosting";
-import { registrationWorkflow } from "@/workflows/registration";
-import { seoWorkflow } from "@/workflows/seo";
+import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
+import { fetchDnsData } from "@/workflows/shared/fetch-dns";
+import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
+import { fetchHostingData } from "@/workflows/shared/fetch-hosting";
+import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
+import { fetchSeoData } from "@/workflows/shared/fetch-seo";
 
 export interface SectionRevalidateWorkflowInput {
   domain: string;
@@ -24,6 +23,9 @@ export interface SectionRevalidateWorkflowResult {
  *
  * Note: Intentionally skips cache checking - this function is called for
  * scheduled revalidation when cached data has expired or is about to expire.
+ *
+ * Each section type calls the appropriate shared step directly at the workflow level,
+ * ensuring proper durability and retry semantics.
  */
 export async function sectionRevalidateWorkflow(
   input: SectionRevalidateWorkflowInput,
@@ -32,102 +34,81 @@ export async function sectionRevalidateWorkflow(
 
   const { domain, section } = input;
 
-  const result = await runSection(domain, section);
-
-  if (!result.success) {
-    return { success: false, domain, section, error: result.error };
-  }
-
-  return { success: true, domain, section };
-}
-
-type RunSectionResult = { success: true } | { success: false; error: string };
-
-async function runSection(
-  domain: string,
-  section: Section,
-): Promise<RunSectionResult> {
-  "use step";
-
   switch (section) {
     case "dns": {
-      const run = await start(dnsWorkflow, [{ domain }]);
-      const result = await run.returnValue;
+      const result = await fetchDnsData(domain);
       if (!result.success) {
-        return { success: false, error: result.error };
+        return { success: false, domain, section, error: "dns_fetch_failed" };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     case "headers": {
-      const run = await start(headersWorkflow, [{ domain }]);
-      const result = await run.returnValue;
+      const result = await fetchHeadersData(domain);
       if (!result.success) {
-        return { success: false, error: result.error };
+        return { success: false, domain, section, error: result.error };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     case "hosting": {
-      // Hosting requires DNS + headers data, fetch them first
-      const [dnsRun, headersRun] = await Promise.all([
-        start(dnsWorkflow, [{ domain }]),
-        start(headersWorkflow, [{ domain }]),
-      ]);
+      // Hosting requires DNS + headers data, fetch them first in parallel
       const [dnsResult, headersResult] = await Promise.all([
-        dnsRun.returnValue,
-        headersRun.returnValue,
+        fetchDnsData(domain),
+        fetchHeadersData(domain),
       ]);
 
-      // Check DNS workflow success
-      if (!dnsResult.success) {
-        return { success: false, error: dnsResult.error };
+      if (!dnsResult.success || !dnsResult.data) {
+        return { success: false, domain, section, error: dnsResult.error };
       }
-
-      // Check headers workflow success
-      if (!headersResult.success) {
-        return { success: false, error: headersResult.error };
+      if (!headersResult.success || !headersResult.data) {
+        return { success: false, domain, section, error: headersResult.error };
       }
+      const hostingResult = await fetchHostingData(
+        domain,
+        dnsResult.data.records,
+        headersResult.data.headers,
+      );
 
-      const hostingRun = await start(hostingWorkflow, [
-        {
-          domain,
-          dnsRecords: dnsResult.data.records,
-          headers: headersResult.data.headers,
-        },
-      ]);
-      const hostingResult = await hostingRun.returnValue;
       if (!hostingResult.success) {
-        return { success: false, error: hostingResult.error };
+        return { success: false, domain, section, error: hostingResult.error };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     case "certificates": {
-      const run = await start(certificatesWorkflow, [{ domain }]);
-      const result = await run.returnValue;
+      const result = await fetchCertificatesData(domain);
       if (!result.success) {
-        return { success: false, error: result.error };
+        return { success: false, domain, section, error: result.error };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     case "seo": {
-      const run = await start(seoWorkflow, [{ domain }]);
-      const result = await run.returnValue;
+      const result = await fetchSeoData(domain);
       if (!result.success) {
-        return { success: false, error: result.error };
+        return { success: false, domain, section, error: result.error };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     case "registration": {
-      const run = await start(registrationWorkflow, [{ domain }]);
-      const result = await run.returnValue;
+      const result = await fetchRegistrationData(domain);
       if (!result.success) {
-        return { success: false, error: result.error };
+        return { success: false, domain, section, error: result.error };
       }
-      return { success: true };
+      return { success: true, domain, section };
     }
+
     default: {
       // Exhaustiveness check - TypeScript will error if a Section case is missing
       const _exhaustive: never = section;
-      return { success: false, error: `Unhandled section: ${_exhaustive}` };
+      return {
+        success: false,
+        domain,
+        section,
+        error: `Unhandled section: ${_exhaustive}`,
+      };
     }
   }
 }

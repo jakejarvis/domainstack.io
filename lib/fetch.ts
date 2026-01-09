@@ -67,38 +67,6 @@ export async function fetchWithTimeoutAndRetry(
   throw lastError instanceof Error ? lastError : new Error("fetch failed");
 }
 
-/**
- * Check if an error is a TLS/SSL related error from fetch/undici.
- */
-export function isExpectedTlsError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const anyErr = err as unknown as {
-    cause?: { code?: string; message?: string };
-    code?: string;
-    message?: string;
-  };
-  const code = anyErr?.cause?.code || anyErr?.code;
-  const message = (
-    anyErr?.cause?.message ||
-    anyErr?.message ||
-    ""
-  ).toLowerCase();
-
-  return (
-    code === "ERR_TLS_CERT_ALTNAME_INVALID" ||
-    code === "ERR_TLS_CERT_HAS_EXPIRED" ||
-    code === "CERT_HAS_EXPIRED" ||
-    code === "ERR_SSL_PROTOCOL_ERROR" ||
-    code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
-    code === "DEPTH_ZERO_SELF_SIGNED_CERT" ||
-    code === "ERR_SSL_WRONG_VERSION_NUMBER" ||
-    message.includes("certificate") ||
-    message.includes("tls") ||
-    message.includes("ssl") ||
-    message.includes("signed")
-  );
-}
-
 function createAbortSignal(
   timeoutMs: number,
   externalSignal?: AbortSignal,

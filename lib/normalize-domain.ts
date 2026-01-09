@@ -1,7 +1,7 @@
 import { toRegistrableDomain as toRegistrableDomainRdapper } from "rdapper";
 import { cache } from "react";
 import { BLACKLISTED_SUFFIXES } from "@/lib/constants/domain-validation";
-import { normalizeDomainInput } from "@/lib/domain";
+import { normalizeDomainInput } from "@/lib/domain-utils";
 
 // A wrapper around rdapper's toRegistrableDomain that:
 // 1. normalizes user input (strips schemes, paths, ports, auth, www., etc.)

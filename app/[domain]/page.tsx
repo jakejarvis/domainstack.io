@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DomainReportClient } from "@/components/domain/report-client";
 import { analytics } from "@/lib/analytics/server";
-import { toRegistrableDomain } from "@/lib/domain-server";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { getQueryClient, trpc } from "@/trpc/server";
 
 import "country-flag-icons/3x2/flags.css";

@@ -1,7 +1,7 @@
 import { getSessionCookie } from "better-auth/cookies";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { toRegistrableDomain } from "@/lib/domain-server";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
 
 // Routes that require authentication (pre-check for faster redirects)
 const PROTECTED_ROUTES = ["/dashboard", "/settings"];

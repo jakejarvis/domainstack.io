@@ -1,4 +1,4 @@
-import { toRegistrableDomain } from "@/lib/domain-server";
+import { toRegistrableDomain } from "@/lib/normalize-domain";
 import type { Header, ProviderRef } from "@/lib/types";
 import type { Provider } from "./parser";
 import type { DetectionContext, Rule } from "./rules";
