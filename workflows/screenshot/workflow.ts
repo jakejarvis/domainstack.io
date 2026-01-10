@@ -124,12 +124,34 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
   try {
     browser = await getBrowser();
 
+    // Initialize adblocker once and reuse for all pages
+    // Using any to avoid complex type inference for dynamically imported class
+    // biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
+    let blocker: any = null;
+    try {
+      const { PuppeteerBlocker } = await import(
+        "@ghostery/adblocker-puppeteer"
+      );
+      blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
+    } catch (err) {
+      logger.warn(err, "failed to initialize adblocker");
+    }
+
     for (const url of urls) {
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         let page: Page | null = null;
 
         try {
           page = await browser.newPage();
+
+          // Enable adblocker if initialized, but don't block if it fails
+          if (blocker) {
+            try {
+              await blocker.enableBlockingInPage(page);
+            } catch (err) {
+              logger.warn(err, "failed to enable adblocker");
+            }
+          }
 
           await page.setViewport({
             width: VIEWPORT_WIDTH,
