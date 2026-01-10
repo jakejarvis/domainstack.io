@@ -315,6 +315,7 @@ const result = await startWithDeduplication(key, async () => {
 
 2. **409 Conflict Handling** - For cron jobs and Inngest functions where step-level conflicts can occur:
 ```typescript
+import { start } from "workflow/api";
 import { withConcurrencyHandling } from "@/lib/workflow";
 
 const run = await start(myWorkflow, [input]);

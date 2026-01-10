@@ -190,15 +190,13 @@ describe("withFetchErrorHandling", () => {
   });
 
   it("includes context in error", async () => {
-    try {
-      await withFetchErrorHandling(
+    await expect(
+      withFetchErrorHandling(
         async () => {
           throw new Error("timeout");
         },
         { context: "test operation" },
-      );
-    } catch (err) {
-      expect((err as Error).message).toContain("test operation");
-    }
+      ),
+    ).rejects.toThrow("test operation");
   });
 });

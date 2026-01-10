@@ -169,6 +169,7 @@ describe("withRetry", () => {
     await withRetry(operation, {
       retries: 3,
       delayMs: 100,
+      backoffType: "exponential",
       backoffMultiplier: 2,
       onRetry,
     });
@@ -177,6 +178,47 @@ describe("withRetry", () => {
     expect(onRetry).toHaveBeenNthCalledWith(1, expect.any(Error), 0, 100);
     expect(onRetry).toHaveBeenNthCalledWith(2, expect.any(Error), 1, 200);
     expect(onRetry).toHaveBeenNthCalledWith(3, expect.any(Error), 2, 400);
+  });
+
+  it("uses linear backoff when configured", async () => {
+    const onRetry = vi.fn();
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("fail 1"))
+      .mockRejectedValueOnce(new Error("fail 2"))
+      .mockRejectedValueOnce(new Error("fail 3"))
+      .mockResolvedValue("success");
+
+    await withRetry(operation, {
+      retries: 3,
+      delayMs: 100,
+      backoffType: "linear",
+      onRetry,
+    });
+
+    // Delays: 100 * (0+1) = 100, 100 * (1+1) = 200, 100 * (2+1) = 300
+    expect(onRetry).toHaveBeenNthCalledWith(1, expect.any(Error), 0, 100);
+    expect(onRetry).toHaveBeenNthCalledWith(2, expect.any(Error), 1, 200);
+    expect(onRetry).toHaveBeenNthCalledWith(3, expect.any(Error), 2, 300);
+  });
+
+  it("uses constant backoff by default", async () => {
+    const onRetry = vi.fn();
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("fail 1"))
+      .mockRejectedValueOnce(new Error("fail 2"))
+      .mockResolvedValue("success");
+
+    await withRetry(operation, {
+      retries: 2,
+      delayMs: 100,
+      onRetry,
+    });
+
+    // Constant: 100, 100, 100
+    expect(onRetry).toHaveBeenNthCalledWith(1, expect.any(Error), 0, 100);
+    expect(onRetry).toHaveBeenNthCalledWith(2, expect.any(Error), 1, 100);
   });
 
   it("respects maxDelayMs", async () => {
@@ -190,6 +232,7 @@ describe("withRetry", () => {
     await withRetry(operation, {
       retries: 2,
       delayMs: 100,
+      backoffType: "exponential",
       backoffMultiplier: 10,
       maxDelayMs: 500,
       onRetry,

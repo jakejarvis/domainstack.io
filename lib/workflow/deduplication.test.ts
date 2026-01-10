@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  clearAllPendingRuns,
   getDeduplicationKey,
   getPendingRunCount,
   hasPendingRun,
@@ -37,8 +38,7 @@ describe("getDeduplicationKey", () => {
 
 describe("startWithDeduplication", () => {
   afterEach(() => {
-    // Reset pending runs between tests by waiting a tick
-    // In real usage, runs clean up after completion
+    clearAllPendingRuns();
   });
 
   it("executes the workflow function", async () => {
@@ -135,9 +135,11 @@ describe("startWithDeduplication", () => {
 });
 
 describe("getPendingRunCount", () => {
-  it("returns 0 when no runs are pending", async () => {
-    // Wait for any previous test runs to complete
-    await new Promise((resolve) => setTimeout(resolve, 10));
+  afterEach(() => {
+    clearAllPendingRuns();
+  });
+
+  it("returns 0 when no runs are pending", () => {
     expect(getPendingRunCount()).toBe(0);
   });
 });

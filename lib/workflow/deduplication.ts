@@ -85,3 +85,13 @@ export function hasPendingRun(key: string): boolean {
 export function getPendingRunCount(): number {
   return pendingRuns.size;
 }
+
+/**
+ * Clear all pending runs. FOR TESTING ONLY.
+ *
+ * This is exposed to allow tests to reset state between runs without
+ * relying on arbitrary timeouts.
+ */
+export function clearAllPendingRuns(): void {
+  pendingRuns.clear();
+}

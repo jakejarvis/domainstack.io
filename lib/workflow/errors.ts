@@ -76,7 +76,7 @@ export function classifyFetchError(
     if (PERMANENT_REMOTE_ASSET_ERRORS.has(err.code)) {
       return new FatalError(`${context}: ${err.code} - ${err.message}`);
     }
-    // Other RemoteAssetErrors (dns_error, invalid_response) might be transient
+    // Other RemoteAssetErrors (invalid_response, etc.) might be transient
     return new RetryableError(`${context}: ${err.code}`, {
       retryAfter: retryAfter as `${number}s`,
     });
@@ -183,11 +183,22 @@ export function getErrorClassification(err: unknown): ErrorClassification {
 
   if (err instanceof Error) {
     const message = err.message.toLowerCase();
+
+    // Timeout/abort errors (separate from network errors for semantic accuracy)
     if (
       message.includes("timeout") ||
+      message.includes("timed out") ||
+      message.includes("aborted")
+    ) {
+      return { type: "retryable", reason: "timeout" };
+    }
+
+    // Network errors
+    if (
       message.includes("network") ||
       message.includes("econnrefused") ||
-      message.includes("econnreset")
+      message.includes("econnreset") ||
+      message.includes("socket hang up")
     ) {
       return { type: "retryable", reason: "network" };
     }

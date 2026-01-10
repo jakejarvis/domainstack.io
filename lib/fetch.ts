@@ -49,7 +49,7 @@ export async function fetchWithTimeoutAndRetry(
     timeoutMs,
     retries,
     delayMs,
-    backoffMultiplier: 1, // Linear backoff to match original behavior
+    backoffType: "linear", // delay, delay*2, delay*3, ... to match original behavior
     signal: externalSignal,
     onRetry: (err, attempt) => {
       logger.warn(
@@ -74,6 +74,7 @@ export async function fetchWithTimeoutAndRetry(
 
 // Re-export the new utilities for convenience
 export {
+  type BackoffType,
   type RetryOptions,
   type TimeoutAndRetryOptions,
   type TimeoutOptions,

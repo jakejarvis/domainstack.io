@@ -8,6 +8,7 @@ export {
 } from "./concurrency";
 
 export {
+  clearAllPendingRuns,
   getDeduplicationKey,
   getPendingRunCount,
   hasPendingRun,

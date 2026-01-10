@@ -130,6 +130,9 @@ export async function withTimeout<T>(
 // Retry Utilities
 // ============================================================================
 
+/** Backoff type for retry delays. */
+export type BackoffType = "constant" | "linear" | "exponential";
+
 /**
  * Options for retry behavior.
  */
@@ -138,7 +141,19 @@ export interface RetryOptions {
   retries?: number;
   /** Base delay between retries in milliseconds. */
   delayMs?: number;
-  /** Backoff multiplier (1 = linear, 2 = exponential). */
+  /**
+   * Backoff type for delay calculation.
+   * - "constant": Same delay each retry (delay)
+   * - "linear": Delay increases linearly (delay, delay*2, delay*3, ...)
+   * - "exponential": Delay increases exponentially using backoffMultiplier (delay * multiplier^attempt)
+   * @default "constant"
+   */
+  backoffType?: BackoffType;
+  /**
+   * Backoff multiplier for exponential backoff.
+   * Only used when backoffType is "exponential".
+   * @default 2
+   */
   backoffMultiplier?: number;
   /** Maximum delay between retries in milliseconds. */
   maxDelayMs?: number;
@@ -158,7 +173,8 @@ const DEFAULT_RETRY_OPTIONS: Required<
 > = {
   retries: 0,
   delayMs: 150,
-  backoffMultiplier: 1,
+  backoffType: "constant",
+  backoffMultiplier: 2,
   maxDelayMs: 30000,
   shouldRetry: () => true,
 };
@@ -169,10 +185,25 @@ const DEFAULT_RETRY_OPTIONS: Required<
 function calculateDelay(
   attempt: number,
   delayMs: number,
+  backoffType: BackoffType,
   backoffMultiplier: number,
   maxDelayMs: number,
 ): number {
-  const delay = delayMs * backoffMultiplier ** attempt;
+  let delay: number;
+  switch (backoffType) {
+    case "linear":
+      // Linear: delay, delay*2, delay*3, ...
+      delay = delayMs * (attempt + 1);
+      break;
+    case "exponential":
+      // Exponential: delay, delay*multiplier, delay*multiplier^2, ...
+      delay = delayMs * backoffMultiplier ** attempt;
+      break;
+    default:
+      // Constant (default): same delay each time
+      delay = delayMs;
+      break;
+  }
   return Math.min(delay, maxDelayMs);
 }
 
@@ -191,7 +222,7 @@ function calculateDelay(
  *   {
  *     retries: 3,
  *     delayMs: 1000,
- *     backoffMultiplier: 2,
+ *     backoffType: "exponential",
  *     shouldRetry: (err) => err instanceof NetworkError,
  *   }
  * );
@@ -201,7 +232,14 @@ export async function withRetry<T>(
   operation: () => Promise<T>,
   options: RetryOptions = {},
 ): Promise<T> {
-  const { retries, delayMs, backoffMultiplier, maxDelayMs, shouldRetry } = {
+  const {
+    retries,
+    delayMs,
+    backoffType,
+    backoffMultiplier,
+    maxDelayMs,
+    shouldRetry,
+  } = {
     ...DEFAULT_RETRY_OPTIONS,
     ...options,
   };
@@ -234,6 +272,7 @@ export async function withRetry<T>(
       const delay = calculateDelay(
         attempt,
         delayMs,
+        backoffType,
         backoffMultiplier,
         maxDelayMs,
       );
@@ -257,10 +296,18 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       return;
     }
 
-    const timeoutId = setTimeout(resolve, ms);
+    let onAbort: (() => void) | undefined;
+
+    const timeoutId = setTimeout(() => {
+      // Clean up abort listener on normal completion to prevent memory leak
+      if (signal && onAbort) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      resolve();
+    }, ms);
 
     if (signal) {
-      const onAbort = () => {
+      onAbort = () => {
         clearTimeout(timeoutId);
         reject(new Error("Sleep aborted"));
       };
