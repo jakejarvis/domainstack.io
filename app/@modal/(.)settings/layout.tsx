@@ -27,6 +27,7 @@ export default function SettingsModalLayout({
       className="pt-1"
       headerSlotId="settings-modal-tabs"
       headerSlotClassName="mt-2"
+      allowedPathPrefix="/settings"
     >
       <Suspense fallback={<SettingsSkeleton />}>
         <AuthorizedSettingsModalLayout>
