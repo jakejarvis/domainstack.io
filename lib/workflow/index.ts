@@ -6,3 +6,10 @@ export {
   wasAlreadyHandled,
   withConcurrencyHandling,
 } from "./concurrency";
+
+export {
+  getDeduplicationKey,
+  getPendingRunCount,
+  hasPendingRun,
+  startWithDeduplication,
+} from "./deduplication";

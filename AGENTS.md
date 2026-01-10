@@ -298,13 +298,25 @@ npx workflow inspect runs
 ```
 
 **Concurrency Handling:**
-The Workflow SDK uses at-least-once delivery, which means steps can be executed multiple times concurrently. When multiple workers race to complete the same step, a 409 conflict error occurs. Use `lib/workflow/` utilities to handle this gracefully:
+The Workflow SDK uses at-least-once delivery, which means steps can be executed multiple times concurrently. Use `lib/workflow/` utilities to handle this gracefully:
 
+1. **Request Deduplication** - Prevents duplicate workflows when multiple requests arrive simultaneously:
 ```typescript
 import { start } from "workflow/api";
+import { getDeduplicationKey, startWithDeduplication } from "@/lib/workflow";
+
+// Deduplicate concurrent requests for the same domain
+const key = getDeduplicationKey("registration", domain);
+const result = await startWithDeduplication(key, async () => {
+  const run = await start(registrationWorkflow, [{ domain }]);
+  return run.returnValue;
+});
+```
+
+2. **409 Conflict Handling** - For cron jobs and Inngest functions where step-level conflicts can occur:
+```typescript
 import { withConcurrencyHandling } from "@/lib/workflow";
 
-// Wrap workflow returnValue to handle 409 conflicts gracefully
 const run = await start(myWorkflow, [input]);
 const result = await withConcurrencyHandling(run.returnValue, {
   domain: "example.com",
@@ -318,15 +330,16 @@ if (result === undefined) {
 ```
 
 Available utilities:
+- `getDeduplicationKey(workflow, input)` - Generate a deduplication key
+- `startWithDeduplication(key, fn)` - Deduplicate concurrent workflow starts (per-instance)
 - `isConcurrencyConflict(error)` - Check if error is a 409 step conflict
-- `withConcurrencyHandling(promise, context)` - Wrap async operations to handle conflicts gracefully
-- `handleStepConcurrencyError(error, context)` - Handle errors within step functions
+- `withConcurrencyHandling(promise, context)` - Handle 409 conflicts gracefully
 
 Best practices for idempotent steps:
 - Use database upserts instead of inserts (e.g., `onConflictDoUpdate`)
 - Use idempotency keys for external API calls (e.g., Resend emails use `stepId`)
 - Check if work is already done before expensive operations
-- Let 409 errors from the SDK be handled by `withConcurrencyHandling`
+- Use `startWithDeduplication` in tRPC routers to avoid duplicate workflows
 
 **Reference**
 [Workflow DevKit docs](https://useworkflow.dev/llms.txt)

@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
+import { getDeduplicationKey, startWithDeduplication } from "@/lib/workflow";
 import {
   createTRPCRouter,
   domainProcedure,
@@ -43,10 +44,16 @@ export const domainRouter = createTRPCRouter({
         };
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
+      // (prevents duplicate workflows if multiple requests arrive simultaneously)
       const { registrationWorkflow } = await import("@/workflows/registration");
-      const run = await start(registrationWorkflow, [{ domain: input.domain }]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("registration", input.domain);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(registrationWorkflow, [
+          { domain: input.domain },
+        ]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
@@ -73,10 +80,13 @@ export const domainRouter = createTRPCRouter({
         };
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
       const { dnsWorkflow } = await import("@/workflows/dns");
-      const run = await start(dnsWorkflow, [{ domain: input.domain }]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("dns", input.domain);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(dnsWorkflow, [{ domain: input.domain }]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
@@ -107,19 +117,24 @@ export const domainRouter = createTRPCRouter({
       }
 
       // Cache miss - orchestrate DNS and headers first, then hosting
+      // Use deduplication to prevent duplicate workflows from concurrent requests
       const { dnsWorkflow } = await import("@/workflows/dns");
       const { headersWorkflow } = await import("@/workflows/headers");
       const { hostingWorkflow } = await import("@/workflows/hosting");
 
-      // Phase 1: Fetch DNS and headers in parallel
-      const [dnsRun, headersRun] = await Promise.all([
-        start(dnsWorkflow, [{ domain: input.domain }]),
-        start(headersWorkflow, [{ domain: input.domain }]),
-      ]);
+      // Phase 1: Fetch DNS and headers in parallel with deduplication
+      const dnsKey = getDeduplicationKey("dns", input.domain);
+      const headersKey = getDeduplicationKey("headers", input.domain);
 
       const [dnsResult, headersResult] = await Promise.all([
-        dnsRun.returnValue,
-        headersRun.returnValue,
+        startWithDeduplication(dnsKey, async () => {
+          const run = await start(dnsWorkflow, [{ domain: input.domain }]);
+          return run.returnValue;
+        }),
+        startWithDeduplication(headersKey, async () => {
+          const run = await start(headersWorkflow, [{ domain: input.domain }]);
+          return run.returnValue;
+        }),
       ]);
 
       // Phase 2: Hosting uses the already-fetched data
@@ -137,14 +152,18 @@ export const domainRouter = createTRPCRouter({
       const dnsRecords = dnsResult.data?.records ?? [];
       const headers = headersResult.data?.headers ?? [];
 
-      const hostingRun = await start(hostingWorkflow, [
-        {
-          domain: input.domain,
-          dnsRecords,
-          headers,
-        },
-      ]);
-      const result = await hostingRun.returnValue;
+      // Hosting workflow with deduplication (key includes the data dependencies)
+      const hostingKey = getDeduplicationKey("hosting", input.domain);
+      const result = await startWithDeduplication(hostingKey, async () => {
+        const run = await start(hostingWorkflow, [
+          {
+            domain: input.domain,
+            dnsRecords,
+            headers,
+          },
+        ]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
@@ -173,10 +192,15 @@ export const domainRouter = createTRPCRouter({
         };
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
       const { certificatesWorkflow } = await import("@/workflows/certificates");
-      const run = await start(certificatesWorkflow, [{ domain: input.domain }]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("certificates", input.domain);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(certificatesWorkflow, [
+          { domain: input.domain },
+        ]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
@@ -203,10 +227,13 @@ export const domainRouter = createTRPCRouter({
         };
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
       const { headersWorkflow } = await import("@/workflows/headers");
-      const run = await start(headersWorkflow, [{ domain: input.domain }]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("headers", input.domain);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(headersWorkflow, [{ domain: input.domain }]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
@@ -231,10 +258,13 @@ export const domainRouter = createTRPCRouter({
       };
     }
 
-    // Cache miss - run workflow
+    // Cache miss - run workflow with deduplication
     const { seoWorkflow } = await import("@/workflows/seo");
-    const run = await start(seoWorkflow, [{ domain: input.domain }]);
-    const result = await run.returnValue;
+    const key = getDeduplicationKey("seo", input.domain);
+    const result = await startWithDeduplication(key, async () => {
+      const run = await start(seoWorkflow, [{ domain: input.domain }]);
+      return run.returnValue;
+    });
 
     return {
       ...result,
@@ -272,10 +302,13 @@ export const domainRouter = createTRPCRouter({
         }
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
       const { faviconWorkflow } = await import("@/workflows/favicon");
-      const run = await start(faviconWorkflow, [{ domain: input.domain }]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("favicon", input.domain);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(faviconWorkflow, [{ domain: input.domain }]);
+        return run.returnValue;
+      });
 
       return {
         ...result,
