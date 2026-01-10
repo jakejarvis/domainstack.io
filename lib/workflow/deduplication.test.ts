@@ -52,7 +52,7 @@ describe("startWithDeduplication", () => {
   });
 
   it("deduplicates concurrent requests with same key", async () => {
-    let resolveWorkflow: (value: unknown) => void;
+    let resolveWorkflow: ((value: unknown) => void) | undefined;
     const workflowPromise = new Promise((resolve) => {
       resolveWorkflow = resolve;
     });
@@ -70,7 +70,9 @@ describe("startWithDeduplication", () => {
     expect(hasPendingRun(key)).toBe(true);
 
     // Resolve the workflow
-    resolveWorkflow!({ data: "shared" });
+    if (resolveWorkflow) {
+      resolveWorkflow({ data: "shared" });
+    }
 
     // Both promises should resolve with the same result
     const [result1, result2] = await Promise.all([promise1, promise2]);
@@ -110,7 +112,7 @@ describe("startWithDeduplication", () => {
   });
 
   it("propagates errors to all waiters", async () => {
-    let rejectWorkflow: (error: Error) => void;
+    let rejectWorkflow: ((error: Error) => void) | undefined;
     const workflowPromise = new Promise((_, reject) => {
       rejectWorkflow = reject;
     });
@@ -122,7 +124,9 @@ describe("startWithDeduplication", () => {
     const promise2 = startWithDeduplication(key, workflowFn);
 
     // Reject the workflow
-    rejectWorkflow!(new Error("shared error"));
+    if (rejectWorkflow) {
+      rejectWorkflow(new Error("shared error"));
+    }
 
     // Both should reject with the same error
     await expect(promise1).rejects.toThrow("shared error");
