@@ -1,13 +1,71 @@
 import "server-only";
 
 import type {
-  CertificateChange,
   CertificateSnapshotData,
-  HostingChange,
   ProviderSnapshotData,
-  RegistrationChange,
   RegistrationSnapshotData,
-} from "@/lib/types";
+} from "@/lib/db/repos/snapshots";
+
+// =============================================================================
+// Change Types
+// =============================================================================
+
+/**
+ * Registration change details.
+ */
+export interface RegistrationChange {
+  registrarChanged: boolean;
+  nameserversChanged: boolean;
+  transferLockChanged: boolean;
+  statusesChanged: boolean;
+  previousRegistrar: string | null;
+  previousNameservers: { host: string }[];
+  previousTransferLock: boolean | null;
+  previousStatuses: string[];
+  newRegistrar: string | null;
+  newNameservers: { host: string }[];
+  newTransferLock: boolean | null;
+  newStatuses: string[];
+}
+
+/**
+ * Provider change details.
+ */
+export interface HostingChange {
+  dnsProviderChanged: boolean;
+  hostingProviderChanged: boolean;
+  emailProviderChanged: boolean;
+  previousDnsProvider: string | null;
+  previousHostingProvider: string | null;
+  previousEmailProvider: string | null;
+  newDnsProvider: string | null;
+  newHostingProvider: string | null;
+  newEmailProvider: string | null;
+  previousDnsProviderId: string | null;
+  previousHostingProviderId: string | null;
+  previousEmailProviderId: string | null;
+  newDnsProviderId: string | null;
+  newHostingProviderId: string | null;
+  newEmailProviderId: string | null;
+}
+
+/**
+ * Certificate change details.
+ */
+export interface CertificateChange {
+  caProviderChanged: boolean;
+  issuerChanged: boolean;
+  previousCaProvider: string | null;
+  previousIssuer: string | null;
+  newCaProvider: string | null;
+  newIssuer: string | null;
+  previousCaProviderId: string | null;
+  newCaProviderId: string | null;
+}
+
+// =============================================================================
+// Change Detection Functions
+// =============================================================================
 
 /**
  * Detect changes in registration data (registrar, nameservers, transfer lock, statuses).

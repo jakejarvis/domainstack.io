@@ -2,8 +2,11 @@ import { differenceInDays } from "date-fns";
 import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import type {
+  VerificationMethod,
+  VerificationStatus,
+} from "@/lib/constants/verification";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@/lib/constants/verification";
-import type { VerificationMethod, VerificationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DomainStatusBadgeProps = {

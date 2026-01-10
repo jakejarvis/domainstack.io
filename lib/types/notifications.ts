@@ -1,37 +1,11 @@
 /**
  * Notification types - Plain TypeScript interfaces.
- *
- * These are internal data structures from our own database,
- * no runtime validation needed.
  */
-
-import type {
-  CERTIFICATE_EXPIRY_THRESHOLDS,
-  DOMAIN_EXPIRY_THRESHOLDS,
-  NOTIFICATION_CATEGORIES,
-} from "@/lib/constants/notifications";
-
-export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
-
-type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
-type CertificateExpiryThreshold =
-  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
-
-export type NotificationType =
-  | `domain_expiry_${DomainExpiryThreshold}d`
-  | `certificate_expiry_${CertificateExpiryThreshold}d`
-  | "verification_failing"
-  | "verification_revoked"
-  | "registration_change"
-  | "provider_change"
-  | "certificate_change";
-
-// =============================================================================
-// Interfaces
-// =============================================================================
 
 /**
  * Data for a single notification item displayed in the UI.
+ * Note: `type` is string to match database storage (text column).
+ * Use NotificationType for type-safe comparisons in helper functions.
  */
 export interface NotificationData {
   id: string;

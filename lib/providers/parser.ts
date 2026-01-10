@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ProviderCategory } from "@/lib/types";
+import type { ProviderCategory } from "@/lib/constants/providers";
 import type { Rule } from "./rules";
 import { RuleSchema } from "./rules";
 

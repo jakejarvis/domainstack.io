@@ -1,4 +1,4 @@
-import type { CertificatesResponse } from "@/lib/types";
+import type { CertificatesResponse } from "@/lib/types/domain/certificates";
 
 export interface FetchCertificatesResult {
   success: boolean;

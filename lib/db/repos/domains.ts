@@ -15,11 +15,11 @@ const logger = createLogger({ source: "domains" });
  */
 const DOMAIN_UPDATE_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 
-export type UpsertDomainParams = {
+export interface UpsertDomainParams {
   name: string; // punycode lowercased
   tld: string;
   unicodeName: string;
-};
+}
 
 /**
  * Insert a new domain record or return the existing one if it already exists.

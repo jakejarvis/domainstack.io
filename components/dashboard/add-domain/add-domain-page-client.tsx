@@ -7,7 +7,7 @@ import { AddDomainContent } from "@/components/dashboard/add-domain/add-domain-c
 import { Card } from "@/components/ui/card";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
-import type { ResumeDomainData } from "@/lib/types";
+import type { ResumeDomainData } from "@/lib/types/verification";
 import { isValidVerificationMethod } from "@/lib/verification-instructions";
 
 export function AddDomainPageClient({

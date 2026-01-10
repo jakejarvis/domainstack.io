@@ -3,16 +3,16 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { httpHeaders } from "@/lib/db/schema";
 import { normalizeHeaders } from "@/lib/headers-utils";
-import type { Header, HeadersResponse } from "@/lib/types";
+import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 import { findDomainByName } from "./domains";
 
-export type ReplaceHeadersParams = {
+export interface ReplaceHeadersParams {
   domainId: string;
   headers: Array<{ name: string; value: string }>;
   status: number;
   fetchedAt: Date;
   expiresAt: Date;
-};
+}
 
 export async function replaceHeaders(params: ReplaceHeadersParams) {
   const { domainId, headers, status, fetchedAt, expiresAt } = params;

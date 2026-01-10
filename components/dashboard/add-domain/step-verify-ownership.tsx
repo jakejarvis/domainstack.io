@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { VerificationMethod, VerificationState } from "@/lib/types";
+import type { VerificationMethod } from "@/lib/constants/verification";
+import type { VerificationState } from "@/lib/types/verification";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 type StepVerifyOwnershipProps = {

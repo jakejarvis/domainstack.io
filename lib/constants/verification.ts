@@ -1,5 +1,5 @@
 /**
- * Domain verification system constants.
+ * Domain verification system constants and derived types.
  * Centralized configuration for verification methods, grace periods, and format strings.
  */
 
@@ -13,11 +13,15 @@ export const VERIFICATION_METHODS = [
   "meta_tag",
 ] as const;
 
+export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
+
 export const VERIFICATION_STATUSES = [
   "verified",
   "failing",
   "unverified",
 ] as const;
+
+export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
 
 // ============================================================================
 // Grace Period

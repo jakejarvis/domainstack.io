@@ -8,10 +8,10 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "resolver" });
 
-type DohLookupResult = {
+interface DohLookupResult {
   address: string;
   family: 4 | 6;
-};
+}
 
 /**
  * Resolve a hostname to IP addresses using DNS-over-HTTPS.

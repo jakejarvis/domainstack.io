@@ -2,7 +2,7 @@
  * Certificate types - Plain TypeScript interfaces.
  */
 
-import type { ProviderRef } from "../provider-ref";
+import type { ProviderRef } from "./provider-ref";
 
 /**
  * A single SSL/TLS certificate.

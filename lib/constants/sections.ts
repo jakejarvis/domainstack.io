@@ -6,11 +6,36 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
-import type { Section, SectionAccent, SectionDef } from "@/lib/types";
 
 /**
- * Section metadata for UI.
+ * Section types and metadata for domain report UI.
  */
+
+export type Section =
+  | "dns"
+  | "headers"
+  | "hosting"
+  | "certificates"
+  | "seo"
+  | "registration";
+
+export type SectionAccent =
+  | "blue"
+  | "purple"
+  | "green"
+  | "orange"
+  | "pink"
+  | "cyan";
+
+export interface SectionDef {
+  title: string;
+  accent: SectionAccent;
+  icon: React.ElementType;
+  description: string;
+  help: string;
+  slug: string;
+}
+
 export const sections: Record<Section, SectionDef> = {
   registration: {
     title: "Registration",

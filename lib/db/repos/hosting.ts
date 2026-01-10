@@ -7,7 +7,7 @@ import {
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
-import type { HostingResponse } from "@/lib/types";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
 import { findDomainByName } from "./domains";
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;

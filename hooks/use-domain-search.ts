@@ -9,13 +9,13 @@ import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 
-type UseDomainSearchOptions = {
+interface UseDomainSearchOptions {
   initialValue?: string;
   showInvalidToast?: boolean;
   enableShortcut?: boolean;
   shortcutKey?: string; // default: "k"
   prefillFromRoute?: boolean;
-};
+}
 
 export function useDomainSearch(options: UseDomainSearchOptions = {}) {
   const {

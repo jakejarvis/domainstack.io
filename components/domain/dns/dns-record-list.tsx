@@ -7,7 +7,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
-import type { DnsRecord } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
 
 export function DnsRecordList({
   records,

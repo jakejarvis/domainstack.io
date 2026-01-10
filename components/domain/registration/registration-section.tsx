@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { RegistrationResponse } from "@/lib/types";
+import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 

@@ -5,7 +5,7 @@ import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import type { SectionDef } from "@/lib/types";
+import type { SectionDef } from "@/lib/constants/sections";
 import { cn } from "@/lib/utils";
 
 interface SectionNavProps {

@@ -4,7 +4,7 @@ import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 
 const STORAGE_KEY = "search-history";
 
-type UseDomainHistoryOptions = {
+interface UseDomainHistoryOptions {
   /**
    * Whether to add the domain to history. When false, the hook only returns
    * the current history without modifying it. Useful when you can't
@@ -13,7 +13,7 @@ type UseDomainHistoryOptions = {
    * @default true
    */
   enabled?: boolean;
-};
+}
 
 /**
  * Hook for managing domain search history in localStorage.

@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Section } from "@/lib/constants/sections";
 import {
   REVALIDATE_MIN_CERTIFICATES,
   REVALIDATE_MIN_DNS,
@@ -16,7 +17,6 @@ import {
   getDecayMultiplier,
   shouldStopRevalidation,
 } from "@/lib/revalidation";
-import type { Section } from "@/lib/types";
 
 const logger = createLogger({ source: "schedule" });
 

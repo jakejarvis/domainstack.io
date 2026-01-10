@@ -4,19 +4,16 @@ import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
+import type { ProviderCategory } from "@/lib/constants/providers";
+import type { HealthFilter, StatusFilter } from "@/lib/dashboard-utils";
 import { getHealthStatus } from "@/lib/dashboard-utils";
-import type {
-  HealthFilter,
-  ProviderCategory,
-  StatusFilter,
-  TrackedDomainWithDetails,
-} from "@/lib/types";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
-export type AvailableProvider = {
+export interface AvailableProvider {
   id: string;
   name: string;
   domain: string | null;
-};
+}
 
 export type AvailableProvidersByCategory = Record<
   ProviderCategory,

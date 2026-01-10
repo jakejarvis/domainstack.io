@@ -1,4 +1,4 @@
-import type { VerificationMethod } from "@/lib/types";
+import type { VerificationMethod } from "@/lib/constants/verification";
 
 export interface VerificationResult {
   verified: boolean;

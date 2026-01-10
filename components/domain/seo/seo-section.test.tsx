@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SeoResponse } from "@/lib/types";
+import type { SeoResponse } from "@/lib/types/domain/seo";
 import { render, screen } from "@/mocks/react";
 
 // Mock child components to isolate main component testing

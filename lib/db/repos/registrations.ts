@@ -4,10 +4,10 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { domains, providers, registrations } from "@/lib/db/schema";
 import type {
-  RegistrationContacts,
-  RegistrationNameservers,
+  RegistrationContact,
+  RegistrationNameserver,
   RegistrationResponse,
-} from "@/lib/types";
+} from "@/lib/types/domain/registration";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
 
@@ -16,7 +16,7 @@ export async function upsertRegistration(params: RegistrationInsert) {
 
   // Normalize nameserver hosts (trim + lowercase)
   // Filter out any nameservers with missing/invalid host values
-  const normalizedNameservers: RegistrationNameservers = (nameservers ?? [])
+  const normalizedNameservers: RegistrationNameserver[] = (nameservers ?? [])
     .filter((n) => n?.host && typeof n.host === "string")
     .map((n) => ({
       host: n.host.trim().toLowerCase(),
@@ -85,7 +85,8 @@ export async function getRegistrationCached(
           domain: null as string | null,
         };
 
-    const contactsArray: RegistrationContacts = row.registration.contacts ?? [];
+    const contactsArray: RegistrationContact[] =
+      row.registration.contacts ?? [];
     const nameserversArray = row.registration.nameservers ?? [];
 
     const response: RegistrationResponse = {

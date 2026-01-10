@@ -20,7 +20,7 @@ import type {
   RobotsTxt,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/types";
+} from "@/lib/types/domain/seo";
 
 const logger = createLogger({ source: "seo-lookup" });
 

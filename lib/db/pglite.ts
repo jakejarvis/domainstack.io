@@ -7,7 +7,10 @@ import * as schema from "@/lib/db/schema";
 const { pushSchema } =
   require("drizzle-kit/api") as typeof import("drizzle-kit/api");
 
-type DbBundle = { db: ReturnType<typeof drizzle>; client: PGlite };
+interface DbBundle {
+  db: ReturnType<typeof drizzle>;
+  client: PGlite;
+}
 let cached: DbBundle | null = null;
 let schemaApplied = false;
 

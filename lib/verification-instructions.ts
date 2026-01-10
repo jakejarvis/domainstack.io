@@ -6,14 +6,14 @@ import {
   HTML_FILE_DIR,
   META_TAG_NAME,
   VERIFICATION_METHODS,
+  type VerificationMethod,
 } from "@/lib/constants/verification";
 import type {
   DnsInstructions,
   HtmlFileInstructions,
   MetaTagInstructions,
   VerificationInstructions,
-  VerificationMethod,
-} from "@/lib/types";
+} from "@/lib/types/verification";
 
 /**
  * Build verification instructions for a single method.

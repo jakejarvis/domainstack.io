@@ -50,12 +50,10 @@ import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { useDashboardTableSort } from "@/hooks/use-dashboard-sort";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
+import type { ProviderCategory } from "@/lib/constants/providers";
 import { formatDateTimeUtc } from "@/lib/format";
-import type {
-  ProviderCategory,
-  ProviderInfo,
-  TrackedDomainWithDetails,
-} from "@/lib/types";
+import type { ProviderInfo } from "@/lib/types/provider";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
 /**

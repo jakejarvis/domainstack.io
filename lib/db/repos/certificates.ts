@@ -13,20 +13,20 @@ import {
 import type {
   Certificate,
   CertificatesResponse,
-  NotificationOverrides,
-} from "@/lib/types";
+} from "@/lib/types/domain/certificates";
+import type { NotificationOverrides } from "@/lib/types/notifications";
 import { findDomainByName } from "./domains";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
-export type UpsertCertificatesParams = {
+export interface UpsertCertificatesParams {
   domainId: string;
   chain: Array<
     Omit<CertificateInsert, "id" | "domainId" | "fetchedAt" | "expiresAt">
   >;
   fetchedAt: Date;
   expiresAt: Date; // policy window for revalidation (not cert validity)
-};
+}
 
 export async function replaceCertificates(params: UpsertCertificatesParams) {
   const { domainId } = params;
@@ -122,7 +122,7 @@ function safeAltNamesArray(value: unknown): string[] {
   return [];
 }
 
-export type TrackedDomainCertificate = {
+export interface TrackedDomainCertificate {
   trackedDomainId: string;
   userId: string;
   domainId: string;
@@ -132,7 +132,7 @@ export type TrackedDomainCertificate = {
   issuer: string;
   userEmail: string;
   userName: string;
-};
+}
 
 /**
  * Get tracked domain IDs that have certificates.

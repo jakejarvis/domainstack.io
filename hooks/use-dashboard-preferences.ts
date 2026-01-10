@@ -11,11 +11,11 @@ import {
   type DashboardViewModeOptions,
 } from "@/lib/dashboard-utils";
 
-type DashboardPreferences = {
+interface DashboardPreferences {
   viewMode: DashboardViewModeOptions;
   pageSize: DashboardPageSizeOptions;
   columnVisibility: Record<string, boolean>;
-};
+}
 
 /**
  * Validates that a value is in the allowed options array.

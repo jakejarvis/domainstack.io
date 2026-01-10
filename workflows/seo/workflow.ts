@@ -5,7 +5,7 @@ import type {
   RobotsTxt,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/types";
+} from "@/lib/types/domain/seo";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 export interface SeoWorkflowInput {

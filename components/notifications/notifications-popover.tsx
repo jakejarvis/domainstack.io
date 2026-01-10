@@ -30,7 +30,7 @@ import {
 import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
-import type { NotificationData } from "@/lib/types";
+import type { NotificationData } from "@/lib/types/notifications";
 
 export function NotificationsPopover() {
   const router = useRouter();

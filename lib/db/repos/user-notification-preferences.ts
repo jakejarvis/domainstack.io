@@ -3,7 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { userNotificationPreferences } from "@/lib/db/schema";
-import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/types";
+import type { UserNotificationPreferences as UserNotificationPreferencesData } from "@/lib/types/notifications";
 
 function mapPreferences(
   row: typeof userNotificationPreferences.$inferSelect,

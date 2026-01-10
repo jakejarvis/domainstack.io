@@ -71,7 +71,7 @@ export function DashboardHeader({
 
       {/* Add Domain button - top-right on mobile, far right on desktop */}
       <div className="lg:order-last">
-        {!subscription?.canAddMore ? (
+        {subscription?.canAddMore ? (
           <Button
             nativeButton={false}
             render={

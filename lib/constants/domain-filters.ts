@@ -1,4 +1,4 @@
-import type { HealthFilter } from "@/lib/types";
+import type { HealthFilter } from "@/lib/dashboard-utils";
 
 /**
  * Domain filter constants for dashboard.

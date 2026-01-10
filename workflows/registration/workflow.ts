@@ -1,5 +1,5 @@
 import { FatalError, RetryableError } from "workflow";
-import type { RegistrationResponse } from "@/lib/types";
+import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
 export interface RegistrationWorkflowInput {
   domain: string;

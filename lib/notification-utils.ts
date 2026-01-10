@@ -7,13 +7,13 @@ import {
   IdCardLanyard,
   ShieldAlert,
 } from "lucide-react";
+import type { NotificationType } from "@/lib/constants/notifications";
 import {
   CERTIFICATE_EXPIRY_THRESHOLDS,
   CERTIFICATE_THRESHOLD_TO_TYPE,
   DOMAIN_EXPIRY_THRESHOLDS,
   DOMAIN_THRESHOLD_TO_TYPE,
 } from "@/lib/constants/notifications";
-import type { NotificationType } from "@/lib/types";
 
 /**
  * Generate a stable idempotency key for Resend.
@@ -69,27 +69,22 @@ export type NotificationSeverity = "critical" | "warning" | "info";
 
 /** Map notification types to icons */
 export function getNotificationIcon(type: string) {
-  const notificationType = type as NotificationType;
-
-  if (notificationType.startsWith("domain_expiry")) {
+  if (type.startsWith("domain_expiry")) {
     return CalendarDays;
   }
-  if (notificationType.startsWith("certificate_expiry")) {
+  if (type.startsWith("certificate_expiry")) {
     return ShieldAlert;
   }
-  if (notificationType === "certificate_change") {
+  if (type === "certificate_change") {
     return FingerprintPattern;
   }
-  if (notificationType === "provider_change") {
+  if (type === "provider_change") {
     return EthernetPort;
   }
-  if (notificationType === "registration_change") {
+  if (type === "registration_change") {
     return IdCardLanyard;
   }
-  if (
-    notificationType === "verification_failing" ||
-    notificationType === "verification_revoked"
-  ) {
+  if (type === "verification_failing" || type === "verification_revoked") {
     return AlertTriangle;
   }
 
@@ -98,23 +93,21 @@ export function getNotificationIcon(type: string) {
 
 /** Map notification types to severity for color coding */
 export function getNotificationSeverity(type: string): NotificationSeverity {
-  const notificationType = type as NotificationType;
-
   // Critical: Expires in 1 day, verification revoked
   if (
-    notificationType === "domain_expiry_1d" ||
-    notificationType === "certificate_expiry_1d" ||
-    notificationType === "verification_revoked"
+    type === "domain_expiry_1d" ||
+    type === "certificate_expiry_1d" ||
+    type === "verification_revoked"
   ) {
     return "critical";
   }
 
   // Warning: Expires in 7 days or less, verification failing
   if (
-    notificationType === "domain_expiry_7d" ||
-    notificationType === "certificate_expiry_3d" ||
-    notificationType === "certificate_expiry_7d" ||
-    notificationType === "verification_failing"
+    type === "domain_expiry_7d" ||
+    type === "certificate_expiry_3d" ||
+    type === "certificate_expiry_7d" ||
+    type === "verification_failing"
   ) {
     return "warning";
   }

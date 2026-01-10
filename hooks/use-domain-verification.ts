@@ -2,15 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
+import type { VerificationMethod } from "@/lib/constants/verification";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
-import type { ResumeDomainData, VerificationMethod } from "@/lib/types";
+import type { ResumeDomainData } from "@/lib/types/verification";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type UseDomainVerificationOptions = {
+interface UseDomainVerificationOptions {
   /** Whether the verification flow is open/visible (default: true for page usage) */
   open?: boolean;
   /** Handler when the flow should close (required for dialog, optional for page) */
@@ -19,7 +20,7 @@ type UseDomainVerificationOptions = {
   resumeDomain?: ResumeDomainData | null;
   /** Pre-fill the domain input (e.g., from domain report "Track" button) */
   prefillDomain?: string;
-};
+}
 
 // ============================================================================
 // State Machine

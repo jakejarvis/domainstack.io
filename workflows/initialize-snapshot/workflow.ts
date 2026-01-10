@@ -1,8 +1,6 @@
-import type {
-  CertificatesResponse,
-  HostingResponse,
-  RegistrationResponse,
-} from "@/lib/types";
+import type { CertificatesResponse } from "@/lib/types/domain/certificates";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
+import type { RegistrationResponse } from "@/lib/types/domain/registration";
 import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
 import { fetchDnsData } from "@/workflows/shared/fetch-dns";
 import { fetchHeadersData } from "@/workflows/shared/fetch-headers";

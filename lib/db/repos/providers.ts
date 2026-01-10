@@ -12,11 +12,11 @@ import { slugify } from "@/lib/slugify";
 
 const logger = createLogger({ source: "providers" });
 
-type ResolveProviderInput = {
+interface ResolveProviderInput {
   category: (typeof providerCategory.enumValues)[number];
   domain?: string | null;
   name?: string | null;
-};
+}
 
 /**
  * Get provider by ID

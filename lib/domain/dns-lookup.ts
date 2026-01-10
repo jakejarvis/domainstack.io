@@ -6,6 +6,7 @@
  */
 
 import { isCloudflareIp } from "@/lib/cloudflare";
+import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import {
   DNS_TYPE_NUMBERS,
@@ -14,9 +15,7 @@ import {
 } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { ttlForDnsRecord } from "@/lib/ttl";
-
-// Note: Database imports are dynamic to avoid initialization issues in tests
-import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
+import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 
 const logger = createLogger({ source: "dns-records" });
 

@@ -1,17 +1,22 @@
 import "server-only";
 
 import { and, eq, gt, isNotNull } from "drizzle-orm";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
+import { PLAN_QUOTAS, type PLANS } from "@/lib/constants/plan-quotas";
 import { db } from "@/lib/db/client";
 import { userSubscriptions, users } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import type { Subscription } from "@/lib/types";
 
 const logger = createLogger({ source: "user-subscription" });
 
-export type UserSubscriptionData = {
+/** Plan type derived from PLANS constant (single source of truth). */
+type Plan = (typeof PLANS)[number];
+
+export interface UserSubscriptionData {
   userId: string;
-} & Pick<Subscription, "plan" | "planQuota" | "endsAt">;
+  plan: Plan;
+  planQuota: number;
+  endsAt: Date | null;
+}
 
 /**
  * Get user's subscription data.
@@ -54,7 +59,7 @@ export async function getUserSubscription(
  */
 export async function updateUserTier(
   userId: string,
-  tier: Subscription["plan"],
+  tier: Plan,
 ): Promise<void> {
   const updated = await db
     .update(userSubscriptions)
@@ -131,14 +136,14 @@ export async function createSubscription(userId: string): Promise<void> {
   }
 }
 
-export type UserWithEndingSubscription = {
+export interface UserWithEndingSubscription {
   userId: string;
   userName: string;
   userEmail: string;
   endsAt: Date;
   /** Last subscription expiry notification threshold sent (7, 3, or 1 days). Null if none sent. */
   lastExpiryNotification: number | null;
-};
+}
 
 /**
  * Get user IDs with ending subscriptions (lightweight query for scheduler).

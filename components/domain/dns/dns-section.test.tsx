@@ -32,7 +32,7 @@ describe("DnsSection", () => {
       { type: "MX", name: "mx", value: "mx.example.com", priority: 10 },
       { type: "TXT", name: "txt", value: "v=spf1" },
       { type: "NS", name: "ns", value: "ns1.example.com" },
-    ] as unknown as import("@/lib/types").DnsRecord[];
+    ] as unknown as import("@/lib/types/domain/dns").DnsRecord[];
 
     render(<DnsSection data={{ records }} />);
 
