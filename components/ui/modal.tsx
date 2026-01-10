@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,9 +33,19 @@ export function Modal({
   headerSlotClassName,
 }: ModalProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const initialPathnameRef = useRef(pathname);
+  const [isOpen, setIsOpen] = useState(true);
+
+  // Close modal when pathname changes (e.g., clicking a link inside the modal)
+  useEffect(() => {
+    if (pathname !== initialPathnameRef.current) {
+      setIsOpen(false);
+    }
+  }, [pathname]);
 
   return (
-    <Dialog open onOpenChange={() => router.back()}>
+    <Dialog open={isOpen} onOpenChange={() => router.back()}>
       <DialogContent
         className={cn(
           "mx-auto flex max-h-[85vh] w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl",
