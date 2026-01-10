@@ -341,6 +341,32 @@ Best practices for idempotent steps:
 - Check if work is already done before expensive operations
 - Use `startWithDeduplication` in tRPC routers to avoid duplicate workflows
 
+**Fetch in Workflows:**
+The SDK provides a durable `fetch` function that makes each fetch a separate step:
+```typescript
+import { fetch } from "workflow";
+
+async function myStep(): Promise<Data> {
+  "use step";
+  // Each fetch call becomes a durable sub-step - result is cached on retry
+  const response = await fetch("https://api.example.com/data");
+  return response.json();
+}
+```
+
+Current architecture uses `lib/safe-fetch.ts` and `lib/fetch.ts` for HTTP calls within steps. This approach:
+- **Pros:** Simpler code, fewer step overhead, works in both workflow and non-workflow contexts
+- **Cons:** Fetches inside a step are repeated if the step retries after the fetch succeeds
+
+When to use SDK's `fetch`:
+- Long-running fetches where you want to avoid repeating them on step retry
+- Fetches with significant side effects (rare in our codebase)
+
+When to use our fetch utilities (`safeFetch`, `fetchWithTimeoutAndRetry`):
+- Fast, idempotent network calls (DNS, headers, HTML)
+- Code that runs both in and out of workflow context
+- Batching multiple quick fetches in a single step
+
 **Reference**
 [Workflow DevKit docs](https://useworkflow.dev/llms.txt)
 
