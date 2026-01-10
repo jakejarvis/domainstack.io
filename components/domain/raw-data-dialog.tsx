@@ -98,15 +98,18 @@ export function RawDataDialog({
                 <div
                   // biome-ignore lint/suspicious/noArrayIndexKey: static list, no reordering
                   key={i}
-                  className="col-span-2 grid grid-cols-subgrid rounded px-1 py-[3px] hover:bg-muted/50"
+                  tabIndex={0}
+                  className="col-span-2 grid grid-cols-subgrid rounded px-1 py-[3px] hover:bg-muted/50 focus:bg-muted/50 focus:outline-none active:bg-muted/50"
                 >
                   <span className="select-none justify-self-end px-1 text-muted-foreground/70">
                     {i + 1}
                   </span>
                   <span
                     className={cn(
-                      "pr-1 pl-3",
-                      wrapLines ? "whitespace-pre-wrap" : "whitespace-pre",
+                      "pr-1 pl-3 min-w-0",
+                      wrapLines
+                        ? "whitespace-pre-wrap break-all"
+                        : "whitespace-pre",
                     )}
                   >
                     {line || "\u00A0"}
