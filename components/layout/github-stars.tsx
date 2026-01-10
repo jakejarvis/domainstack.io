@@ -1,4 +1,4 @@
-import { GitHubIcon } from "@/components/brand-icons";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG, USER_AGENT } from "@/lib/constants/app";
 
@@ -53,7 +53,7 @@ export async function GithubStars() {
           className="group inline-flex shrink-0 items-center gap-2"
           aria-label="Open GitHub repository"
         >
-          <GitHubIcon className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
+          <SiGithub className="flex size-3.5 shrink-0 transition-colors group-hover:text-foreground" />
           <span className="relative inline-block font-mono text-[13px] text-muted-foreground leading-none transition-colors group-hover:text-foreground">
             {label}
           </span>

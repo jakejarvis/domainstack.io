@@ -16,7 +16,7 @@ export function DomainUnregisteredCard({
   return (
     <div
       className="relative overflow-hidden rounded-3xl border border-black/10 bg-background/60 p-8 text-center shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
-      data-accent="pink"
+      data-accent="indigo"
     >
       <div
         aria-hidden

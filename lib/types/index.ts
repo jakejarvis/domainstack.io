@@ -6,7 +6,6 @@ export * from "./changes";
 export * from "./domain";
 export * from "./domain-filters";
 export * from "./notifications";
-export * from "./pricing";
 export * from "./provider";
 export * from "./provider-ref";
 export * from "./rdap";

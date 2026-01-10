@@ -1,3 +1,10 @@
+import {
+  SiApple,
+  SiAppstore,
+  SiGoogle,
+  SiImessage,
+  SiProton,
+} from "@icons-pack/react-simple-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import {
@@ -8,16 +15,8 @@ import {
   RefreshCw,
   ShieldAlert,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import {
-  AppleIcon,
-  AppStoreIcon,
-  ChatGPTIcon,
-  GoogleIcon,
-  MicrosoftIcon,
-  ProtonIcon,
-} from "@/components/brand-icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,27 +152,37 @@ export function CalendarInstructions({ className }: { className?: string }) {
       {
         id: "google",
         label: "Google",
-        icon: GoogleIcon,
+        icon: SiGoogle,
         // https://jamesdoc.com/blog/2024/webcal/
         href: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl.replace("https://", "webcal://"))}`,
       },
       {
         id: "apple",
         label: "macOS/iOS",
-        icon: AppleIcon,
+        icon: SiApple,
         // Apple uses webcal:// protocol which opens natively
         href: feedUrl.replace("https://", "webcal://"),
       },
       {
         id: "outlook",
         label: "Outlook",
-        icon: MicrosoftIcon,
+        icon: (props: React.SVGProps<SVGSVGElement>) => (
+          <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            role="img"
+            aria-label="Microsoft"
+            {...props}
+          >
+            <path d="M11.4 24H0V12.6h11.4zM24 24H12.6V12.6H24zM11.4 11.4H0V0h11.4zm12.6 0H12.6V0H24z" />
+          </svg>
+        ),
         href: `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl.replace("https://", "webcal://"))}`,
       },
       {
         id: "proton",
         label: "Proton",
-        icon: ProtonIcon,
+        icon: SiProton,
         // Proton doesn't support direct subscription URLs
         href: "https://proton.me/support/subscribe-to-external-calendar#subscribe-external-link",
       },
@@ -181,15 +190,6 @@ export function CalendarInstructions({ className }: { className?: string }) {
   }, []);
 
   const integrations = getIntegrations(feed?.feedUrl);
-
-  const gptUrl = useMemo(() => {
-    const url = new URL("https://chatgpt.com/");
-    url.searchParams.set(
-      "prompt",
-      "How do I subscribe to an ics calendar feed in Microsoft Bob?",
-    );
-    return url.toString();
-  }, []);
 
   return (
     <>
@@ -261,7 +261,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                     render={
                       <ButtonGroup className="@md/actions:col-span-1 col-span-2 flex w-full">
                         <Button variant="outline" className="flex-1">
-                          <AppStoreIcon className="text-muted-foreground" />
+                          <SiAppstore className="text-muted-foreground" />
                           Open In…
                         </Button>
                         <Button variant="outline" className="!px-2.5">
@@ -311,15 +311,17 @@ export function CalendarInstructions({ className }: { className?: string }) {
                     <DropdownMenuItem
                       render={
                         <a
-                          href={gptUrl}
+                          href={`https://t3.chat/new?${new URLSearchParams({
+                            q: "How do I subscribe to an ics calendar feed in Microsoft Bob?",
+                          })}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="justify-center text-[13px] text-foreground/90"
-                          aria-label="Ask ChatGPT"
+                          aria-label="Ask AI"
                         >
-                          <ChatGPTIcon />
+                          <SiImessage />
                           Other…
-                          <span className="sr-only">(Ask ChatGPT)</span>
+                          <span className="sr-only">(Ask AI)</span>
                         </a>
                       }
                     />

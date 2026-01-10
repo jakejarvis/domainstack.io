@@ -349,7 +349,6 @@ export function DashboardClient() {
     <div className="space-y-6">
       <DashboardHeader
         userName={session?.user?.name ?? ""}
-        subscription={subscription}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
       />
@@ -370,7 +369,7 @@ export function DashboardClient() {
       <SubscriptionEndingBanner />
 
       {/* Upgrade prompt when free user is near or at limit */}
-      {<UpgradeBanner />}
+      <UpgradeBanner />
 
       {/* Active domains view */}
       {activeTab === "active" && (

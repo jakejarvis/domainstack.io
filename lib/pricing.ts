@@ -1,6 +1,5 @@
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
-import type { PricingResponse } from "@/lib/types";
 
 const logger = createLogger({ source: "pricing" });
 
@@ -226,7 +225,13 @@ const providers: PricingProvider[] = [
  * Fetch domain pricing for the given TLD from all providers.
  * Returns pricing from all providers that have data for this TLD.
  */
-export async function getPricing(tld: string): Promise<PricingResponse> {
+export async function getPricing(tld: string): Promise<{
+  tld: string | null;
+  providers: Array<{
+    provider: string;
+    price: string;
+  }>;
+}> {
   const normalizedTld = (tld ?? "").trim().toLowerCase().replace(/^\./, "");
   if (!normalizedTld) return { tld: null, providers: [] };
 

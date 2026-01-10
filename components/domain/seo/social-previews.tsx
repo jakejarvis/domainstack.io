@@ -1,13 +1,7 @@
+import { SiDiscord, SiFacebook, SiX } from "@icons-pack/react-simple-icons";
 import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import {
-  DiscordIcon,
-  FacebookIcon,
-  LinkedinIcon,
-  SlackIcon,
-  TwitterIcon,
-} from "@/components/brand-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type SocialPreviewProvider =
@@ -44,23 +38,41 @@ export function SocialPreviews({
       >
         <TabsList className="h-11 gap-1 md:justify-start">
           <TabsTrigger value="twitter" data-1p-ignore>
-            <TwitterIcon className="size-4 md:size-3.5" aria-hidden />
+            <SiX className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Twitter</span>
           </TabsTrigger>
           <TabsTrigger value="facebook" data-1p-ignore>
-            <FacebookIcon className="size-4 md:size-3.5" aria-hidden />
+            <SiFacebook className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Facebook</span>
           </TabsTrigger>
           <TabsTrigger value="linkedin" data-1p-ignore>
-            <LinkedinIcon className="size-4 md:size-3.5" aria-hidden />
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="size-4 md:size-3.5"
+              role="img"
+              aria-label="Linkedin"
+              aria-hidden
+            >
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.06 2.06 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065m1.782 13.019H3.555V9h3.564zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z" />
+            </svg>
             <span className="hidden text-[13px] md:inline">LinkedIn</span>
           </TabsTrigger>
           <TabsTrigger value="discord" data-1p-ignore>
-            <DiscordIcon className="size-4 md:size-3.5" aria-hidden />
+            <SiDiscord className="size-4 md:size-3.5" aria-hidden />
             <span className="hidden text-[13px] md:inline">Discord</span>
           </TabsTrigger>
           <TabsTrigger value="slack" data-1p-ignore>
-            <SlackIcon className="size-4 md:size-3.5" aria-hidden />
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="size-4 md:size-3.5"
+              role="img"
+              aria-label="Slack"
+              aria-hidden
+            >
+              <path d="M5.042 15.165a2.53 2.53 0 0 1-2.52 2.523A2.53 2.53 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.53 2.53 0 0 1 8.834 24a2.53 2.53 0 0 1-2.521-2.522zM8.834 5.042a2.53 2.53 0 0 1-2.521-2.52A2.53 2.53 0 0 1 8.834 0a2.53 2.53 0 0 1 2.521 2.522v2.52zm0 1.271a2.53 2.53 0 0 1 2.521 2.521 2.53 2.53 0 0 1-2.521 2.521H2.522A2.53 2.53 0 0 1 0 8.834a2.53 2.53 0 0 1 2.522-2.521zm10.122 2.521a2.53 2.53 0 0 1 2.522-2.521A2.53 2.53 0 0 1 24 8.834a2.53 2.53 0 0 1-2.522 2.521h-2.522zm-1.268 0a2.53 2.53 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.53 2.53 0 0 1 2.523 2.522zm-2.523 10.122a2.53 2.53 0 0 1 2.523 2.522A2.53 2.53 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522zm0-1.268a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.53 2.53 0 0 1-2.522 2.523z" />
+            </svg>
             <span className="hidden text-[13px] md:inline">Slack</span>
           </TabsTrigger>
         </TabsList>

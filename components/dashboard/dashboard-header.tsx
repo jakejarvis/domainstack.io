@@ -16,22 +16,22 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
-import type { Subscription } from "@/lib/types";
 
 type DashboardHeaderProps = {
   userName: string;
-  subscription?: Subscription;
   viewMode: DashboardViewModeOptions;
   onViewModeChange: (mode: DashboardViewModeOptions) => void;
 };
 
 export function DashboardHeader({
   userName,
-  subscription,
   viewMode,
   onViewModeChange,
 }: DashboardHeaderProps) {
+  const { subscription, handleCheckout } = useSubscription();
+
   return (
     <div className="grid grid-cols-[1fr_auto] items-center gap-3 lg:flex lg:justify-between">
       {/* Welcome message */}
@@ -71,7 +71,7 @@ export function DashboardHeader({
 
       {/* Add Domain button - top-right on mobile, far right on desktop */}
       <div className="lg:order-last">
-        {subscription?.canAddMore ? (
+        {!subscription?.canAddMore ? (
           <Button
             nativeButton={false}
             render={
@@ -94,9 +94,17 @@ export function DashboardHeader({
               }
             />
             <ResponsiveTooltipContent>
-              {subscription?.plan === "free"
-                ? "Upgrade to add more domains"
-                : "Domain limit reached"}
+              {subscription?.plan === "free" ? (
+                <Button
+                  variant="link"
+                  onClick={handleCheckout}
+                  className="h-0 p-0 font-normal text-background text-xs"
+                >
+                  Upgrade to add more domains
+                </Button>
+              ) : (
+                "Domain limit reached"
+              )}
             </ResponsiveTooltipContent>
           </ResponsiveTooltip>
         )}

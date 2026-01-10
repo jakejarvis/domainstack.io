@@ -1,6 +1,6 @@
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import Link from "next/link";
 import { Suspense } from "react";
-import { GitHubIcon } from "@/components/brand-icons";
 import { AppHeaderClientButtons } from "@/components/layout/app-header-client-buttons";
 import { AppHeaderGrid } from "@/components/layout/app-header-grid";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
@@ -30,7 +30,7 @@ export function AppHeader() {
           <Suspense
             fallback={
               <div className="mr-1.5 ml-2.5 inline-flex shrink-0 items-center gap-2">
-                <GitHubIcon className="flex size-3.5 shrink-0" />
+                <SiGithub className="flex size-3.5 shrink-0" />
                 <Skeleton className="h-[15px] w-[28px]" />
               </div>
             }

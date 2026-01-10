@@ -134,6 +134,11 @@ const TOOLS = (
       buildUrl: (domain) =>
         `https://exchange.xforce.ibmcloud.com/url/${encodeURIComponent(domain)}`,
     },
+    {
+      name: "Traffic.cv",
+      faviconDomain: "traffic.cv",
+      buildUrl: (domain) => `https://traffic.cv/${encodeURIComponent(domain)}`,
+    },
   ] satisfies Tool[]
 ).toSorted((a, b) =>
   a.name.localeCompare(b.name, "en", { sensitivity: "base" }),

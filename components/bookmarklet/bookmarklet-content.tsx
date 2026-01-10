@@ -1,8 +1,8 @@
 "use client";
 
+import { SiRaycast } from "@icons-pack/react-simple-icons";
 import { Bookmark, Clapperboard, CornerLeftUp, Layers2 } from "lucide-react";
 import { toast } from "sonner";
-import { RaycastIcon } from "@/components/brand-icons";
 import {
   Accordion,
   AccordionContent,
@@ -145,7 +145,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         >
           <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
-              <RaycastIcon className="size-4" />
+              <SiRaycast className="size-4" />
               <span className="font-semibold leading-none">Raycast</span>
             </span>
           </AccordionTrigger>
@@ -184,7 +184,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                       )}`}
                       data-disable-progress
                     >
-                      <RaycastIcon />
+                      <SiRaycast />
                       Add to Raycast
                     </a>
                   }

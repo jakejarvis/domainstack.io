@@ -1,19 +1,18 @@
 import {
-  GitHubIcon,
-  GitLabIcon,
-  GoogleIcon,
-  VercelIcon,
-} from "@/components/brand-icons";
+  SiGithub,
+  SiGitlab,
+  SiGoogle,
+  SiVercel,
+} from "@icons-pack/react-simple-icons";
 
 /**
  * OAuth provider constants for better-auth social providers.
  *
  * To add a new provider:
  * 1. Add the provider config to OAUTH_PROVIDERS
- * 2. Add icon to components/brand-icons.tsx
- * 3. Add env vars (CLIENT_ID, CLIENT_SECRET) to .env.local
- * 4. Update lib/auth.ts socialProviders config
- * 5. Update env var validation in lib/auth.ts
+ * 2. Add env vars (CLIENT_ID, CLIENT_SECRET) to .env.local
+ * 3. Update lib/auth.ts socialProviders config
+ * 4. Update env var validation in lib/auth.ts
  */
 
 export interface OAuthProvider {
@@ -39,25 +38,25 @@ const OAUTH_PROVIDERS: OAuthProvider[] = [
   {
     id: "github",
     name: "GitHub",
-    icon: GitHubIcon,
+    icon: SiGithub,
     enabled: process.env.NEXT_PUBLIC_GITHUB_OAUTH_ENABLED === "true",
   },
   {
     id: "gitlab",
     name: "GitLab",
-    icon: GitLabIcon,
+    icon: SiGitlab,
     enabled: process.env.NEXT_PUBLIC_GITLAB_OAUTH_ENABLED === "true",
   },
   {
     id: "google",
     name: "Google",
-    icon: GoogleIcon,
+    icon: SiGoogle,
     enabled: process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED === "true",
   },
   {
     id: "vercel",
     name: "Vercel",
-    icon: VercelIcon,
+    icon: SiVercel,
     enabled: process.env.NEXT_PUBLIC_VERCEL_OAUTH_ENABLED === "true",
   },
 ];

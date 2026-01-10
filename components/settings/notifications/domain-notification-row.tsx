@@ -113,9 +113,9 @@ export function DomainNotificationRow({
       </div>
 
       <CollapsibleContent>
-        <div className="space-y-1 px-1 pb-1">
+        <div className="space-y-1 p-1">
           {/* Desktop Headers */}
-          <div className="hidden items-center justify-end gap-6 px-2 pb-1 font-medium text-foreground/75 text-xs sm:flex">
+          <div className="hidden items-center justify-end gap-6 px-2 py-1 font-medium text-foreground/75 text-xs sm:flex">
             <div className="w-16 text-center">Web</div>
             <div className="w-16 text-center">Email</div>
           </div>
