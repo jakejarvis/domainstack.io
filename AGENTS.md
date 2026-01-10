@@ -297,6 +297,37 @@ npx workflow web
 npx workflow inspect runs
 ```
 
+**Concurrency Handling:**
+The Workflow SDK uses at-least-once delivery, which means steps can be executed multiple times concurrently. When multiple workers race to complete the same step, a 409 conflict error occurs. Use `lib/workflow/` utilities to handle this gracefully:
+
+```typescript
+import { start } from "workflow/api";
+import { withConcurrencyHandling } from "@/lib/workflow";
+
+// Wrap workflow returnValue to handle 409 conflicts gracefully
+const run = await start(myWorkflow, [input]);
+const result = await withConcurrencyHandling(run.returnValue, {
+  domain: "example.com",
+  workflow: "my-workflow",
+});
+
+// result is undefined if another worker already handled it
+if (result === undefined) {
+  return; // Safe to return - work was not lost
+}
+```
+
+Available utilities:
+- `isConcurrencyConflict(error)` - Check if error is a 409 step conflict
+- `withConcurrencyHandling(promise, context)` - Wrap async operations to handle conflicts gracefully
+- `handleStepConcurrencyError(error, context)` - Handle errors within step functions
+
+Best practices for idempotent steps:
+- Use database upserts instead of inserts (e.g., `onConflictDoUpdate`)
+- Use idempotency keys for external API calls (e.g., Resend emails use `stepId`)
+- Check if work is already done before expensive operations
+- Let 409 errors from the SDK be handled by `withConcurrencyHandling`
+
 **Reference**
 [Workflow DevKit docs](https://useworkflow.dev/llms.txt)
 

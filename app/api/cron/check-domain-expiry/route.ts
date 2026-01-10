@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
+import { withConcurrencyHandling } from "@/lib/workflow";
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });
@@ -43,7 +44,11 @@ export async function GET(request: Request) {
             const run = await start(domainExpiryWorkflow, [
               { trackedDomainId: id },
             ]);
-            await run.returnValue;
+            // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+            await withConcurrencyHandling(run.returnValue, {
+              trackedDomainId: id,
+              workflow: "domain-expiry",
+            });
             return { id, success: true };
           } catch (err) {
             logger.error(

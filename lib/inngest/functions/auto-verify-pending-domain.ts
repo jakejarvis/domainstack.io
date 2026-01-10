@@ -3,6 +3,7 @@ import "server-only";
 import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { withConcurrencyHandling } from "@/lib/workflow";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 
 /**
@@ -30,7 +31,12 @@ export const autoVerifyPendingDomain = inngest.createFunction(
       const run = await start(autoVerifyWorkflow, [
         { trackedDomainId, domainName },
       ]);
-      return await run.returnValue;
+      // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+      return await withConcurrencyHandling(run.returnValue, {
+        trackedDomainId,
+        domainName,
+        workflow: "auto-verify",
+      });
     });
 
     return result;

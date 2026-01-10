@@ -3,6 +3,7 @@ import "server-only";
 import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { withConcurrencyHandling } from "@/lib/workflow";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 
 /**
@@ -22,7 +23,12 @@ export const initializeSnapshot = inngest.createFunction(
       const run = await start(initializeSnapshotWorkflow, [
         { trackedDomainId, domainId },
       ]);
-      return await run.returnValue;
+      // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+      return await withConcurrencyHandling(run.returnValue, {
+        trackedDomainId,
+        domainId,
+        workflow: "initialize-snapshot",
+      });
     });
 
     return result;
