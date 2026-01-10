@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/empty";
 import type { SelectionState } from "@/hooks/use-dashboard-selection";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
-import type { TrackedDomainWithDetails } from "@/lib/types";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type DashboardContentProps = {
   viewMode: DashboardViewModeOptions;

@@ -1,14 +1,16 @@
 import { getStepMetadata } from "workflow";
 import type {
   CertificateChange,
-  CertificateSnapshotData,
-  CertificatesResponse,
   HostingChange,
-  HostingResponse,
   RegistrationChange,
-  RegistrationResponse,
+} from "@/lib/change-detection";
+import type {
+  CertificateSnapshotData,
   RegistrationSnapshotData,
-} from "@/lib/types";
+} from "@/lib/db/repos/snapshots";
+import type { CertificatesResponse } from "@/lib/types/domain/certificates";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
+import type { RegistrationResponse } from "@/lib/types/domain/registration";
 import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
 import { fetchDnsData } from "@/workflows/shared/fetch-dns";
 import { fetchHeadersData } from "@/workflows/shared/fetch-headers";

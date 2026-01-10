@@ -1,4 +1,4 @@
-import type { Section } from "@/lib/types";
+import type { Section } from "@/lib/constants/sections";
 import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
 import { fetchDnsData } from "@/workflows/shared/fetch-dns";
 import { fetchHeadersData } from "@/workflows/shared/fetch-headers";

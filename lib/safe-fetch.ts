@@ -75,14 +75,14 @@ type SafeFetchOptionsWithHead = BaseSafeFetchOptions & {
 
 type SafeFetchOptions = SafeFetchOptionsWithGet | SafeFetchOptionsWithHead;
 
-type SafeFetchResult = {
+interface SafeFetchResult {
   buffer: Buffer;
   contentType: string | null;
   finalUrl: string;
   status: number;
   ok: boolean;
   headers: Record<string, string>;
-};
+}
 
 /**
  * Fetch a user-controlled asset while protecting against SSRF, redirect-based

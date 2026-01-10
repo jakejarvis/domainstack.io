@@ -1,4 +1,4 @@
-import type { SeoResponse } from "@/lib/types";
+import type { SeoResponse } from "@/lib/types/domain/seo";
 
 export interface FetchSeoResult {
   success: boolean;

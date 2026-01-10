@@ -13,7 +13,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { HostingResponse } from "@/lib/types";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
 import { cn } from "@/lib/utils";
 
 function formatLocation(geo: HostingResponse["geo"]): string {

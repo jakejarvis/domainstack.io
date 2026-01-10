@@ -1,7 +1,5 @@
 /**
- * Domain types - Plain TypeScript interfaces.
- *
- * These types are for domain-related data structures.
+ * Combined domain response type.
  */
 
 import type { CertificatesResponse } from "./certificates";
@@ -19,10 +17,3 @@ export interface DomainResponse {
   headers: HeadersResponse;
   seo: SeoResponse;
 }
-
-export * from "./certificates";
-export * from "./dns";
-export * from "./headers";
-export * from "./hosting";
-export * from "./registration";
-export * from "./seo";

@@ -9,7 +9,7 @@ import type {
   RobotsTxt,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/types";
+} from "@/lib/types/domain/seo";
 import { findDomainByName } from "./domains";
 
 type SeoInsert = InferInsertModel<typeof seoTable>;

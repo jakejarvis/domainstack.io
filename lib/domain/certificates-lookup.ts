@@ -10,7 +10,10 @@ import * as tls from "node:tls";
 import { isExpectedDnsError } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { isExpectedTlsError, parseAltNames, toName } from "@/lib/tls-utils";
-import type { Certificate, CertificatesResponse } from "@/lib/types";
+import type {
+  Certificate,
+  CertificatesResponse,
+} from "@/lib/types/domain/certificates";
 
 const logger = createLogger({ source: "certificates-lookup" });
 

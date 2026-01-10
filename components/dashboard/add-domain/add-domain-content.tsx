@@ -27,7 +27,7 @@ import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
-import type { ResumeDomainData } from "@/lib/types";
+import type { ResumeDomainData } from "@/lib/types/verification";
 
 export type AddDomainContentProps = {
   /** Additional classes for the wrapper */

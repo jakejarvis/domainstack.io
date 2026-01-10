@@ -3,11 +3,9 @@ import { BadgeCheck, HatGlasses, Lock, LockOpen } from "lucide-react";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Spinner } from "@/components/ui/spinner";
-import type {
-  DnsRecord,
-  ProviderCategory,
-  RegistrationContacts,
-} from "@/lib/types";
+import type { ProviderCategory } from "@/lib/constants/providers";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { RegistrationContact } from "@/lib/types/domain/registration";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;
@@ -23,7 +21,7 @@ type ProviderTooltipContentProps = {
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
-    contacts: unknown;
+    contacts: RegistrationContact[] | null;
   };
 };
 
@@ -71,7 +69,7 @@ export function ProviderTooltipContent({
   const registrant =
     registrantInfo?.contacts && !registrantInfo.privacyEnabled
       ? (() => {
-          const contacts = registrantInfo.contacts as RegistrationContacts;
+          const { contacts } = registrantInfo;
           const registrantContact = contacts.find(
             (c) => c.type === "registrant",
           );

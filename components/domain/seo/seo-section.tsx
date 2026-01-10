@@ -12,7 +12,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { SeoResponse } from "@/lib/types";
+import type { SeoResponse } from "@/lib/types/domain/seo";
 
 export function SeoSection({
   domain,

@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import type { ProviderCategory } from "@/lib/constants/providers";
 import { useTRPC } from "@/lib/trpc/client";
-import type { DnsRecord, ProviderCategory, ProviderInfo } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { RegistrationContact } from "@/lib/types/domain/registration";
+import type { ProviderInfo } from "@/lib/types/provider";
 
-type UseProviderTooltipDataParams = {
+interface UseProviderTooltipDataParams {
   provider: ProviderInfo;
   trackedDomainId?: string;
   providerType?: ProviderCategory;
-};
+}
 
-type ProviderTooltipData = {
+interface ProviderTooltipData {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   shouldShowTooltip: boolean;
@@ -23,9 +26,9 @@ type ProviderTooltipData = {
   transferLock?: boolean | null;
   registrantInfo?: {
     privacyEnabled: boolean | null;
-    contacts: unknown;
+    contacts: RegistrationContact[] | null;
   };
-};
+}
 
 /**
  * Hook to manage provider tooltip data including lazy loading DNS records
@@ -91,7 +94,7 @@ export function useProviderTooltipData({
   let lazyLoadedRegistrationSource: "rdap" | "whois" | null | undefined;
   let lazyLoadedTransferLock: boolean | null | undefined;
   let lazyLoadedRegistrantInfo:
-    | { privacyEnabled: boolean | null; contacts: unknown }
+    | { privacyEnabled: boolean | null; contacts: RegistrationContact[] | null }
     | undefined;
 
   if (domainDetails && providerType) {

@@ -1,6 +1,6 @@
 import { differenceInDays, format } from "date-fns";
 import { FatalError } from "workflow";
-import type { NotificationType } from "@/lib/types";
+import type { NotificationType } from "@/lib/constants/notifications";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;

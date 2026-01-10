@@ -1,5 +1,5 @@
 import { FatalError } from "workflow";
-import type { VerificationMethod } from "@/lib/types";
+import type { VerificationMethod } from "@/lib/constants/verification";
 import { verifyDomainOwnership } from "@/workflows/shared/verify-domain";
 
 export interface VerifyPendingWorkflowInput {

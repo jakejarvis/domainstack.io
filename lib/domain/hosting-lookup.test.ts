@@ -10,7 +10,8 @@ import {
   it,
   vi,
 } from "vitest";
-import type { DnsRecord, Header } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { Header } from "@/lib/types/domain/headers";
 import { server } from "@/mocks/server";
 
 // Mock GeoIP API

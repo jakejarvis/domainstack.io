@@ -14,7 +14,7 @@ import {
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { sections } from "@/lib/constants/sections";
 import { normalizeDomainInput } from "@/lib/domain-utils";
-import type { HeadersResponse } from "@/lib/types";
+import type { HeadersResponse } from "@/lib/types/domain/headers";
 
 /**
  * Extract domain from a Location header value.

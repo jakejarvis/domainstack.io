@@ -1,5 +1,5 @@
 import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
-import type { Header } from "@/lib/types";
+import type { Header } from "@/lib/types/domain/headers";
 
 /**
  * Normalize header names (trim + lowercase) then sort important headers first.

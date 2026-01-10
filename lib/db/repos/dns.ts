@@ -1,15 +1,16 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
+import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
-import type { DnsRecord, DnsRecordsResponse, DnsRecordType } from "@/lib/types";
+import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 import { findDomainByName } from "./domains";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
 
-export type UpsertDnsParams = {
+export interface UpsertDnsParams {
   domainId: string;
   resolver: string;
   fetchedAt: Date;
@@ -23,7 +24,7 @@ export type UpsertDnsParams = {
       >
     >
   >;
-};
+}
 
 /**
  * Generate a unique key for a DNS record.

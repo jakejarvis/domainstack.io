@@ -16,9 +16,9 @@ import {
 } from "@/lib/providers/detection";
 import type { Provider } from "@/lib/providers/parser";
 import { ttlForHosting } from "@/lib/ttl";
-
-// Note: Database imports are dynamic to avoid initialization issues in tests
-import type { DnsRecord, Header, HostingResponse } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { Header } from "@/lib/types/domain/headers";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
 
 const logger = createLogger({ source: "hosting-lookup" });
 

@@ -15,12 +15,12 @@ type NotificationList = inferProcedureOutput<
 
 type InfiniteNotificationData = InfiniteData<NotificationList>;
 
-type MutationContext = {
+interface MutationContext {
   previousCount?: number;
   previousQueries?: Array<
     [readonly unknown[], InfiniteNotificationData | undefined]
   >;
-};
+}
 
 /**
  * Shared mutations for notifications (mark as read, mark all as read).

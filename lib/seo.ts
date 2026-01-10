@@ -8,7 +8,7 @@ import type {
   SeoMeta,
   SeoPreview,
   TwitterMeta,
-} from "@/lib/types";
+} from "@/lib/types/domain/seo";
 
 export function sanitizeText(input: unknown): string {
   let out = String(input ?? "");

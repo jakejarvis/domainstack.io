@@ -1,5 +1,5 @@
 import { FatalError, RetryableError } from "workflow";
-import type { DnsRecordsResponse } from "@/lib/types";
+import type { DnsRecordsResponse } from "@/lib/types/domain/dns";
 
 export interface DnsWorkflowInput {
   domain: string;

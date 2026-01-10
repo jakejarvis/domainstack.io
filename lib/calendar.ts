@@ -3,19 +3,19 @@ import "server-only";
 import crypto from "node:crypto";
 import ical, { ICalCalendarMethod } from "ical-generator";
 import { BASE_URL } from "@/lib/constants/app";
-import type { TrackedDomainWithDetails } from "@/lib/types";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 /**
  * Result of generating a calendar feed.
  */
-export type CalendarFeedResult = {
+export interface CalendarFeedResult {
   /** The ICS content as a string */
   icsContent: string;
   /** ETag for caching (based on domain data) */
   etag: string;
   /** Number of events in the calendar */
   eventCount: number;
-};
+}
 
 /**
  * Generate an iCalendar feed for domain expirations.

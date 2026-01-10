@@ -3,38 +3,58 @@
  */
 
 import type { REGISTRATION_SOURCES } from "@/lib/constants/registration";
-import type { ProviderRef } from "../provider-ref";
-import type { RegistrationContact } from "../rdap";
+import type { ProviderRef } from "./provider-ref";
 
 type RegistrationSource = (typeof REGISTRATION_SOURCES)[number];
 
 /**
+ * Type of registration contact.
+ */
+export type RegistrationContactType =
+  | "registrant"
+  | "admin"
+  | "tech"
+  | "billing"
+  | "abuse"
+  | "registrar"
+  | "reseller"
+  | "unknown";
+
+/**
+ * Registration contact information from WHOIS/RDAP.
+ */
+export interface RegistrationContact {
+  type: RegistrationContactType;
+  name?: string;
+  organization?: string;
+  email?: string | string[];
+  phone?: string | string[];
+  fax?: string | string[];
+  street?: string[];
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  countryCode?: string;
+}
+
+/**
  * Nameserver information.
  */
-interface RegistrationNameserver {
+export interface RegistrationNameserver {
   host: string;
   ipv4?: string[];
   ipv6?: string[];
 }
 
 /**
- * Array of nameservers.
- */
-export type RegistrationNameservers = RegistrationNameserver[];
-
-/**
  * Registration status with description.
  */
-interface RegistrationStatus {
+export interface RegistrationStatus {
   status: string;
   description?: string;
   raw?: string;
 }
-
-/**
- * Array of registration statuses.
- */
-export type RegistrationStatuses = RegistrationStatus[];
 
 /**
  * Full registration response from WHOIS/RDAP lookup.

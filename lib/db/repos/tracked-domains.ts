@@ -12,6 +12,10 @@ import {
   lt,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import type {
+  VerificationMethod,
+  VerificationStatus,
+} from "@/lib/constants/verification";
 import { db } from "@/lib/db/client";
 import {
   certificates,
@@ -25,24 +29,20 @@ import {
 } from "@/lib/db/schema";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-import type {
-  DnsRecord,
-  NotificationOverrides,
-  ProviderInfo,
-  RegistrationContacts,
-  TrackedDomainWithDetails,
-  VerificationMethod,
-  VerificationStatus,
-} from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { RegistrationContact } from "@/lib/types/domain/registration";
+import type { NotificationOverrides } from "@/lib/types/notifications";
+import type { ProviderInfo } from "@/lib/types/provider";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 const logger = createLogger({ source: "tracked-domains" });
 
-export type CreateTrackedDomainParams = {
+export interface CreateTrackedDomainParams {
   userId: string;
   domainId: string;
   verificationToken: string;
   verificationMethod?: VerificationMethod;
-};
+}
 
 /**
  * Create a new tracked domain record.
@@ -161,7 +161,7 @@ export async function findTrackedDomainById(id: string) {
   return rows[0] ?? null;
 }
 
-export type TrackedDomainWithDomainName = {
+export interface TrackedDomainWithDomainName {
   id: string;
   userId: string;
   domainName: string;
@@ -169,7 +169,7 @@ export type TrackedDomainWithDomainName = {
   verificationMethod: VerificationMethod | null;
   verified: boolean;
   verificationStatus: VerificationStatus;
-};
+}
 
 /**
  * Find a tracked domain by ID with its domain name (single targeted query).
@@ -197,7 +197,7 @@ export async function findTrackedDomainWithDomainName(
 }
 
 // Shared row type for the complex tracked domains query
-type TrackedDomainRow = {
+interface TrackedDomainRow {
   id: string;
   userId: string;
   domainId: string;
@@ -236,8 +236,8 @@ type TrackedDomainRow = {
   registrationSource: "rdap" | "whois" | null;
   registrationTransferLock: boolean | null;
   registrationPrivacyEnabled: boolean | null;
-  registrationContacts: RegistrationContacts | null;
-};
+  registrationContacts: RegistrationContact[] | null;
+}
 
 /**
  * Empty provider info returned for unverified domains.
@@ -502,12 +502,12 @@ async function attachDnsRecords(
   });
 }
 
-type QueryTrackedDomainsOptions = {
+interface QueryTrackedDomainsOptions {
   /** Whether to include DNS records (requires additional query). Default true. */
   includeDnsRecords?: boolean;
   /** Whether to include archived domains. Default false. */
   includeArchived?: boolean;
-};
+}
 
 /**
  * Internal helper to query tracked domains with full details.
@@ -609,12 +609,12 @@ async function queryTrackedDomainsWithDetails(
     : domainsWithoutRecords;
 }
 
-export type GetTrackedDomainsOptions = {
+export interface GetTrackedDomainsOptions {
   /** If true, returns all domains including archived. Default false. */
   includeArchived?: boolean;
   /** If true, includes DNS records (requires additional query). Default true. */
   includeDnsRecords?: boolean;
-};
+}
 
 /**
  * Get all tracked domains for a user with domain details.
@@ -725,10 +725,10 @@ export async function countArchivedTrackedDomainsForUser(
   return result?.count ?? 0;
 }
 
-export type TrackedDomainCounts = {
+export interface TrackedDomainCounts {
   active: number;
   archived: number;
-};
+}
 
 /**
  * Count active and archived tracked domains for a user.
@@ -894,7 +894,7 @@ export async function deleteTrackedDomain(id: string) {
   }
 }
 
-export type TrackedDomainForNotification = {
+export interface TrackedDomainForNotification {
   id: string;
   userId: string;
   domainId: string;
@@ -904,9 +904,9 @@ export type TrackedDomainForNotification = {
   registrar: string | null;
   userEmail: string;
   userName: string;
-};
+}
 
-export type TrackedDomainForReverification = {
+export interface TrackedDomainForReverification {
   id: string;
   userId: string;
   domainName: string;
@@ -917,7 +917,7 @@ export type TrackedDomainForReverification = {
   notificationOverrides: NotificationOverrides;
   userEmail: string;
   userName: string;
-};
+}
 
 /**
  * Get verified tracked domain IDs.
@@ -1252,12 +1252,12 @@ export async function archiveOldestActiveDomains(
   return archivedCount;
 }
 
-export type BulkOperationResult = {
+export interface BulkOperationResult {
   succeeded: string[];
   alreadyProcessed: string[];
   notFound: string[];
   notOwned: string[];
-};
+}
 
 /**
  * Bulk archive domains for a user with ownership verification.

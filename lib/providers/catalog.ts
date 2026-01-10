@@ -1,6 +1,6 @@
 import { cache } from "react";
+import type { ProviderCategory } from "@/lib/constants/providers";
 import { getProviderCatalog } from "@/lib/edge-config";
-import type { ProviderCategory } from "@/lib/types";
 import { getProvidersFromCatalog, type Provider } from "./parser";
 
 /**

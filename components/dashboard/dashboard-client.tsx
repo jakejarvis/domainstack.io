@@ -35,7 +35,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 import { sortDomains } from "@/lib/dashboard-utils";
-import type { TrackedDomainWithDetails } from "@/lib/types";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type ConfirmAction =
   | { type: "remove"; domainId: string; domainName: string }

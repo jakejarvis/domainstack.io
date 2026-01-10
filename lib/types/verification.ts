@@ -2,13 +2,7 @@
  * Verification types - Plain TypeScript interfaces.
  */
 
-import type {
-  VERIFICATION_METHODS,
-  VERIFICATION_STATUSES,
-} from "@/lib/constants/verification";
-
-export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
-export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
+import type { VerificationMethod } from "@/lib/constants/verification";
 
 /**
  * Base verification instructions.
@@ -55,12 +49,12 @@ export interface VerificationInstructions {
   meta_tag: MetaTagInstructions;
 }
 
-export type ResumeDomainData = {
+export interface ResumeDomainData {
   id: string;
   domainName: string;
   verificationToken: string;
   verificationMethod?: VerificationMethod | null;
-};
+}
 
 /** Verification status for the current step (exposed for UI components) */
 export type VerificationState =

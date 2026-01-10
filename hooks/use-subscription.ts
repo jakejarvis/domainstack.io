@@ -1,22 +1,30 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import { checkoutEmbed, customer } from "@/lib/auth-client";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { useTRPC } from "@/lib/trpc/client";
-import type { Subscription } from "@/lib/types";
+import type { AppRouter } from "@/server/routers/_app";
 
-type UseSubscriptionOptions = {
+/**
+ * Subscription data shape inferred from user.getSubscription procedure.
+ * Using inference ensures client types stay in sync with server.
+ */
+type SubscriptionData =
+  inferRouterOutputs<AppRouter>["user"]["getSubscription"];
+
+interface UseSubscriptionOptions {
   /** Whether to enable the query (defaults to true) */
   enabled?: boolean;
-};
+}
 
-type UseSubscriptionResult = {
+interface UseSubscriptionResult {
   /** Subscription data (undefined while loading) */
-  subscription: Subscription | undefined;
+  subscription: SubscriptionData | undefined;
   /** True if user has Pro subscription */
   isPro: boolean;
   /** True if actively loading */
@@ -35,7 +43,7 @@ type UseSubscriptionResult = {
   handleCustomerPortal: () => void;
   /** True if customer portal is loading */
   isCustomerPortalLoading: boolean;
-};
+}
 
 /**
  * Hook to check user's subscription tier and limits.

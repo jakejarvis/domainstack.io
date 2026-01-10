@@ -1,10 +1,10 @@
 import { useMediaQuery } from "@/hooks/use-media-query";
 
-type PointerCapability = {
+interface PointerCapability {
   supportsHover: boolean;
   isCoarsePointer: boolean;
   isTouchDevice: boolean;
-};
+}
 
 /**
  * React hook that reports the current pointer/hover capability of the device.

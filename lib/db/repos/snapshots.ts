@@ -9,13 +9,86 @@ import {
   userTrackedDomains,
 } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
-import type {
-  CreateSnapshotParams,
-  SnapshotForMonitoring,
-  UpdateSnapshotParams,
-} from "@/lib/types";
 
 const logger = createLogger({ source: "snapshots" });
+
+// =============================================================================
+// Types
+// =============================================================================
+
+/**
+ * Registration snapshot data stored in JSONB.
+ */
+export interface RegistrationSnapshotData {
+  registrarProviderId: string | null;
+  nameservers: { host: string }[];
+  transferLock: boolean | null;
+  statuses: string[];
+}
+
+/**
+ * Certificate snapshot data stored in JSONB.
+ */
+export interface CertificateSnapshotData {
+  caProviderId: string | null;
+  issuer: string;
+  validTo: string;
+  fingerprint: string | null;
+}
+
+/**
+ * Provider snapshot data (stored in separate columns).
+ */
+export interface ProviderSnapshotData {
+  dnsProviderId: string | null;
+  hostingProviderId: string | null;
+  emailProviderId: string | null;
+}
+
+/**
+ * Parameters for creating a new snapshot.
+ */
+export interface CreateSnapshotParams {
+  trackedDomainId: string;
+  registration?: RegistrationSnapshotData;
+  certificate?: CertificateSnapshotData;
+  dnsProviderId?: string | null;
+  hostingProviderId?: string | null;
+  emailProviderId?: string | null;
+}
+
+/**
+ * Parameters for updating an existing snapshot.
+ */
+export interface UpdateSnapshotParams {
+  registration?: RegistrationSnapshotData;
+  certificate?: CertificateSnapshotData;
+  dnsProviderId?: string | null;
+  hostingProviderId?: string | null;
+  emailProviderId?: string | null;
+}
+
+/**
+ * Snapshot data with user and domain metadata for monitoring.
+ */
+export interface SnapshotForMonitoring {
+  id: string;
+  trackedDomainId: string;
+  userId: string;
+  domainId: string;
+  domainName: string;
+  registration: unknown;
+  certificate: unknown;
+  dnsProviderId: string | null;
+  hostingProviderId: string | null;
+  emailProviderId: string | null;
+  userEmail: string;
+  userName: string;
+}
+
+// =============================================================================
+// Repository Functions
+// =============================================================================
 
 /**
  * Create a new snapshot with initial data.

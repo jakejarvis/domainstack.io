@@ -5,24 +5,22 @@ import type { inferRouterOutputs } from "@trpc/server";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
-import type { TrackedDomainWithDetails } from "@/lib/types";
 import type { AppRouter } from "@/server/routers/_app";
 
 /**
  * Inferred router outputs for type-safe cache updates.
+ * Using inference ensures client types stay in sync with server.
  */
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 
-/**
- * Subscription data shape inferred from user.getSubscription procedure.
- * Using inference ensures client types stay in sync with server.
- */
+/** Subscription data shape inferred from user.getSubscription procedure. */
 type SubscriptionData = RouterOutputs["user"]["getSubscription"];
 
-/**
- * Domains data shape from tracking.listDomains procedure.
- */
+/** Domains data shape from tracking.listDomains procedure. */
 type DomainsData = RouterOutputs["tracking"]["listDomains"];
+
+/** Single tracked domain type inferred from the list response. */
+export type TrackedDomain = DomainsData[number];
 
 /**
  * Snapshot of a single query's cached data for rollback.
@@ -34,17 +32,17 @@ type QuerySnapshot<T> = [queryKey: readonly unknown[], data: T | undefined];
  * Stores snapshots of all query caches that may be modified.
  * Uses array of snapshots to support multiple query variants (e.g., with/without includeArchived).
  */
-type MutationContext = {
+interface MutationContext {
   previousDomains?: QuerySnapshot<DomainsData>[];
   previousSubscription?: SubscriptionData;
-};
+}
 
-export type UseTrackedDomainsOptions = {
+export interface UseTrackedDomainsOptions {
   /** Whether to include archived domains in the results (defaults to false) */
   includeArchived?: boolean;
   /** Whether to enable the query (defaults to true) */
   enabled?: boolean;
-};
+}
 
 /**
  * Helper to update subscription cache for removing domains from active list.
@@ -407,7 +405,7 @@ export function useTrackedDomains(options: UseTrackedDomainsOptions = {}) {
 
   return {
     // Query results
-    domains: query.data as TrackedDomainWithDetails[] | undefined,
+    domains: query.data,
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

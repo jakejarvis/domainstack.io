@@ -1,4 +1,4 @@
-import type { Header } from "@/lib/types";
+import type { Header } from "@/lib/types/domain/headers";
 import type { Provider } from "./parser";
 import type { DetectionContext, Rule } from "./rules";
 

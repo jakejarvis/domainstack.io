@@ -40,12 +40,12 @@ import {
 } from "@/components/ui/multi-select";
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
+import type { HealthFilter, StatusFilter } from "@/lib/dashboard-utils";
 import {
   type DashboardViewModeOptions,
   SORT_OPTIONS,
   type SortOption,
 } from "@/lib/dashboard-utils";
-import type { HealthFilter, StatusFilter } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type DashboardFiltersProps = {

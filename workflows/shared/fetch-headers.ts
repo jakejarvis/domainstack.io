@@ -1,4 +1,4 @@
-import type { HeadersResponse } from "@/lib/types";
+import type { HeadersResponse } from "@/lib/types/domain/headers";
 
 export interface FetchHeadersResult {
   success: boolean;

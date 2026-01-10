@@ -35,20 +35,20 @@ export const DNS_TYPE_NUMBERS = {
 /**
  * DNS answer from DoH JSON response.
  */
-export type DnsAnswer = {
+export interface DnsAnswer {
   name: string;
   type: number;
   TTL: number;
   data: string;
-};
+}
 
 /**
  * DoH JSON response format (RFC 8427).
  */
-export type DnsJson = {
+export interface DnsJson {
   Status: number;
   Answer?: DnsAnswer[];
-};
+}
 
 // ============================================================================
 // Provider ordering and URL building
@@ -82,13 +82,13 @@ export function providerOrderForLookup(domain: string): DohProvider[] {
 // Shared DoH query logic
 // ============================================================================
 
-export type DohQueryOptions = {
+export interface DohQueryOptions {
   timeoutMs?: number;
   retries?: number;
   backoffMs?: number;
   /** Add timestamp parameter to bypass HTTP caches (useful for verification) */
   cacheBust?: boolean;
-};
+}
 
 /**
  * Query a single record type from a DoH provider.

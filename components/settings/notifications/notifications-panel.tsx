@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { Separator } from "@/components/ui/separator";
 import { useSession } from "@/lib/auth-client";
-import { NOTIFICATION_CATEGORIES } from "@/lib/constants/notifications";
+import {
+  NOTIFICATION_CATEGORIES,
+  type NotificationCategory,
+} from "@/lib/constants/notifications";
 import { useTRPC } from "@/lib/trpc/client";
-import type {
-  NotificationCategory,
-  UserNotificationPreferences,
-} from "@/lib/types";
+import type { UserNotificationPreferences } from "@/lib/types/notifications";
 
 interface NotificationsPanelProps {
   className?: string;

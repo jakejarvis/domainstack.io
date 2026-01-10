@@ -1,5 +1,5 @@
 /**
- * Provider constants.
+ * Provider constants and derived types.
  */
 
 export const PROVIDER_CATEGORIES = [
@@ -9,5 +9,7 @@ export const PROVIDER_CATEGORIES = [
   "ca",
   "registrar",
 ] as const;
+
+export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
 
 export const PROVIDER_SOURCES = ["catalog", "discovered"] as const;

@@ -1,5 +1,7 @@
 import { FatalError } from "workflow";
-import type { DnsRecord, Header, HostingResponse } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { Header } from "@/lib/types/domain/headers";
+import type { HostingResponse } from "@/lib/types/domain/hosting";
 
 export interface HostingWorkflowInput {
   domain: string;

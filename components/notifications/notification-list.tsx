@@ -5,7 +5,7 @@ import { NotificationEmptyState } from "@/components/notifications/notification-
 import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import type { NotificationData } from "@/lib/types";
+import type { NotificationData } from "@/lib/types/notifications";
 
 interface NotificationListProps {
   notifications: NotificationData[];

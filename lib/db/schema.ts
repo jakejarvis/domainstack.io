@@ -25,17 +25,19 @@ import {
   VERIFICATION_METHODS,
   VERIFICATION_STATUSES,
 } from "@/lib/constants/verification";
+import type { Header } from "@/lib/types/domain/headers";
+import type {
+  RegistrationContact,
+  RegistrationNameserver,
+  RegistrationStatus,
+} from "@/lib/types/domain/registration";
 import type {
   GeneralMeta,
-  Header,
-  NotificationOverrides,
   OpenGraphMeta,
-  RegistrationContacts,
-  RegistrationNameservers,
-  RegistrationStatuses,
   RobotsTxt,
   TwitterMeta,
-} from "@/lib/types";
+} from "@/lib/types/domain/seo";
+import type { NotificationOverrides } from "@/lib/types/notifications";
 
 // Enums - const arrays define values; Drizzle pgEnums use them directly.
 export const providerCategory = pgEnum(
@@ -390,15 +392,15 @@ export const registrations = pgTable(
     deletionDate: timestamp("deletion_date", { withTimezone: true }),
     transferLock: boolean("transfer_lock"),
     statuses: jsonb("statuses")
-      .$type<RegistrationStatuses>()
+      .$type<RegistrationStatus[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
     contacts: jsonb("contacts")
-      .$type<RegistrationContacts>()
+      .$type<RegistrationContact[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
     nameservers: jsonb("nameservers")
-      .$type<RegistrationNameservers>()
+      .$type<RegistrationNameserver[]>()
       .notNull()
       .default(sql`'[]'::jsonb`),
     whoisServer: text("whois_server"),

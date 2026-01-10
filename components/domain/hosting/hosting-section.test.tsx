@@ -47,7 +47,7 @@ describe("HostingSection", () => {
         lat: null,
         lon: null,
       },
-    } as unknown as import("@/lib/types").HostingResponse;
+    } as unknown as import("@/lib/types/domain/hosting").HostingResponse;
     render(<HostingSection data={data} />);
     expect(screen.getByText("Cloudflare")).toBeInTheDocument();
     expect(screen.getByText(/logo:cloudflare.com/)).toBeInTheDocument();

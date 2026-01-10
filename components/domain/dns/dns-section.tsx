@@ -11,7 +11,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { DnsRecord } from "@/lib/types";
+import type { DnsRecord } from "@/lib/types/domain/dns";
 
 export function DnsSection({
   data,

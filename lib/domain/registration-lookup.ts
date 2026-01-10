@@ -12,9 +12,10 @@ import { detectRegistrar } from "@/lib/providers/detection";
 import type { Provider } from "@/lib/providers/parser";
 import { getRdapBootstrapData } from "@/lib/rdap-bootstrap";
 import { ttlForRegistration } from "@/lib/ttl";
-
-// Note: Database imports are dynamic to avoid initialization issues in tests
-import type { RegistrationContacts, RegistrationResponse } from "@/lib/types";
+import type {
+  RegistrationContact,
+  RegistrationResponse,
+} from "@/lib/types/domain/registration";
 
 const logger = createLogger({ source: "registration-lookup" });
 
@@ -121,7 +122,7 @@ interface ParsedRdapRecord {
     }>;
   };
   nameservers?: Array<{ host: string; ipv4?: string[]; ipv6?: string[] }>;
-  contacts?: RegistrationContacts;
+  contacts?: RegistrationContact[];
   privacyEnabled?: boolean;
   whoisServer?: string;
   rdapServers?: string[];

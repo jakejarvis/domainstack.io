@@ -6,14 +6,14 @@ const logger = createLogger({ source: "fetch" });
 /**
  * Options for fetch with timeout and retry behavior.
  */
-export type FetchOptions = {
+export interface FetchOptions {
   /** Abort timeout per request (ms). */
   timeoutMs?: number;
   /** Number of retry attempts (defaults to 0). */
   retries?: number;
   /** Backoff delay multiplier for retries (ms). */
   backoffMs?: number;
-};
+}
 
 /**
  * Fetch a trusted upstream resource with a timeout and optional retries.

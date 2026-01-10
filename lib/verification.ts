@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import type { VerificationMethod } from "@/lib/constants/verification";
 import {
   DNS_VERIFICATION_HOST_LEGACY,
   DNS_VERIFICATION_PREFIX,
@@ -10,7 +11,6 @@ import {
 import { providerOrderForLookup, queryDohProvider } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { safeFetch } from "@/lib/safe-fetch";
-import type { VerificationMethod } from "@/lib/types";
 
 const logger = createLogger({ source: "verification" });
 

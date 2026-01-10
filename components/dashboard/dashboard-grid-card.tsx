@@ -37,13 +37,13 @@ import {
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import { formatDateTimeUtc } from "@/lib/format";
+import type { ProviderCategory } from "@/lib/constants/providers";
 import type {
-  ProviderCategory,
-  ProviderInfo,
   VerificationMethod,
   VerificationStatus,
-} from "@/lib/types";
+} from "@/lib/constants/verification";
+import { formatDateTimeUtc } from "@/lib/format";
+import type { ProviderInfo } from "@/lib/types/provider";
 import { cn } from "@/lib/utils";
 
 type DashboardGridCardProps = {

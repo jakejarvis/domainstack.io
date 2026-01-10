@@ -1,6 +1,12 @@
 import type { SortingState } from "@tanstack/react-table";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
-import type { HealthFilter, TrackedDomainWithDetails } from "@/lib/types";
+import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
+
+/** Filter types for domain verification status */
+export type StatusFilter = "verified" | "pending";
+
+/** Filter types for domain health status */
+export type HealthFilter = "healthy" | "expiring" | "expired";
 
 /**
  * Determine health status based on expiration date
@@ -46,12 +52,12 @@ export const DASHBOARD_PREFERENCES_DEFAULT: {
  */
 export type SortOption = `${string}.${"asc" | "desc"}`;
 
-export type SortOptionConfig = {
+export interface SortOptionConfig {
   value: SortOption;
   label: string;
   shortLabel: string;
   direction: "asc" | "desc";
-};
+}
 
 export const SORT_OPTIONS: SortOptionConfig[] = [
   {

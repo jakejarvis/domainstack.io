@@ -12,9 +12,7 @@ import { createLogger } from "@/lib/logger/server";
 import { safeFetch } from "@/lib/safe-fetch";
 import { isExpectedTlsError } from "@/lib/tls-utils";
 import { ttlForHeaders } from "@/lib/ttl";
-import type { Header, HeadersResponse } from "@/lib/types";
-
-// Note: Database imports are dynamic to avoid initialization issues in tests
+import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 
 const logger = createLogger({ source: "headers-lookup" });
 const REQUEST_TIMEOUT_MS = 5000;

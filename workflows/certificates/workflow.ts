@@ -1,5 +1,8 @@
 import { FatalError, RetryableError } from "workflow";
-import type { Certificate, CertificatesResponse } from "@/lib/types";
+import type {
+  Certificate,
+  CertificatesResponse,
+} from "@/lib/types/domain/certificates";
 
 export interface CertificatesWorkflowInput {
   domain: string;

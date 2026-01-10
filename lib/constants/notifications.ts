@@ -6,11 +6,9 @@ import {
   type LucideIcon,
   ShieldAlert,
 } from "lucide-react";
-import type { NotificationCategory, NotificationType } from "@/lib/types";
 
 /**
- * Notification system constants.
- * Types are in @/lib/types/notifications.ts.
+ * Notification system constants and derived types.
  */
 
 // Valid notification channels
@@ -24,6 +22,25 @@ export const NOTIFICATION_CATEGORIES = [
   "certificateExpiry",
   "certificateChanges",
 ] as const;
+
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+// Notification thresholds (days before expiration)
+export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
+export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
+
+type DomainExpiryThreshold = (typeof DOMAIN_EXPIRY_THRESHOLDS)[number];
+type CertificateExpiryThreshold =
+  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number];
+
+export type NotificationType =
+  | `domain_expiry_${DomainExpiryThreshold}d`
+  | `certificate_expiry_${CertificateExpiryThreshold}d`
+  | "verification_failing"
+  | "verification_revoked"
+  | "registration_change"
+  | "provider_change"
+  | "certificate_change";
 
 // Category metadata for UI display
 export const NOTIFICATION_CATEGORY_INFO: Record<
@@ -58,17 +75,13 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
   },
 };
 
-// Notification thresholds (days before expiration)
-export const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
-export const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
-
 // Dashboard "expiring soon" threshold (first notification threshold)
 // biome-ignore lint/nursery/useDestructuring: This is a constant
 export const EXPIRING_SOON_DAYS = DOMAIN_EXPIRY_THRESHOLDS[0];
 
 // Mapping from threshold to notification type
 export const DOMAIN_THRESHOLD_TO_TYPE: Record<
-  (typeof DOMAIN_EXPIRY_THRESHOLDS)[number],
+  DomainExpiryThreshold,
   NotificationType
 > = {
   30: "domain_expiry_30d",
@@ -78,7 +91,7 @@ export const DOMAIN_THRESHOLD_TO_TYPE: Record<
 };
 
 export const CERTIFICATE_THRESHOLD_TO_TYPE: Record<
-  (typeof CERTIFICATE_EXPIRY_THRESHOLDS)[number],
+  CertificateExpiryThreshold,
   NotificationType
 > = {
   14: "certificate_expiry_14d",

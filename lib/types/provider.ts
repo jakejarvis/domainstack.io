@@ -2,11 +2,8 @@
  * Provider types - Plain TypeScript interfaces.
  */
 
-import type { PROVIDER_CATEGORIES } from "@/lib/constants/providers";
 import type { DnsRecord } from "./domain/dns";
-import type { RegistrationContact } from "./rdap";
-
-export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
+import type { RegistrationContact } from "./domain/registration";
 
 /**
  * Provider info with detailed verification data.

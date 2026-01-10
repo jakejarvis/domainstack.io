@@ -1,5 +1,5 @@
 import { FatalError, RetryableError } from "workflow";
-import type { Header, HeadersResponse } from "@/lib/types";
+import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 
 export interface HeadersWorkflowInput {
   domain: string;

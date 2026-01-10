@@ -1,4 +1,4 @@
-import type { DnsRecordsResponse } from "@/lib/types";
+import type { DnsRecordsResponse } from "@/lib/types/domain/dns";
 
 export interface FetchDnsStepResult {
   success: boolean;
