@@ -110,4 +110,9 @@ export interface RegistrationResponse {
   source: RegistrationSource | null;
   warnings?: string[];
   registrarProvider: ProviderRef;
+  /**
+   * Raw RDAP/WHOIS response from the registry as a formatted string.
+   * RDAP responses are pretty-printed JSON, WHOIS responses are plain text.
+   */
+  rawResponse?: string;
 }

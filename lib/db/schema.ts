@@ -417,6 +417,8 @@ export const registrations = pgTable(
     ),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    // Raw RDAP/WHOIS response for debugging and advanced use cases
+    rawResponse: jsonb("raw_response"),
   },
   (t) => [
     index("i_reg_registrar").on(t.registrarProviderId),

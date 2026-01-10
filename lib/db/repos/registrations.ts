@@ -12,7 +12,7 @@ import type {
 type RegistrationInsert = InferInsertModel<typeof registrations>;
 
 export async function upsertRegistration(params: RegistrationInsert) {
-  const { domainId, nameservers, ...rest } = params;
+  const { domainId, nameservers, rawResponse, ...rest } = params;
 
   // Normalize nameserver hosts (trim + lowercase)
   // Filter out any nameservers with missing/invalid host values
@@ -27,10 +27,12 @@ export async function upsertRegistration(params: RegistrationInsert) {
   const insertRow = {
     domainId,
     nameservers: normalizedNameservers,
+    rawResponse,
     ...rest,
   };
   const updateRow = {
     nameservers: normalizedNameservers,
+    rawResponse,
     ...rest,
   };
 
@@ -112,10 +114,38 @@ export async function getRegistrationCached(
       rdapServers: row.registration.rdapServers ?? undefined,
       source: row.registration.source ?? null,
       registrarProvider,
+      rawResponse: formatRawResponseFromDb(
+        row.registration.rawResponse,
+        row.registration.source,
+      ),
     };
 
     return response;
   } catch {
     return null;
   }
+}
+
+/**
+ * Format raw response from database for display.
+ * RDAP (object) is pretty-printed to JSON, WHOIS (string) is returned as-is.
+ */
+function formatRawResponseFromDb(
+  rawResponse: unknown,
+  source: "rdap" | "whois" | null,
+): string | undefined {
+  if (!rawResponse) return undefined;
+
+  // WHOIS is stored as a string
+  if (typeof rawResponse === "string") {
+    return rawResponse;
+  }
+
+  // RDAP is stored as a JSON object - pretty print it
+  if (source === "rdap" && typeof rawResponse === "object") {
+    return JSON.stringify(rawResponse, null, 2);
+  }
+
+  // Fallback: stringify whatever we have
+  return JSON.stringify(rawResponse, null, 2);
 }

@@ -21,6 +21,8 @@ interface ReportSectionProps {
   slug?: string;
   accent?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "slate";
   isLoading?: boolean;
+  /** Optional actions to render in the top-right of the section header */
+  headerActions?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -32,6 +34,7 @@ export function ReportSection({
   slug,
   accent = "slate",
   isLoading,
+  headerActions,
   children,
 }: ReportSectionProps) {
   const Icon = icon;
@@ -104,6 +107,7 @@ export function ReportSection({
                     <span className="sr-only">Loading</span>
                   </div>
                 )}
+                {headerActions}
               </div>
             </div>
           </div>

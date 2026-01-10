@@ -205,13 +205,16 @@ describe("persistRegistrationData", () => {
   });
 
   it("persists registered domain to database", async () => {
-    const recordJson = JSON.stringify({
-      domain: "persist.com",
-      tld: "com",
-      isRegistered: true,
-      source: "rdap",
-      registrar: { name: "GoDaddy" },
-    });
+    // rawResponse is a pre-formatted string (pretty JSON for RDAP)
+    const rawRdapResponse = JSON.stringify(
+      {
+        objectClassName: "domain",
+        handle: "persist.com",
+        ldhName: "persist.com",
+      },
+      null,
+      2,
+    );
 
     const response = {
       domain: "persist.com",
@@ -220,14 +223,11 @@ describe("persistRegistrationData", () => {
       status: "registered" as const,
       source: "rdap" as const,
       registrarProvider: { id: null, name: "GoDaddy", domain: null },
+      rawResponse: rawRdapResponse,
     };
 
     const { persistRegistrationData } = await import("./registration-lookup");
-    const domainId = await persistRegistrationData(
-      "persist.com",
-      recordJson,
-      response,
-    );
+    const domainId = await persistRegistrationData("persist.com", response);
 
     expect(domainId).toBeTruthy();
 

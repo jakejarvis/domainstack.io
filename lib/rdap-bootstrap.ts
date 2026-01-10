@@ -1,4 +1,4 @@
-import "server-only";
+// import "server-only";
 
 import type { BootstrapData } from "rdapper";
 import { USER_AGENT } from "@/lib/constants/app";

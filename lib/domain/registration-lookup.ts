@@ -44,6 +44,7 @@ export async function lookupRdap(domain: string): Promise<RdapLookupResult> {
     const { ok, record, error } = await lookup(domain, {
       timeoutMs: 5000,
       customBootstrapData: bootstrapData,
+      includeRaw: true,
     });
 
     if (!ok || !record) {
@@ -126,6 +127,10 @@ interface ParsedRdapRecord {
   privacyEnabled?: boolean;
   whoisServer?: string;
   rdapServers?: string[];
+  /** Raw RDAP JSON response from the registry */
+  rawRdap?: unknown;
+  /** Raw WHOIS text response from the registry */
+  rawWhois?: string;
   source?: "rdap" | "whois" | null;
   warnings?: string[];
 }
@@ -215,17 +220,34 @@ export async function normalizeRdapRecord(
       name: registrarName.trim() || null,
       domain: registrarDomain,
     },
+    // Format raw response as string: RDAP as pretty JSON, WHOIS as plain text
+    rawResponse: formatRawResponse(record),
   };
+}
+
+/**
+ * Format raw response as a string for display.
+ * RDAP responses are pretty-printed JSON, WHOIS responses are plain text.
+ */
+function formatRawResponse(record: ParsedRdapRecord): string | undefined {
+  if (record.source === "rdap" && record.rawRdap) {
+    return JSON.stringify(record.rawRdap, null, 2);
+  }
+  if (record.source === "whois" && record.rawWhois) {
+    return record.rawWhois;
+  }
+  return undefined;
 }
 
 /**
  * Persist registration to database.
  *
+ * Uses the normalized RegistrationResponse directly - no need to re-parse JSON.
+ *
  * @returns The domain ID from the persisted domain record
  */
 export async function persistRegistrationData(
   domain: string,
-  recordJson: string,
   response: RegistrationResponse,
 ): Promise<string> {
   // Dynamic imports for database operations
@@ -233,48 +255,50 @@ export async function persistRegistrationData(
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
   const { scheduleRevalidation } = await import("@/lib/schedule");
 
-  const record = JSON.parse(recordJson) as ParsedRdapRecord;
   const now = new Date();
-
-  const registrarProviderId = response.registrarProvider.id;
 
   const domainRecord = await upsertDomain({
     name: domain,
     tld: getDomainTld(domain) ?? "",
-    unicodeName: record.unicodeName ?? domain,
+    unicodeName: response.unicodeName ?? domain,
   });
 
   const expiresAt = ttlForRegistration(
     now,
-    record.expirationDate ? new Date(record.expirationDate) : null,
+    response.expirationDate ? new Date(response.expirationDate) : null,
   );
 
   await upsertRegistration({
     domainId: domainRecord.id,
-    isRegistered: record.isRegistered,
-    privacyEnabled: record.privacyEnabled ?? false,
-    registry: record.registry ?? null,
-    creationDate: record.creationDate ? new Date(record.creationDate) : null,
-    updatedDate: record.updatedDate ? new Date(record.updatedDate) : null,
-    expirationDate: record.expirationDate
-      ? new Date(record.expirationDate)
+    isRegistered: response.isRegistered,
+    privacyEnabled: response.privacyEnabled ?? false,
+    registry: response.registry ?? null,
+    creationDate: response.creationDate
+      ? new Date(response.creationDate)
       : null,
-    deletionDate: record.deletionDate ? new Date(record.deletionDate) : null,
-    transferLock: record.transferLock ?? null,
-    statuses: record.statuses ?? [],
-    contacts: record.contacts ?? [],
-    whoisServer: record.whoisServer ?? null,
-    rdapServers: record.rdapServers ?? [],
-    source: record.source ?? "rdap",
-    registrarProviderId,
+    updatedDate: response.updatedDate ? new Date(response.updatedDate) : null,
+    expirationDate: response.expirationDate
+      ? new Date(response.expirationDate)
+      : null,
+    deletionDate: response.deletionDate
+      ? new Date(response.deletionDate)
+      : null,
+    transferLock: response.transferLock ?? null,
+    statuses: response.statuses ?? [],
+    contacts: response.contacts ?? [],
+    whoisServer: response.whoisServer ?? null,
+    rdapServers: response.rdapServers ?? [],
+    source: response.source ?? "rdap",
+    registrarProviderId: response.registrarProvider.id,
     resellerProviderId: null,
     fetchedAt: now,
     expiresAt,
-    nameservers: (record.nameservers ?? []).map((n) => ({
+    nameservers: (response.nameservers ?? []).map((n) => ({
       host: n.host,
       ipv4: n.ipv4 ?? [],
       ipv6: n.ipv6 ?? [],
     })),
+    rawResponse: response.rawResponse,
   });
 
   await scheduleRevalidation(
@@ -312,11 +336,7 @@ export async function lookupAndPersistRegistration(
   // Only persist for registered domains
   if (response.isRegistered) {
     try {
-      const domainId = await persistRegistrationData(
-        domain,
-        rdapResult.recordJson,
-        response,
-      );
+      const domainId = await persistRegistrationData(domain, response);
       return { ...response, domainId };
     } catch (err) {
       logger.error({ err, domain }, "failed to persist registration");

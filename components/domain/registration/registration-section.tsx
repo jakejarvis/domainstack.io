@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
+import { RawDataDialog } from "@/components/domain/raw-data-dialog";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
@@ -21,69 +22,6 @@ import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 
-function VerificationBadge({
-  source,
-  rdapServers,
-  whoisServer,
-}: {
-  source?: string | null;
-  rdapServers?: string[] | null;
-  whoisServer?: string | null;
-}) {
-  if (!source) return null;
-
-  const serverUrl =
-    rdapServers && rdapServers.length > 0
-      ? rdapServers[rdapServers.length - 1]
-      : undefined;
-  const serverName = serverUrl
-    ? (extractSourceDomain(serverUrl) ?? "RDAP")
-    : (whoisServer ?? "WHOIS");
-  const learnUrl =
-    source === "rdap"
-      ? "https://about.rdap.org/"
-      : "https://en.wikipedia.org/wiki/WHOIS";
-
-  return (
-    <ResponsiveTooltip>
-      <ResponsiveTooltipTrigger
-        nativeButton={false}
-        render={<BadgeCheck className="!size-3.5 stroke-muted-foreground/80" />}
-      />
-      <ResponsiveTooltipContent>
-        <div className="flex items-center gap-[5px]">
-          <span>
-            Verified by{" "}
-            <span className="font-medium">
-              {serverUrl ? (
-                <a
-                  href={serverUrl}
-                  target="_blank"
-                  rel="noopener"
-                  className="underline underline-offset-2"
-                >
-                  {serverName}
-                </a>
-              ) : (
-                serverName
-              )}
-            </span>
-          </span>
-          <a
-            href={learnUrl}
-            target="_blank"
-            rel="noopener"
-            title={`Learn about ${source === "rdap" ? "RDAP" : "WHOIS"}`}
-            className="text-muted/80"
-          >
-            <GraduationCap className="size-3" />
-          </a>
-        </div>
-      </ResponsiveTooltipContent>
-    </ResponsiveTooltip>
-  );
-}
-
 export function RegistrationSection({
   data,
 }: {
@@ -96,8 +34,32 @@ export function RegistrationSection({
   // Prefer explicit status over source check for better semantics
   const isWhoisUnavailable = data.status === "unknown";
 
+  const serverUrl =
+    data.rdapServers && data.rdapServers.length > 0
+      ? data.rdapServers[data.rdapServers.length - 1]
+      : undefined;
+  const serverName = serverUrl
+    ? (extractSourceDomain(serverUrl) ?? "RDAP")
+    : (data.whoisServer ?? "WHOIS");
+  const learnUrl =
+    data.source === "rdap"
+      ? "https://about.rdap.org/"
+      : "https://en.wikipedia.org/wiki/WHOIS";
+
   return (
-    <ReportSection {...sections.registration}>
+    <ReportSection
+      {...sections.registration}
+      headerActions={
+        data.rawResponse ? (
+          <RawDataDialog
+            title={data.source === "rdap" ? "RDAP" : "WHOIS"}
+            data={data.rawResponse ?? ""}
+            serverUrl={serverUrl}
+            serverName={serverName}
+          />
+        ) : undefined
+      }
+    >
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
           <AlertCircle className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200" />
@@ -130,11 +92,44 @@ export function RegistrationSection({
               ) : undefined
             }
             suffix={
-              <VerificationBadge
-                source={data.source}
-                rdapServers={data.rdapServers}
-                whoisServer={data.whoisServer}
-              />
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
+                  render={
+                    <BadgeCheck className="!size-3.5 stroke-muted-foreground/80" />
+                  }
+                />
+                <ResponsiveTooltipContent>
+                  <div className="flex items-center gap-[5px]">
+                    <span>
+                      Verified by{" "}
+                      <span className="font-medium">
+                        {serverUrl ? (
+                          <a
+                            href={serverUrl}
+                            target="_blank"
+                            rel="noopener"
+                            className="underline underline-offset-2"
+                          >
+                            {serverName}
+                          </a>
+                        ) : (
+                          serverName
+                        )}
+                      </span>
+                    </span>
+                    <a
+                      href={learnUrl}
+                      target="_blank"
+                      rel="noopener"
+                      title={`Learn about ${data.source === "rdap" ? "RDAP" : "WHOIS"}`}
+                      className="text-muted/80"
+                    >
+                      <GraduationCap className="size-3" />
+                    </a>
+                  </div>
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
             }
           />
 

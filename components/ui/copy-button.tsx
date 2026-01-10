@@ -9,11 +9,13 @@ import { cn, type VariantProps } from "@/lib/utils";
 
 type CopyButtonProps = {
   value: string;
+  showLabel?: boolean;
   className?: string;
 } & VariantProps<typeof buttonVariants>;
 
 export function CopyButton({
   value,
+  showLabel = false,
   variant = "ghost",
   size = "icon-sm",
   className,
@@ -32,6 +34,8 @@ export function CopyButton({
   }, []);
 
   const handleCopy = useCallback(async () => {
+    if (copied) return;
+
     // Show optimistic feedback immediately - don't wait for clipboard API
     setCopied(true);
 
@@ -52,7 +56,7 @@ export function CopyButton({
       timeoutRef.current = setTimeout(() => {
         setCopied(false);
         timeoutRef.current = null;
-      }, 1200);
+      }, 3000);
     } catch {
       // Revert optimistic update on failure
       setCopied(false);
@@ -61,13 +65,13 @@ export function CopyButton({
         position: "bottom-center",
       });
     }
-  }, [value]);
+  }, [copied, value]);
 
   return (
     <Button
       variant={variant}
       size={size}
-      className={cn("shrink-0", className)}
+      className={cn("shrink-0", className, copied && "cursor-default")}
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
@@ -76,7 +80,9 @@ export function CopyButton({
       ) : (
         <Copy className="size-3.5" />
       )}
-      <span className="sr-only">{copied ? "Copied" : "Copy to clipboard"}</span>
+      <span className={cn(!showLabel && "sr-only")}>
+        {copied ? "Copied" : "Copy"}
+      </span>
     </Button>
   );
 }

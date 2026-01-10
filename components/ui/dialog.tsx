@@ -27,7 +27,7 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 backdrop-blur-xs dark:bg-black/50",
+        "fixed inset-0 isolate bg-black/10 backdrop-blur-xs dark:bg-black/50",
         "data-open:fade-in-0 data-open:animate-in data-open:duration-200",
         "data-closed:fade-out-0 data-closed:animate-out data-closed:duration-200",
         // iOS 26+: ensure backdrops cover the visual viewport
@@ -50,35 +50,38 @@ function DialogContent({
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay forceRender />
-      <DialogPrimitive.Popup
-        data-slot="dialog-content"
-        className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border/60 bg-background/95 p-6 text-foreground shadow-lg outline-hidden backdrop-blur-xl sm:max-w-lg dark:bg-background/80",
-          "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
-          "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
-          // Nested dialog styling: Dim the parent popup
-          "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
-          // Prevent interaction with parent dialog when nested dialog is open
-          // This ensures clicks fall through to the nested backdrop (if rendered) or are treated as outside clicks
-          "data-[nested-dialog-open]:pointer-events-none",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="absolute top-2 right-2"
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <XIcon />
-                <span className="sr-only">Close</span>
-              </Button>
-            }
-          />
-        )}
-      </DialogPrimitive.Popup>
+      <DialogPrimitive.Viewport className="fixed inset-0 flex items-center justify-center overflow-hidden py-12">
+        <DialogPrimitive.Popup
+          data-slot="dialog-content"
+          className={cn(
+            "relative flex max-h-full min-h-0 w-[min(40rem,calc(100vw-2rem))] max-w-full flex-col overflow-hidden sm:max-w-lg",
+            "gap-4 rounded-lg border border-border/60 bg-background/95 p-6 text-foreground shadow-lg outline-hidden backdrop-blur-xl dark:bg-background/80",
+            "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
+            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
+            // Nested dialog styling: Dim the parent popup
+            "data-[nested-dialog-open]:after:absolute data-[nested-dialog-open]:after:inset-0 data-[nested-dialog-open]:after:z-50 data-[nested-dialog-open]:after:rounded-[inherit] data-[nested-dialog-open]:after:bg-black/10 data-[nested-dialog-open]:after:content-['']",
+            // Prevent interaction with parent dialog when nested dialog is open
+            // This ensures clicks fall through to the nested backdrop (if rendered) or are treated as outside clicks
+            "data-[nested-dialog-open]:pointer-events-none",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              className="absolute top-2 right-2"
+              render={
+                <Button variant="ghost" size="icon-sm">
+                  <XIcon />
+                  <span className="sr-only">Close</span>
+                </Button>
+              }
+            />
+          )}
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Viewport>
     </DialogPortal>
   );
 }

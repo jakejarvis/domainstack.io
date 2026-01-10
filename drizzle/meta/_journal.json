@@ -99,6 +99,13 @@
       "when": 1767805554122,
       "tag": "0013_lean_psylocke",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1768056078877,
+      "tag": "0014_real_pride",
+      "breakpoints": true
     }
   ]
 }
