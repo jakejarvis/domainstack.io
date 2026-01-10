@@ -367,6 +367,35 @@ When to use our fetch utilities (`safeFetch`, `fetchWithTimeoutAndRetry`):
 - Code that runs both in and out of workflow context
 - Batching multiple quick fetches in a single step
 
+**Error Classification in Steps:**
+Use `lib/workflow/errors.ts` utilities to properly classify fetch errors:
+```typescript
+import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
+
+// Option 1: Wrap the entire operation
+async function fetchDataStep(domain: string): Promise<Data> {
+  "use step";
+  return await withFetchErrorHandling(
+    () => fetchData(domain),
+    { context: `fetching ${domain}` }
+  );
+}
+
+// Option 2: Classify errors manually
+async function fetchDataStep(domain: string): Promise<Data> {
+  "use step";
+  try {
+    return await fetchData(domain);
+  } catch (err) {
+    throw classifyFetchError(err, { context: `fetching ${domain}` });
+  }
+}
+```
+
+Error classification:
+- **FatalError** (don't retry): DNS errors, TLS errors, invalid URLs, blocked hosts
+- **RetryableError** (retry with backoff): Timeouts, network errors, server errors
+
 **Reference**
 [Workflow DevKit docs](https://useworkflow.dev/llms.txt)
 

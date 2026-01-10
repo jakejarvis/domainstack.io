@@ -13,3 +13,10 @@ export {
   hasPendingRun,
   startWithDeduplication,
 } from "./deduplication";
+
+export {
+  classifyFetchError,
+  type ErrorClassification,
+  getErrorClassification,
+  withFetchErrorHandling,
+} from "./errors";
