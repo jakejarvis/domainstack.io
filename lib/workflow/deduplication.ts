@@ -97,7 +97,7 @@ export async function startWithDeduplication<T>(
   // Check if there's already a pending run for this key
   const pending = pendingRuns.get(key);
   if (pending) {
-    logger.debug({ workflow }, "reusing pending workflow run");
+    logger.info(`attaching to pending ${workflow} workflow`);
     return pending as Promise<T>;
   }
 
@@ -108,7 +108,7 @@ export async function startWithDeduplication<T>(
   });
 
   pendingRuns.set(key, runPromise);
-  logger.debug({ workflow }, "started new workflow run");
+  logger.debug(`started new ${workflow} workflow`);
 
   return runPromise;
 }

@@ -126,6 +126,84 @@ export function getBrowser(
   return browserPromise;
 }
 
+const VIEWPORT_WIDTH = 1200;
+const VIEWPORT_HEIGHT = 630;
+const NAV_TIMEOUT_MS = 5000;
+const IDLE_TIME_MS = 500;
+const IDLE_TIMEOUT_MS = 1500;
+
+interface CreatePageOptions {
+  viewport?: import("puppeteer-core").Viewport;
+}
+
+/**
+ * Create a page that's ready to be screenshotted
+ */
+export async function createPage(
+  browser: import("puppeteer-core").Browser,
+  url: string,
+  options: CreatePageOptions = {},
+): Promise<import("puppeteer-core").Page | null> {
+  let page: import("puppeteer-core").Page | null = null;
+
+  // Initialize adblocker once and reuse for all pages
+  // Using any to avoid complex type inference for dynamically imported class
+  // biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
+  let blocker: any = null;
+  try {
+    const { PuppeteerBlocker } = await import("@ghostery/adblocker-puppeteer");
+    blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
+  } catch (err) {
+    logger.warn(err, "failed to initialize adblocker");
+  }
+
+  try {
+    if (!page) {
+      page = await browser.newPage();
+    }
+
+    // Enable adblocker if initialized, but don't throw if it fails
+    if (blocker) {
+      try {
+        await blocker.enableBlockingInPage(page);
+      } catch (err) {
+        logger.warn(err, "failed to enable adblocker");
+      }
+    }
+
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: NAV_TIMEOUT_MS,
+    });
+
+    try {
+      await page.waitForNetworkIdle({
+        idleTime: IDLE_TIME_MS,
+        timeout: IDLE_TIMEOUT_MS,
+      });
+    } catch {
+      // Network idle timeout is not critical
+    }
+
+    // if (process.env.NODE_ENV === "development") {
+    page.on("console", (msg) => {
+      logger.debug({ source: "chromium", msg });
+    });
+    // }
+
+    await page.setViewport({
+      width: options.viewport?.width ?? VIEWPORT_WIDTH,
+      height: options.viewport?.height ?? VIEWPORT_HEIGHT,
+      deviceScaleFactor: 1,
+    });
+
+    return page;
+  } catch (err) {
+    logger.warn(err, "failed to create page");
+    throw err;
+  }
+}
+
 async function closeBrowser(): Promise<void> {
   if (!browserPromise) {
     return;
@@ -151,3 +229,5 @@ if (process.env.NODE_ENV !== "test") {
   process.on("SIGTERM", () => handleShutdown("SIGTERM"));
   process.on("SIGINT", () => handleShutdown("SIGINT"));
 }
+
+export type { Browser, Page } from "puppeteer-core";

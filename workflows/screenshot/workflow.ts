@@ -1,13 +1,9 @@
-import type { Browser, Page } from "puppeteer-core";
-import { RetryableError } from "workflow";
+import { after } from "next/server";
+import { FatalError } from "workflow";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 const VIEWPORT_WIDTH = 1200;
 const VIEWPORT_HEIGHT = 630;
-const NAV_TIMEOUT_MS = 8000;
-const IDLE_TIME_MS = 500;
-const IDLE_TIMEOUT_MS = 3000;
-const MAX_ATTEMPTS = 3;
 
 export interface ScreenshotWorkflowInput {
   domain: string;
@@ -33,7 +29,6 @@ export type ScreenshotWorkflowResult =
 interface CaptureSuccess {
   success: true;
   imageBuffer: string; // base64 encoded for serialization
-  source: "direct_https" | "direct_http";
 }
 
 interface CaptureFailure {
@@ -74,7 +69,7 @@ export async function screenshotWorkflow(
 
   if (!captureResult.success) {
     // Step 3a: Persist failure to cache
-    await persistFailure(domain, captureResult.isPermanentFailure);
+    await persistFailure(domain);
     return {
       success: false,
       error: "capture_error",
@@ -86,16 +81,10 @@ export async function screenshotWorkflow(
   const storageResult = await storeScreenshot(
     domain,
     captureResult.imageBuffer,
-    captureResult.source,
   );
 
   // Step 4: Persist to database
-  await persistSuccess(
-    domain,
-    storageResult.url,
-    storageResult.pathname,
-    storageResult.source,
-  );
+  await persistSuccess(domain, storageResult.url, storageResult.pathname);
 
   return {
     success: true,
@@ -110,141 +99,44 @@ export async function screenshotWorkflow(
 async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
-  const { getBrowser } = await import("@/lib/puppeteer");
-  const { USER_AGENT } = await import("@/lib/constants/app");
-  const { optimizeImageCover } = await import("@/lib/image");
+  const { getBrowser, createPage } = await import("@/lib/puppeteer");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: "screenshot-workflow" });
-  const urls = [`https://${domain}`, `http://${domain}`];
-  const permanentFailureUrls = new Set<string>();
 
-  let browser: Browser | null = null;
+  // Get a browser instance, may reuse an existing one if available
+  const browser = await getBrowser();
 
+  let page: import("@/lib/puppeteer").Page | null = null;
   try {
-    browser = await getBrowser();
+    page = await createPage(browser, `https://${domain}`, {
+      viewport: {
+        width: VIEWPORT_WIDTH,
+        height: VIEWPORT_HEIGHT,
+      },
+    });
 
-    // Initialize adblocker once and reuse for all pages
-    // Using any to avoid complex type inference for dynamically imported class
-    // biome-ignore lint/suspicious/noExplicitAny: PuppeteerBlocker type is complex to infer from dynamic import
-    let blocker: any = null;
-    try {
-      const { PuppeteerBlocker } = await import(
-        "@ghostery/adblocker-puppeteer"
-      );
-      blocker = await PuppeteerBlocker.fromPrebuiltAdsAndTracking();
-    } catch (err) {
-      logger.warn(err, "failed to initialize adblocker");
+    if (!page) {
+      throw new FatalError("Failed to create page");
     }
 
-    for (const url of urls) {
-      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        let page: Page | null = null;
-
-        try {
-          page = await browser.newPage();
-
-          // Enable adblocker if initialized, but don't block if it fails
-          if (blocker) {
-            try {
-              await blocker.enableBlockingInPage(page);
-            } catch (err) {
-              logger.warn(err, "failed to enable adblocker");
-            }
-          }
-
-          await page.setViewport({
-            width: VIEWPORT_WIDTH,
-            height: VIEWPORT_HEIGHT,
-            deviceScaleFactor: 1,
-          });
-          await page.setUserAgent(USER_AGENT);
-
-          const response = await page.goto(url, {
-            waitUntil: "domcontentloaded",
-            timeout: NAV_TIMEOUT_MS,
-          });
-
-          // Check for permanent failure signals (404, 410 Gone, etc.)
-          if (response) {
-            const status = response.status();
-            if (status === 404 || status === 410) {
-              permanentFailureUrls.add(url);
-              break; // No point retrying this specific URL
-            }
-          }
-
-          try {
-            await page.waitForNetworkIdle({
-              idleTime: IDLE_TIME_MS,
-              timeout: IDLE_TIMEOUT_MS,
-            });
-          } catch {
-            // Network idle timeout is not critical
-          }
-
-          const rawPng = (await page.screenshot({
-            type: "png",
-            fullPage: false,
-          })) as Buffer;
-
-          const optimized = await optimizeImageCover(
-            rawPng,
-            VIEWPORT_WIDTH,
-            VIEWPORT_HEIGHT,
-          );
-
-          if (!optimized || optimized.length === 0) {
-            continue;
-          }
-
-          const source = url.startsWith("https://")
-            ? ("direct_https" as const)
-            : ("direct_http" as const);
-
-          // Encode as base64 for serialization between steps
-          return {
-            success: true,
-            imageBuffer: optimized.toString("base64"),
-            source,
-          };
-        } catch (err) {
-          logger.debug(
-            { err, domain, url, attempt: attempt + 1 },
-            "screenshot capture attempt failed",
-          );
-
-          // Exponential backoff for retries
-          if (attempt < MAX_ATTEMPTS - 1) {
-            const delay = Math.min(200 * 2 ** attempt, 1200);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-          }
-        } finally {
-          if (page) {
-            try {
-              await page.close();
-            } catch (err) {
-              logger.error({ err, domain }, "failed to close page");
-            }
-          }
-        }
-      }
-    }
-
-    // All attempts failed
-    const isPermanentFailure =
-      permanentFailureUrls.size === urls.length && urls.length > 0;
+    const imageBuffer = await page.screenshot({
+      type: "webp",
+      fullPage: false,
+      // Encode as base64 for serialization between steps
+      encoding: "base64",
+    });
 
     return {
-      success: false,
-      isPermanentFailure,
+      success: true,
+      imageBuffer,
     };
   } catch (err) {
-    // Outer errors (browser init failures, etc.) are transient - throw to retry
-    logger.warn({ err, domain }, "screenshot capture failed, will retry");
-    throw new RetryableError("Screenshot capture failed", {
-      retryAfter: "10s",
-    });
+    logger.warn({ err, domain }, "screenshot capture failed, not retrying");
+    throw new FatalError("Screenshot capture failed");
+  } finally {
+    // Close page in background to avoid blocking the workflow
+    after(() => page?.close());
   }
 }
 
@@ -254,37 +146,27 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
 async function storeScreenshot(
   domain: string,
   imageBufferBase64: string,
-  source: "direct_https" | "direct_http",
 ): Promise<{
   url: string;
   pathname: string | null;
-  source: "direct_https" | "direct_http";
 }> {
   "use step";
 
-  const { optimizeImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
 
   // Decode base64 back to Buffer
   const imageBuffer = Buffer.from(imageBufferBase64, "base64");
 
-  // Optimize and convert to WebP
-  const optimized = await optimizeImageCover(
-    imageBuffer,
-    VIEWPORT_WIDTH,
-    VIEWPORT_HEIGHT,
-  );
-
   // Store to Vercel Blob
   const { url, pathname } = await storeImage({
     kind: "screenshot",
     domain,
-    buffer: optimized,
+    buffer: imageBuffer,
     width: VIEWPORT_WIDTH,
     height: VIEWPORT_HEIGHT,
   });
 
-  return { url, pathname: pathname ?? null, source };
+  return { url, pathname: pathname ?? null };
 }
 
 /**
@@ -294,7 +176,6 @@ async function persistSuccess(
   domain: string,
   url: string,
   pathname: string | null,
-  source: "direct_https" | "direct_http",
 ): Promise<void> {
   "use step";
 
@@ -312,7 +193,6 @@ async function persistSuccess(
     pathname,
     width: VIEWPORT_WIDTH,
     height: VIEWPORT_HEIGHT,
-    source,
     notFound: false,
     fetchedAt: now,
     expiresAt,
@@ -322,10 +202,7 @@ async function persistSuccess(
 /**
  * Step: Persist failure to database cache
  */
-async function persistFailure(
-  domain: string,
-  isPermanentFailure: boolean,
-): Promise<void> {
+async function persistFailure(domain: string): Promise<void> {
   "use step";
 
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
@@ -346,8 +223,7 @@ async function persistFailure(
       pathname: null,
       width: VIEWPORT_WIDTH,
       height: VIEWPORT_HEIGHT,
-      source: null,
-      notFound: isPermanentFailure,
+      notFound: true,
       fetchedAt: now,
       expiresAt,
     });

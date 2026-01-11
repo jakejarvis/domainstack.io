@@ -253,7 +253,7 @@ export async function persistRegistrationData(
   // Dynamic imports for database operations
   const { upsertDomain } = await import("@/lib/db/repos/domains");
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const now = new Date();
 

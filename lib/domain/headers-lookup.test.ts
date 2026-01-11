@@ -169,7 +169,7 @@ describe("persistHttpHeaders", () => {
 
   it("persists headers to database", async () => {
     // Mock schedule revalidation for this test
-    vi.doMock("@/lib/schedule", () => ({
+    vi.doMock("@/lib/revalidation", () => ({
       scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
     }));
 

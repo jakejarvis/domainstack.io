@@ -6,6 +6,10 @@ import { getDomainById } from "@/lib/db/repos/domains";
 import { getScreenshotByDomainId } from "@/lib/db/repos/screenshots";
 import { createLogger } from "@/lib/logger/server";
 import {
+  getDeduplicationKey,
+  startWithDeduplication,
+} from "@/lib/workflow/deduplication";
+import {
   type ScreenshotWorkflowResult,
   screenshotWorkflow,
 } from "@/workflows/screenshot";
@@ -110,22 +114,31 @@ export async function POST(
       }
     }
 
-    // Cache miss - start workflow (fire-and-forget pattern)
-    const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
+    // Cache miss - start workflow with deduplication
+    // (prevents duplicate workflows if multiple requests arrive simultaneously)
+    const key = getDeduplicationKey("screenshot", domain.name);
+    const result = await startWithDeduplication(key, async () => {
+      const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
 
-    logger.debug(
-      { domainId, domain: domain.name, runId: run.runId },
-      "screenshot workflow started",
-    );
+      logger.debug(
+        { domainId, domain: domain.name, runId: run.runId },
+        "screenshot workflow started",
+      );
 
-    analytics.track("screenshot_api_workflow_started", {
-      domain: domain.name,
-      runId: run.runId,
+      analytics.track("screenshot_api_workflow_started", {
+        domain: domain.name,
+        runId: run.runId,
+      });
+
+      return {
+        runId: run.runId,
+        returnValue: run.returnValue,
+      };
     });
 
     return NextResponse.json({
       status: "running",
-      runId: run.runId,
+      runId: result.runId,
     });
   } catch (err) {
     logger.error({ err }, "failed to start screenshot workflow");

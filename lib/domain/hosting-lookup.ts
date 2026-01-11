@@ -227,7 +227,7 @@ export async function persistHostingData(
   // Dynamic imports for database operations
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertHosting } = await import("@/lib/db/repos/hosting");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const domainRecord = await ensureDomainRecord(domain);
 

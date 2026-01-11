@@ -90,7 +90,7 @@ export function RemoteIcon({
     return (
       <Skeleton
         className={cn(baseClassName, "bg-input", className)}
-        style={{ ...style, width: size, height: size }}
+        style={style}
       />
     );
   }
@@ -116,8 +116,6 @@ export function RemoteIcon({
         )}
         style={{
           ...style,
-          width: size,
-          height: size,
           fontSize,
           backgroundColor,
         }}
@@ -138,7 +136,7 @@ export function RemoteIcon({
       width={size}
       height={size}
       className={cn(baseClassName, className)}
-      style={{ ...style, width: size, height: size }}
+      style={style}
       unoptimized
       priority={false}
       draggable={false}

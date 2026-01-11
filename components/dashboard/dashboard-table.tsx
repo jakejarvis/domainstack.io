@@ -560,7 +560,7 @@ export function DashboardTable({
             <DropdownMenuTrigger
               render={
                 <Button variant="outline" size="icon-sm">
-                  <DotsThreeVerticalIcon />
+                  <DotsThreeVerticalIcon weight="bold" />
                   <span className="sr-only">Actions</span>
                 </Button>
               }

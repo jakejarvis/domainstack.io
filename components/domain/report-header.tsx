@@ -1,4 +1,4 @@
-import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
+import { CameraIcon } from "@phosphor-icons/react/ssr";
 import { ExportButton } from "@/components/domain/export-button";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
@@ -49,15 +49,15 @@ export function DomainReportHeader({
           rel="noopener"
           className="flex min-w-0 items-center gap-2"
         >
-          <Favicon domain={domain} size={20} className="shrink-0" />
+          <Favicon domain={domain} className="size-5 shrink-0" />
           <h2
             className="truncate font-semibold text-xl tracking-tight"
             title={domain}
           >
             {domain}
           </h2>
-          <ArrowSquareOutIcon
-            className="size-3.5 flex-shrink-0 text-muted-foreground/60"
+          <CameraIcon
+            className="ml-0.5 size-4 flex-shrink-0 text-foreground/65"
             aria-hidden
           />
         </a>

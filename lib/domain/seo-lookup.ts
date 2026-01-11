@@ -267,7 +267,7 @@ export async function persistSeoData(
   // Dynamic imports for database operations
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertSeo } = await import("@/lib/db/repos/seo");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const domainRecord = await ensureDomainRecord(domain);
 

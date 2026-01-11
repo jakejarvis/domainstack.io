@@ -147,7 +147,7 @@ export async function persistDnsRecords(
   // Dynamic imports for database operations
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceDns } = await import("@/lib/db/repos/dns");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   // Ensure domain record exists (creates if needed)
   const domainRecord = await ensureDomainRecord(domain);

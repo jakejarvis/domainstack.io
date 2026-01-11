@@ -26,6 +26,10 @@ import { logger } from "@/lib/logger/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { sendEmail } from "@/lib/resend";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
+import {
+  getDeduplicationKey,
+  startWithDeduplication,
+} from "@/lib/workflow/deduplication";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import {
   generateVerificationToken,
@@ -233,15 +237,22 @@ export const trackingRouter = createTRPCRouter({
         return { verified: true, method: tracked.verificationMethod };
       }
 
-      // Run verification workflow (specific method or try all)
-      const workflowRun = await start(verificationWorkflow, [
-        {
-          domain: tracked.domainName,
-          token: tracked.verificationToken,
-          method: method ?? undefined,
-        },
-      ]);
-      const result = await workflowRun.returnValue;
+      // Run verification workflow with deduplication
+      // (prevents duplicate workflows if user clicks verify multiple times)
+      const key = getDeduplicationKey("verification", {
+        trackedDomainId,
+        method: method ?? "all",
+      });
+      const result = await startWithDeduplication(key, async () => {
+        const workflowRun = await start(verificationWorkflow, [
+          {
+            domain: tracked.domainName,
+            token: tracked.verificationToken,
+            method: method ?? undefined,
+          },
+        ]);
+        return workflowRun.returnValue;
+      });
 
       if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified

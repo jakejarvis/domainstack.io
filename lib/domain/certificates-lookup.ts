@@ -210,7 +210,7 @@ export async function persistCertificatesData(
   // Dynamic imports to avoid top-level db dependencies
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceCertificates } = await import("@/lib/db/repos/certificates");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
   const { ttlForCertificates } = await import("@/lib/ttl");
 
   const now = new Date();

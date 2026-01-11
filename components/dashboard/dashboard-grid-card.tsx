@@ -173,7 +173,7 @@ export function DashboardGridCard({
             <DropdownMenuTrigger
               render={
                 <Button variant="ghost" size="icon-sm">
-                  <DotsThreeVerticalIcon />
+                  <DotsThreeVerticalIcon weight="bold" />
                   <span className="sr-only">Actions</span>
                 </Button>
               }

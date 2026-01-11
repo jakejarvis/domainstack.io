@@ -129,7 +129,7 @@ export async function persistHttpHeaders(
   // Dynamic imports for database operations
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceHeaders } = await import("@/lib/db/repos/headers");
-  const { scheduleRevalidation } = await import("@/lib/schedule");
+  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   // Ensure domain record exists (creates if needed)
   const domainRecord = await ensureDomainRecord(domain);

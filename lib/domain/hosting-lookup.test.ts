@@ -88,7 +88,7 @@ vi.mock("@/lib/providers/catalog", () => ({
 }));
 
 // Mock schedule revalidation
-vi.mock("@/lib/schedule", () => ({
+vi.mock("@/lib/revalidation", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
 }));
 

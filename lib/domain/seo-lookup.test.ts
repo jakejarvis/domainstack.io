@@ -14,7 +14,7 @@ vi.mock("@/lib/tls-utils", () => ({
 }));
 
 // Mock schedule revalidation
-vi.mock("@/lib/schedule", () => ({
+vi.mock("@/lib/revalidation", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
 }));
 
