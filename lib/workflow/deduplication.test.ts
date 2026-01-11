@@ -84,6 +84,38 @@ describe("getDeduplicationKey", () => {
       getDeduplicationKey("test", true),
     );
   });
+
+  it("generates different keys for different Date values", () => {
+    const key1 = getDeduplicationKey("test", {
+      expiresAt: new Date("2024-01-01"),
+    });
+    const key2 = getDeduplicationKey("test", {
+      expiresAt: new Date("2025-12-31"),
+    });
+    expect(key1).not.toBe(key2);
+  });
+
+  it("generates same key for same Date values", () => {
+    const key1 = getDeduplicationKey("test", {
+      expiresAt: new Date("2024-01-01T00:00:00.000Z"),
+    });
+    const key2 = getDeduplicationKey("test", {
+      expiresAt: new Date("2024-01-01T00:00:00.000Z"),
+    });
+    expect(key1).toBe(key2);
+  });
+
+  it("handles Date values with different property ordering", () => {
+    const key1 = getDeduplicationKey("test", {
+      domain: "example.com",
+      expiresAt: new Date("2024-01-01"),
+    });
+    const key2 = getDeduplicationKey("test", {
+      expiresAt: new Date("2024-01-01"),
+      domain: "example.com",
+    });
+    expect(key1).toBe(key2);
+  });
 });
 
 describe("startWithDeduplication", () => {

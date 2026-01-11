@@ -17,8 +17,20 @@ const logger = createLogger({ source: "workflow-deduplication" });
 const pendingRuns = new Map<string, Promise<unknown>>();
 
 /**
+ * Check if a value is a plain object (not a class instance like Date, Map, etc.)
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
  * Recursively sort object keys for stable JSON stringification.
- * Arrays preserve order; objects get sorted keys.
+ * Arrays preserve order; plain objects get sorted keys.
+ * Non-plain objects (Date, Map, etc.) fall back to JSON.stringify.
  */
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") {
@@ -29,10 +41,15 @@ function stableStringify(value: unknown): string {
     return `[${value.map(stableStringify).join(",")}]`;
   }
 
-  const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+  // For non-plain objects (Date, Map, custom classes, etc.),
+  // use JSON.stringify which respects toJSON methods
+  if (!isPlainObject(value)) {
+    return JSON.stringify(value);
+  }
+
+  const sortedKeys = Object.keys(value).sort();
   const pairs = sortedKeys.map(
-    (key) =>
-      `${JSON.stringify(key)}:${stableStringify((value as Record<string, unknown>)[key])}`,
+    (key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`,
   );
   return `{${pairs.join(",")}}`;
 }
