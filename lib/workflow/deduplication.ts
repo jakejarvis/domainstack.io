@@ -53,10 +53,13 @@ export async function startWithDeduplication<T>(
   key: string,
   startWorkflow: () => Promise<T>,
 ): Promise<T> {
+  // Extract workflow name from key for safe logging (avoid leaking input data)
+  const workflow = key.split(":")[0] ?? "unknown";
+
   // Check if there's already a pending run for this key
   const pending = pendingRuns.get(key);
   if (pending) {
-    logger.debug({ key }, "reusing pending workflow run");
+    logger.debug({ workflow }, "reusing pending workflow run");
     return pending as Promise<T>;
   }
 
@@ -67,7 +70,7 @@ export async function startWithDeduplication<T>(
   });
 
   pendingRuns.set(key, runPromise);
-  logger.debug({ key }, "started new workflow run");
+  logger.debug({ workflow }, "started new workflow run");
 
   return runPromise;
 }

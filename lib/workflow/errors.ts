@@ -30,11 +30,12 @@ function isRemoteAssetError(
  * Classify a fetch-related error into a workflow error.
  *
  * This utility helps steps properly signal to the workflow SDK whether
- * an error is retryable or fatal, based on the error type.
+ * an error is retryable or fatal, based on the error type. It always
+ * returns a classified error - either RetryableError or FatalError.
  *
  * @param err - The error to classify
  * @param options - Classification options
- * @returns RetryableError, FatalError, or undefined if the error should be re-thrown
+ * @returns RetryableError or FatalError based on error classification
  *
  * @example
  * ```ts
