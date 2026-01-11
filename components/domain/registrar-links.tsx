@@ -116,10 +116,8 @@ export function RegistrarLinks({
     return <RegistrarLinksSkeleton className={className} />;
   }
 
-  const providers = data?.providers ?? [];
+  const providers = data?.data?.providers ?? [];
   if (providers.length === 0) return null;
-
-  const tldSuffix = domain.split(".").slice(1).join(".");
 
   const sortedProviders = [...providers].sort((a, b) => {
     const priceA = Number.parseFloat(a.price);
@@ -167,9 +165,7 @@ export function RegistrarLinks({
                     <TooltipContent>{config.name}</TooltipContent>
                   </Tooltip>
                   <span>
-                    <span className="text-foreground/85">
-                      .{tldSuffix} from
-                    </span>{" "}
+                    <span className="text-foreground/85">.{tld} from</span>{" "}
                     <span className="font-semibold">{price}</span>
                     <span className="text-muted-foreground text-xs">/year</span>
                   </span>

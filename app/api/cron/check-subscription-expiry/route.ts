@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getUserIdsWithEndingSubscriptions } from "@/lib/db/repos/user-subscription";
 import { createLogger } from "@/lib/logger/server";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { subscriptionExpiryWorkflow } from "@/workflows/subscription-expiry";
 
 const logger = createLogger({ source: "cron/check-subscription-expiry" });
@@ -43,7 +44,11 @@ export async function GET(request: Request) {
             const run = await start(subscriptionExpiryWorkflow, [
               { userId: id },
             ]);
-            await run.returnValue;
+            // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+            await withConcurrencyHandling(run.returnValue, {
+              userId: id,
+              workflow: "subscription-expiry",
+            });
             return { id, success: true };
           } catch (err) {
             logger.error(
