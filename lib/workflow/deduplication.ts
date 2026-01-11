@@ -17,17 +17,38 @@ const logger = createLogger({ source: "workflow-deduplication" });
 const pendingRuns = new Map<string, Promise<unknown>>();
 
 /**
+ * Recursively sort object keys for stable JSON stringification.
+ * Arrays preserve order; objects get sorted keys.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+
+  const sortedKeys = Object.keys(value as Record<string, unknown>).sort();
+  const pairs = sortedKeys.map(
+    (key) =>
+      `${JSON.stringify(key)}:${stableStringify((value as Record<string, unknown>)[key])}`,
+  );
+  return `{${pairs.join(",")}}`;
+}
+
+/**
  * Generate a deduplication key for a workflow run.
  *
  * @param workflowName - The name/identifier of the workflow
- * @param input - The workflow input (will be JSON stringified)
+ * @param input - The workflow input (will be stably stringified with sorted keys)
  * @returns A stable key for deduplication
  */
 export function getDeduplicationKey(
   workflowName: string,
   input: unknown,
 ): string {
-  return `${workflowName}:${JSON.stringify(input)}`;
+  return `${workflowName}:${stableStringify(input)}`;
 }
 
 /**

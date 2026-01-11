@@ -151,10 +151,10 @@ export async function withConcurrencyHandling<T>(
     return await operation;
   } catch (err) {
     if (isConcurrencyConflict(err)) {
-      logConcurrencyConflict({
-        ...context,
-        message: "workflow step handled by another worker",
-      });
+      logConcurrencyConflict(
+        context,
+        "workflow step handled by another worker",
+      );
       return undefined;
     }
     throw err;

@@ -3,6 +3,7 @@ import { WorkflowAPIError } from "workflow/internal/errors";
 import {
   handleStepConcurrencyError,
   isConcurrencyConflict,
+  logConcurrencyConflict,
   wasAlreadyHandled,
 } from "./concurrency";
 
@@ -97,6 +98,25 @@ describe("wasAlreadyHandled", () => {
     expect(wasAlreadyHandled(null)).toBe(false);
     expect(wasAlreadyHandled({ data: "test" })).toBe(false);
     expect(wasAlreadyHandled("other_string")).toBe(false);
+  });
+});
+
+describe("logConcurrencyConflict", () => {
+  it("accepts context and custom message", () => {
+    // This test verifies the function signature works correctly
+    // The actual logging is mocked in tests, so we just verify it doesn't throw
+    expect(() =>
+      logConcurrencyConflict(
+        { domain: "example.com" },
+        "custom conflict message",
+      ),
+    ).not.toThrow();
+  });
+
+  it("uses default message when not provided", () => {
+    expect(() =>
+      logConcurrencyConflict({ domain: "example.com" }),
+    ).not.toThrow();
   });
 });
 

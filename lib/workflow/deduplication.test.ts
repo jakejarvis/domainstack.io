@@ -34,6 +34,56 @@ describe("getDeduplicationKey", () => {
     expect(key).toContain("hosting:");
     expect(key).toContain("example.com");
   });
+
+  it("generates same key for objects with different property ordering", () => {
+    const key1 = getDeduplicationKey("hosting", {
+      domain: "example.com",
+      headers: ["X-Frame-Options"],
+      dnsRecords: [{ type: "A", value: "1.2.3.4" }],
+    });
+    const key2 = getDeduplicationKey("hosting", {
+      dnsRecords: [{ type: "A", value: "1.2.3.4" }],
+      domain: "example.com",
+      headers: ["X-Frame-Options"],
+    });
+    expect(key1).toBe(key2);
+  });
+
+  it("generates same key for nested objects with different property ordering", () => {
+    const key1 = getDeduplicationKey("test", {
+      outer: { a: 1, b: 2 },
+      list: [{ x: 10, y: 20 }],
+    });
+    const key2 = getDeduplicationKey("test", {
+      list: [{ y: 20, x: 10 }],
+      outer: { b: 2, a: 1 },
+    });
+    expect(key1).toBe(key2);
+  });
+
+  it("preserves array order (arrays are not sorted)", () => {
+    const key1 = getDeduplicationKey("test", { items: ["a", "b", "c"] });
+    const key2 = getDeduplicationKey("test", { items: ["c", "b", "a"] });
+    expect(key1).not.toBe(key2);
+  });
+
+  it("handles null values", () => {
+    const key1 = getDeduplicationKey("test", { value: null });
+    const key2 = getDeduplicationKey("test", { value: null });
+    expect(key1).toBe(key2);
+  });
+
+  it("handles primitive inputs", () => {
+    expect(getDeduplicationKey("test", "string")).toBe(
+      getDeduplicationKey("test", "string"),
+    );
+    expect(getDeduplicationKey("test", 123)).toBe(
+      getDeduplicationKey("test", 123),
+    );
+    expect(getDeduplicationKey("test", true)).toBe(
+      getDeduplicationKey("test", true),
+    );
+  });
 });
 
 describe("startWithDeduplication", () => {
