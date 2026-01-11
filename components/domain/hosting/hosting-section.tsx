@@ -1,5 +1,4 @@
 import { QuestionIcon } from "@phosphor-icons/react/ssr";
-import { hasFlag } from "country-flag-icons";
 import { HostingMapClient } from "@/components/domain/hosting/hosting-map-client";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
@@ -14,11 +13,24 @@ import {
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
-import { cn } from "@/lib/utils";
 
 function formatLocation(geo: HostingResponse["geo"]): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
   return parts.join(", ");
+}
+
+/**
+ * Convert a Unicode code point string to its emoji representation.
+ * e.g., "U+1F1FA U+1F1F8" → "🇺🇸"
+ */
+function unicodeToEmoji(unicode: string): string {
+  if (!unicode) return "";
+  return unicode
+    .split(" ")
+    .map((cp) =>
+      String.fromCodePoint(Number.parseInt(cp.replace("U+", ""), 16)),
+    )
+    .join("");
 }
 
 export function HostingSection({
@@ -86,16 +98,10 @@ export function HostingSection({
                 label="Location"
                 value={formatLocation(data.geo)}
                 leading={
-                  data.geo.country_code &&
-                  hasFlag(data.geo.country_code.toUpperCase()) ? (
-                    <span
-                      className={cn(
-                        "!w-[15px] !h-[10px] relative inline-block translate-y-0.5 rounded-xs",
-                        // https://gitlab.com/catamphetamine/country-flag-icons/-/tree/master/flags/3x2
-                        `flag:${data.geo.country_code.toUpperCase()}`,
-                      )}
-                      title={data.geo.country || data.geo.country_code}
-                    />
+                  data.geo.country_emoji ? (
+                    <span title={data.geo.country || data.geo.country_code}>
+                      {unicodeToEmoji(data.geo.country_emoji)}
+                    </span>
                   ) : undefined
                 }
               />

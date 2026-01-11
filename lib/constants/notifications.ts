@@ -1,14 +1,6 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
-import {
-  CalendarDotIcon,
-  FingerprintIcon,
-  IdentificationBadgeIcon,
-  PlugsIcon,
-  ShieldWarningIcon,
-} from "@phosphor-icons/react/ssr";
-
 /**
  * Notification system constants and derived types.
+ * Note: UI metadata (icons) is in ./notification-ui.ts to avoid loading React in Node.js contexts.
  */
 
 // Valid notification channels
@@ -41,39 +33,6 @@ export type NotificationType =
   | "registration_change"
   | "provider_change"
   | "certificate_change";
-
-// Category metadata for UI display
-export const NOTIFICATION_CATEGORY_INFO: Record<
-  NotificationCategory,
-  { label: string; description: string; icon: React.FC<IconProps> }
-> = {
-  providerChanges: {
-    label: "Provider Changes",
-    description: "Alerts when DNS, hosting, or email providers change",
-    icon: PlugsIcon,
-  },
-  domainExpiry: {
-    label: "Domain Expiration",
-    description: "Alerts at 30, 14, 7, and 1 day before expiration",
-    icon: CalendarDotIcon,
-  },
-  registrationChanges: {
-    label: "Registration Changes",
-    description:
-      "Alerts when registrar, nameservers, transfer lock, or statuses change",
-    icon: IdentificationBadgeIcon,
-  },
-  certificateExpiry: {
-    label: "Certificate Expiration",
-    description: "Alerts at 14, 7, 3, and 1 day before expiration",
-    icon: ShieldWarningIcon,
-  },
-  certificateChanges: {
-    label: "Certificate Changes",
-    description: "Alerts when SSL certificate issuer or subject changes",
-    icon: FingerprintIcon,
-  },
-};
 
 // Dashboard "expiring soon" threshold (first notification threshold)
 // biome-ignore lint/nursery/useDestructuring: This is a constant

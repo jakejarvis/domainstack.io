@@ -12,9 +12,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
+import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
 import {
   NOTIFICATION_CATEGORIES,
-  NOTIFICATION_CATEGORY_INFO,
   type NotificationCategory,
 } from "@/lib/constants/notifications";
 import type {

@@ -5,8 +5,6 @@ import { analytics } from "@/lib/analytics/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { getQueryClient, trpc } from "@/trpc/server";
 
-import "country-flag-icons/3x2/flags.css";
-
 export async function generateMetadata({
   params,
 }: {

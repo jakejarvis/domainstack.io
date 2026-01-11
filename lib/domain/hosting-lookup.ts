@@ -27,6 +27,7 @@ export interface GeoIpResult {
     city: string;
     region: string;
     country: string;
+    country_emoji: string;
     country_code: string;
     lat: number | null;
     lon: number | null;
@@ -63,6 +64,7 @@ export async function lookupGeoIp(ip: string | null): Promise<GeoIpResult> {
         city: "",
         region: "",
         country: "",
+        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -239,6 +241,7 @@ export async function persistHostingData(
     geoCity: geo.city,
     geoRegion: geo.region,
     geoCountry: geo.country,
+    geoCountryEmoji: geo.country_emoji,
     geoCountryCode: geo.country_code,
     geoLat: geo.lat ?? null,
     geoLon: geo.lon ?? null,

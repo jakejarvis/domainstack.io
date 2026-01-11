@@ -4,8 +4,25 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "geoip" });
 
+interface GeoIpResponse {
+  geo: {
+    city: string;
+    region: string;
+    country: string;
+    country_emoji: string;
+    country_code: string;
+    lat: number | null;
+    lon: number | null;
+  };
+  owner: string | null;
+  domain: string | null;
+}
+
 /**
  * Lookup IP metadata including geolocation and ownership information.
+ *
+ * Uses ipdata.co API for IP geolocation and ASN/company data.
+ * See: https://docs.ipdata.co/docs/all-response-fields
  *
  * Wrapped in React's cache() for per-request deduplication during SSR,
  * ensuring multiple services can query the same IP without triggering
@@ -13,86 +30,11 @@ const logger = createLogger({ source: "geoip" });
  */
 export const lookupGeoIp = cache(async function lookupGeoIp(
   ip: string,
-): Promise<{
-  geo: {
-    city: string;
-    region: string;
-    country: string;
-    country_code: string;
-    lat: number | null;
-    lon: number | null;
-  };
-  owner: string | null;
-  domain: string | null;
-}> {
-  try {
-    const res = await fetchWithTimeoutAndRetry(
-      `https://ipwho.is/${encodeURIComponent(ip)}`,
-      {},
-      { timeoutMs: 5000 },
-    );
+): Promise<GeoIpResponse> {
+  const apiKey = process.env.IPDATA_API_KEY;
 
-    if (!res.ok) {
-      logger.error({ status: res.status }, "ipwho.is lookup failed");
-      throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
-    }
-
-    // https://ipwhois.io/documentation
-    const data = (await res.json()) as {
-      ip?: string;
-      success?: boolean;
-      type?: "IPv4" | "IPv6";
-      continent?: string;
-      continent_code?: string;
-      country?: string;
-      country_code?: string;
-      region?: string;
-      region_code?: string;
-      city?: string;
-      latitude?: number;
-      longitude?: number;
-      is_eu?: boolean;
-      postal?: string;
-      calling_code?: string;
-      capital?: string;
-      borders?: string; // e.g., "CA,MX"
-      flag?: {
-        img?: string; // URL to SVG/PNG
-        emoji?: string; // e.g., "🇺🇸"
-        emoji_unicode?: string; // e.g., "U+1F1FA U+1F1F8"
-      };
-      connection: {
-        asn?: number;
-        org?: string;
-        isp?: string;
-        domain?: string;
-      };
-      timezone?: {
-        id?: string; // IANA TZ, e.g., "America/New_York"
-        abbr?: string; // e.g., "EDT"
-        is_dst?: boolean;
-        offset?: number; // seconds offset from UTC (can be negative)
-        utc?: string; // e.g., "-04:00"
-        current_time?: string; // ISO8601 with offset
-      };
-    };
-
-    const org = data.connection?.org?.trim();
-    const isp = data.connection?.isp?.trim();
-    const owner = (org || isp || "").trim() || null;
-    const domain = (data.connection?.domain || "").trim() || null;
-    const geo = {
-      city: data.city || "",
-      region: data.region || "",
-      country: data.country || "",
-      country_code: data.country_code || "",
-      lat: typeof data.latitude === "number" ? data.latitude : null,
-      lon: typeof data.longitude === "number" ? data.longitude : null,
-    };
-
-    return { geo, owner, domain };
-  } catch (err) {
-    logger.error(err, "ipwho.is lookup failed");
+  if (!apiKey) {
+    logger.warn("IPDATA_API_KEY not configured, skipping IP lookup");
     return {
       owner: null,
       domain: null,
@@ -100,6 +42,83 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
         city: "",
         region: "",
         country: "",
+        country_emoji: "",
+        country_code: "",
+        lat: null,
+        lon: null,
+      },
+    };
+  }
+
+  try {
+    const url = new URL(`https://api.ipdata.co/${encodeURIComponent(ip)}`);
+    url.searchParams.set("api-key", apiKey);
+
+    const res = await fetchWithTimeoutAndRetry(url.toString());
+
+    if (!res.ok) {
+      logger.error({ status: res.status }, "ipdata.co lookup failed");
+      throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
+    }
+
+    // https://docs.ipdata.co/docs/all-response-fields
+    const data = (await res.json()) as {
+      ip?: string;
+      is_eu?: boolean;
+      city?: string;
+      region?: string;
+      region_code?: string;
+      country_name?: string;
+      country_code?: string;
+      continent_name?: string;
+      continent_code?: string;
+      latitude?: number;
+      longitude?: number;
+      postal?: string;
+      calling_code?: string;
+      flag?: string;
+      emoji_flag?: string;
+      emoji_unicode?: string;
+      asn?: {
+        asn?: string;
+        name?: string;
+        domain?: string;
+        route?: string;
+        type?: string;
+      };
+      company?: {
+        name?: string;
+        domain?: string;
+        network?: string;
+        type?: string;
+      };
+    };
+
+    // Prefer company name over ASN name for more accurate ownership
+    const owner = data.company?.name || data.asn?.name || null;
+    const domain = data.company?.domain || data.asn?.domain || null;
+
+    const geo = {
+      city: data.city || "",
+      region: data.region || "",
+      country: data.country_name || "",
+      country_emoji: data.emoji_unicode || "",
+      country_code: data.country_code || "",
+      lat: typeof data.latitude === "number" ? data.latitude : null,
+      lon: typeof data.longitude === "number" ? data.longitude : null,
+    };
+
+    return { geo, owner, domain };
+  } catch (err) {
+    logger.error(err, "ipdata.co lookup failed");
+    return {
+      owner: null,
+      domain: null,
+      geo: {
+        city: "",
+        region: "",
+        country: "",
+        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,

@@ -299,63 +299,66 @@ const dohHandler = ({ request }: { request: Request }) => {
   });
 };
 
-const ipWhoIsHandler = ({ params }: { params: { ip: string } }) => {
+const ipDataHandler = ({ params }: { params: { ip: string } }) => {
   const { ip } = params;
 
-  // Default mock response
+  // Default mock response (ipdata.co format)
+  // See: https://docs.ipdata.co/docs/all-response-fields
   const response = {
     ip,
-    success: true,
-    type: "IPv4",
-    continent: "North America",
-    continent_code: "NA",
-    country: "United States",
-    country_code: "US",
+    is_eu: false,
+    city: "Mountain View",
     region: "California",
     region_code: "CA",
-    city: "Mountain View",
+    country_name: "United States",
+    country_code: "US",
+    continent_name: "North America",
+    continent_code: "NA",
     latitude: 37.386,
     longitude: -122.0838,
-    is_eu: false,
     postal: "94040",
     calling_code: "1",
-    capital: "Washington D.C.",
-    borders: "CA,MX",
-    flag: {
-      img: "https://cdn.ipwhois.io/flags/us.svg",
-      emoji: "🇺🇸",
-      emoji_unicode: "U+1F1FA U+1F1F8",
-    },
-    connection: {
-      asn: 15_169,
-      org: "Google LLC",
-      isp: "Google LLC",
+    flag: "https://ipdata.co/flags/us.png",
+    emoji_flag: "🇺🇸",
+    emoji_unicode: "U+1F1FA U+1F1F8",
+    asn: {
+      asn: "AS15169",
+      name: "Google LLC",
       domain: "google.com",
+      route: "8.8.8.0/24",
+      type: "hosting",
+    },
+    company: {
+      name: "Google LLC",
+      domain: "google.com",
+      network: "8.8.8.0/24",
+      type: "hosting",
     },
     timezone: {
-      id: "America/Los_Angeles",
+      name: "America/Los_Angeles",
       abbr: "PST",
+      offset: "-0800",
       is_dst: false,
-      offset: -28_800,
-      utc: "-08:00",
       current_time: "2024-01-01T12:00:00-08:00",
     },
   };
 
   // Specific mocks for known IPs if needed
   if (ip === "1.1.1.1") {
-    response.connection.org = "Cloudflare, Inc.";
-    response.connection.isp = "Cloudflare, Inc.";
-    response.connection.domain = "cloudflare.com";
+    response.asn.name = "Cloudflare, Inc.";
+    response.asn.domain = "cloudflare.com";
+    response.company.name = "Cloudflare, Inc.";
+    response.company.domain = "cloudflare.com";
     response.city = "San Francisco";
     response.latitude = 37.7;
     response.longitude = -122.4;
   }
 
   if (ip === "9.9.9.9") {
-    response.connection.org = "My ISP";
-    response.connection.isp = "My ISP";
-    response.connection.domain = "isp.example";
+    response.asn.name = "My ISP";
+    response.asn.domain = "isp.example";
+    response.company.name = "My ISP";
+    response.company.domain = "isp.example";
   }
 
   return HttpResponse.json(response);
@@ -541,8 +544,8 @@ export const handlers = [
   // Cloudflare IPs
   http.get("https://api.cloudflare.com/client/v4/ips", cloudflareIpsHandler),
 
-  // IP Lookup
-  http.get("https://ipwho.is/:ip", ipWhoIsHandler),
+  // IP Lookup (ipdata.co)
+  http.get("https://api.ipdata.co/:ip", ipDataHandler),
 
   // RDAP Bootstrap
   http.get("https://data.iana.org/rdap/dns.json", rdapBootstrapHandler),

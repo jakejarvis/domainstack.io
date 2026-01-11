@@ -14,25 +14,29 @@ import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
 import { server } from "@/mocks/server";
 
-// Mock GeoIP API
+// Mock GeoIP API (ipdata.co format)
 function mockGeoIp(
   ip: string,
   data: { city?: string; country?: string; org?: string } = {},
 ) {
   server.use(
-    http.get(`https://ipwho.is/${ip}`, () =>
+    http.get(`https://api.ipdata.co/${ip}`, () =>
       HttpResponse.json({
-        success: true,
         ip,
         city: data.city ?? "San Francisco",
         region: "California",
-        country: data.country ?? "United States",
+        country_name: data.country ?? "United States",
         country_code: "US",
+        country_emoji: "U+1F1FA U+1F1F8",
         latitude: 37.7749,
         longitude: -122.4194,
-        connection: {
-          org: data.org ?? "Cloudflare, Inc.",
-          isp: data.org ?? "Cloudflare, Inc.",
+        asn: {
+          asn: "AS13335",
+          name: data.org ?? "Cloudflare, Inc.",
+          domain: "cloudflare.com",
+        },
+        company: {
+          name: data.org ?? "Cloudflare, Inc.",
           domain: "cloudflare.com",
         },
       }),
@@ -91,6 +95,11 @@ vi.mock("@/lib/providers/catalog", () => ({
 vi.mock("@/lib/revalidation", () => ({
   scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
 }));
+
+beforeAll(() => {
+  // Stub the API key for tests
+  vi.stubEnv("IPDATA_API_KEY", "test-api-key");
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -161,6 +170,7 @@ describe("detectAndResolveProviders", () => {
         city: "San Francisco",
         region: "California",
         country: "United States",
+        country_emoji: "U+1F1FA U+1F1F8",
         country_code: "US",
         lat: 37.7749,
         lon: -122.4194,
@@ -200,6 +210,7 @@ describe("detectAndResolveProviders", () => {
         city: "",
         region: "",
         country: "",
+        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -244,6 +255,7 @@ describe("detectAndResolveProviders", () => {
         city: "",
         region: "",
         country: "",
+        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -273,6 +285,7 @@ describe("detectAndResolveProviders", () => {
         city: "",
         region: "",
         country: "",
+        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,

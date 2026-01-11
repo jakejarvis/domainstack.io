@@ -1,0 +1,1 @@
+ALTER TABLE "hosting" ADD COLUMN "geo_country_emoji" text;
