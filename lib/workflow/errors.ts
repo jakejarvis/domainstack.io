@@ -170,6 +170,14 @@ export type ErrorClassification =
  * to return appropriate result types.
  */
 export function getErrorClassification(err: unknown): ErrorClassification {
+  // Recognize existing workflow errors
+  if (err instanceof FatalError) {
+    return { type: "fatal", reason: "workflow_fatal" };
+  }
+  if (err instanceof RetryableError) {
+    return { type: "retryable", reason: "workflow_retryable" };
+  }
+
   if (isExpectedDnsError(err)) {
     return { type: "fatal", reason: "dns_error" };
   }

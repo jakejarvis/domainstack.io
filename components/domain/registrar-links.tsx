@@ -116,7 +116,7 @@ export function RegistrarLinks({
     return <RegistrarLinksSkeleton className={className} />;
   }
 
-  const providers = data?.data.providers ?? [];
+  const providers = data?.data?.providers ?? [];
   if (providers.length === 0) return null;
 
   const sortedProviders = [...providers].sort((a, b) => {

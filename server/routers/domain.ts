@@ -156,7 +156,11 @@ export const domainRouter = createTRPCRouter({
       const headers = headersResult.data?.headers ?? [];
 
       // Hosting workflow with deduplication (key includes the data dependencies)
-      const hostingKey = getDeduplicationKey("hosting", input.domain);
+      const hostingKey = getDeduplicationKey("hosting", {
+        domain: input.domain,
+        dnsRecords,
+        headers,
+      });
       const result = await startWithDeduplication(hostingKey, async () => {
         const run = await start(hostingWorkflow, [
           {
