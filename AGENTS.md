@@ -297,6 +297,106 @@ npx workflow web
 npx workflow inspect runs
 ```
 
+**Concurrency Handling:**
+The Workflow SDK uses at-least-once delivery, which means steps can be executed multiple times concurrently. Use `lib/workflow/` utilities to handle this gracefully:
+
+1. **Request Deduplication** - Prevents duplicate workflows when multiple requests arrive simultaneously:
+```typescript
+import { start } from "workflow/api";
+import { getDeduplicationKey, startWithDeduplication } from "@/lib/workflow";
+
+// Deduplicate concurrent requests for the same domain
+const key = getDeduplicationKey("registration", domain);
+const result = await startWithDeduplication(key, async () => {
+  const run = await start(registrationWorkflow, [{ domain }]);
+  return run.returnValue;
+});
+```
+
+2. **409 Conflict Handling** - For cron jobs and Inngest functions where step-level conflicts can occur:
+```typescript
+import { start } from "workflow/api";
+import { withConcurrencyHandling } from "@/lib/workflow";
+
+const run = await start(myWorkflow, [input]);
+const result = await withConcurrencyHandling(run.returnValue, {
+  domain: "example.com",
+  workflow: "my-workflow",
+});
+
+// result is undefined if another worker already handled it
+if (result === undefined) {
+  return; // Safe to return - work was not lost
+}
+```
+
+Available utilities:
+- `getDeduplicationKey(workflow, input)` - Generate a deduplication key
+- `startWithDeduplication(key, fn)` - Deduplicate concurrent workflow starts (per-instance)
+- `isConcurrencyConflict(error)` - Check if error is a 409 step conflict
+- `withConcurrencyHandling(promise, context)` - Handle 409 conflicts gracefully
+
+Best practices for idempotent steps:
+- Use database upserts instead of inserts (e.g., `onConflictDoUpdate`)
+- Use idempotency keys for external API calls (e.g., Resend emails use `stepId`)
+- Check if work is already done before expensive operations
+- Use `startWithDeduplication` in tRPC routers to avoid duplicate workflows
+
+**Fetch in Workflows:**
+The SDK provides a durable `fetch` function that makes each fetch a separate step:
+```typescript
+import { fetch } from "workflow";
+
+async function myStep(): Promise<Data> {
+  "use step";
+  // Each fetch call becomes a durable sub-step - result is cached on retry
+  const response = await fetch("https://api.example.com/data");
+  return response.json();
+}
+```
+
+Current architecture uses `lib/safe-fetch.ts` and `lib/fetch.ts` for HTTP calls within steps. This approach:
+- **Pros:** Simpler code, fewer step overhead, works in both workflow and non-workflow contexts
+- **Cons:** Fetches inside a step are repeated if the step retries after the fetch succeeds
+
+When to use SDK's `fetch`:
+- Long-running fetches where you want to avoid repeating them on step retry
+- Fetches with significant side effects (rare in our codebase)
+
+When to use our fetch utilities (`safeFetch`, `fetchWithTimeoutAndRetry`):
+- Fast, idempotent network calls (DNS, headers, HTML)
+- Code that runs both in and out of workflow context
+- Batching multiple quick fetches in a single step
+
+**Error Classification in Steps:**
+Use `lib/workflow/errors.ts` utilities to properly classify fetch errors:
+```typescript
+import { classifyFetchError, withFetchErrorHandling } from "@/lib/workflow";
+
+// Option 1: Wrap the entire operation
+async function fetchDataStep(domain: string): Promise<Data> {
+  "use step";
+  return await withFetchErrorHandling(
+    () => fetchData(domain),
+    { context: `fetching ${domain}` }
+  );
+}
+
+// Option 2: Classify errors manually
+async function fetchDataStep(domain: string): Promise<Data> {
+  "use step";
+  try {
+    return await fetchData(domain);
+  } catch (err) {
+    throw classifyFetchError(err, { context: `fetching ${domain}` });
+  }
+}
+```
+
+Error classification:
+- **FatalError** (don't retry): DNS errors, TLS errors, invalid URLs, blocked hosts
+- **RetryableError** (retry with backoff): Timeouts, network errors, server errors
+
 **Reference**
 [Workflow DevKit docs](https://useworkflow.dev/llms.txt)
 

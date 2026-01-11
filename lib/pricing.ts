@@ -211,47 +211,8 @@ const dynadotProvider = createPricingProvider(
   { enabled: !!dynadotApiKey },
 );
 
-const providers: PricingProvider[] = [
+export const providers: PricingProvider[] = [
   porkbunProvider,
   cloudflareProvider,
   dynadotProvider,
 ];
-
-// ============================================================================
-// Public API
-// ============================================================================
-
-/**
- * Fetch domain pricing for the given TLD from all providers.
- * Returns pricing from all providers that have data for this TLD.
- */
-export async function getPricing(tld: string): Promise<{
-  tld: string | null;
-  providers: Array<{
-    provider: string;
-    price: string;
-  }>;
-}> {
-  const normalizedTld = (tld ?? "").trim().toLowerCase().replace(/^\./, "");
-  if (!normalizedTld) return { tld: null, providers: [] };
-
-  const results = await Promise.all(
-    providers
-      .filter((p) => p.enabled)
-      .map(async (provider) => {
-        try {
-          const payload = await provider.fetchPricing();
-          const price = payload[normalizedTld]?.registration;
-          return price ? { provider: provider.name, price } : null;
-        } catch (err) {
-          logger.error({ err, provider: provider.name });
-          return null;
-        }
-      }),
-  );
-
-  return {
-    tld: normalizedTld,
-    providers: results.filter((r): r is NonNullable<typeof r> => r !== null),
-  };
-}

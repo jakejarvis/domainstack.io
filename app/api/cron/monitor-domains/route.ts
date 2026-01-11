@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getMonitoredSnapshotIds } from "@/lib/db/repos/snapshots";
 import { createLogger } from "@/lib/logger/server";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { monitorDomainWorkflow } from "@/workflows/monitor-domain";
 
 const logger = createLogger({ source: "cron/monitor-domains" });
@@ -43,7 +44,11 @@ export async function GET(request: Request) {
             const run = await start(monitorDomainWorkflow, [
               { trackedDomainId: id },
             ]);
-            await run.returnValue;
+            // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+            await withConcurrencyHandling(run.returnValue, {
+              trackedDomainId: id,
+              workflow: "monitor-domain",
+            });
             return { id, success: true };
           } catch (err) {
             logger.error(

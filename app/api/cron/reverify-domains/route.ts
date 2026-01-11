@@ -5,6 +5,7 @@ import {
   getVerifiedTrackedDomainIds,
 } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
 import { verifyPendingWorkflow } from "@/workflows/verify-pending";
 
@@ -42,7 +43,11 @@ export async function GET(request: Request) {
               const run = await start(verifyPendingWorkflow, [
                 { trackedDomainId: id },
               ]);
-              await run.returnValue;
+              // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+              await withConcurrencyHandling(run.returnValue, {
+                trackedDomainId: id,
+                workflow: "verify-pending",
+              });
               return { id, success: true };
             } catch (err) {
               logger.error(
@@ -72,7 +77,11 @@ export async function GET(request: Request) {
               const run = await start(reverifyOwnershipWorkflow, [
                 { trackedDomainId: id },
               ]);
-              await run.returnValue;
+              // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+              await withConcurrencyHandling(run.returnValue, {
+                trackedDomainId: id,
+                workflow: "reverify-ownership",
+              });
               return { id, success: true };
             } catch (err) {
               logger.error(

@@ -1,6 +1,10 @@
 import { start } from "workflow/api";
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
+import {
+  getDeduplicationKey,
+  startWithDeduplication,
+} from "@/lib/workflow/deduplication";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 export const providerRouter = createTRPCRouter({
@@ -8,9 +12,10 @@ export const providerRouter = createTRPCRouter({
     .input(z.object({ providerId: z.string().uuid() }))
     .query(async ({ input }) => {
       const provider = await getProviderById(input.providerId);
-      if (!provider?.domain) {
+      const providerDomain = provider?.domain;
+      if (!providerDomain) {
         // Return null instead of throwing to avoid logging errors for missing icons
-        return { url: null };
+        return { success: false, url: null };
       }
 
       const { getProviderLogoByProviderId } = await import(
@@ -38,14 +43,17 @@ export const providerRouter = createTRPCRouter({
         }
       }
 
-      // Cache miss - run workflow
+      // Cache miss - run workflow with deduplication
       const { providerLogoWorkflow } = await import(
         "@/workflows/provider-logo"
       );
-      const run = await start(providerLogoWorkflow, [
-        { providerId: input.providerId, providerDomain: provider.domain },
-      ]);
-      const result = await run.returnValue;
+      const key = getDeduplicationKey("provider-logo", input.providerId);
+      const result = await startWithDeduplication(key, async () => {
+        const run = await start(providerLogoWorkflow, [
+          { providerId: input.providerId, providerDomain },
+        ]);
+        return run.returnValue;
+      });
 
       return {
         ...result,

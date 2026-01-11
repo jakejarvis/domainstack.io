@@ -3,6 +3,7 @@ import "server-only";
 import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { sectionRevalidateWorkflow } from "@/workflows/section-revalidate";
 
 /**
@@ -33,7 +34,12 @@ export const sectionRevalidate = inngest.createFunction(
 
     const result = await step.run("run-workflow", async () => {
       const run = await start(sectionRevalidateWorkflow, [{ domain, section }]);
-      return await run.returnValue;
+      // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
+      return await withConcurrencyHandling(run.returnValue, {
+        domain,
+        section,
+        workflow: "section-revalidate",
+      });
     });
 
     return result;
