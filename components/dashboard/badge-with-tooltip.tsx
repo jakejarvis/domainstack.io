@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import { Badge } from "@/components/ui/badge";
 import {
   ResponsiveTooltip,
@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type BadgeWithTooltipProps = {
-  icon: LucideIcon;
+  icon: React.FC<IconProps>;
   label: string;
   className?: string;
   tooltipContent?: React.ReactNode;

@@ -1,4 +1,4 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldWarningIcon } from "@phosphor-icons/react/ssr";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export function CertificateAlert({
 }) {
   return (
     <Alert variant="destructive" className={cn(className)} {...props}>
-      <ShieldAlert aria-hidden className="size-4" />
+      <ShieldWarningIcon aria-hidden className="size-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {error ||

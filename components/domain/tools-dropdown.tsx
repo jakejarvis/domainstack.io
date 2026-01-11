@@ -1,4 +1,4 @@
-import { MoreHorizontal, Plus } from "lucide-react";
+import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import {
@@ -153,7 +153,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
             <TooltipTrigger
               render={
                 <Button variant="outline" aria-label="Open menu" size="icon">
-                  <MoreHorizontal />
+                  <DotsThreeIcon />
                 </Button>
               }
             />
@@ -208,7 +208,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
                   target="_blank"
                   rel="noopener"
                 >
-                  <Plus />
+                  <PlusIcon />
                   Suggest a tool
                 </a>
               }

@@ -1,7 +1,12 @@
 "use client";
 
-import { SiRaycast } from "@icons-pack/react-simple-icons";
-import { Bookmark, Clapperboard, CornerLeftUp, Layers2 } from "lucide-react";
+import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
+import {
+  ArrowElbowLeftUpIcon,
+  CursorClickIcon,
+  FilmStripIcon,
+  StackPlusIcon,
+} from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -48,12 +53,12 @@ export function BookmarkletContent({ className }: { className?: string }) {
             onClick={(e) => {
               e.preventDefault();
               toast.info("Drag the button to your bookmarks bar to use it.", {
-                icon: <CornerLeftUp className="size-4" />,
+                icon: <ArrowElbowLeftUpIcon className="size-4" />,
                 position: "top-center",
               });
             }}
           >
-            <Bookmark />
+            <CursorClickIcon />
             Inspect Domain
           </Button>
         </div>
@@ -71,7 +76,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         >
           <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
-              <Layers2 className="size-4" />
+              <SiOpenlayers className="size-4" />
               <span className="font-semibold leading-none">Apple Shortcut</span>
             </span>
           </AccordionTrigger>
@@ -94,7 +99,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       data-disable-progress
                     >
-                      <Layers2 />
+                      <StackPlusIcon />
                       Add Shortcut
                     </a>
                   }
@@ -104,7 +109,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
                   <DialogTrigger
                     render={
                       <Button variant="outline" aria-label="Watch demo">
-                        <Clapperboard />
+                        <FilmStripIcon />
                         Watch Demo
                       </Button>
                     }

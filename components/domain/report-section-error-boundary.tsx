@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban } from "lucide-react";
+import { ProhibitIcon } from "@phosphor-icons/react/ssr";
 import { Component } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <Alert variant="destructive">
-          <Ban className="size-4" />
+          <ProhibitIcon className="size-4" />
           <AlertTitle>Failed to load section</AlertTitle>
           <AlertDescription className="mt-2 flex flex-col gap-3">
             <p className="text-sm">

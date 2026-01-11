@@ -1,4 +1,8 @@
-import { AlertCircle, BadgeCheck, BellPlus } from "lucide-react";
+import {
+  BellSimpleIcon,
+  SealCheckIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -86,7 +90,7 @@ export function TrackDomainButton({
               nativeButton={false}
               render={
                 <Link href="/dashboard">
-                  <BadgeCheck className="text-success-foreground" />
+                  <SealCheckIcon className="text-success-foreground" />
                   <span className="hidden">View in dashboard</span>
                 </Link>
               }
@@ -103,12 +107,12 @@ export function TrackDomainButton({
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <AlertCircle className="text-accent-orange" />
+      <WarningCircleIcon className="text-accent-orange" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (
     <>
-      <BellPlus className="text-accent-gold" />
+      <BellSimpleIcon className="text-accent-gold" />
       <span className="hidden sm:inline">Track</span>
     </>
   );

@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { InfoIcon } from "@phosphor-icons/react/ssr";
 import {
   Card,
   CardContent,
@@ -69,7 +69,7 @@ export function ReportSection({
             <div className="flex w-full items-center gap-3 text-left">
               {Icon && (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground/90">
-                  <Icon className="size-4" />
+                  <Icon className="size-4" weight="bold" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -84,7 +84,10 @@ export function ReportSection({
                             role="img"
                             aria-label={`More info about ${title}`}
                           >
-                            <Info className="size-3.5 opacity-60" aria-hidden />
+                            <InfoIcon
+                              className="size-3.5 opacity-60"
+                              aria-hidden
+                            />
                           </span>
                         }
                       />

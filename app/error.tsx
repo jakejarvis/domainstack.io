@@ -1,6 +1,6 @@
 "use client";
 
-import { RefreshCcw } from "lucide-react";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react/ssr";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export default function RootError(props: {
         ) : null}
         <div className="mt-6 flex flex-col items-center justify-center gap-3">
           <Button onClick={() => reset()}>
-            <RefreshCcw />
+            <ArrowClockwiseIcon />
             Try again
           </Button>
 

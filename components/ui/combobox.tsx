@@ -1,5 +1,5 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
-import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
+import { CaretDownIcon, CheckIcon, XIcon } from "@phosphor-icons/react/ssr";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +28,7 @@ function ComboboxTrigger({
       {...props}
     >
       {children}
-      <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
+      <CaretDownIcon className="pointer-events-none size-4 text-muted-foreground" />
     </ComboboxPrimitive.Trigger>
   );
 }

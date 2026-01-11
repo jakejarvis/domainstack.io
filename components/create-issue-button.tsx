@@ -1,6 +1,6 @@
 "use client";
 
-import { Bug } from "lucide-react";
+import { BugIcon } from "@phosphor-icons/react/ssr";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
@@ -73,7 +73,7 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
       nativeButton={false}
       render={
         <a href={issueUrl} target="_blank" rel="noopener">
-          <Bug />
+          <BugIcon />
           Create GitHub issue
         </a>
       }

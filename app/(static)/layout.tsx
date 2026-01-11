@@ -18,7 +18,7 @@ export default function StaticLayout({
               "[&>footer]:mt-12 [&>header]:mb-8",
               "[&>section+section]:mt-8 [&>section]:scroll-mt-24 [&>section]:space-y-4",
               "[&_a]:text-foreground/95 [&_a]:underline [&_a]:decoration-muted-foreground/90 [&_a]:underline-offset-2 [&_a]:hover:text-foreground/70",
-              "[&_a]:[&_.lucide-external-link]:ml-1 [&_a]:[&_.lucide-external-link]:inline-block [&_a]:[&_.lucide-external-link]:size-3.5 [&_a]:[&_.lucide-external-link]:-translate-y-0.5 [&_a]:[&_.lucide-external-link]:text-foreground/70",
+              "[&_a]:[&_svg]:ml-1 [&_a]:[&_svg]:inline-block [&_a]:[&_svg]:size-3.5 [&_a]:[&_svg]:-translate-y-0.5 [&_a]:[&_svg]:text-foreground/70",
               "[&_h1]:font-semibold [&_h1]:text-3xl [&_h1]:tracking-tight md:[&_h1]:text-4xl",
               "[&_h2]:font-semibold [&_h2]:text-xl [&_h2]:tracking-tight md:[&_h2]:text-2xl",
               "[&_h3]:font-medium [&_h3]:text-lg [&_h3]:tracking-tight",

@@ -1,4 +1,4 @@
-import { Gauge, ShoppingCart } from "lucide-react";
+import { GaugeIcon, ShoppingCartIcon } from "@phosphor-icons/react/ssr";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -19,7 +19,7 @@ export function UpgradeBanner() {
   return (
     <DashboardBannerDismissable
       variant={atLimit ? "danger" : "warning"}
-      icon={Gauge}
+      icon={GaugeIcon}
       title={atLimit ? "Domain Limit Reached" : "Approaching Limit"}
       description={
         <>
@@ -32,7 +32,7 @@ export function UpgradeBanner() {
       dismissible
       action={
         <UpgradeButton className="w-full md:w-auto">
-          <ShoppingCart className="size-4" />
+          <ShoppingCartIcon className="size-4" />
           Upgrade
         </UpgradeButton>
       }

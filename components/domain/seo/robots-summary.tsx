@@ -1,17 +1,17 @@
 import {
-  Asterisk,
-  Ban,
-  ChevronRight,
-  CircleCheck,
-  CircleDot,
-  ClockFading,
-  EllipsisVertical,
-  ExternalLink,
-  FileQuestionMark,
-  Filter,
-  Signal,
+  ArrowSquareOutIcon,
+  AsteriskIcon,
+  CaretRightIcon,
+  CheckCircleIcon,
+  CircleIcon,
+  DotsThreeVerticalIcon,
+  FunnelIcon,
+  HourglassSimpleMediumIcon,
+  ProhibitIcon,
+  QuestionIcon,
+  WaveformIcon,
   XIcon,
-} from "lucide-react";
+} from "@phosphor-icons/react/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { PillCount } from "@/components/domain/pill-count";
@@ -168,7 +168,7 @@ export function RobotsSummary({
           className="inline-flex items-center gap-1 hover:underline hover:underline-offset-3"
         >
           <span>robots.txt</span>
-          <ExternalLink
+          <ArrowSquareOutIcon
             className="relative bottom-px inline-flex size-3"
             aria-hidden
           />
@@ -197,7 +197,7 @@ export function RobotsSummary({
                     spellCheck={false}
                   />
                   <InputGroupAddon>
-                    <Filter />
+                    <FunnelIcon />
                   </InputGroupAddon>
                   {query ? (
                     <InputGroupAddon align="inline-end">
@@ -227,7 +227,7 @@ export function RobotsSummary({
                     variant="outline"
                     className="h-full"
                   >
-                    <CircleDot
+                    <CircleIcon
                       className="size-3.5 text-accent-blue"
                       aria-hidden
                     />
@@ -242,7 +242,7 @@ export function RobotsSummary({
                     variant="outline"
                     className="h-full"
                   >
-                    <CircleCheck
+                    <CheckCircleIcon
                       className="size-3.5 text-accent-green"
                       aria-hidden
                     />
@@ -254,7 +254,10 @@ export function RobotsSummary({
                     variant="outline"
                     className="h-full"
                   >
-                    <Ban className="size-3.5 text-destructive" aria-hidden />
+                    <ProhibitIcon
+                      className="size-3.5 text-destructive"
+                      aria-hidden
+                    />
                     <span>Disallow</span>
                     <PillCount count={counts.disallows} color="slate" />
                   </ToggleGroupItem>
@@ -288,7 +291,7 @@ export function RobotsSummary({
             <Empty className="border border-dashed">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <FileQuestionMark />
+                  <QuestionIcon />
                 </EmptyMedia>
                 <EmptyTitle>No crawl rules detected</EmptyTitle>
                 <EmptyDescription>
@@ -307,7 +310,7 @@ export function RobotsSummary({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <FileQuestionMark />
+              <QuestionIcon />
             </EmptyMedia>
             <EmptyTitle>No robots.txt found</EmptyTitle>
             <EmptyDescription>
@@ -337,7 +340,7 @@ function RobotsGroupHeader({
   return (
     <div className="flex w-full items-center justify-between">
       <div className="flex flex-wrap items-center gap-1.5">
-        <ChevronRight className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
+        <CaretRightIcon className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
         {userAgents.map((ua) => (
           <span
             key={ua}
@@ -350,7 +353,7 @@ function RobotsGroupHeader({
           >
             {ua === "*" ? (
               <>
-                <Asterisk className="size-3" />
+                <AsteriskIcon className="size-3" />
                 All bots
               </>
             ) : (
@@ -542,7 +545,7 @@ function GroupContent({
             className="text-[12px]"
             onClick={() => setVisible(total)}
           >
-            <EllipsisVertical className="!size-3.5" aria-hidden />
+            <DotsThreeVerticalIcon className="!size-3.5" aria-hidden />
             <span>Show {more} more</span>
           </Button>
         </div>
@@ -585,12 +588,12 @@ function RuleTypeDot({
 }) {
   const Icon =
     type === "allow"
-      ? CircleCheck
+      ? CheckCircleIcon
       : type === "disallow"
-        ? Ban
+        ? ProhibitIcon
         : type === "crawlDelay"
-          ? ClockFading
-          : Signal;
+          ? HourglassSimpleMediumIcon
+          : WaveformIcon;
   const label =
     type === "allow"
       ? "Allow"
@@ -642,7 +645,7 @@ function SitemapsList({ items }: { items: string[] }) {
               rel="noopener"
             >
               {u}
-              <ExternalLink className="size-3" />
+              <ArrowSquareOutIcon className="size-3" />
             </a>
           </div>
         ))}
@@ -664,7 +667,7 @@ function SitemapsList({ items }: { items: string[] }) {
                   rel="noopener"
                 >
                   {u}
-                  <ExternalLink className="size-3" />
+                  <ArrowSquareOutIcon className="size-3" />
                 </a>
               </div>
             ))}
@@ -678,7 +681,7 @@ function SitemapsList({ items }: { items: string[] }) {
               className="text-[12px]"
               onClick={() => setVisible(total)}
             >
-              <EllipsisVertical className="!size-3.5" aria-hidden />
+              <DotsThreeVerticalIcon className="!size-3.5" aria-hidden />
               <span>Show {more} more</span>
             </Button>
           </div>

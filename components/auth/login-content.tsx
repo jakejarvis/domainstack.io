@@ -1,6 +1,6 @@
 "use client";
 
-import { ScanFace } from "lucide-react";
+import { FingerprintIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -43,7 +43,7 @@ export function LoginContent({
   return (
     <div className={cn("flex flex-col items-center", className)}>
       <div className="mb-5 flex size-14 items-center justify-center rounded-xl bg-primary/5 text-primary">
-        <ScanFace className="size-7" strokeWidth={2} />
+        <FingerprintIcon className="size-7" />
       </div>
       <h1 className="mb-2 font-semibold text-xl tracking-tight">
         Welcome to Domainstack

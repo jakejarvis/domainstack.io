@@ -1,5 +1,11 @@
+import {
+  CreditCardIcon,
+  GaugeIcon,
+  GiftIcon,
+  RocketLaunchIcon,
+  ShootingStarIcon,
+} from "@phosphor-icons/react/ssr";
 import { format } from "date-fns";
-import { CreditCard, Gauge, Gem, Gift, ShoppingCart } from "lucide-react";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
@@ -40,7 +46,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <Gauge className="size-4.5" />
+            <GaugeIcon className="size-4.5" />
             Plan
           </CardTitle>
           <CardDescription className="text-destructive">
@@ -55,7 +61,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <Gauge className="size-4.5" />
+          <GaugeIcon className="size-4.5" />
           Plan
         </CardTitle>
         <CardDescription>
@@ -70,9 +76,9 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
           <div>
             <div className="mb-2 flex items-center gap-2">
               {isPro ? (
-                <Gem className="size-4 text-foreground/80" />
+                <ShootingStarIcon className="size-4 text-foreground/80" />
               ) : (
-                <Gift className="size-4 text-foreground/80" />
+                <GiftIcon className="size-4 text-foreground/80" />
               )}
               <span className="font-medium">{isPro ? "Pro" : "Free"} Plan</span>
               {isPro && (
@@ -120,7 +126,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
                 </>
               ) : (
                 <>
-                  <CreditCard />
+                  <CreditCardIcon />
                   Manage Subscription
                 </>
               )}
@@ -146,7 +152,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
 
             <div className="relative">
               <div className="mb-2 flex items-center gap-2 font-medium">
-                <Gem className="size-4 text-foreground/80" />
+                <ShootingStarIcon className="size-4 text-foreground/80" />
                 {PRO_TIER_INFO.name} Plan
               </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
@@ -167,7 +173,7 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
                 </span>
               </div>
               <UpgradeButton className="w-full">
-                <ShoppingCart />
+                <RocketLaunchIcon />
                 Upgrade to Pro
               </UpgradeButton>
             </div>

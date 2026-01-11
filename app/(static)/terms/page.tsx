@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -144,7 +144,7 @@ export default function TermsPage() {
           Payments are processed by{" "}
           <a href="https://polar.sh" target="_blank" rel="noopener noreferrer">
             Polar
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>{" "}
           (our merchant of record) and{" "}
           <a
@@ -153,7 +153,7 @@ export default function TermsPage() {
             rel="noopener noreferrer"
           >
             Stripe
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>{" "}
           (payment infrastructure). By subscribing, you also agree to:
         </p>
@@ -165,7 +165,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Terms of Service
-              <ExternalLink />
+              <ArrowSquareOutIcon />
             </a>
           </li>
           <li>
@@ -175,7 +175,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Consumer Terms
-              <ExternalLink />
+              <ArrowSquareOutIcon />
             </a>
           </li>
         </ul>

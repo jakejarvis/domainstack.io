@@ -1,5 +1,9 @@
+import {
+  HourglassSimpleMediumIcon,
+  SealCheckIcon,
+  WarningIcon,
+} from "@phosphor-icons/react/ssr";
 import { differenceInDays } from "date-fns";
-import { AlertTriangle, BadgeCheck, ClockFading } from "lucide-react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import type {
@@ -47,7 +51,7 @@ export function DomainStatusBadge({
 
     return (
       <BadgeWithTooltip
-        icon={AlertTriangle}
+        icon={WarningIcon}
         label="Failing"
         className={cn(
           "border-danger-border bg-danger/20 text-danger-foreground",
@@ -63,7 +67,7 @@ export function DomainStatusBadge({
   if (verified) {
     return (
       <BadgeWithTooltip
-        icon={BadgeCheck}
+        icon={SealCheckIcon}
         label="Verified"
         className={cn(
           "border-success-border bg-success/20 text-success-foreground",
@@ -81,7 +85,7 @@ export function DomainStatusBadge({
   // Pending state
   return (
     <BadgeWithTooltip
-      icon={ClockFading}
+      icon={HourglassSimpleMediumIcon}
       label="Pending"
       className={cn(
         "border-warning-border bg-warning/20 text-warning-foreground",

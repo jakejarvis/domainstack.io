@@ -1,4 +1,4 @@
-import { FileQuestionMark } from "lucide-react";
+import { FileXIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
 import { SearchClient } from "@/components/search/search-client";
 import {
@@ -21,7 +21,7 @@ export default function NotFound() {
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <FileQuestionMark />
+            <FileXIcon />
           </EmptyMedia>
           <EmptyTitle>404 - Not Found</EmptyTitle>
           <EmptyDescription>

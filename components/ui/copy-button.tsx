@@ -1,7 +1,12 @@
 "use client";
 
+import {
+  CheckIcon,
+  ClipboardTextIcon,
+  CopyIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import clipboardCopy from "clipboard-copy";
-import { Check, CircleX, ClipboardCheck, Copy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button, type buttonVariants } from "@/components/ui/button";
@@ -48,7 +53,7 @@ export function CopyButton({
       await clipboardCopy(value);
 
       toast.success("Copied!", {
-        icon: <ClipboardCheck className="size-4" />,
+        icon: <ClipboardTextIcon className="size-4" />,
         position: "bottom-center",
       });
 
@@ -61,7 +66,7 @@ export function CopyButton({
       // Revert optimistic update on failure
       setCopied(false);
       toast.error("Failed to copy", {
-        icon: <CircleX className="size-4" />,
+        icon: <XCircleIcon className="size-4" />,
         position: "bottom-center",
       });
     }
@@ -76,9 +81,9 @@ export function CopyButton({
       onClick={handleCopy}
     >
       {copied ? (
-        <Check className="size-3.5 text-accent-green" />
+        <CheckIcon className="size-3.5 text-accent-green" />
       ) : (
-        <Copy className="size-3.5" />
+        <CopyIcon className="size-3.5" />
       )}
       <span className={cn(!showLabel && "sr-only")}>
         {copied ? "Copied" : "Copy"}

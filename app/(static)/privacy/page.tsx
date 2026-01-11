@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -105,7 +105,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Polar
-                <ExternalLink />
+                <ArrowSquareOutIcon />
               </a>
             </strong>{" "}
             — Our merchant of record for subscription management. Polar collects
@@ -117,7 +117,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Privacy Policy
-              <ExternalLink />
+              <ArrowSquareOutIcon />
             </a>
             .
           </li>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Stripe
-                <ExternalLink />
+                <ArrowSquareOutIcon />
               </a>
             </strong>{" "}
             — Payment processing infrastructure. Stripe handles your payment
@@ -140,7 +140,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Privacy Policy
-              <ExternalLink />
+              <ArrowSquareOutIcon />
             </a>
             .
           </li>
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>{" "}
           to send transactional emails, including:
         </p>
@@ -182,7 +182,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend&apos;s Privacy Policy
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>
           .
         </p>
@@ -198,7 +198,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>{" "}
           for product analytics and error tracking to understand how our service
           is used and to improve the user experience. PostHog collects:
@@ -218,7 +218,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog&apos;s Privacy Policy
-            <ExternalLink />
+            <ArrowSquareOutIcon />
           </a>
           .
         </p>

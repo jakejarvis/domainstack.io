@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { LogoSimple } from "@/components/logo";
+import { Logo } from "@/components/logo";
 import { normalizeDomainInput } from "@/lib/domain-utils";
 import {
   BRAND,
@@ -68,7 +68,7 @@ export default async function OGImage({
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <LogoSimple
+          <Logo
             width={40}
             height={40}
             style={{

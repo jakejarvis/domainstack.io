@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { PillCount } from "@/components/domain/pill-count";
@@ -34,7 +34,7 @@ export function MetaTagsGrid({
                     className="text-muted-foreground hover:text-foreground"
                     title="Open URL in new tab"
                   >
-                    <ExternalLink className="!size-3.5" aria-hidden />
+                    <ArrowSquareOutIcon className="!size-3.5" aria-hidden />
                   </a>
                 ) : null
               }

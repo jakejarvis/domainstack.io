@@ -1,4 +1,15 @@
 import {
+  ArchiveIcon,
+  ArrowDownIcon,
+  ArrowSquareOutIcon,
+  ArrowsDownUpIcon,
+  ArrowUpIcon,
+  BookmarkSimpleIcon,
+  DotsThreeVerticalIcon,
+  PlayIcon,
+  TrashIcon,
+} from "@phosphor-icons/react/ssr";
+import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -8,17 +19,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import {
-  Archive,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  BookMarked,
-  ExternalLink,
-  MoreVertical,
-  Play,
-  Trash2,
-} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -201,12 +201,12 @@ function ProviderCell({
 
 function SortIndicator({ isSorted }: { isSorted: false | "asc" | "desc" }) {
   if (isSorted === "asc") {
-    return <ArrowUp className="size-3 shrink-0 text-primary" />;
+    return <ArrowUpIcon className="size-3 shrink-0 text-primary" />;
   }
   if (isSorted === "desc") {
-    return <ArrowDown className="size-3 shrink-0 text-primary" />;
+    return <ArrowDownIcon className="size-3 shrink-0 text-primary" />;
   }
-  return <ArrowUpDown className="size-3 shrink-0 opacity-50" />;
+  return <ArrowsDownUpIcon className="size-3 shrink-0 opacity-50" />;
 }
 
 const EMPTY_SET = new Set<string>();
@@ -560,7 +560,7 @@ export function DashboardTable({
             <DropdownMenuTrigger
               render={
                 <Button variant="outline" size="icon-sm">
-                  <MoreVertical />
+                  <DotsThreeVerticalIcon />
                   <span className="sr-only">Actions</span>
                 </Button>
               }
@@ -574,7 +574,7 @@ export function DashboardTable({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ExternalLink />
+                    <ArrowSquareOutIcon />
                     Open
                   </a>
                 }
@@ -586,7 +586,7 @@ export function DashboardTable({
                     href={`/${encodeURIComponent(row.original.domainName)}`}
                     prefetch={false}
                   >
-                    <BookMarked />
+                    <BookmarkSimpleIcon />
                     View Report
                   </Link>
                 }
@@ -598,7 +598,7 @@ export function DashboardTable({
                 }
                 className="cursor-pointer"
               >
-                <Archive />
+                <ArchiveIcon />
                 Archive
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -607,7 +607,7 @@ export function DashboardTable({
                 }
                 className="cursor-pointer"
               >
-                <Trash2 className="text-danger-foreground" />
+                <TrashIcon className="text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -848,7 +848,7 @@ export function DashboardTable({
                               onClick={() => onVerify(row.original)}
                               className="px-2 text-[13px]"
                             >
-                              <Play className="text-accent-green" />
+                              <PlayIcon className="text-accent-green" />
                               Continue
                             </Button>
                             <Button
@@ -862,7 +862,7 @@ export function DashboardTable({
                               }
                               className="px-2 text-[13px]"
                             >
-                              <Trash2 className="text-danger-foreground" />
+                              <TrashIcon className="text-danger-foreground" />
                               Remove
                             </Button>
                           </div>

@@ -1,6 +1,10 @@
 "use client";
 
-import { Bell, User, WalletMinimal } from "lucide-react";
+import {
+  BellSimpleIcon,
+  UserIcon,
+  WalletIcon,
+} from "@phosphor-icons/react/ssr";
 import { useSelectedLayoutSegment } from "next/navigation";
 import {
   useCallback,
@@ -27,17 +31,17 @@ const SETTINGS_TABS = [
   {
     value: "subscription",
     label: "Subscription",
-    icon: WalletMinimal,
+    icon: WalletIcon,
   },
   {
     value: "notifications",
     label: "Notifications",
-    icon: Bell,
+    icon: BellSimpleIcon,
   },
   {
     value: "account",
     label: "Account",
-    icon: User,
+    icon: UserIcon,
   },
 ] as const;
 
@@ -63,7 +67,7 @@ function SettingsTabsList({ className }: { className?: string }) {
                   value={tab.value}
                   className="h-auto flex-col items-center gap-2 px-4 py-2.5"
                 >
-                  <Icon className="size-[18px]" aria-hidden />
+                  <Icon className="size-[18px]" weight="bold" aria-hidden />
                   <span className="hidden text-[13px] leading-none sm:inline">
                     {tab.label}
                   </span>

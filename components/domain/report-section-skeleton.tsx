@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { InfoIcon } from "@phosphor-icons/react/ssr";
 import {
   Card,
   CardContent,
@@ -66,7 +66,7 @@ export function ReportSectionSkeleton({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-base">{title}</span>
                   <span role="img">
-                    <Info className="size-3.5 opacity-60" aria-hidden />
+                    <InfoIcon className="size-3.5 opacity-60" aria-hidden />
                   </span>
                 </CardTitle>
                 {(description || help) && (

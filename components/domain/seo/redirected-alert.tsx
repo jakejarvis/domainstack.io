@@ -1,4 +1,7 @@
-import { Milestone, Search } from "lucide-react";
+import {
+  FlagPennantIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -19,7 +22,7 @@ export function RedirectedAlert({
     if (dest === src) return null;
     return (
       <Alert {...props}>
-        <Milestone aria-hidden />
+        <FlagPennantIcon aria-hidden />
         <AlertDescription>
           <p className="text-[13px]">
             We followed a redirect to{" "}
@@ -30,7 +33,7 @@ export function RedirectedAlert({
               title={`View report for ${dest}`}
             >
               <span className="font-medium">{dest}</span>
-              <Search className="!size-3.5" aria-hidden />
+              <MagnifyingGlassIcon className="!size-3.5" aria-hidden />
             </Link>
             {"."}
           </p>

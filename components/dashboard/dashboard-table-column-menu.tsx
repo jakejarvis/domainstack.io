@@ -1,5 +1,5 @@
+import { ColumnsIcon, EyeIcon } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { Columns3Cog, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -61,7 +61,7 @@ export function DashboardTableColumnMenu<TData>({
                 : "Toggle columns"
             }
           >
-            <Columns3Cog />
+            <ColumnsIcon />
             <span className="sr-only">Toggle columns</span>
           </Button>
         }
@@ -103,7 +103,7 @@ export function DashboardTableColumnMenu<TData>({
                   onClick={showAllColumns}
                   className="cursor-pointer text-muted-foreground"
                 >
-                  <Eye />
+                  <EyeIcon />
                   Show all columns
                 </DropdownMenuItem>
               </>

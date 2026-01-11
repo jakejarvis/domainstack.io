@@ -1,4 +1,4 @@
-import { CircleFadingArrowUp, ShoppingCart } from "lucide-react";
+import { ArrowCircleUpIcon, RocketLaunchIcon } from "@phosphor-icons/react/ssr";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
@@ -29,7 +29,7 @@ export function UpgradeCard() {
         <div className="flex h-full flex-1 flex-col items-center justify-center">
           {/* Icon */}
           <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-gold/5 dark:bg-white/5">
-            <CircleFadingArrowUp className="size-7 text-accent-gold" />
+            <ArrowCircleUpIcon className="size-7 text-accent-gold" />
           </div>
 
           {/* Heading */}
@@ -54,7 +54,7 @@ export function UpgradeCard() {
 
         {/* CTA Button - pushed to bottom */}
         <UpgradeButton variant="outline" className="w-full">
-          <ShoppingCart />
+          <RocketLaunchIcon />
           Get Pro
         </UpgradeButton>
       </CardContent>

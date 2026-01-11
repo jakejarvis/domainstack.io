@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { LogoSimple } from "@/components/logo";
+import { Logo } from "@/components/logo";
 import { BRAND, CHIPS, hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
 
 export const alt = "Domainstack — Domain Intelligence Made Easy";
@@ -51,7 +51,7 @@ export default async function OGImage() {
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <LogoSimple
+          <Logo
             width={40}
             height={40}
             style={{

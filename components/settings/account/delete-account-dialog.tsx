@@ -1,4 +1,8 @@
-import { AlertTriangle, CheckCircle2, HeartCrack } from "lucide-react";
+import {
+  CheckCircleIcon,
+  HeartBreakIcon,
+  WarningIcon,
+} from "@phosphor-icons/react/ssr";
 import { useCallback, useReducer } from "react";
 import {
   AlertDialog,
@@ -129,7 +133,7 @@ export function DeleteAccountDialog({
           <>
             <AlertDialogHeader>
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <CheckCircle2 className="size-6 text-green-600 dark:text-green-400" />
+                <CheckCircleIcon className="size-6 text-green-600 dark:text-green-400" />
               </div>
               <AlertDialogTitle className="text-center">
                 Check your email
@@ -152,7 +156,7 @@ export function DeleteAccountDialog({
           <>
             <AlertDialogHeader>
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                <AlertTriangle className="size-6 text-destructive" />
+                <WarningIcon className="size-6 text-destructive" />
               </div>
               <AlertDialogTitle className="text-center">
                 Delete your account?
@@ -203,7 +207,7 @@ export function DeleteAccountDialog({
                   </>
                 ) : (
                   <>
-                    <HeartCrack />
+                    <HeartBreakIcon />
                     I'm sure.
                   </>
                 )}

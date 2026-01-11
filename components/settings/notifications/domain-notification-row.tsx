@@ -1,4 +1,7 @@
-import { ChevronDown, RotateCcw } from "lucide-react";
+import {
+  ArrowCounterClockwiseIcon,
+  CaretDownIcon,
+} from "@phosphor-icons/react/ssr";
 import { useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { Badge } from "@/components/ui/badge";
@@ -96,11 +99,11 @@ export function DomainNotificationRow({
                     }}
                     disabled={disabled}
                   >
-                    <RotateCcw className="size-3" />
+                    <ArrowCounterClockwiseIcon className="size-3" />
                     <span className="sr-only sm:not-sr-only">Reset</span>
                   </Button>
                 )}
-                <ChevronDown
+                <CaretDownIcon
                   className={cn(
                     "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
                     isOpen && "-rotate-180",

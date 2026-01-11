@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react";
-import { XIcon } from "lucide-react";
+import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
+import { XIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 type DashboardBannerProps = {
-  icon?: LucideIcon;
+  icon?: React.FC<IconProps>;
   title: string;
   description?: React.ReactNode;
   variant: "info" | "warning" | "success" | "danger";

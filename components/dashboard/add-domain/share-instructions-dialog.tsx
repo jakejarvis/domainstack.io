@@ -1,17 +1,17 @@
+import {
+  AtIcon,
+  CheckIcon,
+  ClipboardIcon,
+  ClipboardTextIcon,
+  CopyIcon,
+  DownloadIcon,
+  FileTextIcon,
+  PaperPlaneTiltIcon,
+  ShareNetworkIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import { useMutation } from "@tanstack/react-query";
 import clipboardCopy from "clipboard-copy";
-import {
-  AtSign,
-  Check,
-  CircleX,
-  Clipboard,
-  ClipboardCheck,
-  Copy,
-  Download,
-  FileText,
-  Send,
-  Share2,
-} from "lucide-react";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -262,7 +262,7 @@ export function ShareInstructionsDialog({
       dispatch({ type: "COPY_SUCCESS" });
       toast.success("Copied!", {
         description: "Instructions copied to clipboard.",
-        icon: <ClipboardCheck className="h-4 w-4" />,
+        icon: <ClipboardTextIcon className="h-4 w-4" />,
       });
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -272,7 +272,7 @@ export function ShareInstructionsDialog({
       }, 2000);
     } catch {
       toast.error("Failed to copy", {
-        icon: <CircleX className="h-4 w-4" />,
+        icon: <XCircleIcon className="h-4 w-4" />,
       });
     }
   }, [domain, verificationToken]);
@@ -323,7 +323,7 @@ export function ShareInstructionsDialog({
       <DialogTrigger
         render={
           <Button variant="outline">
-            <Share2 />
+            <ShareNetworkIcon />
             Share
           </Button>
         }
@@ -341,7 +341,7 @@ export function ShareInstructionsDialog({
           {/* Option 1: Copy to clipboard */}
           <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-              <Clipboard className="size-4 text-muted-foreground" />
+              <ClipboardIcon className="size-4 text-muted-foreground" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm">Copy to clipboard</p>
@@ -350,7 +350,11 @@ export function ShareInstructionsDialog({
               </p>
             </div>
             <Button variant="outline" onClick={handleCopy} className="shrink-0">
-              {isCopied ? <Check className="text-green-600" /> : <Copy />}
+              {isCopied ? (
+                <CheckIcon className="text-green-600" />
+              ) : (
+                <CopyIcon />
+              )}
               <span className="hidden sm:inline">
                 {isCopied ? "Copied" : "Copy"}
               </span>
@@ -360,7 +364,7 @@ export function ShareInstructionsDialog({
           {/* Option 2: Download as file */}
           <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-              <FileText className="size-4 text-muted-foreground" />
+              <FileTextIcon className="size-4 text-muted-foreground" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm">Download as file</p>
@@ -373,7 +377,7 @@ export function ShareInstructionsDialog({
               onClick={handleDownload}
               className="shrink-0"
             >
-              <Download />
+              <DownloadIcon />
               <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
@@ -382,7 +386,7 @@ export function ShareInstructionsDialog({
           <div className="rounded-lg border border-border/50 p-3">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                <AtSign className="size-4 text-muted-foreground" />
+                <AtIcon className="size-4 text-muted-foreground" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">Send via email</p>
@@ -428,12 +432,12 @@ export function ShareInstructionsDialog({
                     </>
                   ) : isEmailSent ? (
                     <>
-                      <Check />
+                      <CheckIcon />
                       <span className="hidden sm:inline">Sent!</span>
                     </>
                   ) : (
                     <>
-                      <Send />
+                      <PaperPlaneTiltIcon />
                       <span className="hidden sm:inline">Send</span>
                     </>
                   )}

@@ -1,4 +1,8 @@
-import { AlertTriangle, Clock, RefreshCw } from "lucide-react";
+import {
+  ArrowClockwiseIcon,
+  ClockIcon,
+  WarningIcon,
+} from "@phosphor-icons/react/ssr";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import type { VerificationMethod } from "@/lib/constants/verification";
@@ -56,7 +60,7 @@ export function VerificationFailed({
   return (
     <div className="space-y-4">
       <Alert className="bg-card/60">
-        <AlertTriangle className="size-4 stroke-danger-foreground" />
+        <WarningIcon className="size-4 stroke-danger-foreground" />
         <AlertTitle className="font-medium text-danger-foreground">
           Verification Failed
         </AlertTitle>
@@ -80,11 +84,11 @@ export function VerificationFailed({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button onClick={onCheckAgain} className="flex-1">
-          <RefreshCw />
+          <ArrowClockwiseIcon />
           Check Again
         </Button>
         <Button variant="outline" onClick={onReturnLater} className="flex-1">
-          <Clock />
+          <ClockIcon />
           Return Later
         </Button>
       </div>

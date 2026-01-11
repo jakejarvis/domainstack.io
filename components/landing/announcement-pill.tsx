@@ -1,6 +1,10 @@
 "use client";
 
-import { ArrowUpRight, BellRing, X } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  ShootingStarIcon,
+  XIcon,
+} from "@phosphor-icons/react/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import useLocalStorageState from "use-local-storage-state";
@@ -38,14 +42,14 @@ export function AnnouncementPill() {
               href="/dashboard"
               className="group inline-flex items-center gap-2 py-1.5 pr-2 pl-3"
             >
-              <BellRing className="size-3.5 text-accent-gold" />
+              <ShootingStarIcon className="size-3.5 text-accent-gold" />
               <div className="text-foreground/90">
                 <span className="mr-1.5 font-medium text-accent-gold">
                   New!
                 </span>
                 <span>Track domains &amp; get health alerts.</span>
               </div>
-              <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />
+              <ArrowUpRightIcon className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-[1px] group-hover:-translate-y-[1px]" />
             </Link>
 
             <div className="h-4 w-px bg-black/10 dark:bg-white/10" />
@@ -56,7 +60,7 @@ export function AnnouncementPill() {
               className="cursor-pointer rounded-full p-1.5 pr-2.5 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
               aria-label="Dismiss announcement"
             >
-              <X className="size-3.5" />
+              <XIcon className="size-3.5" weight="bold" />
             </button>
           </div>
         </motion.div>

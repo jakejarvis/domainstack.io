@@ -1,4 +1,4 @@
-import { ClockFading } from "lucide-react";
+import { ClockCountdownIcon } from "@phosphor-icons/react/ssr";
 import { ms } from "ms";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,7 +17,7 @@ export function TtlBadge({ ttl }: { ttl: number }) {
             variant="outline"
             className="cursor-default py-1 text-[11px] text-muted-foreground leading-none"
           >
-            <ClockFading />
+            <ClockCountdownIcon />
             <span suppressHydrationWarning>{ms(ttl * 1000)}</span>
           </Badge>
         }

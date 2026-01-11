@@ -1,4 +1,4 @@
-import { Download } from "lucide-react";
+import { DownloadIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -17,7 +17,7 @@ export function ExportButton({ disabled, onExport }: ExportButtonProps) {
       <TooltipTrigger
         render={
           <Button variant="outline" onClick={onExport} disabled={disabled}>
-            <Download className="sm:text-muted-foreground" />
+            <DownloadIcon className="sm:text-muted-foreground" />
             <span className="hidden sm:inline-block">Export</span>
           </Button>
         }

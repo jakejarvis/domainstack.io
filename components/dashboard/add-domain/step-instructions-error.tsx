@@ -1,4 +1,7 @@
-import { AlertCircle, RefreshCw } from "lucide-react";
+import {
+  ArrowClockwiseIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -16,7 +19,7 @@ export function StepInstructionsError({
   return (
     <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
       <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-        <AlertCircle className="size-6 text-destructive" />
+        <WarningCircleIcon className="size-6 text-destructive" />
       </div>
       <div className="text-center" aria-live="polite">
         <h3 className="font-semibold">Unable to load verification details</h3>
@@ -32,7 +35,7 @@ export function StepInstructionsError({
           </>
         ) : (
           <>
-            <RefreshCw />
+            <ArrowClockwiseIcon />
             <span className="hidden sm:inline">Retry</span>
           </>
         )}

@@ -1,6 +1,12 @@
 "use client";
 
-import { LogInIcon, MenuIcon, Moon, Sun, Table2 } from "lucide-react";
+import {
+  LayoutIcon,
+  ListIcon,
+  MoonIcon,
+  SignInIcon,
+  SunIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { AppHeaderSeparator } from "@/components/layout/app-header-separator";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -56,7 +62,7 @@ export function AppHeaderClientButtons() {
                 nativeButton={false}
                 render={
                   <Link href="/dashboard">
-                    <Table2 />
+                    <LayoutIcon weight="bold" />
                     <span className="sr-only">Dashboard</span>
                   </Link>
                 }
@@ -80,13 +86,17 @@ export function AppHeaderClientButtons() {
         <DropdownMenuTrigger
           render={
             <Button variant="ghost" size="icon-sm" aria-label="Menu">
-              <MenuIcon />
+              <ListIcon weight="bold" />
             </Button>
           }
         />
         <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-            {theme === "dark" ? <Sun /> : <Moon />}
+            {theme === "dark" ? (
+              <SunIcon weight="bold" />
+            ) : (
+              <MoonIcon weight="bold" />
+            )}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -94,7 +104,7 @@ export function AppHeaderClientButtons() {
             nativeButton={false}
             render={
               <Link href="/login" scroll={false}>
-                <LogInIcon />
+                <SignInIcon weight="bold" />
                 Sign In
               </Link>
             }
@@ -116,8 +126,8 @@ export function AppHeaderClientButtons() {
               size="sm"
               onClick={toggleTheme}
             >
-              <Sun className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <SunIcon className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <MoonIcon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               <span className="sr-only">Toggle theme</span>
             </Button>
           }

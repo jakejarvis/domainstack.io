@@ -1,11 +1,11 @@
+import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import {
-  CalendarDays,
-  EthernetPort,
-  FingerprintPattern,
-  IdCardLanyard,
-  type LucideIcon,
-  ShieldAlert,
-} from "lucide-react";
+  CalendarDotIcon,
+  FingerprintIcon,
+  IdentificationBadgeIcon,
+  PlugsIcon,
+  ShieldWarningIcon,
+} from "@phosphor-icons/react/ssr";
 
 /**
  * Notification system constants and derived types.
@@ -45,33 +45,33 @@ export type NotificationType =
 // Category metadata for UI display
 export const NOTIFICATION_CATEGORY_INFO: Record<
   NotificationCategory,
-  { label: string; description: string; icon: LucideIcon }
+  { label: string; description: string; icon: React.FC<IconProps> }
 > = {
   providerChanges: {
     label: "Provider Changes",
     description: "Alerts when DNS, hosting, or email providers change",
-    icon: EthernetPort,
+    icon: PlugsIcon,
   },
   domainExpiry: {
     label: "Domain Expiration",
     description: "Alerts at 30, 14, 7, and 1 day before expiration",
-    icon: CalendarDays,
+    icon: CalendarDotIcon,
   },
   registrationChanges: {
     label: "Registration Changes",
     description:
       "Alerts when registrar, nameservers, transfer lock, or statuses change",
-    icon: IdCardLanyard,
+    icon: IdentificationBadgeIcon,
   },
   certificateExpiry: {
     label: "Certificate Expiration",
     description: "Alerts at 14, 7, 3, and 1 day before expiration",
-    icon: ShieldAlert,
+    icon: ShieldWarningIcon,
   },
   certificateChanges: {
     label: "Certificate Changes",
     description: "Alerts when SSL certificate issuer or subject changes",
-    icon: FingerprintPattern,
+    icon: FingerprintIcon,
   },
 };
 

@@ -98,5 +98,3 @@ pnpm db:studio     # open Drizzle Studio
 ## 📜 License
 
 [MIT](LICENSE)
-
-Toybrick by Ary Prasetyo from [Noun Project](https://thenounproject.com/browse/icons/term/toybrick/) (CC BY 3.0)
