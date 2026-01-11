@@ -61,6 +61,11 @@ export function classifyFetchError(
 ): RetryableError | FatalError {
   const { context = "fetch", retryAfter = "5s", retryUnknown = true } = options;
 
+  // Preserve existing workflow errors - don't re-wrap them
+  if (err instanceof FatalError || err instanceof RetryableError) {
+    return err;
+  }
+
   // DNS errors are usually permanent (domain doesn't exist)
   if (isExpectedDnsError(err)) {
     return new FatalError(`${context}: DNS resolution failed`);

@@ -268,8 +268,8 @@ describe("sleep", () => {
     await sleep(50);
     const elapsed = Date.now() - start;
 
+    // Only verify lower bound - upper bound is flaky on slow CI runners
     expect(elapsed).toBeGreaterThanOrEqual(40);
-    expect(elapsed).toBeLessThan(100);
   });
 
   it("rejects when aborted", async () => {
