@@ -581,35 +581,36 @@ function RuleRow({
   );
 }
 
+const ruleTypeConfig = {
+  allow: {
+    Icon: CheckCircleIcon,
+    label: "Allow",
+    colorClass: "text-accent-green",
+  },
+  disallow: {
+    Icon: ProhibitIcon,
+    label: "Disallow",
+    colorClass: "text-destructive",
+  },
+  crawlDelay: {
+    Icon: HourglassSimpleMediumIcon,
+    label: "Crawl delay",
+    colorClass: "text-accent-orange",
+  },
+  contentSignal: {
+    Icon: WaveformIcon,
+    label: "Content signal",
+    colorClass: "text-accent-purple",
+  },
+} as const;
+
 function RuleTypeDot({
   type,
 }: {
   type: "allow" | "disallow" | "crawlDelay" | "contentSignal";
 }) {
-  const Icon =
-    type === "allow"
-      ? CheckCircleIcon
-      : type === "disallow"
-        ? ProhibitIcon
-        : type === "crawlDelay"
-          ? HourglassSimpleMediumIcon
-          : WaveformIcon;
-  const label =
-    type === "allow"
-      ? "Allow"
-      : type === "disallow"
-        ? "Disallow"
-        : type === "crawlDelay"
-          ? "Crawl delay"
-          : "Content signal";
-  const colorClass =
-    type === "allow"
-      ? "text-accent-green"
-      : type === "disallow"
-        ? "text-destructive"
-        : type === "crawlDelay"
-          ? "text-accent-orange"
-          : "text-accent-purple";
+  const { Icon, label, colorClass } = ruleTypeConfig[type];
+
   return (
     <Tooltip>
       <TooltipTrigger
@@ -626,9 +627,26 @@ function RuleTypeDot({
   );
 }
 
+function SitemapLink({ url }: { url: string }) {
+  return (
+    <div className="flex items-center">
+      <a
+        className="flex items-center gap-1.5 truncate font-medium text-[13px] text-foreground/85 hover:text-foreground/60 hover:no-underline"
+        href={url}
+        target="_blank"
+        rel="noopener"
+      >
+        {url}
+        <ArrowSquareOutIcon className="size-3" />
+      </a>
+    </div>
+  );
+}
+
 function SitemapsList({ items }: { items: string[] }) {
   const { existing, added, more, total, visible, setVisible } =
     useProgressiveReveal(items, 2);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
@@ -637,17 +655,7 @@ function SitemapsList({ items }: { items: string[] }) {
       </div>
       <div className="flex flex-col gap-2.5">
         {existing.map((u) => (
-          <div key={`sm-ex-${u}`} className="flex items-center">
-            <a
-              className="flex items-center gap-1.5 truncate font-medium text-[13px] text-foreground/85 hover:text-foreground/60 hover:no-underline"
-              href={u}
-              target="_blank"
-              rel="noopener"
-            >
-              {u}
-              <ArrowSquareOutIcon className="size-3" />
-            </a>
-          </div>
+          <SitemapLink key={`sm-ex-${u}`} url={u} />
         ))}
         {added.length > 0 ? (
           <motion.div
@@ -659,17 +667,7 @@ function SitemapsList({ items }: { items: string[] }) {
             className="flex flex-col gap-2.5"
           >
             {added.map((u) => (
-              <div key={`sm-add-${u}`} className="flex items-center">
-                <a
-                  className="flex items-center gap-1.5 truncate font-medium text-[13px] text-foreground/85 hover:text-foreground/60 hover:no-underline"
-                  href={u}
-                  target="_blank"
-                  rel="noopener"
-                >
-                  {u}
-                  <ArrowSquareOutIcon className="size-3" />
-                </a>
-              </div>
+              <SitemapLink key={`sm-add-${u}`} url={u} />
             ))}
           </motion.div>
         ) : null}

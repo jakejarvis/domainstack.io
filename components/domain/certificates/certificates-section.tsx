@@ -29,7 +29,95 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { CertificatesResponse } from "@/lib/types/domain/certificates";
+import type {
+  Certificate,
+  CertificatesResponse,
+} from "@/lib/types/domain/certificates";
+
+function CertificateCard({ cert }: { cert: Certificate }) {
+  const sans = Array.isArray(cert.altNames)
+    ? cert.altNames.filter((n) => !equalHostname(n, cert.subject))
+    : [];
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-3 backdrop-blur-lg dark:border-border/50">
+      <KeyValueGrid colsDesktop={2}>
+        <KeyValue
+          label="Issuer"
+          value={cert.issuer}
+          leading={
+            cert.caProvider?.id ? (
+              <ProviderIcon
+                providerId={cert.caProvider.id}
+                providerName={cert.caProvider.name}
+                providerDomain={cert.caProvider.domain}
+              />
+            ) : undefined
+          }
+          suffix={
+            cert.caProvider?.name ? (
+              <span className="text-[11px] text-muted-foreground">
+                {cert.caProvider.name}
+              </span>
+            ) : undefined
+          }
+        />
+
+        <KeyValue
+          label="Subject"
+          value={cert.subject}
+          suffix={
+            sans.length > 0 ? (
+              <ResponsiveTooltip>
+                <ResponsiveTooltipTrigger
+                  nativeButton={false}
+                  render={
+                    <Badge
+                      variant="outline"
+                      className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
+                    >
+                      <span>+</span>
+                      <span className="px-[1px]">{sans.length}</span>
+                    </Badge>
+                  }
+                />
+                <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
+                  {sans.join(", ")}
+                </ResponsiveTooltipContent>
+              </ResponsiveTooltip>
+            ) : undefined
+          }
+        />
+
+        <KeyValue
+          label="Valid from"
+          value={formatDate(cert.validFrom)}
+          valueTooltip={formatDateTimeUtc(cert.validFrom)}
+          suffix={
+            <span className="text-[11px] text-muted-foreground leading-none">
+              <RelativeAgeString from={cert.validFrom} />
+            </span>
+          }
+        />
+
+        <KeyValue
+          label="Valid to"
+          value={formatDate(cert.validTo)}
+          valueTooltip={formatDateTimeUtc(cert.validTo)}
+          suffix={
+            <span className="text-[11px] text-muted-foreground leading-none">
+              <RelativeExpiryString
+                to={cert.validTo}
+                dangerDays={7}
+                warnDays={21}
+              />
+            </span>
+          }
+        />
+      </KeyValueGrid>
+    </div>
+  );
+}
 
 export function CertificatesSection({
   data,
@@ -50,92 +138,7 @@ export function CertificatesSection({
         <CertificateAlert error={error} />
       ) : firstCert ? (
         <>
-          <Fragment
-            key={`cert-${firstCert.subject}-${firstCert.validFrom}-${firstCert.validTo}`}
-          >
-            <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-3 backdrop-blur-lg dark:border-border/50">
-              <KeyValueGrid colsDesktop={2}>
-                <KeyValue
-                  label="Issuer"
-                  value={firstCert.issuer}
-                  leading={
-                    firstCert.caProvider?.id ? (
-                      <ProviderIcon
-                        providerId={firstCert.caProvider.id}
-                        providerName={firstCert.caProvider.name}
-                        providerDomain={firstCert.caProvider.domain}
-                      />
-                    ) : undefined
-                  }
-                  suffix={
-                    firstCert.caProvider?.name ? (
-                      <span className="text-[11px] text-muted-foreground">
-                        {firstCert.caProvider.name}
-                      </span>
-                    ) : undefined
-                  }
-                />
-
-                <KeyValue
-                  label="Subject"
-                  value={firstCert.subject}
-                  suffix={(() => {
-                    const subjectName = firstCert.subject;
-                    const sans = Array.isArray(firstCert.altNames)
-                      ? firstCert.altNames.filter(
-                          (n) => !equalHostname(n, subjectName),
-                        )
-                      : [];
-                    return sans.length > 0 ? (
-                      <ResponsiveTooltip>
-                        <ResponsiveTooltipTrigger
-                          nativeButton={false}
-                          render={
-                            <Badge
-                              variant="outline"
-                              className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                            >
-                              <span>+</span>
-                              <span className="px-[1px]">{sans.length}</span>
-                            </Badge>
-                          }
-                        />
-                        <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
-                          {sans.join(", ")}
-                        </ResponsiveTooltipContent>
-                      </ResponsiveTooltip>
-                    ) : undefined;
-                  })()}
-                />
-
-                <KeyValue
-                  label="Valid from"
-                  value={formatDate(firstCert.validFrom)}
-                  valueTooltip={formatDateTimeUtc(firstCert.validFrom)}
-                  suffix={
-                    <span className="text-[11px] text-muted-foreground leading-none">
-                      <RelativeAgeString from={firstCert.validFrom} />
-                    </span>
-                  }
-                />
-
-                <KeyValue
-                  label="Valid to"
-                  value={formatDate(firstCert.validTo)}
-                  valueTooltip={formatDateTimeUtc(firstCert.validTo)}
-                  suffix={
-                    <span className="text-[11px] text-muted-foreground leading-none">
-                      <RelativeExpiryString
-                        to={firstCert.validTo}
-                        dangerDays={7}
-                        warnDays={21}
-                      />
-                    </span>
-                  }
-                />
-              </KeyValueGrid>
-            </div>
-          </Fragment>
+          <CertificateCard cert={firstCert} />
 
           {remainingCerts.length > 0 && !showAll && (
             <div className="mt-4 flex justify-center">
@@ -169,96 +172,13 @@ export function CertificatesSection({
                       aria-hidden
                     />
                   </div>
-                  {remainingCerts.map((c, idx) => (
+                  {remainingCerts.map((cert, index) => (
                     <Fragment
-                      key={`cert-${c.subject}-${c.validFrom}-${c.validTo}`}
+                      key={`cert-${cert.subject}-${cert.validFrom}-${cert.validTo}`}
                     >
-                      <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-3 backdrop-blur-lg dark:border-border/50">
-                        <KeyValueGrid colsDesktop={2}>
-                          <KeyValue
-                            label="Issuer"
-                            value={c.issuer}
-                            leading={
-                              c.caProvider?.id ? (
-                                <ProviderIcon
-                                  providerId={c.caProvider.id}
-                                  providerName={c.caProvider.name}
-                                  providerDomain={c.caProvider.domain}
-                                />
-                              ) : undefined
-                            }
-                            suffix={
-                              c.caProvider?.name ? (
-                                <span className="text-[11px] text-muted-foreground">
-                                  {c.caProvider.name}
-                                </span>
-                              ) : undefined
-                            }
-                          />
+                      <CertificateCard cert={cert} />
 
-                          <KeyValue
-                            label="Subject"
-                            value={c.subject}
-                            suffix={(() => {
-                              const subjectName = c.subject;
-                              const sans = Array.isArray(c.altNames)
-                                ? c.altNames.filter(
-                                    (n) => !equalHostname(n, subjectName),
-                                  )
-                                : [];
-                              return sans.length > 0 ? (
-                                <ResponsiveTooltip>
-                                  <ResponsiveTooltipTrigger
-                                    nativeButton={false}
-                                    render={
-                                      <Badge
-                                        variant="outline"
-                                        className="select-none gap-0 border-muted-foreground/35 px-1.5 font-mono text-[11px] text-muted-foreground/85"
-                                      >
-                                        <span>+</span>
-                                        <span className="px-[1px]">
-                                          {sans.length}
-                                        </span>
-                                      </Badge>
-                                    }
-                                  />
-                                  <ResponsiveTooltipContent className="max-w-[80vw] whitespace-pre-wrap break-words md:max-w-[40rem]">
-                                    {sans.join(", ")}
-                                  </ResponsiveTooltipContent>
-                                </ResponsiveTooltip>
-                              ) : undefined;
-                            })()}
-                          />
-
-                          <KeyValue
-                            label="Valid from"
-                            value={formatDate(c.validFrom)}
-                            valueTooltip={formatDateTimeUtc(c.validFrom)}
-                            suffix={
-                              <span className="text-[11px] text-muted-foreground leading-none">
-                                <RelativeAgeString from={c.validFrom} />
-                              </span>
-                            }
-                          />
-
-                          <KeyValue
-                            label="Valid to"
-                            value={formatDate(c.validTo)}
-                            valueTooltip={formatDateTimeUtc(c.validTo)}
-                            suffix={
-                              <span className="text-[11px] text-muted-foreground leading-none">
-                                <RelativeExpiryString
-                                  to={c.validTo}
-                                  dangerDays={7}
-                                  warnDays={21}
-                                />
-                              </span>
-                            }
-                          />
-                        </KeyValueGrid>
-                      </div>
-
-                      {idx < remainingCerts.length - 1 && (
+                      {index < remainingCerts.length - 1 && (
                         <div className="my-3 flex justify-center">
                           <ArrowUpIcon
                             className="size-4 text-muted-foreground/60"

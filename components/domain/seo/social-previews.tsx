@@ -102,6 +102,42 @@ function getHostname(url: string): string {
   }
 }
 
+function PreviewImage({
+  src,
+  width,
+  height,
+  placeholderClassName,
+}: {
+  src: string | null;
+  width: number;
+  height: number;
+  placeholderClassName: string;
+}) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt="Preview image"
+        width={width}
+        height={height}
+        className="h-full w-full select-none object-cover"
+        draggable={false}
+        loading="lazy"
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`flex h-full w-full items-center justify-center ${placeholderClassName}`}
+    >
+      <ImageBrokenIcon className="h-5 w-5" aria-hidden />
+      <span className="sr-only">No image</span>
+    </div>
+  );
+}
+
 function SocialPreview({
   provider,
   title,
@@ -126,23 +162,12 @@ function SocialPreview({
         <div className="mx-auto w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
           <div className="flex items-stretch">
             <div className="relative min-h-[96px] w-24 shrink-0 self-stretch bg-[#f1f5f9] dark:bg-[#0f1419]">
-              {image ? (
-                <Image
-                  src={image}
-                  alt="Preview image"
-                  width={240}
-                  height={240}
-                  className="h-full w-full select-none object-cover"
-                  draggable={false}
-                  loading="lazy"
-                  unoptimized
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-[#64748b] text-[11px] dark:text-[#8b98a5]">
-                  <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                  <span className="sr-only">No image</span>
-                </div>
-              )}
+              <PreviewImage
+                src={image}
+                width={240}
+                height={240}
+                placeholderClassName="text-[#64748b] text-[11px] dark:text-[#8b98a5]"
+              />
             </div>
 
             <div className="min-w-0 flex-1 p-3">
@@ -162,28 +187,16 @@ function SocialPreview({
         </div>
       );
     } else {
-      // Large (summary_large_image) layout
       card = (
         <div className="overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
           <div className="relative w-full overflow-hidden bg-[#f1f5f9] dark:bg-[#0f1419]">
             <div className="aspect-[16/9] min-h-[160px] w-full">
-              {image ? (
-                <Image
-                  src={image}
-                  alt="Preview image"
-                  width={1200}
-                  height={675}
-                  className="h-full w-full select-none object-cover"
-                  draggable={false}
-                  loading="lazy"
-                  unoptimized
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-[#64748b] text-[12px] dark:text-[#8b98a5]">
-                  <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                  <span className="sr-only">No image</span>
-                </div>
-              )}
+              <PreviewImage
+                src={image}
+                width={1200}
+                height={675}
+                placeholderClassName="text-[#64748b] text-[12px] dark:text-[#8b98a5]"
+              />
             </div>
           </div>
           <div className="p-3">
@@ -209,22 +222,12 @@ function SocialPreview({
       <div className="overflow-hidden rounded-md border border-[#e4e6eb] bg-white text-black dark:border-[#3a3b3c] dark:bg-[#18191a] dark:text-white">
         <div className="relative w-full bg-[#f0f2f5] dark:bg-[#242526]">
           <div className="aspect-[1.91/1] min-h-[150px] w-full">
-            {image ? (
-              <Image
-                src={image}
-                alt="Preview image"
-                width={1200}
-                height={628}
-                className="h-full w-full select-none object-cover"
-                loading="lazy"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[#606770] text-[12px] dark:text-[#b0b3b8]">
-                <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                <span className="sr-only">No image</span>
-              </div>
-            )}
+            <PreviewImage
+              src={image}
+              width={1200}
+              height={628}
+              placeholderClassName="text-[#606770] text-[12px] dark:text-[#b0b3b8]"
+            />
           </div>
         </div>
         <div className="bg-[#f0f2f5] px-4 py-3 dark:bg-[#3a3b3c]">
@@ -249,23 +252,12 @@ function SocialPreview({
       <div className="overflow-hidden border border-[#dde6f2] bg-white text-black dark:border-[#2e3a44] dark:bg-[#1d2226] dark:text-white">
         <div className="relative w-full bg-[#eef3f8] dark:bg-[#0b0f12]">
           <div className="aspect-[1200/627] min-h-[150px] w-full">
-            {image ? (
-              <Image
-                src={image}
-                alt="Preview image"
-                width={1200}
-                height={627}
-                className="h-full w-full select-none object-cover"
-                draggable={false}
-                loading="lazy"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[#6e7781] text-[12px] dark:text-[#9aa6b2]">
-                <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                <span className="sr-only">No image</span>
-              </div>
-            )}
+            <PreviewImage
+              src={image}
+              width={1200}
+              height={627}
+              placeholderClassName="text-[#6e7781] text-[12px] dark:text-[#9aa6b2]"
+            />
           </div>
         </div>
         <div className="px-4 py-3">
@@ -281,7 +273,6 @@ function SocialPreview({
   }
 
   if (provider === "slack") {
-    // Slack unfurl card: hostname, title (link blue), description, then image.
     card = (
       <div className="relative overflow-hidden rounded-md border border-[#e1e3e6] bg-white p-3 pl-6 text-black dark:border-[#2b2e33] dark:bg-[#1f2329] dark:text-white">
         <div className="absolute top-3 bottom-3 left-3 w-[3px] rounded bg-[#c9ced6] dark:bg-[#3a3f45]" />
@@ -298,23 +289,12 @@ function SocialPreview({
         )}
         <div className="mt-3 overflow-hidden rounded-[6px] bg-[#ecebeb] dark:bg-[#393d42]">
           <div className="aspect-[16/9] min-h-[150px] w-full">
-            {image ? (
-              <Image
-                src={image}
-                alt="Preview image"
-                width={1200}
-                height={675}
-                className="h-full w-full select-none object-cover"
-                draggable={false}
-                loading="lazy"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[#6b7075] text-[12px] dark:text-[#9aa6b2]">
-                <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                <span className="sr-only">No image</span>
-              </div>
-            )}
+            <PreviewImage
+              src={image}
+              width={1200}
+              height={675}
+              placeholderClassName="text-[#6b7075] text-[12px] dark:text-[#9aa6b2]"
+            />
           </div>
         </div>
       </div>
@@ -322,7 +302,6 @@ function SocialPreview({
   }
 
   if (provider === "discord") {
-    // Discord embed-style card: title link blue, description, large rounded image, subtle container.
     card = (
       <div className="rounded-lg border border-[#1f2124] bg-[#2b2d31] p-3 text-white">
         <div className="truncate text-[#b5bac1] text-[12px] leading-4">
@@ -338,23 +317,12 @@ function SocialPreview({
         )}
         <div className="mt-3 overflow-hidden rounded-md bg-[#1f2124]">
           <div className="aspect-[1200/628] min-h-[150px] w-full">
-            {image ? (
-              <Image
-                src={image}
-                alt="Preview image"
-                width={1200}
-                height={628}
-                className="h-full w-full select-none object-cover"
-                draggable={false}
-                loading="lazy"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[#99a1ab] text-[12px]">
-                <ImageBrokenIcon className="h-5 w-5" aria-hidden />
-                <span className="sr-only">No image</span>
-              </div>
-            )}
+            <PreviewImage
+              src={image}
+              width={1200}
+              height={628}
+              placeholderClassName="text-[#99a1ab] text-[12px]"
+            />
           </div>
         </div>
       </div>
