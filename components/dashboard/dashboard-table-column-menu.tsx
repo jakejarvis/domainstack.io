@@ -1,4 +1,4 @@
-import { ColumnsIcon, EyeIcon } from "@phosphor-icons/react/ssr";
+import { EyeIcon, SquareSplitHorizontalIcon } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,7 +61,7 @@ export function DashboardTableColumnMenu<TData>({
                 : "Toggle columns"
             }
           >
-            <ColumnsIcon />
+            <SquareSplitHorizontalIcon />
             <span className="sr-only">Toggle columns</span>
           </Button>
         }

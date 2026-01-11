@@ -2,8 +2,8 @@
 
 import {
   CheckIcon,
+  ClipboardIcon,
   ClipboardTextIcon,
-  CopyIcon,
   XCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import clipboardCopy from "clipboard-copy";
@@ -80,11 +80,7 @@ export function CopyButton({
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
-      {copied ? (
-        <CheckIcon className="size-3.5 text-accent-green" />
-      ) : (
-        <CopyIcon className="size-3.5" />
-      )}
+      {copied ? <CheckIcon className="text-accent-green" /> : <ClipboardIcon />}
       <span className={cn(!showLabel && "sr-only")}>
         {copied ? "Copied" : "Copy"}
       </span>

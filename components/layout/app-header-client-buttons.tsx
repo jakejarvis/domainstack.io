@@ -62,7 +62,7 @@ export function AppHeaderClientButtons() {
                 nativeButton={false}
                 render={
                   <Link href="/dashboard">
-                    <LayoutIcon weight="bold" />
+                    <LayoutIcon />
                     <span className="sr-only">Dashboard</span>
                   </Link>
                 }
@@ -86,17 +86,13 @@ export function AppHeaderClientButtons() {
         <DropdownMenuTrigger
           render={
             <Button variant="ghost" size="icon-sm" aria-label="Menu">
-              <ListIcon weight="bold" />
+              <ListIcon />
             </Button>
           }
         />
         <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-            {theme === "dark" ? (
-              <SunIcon weight="bold" />
-            ) : (
-              <MoonIcon weight="bold" />
-            )}
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -104,7 +100,7 @@ export function AppHeaderClientButtons() {
             nativeButton={false}
             render={
               <Link href="/login" scroll={false}>
-                <SignInIcon weight="bold" />
+                <SignInIcon />
                 Sign In
               </Link>
             }

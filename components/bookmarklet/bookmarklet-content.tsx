@@ -3,8 +3,8 @@
 import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
   ArrowElbowLeftUpIcon,
-  CursorClickIcon,
   FilmStripIcon,
+  MouseLeftClickIcon,
   StackPlusIcon,
 } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
@@ -58,7 +58,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
               });
             }}
           >
-            <CursorClickIcon />
+            <MouseLeftClickIcon />
             Inspect Domain
           </Button>
         </div>

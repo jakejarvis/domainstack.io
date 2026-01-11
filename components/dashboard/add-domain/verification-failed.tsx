@@ -60,7 +60,7 @@ export function VerificationFailed({
   return (
     <div className="space-y-4">
       <Alert className="bg-card/60">
-        <WarningIcon className="size-4 stroke-danger-foreground" />
+        <WarningIcon className="size-4 text-danger-foreground" />
         <AlertTitle className="font-medium text-danger-foreground">
           Verification Failed
         </AlertTitle>

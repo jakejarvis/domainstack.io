@@ -2,7 +2,7 @@ import {
   ArchiveIcon,
   BellSimpleIcon,
   ChecksIcon,
-  GearIcon,
+  FadersHorizontalIcon,
   TrayIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
@@ -177,7 +177,7 @@ export function NotificationsPopover() {
                   className="relative"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
-                  <BellSimpleIcon weight="bold" />
+                  <BellSimpleIcon />
                   {count > 0 && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
@@ -222,7 +222,7 @@ export function NotificationsPopover() {
                       disabled={markAllRead.isPending}
                       aria-label="Clear All"
                     >
-                      <ChecksIcon className="text-muted-foreground" />
+                      <ChecksIcon className="text-foreground/90" />
                       Clear All
                     </Button>
                   )}
@@ -239,7 +239,7 @@ export function NotificationsPopover() {
                     }}
                     render={
                       <Link href="/settings/notifications">
-                        <GearIcon className="text-muted-foreground" />
+                        <FadersHorizontalIcon className="text-foreground/90" />
                         Settings
                       </Link>
                     }

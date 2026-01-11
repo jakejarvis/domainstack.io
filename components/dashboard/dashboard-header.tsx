@@ -181,7 +181,7 @@ export function DashboardHeader({
                       aria-label="Table view"
                       className="!px-3"
                     >
-                      <LayoutIcon className="size-4" weight="bold" />
+                      <LayoutIcon className="size-4" />
                       <span className="sr-only">Table</span>
                     </ToggleGroupItem>
                   }

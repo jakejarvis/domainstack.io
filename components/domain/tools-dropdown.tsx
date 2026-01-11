@@ -1,4 +1,4 @@
-import { DotsThreeIcon, PlusIcon } from "@phosphor-icons/react/ssr";
+import { DotsThreeVerticalIcon, PlusIcon } from "@phosphor-icons/react/ssr";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,8 +152,9 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <Button variant="outline" aria-label="Open menu" size="icon">
-                  <DotsThreeIcon />
+                <Button variant="outline" aria-label="Open menu" size="icon-sm">
+                  <DotsThreeVerticalIcon weight="bold" />
+                  <span className="sr-only">Open tools menu</span>
                 </Button>
               }
             />

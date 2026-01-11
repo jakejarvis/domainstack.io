@@ -16,10 +16,7 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         data-slot="checkbox-indicator"
         className="absolute inset-0 flex items-center justify-center text-current transition-none data-[unchecked]:hidden"
       >
-        <CheckIcon
-          strokeWidth={3}
-          className="size-[87.5%] text-primary-foreground/85"
-        />
+        <CheckIcon weight="bold" className="size-[87.5%] text-background" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

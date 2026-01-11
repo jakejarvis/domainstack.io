@@ -30,7 +30,7 @@ export function CalendarFeedPopover() {
             <PopoverTrigger
               render={
                 <Button variant="outline">
-                  <RssSimpleIcon weight="bold" />
+                  <RssSimpleIcon />
                   <span className="sr-only">Subscribe</span>
                 </Button>
               }

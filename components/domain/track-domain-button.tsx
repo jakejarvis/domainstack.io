@@ -1,6 +1,6 @@
 import {
-  BellSimpleIcon,
   SealCheckIcon,
+  TargetIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
@@ -73,7 +73,7 @@ export function TrackDomainButton({
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" disabled>
+      <Button variant="outline" size="sm" disabled>
         <Spinner />
       </Button>
     );
@@ -87,6 +87,7 @@ export function TrackDomainButton({
           render={
             <Button
               variant="outline"
+              size="sm"
               nativeButton={false}
               render={
                 <Link href="/dashboard">
@@ -112,7 +113,7 @@ export function TrackDomainButton({
     </>
   ) : (
     <>
-      <BellSimpleIcon className="text-accent-gold" />
+      <TargetIcon className="text-accent-purple" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
@@ -126,12 +127,13 @@ export function TrackDomainButton({
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button variant="outline" onClick={handleButtonClick}>
+            <Button variant="outline" size="sm" onClick={handleButtonClick}>
               {buttonContent}
             </Button>
           ) : (
             <Button
               variant="outline"
+              size="sm"
               nativeButton={false}
               render={
                 <Link href="/login" scroll={false}>

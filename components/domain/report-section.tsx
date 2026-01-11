@@ -69,7 +69,7 @@ export function ReportSection({
             <div className="flex w-full items-center gap-3 text-left">
               {Icon && (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground/90">
-                  <Icon className="size-4" weight="bold" />
+                  <Icon className="size-4" />
                 </div>
               )}
               <div className="min-w-0 flex-1">

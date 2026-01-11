@@ -13,8 +13,8 @@ import { HostingSectionSkeleton } from "@/components/domain/hosting/hosting-sect
 import { RegistrationSection } from "@/components/domain/registration/registration-section";
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
 import { DomainReportHeader } from "@/components/domain/report-header";
+import { SectionNav } from "@/components/domain/report-nav";
 import { SectionErrorBoundary } from "@/components/domain/report-section-error-boundary";
-import { SectionNav } from "@/components/domain/section-nav";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";

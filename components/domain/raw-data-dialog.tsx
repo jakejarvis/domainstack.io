@@ -3,7 +3,7 @@
 import {
   ArrowSquareOutIcon,
   ArrowsInSimpleIcon,
-  BracketsCurlyIcon,
+  BinaryIcon,
   SealCheckIcon,
 } from "@phosphor-icons/react/ssr";
 import { useMemo, useState } from "react";
@@ -53,7 +53,8 @@ export function RawDataDialog({
                   aria-label={`View raw ${title} data`}
                   onClick={() => setOpen(true)}
                 >
-                  <BracketsCurlyIcon className="size-4 text-foreground/95" />
+                  <BinaryIcon className="size-4 text-foreground/95" />
+                  <span className="sr-only">View raw {title} data</span>
                 </Button>
               }
             />

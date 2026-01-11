@@ -96,7 +96,7 @@ export function RegistrationSection({
                 <ResponsiveTooltipTrigger
                   nativeButton={false}
                   render={
-                    <SealCheckIcon className="!size-3.5 stroke-muted-foreground/80" />
+                    <SealCheckIcon className="!size-3.5 text-muted-foreground/80" />
                   }
                 />
                 <ResponsiveTooltipContent>
@@ -142,7 +142,7 @@ export function RegistrationSection({
             }
             leading={
               data.privacyEnabled || !registrant ? (
-                <DetectiveIcon className="stroke-muted-foreground" />
+                <DetectiveIcon className="text-muted-foreground" />
               ) : undefined
             }
           />
