@@ -108,7 +108,7 @@
     "@testing-library/user-event": "14.6.1",
     "@types/node": "25.0.5",
     "@types/pg": "^8.16.0",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^5.1.2",
@@ -150,7 +150,7 @@
       "next": "16.1.1",
       "react": "19.2.3",
       "react-dom": "19.2.3",
-      "@types/react": "19.2.7",
+      "@types/react": "19.2.8",
       "@types/react-dom": "19.2.3"
     }
   }
