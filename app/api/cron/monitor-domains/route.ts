@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getMonitoredSnapshotIds } from "@/lib/db/repos/snapshots";
 import { createLogger } from "@/lib/logger/server";
-import { withConcurrencyHandling } from "@/lib/workflow";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { monitorDomainWorkflow } from "@/workflows/monitor-domain";
 
 const logger = createLogger({ source: "cron/monitor-domains" });

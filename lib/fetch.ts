@@ -45,7 +45,7 @@ export async function fetchWithTimeoutAndRetry(
   const delayMs = Math.max(0, opts.backoffMs ?? 150);
   const externalSignal = init.signal ?? undefined;
 
-  const options: TimeoutAndRetryOptions = {
+  const options = {
     timeoutMs,
     retries,
     delayMs,
@@ -57,7 +57,7 @@ export async function fetchWithTimeoutAndRetry(
         `fetch failed, retrying (attempt ${attempt + 1}/${retries + 1})`,
       );
     },
-  };
+  } as TimeoutAndRetryOptions;
 
   return withTimeoutAndRetry(async (signal) => {
     // Robust header merging that handles Headers instances, objects, and undefined
@@ -71,14 +71,3 @@ export async function fetchWithTimeoutAndRetry(
     });
   }, options);
 }
-
-// Re-export the new utilities for convenience
-export {
-  type BackoffType,
-  type RetryOptions,
-  type TimeoutAndRetryOptions,
-  type TimeoutOptions,
-  withRetry,
-  withTimeout,
-  withTimeoutAndRetry as withTimeoutAndRetryAsync,
-} from "@/lib/async";

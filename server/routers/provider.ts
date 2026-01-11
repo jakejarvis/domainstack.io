@@ -1,7 +1,10 @@
 import { start } from "workflow/api";
 import z from "zod";
 import { getProviderById } from "@/lib/db/repos/providers";
-import { getDeduplicationKey, startWithDeduplication } from "@/lib/workflow";
+import {
+  getDeduplicationKey,
+  startWithDeduplication,
+} from "@/lib/workflow/deduplication";
 import { createTRPCRouter, publicProcedure } from "@/trpc/init";
 
 export const providerRouter = createTRPCRouter({
@@ -12,7 +15,7 @@ export const providerRouter = createTRPCRouter({
       const providerDomain = provider?.domain;
       if (!providerDomain) {
         // Return null instead of throwing to avoid logging errors for missing icons
-        return { url: null };
+        return { success: false, url: null };
       }
 
       const { getProviderLogoByProviderId } = await import(

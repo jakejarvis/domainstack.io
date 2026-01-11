@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getVerifiedTrackedDomainIdsWithCertificates } from "@/lib/db/repos/certificates";
 import { createLogger } from "@/lib/logger/server";
-import { withConcurrencyHandling } from "@/lib/workflow";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { certificateExpiryWorkflow } from "@/workflows/certificate-expiry";
 
 const logger = createLogger({ source: "cron/check-certificate-expiry" });

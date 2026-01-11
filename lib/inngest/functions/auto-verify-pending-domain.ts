@@ -3,7 +3,7 @@ import "server-only";
 import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { withConcurrencyHandling } from "@/lib/workflow";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 
 /**

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
-import { withConcurrencyHandling } from "@/lib/workflow";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });

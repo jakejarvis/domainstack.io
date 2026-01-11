@@ -2,7 +2,10 @@ import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { getDeduplicationKey, startWithDeduplication } from "@/lib/workflow";
+import {
+  getDeduplicationKey,
+  startWithDeduplication,
+} from "@/lib/workflow/deduplication";
 import {
   createTRPCRouter,
   domainProcedure,

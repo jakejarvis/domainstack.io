@@ -5,7 +5,7 @@ import {
   getVerifiedTrackedDomainIds,
 } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
-import { withConcurrencyHandling } from "@/lib/workflow";
+import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
 import { verifyPendingWorkflow } from "@/workflows/verify-pending";
 
