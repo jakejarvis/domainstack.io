@@ -175,8 +175,8 @@ importers:
         specifier: 24.32.0
         version: 24.32.0(bufferutil@4.1.0)
       rdapper:
-        specifier: ^0.12.1
-        version: 0.12.1
+        specifier: ^0.13.0
+        version: 0.13.0
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -6259,8 +6259,8 @@ packages:
   rc9@2.1.2:
     resolution: {integrity: sha512-btXCnMmRIBINM2LDZoEmOogIZU7Qe7zn4BpomSKZ/ykbLObuBdvG+mFq11DL6fjH1DRwHhrlgtYWG96bJiC7Cg==}
 
-  rdapper@0.12.1:
-    resolution: {integrity: sha512-GSz0UO2LZ32iMeY04u+42uLgwYcxrr2R8XQVSdp863qdjq/cBunzAIVqgOu4OZO5STzDfxxSckfimA4lNlqv5Q==}
+  rdapper@0.13.0:
+    resolution: {integrity: sha512-oaNNMNMzGQf2w1hePWsSrIAzleQjExMN/O+TOFole/7XfVPPCNavWhZ/TadjxQKDcFlgK9/P8CUI/gKV4oU7Lw==}
     engines: {node: '>=18.17'}
     hasBin: true
 
@@ -13693,7 +13693,7 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
 
-  rdapper@0.12.1:
+  rdapper@0.13.0:
     dependencies:
       tldts: 7.0.19
 
