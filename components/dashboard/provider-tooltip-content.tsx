@@ -114,7 +114,6 @@ export function ProviderTooltipContent({
             providerId={providerId}
             providerName={providerName}
             providerDomain={providerDomain}
-            size={16}
             className="shrink-0"
           />
         )}

@@ -72,7 +72,7 @@ export function ArchivedDomainsList({
           <Card key={domain.id} className="opacity-75">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Favicon domain={domain.domainName} size={24} />
+                <Favicon domain={domain.domainName} className="size-6" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">
                     {domain.domainName}

@@ -87,7 +87,6 @@ export function RegistrationSection({
                   providerId={data.registrarProvider.id}
                   providerName={data.registrarProvider.name}
                   providerDomain={data.registrarProvider.domain}
-                  size={16}
                 />
               ) : undefined
             }

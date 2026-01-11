@@ -144,8 +144,7 @@ function ProviderCell({
           providerId={provider.id}
           providerName={provider.name}
           providerDomain={provider.domain}
-          size={13}
-          className="shrink-0"
+          className="size-[13px] shrink-0"
         />
       )}
       <span ref={valueRef} className="min-w-0 flex-1 truncate">
@@ -261,7 +260,6 @@ export function DashboardTable({
               {/* Favicon - hidden on hover or when selected */}
               <Favicon
                 domain={row.original.domainName}
-                size={16}
                 className={cn(
                   "absolute inset-0",
                   isSelected ? "hidden" : "group-hover:hidden",

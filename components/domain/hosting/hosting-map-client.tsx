@@ -39,11 +39,7 @@ export function HostingMapClient({ lat, lon, domain }: HostingMapClientProps) {
           {domain && (
             <MapMarkerLabel position="bottom">
               <div className="mt-1.5 flex items-center gap-1 leading-none">
-                <Favicon
-                  domain={domain}
-                  size={12}
-                  className="shrink-0 rounded"
-                />
+                <Favicon domain={domain} className="size-3 shrink-0 rounded" />
                 {domain}
               </div>
             </MapMarkerLabel>

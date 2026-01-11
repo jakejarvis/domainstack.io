@@ -28,7 +28,6 @@ export type HomeSearchSuggestionsClientProps = {
 export function HomeSearchSuggestionsClient({
   defaultSuggestions,
   className,
-  faviconSize = 16,
   max = MAX_HISTORY_ITEMS,
 }: HomeSearchSuggestionsClientProps) {
   const router = useRouter();
@@ -98,11 +97,7 @@ export function HomeSearchSuggestionsClient({
               nativeButton={false}
               render={
                 <Link href={`/${encodeURIComponent(domain)}`} prefetch={false}>
-                  <Favicon
-                    domain={domain}
-                    size={faviconSize}
-                    className="shrink-0"
-                  />
+                  <Favicon domain={domain} className="shrink-0" />
                   {domain}
                 </Link>
               }

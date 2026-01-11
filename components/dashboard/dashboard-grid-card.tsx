@@ -120,9 +120,8 @@ export function DashboardGridCard({
             {/* Favicon - hidden on hover or when selected (only if selection is enabled) */}
             <Favicon
               domain={domainName}
-              size={32}
               className={cn(
-                "rounded-md",
+                "size-8 rounded-md",
                 onToggleSelect &&
                   (isSelected ? "hidden" : "group-hover:hidden"),
               )}
@@ -412,8 +411,7 @@ function InfoRow({
           providerId={provider.id}
           providerName={provider.name}
           providerDomain={provider.domain}
-          size={14}
-          className="shrink-0"
+          className="size-3.5 shrink-0"
         />
       )}
       <span ref={valueRef} className="min-w-0 flex-1 truncate">

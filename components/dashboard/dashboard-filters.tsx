@@ -229,8 +229,7 @@ export function DashboardFilters({
               providerId={provider.id}
               providerName={provider.name}
               providerDomain={provider.domain}
-              size={12}
-              className="shrink-0"
+              className="size-3 shrink-0"
             />
           ) : (
             <PlugsIcon className="size-3 text-muted-foreground" />
@@ -424,8 +423,7 @@ export function DashboardFilters({
                     providerId={option.id}
                     providerName={option.label}
                     providerDomain={option.domain}
-                    size={14}
-                    className="shrink-0"
+                    className="size-3.5 shrink-0"
                   />
                   <span className="max-w-[240px] truncate leading-none">
                     {option.label}

@@ -42,7 +42,7 @@ export function DnsRecordList({
                   nativeButton={false}
                   render={
                     <span>
-                      <Favicon domain="cloudflare.com" size={16} />
+                      <Favicon domain="cloudflare.com" />
                     </span>
                   }
                 />

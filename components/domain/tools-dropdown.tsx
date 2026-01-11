@@ -178,7 +178,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Favicon domain={tool.faviconDomain} size={16} />
+                    <Favicon domain={tool.faviconDomain} />
                     {tool.name}
                   </a>
                 }

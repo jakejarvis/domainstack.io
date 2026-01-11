@@ -48,7 +48,6 @@ export function HostingSection({
                     providerId={dnsProvider.id}
                     providerName={dnsProvider.name}
                     providerDomain={dnsProvider.domain}
-                    size={16}
                   />
                 ) : undefined
               }
@@ -62,7 +61,6 @@ export function HostingSection({
                     providerId={hostingProvider.id}
                     providerName={hostingProvider.name}
                     providerDomain={hostingProvider.domain}
-                    size={16}
                   />
                 ) : undefined
               }
@@ -76,7 +74,6 @@ export function HostingSection({
                     providerId={emailProvider.id}
                     providerName={emailProvider.name}
                     providerDomain={emailProvider.domain}
-                    size={16}
                   />
                 ) : undefined
               }

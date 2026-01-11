@@ -104,7 +104,7 @@ export function SectionNav({
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="flex min-w-0 cursor-pointer items-center gap-2"
           >
-            <Favicon domain={domain} size={16} className="shrink-0" />
+            <Favicon domain={domain} className="shrink-0" />
             <span className="max-w-32 truncate font-medium text-[15px]">
               {domain}
             </span>

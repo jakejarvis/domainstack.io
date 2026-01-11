@@ -62,7 +62,7 @@ export type RemoteIconProps = {
 export function RemoteIcon({
   queryOptions,
   fallbackIdentifier,
-  size = 16,
+  size = 32,
   className,
   style,
   alt,
@@ -82,7 +82,7 @@ export function RemoteIcon({
     retryOnMount: false,
   });
 
-  const baseClassName = "pointer-events-none select-none rounded-xs";
+  const baseClassName = cn("pointer-events-none size-4 select-none rounded-xs");
 
   // Show skeleton while query is loading
   // This is consistent between SSR and client hydration (both isPending=true)
