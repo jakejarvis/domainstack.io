@@ -1,6 +1,6 @@
 "use client";
 
-import { BrickWallShield, CircleX } from "lucide-react";
+import { ShieldWarningIcon, XCircleIcon } from "@phosphor-icons/react/ssr";
 import Image from "next/image";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -70,12 +70,12 @@ export function Screenshot({
               </>
             ) : blocked ? (
               <>
-                <BrickWallShield />
+                <ShieldWarningIcon />
                 Screenshot unavailable for this domain.
               </>
             ) : (
               <>
-                <CircleX />
+                <XCircleIcon />
                 Unable to take a screenshot.
               </>
             )}

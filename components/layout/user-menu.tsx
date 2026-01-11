@@ -1,6 +1,12 @@
 "use client";
 
-import { LogOut, Moon, Settings, Sun, Table2 } from "lucide-react";
+import {
+  FadersHorizontalIcon,
+  LayoutIcon,
+  MoonIcon,
+  SignOutIcon,
+  SunIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -98,7 +104,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/dashboard">
-              <Table2 />
+              <LayoutIcon weight="bold" />
               Dashboard
             </Link>
           }
@@ -107,7 +113,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/settings" scroll={false}>
-              <Settings />
+              <FadersHorizontalIcon weight="bold" />
               Settings
             </Link>
           }
@@ -115,12 +121,16 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
         <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-          {theme === "dark" ? <Sun /> : <Moon />}
+          {theme === "dark" ? (
+            <SunIcon weight="bold" />
+          ) : (
+            <MoonIcon weight="bold" />
+          )}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          <LogOut className="text-danger-foreground" />
+          <SignOutIcon className="text-danger-foreground" weight="bold" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

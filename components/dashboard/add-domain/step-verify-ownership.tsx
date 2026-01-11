@@ -1,4 +1,4 @@
-import { Download, Info } from "lucide-react";
+import { DownloadIcon, InfoIcon } from "@phosphor-icons/react/ssr";
 import { toast } from "sonner";
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ function VerificationInstructionsLayout({
   return (
     <div className="mt-1 min-w-0 space-y-3">
       <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
-        <Info className="mt-0.5 size-4 shrink-0 text-info-foreground" />
+        <InfoIcon className="mt-0.5 size-4 shrink-0 text-info-foreground" />
         <div className="space-y-0.5">
           <p className="font-medium text-info-foreground text-sm">{title}</p>
           <p className="text-info-foreground/80 text-sm">{description}</p>
@@ -204,7 +204,7 @@ export function StepVerifyOwnership({
                       }
                     }}
                   >
-                    <Download />
+                    <DownloadIcon />
                     Download File
                   </Button>
                 }

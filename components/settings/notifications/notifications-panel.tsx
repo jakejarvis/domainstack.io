@@ -1,5 +1,11 @@
+import {
+  BellSimpleIcon,
+  CalendarIcon,
+  GlobeIcon,
+  InfoIcon,
+  SlidersHorizontalIcon,
+} from "@phosphor-icons/react/ssr";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CalendarFold, Globe, Info, ListTree } from "lucide-react";
 import { toast } from "sonner";
 import { CalendarInstructions } from "@/components/calendar-instructions";
 import { DomainNotificationRow } from "@/components/settings/notifications/domain-notification-row";
@@ -236,7 +242,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
       <div>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <Bell className="size-4.5" />
+            <BellSimpleIcon className="size-4.5" />
             Notification Preferences
           </CardTitle>
           <CardDescription className="text-destructive">
@@ -275,7 +281,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
     <div className={className}>
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <Globe className="size-4.5" />
+          <GlobeIcon className="size-4.5" />
           Global Preferences
         </CardTitle>
         <CardDescription>
@@ -348,7 +354,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
 
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <ListTree className="size-4.5" />
+          <SlidersHorizontalIcon className="size-4.5" />
           Domain Preferences
         </CardTitle>
         <CardDescription>
@@ -379,7 +385,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
         {/* Info note */}
         {verifiedDomains.length === 0 && (
           <div className="flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
-            <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+            <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
             <p className="text-muted-foreground text-xs">
               Verify your domains to customize per-domain notifications.
             </p>
@@ -391,7 +397,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
 
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <CalendarFold className="size-4.5" />
+          <CalendarIcon className="size-4.5" />
           Calendar Feed
         </CardTitle>
         <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary">

@@ -1,4 +1,4 @@
-import { Earth } from "lucide-react";
+import { GlobeIcon } from "@phosphor-icons/react/ssr";
 import { useMemo } from "react";
 import { DnsGroup } from "@/components/domain/dns/dns-group";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
@@ -80,7 +80,7 @@ export function DnsSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Earth />
+              <GlobeIcon />
             </EmptyMedia>
             <EmptyTitle>No DNS records found</EmptyTitle>
             <EmptyDescription>

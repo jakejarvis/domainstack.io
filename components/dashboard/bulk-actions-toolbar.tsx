@@ -1,4 +1,4 @@
-import { Archive, Trash2, XIcon } from "lucide-react";
+import { ArchiveIcon, TrashIcon, XIcon } from "@phosphor-icons/react/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -94,7 +94,7 @@ export function BulkActionsToolbar({
                 onClick={onArchive}
                 disabled={isLoading}
               >
-                <Archive />
+                <ArchiveIcon />
                 Archive
               </Button>
 
@@ -104,7 +104,7 @@ export function BulkActionsToolbar({
                 onClick={onDelete}
                 disabled={isLoading}
               >
-                <Trash2 />
+                <TrashIcon />
                 Delete
               </Button>
 

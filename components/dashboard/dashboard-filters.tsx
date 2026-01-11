@@ -1,16 +1,15 @@
-import type { Table } from "@tanstack/react-table";
 import {
-  Activity,
-  Check,
-  ChevronDown,
-  ClockFading,
-  EthernetPort,
-  Filter,
-  Globe,
-  Search,
-  X,
+  ActivityIcon,
+  CaretDownIcon,
+  CheckIcon,
+  FunnelIcon,
+  GlobeIcon,
+  HourglassSimpleMediumIcon,
+  MagnifyingGlassIcon,
+  PlugsIcon,
   XIcon,
-} from "lucide-react";
+} from "@phosphor-icons/react/ssr";
+import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -234,7 +233,7 @@ export function DashboardFilters({
               className="shrink-0"
             />
           ) : (
-            <EthernetPort className="size-3 text-muted-foreground" />
+            <PlugsIcon className="size-3 text-muted-foreground" />
           ),
         });
       }
@@ -252,7 +251,7 @@ export function DashboardFilters({
             value: domainId,
             label: filteredDomainName,
             prefix: "Domain",
-            icon: <Globe className="size-3 text-muted-foreground" />,
+            icon: <GlobeIcon className="size-3 text-muted-foreground" />,
           },
         ]
       : []),
@@ -263,7 +262,9 @@ export function DashboardFilters({
             type: "search" as const,
             value: search,
             label: `"${search}"`,
-            icon: <Search className="size-3 text-muted-foreground" />,
+            icon: (
+              <MagnifyingGlassIcon className="size-3 text-muted-foreground" />
+            ),
           },
         ]
       : []),
@@ -272,20 +273,22 @@ export function DashboardFilters({
       type: "status" as const,
       value: s,
       label: s === "verified" ? "Verified" : "Pending Verification",
-      icon: <ClockFading className="size-3 text-muted-foreground" />,
+      icon: (
+        <HourglassSimpleMediumIcon className="size-3 text-muted-foreground" />
+      ),
     })),
     ...health.map((h) => ({
       type: "health" as const,
       value: h,
       label: HEALTH_OPTIONS.find((o) => o.value === h)?.label ?? h,
-      icon: <Activity className="size-3 text-muted-foreground" />,
+      icon: <ActivityIcon className="size-3 text-muted-foreground" />,
     })),
     ...tlds.map((t) => ({
       type: "tld" as const,
       value: t,
       label: `.${t}`, // Display with leading dot
       prefix: "TLD",
-      icon: <Globe className="size-3 text-muted-foreground" />,
+      icon: <GlobeIcon className="size-3 text-muted-foreground" />,
     })),
     ...providers.map((p) => ({
       type: "provider" as const,
@@ -339,7 +342,7 @@ export function DashboardFilters({
         <div className="flex-1 lg:max-w-xs">
           <InputGroup>
             <InputGroupAddon>
-              <Search />
+              <MagnifyingGlassIcon />
             </InputGroupAddon>
             <InputGroupInput
               placeholder="Search domains..."
@@ -380,7 +383,7 @@ export function DashboardFilters({
         <div className="flex flex-wrap gap-2">
           <MultiSelect
             label="Health"
-            icon={Activity}
+            icon={ActivityIcon}
             options={HEALTH_OPTIONS}
             selected={health}
             onSelectionChange={onHealthChange}
@@ -390,7 +393,7 @@ export function DashboardFilters({
           {availableTlds.length > 0 && (
             <MultiSelect
               label="TLD"
-              icon={Globe}
+              icon={GlobeIcon}
               options={tldOptions}
               selected={tlds}
               onSelectionChange={onTldsChange}
@@ -402,7 +405,7 @@ export function DashboardFilters({
           {providerSections.length > 0 && (
             <MultiSelect
               label="Providers"
-              icon={EthernetPort}
+              icon={PlugsIcon}
               sections={providerSections}
               selected={providers}
               onSelectionChange={onProvidersChange}
@@ -486,7 +489,7 @@ export function DashboardFilters({
                   onClick={() => onSortChange(option.value)}
                   className="cursor-pointer gap-2"
                 >
-                  <Check
+                  <CheckIcon
                     className={cn(
                       sortOption === option.value ? "opacity-100" : "opacity-0",
                     )}
@@ -521,7 +524,7 @@ export function DashboardFilters({
               render={
                 <Button variant="outline" className="flex-1 justify-between">
                   <span className="flex items-center gap-2">
-                    <Filter className="text-muted-foreground" />
+                    <FunnelIcon className="text-muted-foreground" />
                     <span className="text-sm">Filters</span>
                     <AnimatePresence initial={false}>
                       {hasActiveFilters && (
@@ -542,7 +545,7 @@ export function DashboardFilters({
                       )}
                     </AnimatePresence>
                   </span>
-                  <ChevronDown
+                  <CaretDownIcon
                     className={cn(
                       "transition-transform",
                       mobileOpen && "rotate-180",
@@ -637,7 +640,7 @@ export function DashboardFilters({
                       className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
                       aria-label={`Remove ${chip.type} filter`}
                     >
-                      <X className="size-3" />
+                      <XIcon className="size-3" />
                     </button>
                   </Badge>
                 </motion.div>

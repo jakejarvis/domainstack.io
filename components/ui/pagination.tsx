@@ -1,10 +1,10 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreHorizontalIcon,
-} from "lucide-react";
+  CaretLeftIcon,
+  CaretRightIcon,
+  DotsThreeIcon,
+} from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -93,7 +93,7 @@ function PaginationPrevious({ className, ...props }: PaginationLinkProps) {
       className={cn("pl-2!", className)}
       {...props}
     >
-      <ChevronLeftIcon aria-hidden />
+      <CaretLeftIcon aria-hidden />
       <span className="hidden sm:block">Previous</span>
     </PaginationLink>
   );
@@ -108,7 +108,7 @@ function PaginationNext({ className, ...props }: PaginationLinkProps) {
       {...props}
     >
       <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon aria-hidden />
+      <CaretRightIcon aria-hidden />
     </PaginationLink>
   );
 }
@@ -128,7 +128,7 @@ function PaginationEllipsis({
       ),
       children: (
         <>
-          <MoreHorizontalIcon className="size-4" aria-hidden />
+          <DotsThreeIcon className="size-4" aria-hidden />
           <span className="sr-only">More pages</span>
         </>
       ),

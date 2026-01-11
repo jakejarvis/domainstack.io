@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { InfoIcon } from "@phosphor-icons/react/ssr";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -73,7 +73,7 @@ export function GlobalNotificationRow({
                 nativeButton={false}
                 render={
                   <span className="px-[7px] text-foreground/70">
-                    <Info className="inline-block size-3.5" />
+                    <InfoIcon className="inline-block size-3.5" />
                   </span>
                 }
               />

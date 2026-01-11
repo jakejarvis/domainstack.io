@@ -1,5 +1,5 @@
+import { QuestionIcon } from "@phosphor-icons/react/ssr";
 import { hasFlag } from "country-flag-icons";
-import { MailQuestionMark } from "lucide-react";
 import { HostingMapClient } from "@/components/domain/hosting/hosting-map-client";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
@@ -117,7 +117,7 @@ export function HostingSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <MailQuestionMark />
+              <QuestionIcon />
             </EmptyMedia>
             <EmptyTitle>No hosting details available</EmptyTitle>
             <EmptyDescription>

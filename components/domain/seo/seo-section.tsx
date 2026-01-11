@@ -1,4 +1,4 @@
-import { FileQuestionMark } from "lucide-react";
+import { QuestionIcon } from "@phosphor-icons/react/ssr";
 import { ReportSection } from "@/components/domain/report-section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
 import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
@@ -73,7 +73,7 @@ export function SeoSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <FileQuestionMark />
+              <QuestionIcon />
             </EmptyMedia>
             <EmptyTitle>No SEO meta detected</EmptyTitle>
             <EmptyDescription>

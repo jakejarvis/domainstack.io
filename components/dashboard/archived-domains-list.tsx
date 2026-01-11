@@ -1,5 +1,10 @@
+import {
+  ArchiveIcon,
+  ArrowCircleUpIcon,
+  ArrowCounterClockwiseIcon,
+  TrashIcon,
+} from "@phosphor-icons/react/ssr";
 import { formatDistanceToNow } from "date-fns";
-import { Archive, CircleFadingArrowUp, RotateCcw, Trash2 } from "lucide-react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
@@ -37,7 +42,7 @@ export function ArchivedDomainsList({
       <Empty className="rounded-xl border bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Archive className="size-6" />
+            <ArchiveIcon className="size-6" />
           </EmptyMedia>
           <EmptyTitle>No archived domains</EmptyTitle>
           <EmptyDescription>
@@ -55,7 +60,7 @@ export function ArchivedDomainsList({
       {!subscription?.canAddMore && !isPro && (
         <DashboardBannerDismissable
           variant="warning"
-          icon={CircleFadingArrowUp}
+          icon={ArrowCircleUpIcon}
           title="Upgrade to Reactivate"
           description="You've reached your domain tracking limit. Upgrade to Pro or remove active domains to reactivate archived ones."
         />
@@ -93,7 +98,7 @@ export function ArchivedDomainsList({
                         onClick={() => onUnarchive(domain.id)}
                         disabled={!subscription?.canAddMore}
                       >
-                        <RotateCcw />
+                        <ArrowCounterClockwiseIcon />
                         <span className="sr-only sm:not-sr-only sm:ml-2">
                           Reactivate
                         </span>
@@ -111,7 +116,7 @@ export function ArchivedDomainsList({
                   size="sm"
                   onClick={() => onRemove(domain.id, domain.domainName)}
                 >
-                  <Trash2 className="text-danger-foreground" />
+                  <TrashIcon className="text-danger-foreground" />
                   <span className="sr-only">Delete</span>
                 </Button>
               </div>

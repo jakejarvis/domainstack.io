@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarFold, CalendarSync, XIcon } from "lucide-react";
+import { CalendarIcon, RssSimpleIcon, XIcon } from "@phosphor-icons/react/ssr";
 import { useState } from "react";
 import { CalendarInstructions } from "@/components/calendar-instructions";
 import { Button } from "@/components/ui/button";
@@ -30,16 +30,14 @@ export function CalendarFeedPopover() {
             <PopoverTrigger
               render={
                 <Button variant="outline">
-                  <CalendarSync className="-translate-y-[1px]" />
+                  <RssSimpleIcon weight="bold" />
                   <span className="sr-only">Subscribe</span>
                 </Button>
               }
             />
           }
         />
-        <TooltipContent className="max-lg:hidden">
-          Subscribe to updates
-        </TooltipContent>
+        <TooltipContent>Subscribe to updates</TooltipContent>
       </Tooltip>
       <PopoverContent
         className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
@@ -54,7 +52,7 @@ export function CalendarFeedPopover() {
         <div className="flex flex-col">
           <PopoverHeader className="px-4 pt-5 pb-3">
             <PopoverTitle className="flex items-center gap-2">
-              <CalendarFold className="size-4" />
+              <CalendarIcon className="size-4" />
               Calendar Feed
             </PopoverTitle>
             <PopoverDescription className="mt-0.5">

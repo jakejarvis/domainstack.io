@@ -1,4 +1,9 @@
-import { ExternalLink, Info, Logs, Search } from "lucide-react";
+import {
+  ArrowSquareOutIcon,
+  InfoIcon,
+  ListBulletsIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
@@ -51,7 +56,7 @@ export function HeadersSection({
         <div className="space-y-4">
           {status !== 200 && (
             <Alert>
-              <Info aria-hidden />
+              <InfoIcon aria-hidden />
               <AlertDescription>
                 <p className="text-[13px]">
                   Server returned{" "}
@@ -65,7 +70,7 @@ export function HeadersSection({
                       {status}
                       {statusMessage ? ` ${statusMessage}` : ""}
                     </span>
-                    <ExternalLink className="!size-3.5" aria-hidden />
+                    <ArrowSquareOutIcon className="!size-3.5" aria-hidden />
                   </a>
                   {"."}
                 </p>
@@ -95,7 +100,7 @@ export function HeadersSection({
                         className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
                         title={`View report for ${locationDomain}`}
                       >
-                        <Search className="h-4 w-4" />
+                        <MagnifyingGlassIcon className="h-4 w-4" />
                       </Link>
                     ) : undefined
                   }
@@ -108,14 +113,14 @@ export function HeadersSection({
         <div className="space-y-4">
           {status === 0 && statusMessage ? (
             <Alert variant="destructive">
-              <Info className="h-4 w-4" />
+              <InfoIcon className="h-4 w-4" />
               <AlertDescription>{statusMessage}</AlertDescription>
             </Alert>
           ) : null}
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <Logs />
+                <ListBulletsIcon />
               </EmptyMedia>
               <EmptyTitle>No HTTP headers detected</EmptyTitle>
               <EmptyDescription>

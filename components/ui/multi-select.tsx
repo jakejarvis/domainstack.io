@@ -1,6 +1,6 @@
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
-import type { LucideIcon } from "lucide-react";
-import { ChevronDown, SearchIcon } from "lucide-react";
+import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
+import { CaretDownIcon, MagnifyingGlassIcon } from "@phosphor-icons/react/ssr";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,7 +23,7 @@ export type MultiSelectProps<T extends string> = {
   /** Label displayed on the trigger button */
   label: string;
   /** Icon displayed before the label */
-  icon: LucideIcon;
+  icon: React.FC<IconProps>;
   /** Available options to select from (flat list) */
   options?: MultiSelectOption<T>[];
   /** Available options grouped into sections (mutually exclusive with options) */
@@ -183,7 +183,7 @@ export function MultiSelect<T extends string>({
                 {selected.length}
               </span>
             )}
-            <ChevronDown className="size-4 opacity-50" />
+            <CaretDownIcon className="size-4 opacity-50" />
           </Button>
         }
       />
@@ -217,7 +217,7 @@ export function MultiSelect<T extends string>({
                   data-slot="command-input-wrapper"
                   className="flex h-9 items-center gap-2 border-b px-3"
                 >
-                  <SearchIcon className="size-4 shrink-0 opacity-50" />
+                  <MagnifyingGlassIcon className="size-4 shrink-0 opacity-50" />
                   <ComboboxPrimitive.Input
                     ref={inputRef}
                     placeholder={`Search ${label}...`}

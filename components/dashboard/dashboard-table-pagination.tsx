@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -79,7 +79,7 @@ export function DashboardTablePagination({
           disabled={!canPreviousPage}
           aria-label="Go to previous page"
         >
-          <ChevronLeft />
+          <CaretLeftIcon />
           <span className="sr-only">Previous page</span>
         </Button>
 
@@ -91,7 +91,7 @@ export function DashboardTablePagination({
           disabled={!canNextPage}
           aria-label="Go to next page"
         >
-          <ChevronRight />
+          <CaretRightIcon />
           <span className="sr-only">Next page</span>
         </Button>
       </div>

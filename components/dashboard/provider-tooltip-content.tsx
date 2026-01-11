@@ -1,5 +1,10 @@
+import {
+  DetectiveIcon,
+  LockIcon,
+  LockOpenIcon,
+  SealCheckIcon,
+} from "@phosphor-icons/react/ssr";
 import { format } from "date-fns";
-import { BadgeCheck, HatGlasses, Lock, LockOpen } from "lucide-react";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderIcon } from "@/components/icons/provider-icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -131,7 +136,7 @@ export function ProviderTooltipContent({
               <div className="flex items-center gap-1.5">
                 {registrantInfo.privacyEnabled || !registrant ? (
                   <>
-                    <HatGlasses className="size-3.5 text-muted" />
+                    <DetectiveIcon className="size-3.5 text-muted" />
                     <span className="text-background/90">Privacy enabled</span>
                   </>
                 ) : (
@@ -147,14 +152,14 @@ export function ProviderTooltipContent({
               <div className="flex items-center gap-1.5">
                 {transferLock ? (
                   <>
-                    <Lock className="size-3.5 text-muted" />
+                    <LockIcon className="size-3.5 text-muted" />
                     <span className="text-background/90">
                       Transfer lock is on
                     </span>
                   </>
                 ) : (
                   <>
-                    <LockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
+                    <LockOpenIcon className="size-3.5 text-amber-300 dark:text-amber-500" />
                     <span className="text-background/90">
                       Transfer lock is off
                     </span>
@@ -165,7 +170,7 @@ export function ProviderTooltipContent({
 
             {/* Verification source */}
             <div className="flex items-center gap-1.5">
-              <BadgeCheck className="size-3.5 text-green-300 dark:text-green-600" />
+              <SealCheckIcon className="size-3.5 text-green-300 dark:text-green-600" />
               <span>
                 Verified by{" "}
                 <span className="font-medium">

@@ -1,5 +1,10 @@
+import {
+  FunnelXIcon,
+  GlobeIcon,
+  HourglassSimpleMediumIcon,
+  PlusIcon,
+} from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { FilterX, Globe, Plus, Timer } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -68,7 +73,7 @@ export function DashboardContent({
       <Empty className="rounded-xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <FilterX className="size-6" />
+            <FunnelXIcon className="size-6" />
           </EmptyMedia>
           <EmptyTitle>No domains match your filters</EmptyTitle>
           <EmptyDescription>
@@ -101,7 +106,7 @@ export function DashboardContent({
 
         <EmptyHeader className="relative">
           <EmptyMedia variant="icon">
-            <Globe className="size-6" />
+            <GlobeIcon className="size-6" />
           </EmptyMedia>
           <EmptyTitle>Start tracking your domains</EmptyTitle>
           <EmptyDescription className="max-w-md">
@@ -112,7 +117,7 @@ export function DashboardContent({
         <EmptyContent className="relative">
           {onAddDomain ? (
             <Button size="lg" onClick={onAddDomain}>
-              <Plus />
+              <PlusIcon />
               Add Your First Domain
             </Button>
           ) : (
@@ -120,14 +125,14 @@ export function DashboardContent({
               size="lg"
               render={
                 <Link href="/dashboard/add-domain" scroll={false}>
-                  <Plus />
+                  <PlusIcon />
                   Add Your First Domain
                 </Link>
               }
             />
           )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
-            <Timer className="size-4" />
+            <HourglassSimpleMediumIcon className="size-4" />
             <span>Verification takes less than 2 minutes</span>
           </div>
         </EmptyContent>

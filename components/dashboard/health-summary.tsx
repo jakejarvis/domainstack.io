@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock } from "lucide-react";
+import { ClockIcon, WarningIcon } from "@phosphor-icons/react/ssr";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -43,7 +43,7 @@ export function HealthSummary({
                     "cursor-pointer border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 font-semibold text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400",
                   )}
                 >
-                  <AlertTriangle className="mr-0.5 size-3.5" />
+                  <WarningIcon className="mr-0.5 size-3.5" />
                   <span className="tabular-nums">{expiringSoon}</span>
                   <span>expiring soon</span>
                 </Badge>
@@ -72,7 +72,7 @@ export function HealthSummary({
                     "cursor-pointer border-blue-500/30 bg-blue-500/10 px-2.5 py-1.5 font-semibold text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400",
                   )}
                 >
-                  <Clock className="mr-0.5 size-3.5" />
+                  <ClockIcon className="mr-0.5 size-3.5" />
                   <span className="tabular-nums">{pendingVerification}</span>
                   <span>pending verification</span>
                 </Badge>

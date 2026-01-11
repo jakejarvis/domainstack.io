@@ -1,6 +1,11 @@
 "use client";
 
-import { BadgeCheck, Braces, ExternalLink, Minimize2 } from "lucide-react";
+import {
+  ArrowSquareOutIcon,
+  ArrowsInSimpleIcon,
+  BracketsCurlyIcon,
+  SealCheckIcon,
+} from "@phosphor-icons/react/ssr";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,7 +53,7 @@ export function RawDataDialog({
                   aria-label={`View raw ${title} data`}
                   onClick={() => setOpen(true)}
                 >
-                  <Braces className="size-4 text-foreground/95" />
+                  <BracketsCurlyIcon className="size-4 text-foreground/95" />
                 </Button>
               }
             />
@@ -62,7 +67,7 @@ export function RawDataDialog({
         <DialogHeader className="border-border/60 border-b p-4">
           <DialogTitle className="text-base">Raw {title} Data</DialogTitle>
           <DialogDescription className="flex items-center gap-1.5 text-[13px] text-foreground/90">
-            <BadgeCheck className="size-3.5 text-accent-green" />
+            <SealCheckIcon className="size-3.5 text-accent-green" />
             <span className="flex items-center gap-1">
               Verified by{" "}
               <span className="font-medium">
@@ -74,7 +79,7 @@ export function RawDataDialog({
                     className="flex items-center gap-1 underline underline-offset-2 hover:text-muted-foreground"
                   >
                     {serverName}
-                    <ExternalLink className="size-3 text-muted-foreground" />
+                    <ArrowSquareOutIcon className="size-3 text-muted-foreground" />
                   </a>
                 ) : (
                   serverName
@@ -142,7 +147,7 @@ export function RawDataDialog({
               onClick={() => setOpen(false)}
               className="!px-3 gap-2 text-[13px]"
             >
-              <Minimize2 />
+              <ArrowsInSimpleIcon />
               Close
             </Button>
           </div>

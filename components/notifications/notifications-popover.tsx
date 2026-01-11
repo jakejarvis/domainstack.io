@@ -1,16 +1,16 @@
 import {
+  ArchiveIcon,
+  BellSimpleIcon,
+  ChecksIcon,
+  GearIcon,
+  TrayIcon,
+  XIcon,
+} from "@phosphor-icons/react/ssr";
+import {
   useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import {
-  Archive,
-  Bell,
-  CheckCheck,
-  Inbox,
-  Settings,
-  XIcon,
-} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
@@ -177,7 +177,7 @@ export function NotificationsPopover() {
                   className="relative"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
-                  <Bell />
+                  <BellSimpleIcon weight="bold" />
                   {count > 0 && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
@@ -208,7 +208,7 @@ export function NotificationsPopover() {
           <div className="shrink-0 space-y-3 border-b p-4">
             <div className="flex items-center justify-between">
               <h4 className="flex items-center gap-2 py-1 font-medium text-[15px] leading-none">
-                <Bell className="size-4" />
+                <BellSimpleIcon className="size-4" />
                 Notifications
               </h4>
               <div className="flex items-center gap-1.5">
@@ -222,7 +222,7 @@ export function NotificationsPopover() {
                       disabled={markAllRead.isPending}
                       aria-label="Clear All"
                     >
-                      <CheckCheck className="text-muted-foreground" />
+                      <ChecksIcon className="text-muted-foreground" />
                       Clear All
                     </Button>
                   )}
@@ -239,7 +239,7 @@ export function NotificationsPopover() {
                     }}
                     render={
                       <Link href="/settings/notifications">
-                        <Settings className="text-muted-foreground" />
+                        <GearIcon className="text-muted-foreground" />
                         Settings
                       </Link>
                     }
@@ -274,7 +274,7 @@ export function NotificationsPopover() {
             >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="inbox" className="gap-2 text-[13px]">
-                  <Inbox />
+                  <TrayIcon />
                   Inbox
                   {count > 0 && (
                     <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
@@ -283,7 +283,7 @@ export function NotificationsPopover() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="archive" className="gap-2 text-[13px]">
-                  <Archive />
+                  <ArchiveIcon />
                   Archive
                 </TabsTrigger>
               </TabsList>

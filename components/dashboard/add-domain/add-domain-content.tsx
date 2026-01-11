@@ -1,4 +1,10 @@
-import { AlertCircle, Check, Gauge, Gem, ShoppingCart } from "lucide-react";
+import {
+  CheckIcon,
+  GaugeIcon,
+  RocketLaunchIcon,
+  ShootingStarIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
@@ -119,7 +125,7 @@ export function AddDomainContent({
       <>
         <div className="mb-4 flex flex-col items-center text-center">
           <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-            <AlertCircle className="size-6 text-destructive" />
+            <WarningCircleIcon className="size-6 text-destructive" />
           </div>
           <h2 className="font-semibold text-lg leading-none tracking-tight">
             Unable to Load Subscription
@@ -156,7 +162,7 @@ export function AddDomainContent({
       <>
         <div className="mb-4 flex flex-col items-center text-center">
           <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-amber-500/10">
-            <Gauge className="size-6 text-amber-600 dark:text-amber-400" />
+            <GaugeIcon className="size-6 text-amber-600 dark:text-amber-400" />
           </div>
           <h2 className="font-semibold text-lg tracking-tight">
             Domain Limit Reached
@@ -215,7 +221,7 @@ export function AddDomainContent({
                 />
 
                 <div className="mb-2 flex items-center gap-2 font-medium">
-                  <Gem className="size-4" />
+                  <ShootingStarIcon className="size-4" />
                   {PRO_TIER_INFO.name} Plan
                 </div>
                 <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
@@ -239,7 +245,7 @@ export function AddDomainContent({
 
               <div className="flex flex-col gap-2">
                 <UpgradeButton className="w-full">
-                  <ShoppingCart />
+                  <RocketLaunchIcon />
                   Upgrade to Pro
                 </UpgradeButton>
                 {onClose && (
@@ -279,7 +285,7 @@ export function AddDomainContent({
       <Stepper
         value={step}
         indicators={{
-          completed: <Check className="size-4" />,
+          completed: <CheckIcon className="size-4" />,
           loading: <Spinner className="size-4" />,
         }}
       >
@@ -397,7 +403,7 @@ export function AddDomainContent({
                         isMissingVerificationData
                       }
                     >
-                      {isVerifying ? <Spinner /> : <Check />}
+                      {isVerifying ? <Spinner /> : <CheckIcon />}
                       {isVerifying ? "Checking..." : "Check Now"}
                     </Button>
                   </div>
@@ -405,7 +411,7 @@ export function AddDomainContent({
               ) : (
                 <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
                   <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                    <AlertCircle className="size-6 text-destructive" />
+                    <WarningCircleIcon className="size-6 text-destructive" />
                   </div>
                   <div className="text-center" aria-live="polite">
                     <h3 className="font-semibold">Something went wrong</h3>

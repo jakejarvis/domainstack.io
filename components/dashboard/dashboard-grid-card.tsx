@@ -1,13 +1,13 @@
-import { format } from "date-fns";
 import {
-  AlertCircle,
-  Archive,
-  BookMarked,
-  ExternalLink,
-  MoreVertical,
-  Trash2,
-  Wrench,
-} from "lucide-react";
+  ArchiveIcon,
+  ArrowSquareOutIcon,
+  BookmarkSimpleIcon,
+  DotsThreeVerticalIcon,
+  TrashIcon,
+  WarningCircleIcon,
+  WrenchIcon,
+} from "@phosphor-icons/react/ssr";
+import { format } from "date-fns";
 import Link from "next/link";
 import {
   DomainHealthBadge,
@@ -173,7 +173,7 @@ export function DashboardGridCard({
             <DropdownMenuTrigger
               render={
                 <Button variant="ghost" size="icon-sm">
-                  <MoreVertical />
+                  <DotsThreeVerticalIcon />
                   <span className="sr-only">Actions</span>
                 </Button>
               }
@@ -187,7 +187,7 @@ export function DashboardGridCard({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ExternalLink />
+                    <ArrowSquareOutIcon />
                     Open
                   </a>
                 }
@@ -199,18 +199,18 @@ export function DashboardGridCard({
                     href={`/${encodeURIComponent(domainName)}`}
                     prefetch={false}
                   >
-                    <BookMarked />
+                    <BookmarkSimpleIcon />
                     View Report
                   </Link>
                 }
               />
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onArchive} className="cursor-pointer">
-                <Archive />
+                <ArchiveIcon />
                 Archive
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
-                <Trash2 className="text-danger-foreground" />
+                <TrashIcon className="text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -356,7 +356,7 @@ export function DashboardGridCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="mt-3 w-full">
-              <Wrench />
+              <WrenchIcon />
               Fix Verification
             </Button>
           </>
@@ -368,7 +368,7 @@ export function DashboardGridCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="w-full">
-              <AlertCircle />
+              <WarningCircleIcon />
               Complete Verification
             </Button>
           </div>

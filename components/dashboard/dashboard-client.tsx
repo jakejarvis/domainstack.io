@@ -1,7 +1,11 @@
 "use client";
 
+import {
+  ArchiveIcon,
+  ArrowLeftIcon,
+  HandHeartIcon,
+} from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { Archive, ArrowLeft, HeartHandshake } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -357,7 +361,7 @@ export function DashboardClient() {
       {showUpgradedBanner && (
         <DashboardBannerDismissable
           variant="success"
-          icon={HeartHandshake}
+          icon={HandHeartIcon}
           title="Welcome to Pro!"
           description={`You now have access to track up to ${subscription?.planQuota} domains. Thank you for upgrading!`}
           dismissible
@@ -437,7 +441,7 @@ export function DashboardClient() {
                 onClick={() => setActiveTab("archived")}
                 className="gap-2 text-muted-foreground hover:text-foreground"
               >
-                <Archive />
+                <ArchiveIcon />
                 View {subscription?.archivedCount} archived domain
                 {subscription?.archivedCount !== 1 && "s"}
               </Button>
@@ -455,7 +459,7 @@ export function DashboardClient() {
             onClick={() => setActiveTab("active")}
             className="gap-2 text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft />
+            <ArrowLeftIcon />
             Back to domains
           </Button>
 

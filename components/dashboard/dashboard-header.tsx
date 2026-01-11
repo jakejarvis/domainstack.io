@@ -1,5 +1,11 @@
+import {
+  ArrowSquareOutIcon,
+  DotsNineIcon,
+  LayoutIcon,
+  PlusIcon,
+  ShootingStarIcon,
+} from "@phosphor-icons/react/ssr";
 import { format } from "date-fns";
-import { Gem, LayoutGrid, Plus, TableIcon } from "lucide-react";
 import Link from "next/link";
 import { CalendarFeedPopover } from "@/components/dashboard/calendar-feed-popover";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
@@ -47,7 +53,7 @@ export function DashboardHeader({
                 nativeButton={false}
                 render={
                   <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-                    <Gem className="size-3" />
+                    <ShootingStarIcon className="size-3" />
                     Pro
                   </span>
                 }
@@ -58,7 +64,7 @@ export function DashboardHeader({
             </ResponsiveTooltip>
           ) : (
             <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-              <Gem className="size-3" />
+              <ShootingStarIcon className="size-3" />
               Pro
             </span>
           )
@@ -76,7 +82,7 @@ export function DashboardHeader({
             nativeButton={false}
             render={
               <Link href="/dashboard/add-domain" scroll={false}>
-                <Plus />
+                <PlusIcon />
                 Add Domain
               </Link>
             }
@@ -87,7 +93,7 @@ export function DashboardHeader({
               render={
                 <div className="cursor-not-allowed">
                   <Button disabled>
-                    <Plus />
+                    <PlusIcon />
                     Add Domain
                   </Button>
                 </div>
@@ -98,9 +104,13 @@ export function DashboardHeader({
                 <Button
                   variant="link"
                   onClick={handleCheckout}
-                  className="h-0 p-0 font-normal text-background text-xs"
+                  className="!p-0 h-4 gap-1 font-normal text-background text-xs"
                 >
                   Upgrade to add more domains
+                  <ArrowSquareOutIcon
+                    className="size-3 -translate-y-[1px]"
+                    weight="bold"
+                  />
                 </Button>
               ) : (
                 "Domain limit reached"
@@ -153,7 +163,7 @@ export function DashboardHeader({
                       aria-label="Grid view"
                       className="!px-3"
                     >
-                      <LayoutGrid className="size-4" />
+                      <DotsNineIcon className="size-4" weight="bold" />
                       <span className="sr-only">Grid</span>
                     </ToggleGroupItem>
                   }
@@ -171,7 +181,7 @@ export function DashboardHeader({
                       aria-label="Table view"
                       className="!px-3"
                     >
-                      <TableIcon className="size-4" />
+                      <LayoutIcon className="size-4" weight="bold" />
                       <span className="sr-only">Table</span>
                     </ToggleGroupItem>
                   }

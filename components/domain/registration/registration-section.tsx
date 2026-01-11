@@ -1,9 +1,9 @@
 import {
-  AlertCircle,
-  BadgeCheck,
-  GraduationCap,
-  HatGlasses,
-} from "lucide-react";
+  DetectiveIcon,
+  GraduationCapIcon,
+  SealCheckIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react/ssr";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/raw-data-dialog";
@@ -62,7 +62,7 @@ export function RegistrationSection({
     >
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
-          <AlertCircle className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200" />
+          <WarningCircleIcon className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200" />
           <div className="space-y-1">
             <p className="font-medium text-yellow-800 dark:text-yellow-200">
               Registration Data Unavailable
@@ -96,7 +96,7 @@ export function RegistrationSection({
                 <ResponsiveTooltipTrigger
                   nativeButton={false}
                   render={
-                    <BadgeCheck className="!size-3.5 stroke-muted-foreground/80" />
+                    <SealCheckIcon className="!size-3.5 stroke-muted-foreground/80" />
                   }
                 />
                 <ResponsiveTooltipContent>
@@ -125,7 +125,7 @@ export function RegistrationSection({
                       title={`Learn about ${data.source === "rdap" ? "RDAP" : "WHOIS"}`}
                       className="text-muted/80"
                     >
-                      <GraduationCap className="size-3" />
+                      <GraduationCapIcon className="size-3" />
                     </a>
                   </div>
                 </ResponsiveTooltipContent>
@@ -142,7 +142,7 @@ export function RegistrationSection({
             }
             leading={
               data.privacyEnabled || !registrant ? (
-                <HatGlasses className="stroke-muted-foreground" />
+                <DetectiveIcon className="stroke-muted-foreground" />
               ) : undefined
             }
           />

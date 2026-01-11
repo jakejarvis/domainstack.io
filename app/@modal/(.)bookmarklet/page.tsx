@@ -1,4 +1,4 @@
-import { MousePointerClick } from "lucide-react";
+import { CursorClickIcon } from "@phosphor-icons/react/ssr";
 import { BookmarkletContent } from "@/components/bookmarklet/bookmarklet-content";
 import { Modal } from "@/components/ui/modal";
 
@@ -10,7 +10,7 @@ export default function InterceptedBookmarkletPage() {
       className="!max-w-lg p-5"
     >
       <div className="mb-2 flex items-center gap-2 font-medium text-lg">
-        <MousePointerClick className="h-4.5 w-4.5" />
+        <CursorClickIcon className="h-4.5 w-4.5" />
         Bookmarklet
       </div>
       <BookmarkletContent />

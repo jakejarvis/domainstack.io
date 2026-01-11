@@ -1,5 +1,5 @@
+import { FingerprintIcon } from "@phosphor-icons/react/ssr";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FingerprintPattern } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
@@ -176,7 +176,7 @@ export function AccountPanel({ className }: AccountPanelProps) {
       <div className={className}>
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <FingerprintPattern className="size-4.5" />
+            <FingerprintIcon className="size-4.5" />
             Login Providers
           </CardTitle>
           <CardDescription>

@@ -1,4 +1,4 @@
-import { CheckCircle } from "lucide-react";
+import { CheckCircleIcon } from "@phosphor-icons/react/ssr";
 
 type StepConfirmationProps = {
   domain: string;
@@ -8,7 +8,7 @@ export function StepConfirmation({ domain }: StepConfirmationProps) {
   return (
     <div className="space-y-4 text-center">
       <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/10">
-        <CheckCircle className="size-6 text-success-foreground" />
+        <CheckCircleIcon className="size-6 text-success-foreground" />
       </div>
       <div>
         <h3 className="font-semibold">Domain verified!</h3>

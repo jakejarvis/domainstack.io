@@ -21,7 +21,7 @@ export function AppHeader() {
           className="mr-2.5 flex items-center justify-self-start rounded-md text-foreground transition-[color,transform] duration-200 hover:text-muted-foreground active:scale-95"
           aria-label="Go to homepage"
         >
-          <Logo className="size-10" />
+          <Logo className="size-8" />
         </Link>
         <Suspense fallback={<HeaderSearchSkeleton />}>
           <HeaderSearchClient />

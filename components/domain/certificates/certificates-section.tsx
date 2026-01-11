@@ -1,9 +1,9 @@
 import {
-  ArrowUp,
-  ChevronDown,
-  ChevronUp,
-  ShieldQuestionMark,
-} from "lucide-react";
+  ArrowUpIcon,
+  CaretDownIcon,
+  CaretUpIcon,
+  SealQuestionIcon,
+} from "@phosphor-icons/react/ssr";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useState } from "react";
 import { CertificateAlert } from "@/components/domain/certificate-alert";
@@ -147,7 +147,7 @@ export function CertificatesSection({
                 onClick={() => setShowAll(true)}
                 className="text-[13px]"
               >
-                <ChevronDown className="size-4" aria-hidden />
+                <CaretDownIcon className="size-4" aria-hidden />
                 <span>Show Chain</span>
               </Button>
             </div>
@@ -165,7 +165,7 @@ export function CertificatesSection({
                   style={{ overflow: "hidden" }}
                 >
                   <div className="my-3 flex justify-center">
-                    <ArrowUp
+                    <ArrowUpIcon
                       className="size-4 text-muted-foreground/60"
                       aria-hidden
                     />
@@ -262,7 +262,7 @@ export function CertificatesSection({
 
                       {idx < remainingCerts.length - 1 && (
                         <div className="my-3 flex justify-center">
-                          <ArrowUp
+                          <ArrowUpIcon
                             className="size-4 text-muted-foreground/60"
                             aria-hidden
                           />
@@ -278,7 +278,7 @@ export function CertificatesSection({
                       className="text-[13px]"
                       aria-expanded
                     >
-                      <ChevronUp className="size-4" aria-hidden />
+                      <CaretUpIcon className="size-4" aria-hidden />
                       <span>Hide Chain</span>
                     </Button>
                   </div>
@@ -291,7 +291,7 @@ export function CertificatesSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <ShieldQuestionMark />
+              <SealQuestionIcon />
             </EmptyMedia>
             <EmptyTitle>No certificates found</EmptyTitle>
             <EmptyDescription>

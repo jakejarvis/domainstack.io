@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react/ssr";
 import { useEffect, useRef, useState } from "react";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -172,7 +172,7 @@ export function SearchClient({
               />
 
               <InputGroupAddon>
-                <Search />
+                <MagnifyingGlassIcon />
               </InputGroupAddon>
 
               {variant === "sm" && (loading || mounted) && (
@@ -203,7 +203,7 @@ export function SearchClient({
                         <Kbd className="hidden text-[13px] sm:inline-flex">
                           ⏎
                         </Kbd>
-                        <ArrowRight className="inline-flex sm:hidden" />
+                        <ArrowRightIcon className="inline-flex sm:hidden" />
                       </div>
                     )}
                   </InputGroupButton>

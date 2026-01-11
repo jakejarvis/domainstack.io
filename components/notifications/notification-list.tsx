@@ -1,4 +1,4 @@
-import { CircleX } from "lucide-react";
+import { XCircleIcon } from "@phosphor-icons/react/ssr";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
@@ -38,7 +38,7 @@ export function NotificationList({
         <NotificationListSkeleton />
       ) : isError ? (
         <div className="flex flex-col items-center justify-center gap-1.5 py-12 text-sm">
-          <CircleX className="size-4" />
+          <XCircleIcon className="size-4" />
           Failed to load notifications
         </div>
       ) : notifications.length === 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { XIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { Favicon } from "@/components/icons/favicon";
