@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/responsive-tooltip";
 import { Spinner } from "@/components/ui/spinner";
 import type { OAuthProvider } from "@/lib/oauth";
-import { cn } from "@/lib/utils";
 
 interface LinkedAccountRowProps {
   provider: OAuthProvider;
@@ -62,8 +61,7 @@ export function LinkedAccountRow({
                   variant="secondary"
                   size="sm"
                   onClick={canUnlink ? onUnlink : undefined}
-                  disabled={isLoading}
-                  className={cn(!canUnlink && "cursor-not-allowed opacity-50")}
+                  disabled={isLoading || !canUnlink}
                 >
                   {isUnlinking && <Spinner />}
                   Unlink

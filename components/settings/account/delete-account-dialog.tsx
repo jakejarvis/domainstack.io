@@ -1,5 +1,5 @@
 import {
-  CheckCircleIcon,
+  CheckIcon,
   HeartBreakIcon,
   WarningIcon,
 } from "@phosphor-icons/react/ssr";
@@ -12,6 +12,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
@@ -132,13 +133,11 @@ export function DeleteAccountDialog({
         {isSuccess ? (
           <>
             <AlertDialogHeader>
-              <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <CheckCircleIcon className="size-6 text-green-600 dark:text-green-400" />
-              </div>
-              <AlertDialogTitle className="text-center">
-                Check your email
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-center">
+              <AlertDialogMedia className="bg-green-100 dark:bg-green-900/30">
+                <CheckIcon className="text-green-600 dark:text-green-400" />
+              </AlertDialogMedia>
+              <AlertDialogTitle>Check your email</AlertDialogTitle>
+              <AlertDialogDescription>
                 We&apos;ve sent a confirmation link to your email address. Click
                 the link to permanently delete your account.
               </AlertDialogDescription>
@@ -155,21 +154,22 @@ export function DeleteAccountDialog({
         ) : (
           <>
             <AlertDialogHeader>
-              <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                <WarningIcon className="size-6 text-destructive" />
-              </div>
-              <AlertDialogTitle className="text-center">
-                Delete your account?
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-center">
-                This action cannot be undone. The following will be permanently
-                deleted:
+              <AlertDialogMedia>
+                <WarningIcon />
+              </AlertDialogMedia>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
 
             <div className="space-y-3">
-              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
-                <ul className="list-disc space-y-2 pl-4 text-sm marker:text-destructive">
+              <div className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-destructive-foreground text-sm">
+                <p className="mb-3">
+                  The following data will be{" "}
+                  <span className="font-medium">permanently deleted:</span>
+                </p>
+                <ul className="list-disc space-y-2 pl-4 text-foreground/80 marker:text-destructive">
                   <li>All your tracked domains</li>
                   <li>Notification preferences</li>
                   <li>Subscription data</li>

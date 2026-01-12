@@ -176,14 +176,14 @@ export function MultiSelect<T extends string>({
               className,
             )}
           >
-            <Icon className="size-4 opacity-60" />
+            <Icon className="text-muted-foreground" />
             {label}
             {selected.length > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-foreground/10 px-1.5 font-semibold text-xs tabular-nums dark:bg-foreground/20">
                 {selected.length}
               </span>
             )}
-            <CaretDownIcon className="size-4 opacity-50" />
+            <CaretDownIcon className="size-3 opacity-50" />
           </Button>
         }
       />

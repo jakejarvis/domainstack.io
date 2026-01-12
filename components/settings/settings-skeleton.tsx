@@ -1,7 +1,7 @@
 import { CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Separator } from "../ui/separator";
 
 /**
  * Skeleton for the subscription section.

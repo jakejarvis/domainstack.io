@@ -91,12 +91,10 @@ export function DashboardHeader({
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
               render={
-                <div className="cursor-not-allowed">
-                  <Button disabled>
-                    <PlusIcon />
-                    Add Domain
-                  </Button>
-                </div>
+                <Button disabled>
+                  <PlusIcon />
+                  Add Domain
+                </Button>
               }
             />
             <ResponsiveTooltipContent>

@@ -396,14 +396,8 @@ export function CalendarInstructions({ className }: { className?: string }) {
               onClick={() => rotateMutation.mutate()}
               disabled={rotateMutation.isPending}
             >
-              {rotateMutation.isPending ? (
-                <>
-                  <Spinner />
-                  Regenerating...
-                </>
-              ) : (
-                "Regenerate"
-              )}
+              {rotateMutation.isPending ? <Spinner /> : <ArrowClockwiseIcon />}
+              Regenerate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -429,14 +423,8 @@ export function CalendarInstructions({ className }: { className?: string }) {
               disabled={deleteMutation.isPending}
               variant="destructive"
             >
-              {deleteMutation.isPending ? (
-                <>
-                  <Spinner />
-                  Disabling...
-                </>
-              ) : (
-                "Disable"
-              )}
+              {deleteMutation.isPending ? <Spinner /> : <CalendarSlashIcon />}
+              Disable
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

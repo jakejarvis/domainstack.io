@@ -1,9 +1,9 @@
 import { ArrowCircleUpIcon, RocketLaunchIcon } from "@phosphor-icons/react/ssr";
 import { Card, CardContent } from "@/components/ui/card";
+import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
-import { UpgradeButton } from "../upgrade-button";
 
 export function UpgradeCard() {
   const { isPro, isSubscriptionLoading } = useSubscription();

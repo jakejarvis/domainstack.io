@@ -9,6 +9,7 @@ import {
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +19,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "../ui/copy-button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface RawDataDialogProps {
   title: string;

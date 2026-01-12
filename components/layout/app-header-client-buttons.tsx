@@ -57,12 +57,12 @@ export function AppHeaderClientButtons() {
             render={
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon-sm"
                 className="hidden sm:inline-flex"
                 nativeButton={false}
                 render={
                   <Link href="/dashboard">
-                    <LayoutIcon weight="bold" />
+                    <LayoutIcon />
                     <span className="sr-only">Dashboard</span>
                   </Link>
                 }

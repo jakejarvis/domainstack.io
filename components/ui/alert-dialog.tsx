@@ -1,12 +1,6 @@
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
-import type { VariantProps } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type BaseUIClickEvent = React.MouseEvent<HTMLButtonElement, MouseEvent> & {
-  preventBaseUIHandler: () => void;
-  readonly baseUIHandlerPrevented?: boolean;
-};
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
@@ -54,7 +48,8 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border/60 bg-background/95 p-6 text-foreground shadow-lg outline-hidden backdrop-blur-xl sm:max-w-lg dark:bg-background/80",
+          "group/alert-dialog-content",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border/60 bg-background p-5 text-foreground shadow-lg outline-hidden sm:max-w-lg",
           "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
           "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
           // Nested dialog styling: Dim the parent popup
@@ -76,7 +71,10 @@ function AlertDialogHeader({
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn(
+        "grid grid-rows-[auto_1fr] place-items-center gap-2 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:place-items-start sm:gap-1 sm:text-left sm:has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        className,
+      )}
       {...props}
     />
   );
@@ -91,6 +89,24 @@ function AlertDialogFooter({
       data-slot="alert-dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "-mx-5 -mb-5 rounded-b-lg border-border/60 border-t bg-muted/30 p-3",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function AlertDialogMedia({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-dialog-media"
+      className={cn(
+        "mb-2 inline-flex size-12 items-center justify-center rounded-full bg-destructive/10",
+        "sm:row-span-2 *:[svg:not([class*='size-'])]:size-6 *:[svg:not([class*='text-'])]:text-destructive",
         className,
       )}
       {...props}
@@ -105,7 +121,10 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("font-semibold text-lg", className)}
+      className={cn(
+        "font-semibold text-base sm:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        className,
+      )}
       {...props}
     />
   );
@@ -118,44 +137,23 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(
+        "text-balance text-muted-foreground text-sm leading-normal sm:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        className,
+      )}
       {...props}
     />
   );
 }
 
 function AlertDialogAction({
-  variant = "default",
-  size = "default",
   className,
-  closeOnClick = true,
-  onClick,
   ...props
-}: AlertDialogPrimitive.Close.Props &
-  VariantProps<typeof buttonVariants> & {
-    /** Prevent the dialog from closing when this button is clicked. */
-    closeOnClick?: boolean;
-  }) {
-  /**
-   * Base UI AlertDialog doesn’t have separate Action/Cancel parts; it only exposes `Close`.
-   * We keep the shadcn-style names for ergonomics, but note:
-   * - Both Action and Cancel close by default.
-   * - For async “confirm” flows where you want to keep the dialog open, set `closeOnClick={false}`
-   *   (or call `event.preventBaseUIHandler()` inside `onClick`) and close manually via controlled state.
-   */
-  const handleClick = (event: BaseUIClickEvent) => {
-    if (!closeOnClick) {
-      // Base UI escape hatch to prevent its internal click handler.
-      event.preventBaseUIHandler();
-    }
-    onClick?.(event);
-  };
-
+}: React.ComponentProps<typeof Button>) {
   return (
-    <AlertDialogPrimitive.Close
+    <Button
       data-slot="alert-dialog-action"
-      onClick={handleClick}
-      className={cn(buttonVariants({ variant, size }), className)}
+      className={cn(className)}
       {...props}
     />
   );
@@ -163,25 +161,16 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
-  closeOnClick = true,
-  onClick,
+  variant = "outline",
+  size = "default",
   ...props
-}: AlertDialogPrimitive.Close.Props & {
-  /** Prevent the dialog from closing when this button is clicked. */
-  closeOnClick?: boolean;
-}) {
-  const handleClick = (event: BaseUIClickEvent) => {
-    if (!closeOnClick) {
-      event.preventBaseUIHandler();
-    }
-    onClick?.(event);
-  };
-
+}: AlertDialogPrimitive.Close.Props &
+  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"
-      onClick={handleClick}
-      className={cn(buttonVariants({ variant: "outline" }), className)}
+      className={cn(className)}
+      render={<Button variant={variant} size={size} />}
       {...props}
     />
   );
@@ -195,6 +184,7 @@ export {
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogFooter,
+  AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,

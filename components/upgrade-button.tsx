@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useSubscription } from "@/hooks/use-subscription";
-import { Spinner } from "./ui/spinner";
 
 export function UpgradeButton({
   className,

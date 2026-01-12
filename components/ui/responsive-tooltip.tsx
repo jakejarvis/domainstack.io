@@ -103,7 +103,7 @@ function ResponsiveTooltipContent({
         <Popup
           data-slot="responsive-tooltip-content"
           className={cn(
-            "relative z-50 w-fit max-w-xs overflow-visible rounded-md bg-foreground px-3 py-1.5 text-background text-xs selection:bg-background selection:text-foreground",
+            "relative z-50 w-fit max-w-xs overflow-visible rounded bg-foreground px-2.5 py-1.5 text-background text-xs selection:bg-background selection:text-foreground",
             "origin-[var(--transform-origin)]",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",

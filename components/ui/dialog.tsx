@@ -54,8 +54,9 @@ function DialogContent({
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
+            "group/dialog-content",
             "relative flex max-h-full min-h-0 w-[min(40rem,calc(100vw-2rem))] max-w-full flex-col overflow-hidden sm:max-w-lg",
-            "gap-4 rounded-lg border border-border/60 bg-background/95 p-6 text-foreground shadow-lg outline-hidden backdrop-blur-xl dark:bg-background/80",
+            "gap-4 rounded-lg border border-border/60 bg-background p-5 text-foreground shadow-lg outline-hidden",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
             // Nested dialog styling: Dim the parent popup
@@ -73,7 +74,7 @@ function DialogContent({
               data-slot="dialog-close"
               className="absolute top-2 right-2"
               render={
-                <Button variant="ghost" size="icon-sm">
+                <Button variant="ghost" size="icon-xs" className="rounded">
                   <XIcon className="size-4" />
                   <span className="sr-only">Close</span>
                 </Button>
@@ -93,7 +94,10 @@ function DialogHeader({
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "grid grid-rows-[auto_1fr] place-items-center gap-2 text-center has-data-[slot=dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=dialog-media]:gap-x-4 sm:place-items-start sm:gap-1 sm:text-left sm:has-data-[slot=dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=dialog-media]:grid-rows-[auto_1fr]",
+        className,
+      )}
       {...props}
     />
   );
@@ -108,6 +112,21 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "-mx-5 -mb-5 rounded-b-lg border-border/60 border-t bg-muted/30 p-3",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function DialogMedia({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-media"
+      className={cn(
+        "mb-2 inline-flex size-12 items-center justify-center rounded-full bg-muted/30",
+        "sm:row-span-2 *:[svg:not([class*='size-'])]:size-6",
         className,
       )}
       {...props}
@@ -119,7 +138,10 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-semibold text-lg leading-none", className)}
+      className={cn(
+        "font-semibold text-base sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2",
+        className,
+      )}
       {...props}
     />
   );
@@ -132,7 +154,10 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(
+        "text-balance text-muted-foreground text-sm sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        className,
+      )}
       {...props}
     />
   );
@@ -145,6 +170,7 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogMedia,
   DialogOverlay,
   DialogPortal,
   DialogTitle,

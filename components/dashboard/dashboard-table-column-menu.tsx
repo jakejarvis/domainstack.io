@@ -1,4 +1,4 @@
-import { EyeIcon, SquareSplitHorizontalIcon } from "@phosphor-icons/react/ssr";
+import { ColumnsIcon, EyeIcon } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 
 type DashboardTableColumnMenuProps<TData> = {
@@ -49,23 +54,35 @@ export function DashboardTableColumnMenu<TData>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-9"
-            title={
-              hiddenCount > 0
-                ? `Toggle columns (${hiddenCount} hidden)`
-                : "Toggle columns"
-            }
-          >
-            <SquareSplitHorizontalIcon />
-            <span className="sr-only">Toggle columns</span>
-          </Button>
-        }
-      />
+      <Tooltip>
+        <DropdownMenuTrigger
+          nativeButton={false}
+          render={
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-9"
+                  title={
+                    hiddenCount > 0
+                      ? `Toggle columns (${hiddenCount} hidden)`
+                      : "Toggle columns"
+                  }
+                >
+                  <ColumnsIcon className="text-foreground/90" />
+                  <span className="sr-only">Toggle columns</span>
+                </Button>
+              }
+            />
+          }
+        />
+        <TooltipContent>
+          {hiddenCount > 0
+            ? `Toggle columns (${hiddenCount} hidden)`
+            : "Toggle columns"}
+        </TooltipContent>
+      </Tooltip>
       <DropdownMenuContent
         align="end"
         className="flex min-w-44 flex-col overflow-hidden p-0"
