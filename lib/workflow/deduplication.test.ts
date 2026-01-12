@@ -145,6 +145,9 @@ describe("startWithDeduplication", () => {
     const promise1 = startWithDeduplication(key, workflowFn);
     const promise2 = startWithDeduplication(key, workflowFn);
 
+    // Workflow start is scheduled in a microtask; flush it before asserting.
+    await Promise.resolve();
+
     // Only one workflow should be started
     expect(workflowFn).toHaveBeenCalledTimes(1);
 
@@ -213,6 +216,79 @@ describe("startWithDeduplication", () => {
     // Both should reject with the same error
     await expect(promise1).rejects.toThrow("shared error");
     await expect(promise2).rejects.toThrow("shared error");
+  });
+
+  it("deduplicates and cleans up when startWorkflow throws synchronously", async () => {
+    const workflowFn = vi.fn(() => {
+      throw new Error("sync boom");
+    });
+    const key = getDeduplicationKey("test-sync-throw", { id: 6 });
+
+    const promise1 = startWithDeduplication(key, workflowFn as never);
+    const promise2 = startWithDeduplication(key, workflowFn as never);
+
+    expect(workflowFn).toHaveBeenCalledTimes(0); // called in a microtask
+
+    await expect(promise1).rejects.toThrow("sync boom");
+    await expect(promise2).rejects.toThrow("sync boom");
+
+    // Only one run should have been attempted, and state should be cleaned up
+    expect(workflowFn).toHaveBeenCalledTimes(1);
+    expect(hasPendingRun(key)).toBe(false);
+  });
+
+  it("can keep a key pending until a keepAlive promise settles (attach while workflow is running)", async () => {
+    let resolveReturnValue: ((value: unknown) => void) | undefined;
+    const returnValue = new Promise((resolve) => {
+      resolveReturnValue = resolve;
+    });
+
+    type KeepAliveResult = {
+      runId: string;
+      returnValue: Promise<unknown>;
+    };
+
+    const workflowFn = vi
+      .fn<() => Promise<KeepAliveResult>>()
+      .mockResolvedValue({
+        runId: "run_123",
+        returnValue,
+      });
+
+    const key = getDeduplicationKey("test-keep-alive", { id: 7 });
+
+    // First call resolves quickly (it returns the runId), but should remain pending due to keepAliveUntil.
+    const result1 = await startWithDeduplication<KeepAliveResult>(
+      key,
+      workflowFn,
+      {
+        keepAliveUntil: (r) => r.returnValue,
+      },
+    );
+    expect(result1.runId).toBe("run_123");
+    expect(workflowFn).toHaveBeenCalledTimes(1);
+    expect(hasPendingRun(key)).toBe(true);
+
+    // A subsequent call should attach and not start a second workflow.
+    const result2 = await startWithDeduplication<KeepAliveResult>(
+      key,
+      workflowFn,
+      {
+        keepAliveUntil: (r) => r.returnValue,
+      },
+    );
+    expect(result2.runId).toBe("run_123");
+    expect(workflowFn).toHaveBeenCalledTimes(1);
+
+    // Resolve the underlying workflow.
+    resolveReturnValue?.({ ok: true });
+    await returnValue;
+
+    // Cleanup happens after keepAlive settles.
+    for (let i = 0; i < 10 && hasPendingRun(key); i++) {
+      await Promise.resolve();
+    }
+    expect(hasPendingRun(key)).toBe(false);
   });
 });
 

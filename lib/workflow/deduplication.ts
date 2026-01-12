@@ -16,6 +16,24 @@ const logger = createLogger({ source: "workflow-deduplication" });
  */
 const pendingRuns = new Map<string, Promise<unknown>>();
 
+export type DeduplicationOptions<T> = {
+  /**
+   * Keep the deduplication entry alive until this operation completes.
+   *
+   * This is useful when you want to return early (e.g. return a runId) but still
+   * prevent duplicate workflow *starts* while the underlying workflow is running.
+   */
+  keepAliveUntil?: (result: T) => unknown | Promise<unknown>;
+
+  /**
+   * Safety valve: evict a pending entry after this many ms to avoid poisoning
+   * a key forever if a promise hangs.
+   *
+   * Note: eviction may allow another workflow to start for the same key.
+   */
+  maxPendingMs?: number;
+};
+
 /**
  * Check if a value is a plain object (not a class instance like Date, Map, etc.)
  */
@@ -33,18 +51,41 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Non-plain objects (Date, Map, etc.) fall back to JSON.stringify.
  */
 function stableStringify(value: unknown): string {
+  // Match JSON.stringify behavior more closely, but always return a string.
+  // (JSON.stringify(undefined) returns undefined which breaks our key format.)
+  if (value === undefined) {
+    return "null";
+  }
+
+  if (typeof value === "bigint") {
+    // Avoid throwing (JSON.stringify(BigInt) throws), and avoid collisions with strings/numbers.
+    return `{"$bigint":${JSON.stringify(value.toString())}}`;
+  }
+
   if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
+    const json = JSON.stringify(value);
+    return json ?? "null";
   }
 
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(",")}]`;
   }
 
-  // For non-plain objects (Date, Map, custom classes, etc.),
-  // use JSON.stringify which respects toJSON methods
+  // Common non-plain objects we intentionally support.
+  if (value instanceof Date) {
+    return JSON.stringify(value.toISOString());
+  }
+
+  if (value instanceof URL) {
+    return JSON.stringify(value.toString());
+  }
+
+  // For other non-plain objects (Map, Set, custom classes, etc.), fail fast:
+  // JSON.stringify often collapses these to "{}", causing key collisions.
   if (!isPlainObject(value)) {
-    return JSON.stringify(value);
+    throw new TypeError(
+      `Unsupported value in workflow deduplication key: ${Object.prototype.toString.call(value)}`,
+    );
   }
 
   const sortedKeys = Object.keys(value).sort();
@@ -90,6 +131,7 @@ export function getDeduplicationKey(
 export async function startWithDeduplication<T>(
   key: string,
   startWorkflow: () => Promise<T>,
+  options: DeduplicationOptions<T> = {},
 ): Promise<T> {
   // Extract workflow name from key for safe logging (avoid leaking input data)
   const workflow = key.split(":")[0] ?? "unknown";
@@ -97,20 +139,75 @@ export async function startWithDeduplication<T>(
   // Check if there's already a pending run for this key
   const pending = pendingRuns.get(key);
   if (pending) {
-    logger.info(`attaching to pending ${workflow} workflow`);
+    logger.debug(`attaching to pending ${workflow} workflow`);
     return pending as Promise<T>;
   }
 
-  // Start new workflow and store the promise
-  const runPromise = startWorkflow().finally(() => {
-    // Clean up after completion (success or failure)
-    pendingRuns.delete(key);
-  });
+  // Start new workflow and store the promise.
+  //
+  // Important: wrap in Promise.resolve().then(...) so that if `startWorkflow`
+  // throws synchronously (despite its type), we still:
+  // - have a promise to store in `pendingRuns` for other callers to attach to
+  // - run cleanup via `.finally`
+  const basePromise = Promise.resolve().then(startWorkflow);
 
-  pendingRuns.set(key, runPromise);
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const cleanup = (storedPromise: Promise<T>): void => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    // Clean up after completion (success or failure).
+    // Guard against accidental overwrites (e.g. in tests or unusual callers).
+    if (pendingRuns.get(key) === storedPromise) {
+      pendingRuns.delete(key);
+    }
+  };
+
+  // If we aren't keeping the key alive, preserve the previous behavior:
+  // - callers awaiting the returned promise will only resolve after cleanup is done
+  // - this avoids subtle races in callers/tests that immediately start another run
+  let storedPromise: Promise<T>;
+  if (options.keepAliveUntil) {
+    storedPromise = basePromise;
+  } else {
+    storedPromise = basePromise.finally(() => cleanup(storedPromise));
+  }
+
+  pendingRuns.set(key, storedPromise);
   logger.debug(`started new ${workflow} workflow`);
 
-  return runPromise;
+  if (options.maxPendingMs && options.maxPendingMs > 0) {
+    timeoutId = setTimeout(() => {
+      if (pendingRuns.get(key) === storedPromise) {
+        pendingRuns.delete(key);
+        logger.warn(
+          { workflow, maxPendingMs: options.maxPendingMs },
+          "evicted pending workflow deduplication entry after timeout",
+        );
+      }
+    }, options.maxPendingMs);
+
+    // Best-effort: don't keep the process alive just because of this timer.
+    // (Not available in all environments.)
+    timeoutId.unref?.();
+  }
+
+  if (options.keepAliveUntil) {
+    // Cleanup lifecycle:
+    // - Always clean up if start throws / rejects.
+    // - Keep the entry alive until keepAliveUntil settles.
+    void storedPromise
+      .then(async (result) => {
+        await options.keepAliveUntil?.(result);
+      })
+      .catch(() => {
+        // Swallow: errors propagate via `storedPromise` to callers, but we still want cleanup.
+      })
+      .finally(() => cleanup(storedPromise));
+  }
+
+  return storedPromise;
 }
 
 /**

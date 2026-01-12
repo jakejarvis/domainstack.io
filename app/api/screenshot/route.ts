@@ -117,24 +117,35 @@ export async function POST(
     // Cache miss - start workflow with deduplication
     // (prevents duplicate workflows if multiple requests arrive simultaneously)
     const key = getDeduplicationKey("screenshot", domain.name);
-    const result = await startWithDeduplication(key, async () => {
-      const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
+    const result = await startWithDeduplication(
+      key,
+      async () => {
+        const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
 
-      logger.debug(
-        { domainId, domain: domain.name, runId: run.runId },
-        "screenshot workflow started",
-      );
+        logger.debug(
+          { domainId, domain: domain.name, runId: run.runId },
+          "screenshot workflow started",
+        );
 
-      analytics.track("screenshot_api_workflow_started", {
-        domain: domain.name,
-        runId: run.runId,
-      });
+        analytics.track("screenshot_api_workflow_started", {
+          domain: domain.name,
+          runId: run.runId,
+        });
 
-      return {
-        runId: run.runId,
-        returnValue: run.returnValue,
-      };
-    });
+        return {
+          runId: run.runId,
+          returnValue: run.returnValue,
+        };
+      },
+      {
+        // Keep the deduplication entry alive for the duration of the workflow,
+        // even though this endpoint returns early with `runId`.
+        keepAliveUntil: (r) => r.returnValue,
+        // Safety valve to avoid poisoning this key forever if something hangs.
+        // Screenshot runs should normally complete much faster than this.
+        maxPendingMs: 5 * 60 * 1000,
+      },
+    );
 
     return NextResponse.json({
       status: "running",

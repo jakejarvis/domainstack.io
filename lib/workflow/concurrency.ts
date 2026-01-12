@@ -53,11 +53,22 @@ export function isConcurrencyConflict(error: unknown): boolean {
     return false;
   }
 
-  // Optionally validate the message matches known patterns
+  // Most known concurrency conflicts are 409s from the workflow API when a step result
+  // is already set by another worker. Messages can vary across SDK/server versions,
+  // so treat any 409 WorkflowAPIError as a concurrency conflict.
   const message = error.message.toLowerCase();
-  return STEP_ALREADY_SET_PATTERNS.some((pattern) =>
+  const matchesKnownPattern = STEP_ALREADY_SET_PATTERNS.some((pattern) =>
     message.includes(pattern.toLowerCase()),
   );
+
+  if (!matchesKnownPattern) {
+    logger.debug(
+      { message: error.message },
+      "treating 409 WorkflowAPIError as concurrency conflict (message did not match known patterns)",
+    );
+  }
+
+  return true;
 }
 
 /**

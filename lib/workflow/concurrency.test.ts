@@ -41,7 +41,7 @@ describe("isConcurrencyConflict", () => {
     const error = new WorkflowAPIError("Resource conflict - please retry", {
       status: 409,
     });
-    expect(isConcurrencyConflict(error)).toBe(false);
+    expect(isConcurrencyConflict(error)).toBe(true);
   });
 
   it("returns false for regular Error", () => {
