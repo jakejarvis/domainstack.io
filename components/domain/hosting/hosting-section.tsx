@@ -12,25 +12,12 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { HostingResponse } from "@/lib/types/domain/hosting";
+import { countryCodeToEmoji } from "@/lib/country-emoji";
+import type { HostingGeo, HostingResponse } from "@/lib/types/domain/hosting";
 
-function formatLocation(geo: HostingResponse["geo"]): string {
+function formatLocation(geo: HostingGeo): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
   return parts.join(", ");
-}
-
-/**
- * Convert a Unicode code point string to its emoji representation.
- * e.g., "U+1F1FA U+1F1F8" → "🇺🇸"
- */
-function unicodeToEmoji(unicode: string): string {
-  if (!unicode) return "";
-  return unicode
-    .split(" ")
-    .map((cp) =>
-      String.fromCodePoint(Number.parseInt(cp.replace("U+", ""), 16)),
-    )
-    .join("");
 }
 
 export function HostingSection({
@@ -45,6 +32,7 @@ export function HostingSection({
   const emailProvider = data?.emailProvider ?? null;
   const hasAnyProvider =
     dnsProvider?.name || hostingProvider?.name || emailProvider?.name;
+  const geolocation = data?.geo ?? null;
 
   return (
     <ReportSection {...sections.hosting}>
@@ -92,27 +80,32 @@ export function HostingSection({
             />
           </KeyValueGrid>
 
-          {data?.geo?.lat != null && data?.geo?.lon != null ? (
+          {geolocation ? (
             <>
               <KeyValue
                 label="Location"
-                value={formatLocation(data.geo)}
+                value={formatLocation(geolocation)}
                 leading={
-                  data.geo.country_emoji ? (
-                    <span title={data.geo.country || data.geo.country_code}>
-                      {unicodeToEmoji(data.geo.country_emoji)}
+                  geolocation.country_code ? (
+                    <span
+                      title={geolocation.country || geolocation.country_code}
+                      className="text-lg leading-none"
+                    >
+                      {countryCodeToEmoji(geolocation.country_code)}
                     </span>
                   ) : undefined
                 }
               />
 
-              <div className="relative h-[280px] w-full">
-                <HostingMapClient
-                  lat={data.geo.lat}
-                  lon={data.geo.lon}
-                  domain={domain}
-                />
-              </div>
+              {geolocation.lat && geolocation.lon ? (
+                <div className="relative h-[280px] w-full">
+                  <HostingMapClient
+                    lat={geolocation.lat}
+                    lon={geolocation.lon}
+                    domain={domain}
+                  />
+                </div>
+              ) : null}
             </>
           ) : null}
         </>

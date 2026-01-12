@@ -520,7 +520,6 @@ export const hosting = pgTable(
     geoCity: text("geo_city"),
     geoRegion: text("geo_region"),
     geoCountry: text("geo_country"),
-    geoCountryEmoji: text("geo_country_emoji"),
     geoCountryCode: text("geo_country_code"),
     geoLat: doublePrecision("geo_lat"),
     geoLon: doublePrecision("geo_lon"),

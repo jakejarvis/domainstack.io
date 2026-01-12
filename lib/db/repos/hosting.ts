@@ -7,8 +7,11 @@ import {
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
+import { createLogger } from "@/lib/logger/server";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import { findDomainByName } from "./domains";
+
+const logger = createLogger({ source: "hosting-repo" });
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;
 
@@ -23,6 +26,7 @@ export async function getHostingCached(
 
   const existingDomain = await findDomainByName(domain);
   if (!existingDomain) {
+    logger.debug({ domain }, "hosting cache miss: domain not found");
     return null;
   }
 
@@ -44,7 +48,6 @@ export async function getHostingCached(
       geoCity: hostingTable.geoCity,
       geoRegion: hostingTable.geoRegion,
       geoCountry: hostingTable.geoCountry,
-      geoCountryEmoji: hostingTable.geoCountryEmoji,
       geoCountryCode: hostingTable.geoCountryCode,
       geoLat: hostingTable.geoLat,
       geoLon: hostingTable.geoLon,
@@ -60,10 +63,34 @@ export async function getHostingCached(
   const [row] = existing;
 
   if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
+    logger.debug(
+      {
+        domain,
+        hasRow: !!row,
+        expired: row ? (row.expiresAt?.getTime?.() ?? 0) <= nowMs : null,
+      },
+      "hosting cache miss: no row or expired",
+    );
     return null;
   }
 
-  return {
+  // Check if geo data is empty - if so, treat as cache miss to retry IP lookup
+  // This handles the case where a previous lookup failed and stored empty data
+  const hasGeoData = !!(row.geoCountry || row.geoCity || row.geoRegion);
+  if (!hasGeoData) {
+    logger.info(
+      {
+        domain,
+        rawGeoCity: row.geoCity,
+        rawGeoCountry: row.geoCountry,
+        rawGeoRegion: row.geoRegion,
+      },
+      "hosting cache invalid: geo data is empty, will re-fetch",
+    );
+    return null;
+  }
+
+  const result = {
     hostingProvider: {
       id: row.hostingProviderId ?? null,
       name: row.hostingProviderName ?? null,
@@ -83,12 +110,18 @@ export async function getHostingCached(
       city: row.geoCity ?? "",
       region: row.geoRegion ?? "",
       country: row.geoCountry ?? "",
-      country_emoji: row.geoCountryEmoji ?? "",
       country_code: row.geoCountryCode ?? "",
       lat: row.geoLat ?? null,
       lon: row.geoLon ?? null,
     },
   };
+
+  logger.debug(
+    { domain, country: result.geo.country },
+    "hosting cache hit with geo data",
+  );
+
+  return result;
 }
 
 export async function upsertHosting(params: HostingInsert) {

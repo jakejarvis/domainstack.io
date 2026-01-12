@@ -299,47 +299,57 @@ const dohHandler = ({ request }: { request: Request }) => {
   });
 };
 
-const ipDataHandler = ({ params }: { params: { ip: string } }) => {
+const ipLocateHandler = ({ params }: { params: { ip: string } }) => {
   const { ip } = params;
 
-  // Default mock response (ipdata.co format)
-  // See: https://docs.ipdata.co/docs/all-response-fields
+  // Default mock response (iplocate.io format)
+  // See: https://www.iplocate.io/docs/ip-intelligence-api/data-types
   const response = {
     ip,
     is_eu: false,
     city: "Mountain View",
-    region: "California",
-    region_code: "CA",
-    country_name: "United States",
+    subdivision: "California",
+    country: "United States",
     country_code: "US",
-    continent_name: "North America",
-    continent_code: "NA",
+    continent: "North America",
     latitude: 37.386,
     longitude: -122.0838,
-    postal: "94040",
+    postal_code: "94040",
     calling_code: "1",
-    flag: "https://ipdata.co/flags/us.png",
-    emoji_flag: "🇺🇸",
-    emoji_unicode: "U+1F1FA U+1F1F8",
+    time_zone: "America/Los_Angeles",
+    currency_code: "USD",
+    is_anycast: false,
+    is_satellite: false,
     asn: {
       asn: "AS15169",
       name: "Google LLC",
       domain: "google.com",
       route: "8.8.8.0/24",
+      netname: "GOOGLE",
       type: "hosting",
+      country_code: "US",
+      rir: "ARIN",
     },
     company: {
       name: "Google LLC",
       domain: "google.com",
-      network: "8.8.8.0/24",
+      country_code: "US",
       type: "hosting",
     },
-    timezone: {
-      name: "America/Los_Angeles",
-      abbr: "PST",
-      offset: "-0800",
-      is_dst: false,
-      current_time: "2024-01-01T12:00:00-08:00",
+    hosting: {
+      provider: "Google Cloud",
+      domain: "cloud.google.com",
+      network: "8.8.8.0/24",
+    },
+    privacy: {
+      is_abuser: false,
+      is_anonymous: false,
+      is_bogon: false,
+      is_hosting: true,
+      is_icloud_relay: false,
+      is_proxy: false,
+      is_tor: false,
+      is_vpn: false,
     },
   };
 
@@ -544,8 +554,8 @@ export const handlers = [
   // Cloudflare IPs
   http.get("https://api.cloudflare.com/client/v4/ips", cloudflareIpsHandler),
 
-  // IP Lookup (ipdata.co)
-  http.get("https://api.ipdata.co/:ip", ipDataHandler),
+  // IP Lookup (iplocate.io)
+  http.get("https://www.iplocate.io/api/lookup/:ip", ipLocateHandler),
 
   // RDAP Bootstrap
   http.get("https://data.iana.org/rdap/dns.json", rdapBootstrapHandler),

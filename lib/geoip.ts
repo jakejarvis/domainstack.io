@@ -9,7 +9,6 @@ interface GeoIpResponse {
     city: string;
     region: string;
     country: string;
-    country_emoji: string;
     country_code: string;
     lat: number | null;
     lon: number | null;
@@ -21,8 +20,8 @@ interface GeoIpResponse {
 /**
  * Lookup IP metadata including geolocation and ownership information.
  *
- * Uses ipdata.co API for IP geolocation and ASN/company data.
- * See: https://docs.ipdata.co/docs/all-response-fields
+ * Uses iplocate.io API for IP geolocation and ASN/company data.
+ * See: https://www.iplocate.io/docs/ip-intelligence-api/data-types
  *
  * Wrapped in React's cache() for per-request deduplication during SSR,
  * ensuring multiple services can query the same IP without triggering
@@ -31,10 +30,10 @@ interface GeoIpResponse {
 export const lookupGeoIp = cache(async function lookupGeoIp(
   ip: string,
 ): Promise<GeoIpResponse> {
-  const apiKey = process.env.IPDATA_API_KEY;
+  const apiKey = process.env.IPLOCATE_API_KEY;
 
   if (!apiKey) {
-    logger.warn("IPDATA_API_KEY not configured, skipping IP lookup");
+    logger.warn("IPLOCATE_API_KEY not configured, skipping IP lookup");
     return {
       owner: null,
       domain: null,
@@ -42,7 +41,6 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
         city: "",
         region: "",
         country: "",
-        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -51,48 +49,91 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
   }
 
   try {
-    const url = new URL(`https://api.ipdata.co/${encodeURIComponent(ip)}`);
-    url.searchParams.set("api-key", apiKey);
+    const url = new URL(
+      `https://www.iplocate.io/api/lookup/${encodeURIComponent(ip)}`,
+    );
+    url.searchParams.set("apikey", apiKey);
+
+    logger.info({ ip }, "looking up IP geolocation");
 
     const res = await fetchWithTimeoutAndRetry(url.toString());
 
     if (!res.ok) {
-      logger.error({ status: res.status }, "ipdata.co lookup failed");
+      const body = await res.text().catch(() => "");
+      logger.error(
+        { ip, status: res.status, body: body.slice(0, 500) },
+        "iplocate.io lookup failed with non-OK status",
+      );
       throw new Error(`Upstream error looking up IP metadata: ${res.status}`);
     }
 
-    // https://docs.ipdata.co/docs/all-response-fields
+    // https://www.iplocate.io/docs/ip-intelligence-api/data-types
     const data = (await res.json()) as {
       ip?: string;
       is_eu?: boolean;
       city?: string;
-      region?: string;
-      region_code?: string;
-      country_name?: string;
+      subdivision?: string;
+      country?: string;
       country_code?: string;
-      continent_name?: string;
-      continent_code?: string;
+      continent?: string;
       latitude?: number;
       longitude?: number;
-      postal?: string;
+      postal_code?: string;
       calling_code?: string;
-      flag?: string;
-      emoji_flag?: string;
-      emoji_unicode?: string;
+      time_zone?: string;
+      currency_code?: string;
+      is_anycast?: boolean;
+      is_satellite?: boolean;
       asn?: {
         asn?: string;
         name?: string;
         domain?: string;
         route?: string;
+        netname?: string;
         type?: string;
+        country_code?: string;
+        rir?: string;
       };
       company?: {
         name?: string;
         domain?: string;
-        network?: string;
+        country_code?: string;
         type?: string;
       };
+      hosting?: {
+        provider?: string;
+        domain?: string;
+        network?: string;
+      };
+      privacy?: {
+        is_abuser?: boolean;
+        is_anonymous?: boolean;
+        is_bogon?: boolean;
+        is_hosting?: boolean;
+        is_icloud_relay?: boolean;
+        is_proxy?: boolean;
+        is_tor?: boolean;
+        is_vpn?: boolean;
+      };
+      abuse?: {
+        address?: string;
+        country_code?: string;
+        email?: string;
+        name?: string;
+        network?: string;
+        phone?: string;
+      };
+      error?: string; // Error message from API
     };
+
+    // Check for API error response
+    if (data.error) {
+      logger.error(
+        { ip, error: data.error },
+        "iplocate.io returned error message",
+      );
+      throw new Error(`iplocate.io error: ${data.error}`);
+    }
 
     // Prefer company name over ASN name for more accurate ownership
     const owner = data.company?.name || data.asn?.name || null;
@@ -100,17 +141,18 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
 
     const geo = {
       city: data.city || "",
-      region: data.region || "",
-      country: data.country_name || "",
-      country_emoji: data.emoji_unicode || "",
+      region: data.subdivision || "",
+      country: data.country || "",
       country_code: data.country_code || "",
       lat: typeof data.latitude === "number" ? data.latitude : null,
       lon: typeof data.longitude === "number" ? data.longitude : null,
     };
 
+    logger.info({ ip }, "IP geolocation complete");
+
     return { geo, owner, domain };
   } catch (err) {
-    logger.error(err, "ipdata.co lookup failed");
+    logger.error({ err, ip }, "iplocate.io lookup failed");
     return {
       owner: null,
       domain: null,
@@ -118,7 +160,6 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
         city: "",
         region: "",
         country: "",
-        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,

@@ -5,7 +5,7 @@
  * It's used by both the standalone hostingWorkflow and shared steps.
  */
 
-import { lookupGeoIp as lookupGeoIpFn } from "@/lib/geoip";
+import { lookupGeoIp } from "@/lib/geoip";
 import { createLogger } from "@/lib/logger/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { getProviders } from "@/lib/providers/catalog";
@@ -14,7 +14,6 @@ import {
   detectEmailProvider,
   detectHostingProvider,
 } from "@/lib/providers/detection";
-import type { Provider } from "@/lib/providers/parser";
 import { ttlForHosting } from "@/lib/ttl";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
@@ -27,7 +26,6 @@ export interface GeoIpResult {
     city: string;
     region: string;
     country: string;
-    country_emoji: string;
     country_code: string;
     lat: number | null;
     lon: number | null;
@@ -55,36 +53,12 @@ export interface ProviderDetectionResult {
 }
 
 /**
- * Lookup GeoIP data for an IP address.
- */
-export async function lookupGeoIp(ip: string | null): Promise<GeoIpResult> {
-  if (!ip) {
-    return {
-      geo: {
-        city: "",
-        region: "",
-        country: "",
-        country_emoji: "",
-        country_code: "",
-        lat: null,
-        lon: null,
-      },
-      owner: null,
-      domain: null,
-    };
-  }
-
-  return lookupGeoIpFn(ip);
-}
-
-/**
  * Detect providers from DNS records and headers, then resolve provider IDs.
  */
 export async function detectAndResolveProviders(
   dnsRecords: DnsRecord[],
   headers: Header[],
-  geoResult: GeoIpResult,
-  ip: string | null,
+  geoResult: GeoIpResult | null,
 ): Promise<ProviderDetectionResult> {
   // Dynamic imports for database operations
   const { resolveOrCreateProviderId, upsertCatalogProvider } = await import(
@@ -105,45 +79,40 @@ export async function detectAndResolveProviders(
   // Hosting provider detection with fallback:
   // - If no A record/IP → null
   // - Else if unknown → try IP ownership org/ISP
-  const hostingMatched = detectHostingProvider(headers, hostingProviders);
+  const hostingCatalogProvider = detectHostingProvider(
+    headers,
+    hostingProviders,
+  );
 
-  let hostingName = hostingMatched?.name ?? null;
-  let hostingIconDomain = hostingMatched?.domain ?? null;
-  let hostingCatalogProvider: Provider | null = hostingMatched;
-  if (!ip) {
-    hostingName = null;
-    hostingIconDomain = null;
-    hostingCatalogProvider = null;
-  } else if (!hostingName) {
-    // Unknown provider: try IP ownership org/ISP
-    if (geoResult.owner) hostingName = geoResult.owner;
-    hostingIconDomain = geoResult.domain ?? null;
-    hostingCatalogProvider = null;
+  let hostingName = hostingCatalogProvider?.name ?? null;
+  let hostingIconDomain = hostingCatalogProvider?.domain ?? null;
+  if (!hostingCatalogProvider) {
+    // Unknown hostingCatalogProvider: try IP ownership org/ISP
+    if (geoResult?.owner) hostingName = geoResult.owner;
+    if (geoResult?.domain) hostingIconDomain = geoResult.domain;
   }
 
   // Determine email provider, null when MX is unset
-  const emailMatched =
+  const emailCatalogProvider =
     mx.length === 0
       ? null
       : detectEmailProvider(
           mx.map((m) => m.value),
           emailProviders,
         );
-  let emailName = emailMatched?.name ?? null;
-  let emailIconDomain = emailMatched?.domain ?? null;
-  const emailCatalogProvider: Provider | null = emailMatched;
+  let emailName = emailCatalogProvider?.name ?? null;
+  let emailIconDomain = emailCatalogProvider?.domain ?? null;
 
   // DNS provider from nameservers
-  const dnsMatched = detectDnsProvider(
+  const dnsCatalogProvider = detectDnsProvider(
     nsRecords.map((n) => n.value),
     dnsProviders,
   );
-  let dnsName = dnsMatched?.name ?? null;
-  let dnsIconDomain = dnsMatched?.domain ?? null;
-  const dnsCatalogProvider: Provider | null = dnsMatched;
+  let dnsName = dnsCatalogProvider?.name ?? null;
+  let dnsIconDomain = dnsCatalogProvider?.domain ?? null;
 
   // If no known match for email provider, fall back to the root domain of the first MX host
-  if (!emailMatched && mx[0]?.value) {
+  if (!emailCatalogProvider && mx[0]?.value) {
     const root = toRegistrableDomain(mx[0].value);
     if (root) {
       emailName = root;
@@ -152,7 +121,7 @@ export async function detectAndResolveProviders(
   }
 
   // If no known match for DNS provider, fall back to the root domain of the first NS host
-  if (!dnsMatched && nsRecords[0]?.value) {
+  if (!dnsCatalogProvider && nsRecords[0]?.value) {
     const root = toRegistrableDomain(nsRecords[0].value);
     if (root) {
       dnsName = root;
@@ -221,7 +190,7 @@ export async function detectAndResolveProviders(
 export async function persistHostingData(
   domain: string,
   providers: ProviderDetectionResult,
-  geo: GeoIpResult["geo"],
+  geo: GeoIpResult["geo"] | null,
 ): Promise<void> {
   const now = new Date();
   const expiresAt = ttlForHosting(now);
@@ -238,13 +207,12 @@ export async function persistHostingData(
     hostingProviderId: providers.hostingProvider.id,
     emailProviderId: providers.emailProvider.id,
     dnsProviderId: providers.dnsProvider.id,
-    geoCity: geo.city,
-    geoRegion: geo.region,
-    geoCountry: geo.country,
-    geoCountryEmoji: geo.country_emoji,
-    geoCountryCode: geo.country_code,
-    geoLat: geo.lat ?? null,
-    geoLon: geo.lon ?? null,
+    geoCity: geo?.city ?? null,
+    geoRegion: geo?.region ?? null,
+    geoCountry: geo?.country ?? null,
+    geoCountryCode: geo?.country_code ?? null,
+    geoLat: geo?.lat ?? null,
+    geoLon: geo?.lon ?? null,
     fetchedAt: now,
     expiresAt,
   });
@@ -275,19 +243,18 @@ export async function lookupAndPersistHosting(
   const ip = (a?.value || aaaa?.value) ?? null;
 
   // GeoIP lookup
-  const geoResult = await lookupGeoIp(ip);
+  const geoResult = ip ? await lookupGeoIp(ip) : null;
 
   // Detect providers
   const providers = await detectAndResolveProviders(
     dnsRecords,
     headers,
     geoResult,
-    ip,
   );
 
   // Persist
   try {
-    await persistHostingData(domain, providers, geoResult.geo);
+    await persistHostingData(domain, providers, geoResult?.geo ?? null);
   } catch (err) {
     logger.error({ err, domain }, "failed to persist hosting data");
     // Still return the data even if persistence failed
@@ -297,6 +264,6 @@ export async function lookupAndPersistHosting(
     hostingProvider: providers.hostingProvider,
     emailProvider: providers.emailProvider,
     dnsProvider: providers.dnsProvider,
-    geo: geoResult.geo,
+    geo: geoResult?.geo ?? null,
   };
 }

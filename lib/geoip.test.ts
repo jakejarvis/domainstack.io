@@ -6,7 +6,7 @@ import { lookupGeoIp } from "./geoip";
 
 beforeAll(() => {
   // Stub the API key for tests
-  vi.stubEnv("IPDATA_API_KEY", "test-api-key");
+  vi.stubEnv("IPLOCATE_API_KEY", "test-api-key");
 });
 
 afterEach(() => {
@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe("lookupGeoIp", () => {
-  it("parses ipdata.co response and derives owner and domain", async () => {
+  it("parses iplocate.io response and derives owner and domain", async () => {
     // 1.1.1.1 is mocked in @/mocks/handlers.ts with Cloudflare data
     const res = await lookupGeoIp("1.1.1.1");
     expect(res.geo.city).toBe("San Francisco");
@@ -25,7 +25,9 @@ describe("lookupGeoIp", () => {
   it("returns defaults on error", async () => {
     // Force network error
     server.use(
-      http.get("https://api.ipdata.co/:ip", () => HttpResponse.error()),
+      http.get("https://www.iplocate.io/api/lookup/:ip", () =>
+        HttpResponse.error(),
+      ),
     );
 
     const res = await lookupGeoIp("1.2.3.4");

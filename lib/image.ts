@@ -45,7 +45,7 @@ export async function convertBufferToImageCover(
       ) as ArrayBuffer;
       const frames = await mod.parse(arr as ArrayBuffer, "image/png");
       if (Array.isArray(frames) && frames.length > 0) {
-        let chosen: IcoFrame = frames[0];
+        let [chosen] = frames;
         chosen = frames.reduce((best: IcoFrame, cur: IcoFrame) => {
           const bw = Number(best?.width ?? 0);
           const bh = Number(best?.height ?? 0);

@@ -30,7 +30,7 @@
 - `server/` backend integrations and tRPC routers; isolate DNS, RDAP/WHOIS, TLS, and header probing services.
 - `server/routers/` tRPC router definitions (`_app.ts` is the main "app" router, consumes all other routers).
 - `server/services/` service layer for orchestration (currently empty - all services migrated to workflows).
-- `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via ipdata.co API.
+- `lib/geoip.ts` IP metadata lookup (geolocation, ownership) via iplocate.co API ([docs](https://www.iplocate.io/docs)).
 - `lib/pricing.ts` Domain registration pricing aggregation from multiple registrars (Porkbun, Cloudflare, Dynadot).
 - `public/` static assets; Tailwind v4 tokens live in `app/globals.css`. Update `instrumentation-client.ts` when adding analytics.
 - `trpc/` tRPC client setup, query client, error handling, and `protectedProcedure` for auth-required endpoints.

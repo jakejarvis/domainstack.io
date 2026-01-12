@@ -11,7 +11,6 @@ export interface HostingGeo {
   city: string;
   region: string;
   country: string;
-  country_emoji: string;
   country_code: string;
   lat: number | null;
   lon: number | null;
@@ -24,5 +23,5 @@ export interface HostingResponse {
   hostingProvider: ProviderRef;
   emailProvider: ProviderRef;
   dnsProvider: ProviderRef;
-  geo: HostingGeo;
+  geo: HostingGeo | null;
 }

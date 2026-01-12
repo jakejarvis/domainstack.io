@@ -34,7 +34,6 @@ interface GeoIpResult {
     city: string;
     region: string;
     country: string;
-    country_emoji: string;
     country_code: string;
     lat: number | null;
     lon: number | null;
@@ -87,18 +86,17 @@ export async function hostingWorkflow(
   const ip = (a?.value || aaaa?.value) ?? null;
 
   // Step 1: GeoIP lookup (if we have an IP)
-  const geoResult = await lookupGeoIpStep(ip);
+  const geoResult = ip ? await lookupGeoIpStep(ip) : null;
 
   // Step 2: Detect providers and resolve IDs
   const providers = await detectAndResolveProvidersStep(
     dnsRecords,
     headers,
     geoResult,
-    ip,
   );
 
   // Step 3: Persist to database
-  await persistHostingStep(domain, providers, geoResult.geo);
+  await persistHostingStep(domain, providers, geoResult?.geo ?? null);
 
   return {
     success: true,
@@ -106,7 +104,7 @@ export async function hostingWorkflow(
       hostingProvider: providers.hostingProvider,
       emailProvider: providers.emailProvider,
       dnsProvider: providers.dnsProvider,
-      geo: geoResult.geo,
+      geo: geoResult?.geo ?? null,
     },
   };
 }
@@ -114,10 +112,10 @@ export async function hostingWorkflow(
 /**
  * Step: Lookup GeoIP data for an IP address.
  */
-async function lookupGeoIpStep(ip: string | null): Promise<GeoIpResult> {
+async function lookupGeoIpStep(ip: string): Promise<GeoIpResult> {
   "use step";
 
-  const { lookupGeoIp } = await import("@/lib/domain/hosting-lookup");
+  const { lookupGeoIp } = await import("@/lib/geoip");
   return lookupGeoIp(ip);
 }
 
@@ -127,15 +125,14 @@ async function lookupGeoIpStep(ip: string | null): Promise<GeoIpResult> {
 async function detectAndResolveProvidersStep(
   dnsRecords: DnsRecord[],
   headers: Header[],
-  geoResult: GeoIpResult,
-  ip: string | null,
+  geoResult: GeoIpResult | null,
 ): Promise<ProviderDetectionResult> {
   "use step";
 
   const { detectAndResolveProviders } = await import(
     "@/lib/domain/hosting-lookup"
   );
-  return detectAndResolveProviders(dnsRecords, headers, geoResult, ip);
+  return detectAndResolveProviders(dnsRecords, headers, geoResult);
 }
 
 /**
@@ -144,7 +141,7 @@ async function detectAndResolveProvidersStep(
 async function persistHostingStep(
   domain: string,
   providers: ProviderDetectionResult,
-  geo: GeoIpResult["geo"],
+  geo: GeoIpResult["geo"] | null,
 ): Promise<void> {
   "use step";
 

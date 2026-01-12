@@ -1,0 +1,1 @@
+ALTER TABLE "hosting" DROP COLUMN "geo_country_emoji";

@@ -7,6 +7,7 @@
 ## 🚀 Features
 
 - **Instant domain reports**: Registration, DNS, certificates, HTTP headers, hosting & email, and geolocation.
+- **Provider detection**: Cross-checks raw data with a large library of hosting, email, and DNS providers.
 - **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
 - **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
 - **Fast, private, no sign-up required for reports**: Live fetches with intelligent multi-layer caching.
@@ -36,6 +37,7 @@
 - **PostHog** for analytics and error tracking
 - [**mapcn**](https://mapcn.vercel.app/) with [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps) for beautiful IP geolocation maps
 - [**Logo.dev**](https://www.logo.dev) for provider icons
+- [**IPLocate.io**](https://www.iplocate.io/) for detailed IP geolocation and reverse ASN lookups
 - **Puppeteer** for on-demand screenshots
 - **Biome** for linting/formatting and **Vitest** (Browser Mode w/ Playwright) for E2E testing
 

@@ -1,5 +1,3 @@
-/* @vitest-environment node */
-import { HttpResponse, http } from "msw";
 import {
   afterAll,
   afterEach,
@@ -13,36 +11,6 @@ import {
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
 import { server } from "@/mocks/server";
-
-// Mock GeoIP API (ipdata.co format)
-function mockGeoIp(
-  ip: string,
-  data: { city?: string; country?: string; org?: string } = {},
-) {
-  server.use(
-    http.get(`https://api.ipdata.co/${ip}`, () =>
-      HttpResponse.json({
-        ip,
-        city: data.city ?? "San Francisco",
-        region: "California",
-        country_name: data.country ?? "United States",
-        country_code: "US",
-        country_emoji: "U+1F1FA U+1F1F8",
-        latitude: 37.7749,
-        longitude: -122.4194,
-        asn: {
-          asn: "AS13335",
-          name: data.org ?? "Cloudflare, Inc.",
-          domain: "cloudflare.com",
-        },
-        company: {
-          name: data.org ?? "Cloudflare, Inc.",
-          domain: "cloudflare.com",
-        },
-      }),
-    ),
-  );
-}
 
 // Mock Edge Config for provider catalogs
 const mockProviderCatalog = vi.hoisted(() =>
@@ -98,37 +66,12 @@ vi.mock("@/lib/revalidation", () => ({
 
 beforeAll(() => {
   // Stub the API key for tests
-  vi.stubEnv("IPDATA_API_KEY", "test-api-key");
+  vi.stubEnv("IPLOCATE_API_KEY", "test-api-key");
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   server.resetHandlers();
-});
-
-describe("lookupGeoIp", () => {
-  it("returns geo data for valid IP", async () => {
-    mockGeoIp("1.2.3.4", {
-      city: "New York",
-      country: "United States",
-      org: "Test ISP",
-    });
-
-    const { lookupGeoIp } = await import("./hosting-lookup");
-    const result = await lookupGeoIp("1.2.3.4");
-
-    expect(result.geo.city).toBe("New York");
-    expect(result.geo.country).toBe("United States");
-    expect(result.owner).toBe("Test ISP");
-  });
-
-  it("returns empty geo for null IP", async () => {
-    const { lookupGeoIp } = await import("./hosting-lookup");
-    const result = await lookupGeoIp(null);
-
-    expect(result.geo.city).toBe("");
-    expect(result.owner).toBeNull();
-  });
 });
 
 describe("detectAndResolveProviders", () => {
@@ -170,7 +113,6 @@ describe("detectAndResolveProviders", () => {
         city: "San Francisco",
         region: "California",
         country: "United States",
-        country_emoji: "U+1F1FA U+1F1F8",
         country_code: "US",
         lat: 37.7749,
         lon: -122.4194,
@@ -184,7 +126,6 @@ describe("detectAndResolveProviders", () => {
       dnsRecords,
       headers,
       geoResult,
-      "1.2.3.4",
     );
 
     expect(result.hostingProvider.name).toBe("Vercel");
@@ -210,7 +151,6 @@ describe("detectAndResolveProviders", () => {
         city: "",
         region: "",
         country: "",
-        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -224,7 +164,6 @@ describe("detectAndResolveProviders", () => {
       dnsRecords,
       headers,
       geoResult,
-      "1.2.3.4",
     );
 
     expect(result.emailProvider.name).toBe("Google Workspace");
@@ -255,7 +194,6 @@ describe("detectAndResolveProviders", () => {
         city: "",
         region: "",
         country: "",
-        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
@@ -269,7 +207,6 @@ describe("detectAndResolveProviders", () => {
       dnsRecords,
       headers,
       geoResult,
-      "1.2.3.4",
     );
 
     expect(result.dnsProvider.name).toBe("Cloudflare");
@@ -278,28 +215,14 @@ describe("detectAndResolveProviders", () => {
 
   it("returns null hosting provider when no IP", async () => {
     const dnsRecords: DnsRecord[] = [];
-    const headers: Header[] = [{ name: "x-vercel-id", value: "abc123" }];
-
-    const geoResult = {
-      geo: {
-        city: "",
-        region: "",
-        country: "",
-        country_emoji: "",
-        country_code: "",
-        lat: null,
-        lon: null,
-      },
-      owner: null,
-      domain: null,
-    };
+    const headers: Header[] = [];
+    const geoResult = null;
 
     const { detectAndResolveProviders } = await import("./hosting-lookup");
     const result = await detectAndResolveProviders(
       dnsRecords,
       headers,
       geoResult,
-      null, // No IP
     );
 
     expect(result.hostingProvider.name).toBeNull();

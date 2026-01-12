@@ -43,7 +43,6 @@ describe("HostingSection", () => {
         city: "",
         region: "",
         country: "",
-        country_emoji: "",
         country_code: "",
         lat: null,
         lon: null,
