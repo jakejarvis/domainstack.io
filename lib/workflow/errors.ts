@@ -4,7 +4,7 @@ import { isExpectedDnsError } from "@/lib/dns-utils";
 import { isExpectedTlsError } from "@/lib/tls-utils";
 
 /**
- * Error codes from RemoteAssetError that are permanent (should not retry)
+ * Error codes from SafeFetchError that are permanent (should not retry)
  */
 const PERMANENT_REMOTE_ASSET_ERRORS = new Set([
   "invalid_url",
@@ -14,16 +14,16 @@ const PERMANENT_REMOTE_ASSET_ERRORS = new Set([
   "private_ip",
   "redirect_limit",
   "size_exceeded",
-  "dns_error", // DNS errors from RemoteAssetError are usually permanent (domain doesn't resolve)
+  "dns_error", // DNS errors from SafeFetchError are usually permanent (domain doesn't resolve)
 ]);
 
 /**
- * Check if a RemoteAssetError is permanent (should not retry)
+ * Check if a SafeFetchError is permanent (should not retry)
  */
-function isRemoteAssetError(
+function isSafeFetchError(
   err: unknown,
 ): err is Error & { code?: string; name?: string } {
-  return err instanceof Error && err.name === "RemoteAssetError";
+  return err instanceof Error && err.name === "SafeFetchError";
 }
 
 /**
@@ -77,12 +77,12 @@ export function classifyFetchError(
     return new FatalError(`${context}: TLS/SSL error`);
   }
 
-  // RemoteAssetError has specific codes
-  if (isRemoteAssetError(err) && err.code) {
+  // SafeFetchError has specific codes
+  if (isSafeFetchError(err) && err.code) {
     if (PERMANENT_REMOTE_ASSET_ERRORS.has(err.code)) {
       return new FatalError(`${context}: ${err.code} - ${err.message}`);
     }
-    // Other RemoteAssetErrors (invalid_response, etc.) might be transient
+    // Other SafeFetchErrors (invalid_response, etc.) might be transient
     return new RetryableError(`${context}: ${err.code}`, {
       retryAfter: retryAfter as `${number}s`,
     });
@@ -187,11 +187,11 @@ export function getErrorClassification(err: unknown): ErrorClassification {
     return { type: "fatal", reason: "tls_error" };
   }
 
-  if (isRemoteAssetError(err) && err.code) {
+  if (isSafeFetchError(err) && err.code) {
     if (PERMANENT_REMOTE_ASSET_ERRORS.has(err.code)) {
       return { type: "fatal", reason: err.code };
     }
-    // Other RemoteAssetErrors (invalid_response, etc.) might be transient
+    // Other SafeFetchErrors (invalid_response, etc.) might be transient
     return { type: "retryable", reason: err.code };
   }
 

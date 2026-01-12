@@ -53,7 +53,7 @@ export async function fetchIconFromSources(
 ): Promise<IconFetchResult> {
   "use step";
 
-  const { safeFetch, RemoteAssetError } = await import("@/lib/safe-fetch");
+  const { safeFetch, SafeFetchError } = await import("@/lib/safe-fetch");
   const { createLogger } = await import("@/lib/logger/server");
 
   const logger = createLogger({ source: options.loggerSource });
@@ -130,7 +130,7 @@ export async function fetchIconFromSources(
         sourceName: source.name,
       };
     } catch (err) {
-      if (!(err instanceof RemoteAssetError)) {
+      if (!(err instanceof SafeFetchError)) {
         logger.warn({ err, domain, source: source.name }, "fetch failed");
       }
       // Infrastructure errors are not "not found"

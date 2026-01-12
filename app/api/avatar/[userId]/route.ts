@@ -6,7 +6,7 @@ import {
 } from "@/lib/constants/ttl";
 import { getUserAvatarUrl } from "@/lib/db/repos/users";
 import { createLogger } from "@/lib/logger/server";
-import { RemoteAssetError, safeFetch } from "@/lib/safe-fetch";
+import { SafeFetchError, safeFetch } from "@/lib/safe-fetch";
 
 const logger = createLogger({ source: "avatar-api" });
 
@@ -83,7 +83,7 @@ export async function GET(
     });
   } catch (err) {
     // Only infrastructure errors (DNS, private IP, size limits, etc.) are thrown
-    if (err instanceof RemoteAssetError) {
+    if (err instanceof SafeFetchError) {
       switch (err.code) {
         case "host_not_allowed":
         case "host_blocked":

@@ -6,14 +6,14 @@ import {
   withFetchErrorHandling,
 } from "./errors";
 
-// Mock RemoteAssetError
-class RemoteAssetError extends Error {
+// Mock SafeFetchError
+class SafeFetchError extends Error {
   constructor(
     public code: string,
     message: string,
   ) {
     super(message);
-    this.name = "RemoteAssetError";
+    this.name = "SafeFetchError";
   }
 }
 
@@ -36,35 +36,35 @@ describe("classifyFetchError", () => {
     });
   });
 
-  describe("RemoteAssetError", () => {
+  describe("SafeFetchError", () => {
     it("returns FatalError for permanent codes", () => {
-      const err = new RemoteAssetError("invalid_url", "Invalid URL");
+      const err = new SafeFetchError("invalid_url", "Invalid URL");
       const result = classifyFetchError(err);
       expect(FatalError.is(result)).toBe(true);
       expect(result.message).toContain("invalid_url");
     });
 
     it("returns FatalError for host_blocked", () => {
-      const err = new RemoteAssetError("host_blocked", "Host blocked");
+      const err = new SafeFetchError("host_blocked", "Host blocked");
       const result = classifyFetchError(err);
       expect(FatalError.is(result)).toBe(true);
     });
 
     it("returns FatalError for private_ip", () => {
-      const err = new RemoteAssetError("private_ip", "Private IP");
+      const err = new SafeFetchError("private_ip", "Private IP");
       const result = classifyFetchError(err);
       expect(FatalError.is(result)).toBe(true);
     });
 
     it("returns FatalError for dns_error (domain doesn't resolve)", () => {
-      // DNS errors from RemoteAssetError are permanent - the domain doesn't exist
-      const err = new RemoteAssetError("dns_error", "DNS lookup failed");
+      // DNS errors from SafeFetchError are permanent - the domain doesn't exist
+      const err = new SafeFetchError("dns_error", "DNS lookup failed");
       const result = classifyFetchError(err);
       expect(FatalError.is(result)).toBe(true);
     });
 
     it("returns RetryableError for invalid_response", () => {
-      const err = new RemoteAssetError("invalid_response", "Invalid response");
+      const err = new SafeFetchError("invalid_response", "Invalid response");
       const result = classifyFetchError(err);
       expect(RetryableError.is(result)).toBe(true);
     });
@@ -141,8 +141,8 @@ describe("getErrorClassification", () => {
     });
   });
 
-  it("returns fatal for permanent RemoteAssetErrors", () => {
-    const err = new RemoteAssetError("host_blocked", "Host blocked");
+  it("returns fatal for permanent SafeFetchErrors", () => {
+    const err = new SafeFetchError("host_blocked", "Host blocked");
     expect(getErrorClassification(err)).toEqual({
       type: "fatal",
       reason: "host_blocked",

@@ -1,7 +1,7 @@
 import * as ipaddr from "ipaddr.js";
+import { withTimeout } from "@/lib/async";
 import { USER_AGENT } from "@/lib/constants/app";
 import { isExpectedDnsError } from "@/lib/dns-utils";
-import { type FetchOptions, fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { dohLookup } from "@/lib/resolver";
 
@@ -15,38 +15,24 @@ const BLOCKED_SUFFIXES = [".local", ".internal", ".localhost"];
 const DEFAULT_MAX_BYTES = 15 * 1024 * 1024; // 15MB
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_MAX_REDIRECTS = 3;
-const DEFAULT_RETRIES = 0;
-const DEFAULT_BACKOFF_MS = 150;
 
-export type RemoteAssetErrorCode =
-  | "invalid_url"
-  | "protocol_not_allowed"
-  | "host_not_allowed"
-  | "host_blocked"
-  | "dns_error"
-  | "private_ip"
-  | "redirect_limit"
-  | "invalid_response"
-  | "size_exceeded";
-
-export class RemoteAssetError extends Error {
-  constructor(
-    public readonly code: RemoteAssetErrorCode,
-    message: string,
-    public readonly status?: number,
-  ) {
-    super(message);
-    this.name = "RemoteAssetError";
-  }
-}
-
-type BaseSafeFetchOptions = FetchOptions & {
+/**
+ * Options for safeFetch.
+ *
+ * Note: Retry logic is intentionally NOT included here. When used in workflow
+ * steps, the workflow SDK handles retries via error classification (FatalError
+ * vs RetryableError). For non-workflow code that needs retries, wrap the call
+ * with `withRetry` from `@/lib/async`.
+ */
+interface BaseSafeFetchOptions {
   /** Absolute URL, or relative to `currentUrl` when provided. */
   url: string | URL;
   /** Optional base URL used to resolve relative `url` values. */
   currentUrl?: string | URL;
   /** Additional headers (e.g., `User-Agent`). */
   headers?: HeadersInit;
+  /** Request timeout in milliseconds. */
+  timeoutMs?: number;
   /** Maximum bytes to buffer before aborting (or truncating if truncateOnLimit is true). */
   maxBytes?: number;
   /** Maximum redirects we will follow while re-checking the host. */
@@ -59,7 +45,7 @@ type BaseSafeFetchOptions = FetchOptions & {
   truncateOnLimit?: boolean;
   /** If true, return the redirect response (3xx) instead of throwing if the redirect target is not in allowedHosts. */
   returnOnDisallowedRedirect?: boolean;
-};
+}
 
 type SafeFetchOptionsWithGet = BaseSafeFetchOptions & {
   /** HTTP method to use (defaults to GET). */
@@ -73,9 +59,11 @@ type SafeFetchOptionsWithHead = BaseSafeFetchOptions & {
   fallbackToGetOnHeadFailure?: boolean;
 };
 
-type SafeFetchOptions = SafeFetchOptionsWithGet | SafeFetchOptionsWithHead;
+export type SafeFetchOptions =
+  | SafeFetchOptionsWithGet
+  | SafeFetchOptionsWithHead;
 
-interface SafeFetchResult {
+export interface SafeFetchResult {
   buffer: Buffer;
   contentType: string | null;
   finalUrl: string;
@@ -84,9 +72,42 @@ interface SafeFetchResult {
   headers: Record<string, string>;
 }
 
+type SafeFetchErrorCode =
+  | "invalid_url"
+  | "protocol_not_allowed"
+  | "host_not_allowed"
+  | "host_blocked"
+  | "dns_error"
+  | "private_ip"
+  | "redirect_limit"
+  | "invalid_response"
+  | "size_exceeded";
+
+export class SafeFetchError extends Error {
+  constructor(
+    public readonly code: SafeFetchErrorCode,
+    message: string,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = "SafeFetchError";
+  }
+}
+
 /**
  * Fetch a user-controlled asset while protecting against SSRF, redirect-based
  * host swapping, and unbounded memory usage.
+ *
+ * This function provides:
+ * - SSRF protection (blocks private IPs, validates DNS resolution)
+ * - Redirect following with host validation at each hop
+ * - Timeout handling per request
+ * - Byte limit enforcement (with optional truncation)
+ *
+ * Retry logic is intentionally NOT included. When used in workflow steps,
+ * throw FatalError or RetryableError based on the SafeFetchError code
+ * (see `lib/workflow/errors.ts` for classification helpers). For non-workflow
+ * code, wrap with `withRetry` from `@/lib/async` if needed.
  */
 export async function safeFetch(
   opts: SafeFetchOptions,
@@ -99,8 +120,6 @@ export async function safeFetch(
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
   const maxRedirects = opts.maxRedirects ?? DEFAULT_MAX_REDIRECTS;
-  const retries = opts.retries ?? DEFAULT_RETRIES;
-  const backoffMs = opts.backoffMs ?? DEFAULT_BACKOFF_MS;
   const allowHttp = opts.allowHttp ?? false;
   const truncateOnLimit = opts.truncateOnLimit ?? false;
   const fallbackToGetOnHeadFailure =
@@ -115,22 +134,23 @@ export async function safeFetch(
     // the hostname/IP vetting so redirects cannot smuggle us into a private net.
     await ensureUrlAllowed(currentUrl, { allowHttp, allowedHosts });
 
-    const response = await fetchWithTimeoutAndRetry(
-      currentUrl.toString(),
-      {
-        method,
-        headers: {
-          "User-Agent": USER_AGENT,
-          ...opts.headers,
-        },
-        redirect: "manual",
-      },
-      { timeoutMs, retries, backoffMs },
+    const response = await withTimeout(
+      (signal) =>
+        fetch(currentUrl.toString(), {
+          method,
+          headers: {
+            "User-Agent": USER_AGENT,
+            ...normalizeHeaders(opts.headers),
+          },
+          redirect: "manual",
+          signal,
+        }),
+      { timeoutMs },
     );
 
     if (isRedirect(response)) {
       if (redirectCount === maxRedirects) {
-        throw new RemoteAssetError(
+        throw new SafeFetchError(
           "redirect_limit",
           `Too many redirects fetching ${currentUrl.toString()}`,
         );
@@ -138,7 +158,7 @@ export async function safeFetch(
       // Follow the Location manually so we can validate the next host ourselves.
       const location = response.headers.get("location");
       if (!location) {
-        throw new RemoteAssetError(
+        throw new SafeFetchError(
           "invalid_response",
           "Redirect response missing Location header",
         );
@@ -199,7 +219,7 @@ export async function safeFetch(
           { url: currentUrl.toString(), declared, limit: maxBytes },
           "size exceeded",
         );
-        const error = new RemoteAssetError(
+        const error = new SafeFetchError(
           "size_exceeded",
           `Remote asset declared size ${declared} exceeds limit ${maxBytes}`,
         );
@@ -225,7 +245,7 @@ export async function safeFetch(
   }
 
   // Safety fallback - should be unreachable given loop logic
-  throw new RemoteAssetError("redirect_limit", "Exceeded redirect limit");
+  throw new SafeFetchError("redirect_limit", "Exceeded redirect limit");
 }
 
 function toUrl(input: string | URL, base?: string | URL): URL {
@@ -233,8 +253,26 @@ function toUrl(input: string | URL, base?: string | URL): URL {
   try {
     return base ? new URL(input, base) : new URL(input);
   } catch {
-    throw new RemoteAssetError("invalid_url", `Invalid URL: ${input}`);
+    throw new SafeFetchError("invalid_url", `Invalid URL: ${input}`);
   }
+}
+
+/**
+ * Normalize headers from various formats to a plain object.
+ */
+function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    const result: Record<string, string> = {};
+    headers.forEach((value, name) => {
+      result[name] = value;
+    });
+    return result;
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return headers;
 }
 
 /**
@@ -248,7 +286,7 @@ async function ensureUrlAllowed(
   const protocol = url.protocol.toLowerCase();
   // HTTPS is the default; only allow HTTP when explicitly opted-in.
   if (protocol !== "https:" && !(options.allowHttp && protocol === "http:")) {
-    throw new RemoteAssetError(
+    throw new SafeFetchError(
       "protocol_not_allowed",
       `Protocol ${protocol} not allowed`,
     );
@@ -256,7 +294,7 @@ async function ensureUrlAllowed(
 
   const hostname = url.hostname.trim().toLowerCase();
   if (!hostname) {
-    throw new RemoteAssetError("invalid_url", "URL missing hostname");
+    throw new SafeFetchError("invalid_url", "URL missing hostname");
   }
 
   if (
@@ -264,7 +302,7 @@ async function ensureUrlAllowed(
     BLOCKED_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
   ) {
     logger.warn({ url: url.toString() }, "blocked host");
-    throw new RemoteAssetError("host_blocked", `Host ${hostname} is blocked`);
+    throw new SafeFetchError("host_blocked", `Host ${hostname} is blocked`);
   }
 
   if (
@@ -272,7 +310,7 @@ async function ensureUrlAllowed(
     !options.allowedHosts.includes(hostname)
   ) {
     logger.warn({ url: url.toString() }, "blocked host");
-    throw new RemoteAssetError(
+    throw new SafeFetchError(
       "host_not_allowed",
       `Host ${hostname} is not in allow list`,
     );
@@ -281,10 +319,7 @@ async function ensureUrlAllowed(
   if (ipaddr.isValid(hostname)) {
     if (isBlockedIp(hostname)) {
       logger.warn({ url: url.toString() }, "blocked private ip");
-      throw new RemoteAssetError(
-        "private_ip",
-        `IP ${hostname} is not reachable`,
-      );
+      throw new SafeFetchError("private_ip", `IP ${hostname} is not reachable`);
     }
     return;
   }
@@ -304,7 +339,7 @@ async function ensureUrlAllowed(
         url: url.toString(),
       });
     }
-    throw new RemoteAssetError(
+    throw new SafeFetchError(
       "dns_error",
       err instanceof Error ? err.message : "DNS lookup failed",
     );
@@ -312,12 +347,12 @@ async function ensureUrlAllowed(
 
   if (!records || records.length === 0) {
     logger.debug({ url: url.toString() }, "lookup returned no records");
-    throw new RemoteAssetError("dns_error", "DNS lookup returned no records");
+    throw new SafeFetchError("dns_error", "DNS lookup returned no records");
   }
 
   if (records.some((record) => isBlockedIp(record.address))) {
     logger.warn({ url: url.toString() }, "blocked private ip");
-    throw new RemoteAssetError(
+    throw new SafeFetchError(
       "private_ip",
       `DNS for ${hostname} resolved to private address`,
     );
@@ -344,7 +379,7 @@ async function readBodyWithLimit(
       if (truncateOnLimit) {
         return buf.subarray(0, maxBytes);
       }
-      throw new RemoteAssetError(
+      throw new SafeFetchError(
         "size_exceeded",
         `Remote asset exceeded ${maxBytes} bytes`,
       );
@@ -383,7 +418,7 @@ async function readBodyWithLimit(
         }
 
         // Abort as soon as the limit is crossed to avoid buffering unbounded data.
-        throw new RemoteAssetError(
+        throw new SafeFetchError(
           "size_exceeded",
           `Remote asset exceeded ${maxBytes} bytes`,
         );

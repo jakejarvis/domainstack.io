@@ -1,6 +1,6 @@
 /* @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { type RemoteAssetError, safeFetch } from "@/lib/safe-fetch";
+import { type SafeFetchError, safeFetch } from "@/lib/safe-fetch";
 
 // Each test replaces the global fetch/DNS lookup so we can simulate edge cases deterministically.
 const fetchMock = vi.hoisted(() => vi.fn());
@@ -47,7 +47,7 @@ describe("safeFetch", () => {
       safeFetch({ url: "http://example.test/file.png" }),
     ).rejects.toMatchObject({
       code: "protocol_not_allowed",
-    } satisfies Partial<RemoteAssetError>);
+    } satisfies Partial<SafeFetchError>);
   });
 
   it("allows http URLs when allowHttp is true", async () => {
@@ -67,7 +67,7 @@ describe("safeFetch", () => {
       safeFetch({ url: "https://private.example/icon.png" }),
     ).rejects.toMatchObject({
       code: "private_ip",
-    } satisfies Partial<RemoteAssetError>);
+    } satisfies Partial<SafeFetchError>);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -112,7 +112,7 @@ describe("safeFetch", () => {
       }),
     ).rejects.toMatchObject({
       code: "size_exceeded",
-    } satisfies Partial<RemoteAssetError>);
+    } satisfies Partial<SafeFetchError>);
   });
 
   it("truncates content when truncateOnLimit is true and size exceeded", async () => {
