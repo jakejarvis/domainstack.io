@@ -3,19 +3,17 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginContent } from "@/components/auth/login-content";
 import { LoginSkeleton } from "@/components/auth/login-skeleton";
-import { Modal } from "@/components/ui/modal";
+import { Modal, ModalContent } from "@/components/ui/modal";
 import { auth } from "@/lib/auth";
 
 export default function InterceptedLoginPage() {
   return (
-    <Modal
-      title="Sign In"
-      description="Sign in to track your domains and receive health alerts."
-      className="!max-w-md p-5"
-    >
-      <Suspense fallback={<LoginSkeleton />}>
-        <AuthorizedLoginContent />
-      </Suspense>
+    <Modal>
+      <ModalContent className="!max-w-md px-5 py-6">
+        <Suspense fallback={<LoginSkeleton />}>
+          <AuthorizedLoginContent />
+        </Suspense>
+      </ModalContent>
     </Modal>
   );
 }

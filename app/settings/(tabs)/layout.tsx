@@ -2,11 +2,7 @@ import { GearIcon } from "@phosphor-icons/react/ssr";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { Card } from "@/components/ui/card";
 
-export default function SettingsTabsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsTabsLayout() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -19,13 +15,8 @@ export default function SettingsTabsLayout({
         </p>
       </div>
 
-      <Card className="overflow-hidden p-3">
-        <SettingsTabsRouter
-          navigationMode="page"
-          className="space-y-3"
-          panelsClassName="p-3"
-        />
-        {children}
+      <Card className="overflow-hidden p-3 [&_[data-slot=tabs-content]]:mt-2 [&_[data-slot=tabs-content]]:p-2">
+        <SettingsTabsRouter navigationMode="page" />
       </Card>
     </div>
   );

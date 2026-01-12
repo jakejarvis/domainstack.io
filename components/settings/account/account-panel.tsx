@@ -28,11 +28,7 @@ import { linkSocial, unlinkAccount } from "@/lib/auth-client";
 import { getEnabledProviders, type OAuthProvider } from "@/lib/oauth";
 import { useTRPC } from "@/lib/trpc/client";
 
-interface AccountPanelProps {
-  className?: string;
-}
-
-export function AccountPanel({ className }: AccountPanelProps) {
+export function AccountPanel() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
@@ -155,25 +151,23 @@ export function AccountPanel({ className }: AccountPanelProps) {
     : null;
 
   if (linkedAccountsQuery.isLoading) {
-    return <LinkedAccountsSkeleton className={className} />;
+    return <LinkedAccountsSkeleton />;
   }
 
   if (linkedAccountsQuery.isError) {
     return (
-      <div className={className}>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle>Providers</CardTitle>
-          <CardDescription className="text-destructive">
-            Failed to load providers
-          </CardDescription>
-        </CardHeader>
-      </div>
+      <CardHeader className="px-0 pt-0 pb-2">
+        <CardTitle>Providers</CardTitle>
+        <CardDescription className="text-destructive">
+          Failed to load providers
+        </CardDescription>
+      </CardHeader>
     );
   }
 
   return (
     <>
-      <div className={className}>
+      <div className="max-w-full overflow-x-hidden">
         <CardHeader className="px-0 pt-0 pb-2">
           <CardTitle className="mb-1 flex items-center gap-2 leading-none">
             <FingerprintIcon className="size-4.5" />

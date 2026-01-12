@@ -330,7 +330,6 @@ export function AddDomainContent({
               />
               <TooltipContent sideOffset={6}>Done!</TooltipContent>
             </Tooltip>
-            <StepperSeparator />
           </StepperItem>
         </StepperNav>
 

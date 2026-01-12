@@ -31,11 +31,7 @@ import {
 import { useTRPC } from "@/lib/trpc/client";
 import type { UserNotificationPreferences } from "@/lib/types/notifications";
 
-interface NotificationsPanelProps {
-  className?: string;
-}
-
-export function NotificationsPanel({ className }: NotificationsPanelProps) {
+export function NotificationsPanel() {
   const { data: session } = useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -239,17 +235,15 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
 
   if (domainsQuery.isError || globalPrefsQuery.isError) {
     return (
-      <div>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <BellSimpleIcon className="size-4.5" />
-            Notification Preferences
-          </CardTitle>
-          <CardDescription className="text-destructive">
-            Failed to load notification settings
-          </CardDescription>
-        </CardHeader>
-      </div>
+      <CardHeader className="px-0 pt-0 pb-2">
+        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+          <BellSimpleIcon className="size-4.5" />
+          Notification Preferences
+        </CardTitle>
+        <CardDescription className="text-destructive">
+          Failed to load notification settings
+        </CardDescription>
+      </CardHeader>
     );
   }
 
@@ -278,7 +272,7 @@ export function NotificationsPanel({ className }: NotificationsPanelProps) {
     resetDomainMutation.isPending;
 
   return (
-    <div className={className}>
+    <div className="max-w-full overflow-x-hidden">
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
           <GlobeIcon className="size-4.5" />

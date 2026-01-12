@@ -22,11 +22,7 @@ import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { cn } from "@/lib/utils";
 
-interface SubscriptionPanelProps {
-  className?: string;
-}
-
-export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
+export function SubscriptionPanel() {
   // Subscription query and hooks
   const {
     subscription,
@@ -38,27 +34,25 @@ export function SubscriptionPanel({ className }: SubscriptionPanelProps) {
   } = useSubscription();
 
   if (isSubscriptionLoading) {
-    return <SubscriptionSkeleton className={className} />;
+    return <SubscriptionSkeleton />;
   }
 
   if (isSubscriptionError) {
     return (
-      <div className={className}>
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <GaugeIcon className="size-4.5" />
-            Plan
-          </CardTitle>
-          <CardDescription className="text-destructive">
-            Failed to load subscription information
-          </CardDescription>
-        </CardHeader>
-      </div>
+      <CardHeader className="px-0 pt-0 pb-2">
+        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
+          <GaugeIcon className="size-4.5" />
+          Plan
+        </CardTitle>
+        <CardDescription className="text-destructive">
+          Failed to load subscription information
+        </CardDescription>
+      </CardHeader>
     );
   }
 
   return (
-    <div className={className}>
+    <div className="max-w-full overflow-x-hidden">
       <CardHeader className="px-0 pt-0 pb-2">
         <CardTitle className="mb-1 flex items-center gap-2 leading-none">
           <GaugeIcon className="size-4.5" />

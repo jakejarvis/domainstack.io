@@ -104,15 +104,9 @@ function SettingsPanels({ className }: { className?: string }) {
 
 export function SettingsTabsRouter({
   navigationMode,
-  className,
-  tabsListClassName,
-  panelsClassName,
   tabsListPortalId,
 }: {
   navigationMode: "page" | "modal";
-  className?: string;
-  tabsListClassName?: string;
-  panelsClassName?: string;
   tabsListPortalId?: string;
 }) {
   const router = useRouter();
@@ -187,20 +181,13 @@ export function SettingsTabsRouter({
 
   return (
     <div ref={tabsRootRef}>
-      <Tabs
-        value={activeTab}
-        onValueChange={onValueChange}
-        className={cn("w-full", className)}
-      >
+      <Tabs value={activeTab} onValueChange={onValueChange}>
         {tabsListPortalTarget ? (
-          createPortal(
-            <SettingsTabsList className={tabsListClassName} />,
-            tabsListPortalTarget,
-          )
+          createPortal(<SettingsTabsList />, tabsListPortalTarget)
         ) : (
-          <SettingsTabsList className={tabsListClassName} />
+          <SettingsTabsList />
         )}
-        <SettingsPanels className={panelsClassName} />
+        <SettingsPanels />
       </Tabs>
     </div>
   );

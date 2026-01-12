@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AddDomainModalClient } from "@/components/dashboard/add-domain/add-domain-modal-client";
 import { AddDomainSkeleton } from "@/components/dashboard/add-domain/add-domain-skeleton";
-import { Modal } from "@/components/ui/modal";
+import { Modal, ModalContent } from "@/components/ui/modal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { auth } from "@/lib/auth";
 
 export default function InterceptedAddDomainPage({
@@ -12,14 +13,14 @@ export default function InterceptedAddDomainPage({
   searchParams: Promise<{ domain?: string }>;
 }) {
   return (
-    <Modal
-      title="Add Domain"
-      description="Track and monitor your domain"
-      className="p-5"
-    >
-      <Suspense fallback={<AddDomainSkeleton />}>
-        <AuthorizedAddDomainContent searchParams={searchParams} />
-      </Suspense>
+    <Modal>
+      <ModalContent>
+        <ScrollArea className="min-h-0 flex-1 p-5">
+          <Suspense fallback={<AddDomainSkeleton />}>
+            <AuthorizedAddDomainContent searchParams={searchParams} />
+          </Suspense>
+        </ScrollArea>
+      </ModalContent>
     </Modal>
   );
 }

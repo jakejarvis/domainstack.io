@@ -3,7 +3,14 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
 import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
-import { Modal } from "@/components/ui/modal";
+import {
+  Modal,
+  ModalContent,
+  ModalDescription,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui/modal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { auth } from "@/lib/auth";
 
 function SettingsSkeleton() {
@@ -14,34 +21,28 @@ function SettingsSkeleton() {
   );
 }
 
-export default function SettingsModalLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsModalLayout() {
   return (
-    <Modal
-      title="Settings"
-      description="Manage your subscription, notifications, and account preferences."
-      showHeader
-      className="pt-1"
-      headerSlotId="settings-modal-tabs"
-      headerSlotClassName="mt-2"
-    >
-      <Suspense fallback={<SettingsSkeleton />}>
-        <AuthorizedSettingsModalLayout>
-          {children}
-        </AuthorizedSettingsModalLayout>
-      </Suspense>
+    <Modal>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Settings</ModalTitle>
+          <ModalDescription>
+            Manage your subscription, notifications, and account preferences.
+          </ModalDescription>
+          <div id="settings-modal-tabs" className="mt-2 min-h-[1px]" />
+        </ModalHeader>
+        <ScrollArea className="min-h-0 flex-1 p-5">
+          <Suspense fallback={<SettingsSkeleton />}>
+            <AuthorizedSettingsModalLayout />
+          </Suspense>
+        </ScrollArea>
+      </ModalContent>
     </Modal>
   );
 }
 
-async function AuthorizedSettingsModalLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function AuthorizedSettingsModalLayout() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -51,14 +52,9 @@ async function AuthorizedSettingsModalLayout({
   }
 
   return (
-    <>
-      <SettingsTabsRouter
-        navigationMode="modal"
-        tabsListPortalId="settings-modal-tabs"
-        tabsListClassName="h-auto"
-        panelsClassName="p-6"
-      />
-      {children}
-    </>
+    <SettingsTabsRouter
+      navigationMode="modal"
+      tabsListPortalId="settings-modal-tabs"
+    />
   );
 }

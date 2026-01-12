@@ -56,7 +56,6 @@ export function DashboardTableColumnMenu<TData>({
     <DropdownMenu>
       <Tooltip>
         <DropdownMenuTrigger
-          nativeButton={false}
           render={
             <TooltipTrigger
               render={
