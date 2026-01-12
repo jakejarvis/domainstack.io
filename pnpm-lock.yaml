@@ -121,8 +121,8 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1(next@16.1.1(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))
       ical-generator:
-        specifier: 10.0.1-develop.11
-        version: 10.0.1-develop.11(@types/node@25.0.5)
+        specifier: 10.0.1-develop.12
+        version: 10.0.1-develop.12(@types/node@25.0.5)
       icojs:
         specifier: ^0.20.1
         version: 0.20.1(@jimp/custom@0.22.12)
@@ -5316,8 +5316,8 @@ packages:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
     engines: {node: '>= 14'}
 
-  ical-generator@10.0.1-develop.11:
-    resolution: {integrity: sha512-KFouT6Dhu/audKdvqnl/QW5oLdFh7CPXYNXB0NINhrV7xPPwh5KvgDDvu60BbSzhoiTsCeKjVQCt49hdACMXnw==}
+  ical-generator@10.0.1-develop.12:
+    resolution: {integrity: sha512-uH9egCNirLsV5d7avG6st0OA7Vla8cQDbsv3P7/Co0ueLrTur4GnXoxH4iopwcjNgWK1vn7kYOWz0NO4p98qWg==}
     engines: {node: 20 || 22 || >=24}
     peerDependencies:
       '@touch4it/ical-timezones': '>=1.6.0'
@@ -12877,7 +12877,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ical-generator@10.0.1-develop.11(@types/node@25.0.5):
+  ical-generator@10.0.1-develop.12(@types/node@25.0.5):
     optionalDependencies:
       '@types/node': 25.0.5
 
