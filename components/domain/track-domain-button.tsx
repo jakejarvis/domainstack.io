@@ -73,7 +73,7 @@ export function TrackDomainButton({
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" size="sm" disabled>
+      <Button variant="outline" disabled>
         <Spinner />
       </Button>
     );
@@ -87,7 +87,6 @@ export function TrackDomainButton({
           render={
             <Button
               variant="outline"
-              size="sm"
               nativeButton={false}
               render={
                 <Link href="/dashboard">
@@ -127,13 +126,12 @@ export function TrackDomainButton({
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button variant="outline" size="sm" onClick={handleButtonClick}>
+            <Button variant="outline" onClick={handleButtonClick}>
               {buttonContent}
             </Button>
           ) : (
             <Button
               variant="outline"
-              size="sm"
               nativeButton={false}
               render={
                 <Link href="/login" scroll={false}>

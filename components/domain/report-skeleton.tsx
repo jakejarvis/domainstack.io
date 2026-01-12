@@ -18,7 +18,6 @@ function HeaderSkeleton() {
       <div className="flex min-w-0 items-center gap-2">
         <Skeleton className="size-5 shrink-0 rounded-xs" />
         <Skeleton className="h-5 w-38 rounded-sm" />
-        <Skeleton className="size-3.5 rounded-xs" />
       </div>
 
       {/* Right: Track button + Export button + Tools dropdown */}
@@ -48,7 +47,7 @@ function SectionNavSkeleton() {
         // Mobile: claims top edge
         "top-0",
         // Desktop: below sticky global header
-        "md:top-[var(--header-height,80px)]",
+        "md:top-[var(--header-height,72px)]",
       )}
     >
       <div

@@ -177,7 +177,7 @@ export function NotificationsPopover() {
                   className="relative"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
-                  <BellSimpleIcon />
+                  <BellSimpleIcon weight="bold" />
                   {count > 0 && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"

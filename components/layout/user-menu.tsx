@@ -104,7 +104,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/dashboard">
-              <LayoutIcon />
+              <LayoutIcon weight="bold" />
               Dashboard
             </Link>
           }
@@ -113,7 +113,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/settings" scroll={false}>
-              <FadersHorizontalIcon />
+              <FadersHorizontalIcon weight="bold" />
               Settings
             </Link>
           }
@@ -121,12 +121,16 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
         <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          {theme === "dark" ? (
+            <SunIcon weight="bold" />
+          ) : (
+            <MoonIcon weight="bold" />
+          )}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          <SignOutIcon className="text-danger-foreground" />
+          <SignOutIcon weight="bold" className="text-danger-foreground" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

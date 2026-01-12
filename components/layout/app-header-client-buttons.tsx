@@ -62,7 +62,7 @@ export function AppHeaderClientButtons() {
                 nativeButton={false}
                 render={
                   <Link href="/dashboard">
-                    <LayoutIcon />
+                    <LayoutIcon weight="bold" />
                     <span className="sr-only">Dashboard</span>
                   </Link>
                 }
@@ -86,13 +86,17 @@ export function AppHeaderClientButtons() {
         <DropdownMenuTrigger
           render={
             <Button variant="ghost" size="icon-sm" aria-label="Menu">
-              <ListIcon />
+              <ListIcon weight="bold" />
             </Button>
           }
         />
         <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            {theme === "dark" ? (
+              <SunIcon weight="bold" />
+            ) : (
+              <MoonIcon weight="bold" />
+            )}
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -100,7 +104,7 @@ export function AppHeaderClientButtons() {
             nativeButton={false}
             render={
               <Link href="/login" scroll={false}>
-                <SignInIcon />
+                <SignInIcon weight="bold" />
                 Sign In
               </Link>
             }
@@ -122,8 +126,14 @@ export function AppHeaderClientButtons() {
               size="sm"
               onClick={toggleTheme}
             >
-              <SunIcon className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <MoonIcon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <SunIcon
+                weight="bold"
+                className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+              />
+              <MoonIcon
+                weight="bold"
+                className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+              />
               <span className="sr-only">Toggle theme</span>
             </Button>
           }

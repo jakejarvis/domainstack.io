@@ -152,7 +152,7 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <Button variant="outline" aria-label="Open menu" size="icon-sm">
+                <Button variant="outline" aria-label="Open menu" size="icon">
                   <DotsThreeVerticalIcon weight="bold" />
                   <span className="sr-only">Open tools menu</span>
                 </Button>

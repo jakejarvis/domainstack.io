@@ -3,11 +3,11 @@
  *
  * These are the single source of truth for layout dimensions.
  * CSS variables are injected at runtime via useLayoutCSSVariables hook.
- * Tailwind classes use fallback values for SSR: var(--header-height, 80px)
+ * Tailwind classes use fallback values for SSR: var(--header-height, 72px)
  */
 
 /** Global app header height in pixels */
-export const HEADER_HEIGHT = 80;
+export const HEADER_HEIGHT = 72;
 
 /** Section navigation bar height in pixels */
 export const SECTION_NAV_HEIGHT = 48;

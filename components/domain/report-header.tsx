@@ -57,7 +57,7 @@ export function DomainReportHeader({
             {domain}
           </h2>
           <CameraIcon
-            className="ml-0.5 size-4 flex-shrink-0 text-foreground/65"
+            className="mr-3 ml-0.5 size-3.5 flex-shrink-0 text-foreground/65"
             aria-hidden
           />
         </a>

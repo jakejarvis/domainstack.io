@@ -50,7 +50,7 @@ export function ReportSection({
       id={computedSlug}
       aria-labelledby={headerId}
       // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
-      className="scroll-mt-[calc(var(--section-nav-height,48px)+var(--scroll-padding,16px))] border-none md:scroll-mt-[calc(var(--header-height,80px)+var(--section-nav-height,48px)+var(--scroll-padding,16px))]"
+      className="scroll-mt-[calc(var(--section-nav-height,48px)+var(--scroll-padding,16px))] border-none md:scroll-mt-[calc(var(--header-height,72px)+var(--section-nav-height,48px)+var(--scroll-padding,16px))]"
     >
       <Card
         className="relative gap-0 overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"

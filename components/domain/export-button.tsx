@@ -16,12 +16,7 @@ export function ExportButton({ disabled, onExport }: ExportButtonProps) {
     <Tooltip>
       <TooltipTrigger
         render={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExport}
-            disabled={disabled}
-          >
+          <Button variant="outline" onClick={onExport} disabled={disabled}>
             <DownloadSimpleIcon className="sm:text-muted-foreground" />
             <span className="hidden sm:inline-block">Export</span>
           </Button>

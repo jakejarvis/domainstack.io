@@ -68,10 +68,10 @@ export function SectionNav({
         isPastThreshold
           ? isGlobalHeaderHidden
             ? "top-0 transition-[top] duration-300 ease-out"
-            : "top-[var(--header-height,80px)] transition-[top] duration-300 ease-out"
+            : "top-[var(--header-height,72px)] transition-[top] duration-300 ease-out"
           : "top-0",
         // Desktop: always below sticky global header (no mobile behavior)
-        "md:!top-[var(--header-height,80px)] md:!transition-none",
+        "md:!top-[var(--header-height,72px)] md:!transition-none",
       )}
     >
       <div

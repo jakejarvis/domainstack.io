@@ -23,7 +23,7 @@ function injectCssVariables(): void {
  * while still allowing Tailwind classes to use CSS variables.
  *
  * Tailwind classes should include fallback values for SSR:
- * `h-[var(--header-height,80px)]` instead of `h-[var(--header-height)]`
+ * `h-[var(--header-height,72px)]` instead of `h-[var(--header-height)]`
  *
  * @example
  * // In app/providers.tsx or root layout
