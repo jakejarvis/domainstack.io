@@ -88,7 +88,7 @@ async function processAndStore(
 ): Promise<{ success: true; url: string } | { success: false }> {
   "use step";
 
-  const { optimizeImageCover } = await import("@/lib/image");
+  const { convertBufferToImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
@@ -97,12 +97,13 @@ async function processAndStore(
   const logger = createLogger({ source: "provider-logo-workflow" });
 
   try {
-    // 1. Process image
+    // 1. Process image (handles ICO files with icojs fallback)
     const inputBuffer = Buffer.from(imageBase64, "base64");
-    const processedBuffer = await optimizeImageCover(
+    const processedBuffer = await convertBufferToImageCover(
       inputBuffer,
       DEFAULT_SIZE,
       DEFAULT_SIZE,
+      null, // contentType - let sharp/icojs detect
     );
 
     if (!processedBuffer || processedBuffer.length === 0) {
