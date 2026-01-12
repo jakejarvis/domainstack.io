@@ -11,21 +11,55 @@ import {
 } from "vitest";
 
 // Hoist mocks for dns-utils (DoH providers)
-const dnsUtilsMock = vi.hoisted(() => ({
-  providerOrderForLookup: vi.fn(() => [
-    { key: "cloudflare", name: "Cloudflare" },
-    { key: "google", name: "Google" },
-  ]),
-  queryDohProvider: vi.fn(),
-  DNS_TYPE_NUMBERS: {
-    A: 1,
-    AAAA: 28,
-    MX: 15,
-    TXT: 16,
-    NS: 2,
-  },
-  DOH_PROVIDERS: {},
-}));
+// Import actual implementations for deduplication functions
+const dnsUtilsMock = vi.hoisted(() => {
+  // Replicate the actual deduplication logic for tests
+  function makeDnsRecordKey(
+    type: string,
+    name: string,
+    value: string,
+    priority: number | null | undefined,
+  ): string {
+    const priorityPart = priority != null ? `|${priority}` : "";
+    const normalizedName = name.trim().toLowerCase();
+    const normalizedValue =
+      type === "TXT" ? value.trim() : value.trim().toLowerCase();
+    return `${type}|${normalizedName}|${normalizedValue}${priorityPart}`;
+  }
+
+  function deduplicateDnsRecords<
+    T extends { type: string; name: string; value: string; priority?: number },
+  >(records: T[]): T[] {
+    const seen = new Set<string>();
+    const deduplicated: T[] = [];
+    for (const r of records) {
+      const key = makeDnsRecordKey(r.type, r.name, r.value, r.priority);
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(r);
+      }
+    }
+    return deduplicated;
+  }
+
+  return {
+    providerOrderForLookup: vi.fn(() => [
+      { key: "cloudflare", name: "Cloudflare" },
+      { key: "google", name: "Google" },
+    ]),
+    queryDohProvider: vi.fn(),
+    DNS_TYPE_NUMBERS: {
+      A: 1,
+      AAAA: 28,
+      MX: 15,
+      TXT: 16,
+      NS: 2,
+    },
+    DOH_PROVIDERS: {},
+    makeDnsRecordKey,
+    deduplicateDnsRecords,
+  };
+});
 
 vi.mock("@/lib/dns-utils", () => dnsUtilsMock);
 

@@ -10,6 +10,7 @@ import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import {
   DNS_TYPE_NUMBERS,
+  deduplicateDnsRecords,
   providerOrderForLookup,
   queryDohProvider,
 } from "@/lib/dns-utils";
@@ -228,22 +229,6 @@ export async function lookupAndPersistDns(
 }
 
 // Helper functions
-function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
-  const seen = new Set<string>();
-  const deduplicated: DnsRecord[] = [];
-
-  for (const r of records) {
-    const priorityPart = r.priority != null ? `|${r.priority}` : "";
-    const key = `${r.type}|${r.name.trim().toLowerCase()}|${r.value.trim().toLowerCase()}${priorityPart}`;
-
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduplicated.push(r);
-    }
-  }
-
-  return deduplicated;
-}
 
 function sortDnsRecordsByType(
   records: DnsRecord[],

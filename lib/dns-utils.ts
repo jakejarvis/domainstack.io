@@ -1,5 +1,50 @@
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { simpleHash } from "@/lib/simple-hash";
+import type { DnsRecord } from "@/lib/types/domain/dns";
+
+// ============================================================================
+// DNS Record Utilities
+// ============================================================================
+
+/**
+ * Generate a unique key for a DNS record.
+ * TXT records preserve case for values (e.g., verification tokens).
+ * All other record types normalize values to lowercase.
+ * Names (hostnames) are always normalized to lowercase per RFC 1035.
+ */
+export function makeDnsRecordKey(
+  type: string,
+  name: string,
+  value: string,
+  priority: number | null | undefined,
+): string {
+  const priorityPart = priority != null ? `|${priority}` : "";
+  const normalizedName = name.trim().toLowerCase();
+  // TXT values preserve case; all others normalize to lowercase
+  const normalizedValue =
+    type === "TXT" ? value.trim() : value.trim().toLowerCase();
+  return `${type}|${normalizedName}|${normalizedValue}${priorityPart}`;
+}
+
+/**
+ * Deduplicate DNS records.
+ * Uses case-sensitive comparison for TXT values, case-insensitive for others.
+ */
+export function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
+  const seen = new Set<string>();
+  const deduplicated: DnsRecord[] = [];
+
+  for (const r of records) {
+    const key = makeDnsRecordKey(r.type, r.name, r.value, r.priority);
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduplicated.push(r);
+    }
+  }
+
+  return deduplicated;
+}
 
 // ============================================================================
 // DNS-over-HTTPS (DoH) providers

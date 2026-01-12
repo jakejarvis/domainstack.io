@@ -5,6 +5,7 @@ import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
+import { deduplicateDnsRecords, makeDnsRecordKey } from "@/lib/dns-utils";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 import { findDomainByName } from "./domains";
 
@@ -24,26 +25,6 @@ export interface UpsertDnsParams {
       >
     >
   >;
-}
-
-/**
- * Generate a unique key for a DNS record.
- * TXT records preserve case for values (e.g., verification tokens).
- * All other record types normalize values to lowercase.
- * Names (hostnames) are always normalized to lowercase per RFC 1035.
- */
-function makeDnsRecordKey(
-  type: string,
-  name: string,
-  value: string,
-  priority: number | null,
-): string {
-  const priorityPart = priority != null ? `|${priority}` : "";
-  const normalizedName = name.trim().toLowerCase();
-  // TXT values preserve case; all others normalize to lowercase
-  const normalizedValue =
-    type === "TXT" ? value.trim() : value.trim().toLowerCase();
-  return `${type}|${normalizedName}|${normalizedValue}${priorityPart}`;
 }
 
 export async function replaceDns(params: UpsertDnsParams) {
@@ -217,22 +198,6 @@ export async function getDnsCached(
 }
 
 // Helper functions for getDnsCached
-function deduplicateDnsRecords(records: DnsRecord[]): DnsRecord[] {
-  const seen = new Set<string>();
-  const deduplicated: DnsRecord[] = [];
-
-  for (const r of records) {
-    const priorityPart = r.priority != null ? `|${r.priority}` : "";
-    const key = `${r.type}|${r.name.trim().toLowerCase()}|${r.value.trim().toLowerCase()}${priorityPart}`;
-
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduplicated.push(r);
-    }
-  }
-
-  return deduplicated;
-}
 
 function sortDnsRecordsByType(
   records: DnsRecord[],
