@@ -13,14 +13,12 @@ let nextConfig: NextConfig = {
   },
   productionBrowserSourceMaps: true,
   serverExternalPackages: [
-    "@silvia-odwyer/photon-node",
     // https://github.com/resend/react-email/issues/2426
     "prettier",
   ],
   outputFileTracingIncludes: {
     "/.well-known/workflow/**/step": [
       "node_modules/@sparticuz/chromium/bin/**",
-      "node_modules/@silvia-odwyer/photon-node/**",
     ],
   },
   logging: {
