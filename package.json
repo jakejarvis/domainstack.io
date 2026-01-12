@@ -69,7 +69,7 @@
     "image-size": "^2.0.2",
     "inngest": "^3.49.1",
     "ipaddr.js": "^2.3.0",
-    "maplibre-gl": "^5.15.0",
+    "maplibre-gl": "^5.16.0",
     "media-chrome": "^4.17.2",
     "motion": "^12.25.0",
     "ms": "3.0.0-canary.202508261828",
