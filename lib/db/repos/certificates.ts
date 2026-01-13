@@ -16,6 +16,7 @@ import type {
 } from "@/lib/types/domain/certificates";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 import { findDomainByName } from "./domains";
+import type { CacheResult } from "./types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
 
@@ -52,18 +53,17 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
 }
 
 /**
- * Get cached certificates for a domain if fresh.
- * Returns null if cache miss or stale.
+ * Get cached certificates for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getCertificatesCached(
+export async function getCertificates(
   domain: string,
-): Promise<CertificatesResponse | null> {
-  const now = new Date();
-  const nowMs = now.getTime();
+): Promise<CacheResult<CertificatesResponse>> {
+  const nowMs = Date.now();
 
   const existingDomain = await findDomainByName(domain);
   if (!existingDomain) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
   const existing = await db
@@ -84,16 +84,20 @@ export async function getCertificatesCached(
     .orderBy(certificates.validTo);
 
   if (existing.length === 0) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
-  const fresh = existing.every((c) => (c.expiresAt?.getTime?.() ?? 0) > nowMs);
+  // Find the earliest expiration across all certificates
+  const earliestExpiresAt = existing.reduce<Date | null>((earliest, c) => {
+    if (!c.expiresAt) return earliest;
+    if (!earliest) return c.expiresAt;
+    return c.expiresAt < earliest ? c.expiresAt : earliest;
+  }, null);
 
-  if (!fresh) {
-    return null;
-  }
+  // Check if ANY certificate is stale
+  const stale = existing.some((c) => (c.expiresAt?.getTime?.() ?? 0) <= nowMs);
 
-  const certs: Certificate[] = existing.map((c) => ({
+  const chained: Certificate[] = existing.map((c) => ({
     issuer: c.issuer,
     subject: c.subject,
     altNames: safeAltNamesArray(c.altNames),
@@ -106,7 +110,11 @@ export async function getCertificatesCached(
     },
   }));
 
-  return { certificates: certs };
+  return {
+    data: { certificates: chained },
+    stale,
+    expiresAt: earliestExpiresAt,
+  };
 }
 
 function safeAltNamesArray(value: unknown): string[] {

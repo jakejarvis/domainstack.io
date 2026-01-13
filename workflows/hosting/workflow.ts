@@ -2,6 +2,7 @@ import { FatalError } from "workflow";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface HostingWorkflowInput {
   domain: string;
@@ -17,16 +18,7 @@ export interface HostingWorkflowInput {
   headers: Header[];
 }
 
-export type HostingWorkflowResult =
-  | {
-      success: true;
-      data: HostingResponse;
-    }
-  | {
-      success: false;
-      error: string;
-      data: HostingResponse | null;
-    };
+export type HostingWorkflowResult = WorkflowResult<HostingResponse>;
 
 // Internal types for step-to-step transfer
 interface GeoIpResult {
@@ -146,14 +138,11 @@ async function persistHostingStep(
   "use step";
 
   const { persistHostingData } = await import("@/lib/domain/hosting-lookup");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "hosting-workflow" });
-
   try {
     await persistHostingData(domain, providers, geo);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist hosting data");
-    throw new FatalError("Failed to persist hosting data");
+    throw new FatalError(
+      `Failed to persist hosting data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

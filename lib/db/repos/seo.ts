@@ -11,6 +11,7 @@ import type {
   TwitterMeta,
 } from "@/lib/types/domain/seo";
 import { findDomainByName } from "./domains";
+import type { CacheResult } from "./types";
 
 type SeoInsert = InferInsertModel<typeof seoTable>;
 
@@ -22,21 +23,21 @@ export async function upsertSeo(params: SeoInsert) {
 }
 
 /**
- * Get cached SEO data for a domain if fresh.
- * Returns null if cache miss or stale.
+ * Get cached SEO data for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getSeoCached(
+export async function getSeo(
   domain: string,
-): Promise<SeoResponse | null> {
+): Promise<CacheResult<SeoResponse>> {
   const nowMs = Date.now();
 
   const existingDomain = await findDomainByName(domain);
 
   if (!existingDomain) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
-  const existing = await db
+  const [row] = await db
     .select({
       sourceFinalUrl: seoTable.sourceFinalUrl,
       sourceStatus: seoTable.sourceStatus,
@@ -55,10 +56,12 @@ export async function getSeoCached(
     .from(seoTable)
     .where(eq(seoTable.domainId, existingDomain.id));
 
-  const [row] = existing;
-  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
-    return null;
+  if (!row) {
+    return { data: null, stale: false, expiresAt: null };
   }
+
+  const { expiresAt } = row;
+  const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
 
   // Check blocklist for cached OG images
   const { isDomainBlocked } = await import("./blocked-domains");
@@ -97,5 +100,5 @@ export async function getSeoCached(
     errors: row.errors as { html?: string; robots?: string },
   };
 
-  return response;
+  return { data: response, stale, expiresAt };
 }

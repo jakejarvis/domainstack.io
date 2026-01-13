@@ -9,7 +9,7 @@ import { getUserById } from "@/lib/db/repos/users";
 import { createLogger } from "@/lib/logger/server";
 import { sendEmail } from "@/lib/resend";
 
-const logger = createLogger({ source: "polar-emails" });
+const logger = createLogger({ source: "polar/emails" });
 
 /**
  * Safely extract first name from a name string.

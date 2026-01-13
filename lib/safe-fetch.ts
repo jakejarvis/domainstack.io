@@ -5,7 +5,7 @@ import { isExpectedDnsError } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { dohLookup } from "@/lib/resolver";
 
-const logger = createLogger({ source: "remote-asset" });
+const logger = createLogger({ source: "safe-fetch" });
 
 // Hosts that should never be fetched regardless of DNS (fast path).
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);

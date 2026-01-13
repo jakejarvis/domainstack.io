@@ -18,7 +18,7 @@ import { db } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "notifications" });
+const logger = createLogger({ source: "db/repos/notifications" });
 
 export interface CreateNotificationParams {
   userId: string;

@@ -35,7 +35,7 @@ import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { ProviderInfo } from "@/lib/types/provider";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
-const logger = createLogger({ source: "tracked-domains" });
+const logger = createLogger({ source: "db/repos/tracked-domains" });
 
 export interface CreateTrackedDomainParams {
   userId: string;

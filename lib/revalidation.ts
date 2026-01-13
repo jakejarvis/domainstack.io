@@ -18,7 +18,7 @@ import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "schedule" });
+const logger = createLogger({ source: "revalidation" });
 
 /**
  * Get the base revalidation interval (in seconds) for a section.

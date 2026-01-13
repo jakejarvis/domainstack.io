@@ -1,7 +1,7 @@
 import "server-only";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "workflow-deduplication" });
+const logger = createLogger({ source: "workflow/deduplication" });
 
 /**
  * In-memory map of pending workflow runs, keyed by workflow+input hash.

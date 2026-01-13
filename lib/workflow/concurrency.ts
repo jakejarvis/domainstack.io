@@ -2,7 +2,7 @@ import "server-only";
 import { WorkflowAPIError } from "workflow/internal/errors";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "workflow-concurrency" });
+const logger = createLogger({ source: "workflow/concurrency" });
 
 /**
  * HTTP status code for conflict errors (concurrent step execution)

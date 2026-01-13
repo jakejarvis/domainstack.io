@@ -391,9 +391,6 @@ async function handleRegistrationChange(
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "monitor-domain-workflow" });
 
   const { shouldSendEmail, shouldSendInApp } =
     await determineNotificationChannels(
@@ -523,7 +520,6 @@ async function handleRegistrationChange(
           newStatuses: change.newStatuses,
         },
       }),
-      logger,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -546,9 +542,6 @@ async function handleProviderChange(
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "monitor-domain-workflow" });
 
   const { shouldSendEmail, shouldSendInApp } =
     await determineNotificationChannels(
@@ -634,7 +627,6 @@ async function handleProviderChange(
         domainName,
         changes: change,
       }),
-      logger,
     },
     shouldSendEmail,
     shouldSendInApp,
@@ -659,9 +651,6 @@ async function handleCertificateChange(
   const { determineNotificationChannels, sendNotification } = await import(
     "@/lib/notifications"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "monitor-domain-workflow" });
 
   const { shouldSendEmail, shouldSendInApp } =
     await determineNotificationChannels(
@@ -750,7 +739,6 @@ async function handleCertificateChange(
         },
         newValidTo,
       }),
-      logger,
     },
     shouldSendEmail,
     shouldSendInApp,

@@ -8,7 +8,7 @@ import {
 import { getTrackedDomainsForUser } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "calendar-feed" });
+const logger = createLogger({ source: "api/calendar/user" });
 
 /**
  * GET /api/calendar/user?token=...

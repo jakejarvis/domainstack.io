@@ -32,9 +32,7 @@ export async function sendEmail(
   "use step";
 
   const { sendEmail: sendResendEmail } = await import("@/lib/resend");
-  const { createLogger } = await import("@/lib/logger/server");
 
-  const logger = createLogger({ source: "send-email" });
   const { to, subject, react } = params;
 
   // Use stepId as idempotency key - stable across retries and unique per step
@@ -51,17 +49,17 @@ export async function sendEmail(
 
   if (!error) {
     // Unexpected: no error but also no data - treat as transient
-    logger.warn({ to, subject }, "Email send returned no data or error");
-    throw new RetryableError("Email send returned no data", {
-      retryAfter: "5s",
-    });
+    throw new RetryableError(
+      `Email send returned no data or error, will retry`,
+      {
+        retryAfter: "5s",
+      },
+    );
   }
 
   // Classify the error based on Resend error types
   const errorName = error.name;
   const errorMessage = error.message;
-
-  logger.warn({ errorName, errorMessage, to, subject }, "Email send failed");
 
   // Permanent failures - don't retry
   const permanentErrors = [

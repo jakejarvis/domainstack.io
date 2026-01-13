@@ -1,4 +1,5 @@
-import { getWorkflowMetadata } from "workflow";
+import { FatalError } from "workflow";
+import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -8,10 +9,7 @@ export interface FaviconWorkflowInput {
   domain: string;
 }
 
-export interface FaviconWorkflowResult {
-  success: boolean;
-  data: { url: string | null };
-}
+export type FaviconWorkflowResult = WorkflowResult<{ url: string | null }>;
 
 const DEFAULT_SIZE = 32;
 
@@ -33,14 +31,13 @@ export async function faviconWorkflow(
     maxBytes: 1 * 1024 * 1024, // 1MB
     timeoutMs: 1500,
     useLogoDev: false,
-    loggerSource: "favicon-workflow",
-    errorPrefix: "Favicon",
   });
 
   if (!fetchResult.success) {
-    // Step 2a: Persist failure
+    // Step 2a: Persist "no favicon found" as a cached state
     await persistFailure(domain, fetchResult.allNotFound);
 
+    // "No favicon" is a valid cached result, not a failure
     return {
       success: true,
       data: { url: null },
@@ -49,20 +46,13 @@ export async function faviconWorkflow(
 
   // Step 2b: Process, store, and persist in one step
   // (avoids serializing processed image between steps)
+  // Note: processAndStore throws FatalError on failure
   const result = await processAndStore(
     domain,
     fetchResult.imageBase64,
     fetchResult.contentType,
     fetchResult.sourceName,
   );
-
-  if (!result.success) {
-    await persistFailure(domain, false);
-    return {
-      success: false,
-      data: { url: null },
-    };
-  }
 
   return {
     success: true,
@@ -79,7 +69,7 @@ async function processAndStore(
   imageBase64: string,
   contentType: string | null,
   sourceName: string,
-): Promise<{ success: true; url: string } | { success: false }> {
+): Promise<{ success: true; url: string }> {
   "use step";
 
   const { convertBufferToImageCover } = await import("@/lib/image");
@@ -87,9 +77,6 @@ async function processAndStore(
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertFavicon } = await import("@/lib/db/repos/favicons");
   const { ttlForFavicon } = await import("@/lib/ttl");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "favicon-workflow" });
 
   try {
     // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
@@ -102,11 +89,7 @@ async function processAndStore(
     );
 
     if (!processedBuffer || processedBuffer.length === 0) {
-      logger.warn(
-        { domain, inputSize: inputBuffer.length },
-        "image processing returned empty result",
-      );
-      return { success: false };
+      throw new FatalError(`Image processing returned empty result: ${domain}`);
     }
 
     // 2. Store to Vercel Blob
@@ -136,13 +119,11 @@ async function processAndStore(
       expiresAt,
     });
 
-    logger.debug({ domain }, "favicon processed and stored");
-
     return { success: true, url };
   } catch (err) {
-    const { workflowRunId } = getWorkflowMetadata();
-    logger.error({ err, domain, workflowRunId }, "failed to process favicon");
-    throw err; // Re-throw so workflow can retry
+    throw new FatalError(
+      `Failed to process favicon for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 
@@ -158,9 +139,6 @@ async function persistFailure(
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertFavicon } = await import("@/lib/db/repos/favicons");
   const { ttlForFavicon } = await import("@/lib/ttl");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "favicon-workflow" });
 
   try {
     const domainRecord = await ensureDomainRecord(domain);
@@ -179,14 +157,9 @@ async function persistFailure(
       fetchedAt: now,
       expiresAt,
     });
-
-    logger.debug({ domain, isNotFound }, "favicon failure persisted");
   } catch (err) {
-    const { workflowRunId } = getWorkflowMetadata();
-    logger.error(
-      { err, domain, workflowRunId },
-      "failed to persist favicon failure",
+    throw new FatalError(
+      `Failed to persist favicon for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
     );
-    throw err; // Re-throw so workflow can retry
   }
 }

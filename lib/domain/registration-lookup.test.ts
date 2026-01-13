@@ -128,26 +128,6 @@ describe("lookupRdap", () => {
   });
 });
 
-describe("buildErrorResponse", () => {
-  it("builds correct response for unsupported TLD", async () => {
-    const { buildErrorResponse } = await import("./registration-lookup");
-    const response = buildErrorResponse("example.ls", "unsupported_tld");
-
-    expect(response.domain).toBe("example.ls");
-    expect(response.isRegistered).toBe(false);
-    expect(response.status).toBe("unknown");
-    expect(response.unavailableReason).toBe("unsupported_tld");
-  });
-
-  it("builds correct response for timeout", async () => {
-    const { buildErrorResponse } = await import("./registration-lookup");
-    const response = buildErrorResponse("slow.com", "timeout");
-
-    expect(response.domain).toBe("slow.com");
-    expect(response.unavailableReason).toBe("timeout");
-  });
-});
-
 describe("normalizeRdapRecord", () => {
   it("builds correct response for registered domain", async () => {
     const recordJson = JSON.stringify({

@@ -6,22 +6,14 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types/domain/seo";
+import type { WorkflowResult } from "@/lib/workflow/types";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 export interface SeoWorkflowInput {
   domain: string;
 }
 
-export type SeoWorkflowResult =
-  | {
-      success: true;
-      data: SeoResponse;
-    }
-  | {
-      success: false;
-      error: string;
-      data: SeoResponse | null;
-    };
+export type SeoWorkflowResult = WorkflowResult<SeoResponse>;
 
 // Internal types for step-to-step transfer
 interface HtmlFetchResult {
@@ -73,7 +65,7 @@ export async function seoWorkflow(
   let uploadedImageUrl: string | null = null;
   if (htmlResult.preview?.image) {
     // Step 3a: Check blocklist (shared step)
-    const isBlocked = await checkBlocklist(domain, "seo-workflow");
+    const isBlocked = await checkBlocklist(domain);
 
     if (!isBlocked) {
       // Step 3b: Process and store image
@@ -171,14 +163,11 @@ async function persistSeoStep(
   "use step";
 
   const { persistSeoData } = await import("@/lib/domain/seo-lookup");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "seo-workflow" });
-
   try {
     await persistSeoData(domain, response, uploadedImageUrl);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist SEO data");
-    throw new FatalError("Failed to persist SEO data");
+    throw new FatalError(
+      `Failed to persist SEO data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

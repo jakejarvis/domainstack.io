@@ -8,6 +8,7 @@ import {
 } from "@/lib/db/repos/notifications";
 import { findTrackedDomainById } from "@/lib/db/repos/tracked-domains";
 import { getOrCreateUserNotificationPreferences } from "@/lib/db/repos/user-notification-preferences";
+import { createLogger } from "@/lib/logger/server";
 import { sendEmail } from "@/lib/resend";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 
@@ -28,7 +29,7 @@ export interface SendNotificationOptions {
   // Subject for the email
   emailSubject?: string;
   // Context-specific logger
-  logger: unknown;
+  logger?: Logger;
 }
 
 /**
@@ -113,8 +114,10 @@ export async function sendNotification(
     idempotencyKey,
     emailComponent,
     emailSubject,
-    logger,
+    logger: contextLogger,
   } = options;
+
+  const logger = contextLogger ?? createLogger({ source: "notifications" });
 
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
@@ -135,7 +138,7 @@ export async function sendNotification(
     });
 
     if (!notification) {
-      (logger as Logger).error(
+      logger.error(
         { trackedDomainId, notificationType, domainName },
         "Failed to create notification record",
       );
@@ -163,7 +166,7 @@ export async function sendNotification(
 
     return true;
   } catch (err) {
-    (logger as Logger).error(
+    logger.error(
       { err, domainName, userId, idempotencyKey },
       `Error sending ${notificationType} notification`,
     );

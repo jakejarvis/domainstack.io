@@ -14,7 +14,7 @@ import {
   screenshotWorkflow,
 } from "@/workflows/screenshot";
 
-const logger = createLogger({ source: "screenshot-api" });
+const logger = createLogger({ source: "api/screenshot" });
 
 /**
  * Response types for the screenshot API

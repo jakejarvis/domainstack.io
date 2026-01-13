@@ -8,7 +8,7 @@ import { getUserAvatarUrl } from "@/lib/db/repos/users";
 import { createLogger } from "@/lib/logger/server";
 import { SafeFetchError, safeFetch } from "@/lib/safe-fetch";
 
-const logger = createLogger({ source: "avatar-api" });
+const logger = createLogger({ source: "api/avatar" });
 
 // Maximum avatar size to proxy (4MB)
 const MAX_AVATAR_BYTES = 4 * 1024 * 1024;

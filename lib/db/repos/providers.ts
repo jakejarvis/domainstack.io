@@ -10,7 +10,7 @@ import type { Provider } from "@/lib/providers/parser";
 import type { DetectionContext } from "@/lib/providers/rules";
 import { slugify } from "@/lib/slugify";
 
-const logger = createLogger({ source: "providers" });
+const logger = createLogger({ source: "db/repos/providers" });
 
 interface ResolveProviderInput {
   category: (typeof providerCategory.enumValues)[number];

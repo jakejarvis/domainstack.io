@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client";
 import { userSubscriptions, userTrackedDomains } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "polar-downgrade" });
+const logger = createLogger({ source: "polar/downgrade" });
 
 /**
  * Handle user downgrade from Pro to Free tier.

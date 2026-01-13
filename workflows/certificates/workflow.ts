@@ -3,21 +3,16 @@ import type {
   Certificate,
   CertificatesResponse,
 } from "@/lib/types/domain/certificates";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface CertificatesWorkflowInput {
   domain: string;
 }
 
-export type CertificatesWorkflowResult =
-  | {
-      success: true;
-      data: CertificatesResponse;
-    }
-  | {
-      success: false;
-      error: "dns_error" | "tls_error" | "timeout" | "connection_failed";
-      data: CertificatesResponse | null;
-    };
+export type CertificatesWorkflowResult = WorkflowResult<
+  CertificatesResponse,
+  "dns_error" | "tls_error" | "timeout" | "connection_failed"
+>;
 
 // Internal types for step-to-step transfer
 interface RawCertificate {
@@ -68,10 +63,7 @@ export async function certificatesWorkflow(
     return {
       success: false,
       error: errorType,
-      data: {
-        certificates: [],
-        ...(tlsResult.isTlsError && { error: "Invalid SSL certificate" }),
-      },
+      data: null,
     };
   }
 
@@ -156,14 +148,12 @@ async function persistCertificatesStep(
   const { persistCertificatesData } = await import(
     "@/lib/domain/certificates-lookup"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "certificates-workflow" });
 
   try {
     await persistCertificatesData(domain, result);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist certificates");
-    throw new FatalError("Failed to persist certificates");
+    throw new FatalError(
+      `Failed to persist certificates: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
