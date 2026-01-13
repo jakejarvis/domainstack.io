@@ -19,7 +19,7 @@
 - **Reliable backend**: Event-driven revalidation and TTL-based persistence.
 
 <p align="center">
-<a href="https://domainstack.io/github.com"><img width="600" height="315" alt="github.com — Domain Report" src="https://domainstack.io/api/og?domain=github.com" /></a>
+<a href="https://domainstack.io/github.com"><img width="600" height="315" alt="og" src="https://github.com/user-attachments/assets/4f327128-df7c-4b19-8648-cb7c85ac95b1" /></a>
 </p>
 
 ## Tech Stack
