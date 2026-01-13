@@ -36,7 +36,7 @@
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/instrumentation-pino": "^0.55.1",
     "@phosphor-icons/react": "^2.1.10",
-    "@polar-sh/better-auth": "^1.6.3",
+    "@polar-sh/better-auth": "^1.6.4",
     "@polar-sh/sdk": "^0.42.1",
     "@posthog/nextjs-config": "^1.7.5",
     "@react-email/components": "^1.0.4",
