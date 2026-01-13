@@ -2,6 +2,13 @@ import "server-only";
 
 import sharp from "sharp";
 
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "image" });
+
+/**
+ * Check if buffer appears to be an ICO (starts with 0x00 0x00 0x01 0x00).
+ */
 function isIcoBuffer(buf: Buffer): boolean {
   return (
     buf.length >= 4 &&
@@ -13,8 +20,18 @@ function isIcoBuffer(buf: Buffer): boolean {
 }
 
 /**
+ * Check if buffer appears to be an SVG (starts with XML or SVG tag).
+ */
+function isSvgBuffer(buf: Buffer): boolean {
+  // SVGs typically start with <?xml, <svg, or whitespace followed by these
+  const head = buf.subarray(0, 256).toString("utf8").trimStart().toLowerCase();
+  return head.startsWith("<?xml") || head.startsWith("<svg");
+}
+
+/**
  * Converts an image buffer to WebP format with cover cropping.
  * Handles ICO files by extracting the best frame using icojs.
+ * Handles SVG files with explicit density for proper rasterization.
  */
 export async function convertBufferToImageCover(
   input: Buffer,
@@ -22,12 +39,33 @@ export async function convertBufferToImageCover(
   height: number,
   contentTypeHint?: string | null,
 ): Promise<Buffer | null> {
-  try {
-    return await optimizeImageCover(input, width, height);
-  } catch {
-    // ignore and try ICO-specific decode if it looks like ICO
+  const isSvg =
+    isSvgBuffer(input) || (contentTypeHint && /svg/.test(contentTypeHint));
+
+  // SVGs need special handling with explicit density for proper rasterization
+  if (isSvg) {
+    try {
+      return await optimizeSvgCover(input, width, height);
+    } catch (err) {
+      logger.debug(
+        { err, inputSize: input.length },
+        "SVG processing failed, trying standard path",
+      );
+      // Fall through to try standard processing
+    }
   }
 
+  // Try standard sharp processing first
+  try {
+    return await optimizeImageCover(input, width, height);
+  } catch (err) {
+    logger.debug(
+      { err, inputSize: input.length, contentTypeHint },
+      "standard sharp processing failed, trying fallbacks",
+    );
+  }
+
+  // ICO fallback
   if (isIcoBuffer(input) || (contentTypeHint && /icon/.test(contentTypeHint))) {
     try {
       type IcoFrame = {
@@ -63,11 +101,15 @@ export async function convertBufferToImageCover(
           return await optimizeImageCover(pngBuf, width, height);
         }
       }
-    } catch {
-      // Fall through to null
+    } catch (err) {
+      logger.debug({ err, inputSize: input.length }, "ICO parsing failed");
     }
   }
 
+  logger.warn(
+    { inputSize: input.length, contentTypeHint },
+    "all image processing attempts failed",
+  );
   return null;
 }
 
@@ -81,6 +123,23 @@ export async function optimizeImageCover(
   height: number,
 ): Promise<Buffer> {
   return sharp(buffer)
+    .resize(width, height, { fit: "cover" })
+    .webp({ quality: 80 })
+    .toBuffer();
+}
+
+/**
+ * Rasterizes an SVG buffer to WebP format with explicit density.
+ * SVGs require explicit density settings to render at the correct size.
+ */
+async function optimizeSvgCover(
+  buffer: Buffer,
+  width: number,
+  height: number,
+): Promise<Buffer> {
+  // Use high density (72 * 4 = 288 DPI) for crisp rasterization,
+  // then resize down to target dimensions
+  return sharp(buffer, { density: 288 })
     .resize(width, height, { fit: "cover" })
     .webp({ quality: 80 })
     .toBuffer();

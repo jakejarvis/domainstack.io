@@ -59,6 +59,7 @@ export async function providerLogoWorkflow(
     providerId,
     providerDomain,
     fetchResult.imageBase64,
+    fetchResult.contentType,
     fetchResult.sourceName,
   );
 
@@ -84,6 +85,7 @@ async function processAndStore(
   providerId: string,
   providerDomain: string,
   imageBase64: string,
+  contentType: string | null,
   sourceName: string,
 ): Promise<{ success: true; url: string } | { success: false }> {
   "use step";
@@ -97,13 +99,13 @@ async function processAndStore(
   const logger = createLogger({ source: "provider-logo-workflow" });
 
   try {
-    // 1. Process image (handles ICO files with icojs fallback)
+    // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
     const inputBuffer = Buffer.from(imageBase64, "base64");
     const processedBuffer = await convertBufferToImageCover(
       inputBuffer,
       DEFAULT_SIZE,
       DEFAULT_SIZE,
-      null, // contentType - let sharp/icojs detect
+      contentType,
     );
 
     if (!processedBuffer || processedBuffer.length === 0) {
