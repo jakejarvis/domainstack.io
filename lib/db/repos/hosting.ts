@@ -7,11 +7,8 @@ import {
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
-import { createLogger } from "@/lib/logger/server";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import { findDomainByName } from "./domains";
-
-const logger = createLogger({ source: "hosting-repo" });
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;
 
@@ -22,13 +19,7 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
 export async function getHostingCached(
   domain: string,
 ): Promise<HostingResponse | null> {
-  const nowMs = Date.now();
-
   const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    logger.debug({ domain }, "hosting cache miss: domain not found");
-    return null;
-  }
 
   const hp = alias(providersTable, "hp");
   const ep = alias(providersTable, "ep");
@@ -62,35 +53,7 @@ export async function getHostingCached(
 
   const [row] = existing;
 
-  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= nowMs) {
-    logger.debug(
-      {
-        domain,
-        hasRow: !!row,
-        expired: row ? (row.expiresAt?.getTime?.() ?? 0) <= nowMs : null,
-      },
-      "hosting cache miss: no row or expired",
-    );
-    return null;
-  }
-
-  // Check if geo data is empty - if so, treat as cache miss to retry IP lookup
-  // This handles the case where a previous lookup failed and stored empty data
-  const hasGeoData = !!(row.geoCountry || row.geoCity || row.geoRegion);
-  if (!hasGeoData) {
-    logger.info(
-      {
-        domain,
-        rawGeoCity: row.geoCity,
-        rawGeoCountry: row.geoCountry,
-        rawGeoRegion: row.geoRegion,
-      },
-      "hosting cache invalid: geo data is empty, will re-fetch",
-    );
-    return null;
-  }
-
-  const result = {
+  return {
     hostingProvider: {
       id: row.hostingProviderId ?? null,
       name: row.hostingProviderName ?? null,
@@ -115,13 +78,6 @@ export async function getHostingCached(
       lon: row.geoLon ?? null,
     },
   };
-
-  logger.debug(
-    { domain, country: result.geo.country },
-    "hosting cache hit with geo data",
-  );
-
-  return result;
 }
 
 export async function upsertHosting(params: HostingInsert) {

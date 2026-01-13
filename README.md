@@ -1,47 +1,46 @@
-# 📚 [Domainstack](https://domainstack.io) - Domain Intelligence Tool
+<p align="center">
+<a href="https://domainstack.io"><img width="72" height="72" alt="Domainstack" src="https://github.com/user-attachments/assets/d76429cc-56cb-4859-bb41-f52131f093e9" /></a>
+</p>
+<p align="center">
+<a href="https://domainstack.io"><strong>Domainstack</strong></a>: Domain Intelligence Made Easy
+</p>
 
-[Domainstack](https://domainstack.io) is an all-in-one app for exploring domain names. Search any domain (e.g., [`github.com`](https://domainstack.io/github.com)) and get instant insights including WHOIS/RDAP lookups, DNS records, SSL certificates, HTTP headers, hosting details, geolocation, and SEO signals.
+## Features
 
-![Screenshot of Domainstack domain analysis page for GitHub.com](https://github.com/user-attachments/assets/5a13d2c5-2d1c-4f70-bc52-a2742d43ebc6)
+- **Instant domain reports**: WHOIS/RDAP data, DNS, certs, headers, hosting/email providers, and geolocation.
+- **Domain tracking**: Verify ownership, monitor domains, and get important health alerts.
+- **Provider detection**: Matches raw data against a large hosting, email, and DNS provider library.
+- **SEO & metadata analysis**: Titles, meta tags, social previews, Open Graph images, canonicals, and `robots.txt`.
+- **Screenshots & icons**: Server-side screenshots, favicon extraction, and provider logos.
+- **Fast & private**: No sign-up required for reports.
+- **Notifications & calendar sync**: Email/In-app alerts plus iCal feeds for expirations.
+- **Advanced dashboard**: Filtering, sorting, bulk actions, and multiple view modes.
+- **Pro subscription**: Paid plan via Polar for higher tracking limits.
+- **Reliable backend**: Event-driven revalidation and TTL-based persistence.
 
-## 🚀 Features
+<p align="center">
+<a href="https://domainstack.io/github.com"><img width="600" height="315" alt="github.com — Domain Report" src="https://domainstack.io/api/og?domain=github.com" /></a>
+</p>
 
-- **Instant domain reports**: Registration, DNS, certificates, HTTP headers, hosting & email, and geolocation.
-- **Provider detection**: Cross-checks raw data with a large library of hosting, email, and DNS providers.
-- **SEO insights**: Extract titles, meta tags, social previews, canonical data, and `robots.txt` signals.
-- **Screenshots & favicons**: Server-side screenshots and favicon extraction, cached in Postgres with Vercel Blob storage.
-- **Fast, private, no sign-up required for reports**: Live fetches with intelligent multi-layer caching.
-- **Domain tracking dashboard**: Sign in to track domains you own, verify ownership, and receive expiration alerts.
-- **Pro tier subscriptions**: Upgrade via [Polar](https://polar.sh) for expanded domain tracking limits (100 vs 5 domains).
-- **Multi-channel notifications**: Configurable alerts via Email and In-App notifications for domain expiry, certificate expiry, and critical record changes.
-- **Calendar integration**: Subscribe to domain expiration dates via iCalendar feed (Google Calendar, Apple Calendar, Outlook, etc.).
-- **Reliable data pipeline**: Postgres persistence with per-table TTLs (Drizzle) and event-driven background revalidation (Inngest).
-- **Advanced dashboard**: Domain filtering by status/health/TLD, URL-persisted filters, bulk archive/delete actions, and sortable table/grid views.
-- **Dynamic configuration**: Vercel Edge Config for runtime-adjustable data and flags without redeployment.
+## Tech Stack
 
-## 🛠️ Tech Stack
+- **Next.js 16** (App Router), **React 19**, **TypeScript**
+- **Tailwind CSS v4** + **shadcn/ui** + [**Base UI**](https://x.com/colmtuite/status/1999535911126565050)
+- **tRPC** + **TanStack Query** & **TanStack Table**
+- **Postgres** (PlanetScale) + **Drizzle ORM**
+- **Better Auth** (OAuth)
+- **Polar** (subscriptions)
+- **Inngest** + [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)
+- **Resend** + **React Email**
+- **Vercel** (Edge Config, Blob Storage)
+- [**mapcn**](https://mapcn.vercel.app/) + [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps)
+- [**Logo.dev**](https://www.logo.dev)
+- [**IPLocate.io**](https://www.iplocate.io/)
+- **PostHog** (analytics)
+- **Puppeteer** (screenshots)
+- **Vitest** + **Playwright**, **Biome**
 
-- **Next.js 16** (App Router) + **React 19** + **TypeScript**
-- **Tailwind CSS v4** + **shadcn/ui** components (of the [**Base UI**](https://x.com/colmtuite/status/1999535911126565050) variety)
-- **tRPC** API with **TanStack Query** for data fetching and optimistic updates
-- **TanStack Table** for sortable dashboard table view
-- [**rdapper**](https://github.com/jakejarvis/rdapper) for RDAP lookups with WHOIS fallback
-- **PlanetScale Postgres** + **Drizzle ORM** with connection pooling
-- **Better Auth** for authentication via OAuth
-- **Polar** for subscription payments
-- **Inngest** for scheduled and event-driven background jobs
-- [**Workflow DevKit**](https://useworkflow.dev/) for durable resource-intensive operations
-- **Resend** + **React Email** for transactional email notifications
-- **Vercel Edge Config** for runtime configuration (domain suggestions, provider detection, and other safeguards)
-- **Vercel Blob** for media storage
-- **PostHog** for analytics and error tracking
-- [**mapcn**](https://mapcn.vercel.app/) with [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps) for beautiful IP geolocation maps
-- [**Logo.dev**](https://www.logo.dev) for provider icons
-- [**IPLocate.io**](https://www.iplocate.io/) for detailed IP geolocation and reverse ASN lookups
-- **Puppeteer** for on-demand screenshots
-- **Biome** for linting/formatting and **Vitest** (Browser Mode w/ Playwright) for E2E testing
-
-## 🌱 Getting Started
+## Development
 
 ### 1. Clone & install
 
@@ -59,7 +58,7 @@ Create `.env.local` and populate [required variables](.env.example):
 cp .env.example .env.local
 ```
 
-At minimum, you'll need `DATABASE_URL` pointing to a PostgreSQL database.
+At minimum, you'll need `DATABASE_URL` pointing to a Postgres database.
 
 ### 3. Set up the database
 
@@ -76,26 +75,6 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
-
-## 🧰 Useful Commands
-
-```bash
-pnpm dev           # start Next.js dev server
-pnpm build         # compile production bundle
-pnpm start         # serve compiled output for smoke tests
-pnpm lint          # Biome lint/format checks
-pnpm format        # apply Biome formatting
-pnpm typecheck     # tsc --noEmit
-pnpm test          # Vitest (watch mode)
-pnpm test:run      # Vitest (single run)
-pnpm test:coverage # Vitest with coverage report
-
-# Drizzle
-pnpm db:generate   # generate SQL migrations from schema
-pnpm db:push       # push the current schema to the database
-pnpm db:migrate    # apply migrations to the database
-pnpm db:studio     # open Drizzle Studio
-```
 
 ## 📜 License
 

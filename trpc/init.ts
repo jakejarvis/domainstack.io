@@ -66,6 +66,8 @@ export const t = initTRPC
   });
 
 export const createTRPCRouter = t.router;
+// biome-ignore lint/nursery/useDestructuring: this is easier
+export const createCallerFactory = t.createCallerFactory;
 
 /**
  * Middleware to log the start, end, and duration of a procedure.

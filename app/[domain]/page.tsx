@@ -30,6 +30,24 @@ export async function generateMetadata({
     alternates: {
       canonical: `/${registrable}`,
     },
+    openGraph: {
+      title: `${registrable} — Domain Report`,
+      description: `Domainstack report for ${registrable}: WHOIS lookup, DNS & SSL scan, HTTP headers, hosting & email provider data, and SEO metadata.`,
+      images: [
+        {
+          url: `/api/og?domain=${encodeURIComponent(registrable)}`,
+          width: 1200,
+          height: 630,
+          alt: `Domainstack — Domain Report for ${registrable}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${registrable} — Domain Report`,
+      description: `Domainstack report for ${registrable}: WHOIS lookup, DNS & SSL scan, HTTP headers, hosting & email provider data, and SEO metadata.`,
+      images: [`/api/og?domain=${encodeURIComponent(registrable)}`],
+    },
   };
 }
 

@@ -19,9 +19,6 @@ type SubscriptionData = RouterOutputs["user"]["getSubscription"];
 /** Domains data shape from tracking.listDomains procedure. */
 type DomainsData = RouterOutputs["tracking"]["listDomains"];
 
-/** Single tracked domain type inferred from the list response. */
-export type TrackedDomain = DomainsData[number];
-
 /**
  * Snapshot of a single query's cached data for rollback.
  */

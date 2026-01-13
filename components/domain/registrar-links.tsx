@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * Registry of all supported pricing providers.
  * Add new providers here and they'll automatically appear in the CTA.
  */
-export const REGISTRAR_PROVIDERS: Record<
+const REGISTRAR_PROVIDERS: Record<
   string,
   {
     /** Provider display name */

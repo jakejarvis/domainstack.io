@@ -4,7 +4,7 @@ import { providerRouter } from "@/server/routers/provider";
 import { registrarRouter } from "@/server/routers/registrar";
 import { trackingRouter } from "@/server/routers/tracking";
 import { userRouter } from "@/server/routers/user";
-import { createTRPCRouter } from "@/trpc/init";
+import { createCallerFactory, createTRPCRouter } from "@/trpc/init";
 
 export const appRouter = createTRPCRouter({
   domain: domainRouter,
@@ -16,3 +16,5 @@ export const appRouter = createTRPCRouter({
 });
 
 export type AppRouter = typeof appRouter;
+
+export const createCaller = createCallerFactory(appRouter);
