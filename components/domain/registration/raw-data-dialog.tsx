@@ -7,6 +7,7 @@ import {
   SealCheckIcon,
 } from "@phosphor-icons/react/ssr";
 import { useMemo, useState } from "react";
+import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CopyButton } from "@/components/ui/copy-button";
@@ -27,18 +28,20 @@ import {
 import { cn } from "@/lib/utils";
 
 interface RawDataDialogProps {
-  title: string;
+  domain: string;
+  format: string;
   /** Pre-formatted string: pretty JSON for RDAP, plain text for WHOIS */
   data: string;
-  serverUrl: string | undefined;
   serverName: string;
+  serverUrl: string | undefined;
 }
 
 export function RawDataDialog({
-  title,
+  domain,
+  format,
   data,
-  serverUrl,
   serverName,
+  serverUrl,
 }: RawDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
@@ -54,26 +57,34 @@ export function RawDataDialog({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label={`View raw ${title} data`}
+                  aria-label={`View raw ${format} data`}
                   onClick={() => setOpen(true)}
                 >
                   <BinaryIcon className="size-4 text-foreground/95" />
-                  <span className="sr-only">View raw {title} data</span>
+                  <span className="sr-only">View raw {format} data</span>
                 </Button>
               }
             />
             <TooltipContent>
-              <p>View raw {title} data</p>
+              <p>View raw {format} data</p>
             </TooltipContent>
           </Tooltip>
         }
       />
       <DialogContent className="!bg-card gap-0 p-0 sm:max-w-2xl">
         <DialogHeader className="place-items-start border-border/60 border-b p-4">
-          <DialogTitle className="text-base">Raw {title} Data</DialogTitle>
+          <DialogTitle className="flex items-center gap-1 text-base">
+            <Favicon domain={domain} className="mr-1 size-5" />
+            <span>
+              <span className="truncate">{domain}</span>{" "}
+              <span className="font-normal text-muted-foreground/90 text-sm">
+                ({format})
+              </span>
+            </span>
+          </DialogTitle>
           <DialogDescription className="flex items-center gap-1.5 text-[13px] text-foreground/90">
             <SealCheckIcon className="size-3.5 text-accent-green" />
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 truncate">
               Verified by{" "}
               <span className="font-medium">
                 {serverUrl ? (
