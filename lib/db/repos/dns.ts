@@ -140,61 +140,57 @@ export async function getDnsCached(
   const nowMs = Date.now();
   const types = DNS_RECORD_TYPES;
 
-  try {
-    const existingDomain = await findDomainByName(domain);
+  const existingDomain = await findDomainByName(domain);
 
-    if (!existingDomain) {
-      return null;
-    }
-
-    const rows = await db
-      .select({
-        type: dnsRecords.type,
-        name: dnsRecords.name,
-        value: dnsRecords.value,
-        ttl: dnsRecords.ttl,
-        priority: dnsRecords.priority,
-        isCloudflare: dnsRecords.isCloudflare,
-        resolver: dnsRecords.resolver,
-        expiresAt: dnsRecords.expiresAt,
-      })
-      .from(dnsRecords)
-      .where(eq(dnsRecords.domainId, existingDomain.id));
-
-    if (rows.length === 0) {
-      return null;
-    }
-
-    // Check if ALL records are still fresh
-    // A domain may not have all record types (e.g., no AAAA records) - that's fine.
-    // We just need all existing records to be fresh.
-    const allFresh = rows.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs);
-
-    if (!allFresh) {
-      return null;
-    }
-
-    // Assemble cached records
-    const records: DnsRecord[] = rows.map((r) => ({
-      type: r.type,
-      name: r.name,
-      value: r.value,
-      ttl: r.ttl ?? undefined,
-      priority: r.priority ?? undefined,
-      isCloudflare: r.isCloudflare ?? undefined,
-    }));
-
-    // Deduplicate and sort
-    const deduplicated = deduplicateDnsRecords(records);
-    const sorted = sortDnsRecordsByType(deduplicated, types);
-
-    return {
-      records: sorted,
-      resolver: rows[0]?.resolver ?? null,
-    };
-  } catch {
+  if (!existingDomain) {
     return null;
   }
+
+  const rows = await db
+    .select({
+      type: dnsRecords.type,
+      name: dnsRecords.name,
+      value: dnsRecords.value,
+      ttl: dnsRecords.ttl,
+      priority: dnsRecords.priority,
+      isCloudflare: dnsRecords.isCloudflare,
+      resolver: dnsRecords.resolver,
+      expiresAt: dnsRecords.expiresAt,
+    })
+    .from(dnsRecords)
+    .where(eq(dnsRecords.domainId, existingDomain.id));
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  // Check if ALL records are still fresh
+  // A domain may not have all record types (e.g., no AAAA records) - that's fine.
+  // We just need all existing records to be fresh.
+  const allFresh = rows.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs);
+
+  if (!allFresh) {
+    return null;
+  }
+
+  // Assemble cached records
+  const records: DnsRecord[] = rows.map((r) => ({
+    type: r.type,
+    name: r.name,
+    value: r.value,
+    ttl: r.ttl ?? undefined,
+    priority: r.priority ?? undefined,
+    isCloudflare: r.isCloudflare ?? undefined,
+  }));
+
+  // Deduplicate and sort
+  const deduplicated = deduplicateDnsRecords(records);
+  const sorted = sortDnsRecordsByType(deduplicated, types);
+
+  return {
+    records: sorted,
+    resolver: rows[0]?.resolver ?? null,
+  };
 }
 
 // Helper functions for getDnsCached

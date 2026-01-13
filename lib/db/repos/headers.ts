@@ -53,46 +53,42 @@ export async function getHeadersCached(
 ): Promise<HeadersResponse | null> {
   const now = Date.now();
 
-  try {
-    const existingDomain = await findDomainByName(domain);
-    if (!existingDomain) {
-      return null;
-    }
-
-    const existing = await db
-      .select({
-        headers: httpHeaders.headers,
-        status: httpHeaders.status,
-        expiresAt: httpHeaders.expiresAt,
-      })
-      .from(httpHeaders)
-      .where(eq(httpHeaders.domainId, existingDomain.id))
-      .limit(1);
-
-    const [row] = existing;
-    if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
-      return null;
-    }
-
-    // Get status message
-    let statusMessage: string | undefined;
-    try {
-      const { getStatusCode } = await import("@readme/http-status-codes");
-      const statusInfo = getStatusCode(row.status);
-      statusMessage = statusInfo.message;
-    } catch {
-      statusMessage = undefined;
-    }
-
-    // Normalize headers
-    const normalized = normalizeHeaders(row.headers as Header[]);
-
-    return {
-      headers: normalized,
-      status: row.status,
-      statusMessage,
-    };
-  } catch {
+  const existingDomain = await findDomainByName(domain);
+  if (!existingDomain) {
     return null;
   }
+
+  const existing = await db
+    .select({
+      headers: httpHeaders.headers,
+      status: httpHeaders.status,
+      expiresAt: httpHeaders.expiresAt,
+    })
+    .from(httpHeaders)
+    .where(eq(httpHeaders.domainId, existingDomain.id))
+    .limit(1);
+
+  const [row] = existing;
+  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
+    return null;
+  }
+
+  // Get status message
+  let statusMessage: string | undefined;
+  try {
+    const { getStatusCode } = await import("@readme/http-status-codes");
+    const statusInfo = getStatusCode(row.status);
+    statusMessage = statusInfo.message;
+  } catch {
+    statusMessage = undefined;
+  }
+
+  // Normalize headers
+  const normalized = normalizeHeaders(row.headers as Header[]);
+
+  return {
+    headers: normalized,
+    status: row.status,
+    statusMessage,
+  };
 }

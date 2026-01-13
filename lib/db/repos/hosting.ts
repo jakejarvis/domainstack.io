@@ -19,7 +19,12 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
 export async function getHostingCached(
   domain: string,
 ): Promise<HostingResponse | null> {
+  const now = Date.now();
+
   const existingDomain = await findDomainByName(domain);
+  if (!existingDomain) {
+    return null;
+  }
 
   const hp = alias(providersTable, "hp");
   const ep = alias(providersTable, "ep");
@@ -52,8 +57,11 @@ export async function getHostingCached(
     .limit(1);
 
   const [row] = existing;
+  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
+    return null;
+  }
 
-  return {
+  const result: HostingResponse = {
     hostingProvider: {
       id: row.hostingProviderId ?? null,
       name: row.hostingProviderName ?? null,
@@ -78,6 +86,8 @@ export async function getHostingCached(
       lon: row.geoLon ?? null,
     },
   };
+
+  return result;
 }
 
 export async function upsertHosting(params: HostingInsert) {
