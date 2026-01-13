@@ -15,10 +15,12 @@ export default function InterceptedAddDomainPage({
   return (
     <Modal>
       <ModalContent>
-        <ScrollArea className="min-h-0 flex-1 p-5">
-          <Suspense fallback={<AddDomainSkeleton />}>
-            <AuthorizedAddDomainContent searchParams={searchParams} />
-          </Suspense>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="p-5">
+            <Suspense fallback={<AddDomainSkeleton />}>
+              <AuthorizedAddDomainContent searchParams={searchParams} />
+            </Suspense>
+          </div>
         </ScrollArea>
       </ModalContent>
     </Modal>

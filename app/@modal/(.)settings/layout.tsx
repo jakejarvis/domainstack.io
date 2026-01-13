@@ -16,7 +16,7 @@ import { auth } from "@/lib/auth";
 function SettingsSkeleton() {
   return (
     <div className="w-full">
-      <SettingsSkeletonPanels className="p-5" />
+      <SettingsSkeletonPanels />
     </div>
   );
 }
@@ -32,10 +32,12 @@ export default function SettingsModalLayout() {
           </ModalDescription>
           <div id="settings-modal-tabs" className="mt-2 min-h-[1px]" />
         </ModalHeader>
-        <ScrollArea className="min-h-0 flex-1 p-5">
-          <Suspense fallback={<SettingsSkeleton />}>
-            <AuthorizedSettingsModalLayout />
-          </Suspense>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="p-5">
+            <Suspense fallback={<SettingsSkeleton />}>
+              <AuthorizedSettingsModalLayout />
+            </Suspense>
+          </div>
         </ScrollArea>
       </ModalContent>
     </Modal>

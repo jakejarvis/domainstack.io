@@ -24,7 +24,18 @@ function ModalPortal({ ...props }: DialogPrimitive.Portal.Props) {
 }
 
 function ModalClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="modal-close" {...props} />;
+  return (
+    <DialogPrimitive.Close
+      data-slot="modal-close"
+      render={
+        <Button variant="ghost" size="icon-xs" className="rounded">
+          <XIcon className="size-4" />
+          <span className="sr-only">Close</span>
+        </Button>
+      }
+      {...props}
+    />
+  );
 }
 
 function ModalOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
@@ -52,14 +63,7 @@ function ModalContent({
 }: DialogPrimitive.Popup.Props & { showCloseButton?: boolean }) {
   return (
     <ModalPortal data-slot="modal-portal">
-      <ModalOverlay
-        className={cn(
-          "fixed inset-0 isolate bg-black/10 backdrop-blur-xs dark:bg-black/50",
-          "data-open:fade-in-0 data-open:animate-in data-open:duration-200",
-          "data-closed:fade-out-0 data-closed:animate-out data-closed:duration-200",
-          "supports-[-webkit-touch-callout:none]:absolute",
-        )}
-      />
+      <ModalOverlay forceRender />
       <DialogPrimitive.Viewport className="fixed inset-0 flex items-center justify-center overflow-hidden py-12">
         <DialogPrimitive.Popup
           data-slot="modal-content"
@@ -73,15 +77,7 @@ function ModalContent({
           {...props}
         >
           {children}
-          <DialogPrimitive.Close
-            className="absolute top-2 right-2"
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <XIcon className="size-4" />
-                <span className="sr-only">Close</span>
-              </Button>
-            }
-          />
+          {showCloseButton && <ModalClose className="absolute top-2 right-2" />}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Viewport>
     </ModalPortal>

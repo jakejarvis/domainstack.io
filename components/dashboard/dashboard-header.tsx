@@ -97,16 +97,16 @@ export function DashboardHeader({
                 </Button>
               }
             />
-            <ResponsiveTooltipContent>
+            <ResponsiveTooltipContent className="!p-0">
               {subscription?.plan === "free" ? (
                 <Button
                   variant="link"
                   onClick={handleCheckout}
-                  className="!p-0 h-4 gap-1 font-normal text-background text-xs"
+                  className="!px-2.5 !py-1.5 !h-auto gap-1 font-normal text-background text-xs"
                 >
                   Upgrade to add more domains
                   <ArrowSquareOutIcon
-                    className="size-3 -translate-y-[1px]"
+                    className="size-3 -translate-y-[2px]"
                     weight="bold"
                   />
                 </Button>

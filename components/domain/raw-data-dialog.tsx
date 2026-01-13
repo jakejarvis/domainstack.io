@@ -69,7 +69,7 @@ export function RawDataDialog({
         }
       />
       <DialogContent className="!bg-card gap-0 p-0 sm:max-w-2xl">
-        <DialogHeader className="border-border/60 border-b p-4">
+        <DialogHeader className="place-items-start border-border/60 border-b p-4">
           <DialogTitle className="text-base">Raw {title} Data</DialogTitle>
           <DialogDescription className="flex items-center gap-1.5 text-[13px] text-foreground/90">
             <SealCheckIcon className="size-3.5 text-accent-green" />
@@ -94,43 +94,45 @@ export function RawDataDialog({
           </DialogDescription>
         </DialogHeader>
         <ScrollArea
-          className="relative flex min-h-0 flex-1 overflow-hidden p-3"
+          className="relative flex min-h-0 flex-1 overflow-hidden"
           showFade={false}
         >
-          <pre className="font-mono text-foreground/90 text-xs leading-snug">
-            <code
-              className={cn(
-                "grid",
-                wrapLines ? "grid-cols-[auto_1fr]" : "grid-cols-[auto_auto]",
-              )}
-            >
-              {lines.map((line, i) => (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: static list, no reordering
-                  key={i}
-                  className="col-span-2 grid grid-cols-subgrid rounded px-1 py-[3px] hover:bg-muted/50 focus:bg-muted/50 focus:outline-none active:bg-muted/50"
-                >
-                  <span className="select-none justify-self-end px-1 text-muted-foreground/70">
-                    {i + 1}
-                  </span>
-                  <span
-                    className={cn(
-                      "min-w-0 pr-1 pl-3",
-                      wrapLines
-                        ? "whitespace-pre-wrap break-all"
-                        : "whitespace-pre",
-                    )}
+          <div className="p-3">
+            <pre className="font-mono text-foreground/90 text-xs leading-snug">
+              <code
+                className={cn(
+                  "grid",
+                  wrapLines ? "grid-cols-[auto_1fr]" : "grid-cols-[auto_auto]",
+                )}
+              >
+                {lines.map((line, i) => (
+                  <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: static list, no reordering
+                    key={i}
+                    className="col-span-2 grid grid-cols-subgrid rounded px-1 py-[3px] hover:bg-muted/50 focus:bg-muted/50 focus:outline-none active:bg-muted/50"
                   >
-                    {line || "\u00A0"}
-                  </span>
-                </div>
-              ))}
-            </code>
-          </pre>
+                    <span className="select-none justify-self-end px-1 text-muted-foreground/70">
+                      {i + 1}
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-0 pr-1 pl-3",
+                        wrapLines
+                          ? "whitespace-pre-wrap break-all"
+                          : "whitespace-pre",
+                      )}
+                    >
+                      {line || "\u00A0"}
+                    </span>
+                  </div>
+                ))}
+              </code>
+            </pre>
+          </div>
         </ScrollArea>
-        <div className="flex w-full items-center justify-between gap-2 border-border/60 border-t p-2">
+        <div className="flex w-full items-center justify-between gap-2 border-border/60 border-t p-3">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             className="!px-3 gap-2 text-[13px]"
             onClick={() => setWrapLines(!wrapLines)}
@@ -138,16 +140,16 @@ export function RawDataDialog({
             <Checkbox checked={wrapLines} className="size-3.5" />
             Wrap lines
           </Button>
-          <div className="space-x-1">
+          <div className="space-x-2">
             <CopyButton
-              value={data}
-              showLabel={true}
-              variant="ghost"
+              variant="outline"
               size="sm"
               className="!px-3 gap-2 text-[13px]"
+              value={data}
+              showLabel={true}
             />
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
               className="!px-3 gap-2 text-[13px]"
