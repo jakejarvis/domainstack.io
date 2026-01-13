@@ -1,20 +1,15 @@
 import { FatalError, RetryableError } from "workflow";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface RegistrationWorkflowInput {
   domain: string;
 }
 
-export type RegistrationWorkflowResult =
-  | {
-      success: true;
-      data: RegistrationResponse;
-    }
-  | {
-      success: false;
-      error: "unsupported_tld" | "timeout" | "lookup_failed";
-      data: RegistrationResponse | null;
-    };
+export type RegistrationWorkflowResult = WorkflowResult<
+  RegistrationResponse,
+  "unsupported_tld" | "timeout" | "lookup_failed"
+>;
 
 // Internal types for step-to-step transfer
 interface RdapLookupSuccess {
@@ -47,9 +42,7 @@ export async function registrationWorkflow(
   const rdapResult = await lookupWhoisStep(domain);
 
   if (!rdapResult.success) {
-    // Build response for failed lookup
-    const errorData = await buildErrorResponseStep(domain, rdapResult.error);
-    return { success: false, error: rdapResult.error, data: errorData };
+    return { success: false, error: rdapResult.error, data: null };
   }
 
   // Step 2: Normalize registrar and build response
@@ -92,21 +85,6 @@ async function lookupWhoisStep(domain: string): Promise<RdapLookupResult> {
   }
 
   return result;
-}
-
-/**
- * Step: Build error response for failed lookups
- */
-async function buildErrorResponseStep(
-  domain: string,
-  error: RdapLookupFailure["error"],
-): Promise<RegistrationResponse> {
-  "use step";
-
-  const { buildErrorResponse } = await import(
-    "@/lib/domain/registration-lookup"
-  );
-  return buildErrorResponse(domain, error);
 }
 
 /**

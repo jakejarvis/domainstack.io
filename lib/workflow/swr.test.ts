@@ -152,12 +152,9 @@ describe("withSwrCache", () => {
         data: { id: 1 },
       });
 
-      // Wait for the error to be caught and logged
-      await vi.waitFor(() => {
-        // The error is caught silently (logged in the catch block)
-        // We can't easily verify logger/analytics calls without mocking them
-        // but we verify the function doesn't throw
-      });
+      // Wait for the rejected promise to be handled
+      // The rejection is caught and logged internally - we verify no unhandled rejection
+      await new Promise((resolve) => setTimeout(resolve, 10));
     });
   });
 
@@ -252,37 +249,6 @@ describe("withSwrCache", () => {
         startWorkflow,
       });
 
-      expect(result).toEqual({
-        success: false,
-        error: "Workflow failed",
-        data: null,
-      });
-    });
-
-    it("returns error when workflow succeeds but returns null data", async () => {
-      const getCached = vi.fn().mockResolvedValue({
-        data: null,
-        stale: false,
-        expiresAt: null,
-      });
-
-      const workflowResult = { success: true, data: null };
-      const startWorkflow = vi.fn().mockResolvedValue({
-        returnValue: Promise.resolve(workflowResult),
-      });
-
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
-
-      const result = await withSwrCache({
-        workflowName: "test",
-        domain: "example.com",
-        getCached,
-        startWorkflow,
-      });
-
-      // success: true but data: null should be treated as failure
       expect(result).toEqual({
         success: false,
         error: "Workflow failed",

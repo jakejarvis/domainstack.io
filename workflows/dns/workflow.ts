@@ -1,20 +1,12 @@
 import { FatalError, RetryableError } from "workflow";
 import type { DnsRecordsResponse } from "@/lib/types/domain/dns";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface DnsWorkflowInput {
   domain: string;
 }
 
-export type DnsWorkflowResult =
-  | {
-      success: true;
-      data: DnsRecordsResponse;
-    }
-  | {
-      success: false;
-      error: string;
-      data: DnsRecordsResponse | null;
-    };
+export type DnsWorkflowResult = WorkflowResult<DnsRecordsResponse>;
 
 /**
  * Durable DNS workflow that breaks down DNS resolution into
@@ -98,7 +90,7 @@ async function persistDnsRecordsStep(
     );
   } catch (err) {
     throw new FatalError(
-      `Failed to persist DNS records: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to persist DNS records for ${domain}: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }

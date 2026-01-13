@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -9,12 +10,7 @@ export interface ProviderLogoWorkflowInput {
   providerDomain: string;
 }
 
-export interface ProviderLogoWorkflowResult {
-  success: boolean;
-  data: {
-    url: string | null;
-  };
-}
+export type ProviderLogoWorkflowResult = WorkflowResult<{ url: string | null }>;
 
 const DEFAULT_SIZE = 64;
 
@@ -42,17 +38,19 @@ export async function providerLogoWorkflow(
   );
 
   if (!fetchResult.success) {
-    // Step 2a: Persist failure
+    // Step 2a: Persist "no logo found" as a cached state
     await persistFailure(providerId, fetchResult.allNotFound);
 
+    // "No logo" is a valid cached result, not a failure
     return {
-      success: false,
+      success: true,
       data: { url: null },
     };
   }
 
   // Step 2b: Process, store, and persist in one step
   // (avoids serializing processed image between steps)
+  // Note: processAndStore throws FatalError on failure (no need to check result.success)
   const result = await processAndStore(
     providerId,
     providerDomain,
@@ -60,14 +58,6 @@ export async function providerLogoWorkflow(
     fetchResult.contentType,
     fetchResult.sourceName,
   );
-
-  if (!result.success) {
-    await persistFailure(providerId, false);
-    return {
-      success: false,
-      data: { url: null },
-    };
-  }
 
   return {
     success: true,
@@ -85,7 +75,7 @@ async function processAndStore(
   imageBase64: string,
   contentType: string | null,
   sourceName: string,
-): Promise<{ success: true; url: string } | { success: false }> {
+): Promise<{ success: true; url: string }> {
   "use step";
 
   const { convertBufferToImageCover } = await import("@/lib/image");

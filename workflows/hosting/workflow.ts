@@ -2,6 +2,7 @@ import { FatalError } from "workflow";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface HostingWorkflowInput {
   domain: string;
@@ -17,16 +18,7 @@ export interface HostingWorkflowInput {
   headers: Header[];
 }
 
-export type HostingWorkflowResult =
-  | {
-      success: true;
-      data: HostingResponse;
-    }
-  | {
-      success: false;
-      error: string;
-      data: HostingResponse | null;
-    };
+export type HostingWorkflowResult = WorkflowResult<HostingResponse>;
 
 // Internal types for step-to-step transfer
 interface GeoIpResult {

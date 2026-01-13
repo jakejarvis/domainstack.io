@@ -1,21 +1,16 @@
 import { FatalError, RetryableError } from "workflow";
 import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface HeadersWorkflowInput {
   domain: string;
 }
 
-export type HeadersWorkflowResult =
-  | {
-      success: true;
-      data: HeadersResponse;
-    }
-  | {
-      success: false;
-      // Note: fetch_error is thrown as RetryableError in fetchHeadersStep and never returned
-      error: "dns_error" | "tls_error";
-      data: HeadersResponse | null;
-    };
+// Note: fetch_error is thrown as RetryableError in fetchHeadersStep and never returned
+export type HeadersWorkflowResult = WorkflowResult<
+  HeadersResponse,
+  "dns_error" | "tls_error"
+>;
 
 // Internal types for step-to-step transfer
 interface FetchSuccess {
@@ -66,11 +61,7 @@ export async function headersWorkflow(
     return {
       success: false,
       error: fetchResult.error,
-      data: {
-        headers: fetchResult.headers,
-        status: fetchResult.status,
-        statusMessage: fetchResult.statusMessage,
-      },
+      data: null,
     };
   }
 

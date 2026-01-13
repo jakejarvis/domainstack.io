@@ -6,22 +6,14 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types/domain/seo";
+import type { WorkflowResult } from "@/lib/workflow/types";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
 export interface SeoWorkflowInput {
   domain: string;
 }
 
-export type SeoWorkflowResult =
-  | {
-      success: true;
-      data: SeoResponse;
-    }
-  | {
-      success: false;
-      error: string;
-      data: SeoResponse | null;
-    };
+export type SeoWorkflowResult = WorkflowResult<SeoResponse>;
 
 // Internal types for step-to-step transfer
 interface HtmlFetchResult {

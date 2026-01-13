@@ -3,21 +3,16 @@ import type {
   Certificate,
   CertificatesResponse,
 } from "@/lib/types/domain/certificates";
+import type { WorkflowResult } from "@/lib/workflow/types";
 
 export interface CertificatesWorkflowInput {
   domain: string;
 }
 
-export type CertificatesWorkflowResult =
-  | {
-      success: true;
-      data: CertificatesResponse;
-    }
-  | {
-      success: false;
-      error: "dns_error" | "tls_error" | "timeout" | "connection_failed";
-      data: CertificatesResponse | null;
-    };
+export type CertificatesWorkflowResult = WorkflowResult<
+  CertificatesResponse,
+  "dns_error" | "tls_error" | "timeout" | "connection_failed"
+>;
 
 // Internal types for step-to-step transfer
 interface RawCertificate {
@@ -68,10 +63,7 @@ export async function certificatesWorkflow(
     return {
       success: false,
       error: errorType,
-      data: {
-        certificates: [],
-        ...(tlsResult.isTlsError && { error: "Invalid SSL certificate" }),
-      },
+      data: null,
     };
   }
 

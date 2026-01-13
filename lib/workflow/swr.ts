@@ -4,6 +4,7 @@ import { analytics } from "@/lib/analytics/server";
 import type { CacheResult } from "@/lib/db/repos/types";
 import { createLogger } from "@/lib/logger/server";
 import { getDeduplicationKey, startWithDeduplication } from "./deduplication";
+import type { WorkflowResult } from "./types";
 
 /** Safety valve timeout for background revalidation (5 minutes) */
 const BACKGROUND_REVALIDATION_TIMEOUT_MS = 5 * 60 * 1000;
@@ -33,16 +34,6 @@ export type SwrResult<T> =
       /** Data is null on failure */
       data: null;
     };
-
-/**
- * Workflow result shape that we expect from workflows.
- * Must have success, data, and optionally error.
- */
-export interface WorkflowResult<T> {
-  success: boolean;
-  data: T | null;
-  error?: string;
-}
 
 /**
  * Options for the withSwrCache helper.
@@ -165,7 +156,7 @@ export async function withSwrCache<T>(
     return run.returnValue;
   });
 
-  if (result.success && result.data) {
+  if (result.success) {
     return {
       success: true,
       cached: false,

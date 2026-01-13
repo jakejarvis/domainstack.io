@@ -122,8 +122,14 @@ export async function fetchIconFromSources(
         contentType: asset.contentType ?? null,
         sourceName: source.name,
       };
-    } catch {
-      // Infrastructure errors are not "not found"
+    } catch (err) {
+      // Infrastructure errors are not "not found" - log for debugging
+      const { createLogger } = await import("@/lib/logger/server");
+      const logger = createLogger({ source: "fetch-icon" });
+      logger.warn(
+        { err, domain, source: source.name },
+        "icon fetch failed from source",
+      );
       allNotFound = false;
     }
   }

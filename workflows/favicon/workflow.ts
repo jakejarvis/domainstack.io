@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -8,10 +9,7 @@ export interface FaviconWorkflowInput {
   domain: string;
 }
 
-export interface FaviconWorkflowResult {
-  success: boolean;
-  data: { url: string | null };
-}
+export type FaviconWorkflowResult = WorkflowResult<{ url: string | null }>;
 
 const DEFAULT_SIZE = 32;
 
@@ -36,9 +34,10 @@ export async function faviconWorkflow(
   });
 
   if (!fetchResult.success) {
-    // Step 2a: Persist failure
+    // Step 2a: Persist "no favicon found" as a cached state
     await persistFailure(domain, fetchResult.allNotFound);
 
+    // "No favicon" is a valid cached result, not a failure
     return {
       success: true,
       data: { url: null },
@@ -47,20 +46,13 @@ export async function faviconWorkflow(
 
   // Step 2b: Process, store, and persist in one step
   // (avoids serializing processed image between steps)
+  // Note: processAndStore throws FatalError on failure
   const result = await processAndStore(
     domain,
     fetchResult.imageBase64,
     fetchResult.contentType,
     fetchResult.sourceName,
   );
-
-  if (!result.success) {
-    await persistFailure(domain, false);
-    return {
-      success: false,
-      data: { url: null },
-    };
-  }
 
   return {
     success: true,
@@ -77,7 +69,7 @@ async function processAndStore(
   imageBase64: string,
   contentType: string | null,
   sourceName: string,
-): Promise<{ success: true; url: string } | { success: false }> {
+): Promise<{ success: true; url: string }> {
   "use step";
 
   const { convertBufferToImageCover } = await import("@/lib/image");

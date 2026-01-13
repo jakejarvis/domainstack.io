@@ -72,31 +72,6 @@ export async function lookupRdap(domain: string): Promise<RdapLookupResult> {
   }
 }
 
-/**
- * Build an error response for failed lookups.
- */
-export function buildErrorResponse(
-  domain: string,
-  error: RdapLookupFailure["error"],
-): RegistrationResponse {
-  const unavailableReason =
-    error === "timeout" ? ("timeout" as const) : ("unsupported_tld" as const);
-
-  return {
-    domain,
-    tld: getDomainTld(domain) ?? "",
-    isRegistered: false,
-    status: "unknown",
-    unavailableReason,
-    source: null,
-    registrarProvider: {
-      id: null,
-      name: null,
-      domain: null,
-    },
-  };
-}
-
 // Type for parsed RDAP record
 interface ParsedRdapRecord {
   domain: string;
@@ -327,8 +302,24 @@ export async function lookupAndPersistRegistration(
     if (rdapResult.error === "retry") {
       return null; // Caller should retry
     }
-    // Return error response for permanent failures
-    return buildErrorResponse(domain, rdapResult.error);
+
+    // Build error response for permanent failures (unsupported_tld, timeout)
+    const unavailableReason =
+      rdapResult.error === "timeout" ? "timeout" : "unsupported_tld";
+
+    return {
+      domain,
+      tld: getDomainTld(domain) ?? "",
+      isRegistered: false,
+      status: "unknown",
+      unavailableReason,
+      source: null,
+      registrarProvider: {
+        id: null,
+        name: null,
+        domain: null,
+      },
+    };
   }
 
   const response = await normalizeRdapRecord(rdapResult.recordJson);
