@@ -9,28 +9,29 @@ import {
 } from "@/lib/db/schema";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import { findDomainByName } from "./domains";
+import type { CacheResult } from "./types";
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;
 
 /**
- * Get cached hosting data for a domain.
- * Returns null if no cached data or cache is expired.
+ * Get cached hosting data for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getHostingCached(
+export async function getHosting(
   domain: string,
-): Promise<HostingResponse | null> {
+): Promise<CacheResult<HostingResponse>> {
   const now = Date.now();
 
   const existingDomain = await findDomainByName(domain);
   if (!existingDomain) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
   const hp = alias(providersTable, "hp");
   const ep = alias(providersTable, "ep");
   const dp = alias(providersTable, "dp");
 
-  const existing = await db
+  const [row] = await db
     .select({
       hostingProviderId: hp.id,
       hostingProviderName: hp.name,
@@ -56,10 +57,12 @@ export async function getHostingCached(
     .where(eq(hostingTable.domainId, existingDomain.id))
     .limit(1);
 
-  const [row] = existing;
-  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
-    return null;
+  if (!row) {
+    return { data: null, stale: false, expiresAt: null };
   }
+
+  const { expiresAt } = row;
+  const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
   const result: HostingResponse = {
     hostingProvider: {
@@ -87,7 +90,7 @@ export async function getHostingCached(
     },
   };
 
-  return result;
+  return { data: result, stale, expiresAt };
 }
 
 export async function upsertHosting(params: HostingInsert) {

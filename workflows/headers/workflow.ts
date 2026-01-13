@@ -120,14 +120,12 @@ async function persistHeadersStep(
   "use step";
 
   const { persistHttpHeaders } = await import("@/lib/domain/headers-lookup");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "headers-workflow" });
 
   try {
     await persistHttpHeaders(domain, headers, status);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist headers");
-    throw new FatalError("Failed to persist headers");
+    throw new FatalError(
+      `Failed to persist headers for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

@@ -54,7 +54,7 @@ export async function screenshotWorkflow(
   const { domain } = input;
 
   // Step 1: Check if domain is blocked (shared step)
-  const isBlocked = await checkBlocklist(domain, "screenshot-workflow");
+  const isBlocked = await checkBlocklist(domain);
 
   if (isBlocked) {
     return {
@@ -100,9 +100,6 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
   "use step";
 
   const { getBrowser, createPage } = await import("@/lib/puppeteer");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "screenshot-workflow" });
 
   // Get a browser instance, may reuse an existing one if available
   const browser = await getBrowser();
@@ -132,8 +129,9 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
       imageBuffer,
     };
   } catch (err) {
-    logger.warn({ err, domain }, "screenshot capture failed, not retrying");
-    throw new FatalError("Screenshot capture failed");
+    throw new FatalError(
+      `Screenshot capture failed for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   } finally {
     // Close page in background to avoid blocking the workflow
     after(() => page?.close());
@@ -208,9 +206,6 @@ async function persistFailure(domain: string): Promise<void> {
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertScreenshot } = await import("@/lib/db/repos/screenshots");
   const { ttlForScreenshot } = await import("@/lib/ttl");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "screenshot-workflow" });
 
   try {
     const domainRecord = await ensureDomainRecord(domain);
@@ -228,6 +223,8 @@ async function persistFailure(domain: string): Promise<void> {
       expiresAt,
     });
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist screenshot failure");
+    throw new FatalError(
+      `Failed to persist screenshot failure for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

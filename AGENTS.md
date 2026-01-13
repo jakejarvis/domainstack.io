@@ -21,6 +21,7 @@
 - `lib/inngest/` Inngest client and functions for background jobs. Uses fan-out pattern with separate `scheduler` and `worker` functions for scalability.
 - `lib/db/` Drizzle ORM schema, migrations, and repository layer for Postgres persistence.
 - `lib/db/repos/` repository layer for each table.
+- `lib/db/repos/types.ts` shared types for repository functions (e.g., `CacheResult<T>` for SWR pattern).
 - `lib/logger/` Pino-based server-side logging system with JSON output in production and pretty-printing in development.
 - `lib/polar/` Polar subscription integration (products config, webhook handlers, downgrade logic, subscription emails).
 - `lib/calendar/` iCalendar feed generation for domain expirations (uses `ical-generator`).
@@ -341,6 +342,46 @@ Best practices for idempotent steps:
 - Use idempotency keys for external API calls (e.g., Resend emails use `stepId`)
 - Check if work is already done before expensive operations
 - Use `startWithDeduplication` in tRPC routers to avoid duplicate workflows
+
+**Stale-While-Revalidate (SWR) Caching:**
+The `lib/workflow/swr.ts` module provides a helper for returning stale cached data immediately while triggering background workflow revalidation:
+
+```typescript
+import { start } from "workflow/api";
+import { withSwrCache } from "@/lib/workflow/swr";
+
+const result = await withSwrCache({
+  workflowName: "registration",
+  domain: "example.com",
+  getCached: () => getRegistration("example.com"),
+  startWorkflow: () => start(registrationWorkflow, [{ domain: "example.com" }]),
+});
+// Returns: { success, cached, stale, data, error? }
+```
+
+SWR behavior:
+- **Fresh data**: Returns immediately with `cached: true, stale: false`
+- **Stale data**: Returns immediately with `cached: true, stale: true`, triggers background revalidation
+- **No data**: Runs workflow and waits with `cached: false, stale: false`
+
+Cache functions in `lib/db/repos/` return `CacheResult<T>` with staleness metadata:
+```typescript
+interface CacheResult<T> {
+  data: T | null;      // The cached data
+  stale: boolean;      // True if data is expired
+  expiresAt: Date | null;
+}
+```
+
+Repository functions:
+- `getRegistration(domain)` - Registration/WHOIS data
+- `getDns(domain)` - DNS records
+- `getHeaders(domain)` - HTTP headers
+- `getHosting(domain)` - Hosting/email/DNS providers
+- `getCertificates(domain)` - SSL certificates
+- `getSeo(domain)` - SEO meta and robots.txt
+- `getFavicon(domain)` / `getFaviconById(domainId)` - Domain favicons
+- `getProviderLogo(providerId)` - Provider logos
 
 **Fetch in Workflows:**
 The SDK provides a durable `fetch` function that makes each fetch a separate step:

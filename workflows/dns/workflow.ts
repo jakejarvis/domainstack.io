@@ -89,9 +89,6 @@ async function persistDnsRecordsStep(
   "use step";
 
   const { persistDnsRecords } = await import("@/lib/domain/dns-lookup");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "dns-workflow" });
 
   try {
     await persistDnsRecords(
@@ -100,7 +97,8 @@ async function persistDnsRecordsStep(
       fetchResult.recordsWithExpiry as Parameters<typeof persistDnsRecords>[2],
     );
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist dns records");
-    throw new FatalError("Failed to persist DNS records");
+    throw new FatalError(
+      `Failed to persist DNS records: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

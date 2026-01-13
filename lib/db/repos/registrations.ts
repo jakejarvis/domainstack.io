@@ -8,6 +8,7 @@ import type {
   RegistrationNameserver,
   RegistrationResponse,
 } from "@/lib/types/domain/registration";
+import type { CacheResult } from "./types";
 
 type RegistrationInsert = InferInsertModel<typeof registrations>;
 
@@ -43,15 +44,15 @@ export async function upsertRegistration(params: RegistrationInsert) {
 }
 
 /**
- * Get cached registration data for a domain if fresh.
- * Returns null if cache miss or stale.
+ * Get cached registration data for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getRegistrationCached(
+export async function getRegistration(
   domain: string,
-): Promise<RegistrationResponse | null> {
+): Promise<CacheResult<RegistrationResponse>> {
   const now = new Date();
 
-  const existing = await db
+  const [row] = await db
     .select({
       domainId: domains.id,
       domainName: domains.name,
@@ -68,11 +69,12 @@ export async function getRegistrationCached(
     .where(eq(domains.name, domain))
     .limit(1);
 
-  if (!existing[0] || existing[0].registration.expiresAt <= now) {
-    return null;
+  if (!row) {
+    return { data: null, stale: false, expiresAt: null };
   }
 
-  const [row] = existing;
+  const { expiresAt } = row.registration;
+  const stale = expiresAt <= now;
 
   const registrarProvider = row.providerName
     ? {
@@ -118,7 +120,7 @@ export async function getRegistrationCached(
     ),
   };
 
-  return response;
+  return { data: response, stale, expiresAt };
 }
 
 /**

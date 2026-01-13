@@ -17,7 +17,7 @@ import {
 } from "@/lib/polar/emails";
 import { getTierForProductId } from "@/lib/polar/products";
 
-const logger = createLogger({ source: "polar-webhooks" });
+const logger = createLogger({ source: "polar/handlers" });
 
 // Extract payload types from WebhooksOptions to ensure compatibility with better-auth.
 // Note: We use better-auth's webhooks() plugin which handles validation internally

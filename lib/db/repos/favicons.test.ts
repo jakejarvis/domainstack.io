@@ -19,7 +19,7 @@ vi.mock("@/lib/db/client", async () => {
 import { db } from "@/lib/db/client";
 import { favicons } from "@/lib/db/schema";
 import { ttlForFavicon } from "@/lib/ttl";
-import { getFaviconByDomainId, upsertFavicon } from "./favicons";
+import { getFaviconById, upsertFavicon } from "./favicons";
 
 let testDomainId: string;
 
@@ -132,13 +132,15 @@ describe("upsertFavicon", () => {
   });
 });
 
-describe("getFaviconByDomainId", () => {
-  it("returns null when domain has no favicon", async () => {
-    const result = await getFaviconByDomainId(testDomainId);
-    expect(result).toBeNull();
+describe("getFaviconById", () => {
+  it("returns null data when domain has no favicon", async () => {
+    const result = await getFaviconById(testDomainId);
+    expect(result.data).toBeNull();
+    expect(result.stale).toBe(false);
+    expect(result.expiresAt).toBeNull();
   });
 
-  it("returns favicon when not expired", async () => {
+  it("returns fresh favicon when not expired", async () => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 3600 * 1000); // 1 hour from now
 
@@ -155,14 +157,14 @@ describe("getFaviconByDomainId", () => {
       expiresAt,
     });
 
-    const result = await getFaviconByDomainId(testDomainId);
-    expect(result).not.toBeNull();
-    if (!result) throw new Error("Expected result");
-
-    expect(result.url).toBe("https://example.test/favicon.webp");
+    const result = await getFaviconById(testDomainId);
+    expect(result.data).not.toBeNull();
+    expect(result.data?.url).toBe("https://example.test/favicon.webp");
+    expect(result.stale).toBe(false);
+    expect(result.expiresAt).toEqual(expiresAt);
   });
 
-  it("returns null when favicon is expired", async () => {
+  it("returns stale favicon when expired", async () => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() - 1000); // 1 second ago
 
@@ -179,7 +181,11 @@ describe("getFaviconByDomainId", () => {
       expiresAt,
     });
 
-    const result = await getFaviconByDomainId(testDomainId);
-    expect(result).toBeNull();
+    const result = await getFaviconById(testDomainId);
+    // Stale-while-revalidate: returns data even when expired
+    expect(result.data).not.toBeNull();
+    expect(result.data?.url).toBe("https://example.test/favicon.webp");
+    expect(result.stale).toBe(true);
+    expect(result.expiresAt).toEqual(expiresAt);
   });
 });

@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client";
 import { userSubscriptions, users } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "user-subscription" });
+const logger = createLogger({ source: "db/repos/user-subscription" });
 
 /** Plan type derived from PLANS constant (single source of truth). */
 type Plan = (typeof PLANS)[number];

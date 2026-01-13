@@ -1,4 +1,4 @@
-import { getWorkflowMetadata } from "workflow";
+import { FatalError } from "workflow";
 import {
   fetchIconFromSources,
   type IconFetchResult,
@@ -38,8 +38,6 @@ export async function providerLogoWorkflow(
       maxBytes: 2 * 1024 * 1024, // 2MB for provider logos
       timeoutMs: 2000,
       useLogoDev: true, // Enable logo.dev for provider logos
-      loggerSource: "provider-logo-workflow",
-      errorPrefix: "Provider logo",
     },
   );
 
@@ -94,9 +92,6 @@ async function processAndStore(
   const { storeImage } = await import("@/lib/storage");
   const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "provider-logo-workflow" });
 
   try {
     // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
@@ -109,11 +104,9 @@ async function processAndStore(
     );
 
     if (!processedBuffer || processedBuffer.length === 0) {
-      logger.warn(
-        { providerId, providerDomain, inputSize: inputBuffer.length },
-        "image processing returned empty result",
+      throw new FatalError(
+        `Image processing returned empty result for provider ${providerId}`,
       );
-      return { success: false };
     }
 
     // 2. Store to Vercel Blob
@@ -140,16 +133,11 @@ async function processAndStore(
       expiresAt,
     });
 
-    logger.debug({ providerId, providerDomain }, "provider logo stored");
-
     return { success: true, url };
   } catch (err) {
-    const { workflowRunId } = getWorkflowMetadata();
-    logger.error(
-      { err, providerId, providerDomain, workflowRunId },
-      "failed to process provider logo",
+    throw new FatalError(
+      `Failed to process provider logo for provider ${providerId}: ${err instanceof Error ? err.message : String(err)}`,
     );
-    throw err; // Re-throw so workflow can retry
   }
 }
 
@@ -164,9 +152,6 @@ async function persistFailure(
 
   const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "provider-logo-workflow" });
 
   try {
     const now = new Date();
@@ -182,14 +167,9 @@ async function persistFailure(
       fetchedAt: now,
       expiresAt,
     });
-
-    logger.debug({ providerId, isNotFound }, "provider logo failure persisted");
   } catch (err) {
-    const { workflowRunId } = getWorkflowMetadata();
-    logger.error(
-      { err, providerId, workflowRunId },
-      "failed to persist logo failure",
+    throw new FatalError(
+      `Failed to persist provider logo failure for provider ${providerId}: ${err instanceof Error ? err.message : String(err)}`,
     );
-    throw err; // Re-throw so workflow can retry
   }
 }

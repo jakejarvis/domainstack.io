@@ -135,14 +135,11 @@ async function persistRegistrationStep(
   const { persistRegistrationData } = await import(
     "@/lib/domain/registration-lookup"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "registration-workflow" });
-
   try {
     return await persistRegistrationData(domain, response);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist registration");
-    throw new FatalError("Failed to persist registration");
+    throw new FatalError(
+      `Failed to persist registration for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

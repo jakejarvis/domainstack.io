@@ -18,7 +18,7 @@ import { createLogger } from "@/lib/logger/server";
 import { ttlForDnsRecord } from "@/lib/ttl";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 
-const logger = createLogger({ source: "dns-records" });
+const logger = createLogger({ source: "dns-lookup" });
 
 export interface DnsLookupResult {
   records: DnsRecord[];

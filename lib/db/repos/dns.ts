@@ -8,6 +8,7 @@ import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
 import { deduplicateDnsRecords, makeDnsRecordKey } from "@/lib/dns-utils";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 import { findDomainByName } from "./domains";
+import type { CacheResult } from "./types";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
 
@@ -131,19 +132,19 @@ export async function replaceDns(params: UpsertDnsParams) {
 }
 
 /**
- * Get cached DNS records for a domain if fresh.
- * Returns null if cache miss or stale.
+ * Get cached DNS records for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getDnsCached(
+export async function getDns(
   domain: string,
-): Promise<DnsRecordsResponse | null> {
+): Promise<CacheResult<DnsRecordsResponse>> {
   const nowMs = Date.now();
   const types = DNS_RECORD_TYPES;
 
   const existingDomain = await findDomainByName(domain);
 
   if (!existingDomain) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
   const rows = await db
@@ -161,17 +162,18 @@ export async function getDnsCached(
     .where(eq(dnsRecords.domainId, existingDomain.id));
 
   if (rows.length === 0) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
-  // Check if ALL records are still fresh
-  // A domain may not have all record types (e.g., no AAAA records) - that's fine.
-  // We just need all existing records to be fresh.
-  const allFresh = rows.every((r) => (r.expiresAt?.getTime?.() ?? 0) > nowMs);
+  // Find the earliest expiration across all records
+  const earliestExpiresAt = rows.reduce<Date | null>((earliest, r) => {
+    if (!r.expiresAt) return earliest;
+    if (!earliest) return r.expiresAt;
+    return r.expiresAt < earliest ? r.expiresAt : earliest;
+  }, null);
 
-  if (!allFresh) {
-    return null;
-  }
+  // Check if ANY record is stale (if one is stale, we should revalidate all)
+  const stale = rows.some((r) => (r.expiresAt?.getTime?.() ?? 0) <= nowMs);
 
   // Assemble cached records
   const records: DnsRecord[] = rows.map((r) => ({
@@ -188,12 +190,16 @@ export async function getDnsCached(
   const sorted = sortDnsRecordsByType(deduplicated, types);
 
   return {
-    records: sorted,
-    resolver: rows[0]?.resolver ?? null,
+    data: {
+      records: sorted,
+      resolver: rows[0]?.resolver ?? null,
+    },
+    stale,
+    expiresAt: earliestExpiresAt,
   };
 }
 
-// Helper functions for getDnsCached
+// Helper functions for getDns
 
 function sortDnsRecordsByType(
   records: DnsRecord[],

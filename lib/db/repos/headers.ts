@@ -5,6 +5,7 @@ import { httpHeaders } from "@/lib/db/schema";
 import { normalizeHeaders } from "@/lib/headers-utils";
 import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 import { findDomainByName } from "./domains";
+import type { CacheResult } from "./types";
 
 export interface ReplaceHeadersParams {
   domainId: string;
@@ -45,20 +46,20 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
 }
 
 /**
- * Get cached headers for a domain if fresh.
- * Returns null if cache miss or stale.
+ * Get cached headers for a domain with staleness metadata.
+ * Returns data even if expired, with `stale: true` flag.
  */
-export async function getHeadersCached(
+export async function getHeaders(
   domain: string,
-): Promise<HeadersResponse | null> {
+): Promise<CacheResult<HeadersResponse>> {
   const now = Date.now();
 
   const existingDomain = await findDomainByName(domain);
   if (!existingDomain) {
-    return null;
+    return { data: null, stale: false, expiresAt: null };
   }
 
-  const existing = await db
+  const [row] = await db
     .select({
       headers: httpHeaders.headers,
       status: httpHeaders.status,
@@ -68,10 +69,12 @@ export async function getHeadersCached(
     .where(eq(httpHeaders.domainId, existingDomain.id))
     .limit(1);
 
-  const [row] = existing;
-  if (!row || (row.expiresAt?.getTime?.() ?? 0) <= now) {
-    return null;
+  if (!row) {
+    return { data: null, stale: false, expiresAt: null };
   }
+
+  const { expiresAt } = row;
+  const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
   // Get status message
   let statusMessage: string | undefined;
@@ -87,8 +90,12 @@ export async function getHeadersCached(
   const normalized = normalizeHeaders(row.headers as Header[]);
 
   return {
-    headers: normalized,
-    status: row.status,
-    statusMessage,
+    data: {
+      headers: normalized,
+      status: row.status,
+      statusMessage,
+    },
+    stale,
+    expiresAt,
   };
 }

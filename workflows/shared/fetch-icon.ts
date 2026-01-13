@@ -24,10 +24,6 @@ export interface FetchIconOptions {
   timeoutMs: number;
   /** Whether to use logo.dev as a source */
   useLogoDev?: boolean;
-  /** Logger source identifier */
-  loggerSource: string;
-  /** Error message prefix for RetryableError */
-  errorPrefix: string;
 }
 
 /**
@@ -53,10 +49,7 @@ export async function fetchIconFromSources(
 ): Promise<IconFetchResult> {
   "use step";
 
-  const { safeFetch, SafeFetchError } = await import("@/lib/safe-fetch");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: options.loggerSource });
+  const { safeFetch } = await import("@/lib/safe-fetch");
 
   const { size = 32, useLogoDev = false } = options;
   const sources: IconSource[] = [];
@@ -129,10 +122,7 @@ export async function fetchIconFromSources(
         contentType: asset.contentType ?? null,
         sourceName: source.name,
       };
-    } catch (err) {
-      if (!(err instanceof SafeFetchError)) {
-        logger.warn({ err, domain, source: source.name }, "fetch failed");
-      }
+    } catch {
       // Infrastructure errors are not "not found"
       allNotFound = false;
     }
@@ -141,11 +131,7 @@ export async function fetchIconFromSources(
   // If all sources returned 404, it's a permanent failure (no icon exists)
   // Otherwise, it could be transient network issues - throw to retry
   if (!allNotFound) {
-    logger.warn(
-      { domain },
-      `${options.errorPrefix} fetch failed with non-404 errors, will retry`,
-    );
-    throw new RetryableError(`${options.errorPrefix} fetch failed`, {
+    throw new RetryableError(`Icon fetch failed for domain ${domain}`, {
       retryAfter: "3s",
     });
   }

@@ -156,14 +156,12 @@ async function persistCertificatesStep(
   const { persistCertificatesData } = await import(
     "@/lib/domain/certificates-lookup"
   );
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "certificates-workflow" });
 
   try {
     await persistCertificatesData(domain, result);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist certificates");
-    throw new FatalError("Failed to persist certificates");
+    throw new FatalError(
+      `Failed to persist certificates: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

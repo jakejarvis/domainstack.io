@@ -11,7 +11,7 @@ import { createCaller } from "@/server/routers/_app";
 
 const SIZE = { width: 1200, height: 630 };
 
-const logger = createLogger({ source: "og" });
+const logger = createLogger({ source: "api/og" });
 
 // Provider colors for dynamic chips
 const PROVIDER_COLORS = {

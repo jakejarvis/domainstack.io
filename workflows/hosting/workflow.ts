@@ -146,14 +146,11 @@ async function persistHostingStep(
   "use step";
 
   const { persistHostingData } = await import("@/lib/domain/hosting-lookup");
-  const { createLogger } = await import("@/lib/logger/server");
-
-  const logger = createLogger({ source: "hosting-workflow" });
-
   try {
     await persistHostingData(domain, providers, geo);
   } catch (err) {
-    logger.error({ err, domain }, "failed to persist hosting data");
-    throw new FatalError("Failed to persist hosting data");
+    throw new FatalError(
+      `Failed to persist hosting data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }

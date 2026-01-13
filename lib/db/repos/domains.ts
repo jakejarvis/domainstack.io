@@ -6,7 +6,7 @@ import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";
 
-const logger = createLogger({ source: "domains" });
+const logger = createLogger({ source: "db/repos/domains" });
 
 /**
  * Debounce interval for updating domain lastAccessedAt timestamp.
