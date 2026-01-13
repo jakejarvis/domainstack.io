@@ -76,12 +76,12 @@ export async function fetchIconFromSources(
   // Fallback to standard favicon sources
   sources.push(
     {
-      url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-      name: "duckduckgo",
-    },
-    {
       url: `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
       name: "google",
+    },
+    {
+      url: `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      name: "duckduckgo",
     },
     {
       url: `https://${domain}/favicon.ico`,
