@@ -91,6 +91,22 @@ export function RobotsSummary({
     return false;
   }, [robots]);
 
+  // Check if there are groups with empty rules (e.g., "Disallow:" with no path means allow all)
+  const hasEmptyRulesGroups = useMemo(() => {
+    const groups = robots?.groups ?? [];
+    for (const g of groups) {
+      for (const r of g.rules) {
+        if (
+          (r.type === "allow" || r.type === "disallow") &&
+          r.value.trim() === ""
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [robots]);
+
   const [query, setQuery] = useState("");
   const [only, setOnly] = useState<"all" | "allow" | "disallow">("all");
 
@@ -287,6 +303,14 @@ export function RobotsSummary({
                 only={only}
               />
             </>
+          ) : hasEmptyRulesGroups ? (
+            // Show groups with empty rules (e.g., "Disallow:" means allow all)
+            <GroupsAccordion
+              groups={displayGroups}
+              query={query}
+              highlight={highlight}
+              only={only}
+            />
           ) : robots?.sitemaps?.length ? (
             <Empty className="border border-dashed">
               <EmptyHeader>
