@@ -117,7 +117,11 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => updateLastAccessed(input.domain as string));
+    after(() => {
+      void updateLastAccessed(input.domain as string).catch(() => {
+        // no-op - access tracking should never break the request
+      });
+    });
   }
   return next();
 });

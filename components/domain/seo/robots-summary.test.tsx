@@ -69,9 +69,17 @@ describe("RobotsSummary", () => {
       );
     });
 
-    it("shows empty state when no robots.txt found", () => {
-      render(<RobotsSummary domain="example.com" robots={null} />);
-      expect(screen.getByText(/No robots.txt found/i)).toBeInTheDocument();
+    it("shows empty state when robots.txt has empty groups", () => {
+      const robots: SeoResponse["robots"] = {
+        fetched: true,
+        groups: [],
+        sitemaps: [],
+      };
+      render(<RobotsSummary domain="example.com" robots={robots} />);
+      // When there are no groups and no sitemaps, only the header with link is shown
+      expect(
+        screen.getByRole("link", { name: /robots\.txt/i }),
+      ).toBeInTheDocument();
     });
 
     it("shows appropriate message when robots.txt has no rules but has sitemaps", () => {

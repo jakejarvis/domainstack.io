@@ -1,3 +1,5 @@
+"use client";
+
 import { DownloadSimpleIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
@@ -5,18 +7,27 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useReportExport } from "@/hooks/use-report-export";
 
-type ExportButtonProps = {
-  disabled?: boolean;
-  onExport: () => void;
-};
+export function ExportButton({
+  domain,
+  enabled = true,
+}: {
+  domain: string;
+  enabled?: boolean;
+}) {
+  // Track export state and get export handler
+  const { handleExport, allDataLoaded } = useReportExport(domain);
 
-export function ExportButton({ disabled, onExport }: ExportButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger
         render={
-          <Button variant="outline" onClick={onExport} disabled={disabled}>
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={!enabled || !allDataLoaded}
+          >
             <DownloadSimpleIcon className="sm:text-muted-foreground" />
             <span className="hidden sm:inline-block">Export</span>
           </Button>

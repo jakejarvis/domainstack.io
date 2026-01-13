@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { DomainReportClient } from "@/components/domain/report-client";
 import { analytics } from "@/lib/analytics/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
-import { getQueryClient, trpc } from "@/trpc/server";
 
 export async function generateMetadata({
   params,
@@ -69,29 +68,6 @@ export default async function DomainPage({
 
   // Track server-side page view
   analytics.track("report_viewed", { domain: registrable });
-
-  // Parallel prefetch: start all queries simultaneously (fire-and-forget)
-  // This eliminates waterfall while allowing the page to stream immediately
-  // Use getQueryClient() to ensure consistent query client across the request
-  const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
-    trpc.domain.getRegistration.queryOptions({ domain: registrable }),
-  );
-  void queryClient.prefetchQuery(
-    trpc.domain.getHosting.queryOptions({ domain: registrable }),
-  );
-  void queryClient.prefetchQuery(
-    trpc.domain.getDnsRecords.queryOptions({ domain: registrable }),
-  );
-  void queryClient.prefetchQuery(
-    trpc.domain.getCertificates.queryOptions({ domain: registrable }),
-  );
-  void queryClient.prefetchQuery(
-    trpc.domain.getHeaders.queryOptions({ domain: registrable }),
-  );
-  void queryClient.prefetchQuery(
-    trpc.domain.getSeo.queryOptions({ domain: registrable }),
-  );
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6">

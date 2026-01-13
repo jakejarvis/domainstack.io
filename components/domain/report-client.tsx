@@ -1,6 +1,6 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQueries } from "@tanstack/react-query";
 import { Suspense, useRef } from "react";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -19,103 +19,72 @@ import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
 import { useDomainHistory } from "@/hooks/use-domain-history";
-import { useReportExport } from "@/hooks/use-report-export";
 import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
 import { sections } from "@/lib/constants/sections";
 import { useTRPC } from "@/lib/trpc/client";
 
-// Section content components that fetch and render data
-function RegistrationSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getRegistration.queryOptions({ domain }),
-  );
-  return <RegistrationSection domain={domain} data={data.data} />;
-}
-
-function HostingSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getHosting.queryOptions({ domain }),
-  );
-  return <HostingSection domain={domain} data={data.data} />;
-}
-
-function DnsSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getDnsRecords.queryOptions({ domain }),
-  );
-  return <DnsSection domain={domain} data={data.data} />;
-}
-
-function CertificatesSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getCertificates.queryOptions({ domain }),
-  );
-  return <CertificatesSection domain={domain} data={data.data} />;
-}
-
-function HeadersSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getHeaders.queryOptions({ domain }),
-  );
-  return <HeadersSection domain={domain} data={data.data} />;
-}
-
-function SeoSectionContent({ domain }: { domain: string }) {
-  const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getSeo.queryOptions({ domain }),
-  );
-  return <SeoSection domain={domain} data={data.data} />;
-}
-
-/**
- * All report sections wrapped in individual suspense boundaries.
- * Renders independently of the header/nav for progressive loading.
- */
-function ReportSections({ domain }: { domain: string }) {
+function AllSkeletonsExceptRegistration() {
   return (
-    <div className="space-y-4">
-      <SectionErrorBoundary sectionName="Registration">
-        <Suspense fallback={<RegistrationSectionSkeleton />}>
-          <RegistrationSectionContent domain={domain} />
-        </Suspense>
-      </SectionErrorBoundary>
+    <>
+      <HostingSectionSkeleton />
+      <DnsSectionSkeleton />
+      <CertificatesSectionSkeleton />
+      <HeadersSectionSkeleton />
+      <SeoSectionSkeleton />
+    </>
+  );
+}
 
+function SuspendedSections({
+  domain,
+  isRegistered,
+}: {
+  domain: string;
+  isRegistered: boolean;
+}) {
+  const trpc = useTRPC();
+  const [hosting, dns, certificates, headers, seo] = useSuspenseQueries({
+    queries: [
+      trpc.domain.getHosting.queryOptions({ domain }),
+      trpc.domain.getDnsRecords.queryOptions({ domain }),
+      trpc.domain.getCertificates.queryOptions({ domain }),
+      trpc.domain.getHeaders.queryOptions({ domain }),
+      trpc.domain.getSeo.queryOptions({ domain }),
+    ],
+  });
+
+  if (!isRegistered) {
+    return <AllSkeletonsExceptRegistration />;
+  }
+
+  return (
+    <>
       <SectionErrorBoundary sectionName="Hosting">
         <Suspense fallback={<HostingSectionSkeleton />}>
-          <HostingSectionContent domain={domain} />
+          <HostingSection domain={domain} data={hosting.data.data} />
         </Suspense>
       </SectionErrorBoundary>
-
       <SectionErrorBoundary sectionName="DNS">
         <Suspense fallback={<DnsSectionSkeleton />}>
-          <DnsSectionContent domain={domain} />
+          <DnsSection domain={domain} data={dns.data.data} />
         </Suspense>
       </SectionErrorBoundary>
-
       <SectionErrorBoundary sectionName="Certificates">
         <Suspense fallback={<CertificatesSectionSkeleton />}>
-          <CertificatesSectionContent domain={domain} />
+          <CertificatesSection domain={domain} data={certificates.data.data} />
         </Suspense>
       </SectionErrorBoundary>
-
       <SectionErrorBoundary sectionName="Headers">
         <Suspense fallback={<HeadersSectionSkeleton />}>
-          <HeadersSectionContent domain={domain} />
+          <HeadersSection domain={domain} data={headers.data.data} />
         </Suspense>
       </SectionErrorBoundary>
-
       <SectionErrorBoundary sectionName="SEO">
         <Suspense fallback={<SeoSectionSkeleton />}>
-          <SeoSectionContent domain={domain} />
+          <SeoSection domain={domain} data={seo.data.data} />
         </Suspense>
       </SectionErrorBoundary>
-    </div>
+    </>
   );
 }
 
@@ -130,15 +99,10 @@ function ReportSections({ domain }: { domain: string }) {
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
 
-  const { data: registration } = useSuspenseQuery(
+  const { data: registration, isLoading: isRegistrationLoading } = useQuery(
     trpc.domain.getRegistration.queryOptions({ domain }),
   );
   const domainId = registration?.data?.domainId;
-
-  // Check if domain is confirmed unregistered (hide header/nav in this case)
-  const isConfirmedUnregistered =
-    registration?.data?.isRegistered === false &&
-    registration?.data?.source !== null;
 
   // Section navigation - tracks active section and header visibility for context injection
   const headerRef = useRef<HTMLDivElement>(null);
@@ -149,13 +113,12 @@ export function DomainReportClient({ domain }: { domain: string }) {
     });
 
   // Add to search history for registered domains
-  useDomainHistory(domain, { enabled: !isConfirmedUnregistered });
-
-  // Track export state and get export handler
-  const { handleExport, allDataLoaded } = useReportExport(domain);
+  useDomainHistory(domain, {
+    enabled: registration?.data?.isRegistered === true,
+  });
 
   // For confirmed unregistered domains, show only the unregistered card
-  if (isConfirmedUnregistered) {
+  if (!isRegistrationLoading && !registration?.data?.isRegistered) {
     return <DomainUnregisteredCard domain={domain} />;
   }
 
@@ -165,9 +128,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
       <DomainReportHeader
         domain={domain}
         domainId={domainId}
-        isRegistered={registration?.data?.isRegistered === true}
-        onExport={handleExport}
-        exportDisabled={!allDataLoaded}
+        isRegistered={registration?.data?.isRegistered}
         ref={headerRef}
       />
 
@@ -180,8 +141,21 @@ export function DomainReportClient({ domain }: { domain: string }) {
         onSectionClick={scrollToSection}
       />
 
-      {/* Content area - individual sections have their own Suspense boundaries */}
-      <ReportSections domain={domain} />
+      {/* Content area - individual sections have their own Suspense boundaries BUT we still need a boundary here for the header to render immediately */}
+      <div className="space-y-4">
+        {isRegistrationLoading ? (
+          <RegistrationSectionSkeleton />
+        ) : (
+          <RegistrationSection domain={domain} data={registration?.data} />
+        )}
+
+        <Suspense fallback={<AllSkeletonsExceptRegistration />}>
+          <SuspendedSections
+            domain={domain}
+            isRegistered={registration?.data?.isRegistered === true}
+          />
+        </Suspense>
+      </div>
     </div>
   );
 }

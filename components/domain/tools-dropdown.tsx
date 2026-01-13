@@ -18,6 +18,7 @@ import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ToolsDropdownProps = {
   domain: string;
+  enabled?: boolean;
 };
 
 type Tool = {
@@ -144,7 +145,7 @@ const TOOLS = (
   a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
 );
 
-export function ToolsDropdown({ domain }: ToolsDropdownProps) {
+export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
   return (
     <DropdownMenu>
       <Tooltip>
@@ -152,7 +153,12 @@ export function ToolsDropdown({ domain }: ToolsDropdownProps) {
           render={
             <TooltipTrigger
               render={
-                <Button variant="outline" aria-label="Open menu" size="icon">
+                <Button
+                  variant="outline"
+                  aria-label="Open menu"
+                  size="icon"
+                  disabled={!enabled}
+                >
                   <DotsThreeVerticalIcon weight="bold" />
                   <span className="sr-only">Open tools menu</span>
                 </Button>

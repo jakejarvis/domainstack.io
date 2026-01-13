@@ -11,13 +11,13 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
-import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 
 export function DnsSection({
   data,
 }: {
   domain?: string;
-  data?: { records?: DnsRecord[] | null } | null;
+  data?: DnsRecordsResponse | null;
 }) {
   const records = data?.records;
   const recordsByType = useMemo(() => {

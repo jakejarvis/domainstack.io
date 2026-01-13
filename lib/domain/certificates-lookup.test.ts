@@ -1,7 +1,7 @@
 /* @vitest-environment node */
 import type * as tls from "node:tls";
 import { describe, expect, it } from "vitest";
-import { parseAltNames, toName } from "../tls-utils";
+import { parseAltNames, toName } from "@/lib/tls-utils";
 
 describe("certificates helper functions", () => {
   describe("toName", () => {

@@ -1,4 +1,3 @@
-import { RetryableError } from "workflow";
 import { BASE_URL } from "@/lib/constants/app";
 
 export interface IconFetchSuccess {
@@ -10,7 +9,14 @@ export interface IconFetchSuccess {
 
 export interface IconFetchFailure {
   success: false;
-  allNotFound: true;
+  /**
+   * True when this was a definitive "no icon exists / cannot be fetched" outcome
+   * (e.g. 404s everywhere, NXDOMAIN for direct fetches, blocked/private host).
+   *
+   * False when at least one source failed in a way that might be transient
+   * (e.g. 5xx, timeouts), meaning we should avoid caching this as "permanently not found".
+   */
+  allNotFound: boolean;
 }
 
 export type IconFetchResult = IconFetchSuccess | IconFetchFailure;
@@ -106,8 +112,11 @@ export async function fetchIconFromSources(
       });
 
       if (!asset.ok) {
-        // 404 is still considered a true "not found", other errors are not
-        if (asset.status !== 404) {
+        // 404 (and some "bad request" responses from upstream favicon APIs) are
+        // definitive "not found". Other non-2xx are treated as non-definitive.
+        const isDefinitiveNotFoundStatus =
+          asset.status === 404 || asset.status === 400;
+        if (!isDefinitiveNotFoundStatus) {
           allNotFound = false;
         }
         continue;
@@ -122,19 +131,36 @@ export async function fetchIconFromSources(
         contentType: asset.contentType ?? null,
         sourceName: source.name,
       };
-    } catch {
-      // Infrastructure errors are not "not found"
-      allNotFound = false;
+    } catch (err) {
+      // `safeFetch` throws on "infrastructure" failures (DNS/SSRF blocking/etc).
+      // Some of these are actually definitive "not found" outcomes for our use case
+      // (e.g. NXDOMAIN for `https://${domain}/favicon.ico`).
+      if (!isDefinitiveNotFoundError(err)) {
+        allNotFound = false;
+      }
     }
   }
 
-  // If all sources returned 404, it's a permanent failure (no icon exists)
-  // Otherwise, it could be transient network issues - throw to retry
-  if (!allNotFound) {
-    throw new RetryableError(`Icon fetch failed for domain ${domain}`, {
-      retryAfter: "3s",
-    });
-  }
+  return { success: false, allNotFound };
+}
 
-  return { success: false, allNotFound: true };
+function isDefinitiveNotFoundError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const maybe = err as { name?: unknown; code?: unknown };
+  if (maybe.name !== "SafeFetchError") return false;
+
+  // These codes are deterministic for a given input URL, and should be treated as
+  // "no icon can be fetched" rather than something we should retry.
+  //
+  // In particular, `dns_error` is expected for non-existent domains (NXDOMAIN).
+  const definitiveCodes = new Set([
+    "dns_error",
+    "host_blocked",
+    "host_not_allowed",
+    "private_ip",
+    "protocol_not_allowed",
+    "invalid_url",
+  ]);
+
+  return typeof maybe.code === "string" && definitiveCodes.has(maybe.code);
 }

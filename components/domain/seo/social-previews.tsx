@@ -76,18 +76,20 @@ export function SocialPreviews({
             <span className="hidden text-[13px] md:inline">Slack</span>
           </TabsTrigger>
         </TabsList>
-        <div className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]">
-          <TabsContent value={selectedTab} className="grid place-items-center">
-            <SocialPreview
-              provider={selectedTab}
-              title={preview.title}
-              description={preview.description}
-              image={preview.imageUploaded ?? null}
-              url={preview.canonicalUrl}
-              variant={selectedTab === "twitter" ? twitterVariant : undefined}
-            />
-          </TabsContent>
-        </div>
+
+        <TabsContent
+          value={selectedTab}
+          className="mx-auto mt-4 mb-2 w-full max-w-[480px] md:max-w-[640px]"
+        >
+          <SocialPreview
+            provider={selectedTab}
+            title={preview.title}
+            description={preview.description}
+            image={preview.imageUploaded ?? null}
+            url={preview.canonicalUrl}
+            variant={selectedTab === "twitter" ? twitterVariant : undefined}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

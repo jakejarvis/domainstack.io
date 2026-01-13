@@ -68,7 +68,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ReactQueryStreamedHydration>
+      <ReactQueryStreamedHydration queryClient={queryClient}>
         <Provider trpcClient={trpcClient} queryClient={queryClient}>
           {children}
           {process.env.NODE_ENV === "development" && (

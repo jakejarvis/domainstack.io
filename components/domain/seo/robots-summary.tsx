@@ -52,11 +52,6 @@ export function RobotsSummary({
   domain: string;
   robots: SeoResponse["robots"];
 }) {
-  const has =
-    !!robots &&
-    robots.fetched &&
-    ((robots.groups?.length ?? 0) > 0 || (robots.sitemaps?.length ?? 0) > 0);
-
   const counts = useMemo(() => {
     const isNonEmpty = (r: { value: string }) => r.value.trim() !== "";
     const disallows =
@@ -195,155 +190,140 @@ export function RobotsSummary({
         />
       </div>
 
-      {has ? (
-        <div className="space-y-4">
-          {hasAnyListedRules ? (
-            <>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <InputGroup className="sm:flex-1">
-                  <InputGroupInput
-                    name="robots-filter"
-                    placeholder="Filter rules…"
-                    value={query}
-                    onChange={(e) => setQuery(e.currentTarget.value)}
-                    aria-label="Filter robots rules"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                  />
-                  <InputGroupAddon>
-                    <FunnelIcon />
+      <div className="space-y-4">
+        {hasAnyListedRules ? (
+          <>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <InputGroup className="sm:flex-1">
+                <InputGroupInput
+                  name="robots-filter"
+                  placeholder="Filter rules…"
+                  value={query}
+                  onChange={(e) => setQuery(e.currentTarget.value)}
+                  aria-label="Filter robots rules"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+                <InputGroupAddon>
+                  <FunnelIcon />
+                </InputGroupAddon>
+                {query ? (
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setQuery("")}
+                    >
+                      <XIcon />
+                    </InputGroupButton>
                   </InputGroupAddon>
-                  {query ? (
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupButton
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQuery("")}
-                      >
-                        <XIcon />
-                      </InputGroupButton>
-                    </InputGroupAddon>
-                  ) : null}
-                </InputGroup>
+                ) : null}
+              </InputGroup>
 
-                <ToggleGroup
-                  multiple={false}
-                  value={[only]}
-                  onValueChange={(groupValue) => {
-                    const next = groupValue[0] as typeof only | undefined;
-                    setOnly(next ?? "all");
-                  }}
-                  spacing={1}
-                  className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
+              <ToggleGroup
+                multiple={false}
+                value={[only]}
+                onValueChange={(groupValue) => {
+                  const next = groupValue[0] as typeof only | undefined;
+                  setOnly(next ?? "all");
+                }}
+                spacing={1}
+                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
+              >
+                <ToggleGroupItem
+                  value="all"
+                  variant="outline"
+                  className="h-full"
                 >
-                  <ToggleGroupItem
-                    value="all"
-                    variant="outline"
-                    className="h-full"
-                  >
-                    <CircleIcon
-                      className="size-3.5 text-accent-blue"
-                      aria-hidden
-                    />
-                    All
-                    <PillCount
-                      count={(counts.allows + counts.disallows) as number}
-                      color="slate"
-                    />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="allow"
-                    variant="outline"
-                    className="h-full"
-                  >
-                    <CheckCircleIcon
-                      className="size-3.5 text-accent-green"
-                      aria-hidden
-                    />
-                    <span>Allow</span>
-                    <PillCount count={counts.allows} color="slate" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="disallow"
-                    variant="outline"
-                    className="h-full"
-                  >
-                    <ProhibitIcon
-                      className="size-3.5 text-destructive"
-                      aria-hidden
-                    />
-                    <span>Disallow</span>
-                    <PillCount count={counts.disallows} color="slate" />
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                  <CircleIcon
+                    className="size-3.5 text-accent-blue"
+                    aria-hidden
+                  />
+                  All
+                  <PillCount
+                    count={(counts.allows + counts.disallows) as number}
+                    color="slate"
+                  />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="allow"
+                  variant="outline"
+                  className="h-full"
+                >
+                  <CheckCircleIcon
+                    className="size-3.5 text-accent-green"
+                    aria-hidden
+                  />
+                  <span>Allow</span>
+                  <PillCount count={counts.allows} color="slate" />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="disallow"
+                  variant="outline"
+                  className="h-full"
+                >
+                  <ProhibitIcon
+                    className="size-3.5 text-destructive"
+                    aria-hidden
+                  />
+                  <span>Disallow</span>
+                  <PillCount count={counts.disallows} color="slate" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            {filtersActive && !hasFilteredRules ? (
+              <div className="text-muted-foreground text-sm">
+                No matching rules.
+                <Button
+                  variant="link"
+                  className="px-1"
+                  onClick={() => {
+                    setQuery("");
+                    setOnly("all");
+                  }}
+                >
+                  Reset filters
+                </Button>
               </div>
+            ) : null}
 
-              {filtersActive && !hasFilteredRules ? (
-                <div className="text-muted-foreground text-sm">
-                  No matching rules.
-                  <Button
-                    variant="link"
-                    className="px-1"
-                    onClick={() => {
-                      setQuery("");
-                      setOnly("all");
-                    }}
-                  >
-                    Reset filters
-                  </Button>
-                </div>
-              ) : null}
-
-              <GroupsAccordion
-                groups={displayGroups}
-                query={query}
-                highlight={highlight}
-                only={only}
-              />
-            </>
-          ) : hasEmptyRulesGroups ? (
-            // Show groups with empty rules (e.g., "Disallow:" means allow all)
             <GroupsAccordion
               groups={displayGroups}
               query={query}
               highlight={highlight}
               only={only}
             />
-          ) : robots?.sitemaps?.length ? (
-            <Empty className="border border-dashed">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <QuestionIcon />
-                </EmptyMedia>
-                <EmptyTitle>No crawl rules detected</EmptyTitle>
-                <EmptyDescription>
-                  This website&apos;s robots.txt only declares sitemaps; no
-                  crawl rules are specified.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ) : null}
+          </>
+        ) : hasEmptyRulesGroups ? (
+          // Show groups with empty rules (e.g., "Disallow:" means allow all)
+          <GroupsAccordion
+            groups={displayGroups}
+            query={query}
+            highlight={highlight}
+            only={only}
+          />
+        ) : robots?.sitemaps?.length ? (
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <QuestionIcon />
+              </EmptyMedia>
+              <EmptyTitle>No crawl rules detected</EmptyTitle>
+              <EmptyDescription>
+                This website&apos;s robots.txt only declares sitemaps; no crawl
+                rules are specified.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : null}
 
-          {robots?.sitemaps?.length ? (
-            <SitemapsList items={robots.sitemaps} />
-          ) : null}
-        </div>
-      ) : (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <QuestionIcon />
-            </EmptyMedia>
-            <EmptyTitle>No robots.txt found</EmptyTitle>
-            <EmptyDescription>
-              We didn&apos;t find a robots.txt for this site. Crawlers will use
-              default behavior until one is added.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      )}
+        {robots?.sitemaps?.length ? (
+          <SitemapsList items={robots.sitemaps} />
+        ) : null}
+      </div>
     </div>
   );
 }

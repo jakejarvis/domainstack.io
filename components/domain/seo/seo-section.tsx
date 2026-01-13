@@ -1,4 +1,4 @@
-import { QuestionIcon } from "@phosphor-icons/react/ssr";
+import { QuestionIcon, WarningIcon } from "@phosphor-icons/react/ssr";
 import { ReportSection } from "@/components/domain/report-section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
 import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
@@ -33,6 +33,18 @@ export function SeoSection({
   ];
   const metaTagCount = metaTagValues.filter((t) => t.value != null).length;
   const hasAnySeoMeta = metaTagCount > 0;
+  const hasHtmlError = Boolean(data?.errors?.html);
+  // Check for meaningful robots data (fetched successfully with actual content)
+  const hasRobotsData = Boolean(
+    data?.robots?.fetched &&
+      ((data.robots.groups?.length ?? 0) > 0 ||
+        (data.robots.sitemaps?.length ?? 0) > 0),
+  );
+
+  // If HTML failed and no meaningful robots data, nothing to show
+  if (hasHtmlError && !hasRobotsData) {
+    return null;
+  }
 
   // Decide which X (Twitter) card variant to display based on meta tags.
   const twitterCard = data?.meta?.twitter?.card?.toLowerCase();
@@ -45,44 +57,76 @@ export function SeoSection({
           ? "large"
           : "compact";
 
-  if (data?.errors?.html) {
-    return null;
-  }
-
   return (
     <ReportSection {...sections.seo}>
-      {hasAnySeoMeta ? (
-        <div className="space-y-4">
-          <RedirectedAlert
-            domain={domain}
-            finalUrl={data?.source?.finalUrl ?? undefined}
-          />
-
-          <MetaTagsGrid metaTagValues={metaTagValues} />
-
-          {data?.preview ? (
-            <SocialPreviews
-              preview={data.preview}
-              twitterVariant={twitterVariant}
+      <div className="space-y-4">
+        {hasHtmlError ? (
+          // HTML fetch failed but we have robots data to show
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <WarningIcon />
+              </EmptyMedia>
+              <EmptyTitle>Couldn&apos;t fetch page meta</EmptyTitle>
+              <EmptyDescription>
+                We weren&apos;t able to retrieve the HTML for this page to
+                extract its meta tags.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : hasAnySeoMeta ? (
+          <>
+            <RedirectedAlert
+              domain={domain}
+              finalUrl={data?.source?.finalUrl ?? undefined}
             />
-          ) : null}
 
-          <RobotsSummary domain={domain} robots={data?.robots ?? null} />
-        </div>
-      ) : (
-        <Empty className="border border-dashed">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <QuestionIcon />
-            </EmptyMedia>
-            <EmptyTitle>No SEO meta detected</EmptyTitle>
-            <EmptyDescription>
-              We didn&apos;t find standard SEO meta tags (title, description,
-              canonical, or open graph). Add them to improve link previews.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      )}
+            <MetaTagsGrid metaTagValues={metaTagValues} />
+
+            {data?.preview ? (
+              <SocialPreviews
+                preview={data.preview}
+                twitterVariant={twitterVariant}
+              />
+            ) : null}
+          </>
+        ) : (
+          <Empty className="border border-dashed">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <QuestionIcon />
+              </EmptyMedia>
+              <EmptyTitle>No SEO meta detected</EmptyTitle>
+              <EmptyDescription>
+                We didn&apos;t find standard SEO meta tags (title, description,
+                canonical, or open graph). Add them to improve link previews.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
+
+        {hasRobotsData && data?.robots ? (
+          <RobotsSummary domain={domain} robots={data.robots} />
+        ) : (
+          <>
+            <div className="mt-5 text-[11px] text-foreground/70 uppercase leading-none tracking-[0.08em] dark:text-foreground/80">
+              robots.txt
+            </div>
+            <Empty className="border border-dashed">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <QuestionIcon />
+                </EmptyMedia>
+                <EmptyTitle>No robots.txt found</EmptyTitle>
+                <EmptyDescription>
+                  We didn&apos;t find a robots.txt for this site. Crawlers will
+                  use default behavior until one is added.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </>
+        )}
+      </div>
     </ReportSection>
   );
 }

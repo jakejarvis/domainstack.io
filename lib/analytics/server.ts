@@ -109,15 +109,11 @@ export const analytics = {
       });
     };
 
-    // Run in background when available, otherwise fire-and-forget
-    try {
-      after(() => doIdentify());
-    } catch {
-      // If after not available, still identify but don't block
-      doIdentify().catch(() => {
+    after(() => {
+      void doIdentify().catch(() => {
         // no-op - graceful degradation
       });
-    }
+    });
   },
 
   track: (
@@ -147,15 +143,11 @@ export const analytics = {
       });
     };
 
-    // Run in background when available, otherwise fire-and-forget
-    try {
-      after(() => doTrack());
-    } catch {
-      // If after not available, still track but don't block
-      doTrack().catch(() => {
+    after(() => {
+      void doTrack().catch(() => {
         // no-op - graceful degradation
       });
-    }
+    });
   },
 
   /**
@@ -184,14 +176,10 @@ export const analytics = {
       client.captureException(error, resolvedDistinctId, properties);
     };
 
-    // Run in background when available, otherwise fire-and-forget
-    try {
-      after(() => doTrack());
-    } catch {
-      // If after not available, still track but don't block
-      doTrack().catch(() => {
+    after(() => {
+      void doTrack().catch(() => {
         // no-op - graceful degradation
       });
-    }
+    });
   },
 };

@@ -56,6 +56,16 @@ describe("SeoSection - Integration & Orchestration", () => {
           imageUploaded: null,
           canonicalUrl: "https://example.com",
         },
+        robots: {
+          fetched: true,
+          groups: [
+            {
+              userAgents: ["*"],
+              rules: [{ type: "disallow", value: "/admin" }],
+            },
+          ],
+          sitemaps: ["https://example.com/sitemap.xml"],
+        },
       });
       render(<SeoSection domain="example.com" data={data} />);
 
@@ -79,6 +89,16 @@ describe("SeoSection - Integration & Orchestration", () => {
           general: { robots: "index, follow" },
         },
         preview: null,
+        robots: {
+          fetched: true,
+          groups: [
+            {
+              userAgents: ["*"],
+              rules: [{ type: "disallow", value: "/admin" }],
+            },
+          ],
+          sitemaps: [],
+        },
       });
       render(<SeoSection domain="example.com" data={data} />);
 
