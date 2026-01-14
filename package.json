@@ -42,7 +42,7 @@
     "@react-email/components": "^1.0.4",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "143.0.0",
-    "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-query": "^5.90.17",
     "@tanstack/react-query-devtools": "^5.91.2",
     "@tanstack/react-query-next-experimental": "^5.91.0",
     "@tanstack/react-table": "^8.21.3",
