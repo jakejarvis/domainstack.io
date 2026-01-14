@@ -22,7 +22,10 @@ import {
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
-import { logger } from "@/lib/logger/server";
+import { createLogger } from "@/lib/logger/server";
+
+const logger = createLogger({ source: "routers/tracking" });
+
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { sendEmail } from "@/lib/resend";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";

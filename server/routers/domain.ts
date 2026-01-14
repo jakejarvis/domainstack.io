@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
-import { createLogger } from "@/lib/logger/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { withSwrCache } from "@/lib/workflow/swr";
 import {
@@ -9,8 +8,6 @@ import {
   domainProcedure,
   publicProcedure,
 } from "@/trpc/init";
-
-const _logger = createLogger({ source: "routers/domain" });
 
 const DomainInputSchema = z
   .object({ domain: z.string().min(1) })
