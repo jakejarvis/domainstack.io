@@ -28,6 +28,7 @@ import {
   userTrackedDomains,
 } from "@/lib/db/schema";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 import { createLogger } from "@/lib/logger/server";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { RegistrationContact } from "@/lib/types/domain/registration";
@@ -92,7 +93,9 @@ export async function createTrackedDomainWithLimitCheck(
   } = params;
 
   return await db.transaction(async (tx) => {
-    // Count active (non-archived) domains for this user within the transaction
+    // Count active (non-archived) domains for this user within the transaction.
+    // Use FOR UPDATE to prevent race conditions where concurrent requests
+    // both read the same count before either inserts.
     const [countResult] = await tx
       .select({ count: count() })
       .from(userTrackedDomains)
@@ -101,7 +104,8 @@ export async function createTrackedDomainWithLimitCheck(
           eq(userTrackedDomains.userId, userId),
           isNull(userTrackedDomains.archivedAt),
         ),
-      );
+      )
+      .for("update");
 
     const currentCount = countResult?.count ?? 0;
 
@@ -784,26 +788,32 @@ export async function verifyTrackedDomain(
   // After verification, initialize snapshot for change detection
   // This is done in the background to avoid blocking the user
   if (updated[0]) {
+    const trackedDomain = updated[0];
     // Import dynamically to avoid circular dependencies
     void import("@/lib/inngest/client")
       .then(({ inngest }) =>
         inngest.send({
           name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
           data: {
-            trackedDomainId: updated[0].id,
-            domainId: updated[0].domainId,
+            trackedDomainId: trackedDomain.id,
+            domainId: trackedDomain.domainId,
           },
         }),
       )
       .catch((err) => {
-        logger.error(
-          {
-            err,
-            trackedDomainId: updated[0].id,
-            domainId: updated[0].domainId,
+        // Track failure for observability and potential alerting
+        // The snapshot can be initialized later via the monitor-domains cron
+        // or when the user accesses domain data (SWR pattern will trigger workflows)
+        trackWorkflowFailureAsync({
+          workflow: "snapshot-initialize-trigger",
+          error: err instanceof Error ? err : new Error(String(err)),
+          classification: "fatal",
+          context: {
+            trackedDomainId: trackedDomain.id,
+            domainId: trackedDomain.domainId,
+            trigger: "verification_complete",
           },
-          "failed to trigger snapshot initialization for domain",
-        );
+        });
       });
   }
 
@@ -1181,7 +1191,9 @@ export async function unarchiveTrackedDomainWithLimitCheck(
       return { success: false, reason: "not_archived" } as const;
     }
 
-    // Count active (non-archived) domains for this user within the transaction
+    // Count active (non-archived) domains for this user within the transaction.
+    // Use FOR UPDATE to prevent race conditions where concurrent requests
+    // both read the same count before either updates.
     const [countResult] = await tx
       .select({ count: count() })
       .from(userTrackedDomains)
@@ -1190,7 +1202,8 @@ export async function unarchiveTrackedDomainWithLimitCheck(
           eq(userTrackedDomains.userId, userId),
           isNull(userTrackedDomains.archivedAt),
         ),
-      );
+      )
+      .for("update");
 
     const currentCount = countResult?.count ?? 0;
 

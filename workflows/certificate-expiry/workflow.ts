@@ -31,7 +31,16 @@ export async function certificateExpiryWorkflow(
   }
 
   // Step 2: Calculate days remaining
+  // Validate validTo exists and is a valid date before proceeding
+  if (!cert.validTo) {
+    return { skipped: true, reason: "no_valid_to_date" };
+  }
+
   const validTo = new Date(cert.validTo);
+  if (Number.isNaN(validTo.getTime())) {
+    return { skipped: true, reason: "invalid_valid_to_date" };
+  }
+
   const daysRemaining = differenceInDays(validTo, new Date());
   const MAX_THRESHOLD_DAYS = 14;
 
@@ -118,7 +127,7 @@ interface CertificateData {
   userName: string;
   userEmail: string;
   domainName: string;
-  validTo: Date;
+  validTo: Date | string | null;
   issuer: string;
   notificationOverrides: {
     certificateExpiry?: { email: boolean; inApp: boolean };

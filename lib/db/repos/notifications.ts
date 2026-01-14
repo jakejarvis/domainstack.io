@@ -140,8 +140,24 @@ export async function getUserNotifications(
     .limit(1);
 
   if (!cursorNotif) {
-    // Invalid cursor, return empty
-    return [];
+    // Invalid cursor (notification was deleted) - return first page instead of empty
+    // This provides a better UX when the user's cursor becomes stale
+    const conditions = [
+      eq(notifications.userId, userId),
+      sql`${notifications.channels} @> '["in-app"]'`,
+    ];
+
+    const readStatusCondition = getReadStatusCondition();
+    if (readStatusCondition) {
+      conditions.push(readStatusCondition);
+    }
+
+    return db
+      .select()
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.sentAt), desc(notifications.id))
+      .limit(limit);
   }
 
   // Fetch notifications sent before the cursor (older notifications)
@@ -238,8 +254,16 @@ export async function markAllAsRead(userId: string) {
 }
 
 /**
- * Check if a notification of this type has been sent RECENTLY.
+ * Check if a notification of this type has been FULLY sent recently.
  * Since we removed the unique constraint, this prevents notification spam.
+ *
+ * A notification is considered "fully sent" if:
+ * - It exists and does NOT include "email" in channels (in-app only), OR
+ * - It exists, includes "email" in channels, AND has a resendId (email was sent)
+ *
+ * This prevents the case where a workflow creates a notification record but fails
+ * before sending the email - on retry, we want to attempt the email again rather
+ * than skipping with "already_sent".
  */
 export async function hasRecentNotification(
   trackedDomainId: string,
@@ -250,7 +274,10 @@ export async function hasRecentNotification(
   cutoff.setDate(cutoff.getDate() - days);
 
   const rows = await db
-    .select()
+    .select({
+      channels: notifications.channels,
+      resendId: notifications.resendId,
+    })
     .from(notifications)
     .where(
       and(
@@ -261,7 +288,20 @@ export async function hasRecentNotification(
     )
     .limit(1);
 
-  return rows.length > 0;
+  if (rows.length === 0) {
+    return false;
+  }
+
+  const notification = rows[0];
+  const channels = (notification.channels as string[]) ?? [];
+
+  // If email was requested but not sent (no resendId), consider it incomplete
+  // This allows workflow retries to attempt email delivery again
+  if (channels.includes("email") && !notification.resendId) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
