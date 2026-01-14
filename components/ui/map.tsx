@@ -20,8 +20,10 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/hooks/use-theme";
+import { analytics } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -634,8 +636,24 @@ function MapControls({
           setWaitingForLocation(false);
         },
         (error) => {
-          console.error("Error getting location:", error);
           setWaitingForLocation(false);
+
+          // Map error codes to user-friendly messages
+          const messages: Record<number, string> = {
+            1: "Location access denied. Please enable location permissions.",
+            2: "Unable to determine your location. Please try again.",
+            3: "Location request timed out. Please try again.",
+          };
+          const message = messages[error.code] ?? "Unable to get your location";
+          toast.error(message);
+
+          // Track non-permission errors (permission denied is expected user behavior)
+          if (error.code !== 1) {
+            analytics.trackException(new Error(message), {
+              context: "geolocation",
+              code: error.code,
+            });
+          }
         },
       );
     }
