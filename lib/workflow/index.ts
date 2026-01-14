@@ -41,6 +41,12 @@ export {
   getErrorClassification,
   withFetchErrorHandling,
 } from "./errors";
+// Observability (failure tracking, metrics, etc.)
+export type { TrackFailureOptions } from "./observability";
+export {
+  trackWorkflowFailure,
+  trackWorkflowFailureAsync,
+} from "./observability";
 // SWR caching
 export type { SwrOptions, SwrResult } from "./swr";
 export { withSwrCache } from "./swr";

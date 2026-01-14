@@ -1,9 +1,11 @@
 import "server-only";
 
 import { start } from "workflow/api";
+import type { Section } from "@/lib/constants/sections";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
+import { trackWorkflowFailure } from "@/lib/workflow/observability";
 import { sectionRevalidateWorkflow } from "@/workflows/section-revalidate";
 
 /**
@@ -27,10 +29,31 @@ export const sectionRevalidate = inngest.createFunction(
       limit: 1,
       key: "event.data.domain + ':' + event.data.section",
     },
+    // Track failures after retries are exhausted
+    onFailure: async ({ error, event }) => {
+      const eventData = event.data.event.data as {
+        domain: string;
+        section: Section;
+      };
+      await trackWorkflowFailure({
+        workflow: "section-revalidate",
+        domain: eventData.domain,
+        section: eventData.section,
+        error,
+        classification: "retries_exhausted",
+        context: {
+          inngestRunId: event.data.run_id,
+          retriesExhausted: true,
+        },
+      });
+    },
   },
   { event: INNGEST_EVENTS.SECTION_REVALIDATE },
   async ({ event, step }) => {
-    const { domain, section } = event.data;
+    const { domain, section } = event.data as {
+      domain: string;
+      section: Section;
+    };
 
     const result = await step.run("run-workflow", async () => {
       const run = await start(sectionRevalidateWorkflow, [{ domain, section }]);

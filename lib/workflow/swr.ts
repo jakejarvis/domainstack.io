@@ -1,9 +1,9 @@
 import "server-only";
 
-import { analytics } from "@/lib/analytics/server";
 import type { CacheResult } from "@/lib/db/repos/types";
 import { createLogger } from "@/lib/logger/server";
 import { getDeduplicationKey, startWithDeduplication } from "./deduplication";
+import { trackWorkflowFailureAsync } from "./observability";
 import type { WorkflowResult } from "./types";
 
 /** Safety valve timeout for background revalidation (5 minutes) */
@@ -129,19 +129,14 @@ export async function withSwrCache<T>(
         );
       })
       .catch((err) => {
-        // Log and track - this is background work but failures may indicate systemic issues
-        logger.error(
-          { err, domain, workflow: workflowName },
-          "background revalidation failed",
-        );
-        analytics.trackException(
-          err instanceof Error ? err : new Error(String(err)),
-          {
-            source: "workflow/swr",
-            domain,
-            workflow: workflowName,
-          },
-        );
+        // Track for observability (logs + Inngest event → PostHog)
+        trackWorkflowFailureAsync({
+          workflow: workflowName,
+          domain,
+          error: err instanceof Error ? err : new Error(String(err)),
+          classification: "retries_exhausted",
+          context: { trigger: "background_revalidation" },
+        });
       });
 
     return {
