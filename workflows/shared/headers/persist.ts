@@ -5,7 +5,6 @@
  * This step is shared between the dedicated headersWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type { HeadersFetchData } from "./types";
 
 /**
@@ -51,8 +50,9 @@ export async function persistHeadersStep(
       domainRecord.lastAccessedAt ?? null,
     );
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist headers for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting headers for ${domain}`,
+    });
   }
 }

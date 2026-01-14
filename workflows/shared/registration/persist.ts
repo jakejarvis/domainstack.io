@@ -5,7 +5,6 @@
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
 /**
@@ -91,8 +90,9 @@ export async function persistRegistrationStep(
 
     return domainRecord.id;
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist registration for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting registration for ${domain}`,
+    });
   }
 }

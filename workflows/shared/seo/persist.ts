@@ -5,7 +5,6 @@
  * This step is shared between the dedicated seoWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -72,8 +71,9 @@ export async function persistSeoStep(
 
     logger.debug({ domain }, "SEO data persisted");
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist SEO data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting SEO data for ${domain}`,
+    });
   }
 }

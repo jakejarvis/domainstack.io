@@ -5,7 +5,6 @@
  * This step is shared between the dedicated hostingWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type { GeoIpData, ProviderDetectionData } from "./types";
 
 /**
@@ -62,8 +61,9 @@ export async function persistHostingStep(
 
     logger.debug({ domain }, "persisted hosting data");
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist hosting data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting hosting data for ${domain}`,
+    });
   }
 }

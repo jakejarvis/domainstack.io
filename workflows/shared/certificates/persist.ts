@@ -5,7 +5,6 @@
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type { CertificatesProcessedData } from "./types";
 
 /**
@@ -64,8 +63,9 @@ export async function persistCertificatesStep(
 
     logger.debug({ domain }, "certificates persisted");
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist certificates for ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting certificates for ${domain}`,
+    });
   }
 }

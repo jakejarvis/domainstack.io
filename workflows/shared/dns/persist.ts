@@ -5,7 +5,6 @@
  * This step is shared between the dedicated dnsWorkflow and internal workflows.
  */
 
-import { FatalError } from "workflow";
 import type { DnsRecordType } from "@/lib/constants/dns";
 import type { DnsFetchData } from "./types";
 
@@ -90,8 +89,9 @@ export async function persistDnsRecordsStep(
       "dns records persisted",
     );
   } catch (err) {
-    throw new FatalError(
-      `Failed to persist DNS records for ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const { classifyDatabaseError } = await import("@/lib/workflow/errors");
+    throw classifyDatabaseError(err, {
+      context: `persisting DNS records for ${domain}`,
+    });
   }
 }
