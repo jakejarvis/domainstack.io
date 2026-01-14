@@ -20,6 +20,21 @@ import { createLogger } from "@/lib/logger/server";
 const logger = createLogger({ source: "revalidation" });
 
 /**
+ * In-memory map of recently scheduled revalidation events.
+ * Prevents duplicate Inngest API calls when multiple concurrent persist steps
+ * try to schedule the same domain+section.
+ *
+ * Map: eventId (domain:section) -> timestamp
+ */
+const recentlyScheduled = new Map<string, number>();
+
+/** How long to consider an event "recently scheduled" (5 seconds) */
+const RECENT_SCHEDULE_WINDOW_MS = 5000;
+
+/** Max entries before cleanup (prevents unbounded growth) */
+const MAX_RECENT_ENTRIES = 1000;
+
+/**
  * Get the base revalidation interval (in seconds) for a section.
  */
 function getBaseTtlSeconds(section: Section): number {
@@ -224,6 +239,19 @@ export async function scheduleRevalidation(
   // Duplicate work is further prevented by Inngest's concurrency control (configured
   // in the function), which ensures only one instance of domain+section runs at a time.
   const eventId = `${normalizedDomain}:${section}`;
+
+  // In-memory deduplication: check if we recently scheduled this exact event
+  // This prevents unnecessary Inngest API calls when multiple concurrent persist
+  // steps try to schedule the same domain+section within a short time window.
+  const recentTimestamp = recentlyScheduled.get(eventId);
+  if (recentTimestamp && now - recentTimestamp < RECENT_SCHEDULE_WINDOW_MS) {
+    logger.debug(
+      { domain: normalizedDomain, section },
+      "skip (recently scheduled)",
+    );
+    return;
+  }
+
   await inngest.send({
     name: INNGEST_EVENTS.SECTION_REVALIDATE,
     data: {
@@ -233,4 +261,17 @@ export async function scheduleRevalidation(
     ts: scheduledDueMs,
     id: eventId,
   });
+
+  // Track this scheduling to prevent duplicate API calls
+  recentlyScheduled.set(eventId, now);
+
+  // Periodic cleanup: remove old entries to prevent unbounded memory growth
+  if (recentlyScheduled.size > MAX_RECENT_ENTRIES) {
+    const cutoff = now - RECENT_SCHEDULE_WINDOW_MS * 2;
+    for (const [key, ts] of recentlyScheduled.entries()) {
+      if (ts < cutoff) {
+        recentlyScheduled.delete(key);
+      }
+    }
+  }
 }
