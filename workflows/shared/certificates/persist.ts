@@ -22,12 +22,14 @@ export async function persistCertificatesStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
+  const { getStepMetadata } = await import("workflow");
   const { createLogger } = await import("@/lib/logger/server");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceCertificates } = await import("@/lib/db/repos/certificates");
   const { scheduleRevalidation } = await import("@/lib/revalidation");
   const { ttlForCertificates } = await import("@/lib/ttl");
 
+  const { stepId } = getStepMetadata();
   const logger = createLogger({ source: "certificates-persist" });
   const now = new Date();
 
@@ -61,7 +63,7 @@ export async function persistCertificatesStep(
       domainRecord.lastAccessedAt ?? null,
     );
 
-    logger.debug({ domain }, "certificates persisted");
+    logger.debug({ domain, stepId }, "certificates persisted");
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {

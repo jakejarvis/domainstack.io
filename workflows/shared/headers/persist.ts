@@ -22,11 +22,15 @@ export async function persistHeadersStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
+  const { getStepMetadata } = await import("workflow");
+  const { createLogger } = await import("@/lib/logger/server");
   const { ttlForHeaders } = await import("@/lib/ttl");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceHeaders } = await import("@/lib/db/repos/headers");
   const { scheduleRevalidation } = await import("@/lib/revalidation");
 
+  const { stepId } = getStepMetadata();
+  const logger = createLogger({ source: "headers-persist" });
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 
@@ -49,6 +53,8 @@ export async function persistHeadersStep(
       expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
+
+    logger.debug({ domain, stepId }, "headers persisted");
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {
