@@ -6,7 +6,7 @@ import {
   BinaryIcon,
   SealCheckIcon,
 } from "@phosphor-icons/react/ssr";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,6 +27,165 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
+// Token types for JSON syntax highlighting
+type TokenType =
+  | "key"
+  | "string"
+  | "number"
+  | "boolean"
+  | "null"
+  | "punctuation";
+
+interface Token {
+  type: TokenType;
+  value: string;
+}
+
+/**
+ * Simple JSON tokenizer that produces tokens for syntax highlighting.
+ * Only used for RDAP (JSON) data, not for WHOIS (plain text).
+ */
+function tokenizeLine(line: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+
+  while (i < line.length) {
+    // Whitespace - preserve as punctuation
+    if (/\s/.test(line[i])) {
+      let ws = "";
+      while (i < line.length && /\s/.test(line[i])) {
+        ws += line[i++];
+      }
+      tokens.push({ type: "punctuation", value: ws });
+      continue;
+    }
+
+    // Punctuation: { } [ ] , :
+    if (/[{}[\],:]/u.test(line[i])) {
+      tokens.push({ type: "punctuation", value: line[i++] });
+      continue;
+    }
+
+    // String (could be key or value)
+    if (line[i] === '"') {
+      let str = '"';
+      i++;
+      while (i < line.length && line[i] !== '"') {
+        if (line[i] === "\\") {
+          str += line[i++];
+          if (i < line.length) str += line[i++];
+        } else {
+          str += line[i++];
+        }
+      }
+      if (i < line.length) str += line[i++]; // closing quote
+
+      // Check if followed by colon (making it a key)
+      let lookahead = i;
+      while (lookahead < line.length && /\s/.test(line[lookahead])) {
+        lookahead++;
+      }
+      const isKey = lookahead < line.length && line[lookahead] === ":";
+
+      tokens.push({ type: isKey ? "key" : "string", value: str });
+      continue;
+    }
+
+    // Number
+    if (/[-\d]/.test(line[i])) {
+      let num = "";
+      if (line[i] === "-") num += line[i++];
+      while (i < line.length && /[\d.eE+-]/.test(line[i])) {
+        num += line[i++];
+      }
+      tokens.push({ type: "number", value: num });
+      continue;
+    }
+
+    // Keywords: true, false, null
+    const remaining = line.slice(i);
+    if (remaining.startsWith("true")) {
+      tokens.push({ type: "boolean", value: "true" });
+      i += 4;
+      continue;
+    }
+    if (remaining.startsWith("false")) {
+      tokens.push({ type: "boolean", value: "false" });
+      i += 5;
+      continue;
+    }
+    if (remaining.startsWith("null")) {
+      tokens.push({ type: "null", value: "null" });
+      i += 4;
+      continue;
+    }
+
+    // Fallback: consume single character
+    tokens.push({ type: "punctuation", value: line[i++] });
+  }
+
+  return tokens;
+}
+
+/**
+ * Renders a tokenized line with syntax highlighting using CSS classes.
+ * Falls back to plain text if tokenization fails for any reason.
+ */
+function HighlightedLine({
+  line,
+  isJson,
+}: {
+  line: string;
+  isJson: boolean;
+}): ReactNode {
+  // For non-JSON (WHOIS), render plain text
+  if (!isJson) {
+    return <>{line || "\u00A0"}</>;
+  }
+
+  // Empty line
+  if (!line.trim()) {
+    return <>{"\u00A0"}</>;
+  }
+
+  // Attempt tokenization with graceful fallback to plain text
+  let tokens: Token[];
+  try {
+    tokens = tokenizeLine(line);
+    // Sanity check: ensure tokens reconstruct the original line
+    const reconstructed = tokens.map((t) => t.value).join("");
+    if (reconstructed !== line) {
+      return <>{line}</>;
+    }
+  } catch {
+    // Tokenization failed - fall back to plain text
+    return <>{line}</>;
+  }
+
+  return (
+    <>
+      {tokens.map((token, i) => (
+        <span
+          // biome-ignore lint/suspicious/noArrayIndexKey: tokens are derived from line content
+          key={i}
+          className={cn(
+            // Carefully chosen Tailwind colors for good contrast in both light/dark modes
+            // Light: ~99.5% lightness bg, Dark: ~16.5% lightness bg (card)
+            token.type === "key" && "text-blue-700 dark:text-blue-400",
+            token.type === "string" && "text-emerald-700 dark:text-emerald-400",
+            token.type === "number" && "text-amber-700 dark:text-amber-400",
+            token.type === "boolean" && "text-violet-700 dark:text-violet-400",
+            token.type === "null" &&
+              "text-stone-500 italic dark:text-stone-400",
+          )}
+        >
+          {token.value}
+        </span>
+      ))}
+    </>
+  );
+}
+
 interface RawDataDialogProps {
   domain: string;
   format: string;
@@ -45,6 +204,8 @@ export function RawDataDialog({
 }: RawDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
+
+  const isJson = typeof data !== "string";
 
   // Prettify JSON objects on the client side, keep strings as-is (WHOIS)
   const formattedData = useMemo(() => {
@@ -84,7 +245,7 @@ export function RawDataDialog({
         }
       />
       <DialogContent className="!bg-card gap-0 p-0 sm:max-w-2xl">
-        <DialogHeader className="place-items-start border-border/60 border-b p-4">
+        <DialogHeader className="place-items-start space-y-1 border-border/60 border-b p-4">
           <DialogTitle className="flex items-center gap-1 text-base">
             <Favicon domain={domain} className="mr-1 size-5" />
             <span>
@@ -145,7 +306,7 @@ export function RawDataDialog({
                           : "whitespace-pre",
                       )}
                     >
-                      {line || "\u00A0"}
+                      <HighlightedLine line={line} isJson={isJson} />
                     </span>
                   </div>
                 ))}
