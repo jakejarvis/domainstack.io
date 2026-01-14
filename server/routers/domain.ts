@@ -34,13 +34,15 @@ export const domainRouter = createTRPCRouter({
   getRegistration: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getRegistration } = await import("@/lib/db/repos/registrations");
+      const { getCachedRegistration } = await import(
+        "@/lib/db/repos/registrations"
+      );
       const { registrationWorkflow } = await import("@/workflows/registration");
 
       return withSwrCache({
         workflowName: "registration",
         domain: input.domain,
-        getCached: () => getRegistration(input.domain),
+        getCached: () => getCachedRegistration(input.domain),
         startWorkflow: () =>
           start(registrationWorkflow, [{ domain: input.domain }]),
       });
@@ -54,13 +56,13 @@ export const domainRouter = createTRPCRouter({
   getDnsRecords: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getDns } = await import("@/lib/db/repos/dns");
+      const { getCachedDns } = await import("@/lib/db/repos/dns");
       const { dnsWorkflow } = await import("@/workflows/dns");
 
       return withSwrCache({
         workflowName: "dns",
         domain: input.domain,
-        getCached: () => getDns(input.domain),
+        getCached: () => getCachedDns(input.domain),
         startWorkflow: () => start(dnsWorkflow, [{ domain: input.domain }]),
       });
     }),
@@ -76,14 +78,14 @@ export const domainRouter = createTRPCRouter({
   getHosting: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getHosting } = await import("@/lib/db/repos/hosting");
+      const { getCachedHosting } = await import("@/lib/db/repos/hosting");
       const { hostingOrchestrationWorkflow } = await import(
         "@/workflows/hosting-orchestration"
       );
 
       return withSwrCache({
         domain: input.domain,
-        getCached: () => getHosting(input.domain),
+        getCached: () => getCachedHosting(input.domain),
         startWorkflow: () =>
           start(hostingOrchestrationWorkflow, [{ domain: input.domain }]),
         workflowName: "hosting-orchestration",
@@ -98,13 +100,15 @@ export const domainRouter = createTRPCRouter({
   getCertificates: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCertificates } = await import("@/lib/db/repos/certificates");
+      const { getCachedCertificates } = await import(
+        "@/lib/db/repos/certificates"
+      );
       const { certificatesWorkflow } = await import("@/workflows/certificates");
 
       return withSwrCache({
         workflowName: "certificates",
         domain: input.domain,
-        getCached: () => getCertificates(input.domain),
+        getCached: () => getCachedCertificates(input.domain),
         startWorkflow: () =>
           start(certificatesWorkflow, [{ domain: input.domain }]),
       });
@@ -118,13 +122,13 @@ export const domainRouter = createTRPCRouter({
   getHeaders: domainProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getHeaders } = await import("@/lib/db/repos/headers");
+      const { getCachedHeaders } = await import("@/lib/db/repos/headers");
       const { headersWorkflow } = await import("@/workflows/headers");
 
       return withSwrCache({
         workflowName: "headers",
         domain: input.domain,
-        getCached: () => getHeaders(input.domain),
+        getCached: () => getCachedHeaders(input.domain),
         startWorkflow: () => start(headersWorkflow, [{ domain: input.domain }]),
       });
     }),
@@ -135,13 +139,13 @@ export const domainRouter = createTRPCRouter({
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
   getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
-    const { getSeo } = await import("@/lib/db/repos/seo");
+    const { getCachedSeo } = await import("@/lib/db/repos/seo");
     const { seoWorkflow } = await import("@/workflows/seo");
 
     return withSwrCache({
       workflowName: "seo",
       domain: input.domain,
-      getCached: () => getSeo(input.domain),
+      getCached: () => getCachedSeo(input.domain),
       startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
     });
   }),

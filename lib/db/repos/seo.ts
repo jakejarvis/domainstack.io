@@ -25,8 +25,11 @@ export async function upsertSeo(params: SeoInsert) {
 /**
  * Get cached SEO data for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data,
+ * use `fetchSeoStep` from workflows/shared/seo.
  */
-export async function getSeo(
+export async function getCachedSeo(
   domain: string,
 ): Promise<CacheResult<SeoResponse>> {
   const nowMs = Date.now();

@@ -55,8 +55,11 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
 /**
  * Get cached certificates for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data,
+ * use `fetchCertificateChainStep` from workflows/shared/certificates.
  */
-export async function getCertificates(
+export async function getCachedCertificates(
   domain: string,
 ): Promise<CacheResult<CertificatesResponse>> {
   const nowMs = Date.now();

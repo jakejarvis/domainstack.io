@@ -48,8 +48,11 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
 /**
  * Get cached headers for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data,
+ * use `fetchHeadersStep` from workflows/shared/headers.
  */
-export async function getHeaders(
+export async function getCachedHeaders(
   domain: string,
 ): Promise<CacheResult<HeadersResponse>> {
   const now = Date.now();

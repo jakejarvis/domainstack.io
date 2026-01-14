@@ -75,7 +75,7 @@ export interface SwrOptions<T> {
  * const result = await withSwrCache({
  *   workflowName: "registration",
  *   domain: "example.com",
- *   getCached: () => getRegistration("example.com"),
+ *   getCached: () => getCachedRegistration("example.com"),
  *   startWorkflow: () => start(registrationWorkflow, [{ domain: "example.com" }]),
  * });
  * ```

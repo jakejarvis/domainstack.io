@@ -16,8 +16,11 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
 /**
  * Get cached hosting data for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data,
+ * use `hostingOrchestrationWorkflow` from workflows/hosting-orchestration.
  */
-export async function getHosting(
+export async function getCachedHosting(
   domain: string,
 ): Promise<CacheResult<HostingResponse>> {
   const now = Date.now();

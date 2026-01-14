@@ -46,8 +46,11 @@ export async function upsertRegistration(params: RegistrationInsert) {
 /**
  * Get cached registration data for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data,
+ * use `fetchRegistrationStep` from workflows/shared/registration.
  */
-export async function getRegistration(
+export async function getCachedRegistration(
   domain: string,
 ): Promise<CacheResult<RegistrationResponse>> {
   const now = new Date();

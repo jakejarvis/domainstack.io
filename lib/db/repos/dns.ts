@@ -134,8 +134,11 @@ export async function replaceDns(params: UpsertDnsParams) {
 /**
  * Get cached DNS records for a domain with staleness metadata.
  * Returns data even if expired, with `stale: true` flag.
+ *
+ * Note: This queries the database cache. For fetching fresh data from
+ * external DNS providers, use `fetchDnsRecordsStep` from workflows/shared/dns.
  */
-export async function getDns(
+export async function getCachedDns(
   domain: string,
 ): Promise<CacheResult<DnsRecordsResponse>> {
   const nowMs = Date.now();
