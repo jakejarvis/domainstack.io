@@ -19,7 +19,7 @@ export async function putBlob(options: {
       access: "public",
       contentType: options.contentType,
       cacheControlMaxAge: options.cacheControlMaxAge,
-      allowOverwrite: true, // TODO: temporary fix until KV/blob storage self-heals
+      allowOverwrite: true, // Pathnames are deterministic hashes, so updates overwrite existing blobs
     });
 
     return {
