@@ -74,15 +74,9 @@ export async function persistDnsRecordsStep(
     });
 
     // Schedule revalidation
-    const times = fetchData.recordsWithExpiry
-      .map((r) => new Date(r.expiresAt).getTime())
-      .filter((t) => Number.isFinite(t));
-    const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
-
     await scheduleRevalidation(
       domain,
       "dns",
-      soonest,
       domainRecord.lastAccessedAt ?? null,
     );
 

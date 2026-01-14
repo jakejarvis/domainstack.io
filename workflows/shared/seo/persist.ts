@@ -67,7 +67,6 @@ export async function persistSeoStep(
     await scheduleRevalidation(
       domain,
       "seo",
-      expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
 

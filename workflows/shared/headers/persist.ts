@@ -50,7 +50,6 @@ export async function persistHeadersStep(
     await scheduleRevalidation(
       domain,
       "headers",
-      expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
 

@@ -59,7 +59,6 @@ export async function persistCertificatesStep(
     await scheduleRevalidation(
       domain,
       "certificates",
-      expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
 

@@ -171,15 +171,16 @@ function minTtlSecondsForSection(section: Section): number {
  * Schedule a section revalidation for a domain by sending an Inngest event.
  * Uses Inngest's native scheduling (sendAt) and deduplication (stable event ID).
  *
+ * Revalidation timing is calculated from the base TTL for the section,
+ * with decay multipliers applied based on domain inactivity.
+ *
  * @param domain - The domain to revalidate
  * @param section - The section to revalidate
- * @param dueAtMs - When the revalidation should run (milliseconds since epoch)
  * @param lastAccessedAt - When the domain was last accessed (for decay calculation)
  */
 export async function scheduleRevalidation(
   domain: string,
   section: Section,
-  dueAtMs: number,
   lastAccessedAt?: Date | null,
 ): Promise<void> {
   // Normalize domain for consistency
@@ -199,38 +200,13 @@ export async function scheduleRevalidation(
     return;
   }
 
-  // Apply decay multiplier to the due time
-  const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
-
-  // Calculate the actual due time with decay applied
+  // Calculate revalidation timing with decay multiplier
+  // Start with the base TTL for this section, then apply decay based on inactivity
   const now = Date.now();
-  const baseDelta = dueAtMs - now;
-  const decayedDelta = applyDecayToTtl(baseDelta, decayMultiplier);
-  const decayedDueMs = now + decayedDelta;
-
-  // Validate dueAtMs before scheduling
-  if (!Number.isFinite(decayedDueMs) || decayedDueMs < 0) {
-    return;
-  }
-
-  // Enforce minimum TTL for this section
-  const minDueMs = now + minTtlSecondsForSection(section) * 1000;
-  let scheduledDueMs = Math.max(decayedDueMs, minDueMs);
-
-  // Ensure timestamp is always in the future to prevent negative timeout warnings
-  // This handles race conditions where dueAtMs was calculated in the past
-  if (scheduledDueMs <= now) {
-    scheduledDueMs = now + minTtlSecondsForSection(section) * 1000;
-    logger.warn(
-      {
-        domain: normalizedDomain,
-        section,
-        originalDueMs: dueAtMs,
-        adjustedDueMs: scheduledDueMs,
-      },
-      "adjusted past timestamp",
-    );
-  }
+  const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
+  const baseTtlMs = minTtlSecondsForSection(section) * 1000;
+  const decayedTtlMs = applyDecayToTtl(baseTtlMs, decayMultiplier);
+  const scheduledDueMs = now + decayedTtlMs;
 
   // Send event to Inngest
   // Use stable event ID (domain+section) to enable Inngest's built-in deduplication.

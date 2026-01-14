@@ -57,7 +57,6 @@ export async function persistHostingStep(
     await scheduleRevalidation(
       domain,
       "hosting",
-      expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
 

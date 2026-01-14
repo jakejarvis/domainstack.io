@@ -84,7 +84,6 @@ export async function persistRegistrationStep(
     await scheduleRevalidation(
       domain,
       "registration",
-      expiresAt.getTime(),
       domainRecord.lastAccessedAt ?? null,
     );
 
