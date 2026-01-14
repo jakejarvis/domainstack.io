@@ -6,6 +6,45 @@ export interface VerificationResult {
 }
 
 /**
+ * Step: Verify domain ownership via DNS TXT record.
+ */
+export async function verifyDomainByDns(
+  domain: string,
+  token: string,
+): Promise<VerificationResult> {
+  "use step";
+
+  const { verifyByDns } = await import("@/lib/verification");
+  return await verifyByDns(domain, token);
+}
+
+/**
+ * Step: Verify domain ownership via HTML file.
+ */
+export async function verifyDomainByHtmlFile(
+  domain: string,
+  token: string,
+): Promise<VerificationResult> {
+  "use step";
+
+  const { verifyByHtmlFile } = await import("@/lib/verification");
+  return await verifyByHtmlFile(domain, token);
+}
+
+/**
+ * Step: Verify domain ownership via meta tag.
+ */
+export async function verifyDomainByMetaTag(
+  domain: string,
+  token: string,
+): Promise<VerificationResult> {
+  "use step";
+
+  const { verifyByMetaTag } = await import("@/lib/verification");
+  return await verifyByMetaTag(domain, token);
+}
+
+/**
  * Step: Verify domain ownership by trying all methods in order.
  * Returns on first successful verification.
  *

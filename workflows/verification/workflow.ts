@@ -1,7 +1,9 @@
 import type { VerificationMethod } from "@/lib/constants/verification";
 import { VERIFICATION_METHODS } from "@/lib/constants/verification";
 import {
-  verifyDomainOwnership,
+  verifyDomainByDns,
+  verifyDomainByHtmlFile,
+  verifyDomainByMetaTag,
   verifyDomainOwnershipByMethod,
 } from "@/workflows/shared/verify-domain";
 
@@ -27,10 +29,11 @@ export type VerificationWorkflowResult =
  * Durable verification workflow that checks domain ownership
  * using DNS TXT records, HTML files, or meta tags.
  *
- * This workflow is a thin wrapper around the shared verification steps.
- * New code should prefer calling the shared steps directly:
- * - `verifyDomainOwnership()` - try all methods
- * - `verifyDomainOwnershipByMethod()` - try specific method
+ * Each verification method runs as a separate workflow step for better
+ * observability and debugging. Methods are tried in order of reliability:
+ * 1. DNS TXT record (most reliable)
+ * 2. HTML file
+ * 3. Meta tag
  */
 export async function verificationWorkflow(
   input: VerificationWorkflowInput,
@@ -57,11 +60,37 @@ export async function verificationWorkflow(
     };
   }
 
-  // Try all methods in order of reliability
-  const result = await verifyDomainOwnership(domain, token);
+  // Try DNS first (most reliable)
+  const dnsResult = await verifyDomainByDns(domain, token);
+  if (dnsResult.verified) {
+    return {
+      success: true,
+      data: dnsResult,
+    };
+  }
+
+  // Try HTML file
+  const htmlResult = await verifyDomainByHtmlFile(domain, token);
+  if (htmlResult.verified) {
+    return {
+      success: true,
+      data: htmlResult,
+    };
+  }
+
+  // Try meta tag
+  const metaResult = await verifyDomainByMetaTag(domain, token);
+  if (metaResult.verified) {
+    return {
+      success: true,
+      data: metaResult,
+    };
+  }
+
+  // None of the methods succeeded
   return {
     success: true,
-    data: result,
+    data: { verified: false, method: null },
   };
 }
 
