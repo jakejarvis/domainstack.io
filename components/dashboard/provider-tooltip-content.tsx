@@ -6,7 +6,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import { format } from "date-fns";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Spinner } from "@/components/ui/spinner";
 import type { ProviderCategory } from "@/lib/constants/providers";
 import type { DnsRecord } from "@/lib/types/domain/dns";
@@ -15,7 +15,6 @@ import type { RegistrationContact } from "@/lib/types/domain/registration";
 type ProviderTooltipContentProps = {
   providerId?: string | null;
   providerName: string;
-  providerDomain: string | null;
   providerType?: ProviderCategory;
   isLoading: boolean;
   records?: DnsRecord[];
@@ -55,7 +54,6 @@ function extractDomain(input: string | undefined | null): string | undefined {
 export function ProviderTooltipContent({
   providerId,
   providerName,
-  providerDomain,
   providerType,
   isLoading,
   records,
@@ -110,10 +108,9 @@ export function ProviderTooltipContent({
       {/* Provider info */}
       <div className="flex items-center gap-1.5 border-border/20 border-b pb-2">
         {providerId && (
-          <ProviderIcon
+          <ProviderLogo
             providerId={providerId}
             providerName={providerName}
-            providerDomain={providerDomain}
             className="shrink-0"
           />
         )}

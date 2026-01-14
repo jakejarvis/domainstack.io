@@ -18,7 +18,7 @@ import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -407,10 +407,9 @@ function InfoRow({
   const providerContent = (
     <span className="flex min-w-0 items-center gap-1.5">
       {provider?.id && (
-        <ProviderIcon
+        <ProviderLogo
           providerId={provider.id}
           providerName={provider.name}
-          providerDomain={provider.domain}
           className="size-3.5 shrink-0"
         />
       )}
@@ -438,7 +437,6 @@ function InfoRow({
                   <ProviderTooltipContent
                     providerId={tooltipData.providerId}
                     providerName={provider.name}
-                    providerDomain={provider.domain}
                     providerType={providerType}
                     isLoading={tooltipData.isLoading}
                     records={tooltipData.records}

@@ -10,7 +10,7 @@ import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog"
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -84,10 +84,9 @@ export function RegistrationSection({
             value={data.registrarProvider?.name || "Unknown"}
             leading={
               data.registrarProvider?.id ? (
-                <ProviderIcon
+                <ProviderLogo
                   providerId={data.registrarProvider.id}
                   providerName={data.registrarProvider.name}
-                  providerDomain={data.registrarProvider.domain}
                 />
               ) : undefined
             }

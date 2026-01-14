@@ -12,7 +12,7 @@ import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RelativeAgeString } from "@/components/domain/relative-age";
 import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,10 +47,9 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           value={cert.issuer}
           leading={
             cert.caProvider?.id ? (
-              <ProviderIcon
+              <ProviderLogo
                 providerId={cert.caProvider.id}
                 providerName={cert.caProvider.name}
-                providerDomain={cert.caProvider.domain}
               />
             ) : undefined
           }

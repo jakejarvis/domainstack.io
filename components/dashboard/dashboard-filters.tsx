@@ -13,7 +13,7 @@ import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -225,10 +225,9 @@ export function DashboardFilters({
           name: provider.name,
           category: categoryLabel,
           icon: provider.id ? (
-            <ProviderIcon
+            <ProviderLogo
               providerId={provider.id}
               providerName={provider.name}
-              providerDomain={provider.domain}
               className="size-3 shrink-0"
             />
           ) : (
@@ -419,10 +418,9 @@ export function DashboardFilters({
                 },
               ) => (
                 <div className="flex items-center gap-1.5 px-0.5 py-[3px]">
-                  <ProviderIcon
+                  <ProviderLogo
                     providerId={option.id}
                     providerName={option.label}
-                    providerDomain={option.domain}
                     className="size-3.5 shrink-0"
                   />
                   <span className="max-w-[240px] truncate leading-none">

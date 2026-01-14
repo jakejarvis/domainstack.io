@@ -2,14 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/mocks/react";
 import { HostingSection } from "./hosting-section";
 
-vi.mock("@/components/icons/provider-icon", () => ({
-  ProviderIcon: ({
-    providerId: _providerId,
-    providerDomain,
-  }: {
-    providerId: string | null | undefined;
-    providerDomain: string | null;
-  }) => <div>logo:{providerDomain}</div>,
+vi.mock("@/components/icons/provider-logo", () => ({
+  ProviderLogo: ({ providerId }: { providerId: string | null | undefined }) => (
+    <div>logo:{providerId}</div>
+  ),
 }));
 
 // Mock the map client to avoid loading maplibre-gl in tests
@@ -50,7 +46,7 @@ describe("HostingSection", () => {
     } as unknown as import("@/lib/types/domain/hosting").HostingResponse;
     render(<HostingSection data={data} />);
     expect(screen.getByText("Cloudflare")).toBeInTheDocument();
-    expect(screen.getByText(/logo:cloudflare.com/)).toBeInTheDocument();
+    expect(screen.getByText(/logo:provider-cloudflare/)).toBeInTheDocument();
     expect(screen.getByText("Vercel")).toBeInTheDocument();
     expect(screen.getByText("Google Workspace")).toBeInTheDocument();
   });

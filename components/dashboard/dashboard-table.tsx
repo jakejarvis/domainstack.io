@@ -29,7 +29,7 @@ import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -140,10 +140,9 @@ function ProviderCell({
   const providerContent = (
     <span className="flex min-w-0 items-center gap-1.5">
       {provider.id && (
-        <ProviderIcon
+        <ProviderLogo
           providerId={provider.id}
           providerName={provider.name}
-          providerDomain={provider.domain}
           className="size-[13px] shrink-0"
         />
       )}
@@ -167,7 +166,6 @@ function ProviderCell({
           <ProviderTooltipContent
             providerId={tooltipData.providerId}
             providerName={provider.name}
-            providerDomain={provider.domain}
             providerType={providerType}
             isLoading={tooltipData.isLoading}
             records={tooltipData.records}

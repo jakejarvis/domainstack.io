@@ -3,7 +3,7 @@ import { HostingMapClient } from "@/components/domain/hosting/hosting-map-client
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
-import { ProviderIcon } from "@/components/icons/provider-icon";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import {
   Empty,
   EmptyDescription,
@@ -44,10 +44,9 @@ export function HostingSection({
               value={dnsProvider?.name ?? "Not configured"}
               leading={
                 dnsProvider?.id ? (
-                  <ProviderIcon
+                  <ProviderLogo
                     providerId={dnsProvider.id}
                     providerName={dnsProvider.name}
-                    providerDomain={dnsProvider.domain}
                   />
                 ) : undefined
               }
@@ -57,10 +56,9 @@ export function HostingSection({
               value={hostingProvider?.name ?? "Not configured"}
               leading={
                 hostingProvider?.id ? (
-                  <ProviderIcon
+                  <ProviderLogo
                     providerId={hostingProvider.id}
                     providerName={hostingProvider.name}
-                    providerDomain={hostingProvider.domain}
                   />
                 ) : undefined
               }
@@ -70,10 +68,9 @@ export function HostingSection({
               value={emailProvider?.name ?? "Not configured"}
               leading={
                 emailProvider?.id ? (
-                  <ProviderIcon
+                  <ProviderLogo
                     providerId={emailProvider.id}
                     providerName={emailProvider.name}
-                    providerDomain={emailProvider.domain}
                   />
                 ) : undefined
               }
