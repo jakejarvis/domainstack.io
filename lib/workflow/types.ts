@@ -19,3 +19,25 @@ export type WorkflowResult<TData, TError extends string = string> =
       data: null;
       error: TError;
     };
+
+/**
+ * Result from persist steps, includes lastAccessedAt for scheduling revalidation.
+ *
+ * Persist steps are pure database operations that return metadata needed for
+ * scheduling the next revalidation at the workflow level.
+ */
+export interface PersistResult {
+  /** When the domain was last accessed by a user, used for decay calculation */
+  lastAccessedAt: Date | null;
+}
+
+/**
+ * Extended persist result for registration workflow.
+ *
+ * Registration persist step also returns the domain ID since it may create
+ * the domain record (unlike other persist steps which use ensureDomainRecord).
+ */
+export interface RegistrationPersistResult extends PersistResult {
+  /** The ID of the persisted domain record */
+  domainId: string;
+}

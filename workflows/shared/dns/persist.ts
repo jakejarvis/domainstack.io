@@ -9,12 +9,8 @@
  */
 
 import type { DnsRecordType } from "@/lib/constants/dns";
+import type { PersistResult } from "@/lib/workflow/types";
 import type { DnsFetchData } from "./types";
-
-/** Result from persist step, includes lastAccessedAt for scheduling */
-export interface PersistResult {
-  lastAccessedAt: Date | null;
-}
 
 /**
  * Step: Persist DNS records to database.

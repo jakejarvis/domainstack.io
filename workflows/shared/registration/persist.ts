@@ -9,12 +9,7 @@
  */
 
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
-
-/** Result from persist step, includes lastAccessedAt for scheduling */
-export interface PersistResult {
-  domainId: string;
-  lastAccessedAt: Date | null;
-}
+import type { RegistrationPersistResult } from "@/lib/workflow/types";
 
 /**
  * Step: Persist registration to database.
@@ -30,7 +25,7 @@ export interface PersistResult {
 export async function persistRegistrationStep(
   domain: string,
   response: RegistrationResponse,
-): Promise<PersistResult> {
+): Promise<RegistrationPersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations

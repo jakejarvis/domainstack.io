@@ -8,12 +8,8 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
+import type { PersistResult } from "@/lib/workflow/types";
 import type { HeadersFetchData } from "./types";
-
-/** Result from persist step, includes lastAccessedAt for scheduling */
-export interface PersistResult {
-  lastAccessedAt: Date | null;
-}
 
 /**
  * Step: Persist headers to database.

@@ -14,11 +14,7 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types/domain/seo";
-
-/** Result from persist step, includes lastAccessedAt for scheduling */
-export interface PersistResult {
-  lastAccessedAt: Date | null;
-}
+import type { PersistResult } from "@/lib/workflow/types";
 
 /**
  * Step: Persist SEO data to database.
