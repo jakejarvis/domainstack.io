@@ -6,6 +6,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import type { inferProcedureOutput } from "@trpc/server";
+import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 
@@ -132,6 +133,7 @@ export function useNotificationMutations() {
           queryClient.setQueryData<InfiniteNotificationData>(key, data);
         }
       }
+      toast.error("Failed to mark notification as read");
     },
     onSettled: () => {
       // Invalidate to ensure consistency with server
@@ -215,6 +217,7 @@ export function useNotificationMutations() {
           queryClient.setQueryData<InfiniteNotificationData>(key, data);
         }
       }
+      toast.error("Failed to mark notifications as read");
     },
     onSettled: () => {
       // Invalidate to trigger refetch and ensure server sync

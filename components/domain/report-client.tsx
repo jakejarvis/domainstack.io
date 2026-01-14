@@ -15,6 +15,7 @@ import { RegistrationSectionSkeleton } from "@/components/domain/registration/re
 import { DomainReportHeader } from "@/components/domain/report-header";
 import { SectionNav } from "@/components/domain/report-nav";
 import { SectionErrorBoundary } from "@/components/domain/report-section-error-boundary";
+import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
@@ -61,27 +62,59 @@ function SuspendedSections({
     <>
       <SectionErrorBoundary sectionName="Hosting">
         <Suspense fallback={<HostingSectionSkeleton />}>
-          <HostingSection domain={domain} data={hosting.data.data} />
+          {hosting.data.success ? (
+            <HostingSection domain={domain} data={hosting.data.data} />
+          ) : (
+            <SectionFailedAlert
+              section={sections.hosting}
+              error={hosting.data.error}
+            />
+          )}
         </Suspense>
       </SectionErrorBoundary>
       <SectionErrorBoundary sectionName="DNS">
         <Suspense fallback={<DnsSectionSkeleton />}>
-          <DnsSection domain={domain} data={dns.data.data} />
+          {dns.data.success ? (
+            <DnsSection domain={domain} data={dns.data.data} />
+          ) : (
+            <SectionFailedAlert section={sections.dns} error={dns.data.error} />
+          )}
         </Suspense>
       </SectionErrorBoundary>
       <SectionErrorBoundary sectionName="Certificates">
         <Suspense fallback={<CertificatesSectionSkeleton />}>
-          <CertificatesSection domain={domain} data={certificates.data.data} />
+          {certificates.data.success ? (
+            <CertificatesSection
+              domain={domain}
+              data={certificates.data.data}
+            />
+          ) : (
+            <SectionFailedAlert
+              section={sections.certificates}
+              error={certificates.data.error}
+            />
+          )}
         </Suspense>
       </SectionErrorBoundary>
       <SectionErrorBoundary sectionName="Headers">
         <Suspense fallback={<HeadersSectionSkeleton />}>
-          <HeadersSection domain={domain} data={headers.data.data} />
+          {headers.data.success ? (
+            <HeadersSection domain={domain} data={headers.data.data} />
+          ) : (
+            <SectionFailedAlert
+              section={sections.headers}
+              error={headers.data.error}
+            />
+          )}
         </Suspense>
       </SectionErrorBoundary>
       <SectionErrorBoundary sectionName="SEO">
         <Suspense fallback={<SeoSectionSkeleton />}>
-          <SeoSection domain={domain} data={seo.data.data} />
+          {seo.data.success ? (
+            <SeoSection domain={domain} data={seo.data.data} />
+          ) : (
+            <SectionFailedAlert section={sections.seo} error={seo.data.error} />
+          )}
         </Suspense>
       </SectionErrorBoundary>
     </>

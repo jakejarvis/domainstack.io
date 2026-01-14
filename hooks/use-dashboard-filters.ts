@@ -5,9 +5,20 @@ import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import type { ProviderCategory } from "@/lib/constants/providers";
-import type { HealthFilter, StatusFilter } from "@/lib/dashboard-utils";
-import { getHealthStatus } from "@/lib/dashboard-utils";
+import {
+  getHealthStatus,
+  type HealthFilter,
+  type StatusFilter,
+} from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
+
+// Valid filter values for runtime validation of URL params
+const VALID_STATUS_FILTERS: readonly StatusFilter[] = ["verified", "pending"];
+const VALID_HEALTH_FILTERS: readonly HealthFilter[] = [
+  "healthy",
+  "expiring",
+  "expired",
+];
 
 export interface AvailableProvider {
   id: string;
@@ -63,6 +74,24 @@ export function useDashboardFilters(
   }, [filters, isDashboardPage]);
 
   const activeFilters = isDashboardPage ? filters : cachedFilters;
+
+  // Validate status and health filter values from URL params
+  // Filter out any invalid values that might come from manual URL manipulation
+  const validatedStatus = useMemo(
+    () =>
+      activeFilters.status.filter((s): s is StatusFilter =>
+        VALID_STATUS_FILTERS.includes(s as StatusFilter),
+      ),
+    [activeFilters.status],
+  );
+
+  const validatedHealth = useMemo(
+    () =>
+      activeFilters.health.filter((h): h is HealthFilter =>
+        VALID_HEALTH_FILTERS.includes(h as HealthFilter),
+      ),
+    [activeFilters.health],
+  );
 
   // Extract unique TLDs from domains for the dropdown
   // Note: TLDs are stored in database and URL state without leading dot (e.g., "com")
@@ -186,11 +215,11 @@ export function useDashboardFilters(
     return ids;
   }, [availableProviders]);
 
-  // Check if any filters are active
+  // Check if any filters are active (use validated status/health)
   const hasActiveFilters =
     activeFilters.search.length > 0 ||
-    activeFilters.status.length > 0 ||
-    activeFilters.health.length > 0 ||
+    validatedStatus.length > 0 ||
+    validatedHealth.length > 0 ||
     activeFilters.tlds.length > 0 ||
     activeFilters.providers.length > 0 ||
     !!activeFilters.domainId;
@@ -216,23 +245,23 @@ export function useDashboardFilters(
         }
       }
 
-      // Status filter
-      if (activeFilters.status.length > 0) {
+      // Status filter (use validated values)
+      if (validatedStatus.length > 0) {
         const domainStatus = domain.verified ? "verified" : "pending";
-        if (!activeFilters.status.includes(domainStatus)) {
+        if (!validatedStatus.includes(domainStatus)) {
           return false;
         }
       }
 
-      // Health filter
-      if (activeFilters.health.length > 0) {
+      // Health filter (use validated values)
+      if (validatedHealth.length > 0) {
         const healthStatus = getHealthStatus(
           domain.expirationDate,
           domain.verified,
           now,
         );
         // If domain has no health status (unverified), only show if no health filter
-        if (!healthStatus || !activeFilters.health.includes(healthStatus)) {
+        if (!healthStatus || !validatedHealth.includes(healthStatus)) {
           return false;
         }
       }
@@ -288,7 +317,14 @@ export function useDashboardFilters(
 
       return true;
     });
-  }, [domains, activeFilters, now, validProviderIds]);
+  }, [
+    domains,
+    activeFilters,
+    validatedStatus,
+    validatedHealth,
+    now,
+    validProviderIds,
+  ]);
 
   // Compute stats for health summary
   const stats = useMemo(() => {
@@ -403,8 +439,8 @@ export function useDashboardFilters(
   return {
     // Current filter values
     search: activeFilters.search,
-    status: activeFilters.status as StatusFilter[],
-    health: activeFilters.health as HealthFilter[],
+    status: validatedStatus,
+    health: validatedHealth,
     tlds: activeFilters.tlds,
     providers: activeFilters.providers,
     domainId: activeFilters.domainId,
