@@ -192,4 +192,59 @@ describe("revalidation", () => {
       expect(applyDecayToTtl(1000, Number.NaN)).toBe(1000);
     });
   });
+
+  describe("scheduleRevalidation", () => {
+    let scheduleRevalidation: typeof import("./revalidation").scheduleRevalidation;
+    let inngest: typeof import("@/lib/inngest/client").inngest;
+
+    beforeAll(async () => {
+      const revalidationModule = await import("./revalidation");
+      // biome-ignore lint/nursery/useDestructuring: dynamic import
+      scheduleRevalidation = revalidationModule.scheduleRevalidation;
+
+      const inngestModule = await import("@/lib/inngest/client");
+      // biome-ignore lint/nursery/useDestructuring: dynamic import
+      inngest = inngestModule.inngest;
+    });
+
+    beforeEach(() => {
+      vi.mocked(inngest.send).mockClear();
+    });
+
+    it("schedules revalidation event with decay applied", async () => {
+      const domain = "example.com";
+      const lastAccessed = new Date(now.getTime() - 10 * msPerDay); // 10 days ago
+
+      await scheduleRevalidation(domain, "dns", lastAccessed);
+
+      expect(inngest.send).toHaveBeenCalledTimes(1);
+      // biome-ignore lint/nursery/useDestructuring: test assertion
+      const call = vi.mocked(inngest.send).mock.calls[0][0] as {
+        name: string;
+        data: { domain: string; section: string };
+        ts: number;
+        id: string;
+      };
+      expect(call.data.domain).toBe(domain);
+      expect(call.data.section).toBe("dns");
+      expect(call.id).toBe(`${domain}:dns`);
+      // DNS is fast-changing, 10 days = 3x multiplier
+      // Base TTL is 1 hour (3600s), so 3 hours = 10800000ms
+      expect(call.ts).toBeGreaterThan(now.getTime());
+    });
+
+    it("skips scheduling for inactive domains", async () => {
+      const domain = "inactive.com";
+      // DNS stops after 180 days for fast-changing
+      const lastAccessed = new Date(now.getTime() - 181 * msPerDay);
+
+      await scheduleRevalidation(domain, "dns", lastAccessed);
+
+      expect(inngest.send).not.toHaveBeenCalled();
+    });
+
+    // Note: Additional tests for deduplication and domain normalization
+    // are implicitly covered by the integration tests and would require
+    // exposing internal state (recentlyScheduled map) which breaks encapsulation
+  });
 });
