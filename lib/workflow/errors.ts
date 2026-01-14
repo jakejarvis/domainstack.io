@@ -88,9 +88,28 @@ export function classifyFetchError(
     });
   }
 
-  // Timeout errors are usually retryable
+  // Check for HTTP errors with status codes
   if (err instanceof Error) {
     const message = err.message.toLowerCase();
+
+    // Rate limiting (429) - use longer retry delay
+    if (
+      message.includes("429") ||
+      message.includes("rate limit") ||
+      message.includes("too many requests")
+    ) {
+      // Try to extract Retry-After header value from error message
+      // Many HTTP clients include this in the error
+      const retryAfterMatch = message.match(/retry[- ]after[:\s]+(\d+)/i);
+      const retrySeconds = retryAfterMatch
+        ? Number.parseInt(retryAfterMatch[1], 10)
+        : 60; // Default to 1 minute for rate limits
+      return new RetryableError(`${context}: rate limited`, {
+        retryAfter: `${retrySeconds}s` as `${number}s`,
+      });
+    }
+
+    // Timeout errors are usually retryable
     if (
       message.includes("timeout") ||
       message.includes("timed out") ||
@@ -160,8 +179,9 @@ export async function withFetchErrorHandling<T>(
  * Use this when you need to check the classification without throwing.
  */
 export type ErrorClassification =
-  | { type: "retryable"; reason: string }
+  | { type: "retryable"; reason: string; retryAfter?: string }
   | { type: "fatal"; reason: string }
+  | { type: "rate_limited"; reason: string; retryAfter: string }
   | { type: "unknown" };
 
 /**
@@ -197,6 +217,18 @@ export function getErrorClassification(err: unknown): ErrorClassification {
 
   if (err instanceof Error) {
     const message = err.message.toLowerCase();
+
+    // Rate limiting - special classification for observability
+    if (
+      message.includes("429") ||
+      message.includes("rate limit") ||
+      message.includes("too many requests")
+    ) {
+      // Try to extract retry-after
+      const retryAfterMatch = message.match(/retry[- ]after[:\s]+(\d+)/i);
+      const retryAfter = retryAfterMatch ? `${retryAfterMatch[1]}s` : "60s";
+      return { type: "rate_limited", reason: "rate_limit", retryAfter };
+    }
 
     // Timeout/abort errors (separate from network errors for semantic accuracy)
     if (
