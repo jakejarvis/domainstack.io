@@ -102,16 +102,16 @@ describe("fetchHeadersStep", () => {
     );
   });
 
-  it("normalizes and sorts headers correctly", async () => {
-    mockDns("sorted.test");
+  it("normalizes headers correctly", async () => {
+    mockDns("normalized.test");
     server.use(
-      http.head("https://sorted.test/", () => {
+      http.head("https://normalized.test/", () => {
         return new HttpResponse(null, {
           status: 200,
           headers: {
             "X-Custom": "value",
             Server: "NGINX", // Mixed case
-            "Content-Security-Policy": "default-src 'self'", // Important header
+            "Content-Security-Policy": "default-src 'self'",
             Accept: "text/html",
           },
         });
@@ -119,7 +119,7 @@ describe("fetchHeadersStep", () => {
     );
 
     const { fetchHeadersStep } = await import("./fetch");
-    const result = await fetchHeadersStep("sorted.test");
+    const result = await fetchHeadersStep("normalized.test");
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -134,10 +134,10 @@ describe("fetchHeadersStep", () => {
         ]),
       );
 
-      // Important headers (like content-security-policy) should be first
-      const cspIndex = headerNames.indexOf("content-security-policy");
-      const serverIndex = headerNames.indexOf("server");
-      expect(cspIndex).toBeLessThan(serverIndex);
+      // All header names should be lowercase
+      for (const name of headerNames) {
+        expect(name).toBe(name.toLowerCase());
+      }
     }
   });
 });

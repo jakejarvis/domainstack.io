@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowSquareOutIcon,
   InfoIcon,
@@ -5,6 +7,7 @@ import {
   MagnifyingGlassIcon,
 } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
+import { useMemo } from "react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
@@ -42,9 +45,21 @@ export function HeadersSection({
   domain?: string;
   data?: HeadersResponse | null;
 }) {
-  const headers = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
   const status = data?.status;
   const statusMessage = data?.statusMessage;
+
+  // Sort headers client-side: important headers first, then alphabetically
+  const headers = useMemo(() => {
+    const filtered = data?.headers?.filter((h) => h.value.trim() !== "") ?? [];
+    return filtered.sort(
+      (a, b) =>
+        Number(IMPORTANT_HEADERS.has(b.name?.toLowerCase() ?? "")) -
+          Number(IMPORTANT_HEADERS.has(a.name?.toLowerCase() ?? "")) ||
+        (a.name?.toLowerCase() ?? "").localeCompare(
+          b.name?.toLowerCase() ?? "",
+        ),
+    );
+  }, [data?.headers]);
 
   if (status === 0 && statusMessage === "Invalid SSL certificate") {
     return null;

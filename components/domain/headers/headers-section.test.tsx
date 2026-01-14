@@ -37,6 +37,47 @@ describe("HeadersSection", () => {
     expect(values.some((n) => n.tagName.toLowerCase() === "span")).toBe(true);
   });
 
+  it("sorts headers with important ones first, then alphabetically", () => {
+    const data = {
+      headers: [
+        { name: "x-custom", value: "value1" },
+        { name: "server", value: "nginx" }, // Important
+        { name: "accept", value: "text/html" },
+        { name: "content-security-policy", value: "default-src 'self'" }, // Important
+        { name: "zebra", value: "last" },
+      ],
+      status: 200,
+    };
+    const { container } = render(<HeadersSection data={data} />);
+
+    // Get all header label elements (they have uppercase styling via CSS)
+    const allText = (container.textContent || "").toUpperCase();
+
+    // Find positions of each header name in the rendered text
+    const cspPos = allText.indexOf("CONTENT-SECURITY-POLICY");
+    const serverPos = allText.indexOf("SERVER");
+    const acceptPos = allText.indexOf("ACCEPT");
+    const xCustomPos = allText.indexOf("X-CUSTOM");
+    const zebraPos = allText.indexOf("ZEBRA");
+
+    // All headers should be found
+    expect(cspPos).toBeGreaterThan(-1);
+    expect(serverPos).toBeGreaterThan(-1);
+    expect(acceptPos).toBeGreaterThan(-1);
+    expect(xCustomPos).toBeGreaterThan(-1);
+    expect(zebraPos).toBeGreaterThan(-1);
+
+    // Important headers (content-security-policy, server) should appear before non-important headers in the text
+    expect(cspPos).toBeLessThan(acceptPos);
+    expect(cspPos).toBeLessThan(xCustomPos);
+    expect(serverPos).toBeLessThan(acceptPos);
+    expect(serverPos).toBeLessThan(xCustomPos);
+
+    // Non-important headers should be alphabetically sorted
+    expect(acceptPos).toBeLessThan(xCustomPos);
+    expect(xCustomPos).toBeLessThan(zebraPos);
+  });
+
   it("shows empty state when no headers", () => {
     render(<HeadersSection data={null} />);
     expect(screen.getByText(/No HTTP headers detected/i)).toBeInTheDocument();
