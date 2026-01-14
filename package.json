@@ -52,7 +52,7 @@
     "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.0.0",
     "@vercel/edge-config": "^1.4.3",
-    "@vercel/functions": "^3.3.5",
+    "@vercel/functions": "^3.3.6",
     "@vercel/otel": "^2.1.0",
     "better-auth": "^1.4.12",
     "cheerio": "^1.1.2",
