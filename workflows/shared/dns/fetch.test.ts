@@ -72,32 +72,39 @@ describe("fetchDnsRecordsStep", () => {
     dnsUtilsMock.queryDohProvider.mockImplementation(
       (_provider, _domain, type) => {
         const responses: Record<string, unknown[]> = {
-          A: [{ type: 1, name: "test.com.", data: "1.2.3.4", TTL: 300 }],
-          AAAA: [{ type: 28, name: "test.com.", data: "::1", TTL: 300 }],
+          A: [{ type: 1, name: "test.invalid.", data: "1.2.3.4", TTL: 300 }],
+          AAAA: [{ type: 28, name: "test.invalid.", data: "::1", TTL: 300 }],
           MX: [
             {
               type: 15,
-              name: "test.com.",
-              data: "10 mail.test.com.",
+              name: "test.invalid.",
+              data: "10 mail.test.invalid.",
               TTL: 300,
             },
           ],
           TXT: [
             {
               type: 16,
-              name: "test.com.",
+              name: "test.invalid.",
               data: '"v=spf1 ~all"',
               TTL: 300,
             },
           ],
-          NS: [{ type: 2, name: "test.com.", data: "ns1.test.com.", TTL: 300 }],
+          NS: [
+            {
+              type: 2,
+              name: "test.invalid.",
+              data: "ns1.test.invalid.",
+              TTL: 300,
+            },
+          ],
         };
         return Promise.resolve(responses[type] ?? []);
       },
     );
 
     const { fetchDnsRecordsStep } = await import("./fetch");
-    const result = await fetchDnsRecordsStep("test.com");
+    const result = await fetchDnsRecordsStep("test.invalid");
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -113,7 +120,7 @@ describe("fetchDnsRecordsStep", () => {
 
     const { fetchDnsRecordsStep } = await import("./fetch");
 
-    await expect(fetchDnsRecordsStep("failing.com")).rejects.toThrow(
+    await expect(fetchDnsRecordsStep("failing.invalid")).rejects.toThrow(
       "All DoH providers failed",
     );
   });
@@ -128,12 +135,12 @@ describe("fetchDnsRecordsStep", () => {
       }
       // Google succeeds
       return Promise.resolve([
-        { type: 1, name: "fallback.com.", data: "9.9.9.9", TTL: 300 },
+        { type: 1, name: "fallback.invalid.", data: "9.9.9.9", TTL: 300 },
       ]);
     });
 
     const { fetchDnsRecordsStep } = await import("./fetch");
-    const result = await fetchDnsRecordsStep("fallback.com");
+    const result = await fetchDnsRecordsStep("fallback.invalid");
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -146,9 +153,9 @@ describe("fetchDnsRecordsStep", () => {
       (_provider, _domain, type) => {
         if (type === "A") {
           return Promise.resolve([
-            { type: 1, name: "dupes.com.", data: "1.2.3.4", TTL: 300 },
-            { type: 1, name: "dupes.com.", data: "1.2.3.4", TTL: 300 }, // duplicate
-            { type: 1, name: "dupes.com.", data: "5.6.7.8", TTL: 300 },
+            { type: 1, name: "dupes.invalid.", data: "1.2.3.4", TTL: 300 },
+            { type: 1, name: "dupes.invalid.", data: "1.2.3.4", TTL: 300 }, // duplicate
+            { type: 1, name: "dupes.invalid.", data: "5.6.7.8", TTL: 300 },
           ]);
         }
         return Promise.resolve([]);
@@ -156,7 +163,7 @@ describe("fetchDnsRecordsStep", () => {
     );
 
     const { fetchDnsRecordsStep } = await import("./fetch");
-    const result = await fetchDnsRecordsStep("dupes.com");
+    const result = await fetchDnsRecordsStep("dupes.invalid");
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -170,12 +177,22 @@ describe("fetchDnsRecordsStep", () => {
       (_provider, _domain, type) => {
         if (type === "MX") {
           return Promise.resolve([
-            { type: 15, name: "mx.com.", data: "30 backup.mx.com.", TTL: 300 },
-            { type: 15, name: "mx.com.", data: "10 primary.mx.com.", TTL: 300 },
             {
               type: 15,
-              name: "mx.com.",
-              data: "20 secondary.mx.com.",
+              name: "mx.invalid.",
+              data: "30 backup.mx.invalid.",
+              TTL: 300,
+            },
+            {
+              type: 15,
+              name: "mx.invalid.",
+              data: "10 primary.mx.invalid.",
+              TTL: 300,
+            },
+            {
+              type: 15,
+              name: "mx.invalid.",
+              data: "20 secondary.mx.invalid.",
               TTL: 300,
             },
           ]);
@@ -185,7 +202,7 @@ describe("fetchDnsRecordsStep", () => {
     );
 
     const { fetchDnsRecordsStep } = await import("./fetch");
-    const result = await fetchDnsRecordsStep("mx.com");
+    const result = await fetchDnsRecordsStep("mx.invalid");
 
     expect(result.success).toBe(true);
     if (result.success) {

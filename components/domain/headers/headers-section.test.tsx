@@ -44,18 +44,18 @@ describe("HeadersSection", () => {
 
   it("renders location header with link to destination domain", () => {
     const data = {
-      headers: [{ name: "location", value: "https://www.example.com/path" }],
+      headers: [{ name: "location", value: "https://www.test.invalid/path" }],
       status: 301,
     };
     render(<HeadersSection data={data} />);
     expect(screen.getByText("location")).toBeInTheDocument();
     expect(
-      screen.getByText("https://www.example.com/path"),
+      screen.getByText("https://www.test.invalid/path"),
     ).toBeInTheDocument();
 
     // Check that the link is rendered with correct href
-    const link = screen.getByTitle("View report for example.com");
-    expect(link).toHaveAttribute("href", "/example.com");
+    const link = screen.getByTitle("View report for test.invalid");
+    expect(link).toHaveAttribute("href", "/test.invalid");
   });
 
   it("renders location header without link for relative URLs", () => {

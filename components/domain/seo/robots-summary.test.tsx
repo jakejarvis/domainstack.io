@@ -48,14 +48,14 @@ describe("RobotsSummary", () => {
             ],
           },
         ],
-        sitemaps: ["https://example.com/sitemap.xml"],
+        sitemaps: ["https://test.invalid/sitemap.xml"],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
 
       // Verify robots.txt link
       expect(screen.getByRole("link", { name: /robots.txt/i })).toHaveAttribute(
         "href",
-        "https://example.com/robots.txt",
+        "https://test.invalid/robots.txt",
       );
 
       // Verify rules are present (in accordion)
@@ -65,7 +65,7 @@ describe("RobotsSummary", () => {
       // Verify sitemap
       expect(screen.getByRole("link", { name: /sitemap/i })).toHaveAttribute(
         "href",
-        "https://example.com/sitemap.xml",
+        "https://test.invalid/sitemap.xml",
       );
     });
 
@@ -75,7 +75,7 @@ describe("RobotsSummary", () => {
         groups: [],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // When there are no groups and no sitemaps, only the header with link is shown
       expect(
         screen.getByRole("link", { name: /robots\.txt/i }),
@@ -87,11 +87,11 @@ describe("RobotsSummary", () => {
         fetched: true,
         groups: [],
         sitemaps: [
-          "https://example.com/sitemap.xml",
-          "https://example.com/sitemap-2.xml",
+          "https://test.invalid/sitemap.xml",
+          "https://test.invalid/sitemap-2.xml",
         ],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       expect(screen.getByText(/No crawl rules detected/i)).toBeInTheDocument();
       expect(screen.getByText("Sitemaps")).toBeInTheDocument();
     });
@@ -111,7 +111,7 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // "All" appears in both the filter button and the user agent badge
       expect(screen.getAllByText("All").length).toBeGreaterThan(0);
       expect(screen.getByText("Googlebot")).toBeInTheDocument();
@@ -131,7 +131,7 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       expect(screen.getByText("10")).toBeInTheDocument();
     });
 
@@ -149,7 +149,7 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       expect(screen.getByText("no-ai-training")).toBeInTheDocument();
     });
 
@@ -163,21 +163,21 @@ describe("RobotsSummary", () => {
           },
         ],
         sitemaps: [
-          "https://example.com/sitemap.xml",
-          "https://example.com/sitemap-products.xml",
-          "https://example.com/sitemap-blog.xml",
+          "https://test.invalid/sitemap.xml",
+          "https://test.invalid/sitemap-products.xml",
+          "https://test.invalid/sitemap-blog.xml",
         ],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Progressive reveal shows first 2 sitemaps by default
       expect(
         screen.getByRole("link", {
-          name: /https:\/\/example\.com\/sitemap\.xml/i,
+          name: /https:\/\/test\.invalid\/sitemap\.xml/i,
         }),
       ).toBeInTheDocument();
       expect(
         screen.getByRole("link", {
-          name: /https:\/\/example\.com\/sitemap-products\.xml/i,
+          name: /https:\/\/test\.invalid\/sitemap-products\.xml/i,
         }),
       ).toBeInTheDocument();
       // Third sitemap is hidden behind "Show more" button
@@ -197,7 +197,7 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Empty disallow means allow all - the message appears inside the accordion when opened
       // Since we're using mocked accordions, we can't test the message visibility
       // Just verify the component renders
@@ -220,7 +220,7 @@ describe("RobotsSummary", () => {
         ],
         sitemaps: [],
       };
-      render(<RobotsSummary domain="example.com" robots={robots} />);
+      render(<RobotsSummary domain="test.invalid" robots={robots} />);
       // Get all buttons and find the filter buttons specifically
       const buttons = screen.getAllByRole("button");
       const allButton = buttons.find((btn) => btn.textContent?.includes("All"));

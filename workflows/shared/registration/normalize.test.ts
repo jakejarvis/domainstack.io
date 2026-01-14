@@ -28,14 +28,14 @@ describe("normalizeAndBuildResponseStep", () => {
 
   it("builds correct response for registered domain", async () => {
     const recordJson = JSON.stringify({
-      domain: "registered.com",
-      tld: "com",
+      domain: "registered.invalid",
+      tld: "invalid",
       isRegistered: true,
       source: "rdap",
       registrar: { name: "Namecheap", url: "https://namecheap.com" },
       creationDate: "2020-01-01T00:00:00Z",
       expirationDate: "2025-01-01T00:00:00Z",
-      nameservers: [{ host: "ns1.example.com" }],
+      nameservers: [{ host: "ns1.test.invalid" }],
     });
 
     const { normalizeAndBuildResponseStep } = await import("./normalize");
@@ -49,8 +49,8 @@ describe("normalizeAndBuildResponseStep", () => {
 
   it("builds correct response for unregistered domain", async () => {
     const recordJson = JSON.stringify({
-      domain: "available.com",
-      tld: "com",
+      domain: "available.invalid",
+      tld: "invalid",
       isRegistered: false,
       source: "rdap",
     });

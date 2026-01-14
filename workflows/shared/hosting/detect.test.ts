@@ -94,10 +94,10 @@ describe("detectAndResolveProvidersStep", () => {
 
   it("detects Vercel hosting from x-vercel-id header", async () => {
     const dnsRecords: DnsRecord[] = [
-      { type: "A", name: "test.com", value: "1.2.3.4", ttl: 300 },
+      { type: "A", name: "test.invalid", value: "1.2.3.4", ttl: 300 },
       {
         type: "NS",
-        name: "test.com",
+        name: "test.invalid",
         value: "ns1.cloudflare.com",
         ttl: 86_400,
       },
@@ -134,10 +134,10 @@ describe("detectAndResolveProvidersStep", () => {
 
   it("detects Google Workspace email from MX records", async () => {
     const dnsRecords: DnsRecord[] = [
-      { type: "A", name: "test.com", value: "1.2.3.4", ttl: 300 },
+      { type: "A", name: "test.invalid", value: "1.2.3.4", ttl: 300 },
       {
         type: "MX",
-        name: "test.com",
+        name: "test.invalid",
         value: "aspmx.l.google.com",
         ttl: 3600,
         priority: 1,
@@ -172,16 +172,16 @@ describe("detectAndResolveProvidersStep", () => {
 
   it("detects Cloudflare DNS from NS records", async () => {
     const dnsRecords: DnsRecord[] = [
-      { type: "A", name: "test.com", value: "1.2.3.4", ttl: 300 },
+      { type: "A", name: "test.invalid", value: "1.2.3.4", ttl: 300 },
       {
         type: "NS",
-        name: "test.com",
+        name: "test.invalid",
         value: "ns1.cloudflare.com",
         ttl: 86_400,
       },
       {
         type: "NS",
-        name: "test.com",
+        name: "test.invalid",
         value: "ns2.cloudflare.com",
         ttl: 86_400,
       },

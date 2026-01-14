@@ -30,8 +30,8 @@ import { cn } from "@/lib/utils";
 interface RawDataDialogProps {
   domain: string;
   format: string;
-  /** Pre-formatted string: pretty JSON for RDAP, plain text for WHOIS */
-  data: string;
+  /** Raw data: JSON object for RDAP, plain text string for WHOIS */
+  data: Record<string, unknown> | string;
   serverName: string;
   serverUrl: string | undefined;
 }
@@ -45,7 +45,19 @@ export function RawDataDialog({
 }: RawDataDialogProps) {
   const [open, setOpen] = useState(false);
   const [wrapLines, setWrapLines] = useState(true);
-  const lines = useMemo(() => data?.trim().split("\n") ?? [], [data]);
+
+  // Prettify JSON objects on the client side, keep strings as-is (WHOIS)
+  const formattedData = useMemo(() => {
+    if (typeof data === "string") {
+      return data;
+    }
+    return JSON.stringify(data, null, 2);
+  }, [data]);
+
+  const lines = useMemo(
+    () => formattedData?.trim().split("\n") ?? [],
+    [formattedData],
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -156,7 +168,7 @@ export function RawDataDialog({
               variant="outline"
               size="sm"
               className="!px-3 gap-2 text-[13px]"
-              value={data}
+              value={formattedData}
               showLabel={true}
             />
             <Button

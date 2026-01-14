@@ -6,8 +6,8 @@ import { parseAltNames, toName } from "@/lib/tls-utils";
 describe("tls-utils", () => {
   describe("toName", () => {
     it("prefers CN over O", () => {
-      expect(toName({ CN: "example.com" } as tls.Certificate)).toBe(
-        "example.com",
+      expect(toName({ CN: "test.invalid" } as tls.Certificate)).toBe(
+        "test.invalid",
       );
     });
 
@@ -32,13 +32,13 @@ describe("tls-utils", () => {
     it("extracts DNS and IP Address values", () => {
       expect(
         parseAltNames(
-          "DNS:example.com, DNS:www.example.com, IP Address:1.2.3.4",
+          "DNS:test.invalid, DNS:www.test.invalid, IP Address:1.2.3.4",
         ),
-      ).toEqual(["example.com", "www.example.com", "1.2.3.4"]);
+      ).toEqual(["test.invalid", "www.test.invalid", "1.2.3.4"]);
     });
 
     it("filters out non-DNS/IP values", () => {
-      expect(parseAltNames("URI:http://example.com")).toEqual([]);
+      expect(parseAltNames("URI:http://test.invalid")).toEqual([]);
     });
 
     it("handles undefined input", () => {
@@ -50,9 +50,9 @@ describe("tls-utils", () => {
     });
 
     it("handles mixed case kind prefixes", () => {
-      expect(parseAltNames("dns:lower.com, DNS:upper.com")).toEqual([
-        "lower.com",
-        "upper.com",
+      expect(parseAltNames("dns:lower.invalid, DNS:upper.invalid")).toEqual([
+        "lower.invalid",
+        "upper.invalid",
       ]);
     });
   });

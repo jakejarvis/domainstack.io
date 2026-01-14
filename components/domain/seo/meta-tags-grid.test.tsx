@@ -10,8 +10,8 @@ describe("MetaTagsGrid", () => {
         { label: "Description", value: "Test Description" },
         { label: "Keywords", value: "seo, testing" },
         { label: "Author", value: "Test Author" },
-        { label: "Canonical", value: "https://example.com/canonical" },
-        { label: "Image", value: "https://example.com/image.png" },
+        { label: "Canonical", value: "https://test.invalid/canonical" },
+        { label: "Image", value: "https://test.invalid/image.png" },
         { label: "Generator", value: "Next.js" },
         { label: "Robots", value: "index, follow" },
       ];
@@ -57,8 +57,8 @@ describe("MetaTagsGrid", () => {
 
     it("renders external link for URL values", () => {
       const metaTagValues = [
-        { label: "Canonical", value: "https://example.com/page" },
-        { label: "Image", value: "https://example.com/og-image.png" },
+        { label: "Canonical", value: "https://test.invalid/page" },
+        { label: "Image", value: "https://test.invalid/og-image.png" },
       ];
       render(<MetaTagsGrid metaTagValues={metaTagValues} />);
 
@@ -66,7 +66,7 @@ describe("MetaTagsGrid", () => {
       expect(links.length).toBeGreaterThan(0);
 
       const canonicalLink = links.find((link) =>
-        link.getAttribute("href")?.includes("example.com/page"),
+        link.getAttribute("href")?.includes("test.invalid/page"),
       );
       expect(canonicalLink).toBeDefined();
       expect(canonicalLink).toHaveAttribute("target", "_blank");
@@ -145,9 +145,9 @@ describe("MetaTagsGrid", () => {
         metaTagValues: [
           { label: "Title", value: null },
           { label: "Description", value: null },
-          { label: "Canonical", value: "https://example.com/page" },
+          { label: "Canonical", value: "https://test.invalid/page" },
         ],
-        expectedTags: ["https://example.com/page"],
+        expectedTags: ["https://test.invalid/page"],
         expectedCount: 1,
       },
     ];

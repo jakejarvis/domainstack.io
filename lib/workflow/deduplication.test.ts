@@ -9,41 +9,51 @@ import {
 
 describe("getDeduplicationKey", () => {
   it("generates consistent keys for same input", () => {
-    const key1 = getDeduplicationKey("registration", { domain: "example.com" });
-    const key2 = getDeduplicationKey("registration", { domain: "example.com" });
+    const key1 = getDeduplicationKey("registration", {
+      domain: "test.invalid",
+    });
+    const key2 = getDeduplicationKey("registration", {
+      domain: "test.invalid",
+    });
     expect(key1).toBe(key2);
   });
 
   it("generates different keys for different workflows", () => {
-    const key1 = getDeduplicationKey("registration", { domain: "example.com" });
-    const key2 = getDeduplicationKey("dns", { domain: "example.com" });
+    const key1 = getDeduplicationKey("registration", {
+      domain: "test.invalid",
+    });
+    const key2 = getDeduplicationKey("dns", { domain: "test.invalid" });
     expect(key1).not.toBe(key2);
   });
 
   it("generates different keys for different inputs", () => {
-    const key1 = getDeduplicationKey("registration", { domain: "example.com" });
-    const key2 = getDeduplicationKey("registration", { domain: "other.com" });
+    const key1 = getDeduplicationKey("registration", {
+      domain: "test.invalid",
+    });
+    const key2 = getDeduplicationKey("registration", {
+      domain: "other.invalid",
+    });
     expect(key1).not.toBe(key2);
   });
 
   it("handles complex inputs", () => {
     const key = getDeduplicationKey("hosting", {
-      domain: "example.com",
+      domain: "test.invalid",
       dnsRecords: [{ type: "A", value: "1.2.3.4" }],
     });
     expect(key).toContain("hosting:");
-    expect(key).toContain("example.com");
+    expect(key).toContain("test.invalid");
   });
 
   it("generates same key for objects with different property ordering", () => {
     const key1 = getDeduplicationKey("hosting", {
-      domain: "example.com",
+      domain: "test.invalid",
       headers: ["X-Frame-Options"],
       dnsRecords: [{ type: "A", value: "1.2.3.4" }],
     });
     const key2 = getDeduplicationKey("hosting", {
       dnsRecords: [{ type: "A", value: "1.2.3.4" }],
-      domain: "example.com",
+      domain: "test.invalid",
       headers: ["X-Frame-Options"],
     });
     expect(key1).toBe(key2);
@@ -107,12 +117,12 @@ describe("getDeduplicationKey", () => {
 
   it("handles Date values with different property ordering", () => {
     const key1 = getDeduplicationKey("test", {
-      domain: "example.com",
+      domain: "test.invalid",
       expiresAt: new Date("2024-01-01"),
     });
     const key2 = getDeduplicationKey("test", {
       expiresAt: new Date("2024-01-01"),
-      domain: "example.com",
+      domain: "test.invalid",
     });
     expect(key1).toBe(key2);
   });

@@ -147,12 +147,15 @@ export async function normalizeAndBuildResponseStep(
 }
 
 /**
- * Format raw response as a string for display.
- * RDAP responses are pretty-printed JSON, WHOIS responses are plain text.
+ * Get raw response for storage.
+ * RDAP responses are returned as JSON objects, WHOIS responses as plain text.
+ * Client-side code is responsible for prettification when displaying.
  */
-function formatRawResponse(record: ParsedRdapRecord): string | undefined {
+function formatRawResponse(
+  record: ParsedRdapRecord,
+): Record<string, unknown> | string | undefined {
   if (record.source === "rdap" && record.rawRdap) {
-    return JSON.stringify(record.rawRdap, null, 2);
+    return record.rawRdap as Record<string, unknown>;
   }
   if (record.source === "whois" && record.rawWhois) {
     return record.rawWhois;

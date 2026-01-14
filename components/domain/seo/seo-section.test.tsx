@@ -54,7 +54,7 @@ describe("SeoSection - Integration & Orchestration", () => {
           description: "Test",
           image: null,
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
         robots: {
           fetched: true,
@@ -64,10 +64,10 @@ describe("SeoSection - Integration & Orchestration", () => {
               rules: [{ type: "disallow", value: "/admin" }],
             },
           ],
-          sitemaps: ["https://example.com/sitemap.xml"],
+          sitemaps: ["https://test.invalid/sitemap.xml"],
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
 
       expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
       expect(screen.getByTestId("social-previews")).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe("SeoSection - Integration & Orchestration", () => {
 
     it("shows empty state when no meta tags", () => {
       const data = buildSeoResponse();
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       expect(screen.getByText(/No SEO meta detected/i)).toBeInTheDocument();
       expect(screen.queryByTestId("meta-tags-grid")).not.toBeInTheDocument();
     });
@@ -100,7 +100,7 @@ describe("SeoSection - Integration & Orchestration", () => {
           sitemaps: [],
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
 
       expect(screen.getByTestId("meta-tags-grid")).toBeInTheDocument();
       expect(screen.queryByTestId("social-previews")).not.toBeInTheDocument();
@@ -119,12 +119,12 @@ describe("SeoSection - Integration & Orchestration", () => {
         preview: {
           title: "Test",
           description: "Test",
-          image: "https://example.com/image.png",
+          image: "https://test.invalid/image.png",
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "large");
     });
@@ -141,10 +141,10 @@ describe("SeoSection - Integration & Orchestration", () => {
           description: "Test",
           image: null,
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "compact");
     });
@@ -159,12 +159,12 @@ describe("SeoSection - Integration & Orchestration", () => {
         preview: {
           title: "Test",
           description: "Test",
-          image: "https://example.com/image.png",
+          image: "https://test.invalid/image.png",
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "large");
     });
@@ -181,10 +181,10 @@ describe("SeoSection - Integration & Orchestration", () => {
           description: "Test",
           image: null,
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       const tabs = screen.getByTestId("social-previews");
       expect(tabs).toHaveAttribute("data-variant", "compact");
     });
@@ -210,7 +210,7 @@ describe("SeoSection - Integration & Orchestration", () => {
           status: 301,
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       expect(screen.getByText(/We followed a redirect/i)).toBeInTheDocument();
     });
 
@@ -226,14 +226,14 @@ describe("SeoSection - Integration & Orchestration", () => {
           description: "Test",
           image: null,
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         },
         source: {
-          finalUrl: "https://example.com",
+          finalUrl: "https://test.invalid",
           status: 200,
         },
       });
-      render(<SeoSection domain="example.com" data={data} />);
+      render(<SeoSection domain="test.invalid" data={data} />);
       expect(
         screen.queryByText(/We followed a redirect/i),
       ).not.toBeInTheDocument();

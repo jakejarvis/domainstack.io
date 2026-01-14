@@ -32,21 +32,21 @@ describe("DnsRecordList", () => {
       {
         type: "MX",
         name: "",
-        value: "mx-b.example.com",
+        value: "mx-b.test.invalid",
         ttl: 200,
         priority: 20,
       },
       {
         type: "MX",
         name: "",
-        value: "mx-a.example.com",
+        value: "mx-a.test.invalid",
         ttl: 300,
         priority: 10,
       },
       {
         type: "MX",
         name: "",
-        value: "mx-c.example.com",
+        value: "mx-c.test.invalid",
         ttl: 100,
         priority: 30,
       },
@@ -61,9 +61,9 @@ describe("DnsRecordList", () => {
     // Ensure all rendered
     expect(items).toEqual(
       expect.arrayContaining([
-        "mx-a.example.com",
-        "mx-b.example.com",
-        "mx-c.example.com",
+        "mx-a.test.invalid",
+        "mx-b.test.invalid",
+        "mx-c.test.invalid",
       ]),
     );
 

@@ -60,7 +60,7 @@ describe("fetchHtmlStep", () => {
               <meta name="description" content="Test description">
               <meta property="og:title" content="OG Title">
               <meta property="og:description" content="OG Description">
-              <meta property="og:image" content="https://example.com/og.jpg">
+              <meta property="og:image" content="https://test.invalid/og.jpg">
               <meta name="twitter:card" content="summary_large_image">
             </head>
             <body></body>
@@ -72,7 +72,7 @@ describe("fetchHtmlStep", () => {
     });
 
     const { fetchHtmlStep } = await import("./fetch");
-    const result = await fetchHtmlStep("example.com");
+    const result = await fetchHtmlStep("test.invalid");
 
     expect(result.success).toBe(true);
     expect(result.meta).not.toBeNull();
@@ -88,12 +88,12 @@ describe("fetchHtmlStep", () => {
       status: 200,
       contentType: "application/json",
       buffer: Buffer.from("{}"),
-      finalUrl: "https://example.com/",
+      finalUrl: "https://test.invalid/",
       headers: {},
     });
 
     const { fetchHtmlStep } = await import("./fetch");
-    const result = await fetchHtmlStep("api.example.com");
+    const result = await fetchHtmlStep("api.test.invalid");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Non-HTML");
@@ -105,12 +105,12 @@ describe("fetchHtmlStep", () => {
       status: 404,
       contentType: "text/html",
       buffer: Buffer.from("<html>Not Found</html>"),
-      finalUrl: "https://example.com/",
+      finalUrl: "https://test.invalid/",
       headers: {},
     });
 
     const { fetchHtmlStep } = await import("./fetch");
-    const result = await fetchHtmlStep("notfound.example.com");
+    const result = await fetchHtmlStep("notfound.test.invalid");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("404");
@@ -126,17 +126,17 @@ describe("fetchRobotsStep", () => {
       buffer: Buffer.from(`User-agent: *
 Disallow: /private/
 Allow: /
-Sitemap: https://example.com/sitemap.xml`),
-      finalUrl: "https://example.com/robots.txt",
+Sitemap: https://test.invalid/sitemap.xml`),
+      finalUrl: "https://test.invalid/robots.txt",
       headers: {},
     });
 
     const { fetchRobotsStep } = await import("./fetch");
-    const result = await fetchRobotsStep("example.com");
+    const result = await fetchRobotsStep("test.invalid");
 
     expect(result.robots).not.toBeNull();
     expect(result.robots?.sitemaps).toContain(
-      "https://example.com/sitemap.xml",
+      "https://test.invalid/sitemap.xml",
     );
   });
 
@@ -146,12 +146,12 @@ Sitemap: https://example.com/sitemap.xml`),
       status: 404,
       contentType: "text/html",
       buffer: Buffer.from("Not Found"),
-      finalUrl: "https://example.com/robots.txt",
+      finalUrl: "https://test.invalid/robots.txt",
       headers: {},
     });
 
     const { fetchRobotsStep } = await import("./fetch");
-    const result = await fetchRobotsStep("example.com");
+    const result = await fetchRobotsStep("test.invalid");
 
     expect(result.robots).toBeNull();
     expect(result.error).toContain("404");
@@ -165,15 +165,15 @@ describe("processOgImageStep", () => {
       status: 200,
       contentType: "image/jpeg",
       buffer: Buffer.from("fake-image-data"),
-      finalUrl: "https://example.com/og.jpg",
+      finalUrl: "https://test.invalid/og.jpg",
       headers: {},
     });
 
     const { processOgImageStep } = await import("./fetch");
     const result = await processOgImageStep(
-      "example.com",
-      "https://example.com/og.jpg",
-      "https://example.com/",
+      "test.invalid",
+      "https://test.invalid/og.jpg",
+      "https://test.invalid/",
     );
 
     expect(result.url).toBe("https://blob.vercel-storage.com/og-test.webp");
@@ -185,15 +185,15 @@ describe("processOgImageStep", () => {
       status: 404,
       contentType: "text/html",
       buffer: Buffer.from("Not Found"),
-      finalUrl: "https://example.com/og.jpg",
+      finalUrl: "https://test.invalid/og.jpg",
       headers: {},
     });
 
     const { processOgImageStep } = await import("./fetch");
     const result = await processOgImageStep(
-      "example.com",
-      "https://example.com/og.jpg",
-      "https://example.com/",
+      "test.invalid",
+      "https://test.invalid/og.jpg",
+      "https://test.invalid/",
     );
 
     expect(result.url).toBeNull();

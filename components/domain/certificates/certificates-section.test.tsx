@@ -66,8 +66,8 @@ describe("CertificatesSection", () => {
       certificates: [
         {
           issuer: "Let's Encrypt",
-          subject: "example.com",
-          altNames: ["*.example.com", "example.com"],
+          subject: "test.invalid",
+          altNames: ["*.test.invalid", "test.invalid"],
           validFrom: "2024-01-01T00:00:00.000Z",
           validTo: "2025-01-01T00:00:00.000Z",
           caProvider: {
@@ -95,7 +95,7 @@ describe("CertificatesSection", () => {
     expect(screen.getByRole("button", { name: /\+1/i })).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /\+1/i }));
-    expect(await screen.findByText("*.example.com")).toBeInTheDocument();
+    expect(await screen.findByText("*.test.invalid")).toBeInTheDocument();
 
     // Assert CA provider logo with correct domain
     const providerLogo = screen.getByTestId("provider-icon");
@@ -120,6 +120,6 @@ describe("CertificatesSection", () => {
 
 describe("equalHostname", () => {
   it("ignores case and whitespace", () => {
-    expect(equalHostname(" ExAmple.COM ", "example.com")).toBe(true);
+    expect(equalHostname(" TeSt.INVALID ", "test.invalid")).toBe(true);
   });
 });

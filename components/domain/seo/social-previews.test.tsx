@@ -7,9 +7,9 @@ describe("SocialPreviews", () => {
   const mockPreview = {
     title: "Test Title",
     description: "Test Description",
-    image: "https://example.com/image.png",
-    imageUploaded: "https://example.com/uploaded.png",
-    canonicalUrl: "https://example.com",
+    image: "https://test.invalid/image.png",
+    imageUploaded: "https://test.invalid/uploaded.png",
+    canonicalUrl: "https://test.invalid",
   };
 
   describe("tab switching", () => {
@@ -19,7 +19,7 @@ describe("SocialPreviews", () => {
 
       // Initial state: Twitter tab active
       const twitterPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(twitterPreview).toHaveAttribute("data-provider", "twitter");
 
@@ -27,7 +27,7 @@ describe("SocialPreviews", () => {
       const facebookTab = screen.getByRole("tab", { name: /facebook/i });
       await user.click(facebookTab);
       const facebookPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(facebookPreview).toHaveAttribute("data-provider", "facebook");
 
@@ -35,7 +35,7 @@ describe("SocialPreviews", () => {
       const linkedinTab = screen.getByRole("tab", { name: /linkedin/i });
       await user.click(linkedinTab);
       const linkedinPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(linkedinPreview).toHaveAttribute("data-provider", "linkedin");
 
@@ -43,7 +43,7 @@ describe("SocialPreviews", () => {
       const discordTab = screen.getByRole("tab", { name: /discord/i });
       await user.click(discordTab);
       const discordPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(discordPreview).toHaveAttribute("data-provider", "discord");
 
@@ -51,7 +51,7 @@ describe("SocialPreviews", () => {
       const slackTab = screen.getByRole("tab", { name: /slack/i });
       await user.click(slackTab);
       const slackPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(slackPreview).toHaveAttribute("data-provider", "slack");
     });
@@ -62,13 +62,13 @@ describe("SocialPreviews", () => {
 
       // Check initial Twitter content
       expect(
-        screen.getByRole("link", { name: /open example.com in a new tab/i }),
+        screen.getByRole("link", { name: /open test.invalid in a new tab/i }),
       ).toHaveAttribute("data-provider", "twitter");
 
       // Switch to Facebook and verify
       await user.click(screen.getByRole("tab", { name: /facebook/i }));
       expect(
-        screen.getByRole("link", { name: /open example.com in a new tab/i }),
+        screen.getByRole("link", { name: /open test.invalid in a new tab/i }),
       ).toHaveAttribute("data-provider", "facebook");
     });
   });
@@ -77,7 +77,7 @@ describe("SocialPreviews", () => {
     it("renders compact variant for Twitter when specified", () => {
       render(<SocialPreviews preview={mockPreview} twitterVariant="compact" />);
       const preview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(preview).toHaveAttribute("data-provider", "twitter");
       expect(preview).toHaveAttribute("data-variant", "compact");
@@ -86,7 +86,7 @@ describe("SocialPreviews", () => {
     it("renders large variant for Twitter when specified", () => {
       render(<SocialPreviews preview={mockPreview} twitterVariant="large" />);
       const preview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(preview).toHaveAttribute("data-provider", "twitter");
       expect(preview).toHaveAttribute("data-variant", "large");
@@ -99,7 +99,7 @@ describe("SocialPreviews", () => {
       // Switch to Facebook - should not have variant attribute or should not be "large"
       await user.click(screen.getByRole("tab", { name: /facebook/i }));
       const facebookPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(facebookPreview).toHaveAttribute("data-provider", "facebook");
       // Facebook doesn't use the twitterVariant prop
@@ -124,9 +124,9 @@ describe("SocialPreviews", () => {
         const preview = {
           title: `${provider} Preview Title`,
           description: `${provider} Preview Description`,
-          image: `https://example.com/${provider}.png`,
-          imageUploaded: `https://example.com/${provider}-uploaded.png`,
-          canonicalUrl: "https://example.com",
+          image: `https://test.invalid/${provider}.png`,
+          imageUploaded: `https://test.invalid/${provider}-uploaded.png`,
+          canonicalUrl: "https://test.invalid",
         };
         render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
@@ -136,7 +136,7 @@ describe("SocialPreviews", () => {
 
         // Verify the preview is rendered with correct provider
         const previewLink = screen.getByRole("link", {
-          name: /open example.com in a new tab/i,
+          name: /open test.invalid in a new tab/i,
         });
         expect(previewLink).toHaveAttribute("data-provider", provider);
       });
@@ -148,7 +148,7 @@ describe("SocialPreviews", () => {
           description: `${provider} description without image`,
           image: null,
           imageUploaded: null,
-          canonicalUrl: "https://example.com",
+          canonicalUrl: "https://test.invalid",
         };
         render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
@@ -156,7 +156,7 @@ describe("SocialPreviews", () => {
         await user.click(tab);
 
         const previewLink = screen.getByRole("link", {
-          name: /open example.com in a new tab/i,
+          name: /open test.invalid in a new tab/i,
         });
         expect(previewLink).toHaveAttribute("data-provider", provider);
         // Verify "No image" accessible text is present in the DOM
@@ -167,26 +167,26 @@ describe("SocialPreviews", () => {
 
     it("uses imageUploaded when available", async () => {
       const user = userEvent.setup();
-      const uploadedImageUrl = "https://example.com/uploaded-image.png";
+      const uploadedImageUrl = "https://test.invalid/uploaded-image.png";
       const preview = {
         title: "Uploaded Image Preview",
         description: "Preview with uploaded image",
-        image: "https://example.com/original.png",
+        image: "https://test.invalid/original.png",
         imageUploaded: uploadedImageUrl,
-        canonicalUrl: "https://example.com",
+        canonicalUrl: "https://test.invalid",
       };
       render(<SocialPreviews preview={preview} twitterVariant="compact" />);
 
       // Twitter preview should be visible by default
       const twitterPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       expect(twitterPreview).toBeInTheDocument();
 
       // Switch to Facebook to verify imageUploaded is used
       await user.click(screen.getByRole("tab", { name: /facebook/i }));
       const facebookPreview = screen.getByRole("link", {
-        name: /open example.com in a new tab/i,
+        name: /open test.invalid in a new tab/i,
       });
       // Check that the preview image element uses the uploaded URL
       const image = within(facebookPreview).getByAltText("Preview image");

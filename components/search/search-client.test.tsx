@@ -32,8 +32,8 @@ describe("DomainSearch (form variant)", () => {
   it("submits valid domain and navigates", async () => {
     render(<SearchClient variant="lg" />);
     const input = screen.getByLabelText(/Search any domain/i);
-    await userEvent.type(input, "example.com{Enter}");
-    expect(nav.push).toHaveBeenCalledWith("/example.com");
+    await userEvent.type(input, "test.invalid{Enter}");
+    expect(nav.push).toHaveBeenCalledWith("/test.invalid");
     // Input and button should be disabled while loading/submitting
     expect(
       (screen.getByLabelText(/Search any domain/i) as HTMLInputElement)
@@ -63,7 +63,7 @@ describe("DomainSearch (form variant)", () => {
     rerender(
       <SearchClient
         variant="lg"
-        value="example.com"
+        value="test.invalid"
         onNavigationCompleteAction={onComplete}
       />,
     );
@@ -72,11 +72,11 @@ describe("DomainSearch (form variant)", () => {
     const input = (await screen.findByLabelText(
       /Search any domain/i,
     )) as HTMLInputElement;
-    expect(input.value).toBe("example.com");
+    expect(input.value).toBe("test.invalid");
 
     // Wait for navigation and completion callback to be triggered
     await waitFor(() => {
-      expect(nav.push).toHaveBeenCalledWith("/example.com");
+      expect(nav.push).toHaveBeenCalledWith("/test.invalid");
       expect(onComplete).toHaveBeenCalled();
     });
   });

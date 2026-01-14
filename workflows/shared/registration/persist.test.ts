@@ -33,16 +33,12 @@ describe("persistRegistrationStep", () => {
   });
 
   it("persists registered domain to database", async () => {
-    // rawResponse is a pre-formatted string (pretty JSON for RDAP)
-    const rawRdapResponse = JSON.stringify(
-      {
-        objectClassName: "domain",
-        handle: "persist.com",
-        ldhName: "persist.com",
-      },
-      null,
-      2,
-    );
+    // rawResponse is the raw RDAP JSON object (not prettified)
+    const rawRdapResponse = {
+      objectClassName: "domain",
+      handle: "persist.com",
+      ldhName: "persist.com",
+    };
 
     const response = {
       domain: "persist.com",

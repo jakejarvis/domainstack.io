@@ -67,14 +67,16 @@ describe("handleStepConcurrencyError", () => {
       "Cannot set error for workflow step abc123 because error already exists.",
       { status: 409 },
     );
-    const result = handleStepConcurrencyError(error, { domain: "example.com" });
+    const result = handleStepConcurrencyError(error, {
+      domain: "test.invalid",
+    });
     expect(result).toBe("already_handled");
   });
 
   it("re-throws non-concurrency errors", () => {
     const error = new Error("Database connection failed");
     expect(() =>
-      handleStepConcurrencyError(error, { domain: "example.com" }),
+      handleStepConcurrencyError(error, { domain: "test.invalid" }),
     ).toThrow("Database connection failed");
   });
 
@@ -107,7 +109,7 @@ describe("logConcurrencyConflict", () => {
     // The actual logging is mocked in tests, so we just verify it doesn't throw
     expect(() =>
       logConcurrencyConflict(
-        { domain: "example.com" },
+        { domain: "test.invalid" },
         "custom conflict message",
       ),
     ).not.toThrow();
@@ -115,7 +117,7 @@ describe("logConcurrencyConflict", () => {
 
   it("uses default message when not provided", () => {
     expect(() =>
-      logConcurrencyConflict({ domain: "example.com" }),
+      logConcurrencyConflict({ domain: "test.invalid" }),
     ).not.toThrow();
   });
 });
@@ -125,7 +127,7 @@ describe("withConcurrencyHandling", () => {
     const { withConcurrencyHandling } = await import("./concurrency");
     const result = await withConcurrencyHandling(
       Promise.resolve({ data: "test" }),
-      { domain: "example.com" },
+      { domain: "test.invalid" },
     );
     expect(result).toEqual({ data: "test" });
   });
@@ -146,7 +148,9 @@ describe("withConcurrencyHandling", () => {
     const { withConcurrencyHandling } = await import("./concurrency");
     const error = new Error("Database connection failed");
     await expect(
-      withConcurrencyHandling(Promise.reject(error), { domain: "example.com" }),
+      withConcurrencyHandling(Promise.reject(error), {
+        domain: "test.invalid",
+      }),
     ).rejects.toThrow("Database connection failed");
   });
 

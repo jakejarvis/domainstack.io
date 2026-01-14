@@ -32,7 +32,7 @@ describe("lookupWhoisStep", () => {
       ok: true,
       error: null,
       record: {
-        domain: "example.com",
+        domain: "test.invalid",
         tld: "com",
         isRegistered: true,
         source: "rdap",
@@ -41,11 +41,11 @@ describe("lookupWhoisStep", () => {
     });
 
     const { lookupWhoisStep } = await import("./fetch");
-    const result = await lookupWhoisStep("example.com");
+    const result = await lookupWhoisStep("test.invalid");
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.recordJson).toContain("example.com");
+      expect(result.data.recordJson).toContain("test.invalid");
     }
   });
 
@@ -57,7 +57,7 @@ describe("lookupWhoisStep", () => {
     });
 
     const { lookupWhoisStep } = await import("./fetch");
-    const result = await lookupWhoisStep("example.ls");
+    const result = await lookupWhoisStep("unsupported.invalid");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -74,7 +74,7 @@ describe("lookupWhoisStep", () => {
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("slow.com")).rejects.toThrow(
+    await expect(lookupWhoisStep("slow.invalid")).rejects.toThrow(
       "RDAP lookup timed out",
     );
   });
@@ -88,7 +88,7 @@ describe("lookupWhoisStep", () => {
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("error.com")).rejects.toThrow(
+    await expect(lookupWhoisStep("error.invalid")).rejects.toThrow(
       "RDAP lookup failed",
     );
   });

@@ -34,7 +34,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -71,7 +71,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -86,7 +86,7 @@ describe("withSwrCache", () => {
 
       // Background revalidation should be triggered
       expect(startWithDeduplication).toHaveBeenCalledTimes(1);
-      expect(getDeduplicationKey).toHaveBeenCalledWith("test", "example.com");
+      expect(getDeduplicationKey).toHaveBeenCalledWith("test", "test.invalid");
 
       // Wait for background work to complete
       await vi.waitFor(() => {
@@ -111,7 +111,7 @@ describe("withSwrCache", () => {
 
       await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -139,7 +139,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -177,7 +177,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -214,7 +214,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -244,7 +244,7 @@ describe("withSwrCache", () => {
 
       const result = await withSwrCache({
         workflowName: "test",
-        domain: "example.com",
+        domain: "test.invalid",
         getCached,
         startWorkflow,
       });
@@ -275,14 +275,14 @@ describe("withSwrCache", () => {
 
       await withSwrCache({
         workflowName: "registration",
-        domain: "test.com",
+        domain: "another.invalid",
         getCached,
         startWorkflow,
       });
 
       expect(getDeduplicationKey).toHaveBeenCalledWith(
         "registration",
-        "test.com",
+        "another.invalid",
       );
     });
   });

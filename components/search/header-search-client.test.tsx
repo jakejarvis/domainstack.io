@@ -6,7 +6,7 @@ import { HeaderSearchProvider } from "./header-search-context";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn(),
-  params: { domain: "Example.COM" as string | undefined },
+  params: { domain: "Test.INVALID" as string | undefined },
 }));
 
 vi.mock("@/hooks/use-router", () => ({
@@ -24,16 +24,16 @@ describe("HeaderSearch", () => {
   });
 
   it("prefills normalized domain from params and navigates on Enter", async () => {
-    nav.params = { domain: "Sub.Example.COM" };
+    nav.params = { domain: "Sub.Test.INVALID" };
     render(
       <HeaderSearchProvider>
         <HeaderSearchClient />
       </HeaderSearchProvider>,
     );
     const input = screen.getByLabelText(/Search any domain/i);
-    expect(input).toHaveValue("sub.example.com");
+    expect(input).toHaveValue("sub.test.invalid");
     await userEvent.type(input, "{Enter}");
-    expect(nav.push).toHaveBeenCalledWith("/sub.example.com");
+    expect(nav.push).toHaveBeenCalledWith("/sub.test.invalid");
   });
 
   it("does nothing on invalid domain", async () => {
@@ -49,7 +49,7 @@ describe("HeaderSearch", () => {
   });
 
   it("re-enables the input after navigating to a new route", async () => {
-    nav.params = { domain: "foo.com" };
+    nav.params = { domain: "foo.invalid" };
     const { rerender } = render(
       <HeaderSearchProvider>
         <HeaderSearchClient />
@@ -60,7 +60,7 @@ describe("HeaderSearch", () => {
     await userEvent.type(input, "{Enter}");
     expect(input).toBeDisabled();
     // Simulate navigation by changing route params and re-rendering
-    nav.params = { domain: "bar.com" };
+    nav.params = { domain: "bar.invalid" };
     rerender(
       <HeaderSearchProvider>
         <HeaderSearchClient />

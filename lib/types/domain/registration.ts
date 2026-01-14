@@ -111,8 +111,9 @@ export interface RegistrationResponse {
   warnings?: string[];
   registrarProvider: ProviderRef;
   /**
-   * Raw RDAP/WHOIS response from the registry as a formatted string.
-   * RDAP responses are pretty-printed JSON, WHOIS responses are plain text.
+   * Raw RDAP/WHOIS response from the registry.
+   * RDAP responses are JSON objects, WHOIS responses are plain text strings.
+   * Display formatting (prettification) should happen on the client side.
    */
-  rawResponse?: string;
+  rawResponse?: Record<string, unknown> | string;
 }

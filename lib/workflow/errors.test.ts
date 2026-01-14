@@ -20,7 +20,7 @@ class SafeFetchError extends Error {
 describe("classifyFetchError", () => {
   describe("DNS errors", () => {
     it("returns FatalError for ENOTFOUND", () => {
-      const err = new Error("getaddrinfo ENOTFOUND example.com");
+      const err = new Error("getaddrinfo ENOTFOUND test.invalid");
       (err as NodeJS.ErrnoException).code = "ENOTFOUND";
       const result = classifyFetchError(err);
       expect(FatalError.is(result)).toBe(true);
@@ -29,7 +29,7 @@ describe("classifyFetchError", () => {
 
     it("returns RetryableError for ENODATA (not recognized as DNS error)", () => {
       // ENODATA is not in our DNS error detection, so it's treated as unknown/retryable
-      const err = new Error("queryA ENODATA example.com");
+      const err = new Error("queryA ENODATA test.invalid");
       (err as NodeJS.ErrnoException).code = "ENODATA";
       const result = classifyFetchError(err);
       expect(RetryableError.is(result)).toBe(true);
@@ -124,9 +124,9 @@ describe("classifyFetchError", () => {
     it("includes context in error message", () => {
       const err = new Error("timeout");
       const result = classifyFetchError(err, {
-        context: "fetching example.com",
+        context: "fetching test.invalid",
       });
-      expect(result.message).toContain("fetching example.com");
+      expect(result.message).toContain("fetching test.invalid");
     });
   });
 });

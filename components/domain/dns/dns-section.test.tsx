@@ -29,9 +29,9 @@ describe("DnsSection", () => {
     const records = [
       { type: "A", name: "a", value: "1.2.3.4" },
       { type: "AAAA", name: "aaaa", value: "::1" },
-      { type: "MX", name: "mx", value: "mx.example.com", priority: 10 },
+      { type: "MX", name: "mx", value: "mx.test.invalid", priority: 10 },
       { type: "TXT", name: "txt", value: "v=spf1" },
-      { type: "NS", name: "ns", value: "ns1.example.com" },
+      { type: "NS", name: "ns", value: "ns1.test.invalid" },
     ] as unknown as import("@/lib/types/domain/dns").DnsRecord[];
 
     render(<DnsSection data={{ records, resolver: null }} />);

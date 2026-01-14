@@ -114,7 +114,7 @@ export async function getRegistration(
     rdapServers: row.registration.rdapServers ?? undefined,
     source: row.registration.source ?? null,
     registrarProvider,
-    rawResponse: formatRawResponseFromDb(
+    rawResponse: getRawResponseFromDb(
       row.registration.rawResponse,
       row.registration.source,
     ),
@@ -124,13 +124,14 @@ export async function getRegistration(
 }
 
 /**
- * Format raw response from database for display.
- * RDAP (object) is pretty-printed to JSON, WHOIS (string) is returned as-is.
+ * Get raw response from database.
+ * RDAP is returned as a JSON object, WHOIS as a plain text string.
+ * Client-side code is responsible for prettification when displaying.
  */
-function formatRawResponseFromDb(
+function getRawResponseFromDb(
   rawResponse: unknown,
   source: "rdap" | "whois" | null,
-): string | undefined {
+): Record<string, unknown> | string | undefined {
   if (!rawResponse) return undefined;
 
   // WHOIS is stored as a string
@@ -138,11 +139,15 @@ function formatRawResponseFromDb(
     return rawResponse;
   }
 
-  // RDAP is stored as a JSON object - pretty print it
+  // RDAP is stored as a JSON object - return as-is
   if (source === "rdap" && typeof rawResponse === "object") {
-    return JSON.stringify(rawResponse, null, 2);
+    return rawResponse as Record<string, unknown>;
   }
 
-  // Fallback: stringify whatever we have
-  return JSON.stringify(rawResponse, null, 2);
+  // Fallback: return the object as-is
+  if (typeof rawResponse === "object") {
+    return rawResponse as Record<string, unknown>;
+  }
+
+  return undefined;
 }

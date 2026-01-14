@@ -28,8 +28,8 @@ describe("RegistrationSection", () => {
       <RegistrationSection
         data={
           {
-            domain: "example.com",
-            tld: "com",
+            domain: "test.invalid",
+            tld: "invalid",
             isRegistered: true,
             status: "registered",
             unavailableReason: null,

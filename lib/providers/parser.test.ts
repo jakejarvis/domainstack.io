@@ -37,7 +37,7 @@ describe("parseProviderCatalog", () => {
     const raw = {
       ca: [
         {
-          domain: "example.com",
+          domain: "test.invalid",
           rule: { kind: "issuerIncludes", substr: "test" },
         },
       ],
@@ -51,7 +51,7 @@ describe("parseProviderCatalog", () => {
       ca: [
         {
           name: "",
-          domain: "example.com",
+          domain: "test.invalid",
           rule: { kind: "issuerIncludes", substr: "test" },
         },
       ],
@@ -65,7 +65,7 @@ describe("parseProviderCatalog", () => {
       dns: [
         {
           name: "Test Provider",
-          domain: "test.com",
+          domain: "test.invalid",
           rule: { kind: "nsRegex", pattern: "[invalid(regex" },
         },
       ],
@@ -79,10 +79,10 @@ describe("parseProviderCatalog", () => {
       email: [
         {
           name: "Test Provider",
-          domain: "test.com",
+          domain: "test.invalid",
           rule: {
             any: [
-              { kind: "mxSuffix", suffix: "valid.com" },
+              { kind: "mxSuffix", suffix: "valid.invalid" },
               { kind: "mxRegex", pattern: "[invalid(" },
             ],
           },
@@ -98,7 +98,7 @@ describe("parseProviderCatalog", () => {
       dns: [
         {
           name: "Test Provider",
-          domain: "test.com",
+          domain: "test.invalid",
           rule: {
             all: [
               { kind: "nsRegex", pattern: "^valid$" },
