@@ -292,7 +292,7 @@ export async function hasRecentNotification(
     return false;
   }
 
-  const notification = rows[0];
+  const [notification] = rows;
   const channels = (notification.channels as string[]) ?? [];
 
   // If email was requested but not sent (no resendId), consider it incomplete
