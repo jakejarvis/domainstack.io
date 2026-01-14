@@ -3,24 +3,34 @@
  *
  * Persists registration data to the database.
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
+ *
+ * Note: This step only handles database persistence. Revalidation scheduling
+ * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
+/** Result from persist step, includes lastAccessedAt for scheduling */
+export interface PersistResult {
+  domainId: string;
+  lastAccessedAt: Date | null;
+}
+
 /**
  * Step: Persist registration to database.
  *
- * Creates/updates domain record and schedules revalidation.
+ * Creates/updates domain record. Returns lastAccessedAt for use in
+ * scheduling revalidation at the workflow level.
  * Only call this for registered domains (isRegistered: true).
  *
  * @param domain - The domain name
  * @param response - The normalized registration response
- * @returns The domain ID from the persisted domain record
+ * @returns Object with domainId and lastAccessedAt for scheduling
  */
 export async function persistRegistrationStep(
   domain: string,
   response: RegistrationResponse,
-): Promise<string> {
+): Promise<PersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
@@ -30,7 +40,6 @@ export async function persistRegistrationStep(
   const { ttlForRegistration } = await import("@/lib/ttl");
   const { upsertDomain } = await import("@/lib/db/repos/domains");
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const { stepId } = getStepMetadata();
   const logger = createLogger({ source: "registration-persist" });
@@ -81,15 +90,12 @@ export async function persistRegistrationStep(
       rawResponse: response.rawResponse,
     });
 
-    await scheduleRevalidation(
-      domain,
-      "registration",
-      domainRecord.lastAccessedAt ?? null,
-    );
-
     logger.debug({ domain, stepId }, "registration persisted");
 
-    return domainRecord.id;
+    return {
+      domainId: domainRecord.id,
+      lastAccessedAt: domainRecord.lastAccessedAt ?? null,
+    };
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {

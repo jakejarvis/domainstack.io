@@ -251,3 +251,98 @@ export async function scheduleRevalidation(
     }
   }
 }
+
+/**
+ * Schedule revalidation for multiple sections at once using a single Inngest API call.
+ * This is more efficient than calling scheduleRevalidation() multiple times when
+ * a workflow needs to schedule revalidation for several sections.
+ *
+ * @param domain - The domain to revalidate
+ * @param sections - The sections to revalidate
+ * @param lastAccessedAt - When the domain was last accessed (for decay calculation)
+ */
+export async function scheduleRevalidationBatch(
+  domain: string,
+  sections: Section[],
+  lastAccessedAt?: Date | null,
+): Promise<void> {
+  if (sections.length === 0) return;
+
+  // Normalize domain for consistency
+  const normalizedDomain =
+    typeof domain === "string" ? domain.trim().toLowerCase() : domain;
+
+  const now = Date.now();
+  const events: Array<{
+    name: string;
+    data: { domain: string; section: Section };
+    ts: number;
+    id: string;
+  }> = [];
+
+  for (const section of sections) {
+    // Check if domain should stop being revalidated due to inactivity
+    if (shouldStopRevalidation(section, lastAccessedAt ?? null)) {
+      logger.debug(
+        {
+          domain: normalizedDomain,
+          section,
+          lastAccessedAt: lastAccessedAt?.toISOString() ?? "never",
+        },
+        "skip (stopped: inactive)",
+      );
+      continue;
+    }
+
+    const eventId = `${normalizedDomain}:${section}`;
+
+    // Check in-memory deduplication
+    const recentTimestamp = recentlyScheduled.get(eventId);
+    if (recentTimestamp && now - recentTimestamp < RECENT_SCHEDULE_WINDOW_MS) {
+      logger.debug(
+        { domain: normalizedDomain, section },
+        "skip (recently scheduled)",
+      );
+      continue;
+    }
+
+    // Calculate timing with decay
+    const decayMultiplier = getDecayMultiplier(section, lastAccessedAt ?? null);
+    const baseTtlMs = minTtlSecondsForSection(section) * 1000;
+    const decayedTtlMs = applyDecayToTtl(baseTtlMs, decayMultiplier);
+    const scheduledDueMs = now + decayedTtlMs;
+
+    events.push({
+      name: INNGEST_EVENTS.SECTION_REVALIDATE,
+      data: {
+        domain: normalizedDomain,
+        section,
+      },
+      ts: scheduledDueMs,
+      id: eventId,
+    });
+
+    // Track this scheduling
+    recentlyScheduled.set(eventId, now);
+  }
+
+  // Send all events in a single API call
+  if (events.length > 0) {
+    await inngest.send(events);
+
+    logger.debug(
+      { domain: normalizedDomain, sections: events.map((e) => e.data.section) },
+      "scheduled revalidation batch",
+    );
+  }
+
+  // Periodic cleanup
+  if (recentlyScheduled.size > MAX_RECENT_ENTRIES) {
+    const cutoff = now - RECENT_SCHEDULE_WINDOW_MS * 2;
+    for (const [key, ts] of recentlyScheduled.entries()) {
+      if (ts < cutoff) {
+        recentlyScheduled.delete(key);
+      }
+    }
+  }
+}

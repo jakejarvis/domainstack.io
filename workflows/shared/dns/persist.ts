@@ -3,23 +3,33 @@
  *
  * Persists DNS records to the database.
  * This step is shared between the dedicated dnsWorkflow and internal workflows.
+ *
+ * Note: This step only handles database persistence. Revalidation scheduling
+ * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
 import type { DnsRecordType } from "@/lib/constants/dns";
 import type { DnsFetchData } from "./types";
 
+/** Result from persist step, includes lastAccessedAt for scheduling */
+export interface PersistResult {
+  lastAccessedAt: Date | null;
+}
+
 /**
  * Step: Persist DNS records to database.
  *
- * Creates domain record if needed and schedules revalidation.
+ * Creates domain record if needed. Returns lastAccessedAt for use in
+ * scheduling revalidation at the workflow level.
  *
  * @param domain - The domain name
  * @param fetchData - The DNS fetch result containing records and expiry metadata
+ * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistDnsRecordsStep(
   domain: string,
   fetchData: DnsFetchData,
-): Promise<void> {
+): Promise<PersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
@@ -28,7 +38,6 @@ export async function persistDnsRecordsStep(
   const { createLogger } = await import("@/lib/logger/server");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceDns } = await import("@/lib/db/repos/dns");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const { stepId } = getStepMetadata();
   const logger = createLogger({ source: "dns-persist" });
@@ -73,13 +82,6 @@ export async function persistDnsRecordsStep(
       recordsByType,
     });
 
-    // Schedule revalidation
-    await scheduleRevalidation(
-      domain,
-      "dns",
-      domainRecord.lastAccessedAt ?? null,
-    );
-
     logger.debug(
       {
         domain,
@@ -88,6 +90,8 @@ export async function persistDnsRecordsStep(
       },
       "dns records persisted",
     );
+
+    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {

@@ -1,3 +1,4 @@
+import type { Section } from "@/lib/constants/sections";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
@@ -13,6 +14,7 @@ import {
   lookupGeoIpStep,
   persistHostingStep,
 } from "@/workflows/shared/hosting";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
 
 export interface HostingOrchestrationWorkflowInput {
   domain: string;
@@ -36,6 +38,7 @@ export type HostingOrchestrationWorkflowResult =
  * 4. GeoIP lookup (if IP available)
  * 5. Detect providers from headers and DNS records
  * 6. Persist hosting data
+ * 7. Schedule revalidation for all updated sections
  */
 export async function hostingOrchestrationWorkflow(
   input: HostingOrchestrationWorkflowInput,
@@ -51,13 +54,22 @@ export async function hostingOrchestrationWorkflow(
     fetchHeadersStep(domain),
   ]);
 
+  // Track which sections we updated for batch scheduling
+  const updatedSections: Section[] = ["dns"];
+
   // Always persist DNS data
-  await persistDnsRecordsStep(domain, dnsResult.data);
+  let { lastAccessedAt } = await persistDnsRecordsStep(domain, dnsResult.data);
 
   // If headers failed, we can still proceed with DNS-only provider detection
   // but we persist headers only if successful
   if (headersResult.success) {
-    await persistHeadersStep(domain, headersResult.data);
+    const headersPersistedResult = await persistHeadersStep(
+      domain,
+      headersResult.data,
+    );
+    updatedSections.push("headers");
+    // Use headers lastAccessedAt if available (both should be same domain)
+    lastAccessedAt = headersPersistedResult.lastAccessedAt ?? lastAccessedAt;
   }
 
   // Use available data for provider detection (prefer full data, fallback to partial)
@@ -80,7 +92,16 @@ export async function hostingOrchestrationWorkflow(
   );
 
   // Step 6: Persist hosting data to database
-  await persistHostingStep(domain, providers, geoResult?.geo ?? null);
+  const hostingPersistedResult = await persistHostingStep(
+    domain,
+    providers,
+    geoResult?.geo ?? null,
+  );
+  updatedSections.push("hosting");
+  lastAccessedAt = hostingPersistedResult.lastAccessedAt ?? lastAccessedAt;
+
+  // Step 7: Schedule revalidation for all updated sections
+  await scheduleRevalidationBatchStep(domain, updatedSections, lastAccessedAt);
 
   return {
     success: true,

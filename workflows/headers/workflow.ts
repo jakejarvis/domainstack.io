@@ -5,6 +5,7 @@ import {
   type HeadersError,
   persistHeadersStep,
 } from "@/workflows/shared/headers";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
 
 export interface HeadersWorkflowInput {
   domain: string;
@@ -20,6 +21,7 @@ export type HeadersWorkflowResult = WorkflowResult<
  * independently retryable steps:
  * 1. Fetch headers from domain
  * 2. Persist to database (creates domain record if needed)
+ * 3. Schedule revalidation
  */
 export async function headersWorkflow(
   input: HeadersWorkflowInput,
@@ -41,7 +43,10 @@ export async function headersWorkflow(
   }
 
   // Step 2: Persist to database
-  await persistHeadersStep(domain, fetchResult.data);
+  const { lastAccessedAt } = await persistHeadersStep(domain, fetchResult.data);
+
+  // Step 3: Schedule revalidation
+  await scheduleRevalidationBatchStep(domain, ["headers"], lastAccessedAt);
 
   return {
     success: true,

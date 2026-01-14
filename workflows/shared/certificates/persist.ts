@@ -3,22 +3,32 @@
  *
  * Persists certificates to the database.
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
+ *
+ * Note: This step only handles database persistence. Revalidation scheduling
+ * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
 import type { CertificatesProcessedData } from "./types";
 
+/** Result from persist step, includes lastAccessedAt for scheduling */
+export interface PersistResult {
+  lastAccessedAt: Date | null;
+}
+
 /**
  * Step: Persist certificates to database.
  *
- * Creates domain record if needed and schedules revalidation.
+ * Creates domain record if needed. Returns lastAccessedAt for use in
+ * scheduling revalidation at the workflow level.
  *
  * @param domain - The domain name
  * @param processedData - The processed certificates with provider IDs and expiry metadata
+ * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistCertificatesStep(
   domain: string,
   processedData: CertificatesProcessedData,
-): Promise<void> {
+): Promise<PersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
@@ -26,7 +36,6 @@ export async function persistCertificatesStep(
   const { createLogger } = await import("@/lib/logger/server");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceCertificates } = await import("@/lib/db/repos/certificates");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
   const { ttlForCertificates } = await import("@/lib/ttl");
 
   const { stepId } = getStepMetadata();
@@ -55,14 +64,9 @@ export async function persistCertificatesStep(
       expiresAt,
     });
 
-    // Schedule background revalidation
-    await scheduleRevalidation(
-      domain,
-      "certificates",
-      domainRecord.lastAccessedAt ?? null,
-    );
-
     logger.debug({ domain, stepId }, "certificates persisted");
+
+    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {

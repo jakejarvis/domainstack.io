@@ -23,6 +23,7 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
 import {
   buildSeoResponseStep,
   fetchHtmlStep,
@@ -50,7 +51,8 @@ export interface SectionRevalidateWorkflowResult {
  * scheduled revalidation when cached data has expired or is about to expire.
  *
  * Each section type calls the appropriate shared step directly at the workflow level,
- * ensuring proper durability and retry semantics.
+ * ensuring proper durability and retry semantics. After persisting, schedules the
+ * next revalidation based on access-based decay.
  */
 export async function sectionRevalidateWorkflow(
   input: SectionRevalidateWorkflowInput,
@@ -63,7 +65,11 @@ export async function sectionRevalidateWorkflow(
     case "dns": {
       // DNS always succeeds or throws RetryableError
       const fetchResult = await fetchDnsRecordsStep(domain);
-      await persistDnsRecordsStep(domain, fetchResult.data);
+      const { lastAccessedAt } = await persistDnsRecordsStep(
+        domain,
+        fetchResult.data,
+      );
+      await scheduleRevalidationBatchStep(domain, ["dns"], lastAccessedAt);
       return { success: true, domain, section };
     }
 
@@ -72,7 +78,11 @@ export async function sectionRevalidateWorkflow(
       if (!fetchResult.success) {
         return { success: false, domain, section, error: fetchResult.error };
       }
-      await persistHeadersStep(domain, fetchResult.data);
+      const { lastAccessedAt } = await persistHeadersStep(
+        domain,
+        fetchResult.data,
+      );
+      await scheduleRevalidationBatchStep(domain, ["headers"], lastAccessedAt);
       return { success: true, domain, section };
     }
 
@@ -84,12 +94,22 @@ export async function sectionRevalidateWorkflow(
         fetchHeadersStep(domain),
       ]);
 
-      // Always persist DNS data if we got it
-      await persistDnsRecordsStep(domain, dnsResult.data);
+      // Track sections we update
+      const updatedSections: Section[] = ["dns"];
 
-      // If headers failed, return partial success
-      // DNS was still updated, so this isn't a total failure
+      // Always persist DNS data if we got it
+      let { lastAccessedAt } = await persistDnsRecordsStep(
+        domain,
+        dnsResult.data,
+      );
+
+      // If headers failed, schedule DNS revalidation and return partial success
       if (!headersResult.success) {
+        await scheduleRevalidationBatchStep(
+          domain,
+          updatedSections,
+          lastAccessedAt,
+        );
         return {
           success: false,
           domain,
@@ -99,7 +119,12 @@ export async function sectionRevalidateWorkflow(
       }
 
       // Persist headers now that we know they succeeded
-      await persistHeadersStep(domain, headersResult.data);
+      const headersPersistedResult = await persistHeadersStep(
+        domain,
+        headersResult.data,
+      );
+      updatedSections.push("headers");
+      lastAccessedAt = headersPersistedResult.lastAccessedAt ?? lastAccessedAt;
 
       // GeoIP lookup
       const a = dnsResult.data.records.find((d) => d.type === "A");
@@ -115,7 +140,20 @@ export async function sectionRevalidateWorkflow(
       );
 
       // Persist hosting
-      await persistHostingStep(domain, providers, geoResult?.geo ?? null);
+      const hostingPersistedResult = await persistHostingStep(
+        domain,
+        providers,
+        geoResult?.geo ?? null,
+      );
+      updatedSections.push("hosting");
+      lastAccessedAt = hostingPersistedResult.lastAccessedAt ?? lastAccessedAt;
+
+      // Schedule revalidation for all updated sections
+      await scheduleRevalidationBatchStep(
+        domain,
+        updatedSections,
+        lastAccessedAt,
+      );
 
       return { success: true, domain, section };
     }
@@ -126,7 +164,15 @@ export async function sectionRevalidateWorkflow(
         return { success: false, domain, section, error: fetchResult.error };
       }
       const processed = await processChainStep(fetchResult.data.chainJson);
-      await persistCertificatesStep(domain, processed);
+      const { lastAccessedAt } = await persistCertificatesStep(
+        domain,
+        processed,
+      );
+      await scheduleRevalidationBatchStep(
+        domain,
+        ["certificates"],
+        lastAccessedAt,
+      );
       return { success: true, domain, section };
     }
 
@@ -154,7 +200,12 @@ export async function sectionRevalidateWorkflow(
         robotsResult,
         uploadedImageUrl,
       );
-      await persistSeoStep(domain, response, uploadedImageUrl);
+      const { lastAccessedAt } = await persistSeoStep(
+        domain,
+        response,
+        uploadedImageUrl,
+      );
+      await scheduleRevalidationBatchStep(domain, ["seo"], lastAccessedAt);
       return { success: true, domain, section };
     }
 
@@ -167,7 +218,15 @@ export async function sectionRevalidateWorkflow(
         rdapResult.data.recordJson,
       );
       if (normalized.isRegistered) {
-        await persistRegistrationStep(domain, normalized);
+        const { lastAccessedAt } = await persistRegistrationStep(
+          domain,
+          normalized,
+        );
+        await scheduleRevalidationBatchStep(
+          domain,
+          ["registration"],
+          lastAccessedAt,
+        );
       }
       return { success: true, domain, section };
     }

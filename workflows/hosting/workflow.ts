@@ -7,6 +7,7 @@ import {
   lookupGeoIpStep,
   persistHostingStep,
 } from "@/workflows/shared/hosting";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
 
 export interface HostingWorkflowInput {
   domain: string;
@@ -36,6 +37,7 @@ export type HostingWorkflowResult = WorkflowResult<HostingResponse>;
  * 1. GeoIP lookup (if IP available)
  * 2. Detect providers from headers and DNS records
  * 3. Persist to database
+ * 4. Schedule revalidation
  */
 export async function hostingWorkflow(
   input: HostingWorkflowInput,
@@ -60,7 +62,14 @@ export async function hostingWorkflow(
   );
 
   // Step 3: Persist to database
-  await persistHostingStep(domain, providers, geoResult?.geo ?? null);
+  const { lastAccessedAt } = await persistHostingStep(
+    domain,
+    providers,
+    geoResult?.geo ?? null,
+  );
+
+  // Step 4: Schedule revalidation
+  await scheduleRevalidationBatchStep(domain, ["hosting"], lastAccessedAt);
 
   return {
     success: true,

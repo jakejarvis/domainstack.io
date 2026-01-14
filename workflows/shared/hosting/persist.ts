@@ -3,24 +3,34 @@
  *
  * Persists hosting data to the database.
  * This step is shared between the dedicated hostingWorkflow and internal workflows.
+ *
+ * Note: This step only handles database persistence. Revalidation scheduling
+ * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
 import type { GeoIpData, ProviderDetectionData } from "./types";
 
+/** Result from persist step, includes lastAccessedAt for scheduling */
+export interface PersistResult {
+  lastAccessedAt: Date | null;
+}
+
 /**
  * Step: Persist hosting data to database.
  *
- * Creates domain record if needed and schedules revalidation.
+ * Creates domain record if needed. Returns lastAccessedAt for use in
+ * scheduling revalidation at the workflow level.
  *
  * @param domain - The domain name
  * @param providers - The detected provider data
  * @param geo - Optional GeoIP data
+ * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistHostingStep(
   domain: string,
   providers: ProviderDetectionData,
   geo: GeoIpData["geo"] | null,
-): Promise<void> {
+): Promise<PersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
@@ -29,7 +39,6 @@ export async function persistHostingStep(
   const { ttlForHosting } = await import("@/lib/ttl");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertHosting } = await import("@/lib/db/repos/hosting");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const { stepId } = getStepMetadata();
   const logger = createLogger({ source: "hosting-persist" });
@@ -54,13 +63,9 @@ export async function persistHostingStep(
       expiresAt,
     });
 
-    await scheduleRevalidation(
-      domain,
-      "hosting",
-      domainRecord.lastAccessedAt ?? null,
-    );
-
     logger.debug({ domain, stepId }, "persisted hosting data");
+
+    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {

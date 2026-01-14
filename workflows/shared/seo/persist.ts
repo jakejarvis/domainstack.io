@@ -3,6 +3,9 @@
  *
  * Persists SEO data to the database.
  * This step is shared between the dedicated seoWorkflow and internal workflows.
+ *
+ * Note: This step only handles database persistence. Revalidation scheduling
+ * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
 import type {
@@ -12,20 +15,27 @@ import type {
   TwitterMeta,
 } from "@/lib/types/domain/seo";
 
+/** Result from persist step, includes lastAccessedAt for scheduling */
+export interface PersistResult {
+  lastAccessedAt: Date | null;
+}
+
 /**
  * Step: Persist SEO data to database.
  *
- * Creates domain record if needed and schedules revalidation.
+ * Creates domain record if needed. Returns lastAccessedAt for use in
+ * scheduling revalidation at the workflow level.
  *
  * @param domain - The domain name
  * @param response - The SEO response to persist
  * @param uploadedImageUrl - Optional uploaded OG image URL
+ * @returns Object with lastAccessedAt for scheduling
  */
 export async function persistSeoStep(
   domain: string,
   response: SeoResponse,
   uploadedImageUrl: string | null,
-): Promise<void> {
+): Promise<PersistResult> {
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
@@ -34,7 +44,6 @@ export async function persistSeoStep(
   const { ttlForSeo } = await import("@/lib/ttl");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertSeo } = await import("@/lib/db/repos/seo");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
 
   const { stepId } = getStepMetadata();
   const logger = createLogger({ source: "seo-persist" });
@@ -64,13 +73,9 @@ export async function persistSeoStep(
       expiresAt,
     });
 
-    await scheduleRevalidation(
-      domain,
-      "seo",
-      domainRecord.lastAccessedAt ?? null,
-    );
-
     logger.debug({ domain, stepId }, "SEO data persisted");
+
+    return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {
     const { classifyDatabaseError } = await import("@/lib/workflow/errors");
     throw classifyDatabaseError(err, {
