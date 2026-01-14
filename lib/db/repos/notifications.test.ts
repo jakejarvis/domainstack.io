@@ -502,13 +502,15 @@ describe("hasRecentNotification", () => {
     expect(result).toBe(false);
   });
 
-  it("returns true when recent notification exists", async () => {
+  it("returns true when recent notification exists with in-app only", async () => {
+    // Notification with in-app only (no email) is considered complete
     await createNotification({
       userId: testUserId,
       trackedDomainId: testTrackedDomainId,
       type: "domain_expiry_30d",
       title: "Test notification",
       message: "Test message",
+      channels: ["in-app"],
     });
 
     const result = await hasRecentNotification(
@@ -516,6 +518,52 @@ describe("hasRecentNotification", () => {
       "domain_expiry_30d",
     );
     expect(result).toBe(true);
+  });
+
+  it("returns true when recent notification exists with email sent", async () => {
+    // Notification with email channel and resendId is considered complete
+    const notification = await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_7d",
+      title: "Test notification",
+      message: "Test message",
+      channels: ["in-app", "email"],
+    });
+    if (!notification) {
+      throw new Error("Failed to create notification");
+    }
+
+    // Set resendId to mark email as sent
+    await db
+      .update(notifications)
+      .set({ resendId: "re_test123" })
+      .where(eq(notifications.id, notification.id));
+
+    const result = await hasRecentNotification(
+      testTrackedDomainId,
+      "domain_expiry_7d",
+    );
+    expect(result).toBe(true);
+  });
+
+  it("returns false when email notification exists but email not sent", async () => {
+    // Notification with email channel but no resendId is considered incomplete
+    // This allows workflow retries to send the email
+    await createNotification({
+      userId: testUserId,
+      trackedDomainId: testTrackedDomainId,
+      type: "domain_expiry_1d",
+      title: "Test notification",
+      message: "Test message",
+      channels: ["in-app", "email"],
+    });
+
+    const result = await hasRecentNotification(
+      testTrackedDomainId,
+      "domain_expiry_1d",
+    );
+    expect(result).toBe(false);
   });
 
   it("returns false for old notifications beyond cutoff", async () => {

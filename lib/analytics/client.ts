@@ -7,6 +7,12 @@ import type {
   IdentifySetOnceProperties,
 } from "@/lib/analytics/types";
 
+/**
+ * Track identification state locally to avoid relying on PostHog's private API.
+ * This is set when identify() is called and cleared when reset() is called.
+ */
+let identifiedUserId: string | null = null;
+
 function track(event: string, properties?: Record<string, unknown>) {
   try {
     posthog.capture(event, properties);
@@ -38,6 +44,7 @@ function identify(
 ) {
   try {
     posthog.identify(userId, properties, setOnceProperties);
+    identifiedUserId = userId;
   } catch {
     // no-op
   }
@@ -50,6 +57,7 @@ function identify(
 function reset() {
   try {
     posthog.reset();
+    identifiedUserId = null;
   } catch {
     // no-op
   }
@@ -60,13 +68,7 @@ function reset() {
  * Use this to prevent duplicate identify calls.
  */
 function isIdentified(): boolean {
-  try {
-    // PostHog internal method to check identification status
-    // biome-ignore lint/suspicious/noExplicitAny: PostHog internal API
-    return (posthog as any)._isIdentified?.() ?? false;
-  } catch {
-    return false;
-  }
+  return identifiedUserId !== null;
 }
 
 /**

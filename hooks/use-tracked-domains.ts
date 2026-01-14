@@ -325,10 +325,19 @@ export function useTrackedDomains(options: UseTrackedDomainsOptions = {}) {
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count how many will be archived (use first cached query to count)
-      const firstCachedDomains = previousDomains[0]?.[1];
-      const archiveCount =
-        firstCachedDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
+      // Count how many will be archived by checking all cache variants
+      // A domain counts toward archiveCount if it exists in any cache,
+      // is in the requested IDs, and is not already archived
+      const domainsToArchive = new Set<string>();
+      for (const [, domains] of previousDomains) {
+        if (!domains) continue;
+        for (const d of domains) {
+          if (idsSet.has(d.id) && !d.archivedAt) {
+            domainsToArchive.add(d.id);
+          }
+        }
+      }
+      const archiveCount = domainsToArchive.size;
 
       // Optimistically mark domains as archived in all query variants
       queryClient.setQueriesData<DomainsData>(
@@ -371,10 +380,18 @@ export function useTrackedDomains(options: UseTrackedDomainsOptions = {}) {
 
       const idsSet = new Set(trackedDomainIds);
 
-      // Count how many will be deleted (use first cached query to count)
-      const firstCachedDomains = previousDomains[0]?.[1];
-      const deleteCount =
-        firstCachedDomains?.filter((d) => idsSet.has(d.id)).length ?? 0;
+      // Count how many active (non-archived) domains will be deleted
+      // by checking all cache variants. Only active domains affect the subscription count.
+      const activeDomainsToDelete = new Set<string>();
+      for (const [, domains] of previousDomains) {
+        if (!domains) continue;
+        for (const d of domains) {
+          if (idsSet.has(d.id) && !d.archivedAt) {
+            activeDomainsToDelete.add(d.id);
+          }
+        }
+      }
+      const deleteCount = activeDomainsToDelete.size;
 
       // Optimistically remove domains from all query variants
       queryClient.setQueriesData<DomainsData>(

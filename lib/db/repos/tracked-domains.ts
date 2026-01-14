@@ -34,6 +34,7 @@ import type { RegistrationContact } from "@/lib/types/domain/registration";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { ProviderInfo } from "@/lib/types/provider";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
+import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 
 const logger = createLogger({ source: "db/repos/tracked-domains" });
 
@@ -92,18 +93,23 @@ export async function createTrackedDomainWithLimitCheck(
   } = params;
 
   return await db.transaction(async (tx) => {
-    // Count active (non-archived) domains for this user within the transaction
-    const [countResult] = await tx
-      .select({ count: count() })
+    // Lock and count active (non-archived) domains for this user.
+    // We select the IDs with FOR UPDATE to prevent race conditions where
+    // concurrent requests both read the same count before either inserts.
+    // Note: FOR UPDATE cannot be used with aggregate functions, so we
+    // select the rows then count in application code.
+    const lockedRows = await tx
+      .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
       .where(
         and(
           eq(userTrackedDomains.userId, userId),
           isNull(userTrackedDomains.archivedAt),
         ),
-      );
+      )
+      .for("update");
 
-    const currentCount = countResult?.count ?? 0;
+    const currentCount = lockedRows.length;
 
     // Check if adding would exceed limit
     if (currentCount >= maxDomains) {
@@ -783,27 +789,33 @@ export async function verifyTrackedDomain(
 
   // After verification, initialize snapshot for change detection
   // This is done in the background to avoid blocking the user
-  if (updated[0]) {
+  const [trackedDomain] = updated;
+  if (trackedDomain) {
     // Import dynamically to avoid circular dependencies
     void import("@/lib/inngest/client")
       .then(({ inngest }) =>
         inngest.send({
           name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
           data: {
-            trackedDomainId: updated[0].id,
-            domainId: updated[0].domainId,
+            trackedDomainId: trackedDomain.id,
+            domainId: trackedDomain.domainId,
           },
         }),
       )
       .catch((err) => {
-        logger.error(
-          {
-            err,
-            trackedDomainId: updated[0].id,
-            domainId: updated[0].domainId,
+        // Track failure for observability and potential alerting
+        // The snapshot can be initialized later via the monitor-domains cron
+        // or when the user accesses domain data (SWR pattern will trigger workflows)
+        trackWorkflowFailureAsync({
+          workflow: "snapshot-initialize-trigger",
+          error: err instanceof Error ? err : new Error(String(err)),
+          classification: "fatal",
+          context: {
+            trackedDomainId: trackedDomain.id,
+            domainId: trackedDomain.domainId,
+            trigger: "verification_complete",
           },
-          "failed to trigger snapshot initialization for domain",
-        );
+        });
       });
   }
 
@@ -1181,18 +1193,23 @@ export async function unarchiveTrackedDomainWithLimitCheck(
       return { success: false, reason: "not_archived" } as const;
     }
 
-    // Count active (non-archived) domains for this user within the transaction
-    const [countResult] = await tx
-      .select({ count: count() })
+    // Lock and count active (non-archived) domains for this user.
+    // We select the IDs with FOR UPDATE to prevent race conditions where
+    // concurrent requests both read the same count before either updates.
+    // Note: FOR UPDATE cannot be used with aggregate functions, so we
+    // select the rows then count in application code.
+    const lockedRows = await tx
+      .select({ id: userTrackedDomains.id })
       .from(userTrackedDomains)
       .where(
         and(
           eq(userTrackedDomains.userId, userId),
           isNull(userTrackedDomains.archivedAt),
         ),
-      );
+      )
+      .for("update");
 
-    const currentCount = countResult?.count ?? 0;
+    const currentCount = lockedRows.length;
 
     // Check if unarchiving would exceed limit
     if (currentCount >= maxDomains) {
