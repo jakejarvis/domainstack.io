@@ -106,6 +106,11 @@ export function getDeduplicationKey(
   workflowName: string,
   input: unknown,
 ): string {
+  // Fast path for string inputs (most common case: domain names)
+  // Avoids unnecessary processing through stableStringify
+  if (typeof input === "string") {
+    return `${workflowName}:${JSON.stringify(input)}`;
+  }
   return `${workflowName}:${stableStringify(input)}`;
 }
 
