@@ -1,6 +1,5 @@
 import "server-only";
 
-import { after } from "next/server";
 import {
   FAST_CHANGING_TIERS,
   SLOW_CHANGING_TIERS,
@@ -225,15 +224,13 @@ export async function scheduleRevalidation(
   // Duplicate work is further prevented by Inngest's concurrency control (configured
   // in the function), which ensures only one instance of domain+section runs at a time.
   const eventId = `${normalizedDomain}:${section}`;
-  after(() => {
-    inngest.send({
-      name: INNGEST_EVENTS.SECTION_REVALIDATE,
-      data: {
-        domain: normalizedDomain,
-        section,
-      },
-      ts: scheduledDueMs,
-      id: eventId,
-    });
+  await inngest.send({
+    name: INNGEST_EVENTS.SECTION_REVALIDATE,
+    data: {
+      domain: normalizedDomain,
+      section,
+    },
+    ts: scheduledDueMs,
+    id: eventId,
   });
 }
