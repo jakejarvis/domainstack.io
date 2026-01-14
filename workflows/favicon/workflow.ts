@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+import type { FaviconResponse } from "@/lib/types/domain/icon";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,
@@ -9,7 +10,7 @@ export interface FaviconWorkflowInput {
   domain: string;
 }
 
-export type FaviconWorkflowResult = WorkflowResult<{ url: string | null }>;
+export type FaviconWorkflowResult = WorkflowResult<FaviconResponse>;
 
 const DEFAULT_SIZE = 32;
 

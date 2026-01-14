@@ -1,11 +1,18 @@
-import { FatalError, RetryableError } from "workflow";
 import type { DnsRecordsResponse } from "@/lib/types/domain/dns";
 import type { WorkflowResult } from "@/lib/workflow/types";
+import {
+  fetchDnsRecordsStep,
+  persistDnsRecordsStep,
+} from "@/workflows/shared/dns";
 
 export interface DnsWorkflowInput {
   domain: string;
 }
 
+/**
+ * DNS workflow always succeeds or throws (no permanent typed errors).
+ * Transient failures are handled via RetryableError until retries are exhausted.
+ */
 export type DnsWorkflowResult = WorkflowResult<DnsRecordsResponse>;
 
 /**
@@ -21,76 +28,17 @@ export async function dnsWorkflow(
 
   const { domain } = input;
 
-  // Step 1: Fetch from DoH providers
+  // Step 1: Fetch from DoH providers (throws RetryableError on failure)
   const fetchResult = await fetchDnsRecordsStep(domain);
 
   // Step 2: Persist to database
-  await persistDnsRecordsStep(domain, fetchResult);
+  await persistDnsRecordsStep(domain, fetchResult.data);
 
   return {
     success: true,
     data: {
-      records: fetchResult.records,
-      resolver: fetchResult.resolver,
+      records: fetchResult.data.records,
+      resolver: fetchResult.data.resolver,
     },
   };
-}
-
-// Internal type for step-to-step transfer
-interface FetchStepResult {
-  records: DnsRecordsResponse["records"];
-  resolver: string;
-  recordsWithExpiry: Array<{
-    type: string;
-    name: string;
-    value: string;
-    ttl?: number;
-    priority?: number;
-    isCloudflare?: boolean;
-    expiresAt: string;
-  }>;
-}
-
-/**
- * Step: Fetch DNS records from DoH providers with fallback
- */
-async function fetchDnsRecordsStep(domain: string): Promise<FetchStepResult> {
-  "use step";
-
-  const { fetchDnsRecords } = await import("@/lib/domain/dns-lookup");
-
-  const result = await fetchDnsRecords(domain);
-
-  if (!result) {
-    throw new RetryableError("All DoH providers failed", { retryAfter: "5s" });
-  }
-
-  return result;
-}
-
-// Allow more retries for DNS since DoH providers can be flaky
-fetchDnsRecordsStep.maxRetries = 5;
-
-/**
- * Step: Persist DNS records to database
- */
-async function persistDnsRecordsStep(
-  domain: string,
-  fetchResult: FetchStepResult,
-): Promise<void> {
-  "use step";
-
-  const { persistDnsRecords } = await import("@/lib/domain/dns-lookup");
-
-  try {
-    await persistDnsRecords(
-      domain,
-      fetchResult.resolver,
-      fetchResult.recordsWithExpiry as Parameters<typeof persistDnsRecords>[2],
-    );
-  } catch (err) {
-    throw new FatalError(
-      `Failed to persist DNS records for ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
 }

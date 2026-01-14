@@ -1,14 +1,5 @@
 /* @vitest-environment node */
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoist mocks for dns-utils (DoH providers)
 // Import actual implementations for deduplication functions
@@ -68,12 +59,7 @@ vi.mock("@/lib/cloudflare", () => ({
   isCloudflareIp: vi.fn().mockResolvedValue(false),
 }));
 
-// Mock schedule revalidation
-vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
-}));
-
-describe("fetchDnsRecords", () => {
+describe("fetchDnsRecordsStep", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -110,23 +96,26 @@ describe("fetchDnsRecords", () => {
       },
     );
 
-    const { fetchDnsRecords } = await import("./dns-lookup");
-    const result = await fetchDnsRecords("test.com");
+    const { fetchDnsRecordsStep } = await import("./fetch");
+    const result = await fetchDnsRecordsStep("test.com");
 
-    expect(result).not.toBeNull();
-    expect(result?.resolver).toBe("cloudflare");
-    expect(result?.records.some((r) => r.type === "A")).toBe(true);
-    expect(result?.records.some((r) => r.type === "MX")).toBe(true);
-    expect(result?.records.some((r) => r.type === "NS")).toBe(true);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.resolver).toBe("cloudflare");
+      expect(result.data.records.some((r) => r.type === "A")).toBe(true);
+      expect(result.data.records.some((r) => r.type === "MX")).toBe(true);
+      expect(result.data.records.some((r) => r.type === "NS")).toBe(true);
+    }
   });
 
-  it("returns null when all providers fail", async () => {
+  it("throws RetryableError when all providers fail", async () => {
     dnsUtilsMock.queryDohProvider.mockRejectedValue(new Error("Network error"));
 
-    const { fetchDnsRecords } = await import("./dns-lookup");
-    const result = await fetchDnsRecords("failing.com");
+    const { fetchDnsRecordsStep } = await import("./fetch");
 
-    expect(result).toBeNull();
+    await expect(fetchDnsRecordsStep("failing.com")).rejects.toThrow(
+      "All DoH providers failed",
+    );
   });
 
   it("falls back to second provider on first failure", async () => {
@@ -143,11 +132,13 @@ describe("fetchDnsRecords", () => {
       ]);
     });
 
-    const { fetchDnsRecords } = await import("./dns-lookup");
-    const result = await fetchDnsRecords("fallback.com");
+    const { fetchDnsRecordsStep } = await import("./fetch");
+    const result = await fetchDnsRecordsStep("fallback.com");
 
-    expect(result).not.toBeNull();
-    expect(result?.resolver).toBe("google");
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.resolver).toBe("google");
+    }
   });
 
   it("deduplicates records correctly", async () => {
@@ -164,12 +155,14 @@ describe("fetchDnsRecords", () => {
       },
     );
 
-    const { fetchDnsRecords } = await import("./dns-lookup");
-    const result = await fetchDnsRecords("dupes.com");
+    const { fetchDnsRecordsStep } = await import("./fetch");
+    const result = await fetchDnsRecordsStep("dupes.com");
 
-    expect(result).not.toBeNull();
-    const aRecords = result?.records.filter((r) => r.type === "A");
-    expect(aRecords?.length).toBe(2); // Should have 2 unique records
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const aRecords = result.data.records.filter((r) => r.type === "A");
+      expect(aRecords.length).toBe(2); // Should have 2 unique records
+    }
   });
 
   it("sorts MX records by priority", async () => {
@@ -191,65 +184,16 @@ describe("fetchDnsRecords", () => {
       },
     );
 
-    const { fetchDnsRecords } = await import("./dns-lookup");
-    const result = await fetchDnsRecords("mx.com");
+    const { fetchDnsRecordsStep } = await import("./fetch");
+    const result = await fetchDnsRecordsStep("mx.com");
 
-    expect(result).not.toBeNull();
-    const mxRecords = result?.records.filter((r) => r.type === "MX");
-    expect(mxRecords?.length).toBe(3);
-    expect(mxRecords?.[0].priority).toBe(10);
-    expect(mxRecords?.[1].priority).toBe(20);
-    expect(mxRecords?.[2].priority).toBe(30);
-  });
-});
-
-describe("persistDnsRecords", () => {
-  beforeAll(async () => {
-    const { makePGliteDb } = await import("@/lib/db/pglite");
-    const { db } = await makePGliteDb();
-    vi.doMock("@/lib/db/client", () => ({ db }));
-  });
-
-  beforeEach(async () => {
-    const { resetPGliteDb } = await import("@/lib/db/pglite");
-    await resetPGliteDb();
-    vi.clearAllMocks();
-  });
-
-  afterAll(async () => {
-    const { closePGliteDb } = await import("@/lib/db/pglite");
-    await closePGliteDb();
-  });
-
-  it("persists DNS records to database", async () => {
-    const { upsertDomain } = await import("@/lib/db/repos/domains");
-    const domain = await upsertDomain({
-      name: "persist.com",
-      tld: "com",
-      unicodeName: "persist.com",
-    });
-
-    const { persistDnsRecords } = await import("./dns-lookup");
-    await persistDnsRecords("persist.com", "cloudflare", [
-      {
-        type: "A",
-        name: "persist.com",
-        value: "1.2.3.4",
-        ttl: 300,
-        expiresAt: new Date(Date.now() + 300_000).toISOString(),
-      },
-    ]);
-
-    const { db } = await import("@/lib/db/client");
-    const { dnsRecords } = await import("@/lib/db/schema");
-    const { eq } = await import("drizzle-orm");
-
-    const rows = await db
-      .select()
-      .from(dnsRecords)
-      .where(eq(dnsRecords.domainId, domain.id));
-
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows.some((r) => r.type === "A")).toBe(true);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const mxRecords = result.data.records.filter((r) => r.type === "MX");
+      expect(mxRecords.length).toBe(3);
+      expect(mxRecords[0].priority).toBe(10);
+      expect(mxRecords[1].priority).toBe(20);
+      expect(mxRecords[2].priority).toBe(30);
+    }
   });
 });

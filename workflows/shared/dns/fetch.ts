@@ -1,40 +1,39 @@
 /**
- * DNS records lookup implementation - core logic for fetching and persisting DNS records.
+ * DNS fetch step.
  *
- * This module contains the business logic extracted from the DNS workflow.
- * It's used by both the standalone dnsWorkflow and shared steps.
+ * Fetches DNS records from DoH providers with fallback.
+ * This step is shared between the dedicated dnsWorkflow and internal workflows.
  */
 
-import { isCloudflareIp } from "@/lib/cloudflare";
+import { RetryableError } from "workflow";
 import type { DnsRecordType } from "@/lib/constants/dns";
-import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
-import {
-  DNS_TYPE_NUMBERS,
-  deduplicateDnsRecords,
-  providerOrderForLookup,
-  queryDohProvider,
-} from "@/lib/dns-utils";
-import { createLogger } from "@/lib/logger/server";
-import { ttlForDnsRecord } from "@/lib/ttl";
-import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
-
-const logger = createLogger({ source: "dns-lookup" });
-
-export interface DnsLookupResult {
-  records: DnsRecord[];
-  resolver: string;
-  recordsWithExpiry: Array<DnsRecord & { expiresAt: string }>;
-}
+import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { FetchDnsResult } from "./types";
 
 /**
- * Fetch DNS records from DoH providers with fallback.
+ * Step: Fetch DNS records from DoH providers with fallback.
  *
- * Tries multiple DoH providers in order until one succeeds.
- * Returns null if all providers fail.
+ * @param domain - The domain to resolve
+ * @returns FetchDnsResult with typed error on failure
  */
-export async function fetchDnsRecords(
+export async function fetchDnsRecordsStep(
   domain: string,
-): Promise<DnsLookupResult | null> {
+): Promise<FetchDnsResult> {
+  "use step";
+
+  // Dynamic imports for Node.js modules
+  const { isCloudflareIp } = await import("@/lib/cloudflare");
+  const { DNS_RECORD_TYPES } = await import("@/lib/constants/dns");
+  const {
+    DNS_TYPE_NUMBERS,
+    deduplicateDnsRecords,
+    providerOrderForLookup,
+    queryDohProvider,
+  } = await import("@/lib/dns-utils");
+  const { createLogger } = await import("@/lib/logger/server");
+  const { ttlForDnsRecord } = await import("@/lib/ttl");
+
+  const logger = createLogger({ source: "dns-fetch" });
   const providers = providerOrderForLookup(domain);
   const types = DNS_RECORD_TYPES;
   const now = new Date();
@@ -117,9 +116,12 @@ export async function fetchDnsRecords(
       }));
 
       return {
-        records: sorted,
-        resolver: provider.key,
-        recordsWithExpiry,
+        success: true,
+        data: {
+          records: sorted,
+          resolver: provider.key,
+          recordsWithExpiry,
+        },
       };
     } catch (err) {
       logger.info({ err, domain, provider: provider.key }, "provider failed");
@@ -127,108 +129,16 @@ export async function fetchDnsRecords(
     }
   }
 
-  // All providers failed
-  logger.warn({ domain }, "all DoH providers failed");
-  return null;
+  // All providers failed - throw retryable error
+  throw new RetryableError("All DoH providers failed", { retryAfter: "5s" });
 }
 
-/**
- * Persist DNS records to database.
- *
- * Creates domain record if needed and schedules revalidation.
- */
-export async function persistDnsRecords(
-  domain: string,
-  resolver: string,
-  recordsWithExpiry: Array<DnsRecord & { expiresAt: string }>,
-): Promise<void> {
-  const types = DNS_RECORD_TYPES;
-  const now = new Date();
+// Allow more retries for DNS since DoH providers can be flaky
+fetchDnsRecordsStep.maxRetries = 5;
 
-  // Dynamic imports for database operations
-  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-  const { replaceDns } = await import("@/lib/db/repos/dns");
-  const { scheduleRevalidation } = await import("@/lib/revalidation");
-
-  // Ensure domain record exists (creates if needed)
-  const domainRecord = await ensureDomainRecord(domain);
-
-  // Group records by type for replaceDns
-  const recordsByType = Object.fromEntries(
-    types.map((t) => [
-      t,
-      recordsWithExpiry
-        .filter((r) => r.type === t)
-        .map((r) => ({
-          name: r.name,
-          value: r.value,
-          ttl: r.ttl,
-          priority: r.priority,
-          isCloudflare: r.isCloudflare,
-          expiresAt: new Date(r.expiresAt),
-        })),
-    ]),
-  ) as Record<
-    DnsRecordType,
-    Array<{
-      name: string;
-      value: string;
-      ttl: number | null;
-      priority: number | null;
-      isCloudflare: boolean | null;
-      expiresAt: Date;
-    }>
-  >;
-
-  await replaceDns({
-    domainId: domainRecord.id,
-    resolver,
-    fetchedAt: now,
-    recordsByType,
-  });
-
-  // Schedule revalidation
-  const times = recordsWithExpiry
-    .map((r) => new Date(r.expiresAt).getTime())
-    .filter((t) => Number.isFinite(t));
-  const soonest = times.length > 0 ? Math.min(...times) : now.getTime();
-
-  await scheduleRevalidation(
-    domain,
-    "dns",
-    soonest,
-    domainRecord.lastAccessedAt ?? null,
-  );
-
-  logger.debug(
-    { domain, recordCount: recordsWithExpiry.length },
-    "dns records persisted",
-  );
-}
-
-/**
- * Fetch and persist DNS records in one operation.
- *
- * This is the main entry point for shared steps.
- */
-export async function lookupAndPersistDns(
-  domain: string,
-): Promise<DnsRecordsResponse | null> {
-  const result = await fetchDnsRecords(domain);
-
-  if (!result) {
-    return null;
-  }
-
-  await persistDnsRecords(domain, result.resolver, result.recordsWithExpiry);
-
-  return {
-    records: result.records,
-    resolver: result.resolver,
-  };
-}
-
-// Helper functions
+// ============================================================================
+// Helper functions (pure, no Node.js dependencies)
+// ============================================================================
 
 function sortDnsRecordsByType(
   records: DnsRecord[],

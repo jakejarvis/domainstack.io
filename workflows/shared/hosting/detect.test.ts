@@ -74,7 +74,7 @@ afterEach(() => {
   server.resetHandlers();
 });
 
-describe("detectAndResolveProviders", () => {
+describe("detectAndResolveProvidersStep", () => {
   beforeAll(async () => {
     const { makePGliteDb } = await import("@/lib/db/pglite");
     const { db } = await makePGliteDb();
@@ -121,8 +121,8 @@ describe("detectAndResolveProviders", () => {
       domain: "vercel.com",
     };
 
-    const { detectAndResolveProviders } = await import("./hosting-lookup");
-    const result = await detectAndResolveProviders(
+    const { detectAndResolveProvidersStep } = await import("./detect");
+    const result = await detectAndResolveProvidersStep(
       dnsRecords,
       headers,
       geoResult,
@@ -159,8 +159,8 @@ describe("detectAndResolveProviders", () => {
       domain: null,
     };
 
-    const { detectAndResolveProviders } = await import("./hosting-lookup");
-    const result = await detectAndResolveProviders(
+    const { detectAndResolveProvidersStep } = await import("./detect");
+    const result = await detectAndResolveProvidersStep(
       dnsRecords,
       headers,
       geoResult,
@@ -202,8 +202,8 @@ describe("detectAndResolveProviders", () => {
       domain: null,
     };
 
-    const { detectAndResolveProviders } = await import("./hosting-lookup");
-    const result = await detectAndResolveProviders(
+    const { detectAndResolveProvidersStep } = await import("./detect");
+    const result = await detectAndResolveProvidersStep(
       dnsRecords,
       headers,
       geoResult,
@@ -218,8 +218,8 @@ describe("detectAndResolveProviders", () => {
     const headers: Header[] = [];
     const geoResult = null;
 
-    const { detectAndResolveProviders } = await import("./hosting-lookup");
-    const result = await detectAndResolveProviders(
+    const { detectAndResolveProvidersStep } = await import("./detect");
+    const result = await detectAndResolveProvidersStep(
       dnsRecords,
       headers,
       geoResult,

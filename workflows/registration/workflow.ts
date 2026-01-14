@@ -1,6 +1,11 @@
-import { FatalError, RetryableError } from "workflow";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
 import type { WorkflowResult } from "@/lib/workflow/types";
+import {
+  lookupWhoisStep,
+  normalizeAndBuildResponseStep,
+  persistRegistrationStep,
+  type RegistrationError,
+} from "@/workflows/shared/registration";
 
 export interface RegistrationWorkflowInput {
   domain: string;
@@ -8,21 +13,8 @@ export interface RegistrationWorkflowInput {
 
 export type RegistrationWorkflowResult = WorkflowResult<
   RegistrationResponse,
-  "unsupported_tld" | "timeout" | "lookup_failed"
+  RegistrationError
 >;
-
-// Internal types for step-to-step transfer
-interface RdapLookupSuccess {
-  success: true;
-  recordJson: string;
-}
-
-interface RdapLookupFailure {
-  success: false;
-  error: "unsupported_tld" | "timeout" | "lookup_failed";
-}
-
-type RdapLookupResult = RdapLookupSuccess | RdapLookupFailure;
 
 /**
  * Durable registration workflow that breaks down WHOIS/RDAP lookup into
@@ -47,7 +39,7 @@ export async function registrationWorkflow(
 
   // Step 2: Normalize registrar and build response
   const normalizedResult = await normalizeAndBuildResponseStep(
-    rdapResult.recordJson,
+    rdapResult.data.recordJson,
   );
 
   // Step 3: Persist to database (only for registered domains)
@@ -60,64 +52,4 @@ export async function registrationWorkflow(
     success: true,
     data: { ...normalizedResult, domainId },
   };
-}
-
-/**
- * Step: Lookup domain registration via rdapper (WHOIS/RDAP)
- */
-async function lookupWhoisStep(domain: string): Promise<RdapLookupResult> {
-  "use step";
-
-  const { lookupRdap } = await import("@/lib/domain/registration-lookup");
-
-  const result = await lookupRdap(domain);
-
-  if (!result.success) {
-    // Both retry and timeout should trigger retries
-    if (result.error === "retry") {
-      throw new RetryableError("RDAP lookup failed", { retryAfter: "5s" });
-    }
-    if (result.error === "timeout") {
-      throw new RetryableError("RDAP lookup timed out", { retryAfter: "10s" });
-    }
-    // Permanent failure - preserve the actual error
-    return { success: false, error: result.error };
-  }
-
-  return result;
-}
-
-/**
- * Step: Normalize registrar and build response
- */
-async function normalizeAndBuildResponseStep(
-  recordJson: string,
-): Promise<RegistrationResponse> {
-  "use step";
-
-  const { normalizeRdapRecord } = await import(
-    "@/lib/domain/registration-lookup"
-  );
-  return await normalizeRdapRecord(recordJson);
-}
-
-/**
- * Step: Persist registration to database
- */
-async function persistRegistrationStep(
-  domain: string,
-  response: RegistrationResponse,
-): Promise<string> {
-  "use step";
-
-  const { persistRegistrationData } = await import(
-    "@/lib/domain/registration-lookup"
-  );
-  try {
-    return await persistRegistrationData(domain, response);
-  } catch (err) {
-    throw new FatalError(
-      `Failed to persist registration for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
 }

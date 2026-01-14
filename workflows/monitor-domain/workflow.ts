@@ -11,14 +11,29 @@ import type {
 import type { CertificatesResponse } from "@/lib/types/domain/certificates";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
-import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
-import { fetchDnsData } from "@/workflows/shared/fetch-dns";
-import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
 import {
-  type FetchHostingResult,
-  fetchHostingData,
-} from "@/workflows/shared/fetch-hosting";
-import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
+  fetchCertificateChainStep,
+  persistCertificatesStep,
+  processChainStep,
+} from "@/workflows/shared/certificates";
+import {
+  fetchDnsRecordsStep,
+  persistDnsRecordsStep,
+} from "@/workflows/shared/dns";
+import {
+  fetchHeadersStep,
+  persistHeadersStep,
+} from "@/workflows/shared/headers";
+import {
+  detectAndResolveProvidersStep,
+  lookupGeoIpStep,
+  persistHostingStep,
+} from "@/workflows/shared/hosting";
+import {
+  lookupWhoisStep,
+  normalizeAndBuildResponseStep,
+  persistRegistrationStep,
+} from "@/workflows/shared/registration";
 
 export interface MonitorDomainWorkflowInput {
   trackedDomainId: string;
@@ -65,30 +80,62 @@ export async function monitorDomainWorkflow(
   // First, fetch the independent data sources in parallel
   const [registrationResult, dnsResult, headersResult, certificatesResult] =
     await Promise.all([
-      fetchRegistrationData(domainName),
-      fetchDnsData(domainName),
-      fetchHeadersData(domainName),
-      fetchCertificatesData(domainName),
+      lookupWhoisStep(domainName),
+      fetchDnsRecordsStep(domainName),
+      fetchHeadersStep(domainName),
+      fetchCertificateChainStep(domainName),
     ]);
 
-  // Then compute hosting using DNS + headers data (depends on previous results)
-  let hostingResult: FetchHostingResult | null = null;
-  if (dnsResult.data && headersResult.data) {
-    hostingResult = await fetchHostingData(
-      domainName,
-      dnsResult.data.records,
-      headersResult.data.headers,
+  // Process and persist registration
+  let registrationData: RegistrationResponse | null = null;
+  if (registrationResult.success) {
+    registrationData = await normalizeAndBuildResponseStep(
+      registrationResult.data.recordJson,
     );
+    if (registrationData.isRegistered) {
+      await persistRegistrationStep(domainName, registrationData);
+    }
   }
 
-  // Extract response data
-  const registrationData: RegistrationResponse | null =
-    registrationResult.success ? registrationResult.data : null;
-  const certificatesData: CertificatesResponse | null =
-    certificatesResult.success ? certificatesResult.data : null;
-  const hostingData: HostingResponse | null = hostingResult?.success
-    ? hostingResult.data
-    : null;
+  // Persist DNS (always succeeds or throws)
+  await persistDnsRecordsStep(domainName, dnsResult.data);
+
+  // Persist headers (if succeeded)
+  if (headersResult.success) {
+    await persistHeadersStep(domainName, headersResult.data);
+  }
+
+  // Process and persist certificates
+  let certificatesData: CertificatesResponse | null = null;
+  if (certificatesResult.success) {
+    const processed = await processChainStep(certificatesResult.data.chainJson);
+    await persistCertificatesStep(domainName, processed);
+    certificatesData = { certificates: processed.certificates };
+  }
+
+  // Compute and persist hosting using DNS + headers data
+  let hostingData: HostingResponse | null = null;
+  if (dnsResult.success && headersResult.success) {
+    const a = dnsResult.data.records.find((d) => d.type === "A");
+    const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
+    const ip = (a?.value || aaaa?.value) ?? null;
+    const geoResult = ip ? await lookupGeoIpStep(ip) : null;
+
+    const providers = await detectAndResolveProvidersStep(
+      dnsResult.data.records,
+      headersResult.data.headers,
+      geoResult,
+    );
+
+    await persistHostingStep(domainName, providers, geoResult?.geo ?? null);
+
+    hostingData = {
+      hostingProvider: providers.hostingProvider,
+      emailProvider: providers.emailProvider,
+      dnsProvider: providers.dnsProvider,
+      geo: geoResult?.geo ?? null,
+    };
+  }
 
   const results = {
     registrationChanges: false,

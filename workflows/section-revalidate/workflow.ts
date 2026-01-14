@@ -1,10 +1,35 @@
 import type { Section } from "@/lib/constants/sections";
-import { fetchCertificatesData } from "@/workflows/shared/fetch-certificates";
-import { fetchDnsData } from "@/workflows/shared/fetch-dns";
-import { fetchHeadersData } from "@/workflows/shared/fetch-headers";
-import { fetchHostingData } from "@/workflows/shared/fetch-hosting";
-import { fetchRegistrationData } from "@/workflows/shared/fetch-registration";
-import { fetchSeoData } from "@/workflows/shared/fetch-seo";
+import {
+  fetchCertificateChainStep,
+  persistCertificatesStep,
+  processChainStep,
+} from "@/workflows/shared/certificates";
+import { checkBlocklist } from "@/workflows/shared/check-blocklist";
+import {
+  fetchDnsRecordsStep,
+  persistDnsRecordsStep,
+} from "@/workflows/shared/dns";
+import {
+  fetchHeadersStep,
+  persistHeadersStep,
+} from "@/workflows/shared/headers";
+import {
+  detectAndResolveProvidersStep,
+  lookupGeoIpStep,
+  persistHostingStep,
+} from "@/workflows/shared/hosting";
+import {
+  lookupWhoisStep,
+  normalizeAndBuildResponseStep,
+  persistRegistrationStep,
+} from "@/workflows/shared/registration";
+import {
+  buildSeoResponseStep,
+  fetchHtmlStep,
+  fetchRobotsStep,
+  persistSeoStep,
+  processOgImageStep,
+} from "@/workflows/shared/seo";
 
 export interface SectionRevalidateWorkflowInput {
   domain: string;
@@ -36,66 +61,106 @@ export async function sectionRevalidateWorkflow(
 
   switch (section) {
     case "dns": {
-      const result = await fetchDnsData(domain);
-      if (!result.success) {
-        return { success: false, domain, section, error: result.error };
-      }
+      // DNS always succeeds or throws RetryableError
+      const fetchResult = await fetchDnsRecordsStep(domain);
+      await persistDnsRecordsStep(domain, fetchResult.data);
       return { success: true, domain, section };
     }
 
     case "headers": {
-      const result = await fetchHeadersData(domain);
-      if (!result.success) {
-        return { success: false, domain, section, error: result.error };
+      const fetchResult = await fetchHeadersStep(domain);
+      if (!fetchResult.success) {
+        return { success: false, domain, section, error: fetchResult.error };
       }
+      await persistHeadersStep(domain, fetchResult.data);
       return { success: true, domain, section };
     }
 
     case "hosting": {
       // Hosting requires DNS + headers data, fetch them first in parallel
+      // DNS always succeeds or throws; headers may fail with typed error
       const [dnsResult, headersResult] = await Promise.all([
-        fetchDnsData(domain),
-        fetchHeadersData(domain),
+        fetchDnsRecordsStep(domain),
+        fetchHeadersStep(domain),
       ]);
 
-      if (!dnsResult.success || !dnsResult.data) {
-        return { success: false, domain, section, error: dnsResult.error };
-      }
-      if (!headersResult.success || !headersResult.data) {
+      if (!headersResult.success) {
         return { success: false, domain, section, error: headersResult.error };
       }
-      const hostingResult = await fetchHostingData(
-        domain,
+
+      // Persist DNS and headers
+      await Promise.all([
+        persistDnsRecordsStep(domain, dnsResult.data),
+        persistHeadersStep(domain, headersResult.data),
+      ]);
+
+      // GeoIP lookup
+      const a = dnsResult.data.records.find((d) => d.type === "A");
+      const aaaa = dnsResult.data.records.find((d) => d.type === "AAAA");
+      const ip = (a?.value || aaaa?.value) ?? null;
+      const geoResult = ip ? await lookupGeoIpStep(ip) : null;
+
+      // Detect providers
+      const providers = await detectAndResolveProvidersStep(
         dnsResult.data.records,
         headersResult.data.headers,
+        geoResult,
       );
 
-      if (!hostingResult.success) {
-        return { success: false, domain, section, error: hostingResult.error };
-      }
+      // Persist hosting
+      await persistHostingStep(domain, providers, geoResult?.geo ?? null);
+
       return { success: true, domain, section };
     }
 
     case "certificates": {
-      const result = await fetchCertificatesData(domain);
-      if (!result.success) {
-        return { success: false, domain, section, error: result.error };
+      const fetchResult = await fetchCertificateChainStep(domain);
+      if (!fetchResult.success) {
+        return { success: false, domain, section, error: fetchResult.error };
       }
+      const processed = await processChainStep(fetchResult.data.chainJson);
+      await persistCertificatesStep(domain, processed);
       return { success: true, domain, section };
     }
 
     case "seo": {
-      const result = await fetchSeoData(domain);
-      if (!result.success) {
-        return { success: false, domain, section, error: result.error };
+      const htmlResult = await fetchHtmlStep(domain);
+      const robotsResult = await fetchRobotsStep(domain);
+
+      // Process OG image if present and not blocked
+      let uploadedImageUrl: string | null = null;
+      if (htmlResult.preview?.image) {
+        const isBlocked = await checkBlocklist(domain);
+        if (!isBlocked) {
+          const imageResult = await processOgImageStep(
+            domain,
+            htmlResult.preview.image,
+            htmlResult.finalUrl,
+          );
+          uploadedImageUrl = imageResult.url;
+        }
       }
+
+      // Build and persist response
+      const response = await buildSeoResponseStep(
+        htmlResult,
+        robotsResult,
+        uploadedImageUrl,
+      );
+      await persistSeoStep(domain, response, uploadedImageUrl);
       return { success: true, domain, section };
     }
 
     case "registration": {
-      const result = await fetchRegistrationData(domain);
-      if (!result.success) {
-        return { success: false, domain, section, error: result.error };
+      const rdapResult = await lookupWhoisStep(domain);
+      if (!rdapResult.success) {
+        return { success: false, domain, section, error: rdapResult.error };
+      }
+      const normalized = await normalizeAndBuildResponseStep(
+        rdapResult.data.recordJson,
+      );
+      if (normalized.isRegistered) {
+        await persistRegistrationStep(domain, normalized);
       }
       return { success: true, domain, section };
     }

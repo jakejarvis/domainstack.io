@@ -13,11 +13,6 @@ vi.mock("@/lib/tls-utils", () => ({
   isExpectedTlsError: vi.fn().mockReturnValue(false),
 }));
 
-// Mock schedule revalidation
-vi.mock("@/lib/revalidation", () => ({
-  scheduleRevalidation: vi.fn().mockResolvedValue(undefined),
-}));
-
 // Mock blocked domains
 vi.mock("@/lib/db/repos/blocked-domains", () => ({
   isDomainBlocked: vi.fn().mockResolvedValue(false),
@@ -41,7 +36,7 @@ afterEach(() => {
   server.resetHandlers();
 });
 
-describe("fetchHtmlMeta", () => {
+describe("fetchHtmlStep", () => {
   it("parses HTML meta tags correctly", async () => {
     safeFetchMock.mockImplementation(({ url }: { url: string }) => {
       if (url.includes("robots.txt")) {
@@ -76,8 +71,8 @@ describe("fetchHtmlMeta", () => {
       });
     });
 
-    const { fetchHtmlMeta } = await import("./seo-lookup");
-    const result = await fetchHtmlMeta("example.com");
+    const { fetchHtmlStep } = await import("./fetch");
+    const result = await fetchHtmlStep("example.com");
 
     expect(result.success).toBe(true);
     expect(result.meta).not.toBeNull();
@@ -97,8 +92,8 @@ describe("fetchHtmlMeta", () => {
       headers: {},
     });
 
-    const { fetchHtmlMeta } = await import("./seo-lookup");
-    const result = await fetchHtmlMeta("api.example.com");
+    const { fetchHtmlStep } = await import("./fetch");
+    const result = await fetchHtmlStep("api.example.com");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("Non-HTML");
@@ -114,15 +109,15 @@ describe("fetchHtmlMeta", () => {
       headers: {},
     });
 
-    const { fetchHtmlMeta } = await import("./seo-lookup");
-    const result = await fetchHtmlMeta("notfound.example.com");
+    const { fetchHtmlStep } = await import("./fetch");
+    const result = await fetchHtmlStep("notfound.example.com");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("404");
   });
 });
 
-describe("fetchRobotsTxt", () => {
+describe("fetchRobotsStep", () => {
   it("parses robots.txt correctly", async () => {
     safeFetchMock.mockResolvedValue({
       ok: true,
@@ -136,8 +131,8 @@ Sitemap: https://example.com/sitemap.xml`),
       headers: {},
     });
 
-    const { fetchRobotsTxt } = await import("./seo-lookup");
-    const result = await fetchRobotsTxt("example.com");
+    const { fetchRobotsStep } = await import("./fetch");
+    const result = await fetchRobotsStep("example.com");
 
     expect(result.robots).not.toBeNull();
     expect(result.robots?.sitemaps).toContain(
@@ -155,15 +150,15 @@ Sitemap: https://example.com/sitemap.xml`),
       headers: {},
     });
 
-    const { fetchRobotsTxt } = await import("./seo-lookup");
-    const result = await fetchRobotsTxt("example.com");
+    const { fetchRobotsStep } = await import("./fetch");
+    const result = await fetchRobotsStep("example.com");
 
     expect(result.robots).toBeNull();
     expect(result.error).toContain("404");
   });
 });
 
-describe("processOgImageUpload", () => {
+describe("processOgImageStep", () => {
   it("fetches and processes OG image", async () => {
     safeFetchMock.mockResolvedValue({
       ok: true,
@@ -174,8 +169,8 @@ describe("processOgImageUpload", () => {
       headers: {},
     });
 
-    const { processOgImageUpload } = await import("./seo-lookup");
-    const result = await processOgImageUpload(
+    const { processOgImageStep } = await import("./fetch");
+    const result = await processOgImageStep(
       "example.com",
       "https://example.com/og.jpg",
       "https://example.com/",
@@ -194,8 +189,8 @@ describe("processOgImageUpload", () => {
       headers: {},
     });
 
-    const { processOgImageUpload } = await import("./seo-lookup");
-    const result = await processOgImageUpload(
+    const { processOgImageStep } = await import("./fetch");
+    const result = await processOgImageStep(
       "example.com",
       "https://example.com/og.jpg",
       "https://example.com/",

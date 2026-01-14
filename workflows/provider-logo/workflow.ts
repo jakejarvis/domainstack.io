@@ -1,4 +1,5 @@
 import { FatalError } from "workflow";
+import type { ProviderLogoResponse } from "@/lib/types/domain/icon";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,
@@ -10,7 +11,7 @@ export interface ProviderLogoWorkflowInput {
   providerDomain: string;
 }
 
-export type ProviderLogoWorkflowResult = WorkflowResult<{ url: string | null }>;
+export type ProviderLogoWorkflowResult = WorkflowResult<ProviderLogoResponse>;
 
 const DEFAULT_SIZE = 64;
 

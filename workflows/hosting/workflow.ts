@@ -1,8 +1,12 @@
-import { FatalError } from "workflow";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { WorkflowResult } from "@/lib/workflow/types";
+import {
+  detectAndResolveProvidersStep,
+  lookupGeoIpStep,
+  persistHostingStep,
+} from "@/workflows/shared/hosting";
 
 export interface HostingWorkflowInput {
   domain: string;
@@ -19,38 +23,6 @@ export interface HostingWorkflowInput {
 }
 
 export type HostingWorkflowResult = WorkflowResult<HostingResponse>;
-
-// Internal types for step-to-step transfer
-interface GeoIpResult {
-  geo: {
-    city: string;
-    region: string;
-    country: string;
-    country_code: string;
-    lat: number | null;
-    lon: number | null;
-  };
-  owner: string | null;
-  domain: string | null;
-}
-
-interface ProviderDetectionResult {
-  hostingProvider: {
-    id: string | null;
-    name: string | null;
-    domain: string | null;
-  };
-  emailProvider: {
-    id: string | null;
-    name: string | null;
-    domain: string | null;
-  };
-  dnsProvider: {
-    id: string | null;
-    name: string | null;
-    domain: string | null;
-  };
-}
 
 /**
  * Durable hosting workflow that computes hosting/email/DNS providers
@@ -99,50 +71,4 @@ export async function hostingWorkflow(
       geo: geoResult?.geo ?? null,
     },
   };
-}
-
-/**
- * Step: Lookup GeoIP data for an IP address.
- */
-async function lookupGeoIpStep(ip: string): Promise<GeoIpResult> {
-  "use step";
-
-  const { lookupGeoIp } = await import("@/lib/geoip");
-  return lookupGeoIp(ip);
-}
-
-/**
- * Step: Detect providers from DNS records and headers, then resolve provider IDs.
- */
-async function detectAndResolveProvidersStep(
-  dnsRecords: DnsRecord[],
-  headers: Header[],
-  geoResult: GeoIpResult | null,
-): Promise<ProviderDetectionResult> {
-  "use step";
-
-  const { detectAndResolveProviders } = await import(
-    "@/lib/domain/hosting-lookup"
-  );
-  return detectAndResolveProviders(dnsRecords, headers, geoResult);
-}
-
-/**
- * Step: Persist hosting data to database.
- */
-async function persistHostingStep(
-  domain: string,
-  providers: ProviderDetectionResult,
-  geo: GeoIpResult["geo"] | null,
-): Promise<void> {
-  "use step";
-
-  const { persistHostingData } = await import("@/lib/domain/hosting-lookup");
-  try {
-    await persistHostingData(domain, providers, geo);
-  } catch (err) {
-    throw new FatalError(
-      `Failed to persist hosting data for domain ${domain}: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
 }

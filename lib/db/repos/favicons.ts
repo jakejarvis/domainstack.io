@@ -3,6 +3,7 @@ import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { domains, favicons } from "@/lib/db/schema";
+import type { FaviconResponse } from "@/lib/types/domain/icon";
 import type { CacheResult } from "./types";
 
 type FaviconInsert = InferInsertModel<typeof favicons>;
@@ -20,10 +21,6 @@ export async function upsertFavicon(
     })
     .returning();
   return rows[0] ?? null;
-}
-
-export interface FaviconResponse {
-  url: string | null;
 }
 
 /**
