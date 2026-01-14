@@ -218,7 +218,6 @@ describe("revalidation", () => {
       await scheduleRevalidation(domain, "dns", lastAccessed);
 
       expect(inngest.send).toHaveBeenCalledTimes(1);
-      // biome-ignore lint/nursery/useDestructuring: test assertion
       const call = vi.mocked(inngest.send).mock.calls[0][0] as {
         name: string;
         data: { domain: string; section: string };
