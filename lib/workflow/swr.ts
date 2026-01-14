@@ -120,21 +120,29 @@ export async function withSwrCache<T>(
         return run.returnValue;
       },
       { maxPendingMs: BACKGROUND_REVALIDATION_TIMEOUT_MS },
-    ).catch((err) => {
-      // Log and track - this is background work but failures may indicate systemic issues
-      logger.error(
-        { err, domain, workflow: workflowName },
-        "background revalidation failed",
-      );
-      analytics.trackException(
-        err instanceof Error ? err : new Error(String(err)),
-        {
-          source: "workflow/swr",
-          domain,
-          workflow: workflowName,
-        },
-      );
-    });
+    )
+      .then(() => {
+        // Track successful background revalidation
+        logger.debug(
+          { domain, workflow: workflowName },
+          "background revalidation succeeded",
+        );
+      })
+      .catch((err) => {
+        // Log and track - this is background work but failures may indicate systemic issues
+        logger.error(
+          { err, domain, workflow: workflowName },
+          "background revalidation failed",
+        );
+        analytics.trackException(
+          err instanceof Error ? err : new Error(String(err)),
+          {
+            source: "workflow/swr",
+            domain,
+            workflow: workflowName,
+          },
+        );
+      });
 
     return {
       success: true,
