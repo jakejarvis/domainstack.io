@@ -84,15 +84,22 @@ export async function sectionRevalidateWorkflow(
         fetchHeadersStep(domain),
       ]);
 
+      // Always persist DNS data if we got it
+      await persistDnsRecordsStep(domain, dnsResult.data);
+
+      // If headers failed, return partial success
+      // DNS was still updated, so this isn't a total failure
       if (!headersResult.success) {
-        return { success: false, domain, section, error: headersResult.error };
+        return {
+          success: false,
+          domain,
+          section,
+          error: headersResult.error,
+        };
       }
 
-      // Persist DNS and headers
-      await Promise.all([
-        persistDnsRecordsStep(domain, dnsResult.data),
-        persistHeadersStep(domain, headersResult.data),
-      ]);
+      // Persist headers now that we know they succeeded
+      await persistHeadersStep(domain, headersResult.data);
 
       // GeoIP lookup
       const a = dnsResult.data.records.find((d) => d.type === "A");
