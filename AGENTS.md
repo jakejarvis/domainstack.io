@@ -1,5 +1,15 @@
 # Repository Guidelines
 
+## Pre-Commit Checklist
+
+**CRITICAL:** Before declaring victory on any task and before committing to git, the following three commands must pass with NO WARNINGS:
+
+1. `pnpm lint` — Must pass with zero warnings
+2. `pnpm typecheck` — Must pass with zero warnings
+3. `pnpm test:run` — Must pass with zero warnings
+
+Do not proceed with commits until all three checks are clean.
+
 ## Commands
 
 ### Development

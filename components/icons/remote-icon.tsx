@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import type { FaviconWorkflowResult } from "@/workflows/favicon";
 import type { ProviderLogoWorkflowResult } from "@/workflows/provider-logo";
 
+/** Union of workflow result types this component can handle */
+type IconWorkflowResult = FaviconWorkflowResult | ProviderLogoWorkflowResult;
+
 // Deterministic color palette - vibrant but not overwhelming
 // Using actual color values to avoid Tailwind purging issues
 const PLACEHOLDER_COLORS = [
@@ -34,8 +37,16 @@ function getEmptyPlaceholder(identifier: string) {
 }
 
 export type RemoteIconProps = {
-  /** TanStack Query options for fetching the icon */
-  // biome-ignore lint/suspicious/noExplicitAny: tRPC query options have complex types that are hard to express
+  /**
+   * TanStack Query options from tRPC's queryOptions() method.
+   * Expected to resolve to FaviconWorkflowResult or ProviderLogoWorkflowResult.
+   *
+   * Note: Using `any` because tRPC generates complex internal types
+   * (UnusedSkipTokenTRPCQueryOptionsOut) that don't conform to standard
+   * UseQueryOptions interfaces. Type safety is maintained through the
+   * useQuery<IconWorkflowResult> generic parameter.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: tRPC queryOptions returns complex internal types
   queryOptions: any;
   /** Identifier for fallback avatar (e.g., domain name, provider name) */
   fallbackIdentifier: string;
@@ -74,7 +85,7 @@ export function RemoteIcon({
     data: result,
     isPending,
     isError,
-  } = useQuery<FaviconWorkflowResult | ProviderLogoWorkflowResult>({
+  } = useQuery<IconWorkflowResult>({
     ...queryOptions,
     // Prevent React Query from throwing/logging errors - we handle them gracefully
     throwOnError: false,
