@@ -1,8 +1,19 @@
 "use client";
 
-import { CalendarIcon, RssSimpleIcon, XIcon } from "@phosphor-icons/react/ssr";
-import { useState } from "react";
-import { CalendarInstructions } from "@/components/calendar-instructions";
+import {
+  ArrowCounterClockwiseIcon,
+  CalendarIcon,
+  RssSimpleIcon,
+  WarningIcon,
+  XIcon,
+} from "@phosphor-icons/react/ssr";
+import { Suspense, useState } from "react";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+import {
+  CalendarInstructions,
+  CalendarInstructionsSkeleton,
+} from "@/components/calendar-instructions";
+import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -18,6 +29,25 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+/**
+ * Compact error fallback for popover content.
+ */
+function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+  return (
+    <div className="flex flex-col items-center gap-2 p-4 text-center">
+      <WarningIcon className="size-5 text-destructive" />
+      <p className="text-muted-foreground text-sm">Failed to load</p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
+          <ArrowCounterClockwiseIcon />
+          Try again
+        </Button>
+        <CreateIssueButton error={error} variant="ghost" size="sm" />
+      </div>
+    </div>
+  );
+}
 
 export function CalendarFeedPopover() {
   const [open, setOpen] = useState(false);
@@ -73,7 +103,13 @@ export function CalendarFeedPopover() {
 
           <Separator className="bg-muted" />
 
-          <CalendarInstructions className="bg-background/50 p-4" />
+          <ErrorBoundary FallbackComponent={PopoverErrorFallback}>
+            <Suspense
+              fallback={<CalendarInstructionsSkeleton className="p-4" />}
+            >
+              <CalendarInstructions className="bg-background/50 p-4" />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </PopoverContent>
     </Popover>

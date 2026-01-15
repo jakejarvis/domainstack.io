@@ -1,16 +1,23 @@
 import {
-  BellSimpleIcon,
   CalendarIcon,
   GlobeIcon,
   InfoIcon,
   SlidersHorizontalIcon,
 } from "@phosphor-icons/react/ssr";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQueries,
+} from "@tanstack/react-query";
+import { Suspense } from "react";
 import { toast } from "sonner";
-import { CalendarInstructions } from "@/components/calendar-instructions";
+import {
+  CalendarInstructions,
+  CalendarInstructionsSkeleton,
+} from "@/components/calendar-instructions";
 import { DomainNotificationRow } from "@/components/settings/notifications/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/notifications/global-notification-row";
-import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
+import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import {
   CardContent,
   CardDescription,
@@ -40,11 +47,15 @@ export function NotificationsPanel() {
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
 
-  // Queries
-  const domainsQuery = useQuery(trpc.tracking.listDomains.queryOptions());
-  const globalPrefsQuery = useQuery(
-    trpc.user.getNotificationPreferences.queryOptions(),
-  );
+  // Queries - both run in parallel with Suspense for loading state
+  const [domainsResult, globalPrefsResult] = useSuspenseQueries({
+    queries: [
+      trpc.tracking.listDomains.queryOptions(),
+      trpc.user.getNotificationPreferences.queryOptions(),
+    ],
+  });
+  const domainsData = domainsResult.data;
+  const globalPrefsData = globalPrefsResult.data;
 
   // Mutations with optimistic updates
   const updateGlobalMutation = useMutation({
@@ -86,12 +97,12 @@ export function NotificationsPanel() {
     onMutate: async ({ trackedDomainId, overrides }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<
-        typeof domainsQuery.data
-      >({ queryKey: domainsQueryKey });
+      const previousDomains = queryClient.getQueriesData<typeof domainsData>({
+        queryKey: domainsQueryKey,
+      });
 
       // Optimistically update the domain's overrides in all query variants
-      queryClient.setQueriesData<typeof domainsQuery.data>(
+      queryClient.setQueriesData<typeof domainsData>(
         { queryKey: domainsQueryKey },
         (old) =>
           old
@@ -132,12 +143,12 @@ export function NotificationsPanel() {
     onMutate: async ({ trackedDomainId }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<
-        typeof domainsQuery.data
-      >({ queryKey: domainsQueryKey });
+      const previousDomains = queryClient.getQueriesData<typeof domainsData>({
+        queryKey: domainsQueryKey,
+      });
 
       // Optimistically reset the domain's overrides in all query variants
-      queryClient.setQueriesData<typeof domainsQuery.data>(
+      queryClient.setQueriesData<typeof domainsData>(
         { queryKey: domainsQueryKey },
         (old) =>
           old
@@ -228,25 +239,8 @@ export function NotificationsPanel() {
     resetDomainMutation.mutate({ trackedDomainId });
   };
 
-  if (domainsQuery.isLoading || globalPrefsQuery.isLoading) {
-    return <NotificationsSkeleton />;
-  }
-
-  if (domainsQuery.isError || globalPrefsQuery.isError) {
-    return (
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <BellSimpleIcon className="size-4.5" />
-          Notification Preferences
-        </CardTitle>
-        <CardDescription className="text-destructive">
-          Failed to load notification settings
-        </CardDescription>
-      </CardHeader>
-    );
-  }
-
-  const domains = domainsQuery.data ?? [];
+  // With useSuspenseQueries, data is guaranteed to be defined
+  const domains = domainsData;
   const verifiedDomains = domains
     .filter((d) => d.verified)
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
@@ -262,7 +256,7 @@ export function NotificationsPanel() {
   // Merge defaults with saved preferences to ensure new fields are always present
   const globalPrefs: UserNotificationPreferences = {
     ...defaultGlobalPrefs,
-    ...globalPrefsQuery.data,
+    ...globalPrefsData,
   };
 
   const isPending =
@@ -398,7 +392,11 @@ export function NotificationsPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0 pt-2">
-        <CalendarInstructions />
+        <SettingsErrorBoundary sectionName="Calendar Feed">
+          <Suspense fallback={<CalendarInstructionsSkeleton />}>
+            <CalendarInstructions />
+          </Suspense>
+        </SettingsErrorBoundary>
       </CardContent>
     </div>
   );

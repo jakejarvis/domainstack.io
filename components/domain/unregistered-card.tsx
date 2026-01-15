@@ -1,5 +1,13 @@
-import { RegistrarLinks } from "@/components/domain/registrar-links";
+"use client";
+
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import {
+  RegistrarLinks,
+  RegistrarLinksSkeleton,
+} from "@/components/domain/registrar-links";
 import { NONPUBLIC_TLDS } from "@/lib/constants/domain-validation";
+import { extractTldClient } from "@/lib/domain-utils";
 
 interface DomainUnregisteredCardProps {
   domain: string;
@@ -12,6 +20,10 @@ export function DomainUnregisteredCard({
   const isNonPublicTld = NONPUBLIC_TLDS.some((suffix) =>
     lower.endsWith(suffix),
   );
+
+  // Extract TLD for registrar pricing - parent handles validation
+  const tld = extractTldClient(domain);
+  const canShowRegistrarLinks = !isNonPublicTld && tld;
 
   return (
     <div
@@ -34,9 +46,13 @@ export function DomainUnregisteredCard({
           </p>
         </div>
 
-        {!isNonPublicTld ? (
-          // CTA component fetches Porkbun pricing and conditionally renders
-          <RegistrarLinks domain={domain} />
+        {canShowRegistrarLinks ? (
+          // Silently fail on pricing errors - this is supplementary info
+          <ErrorBoundary fallback={null}>
+            <Suspense fallback={<RegistrarLinksSkeleton />}>
+              <RegistrarLinks domain={domain} tld={tld} />
+            </Suspense>
+          </ErrorBoundary>
         ) : null}
       </div>
     </div>

@@ -13,7 +13,11 @@ import {
   InfoIcon,
   ShieldWarningIcon,
 } from "@phosphor-icons/react/ssr";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { formatDistanceToNowStrict } from "date-fns";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +44,35 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+
+/**
+ * Skeleton for calendar instructions.
+ * Exported for use as Suspense fallback in parent components.
+ */
+export function CalendarInstructionsSkeleton({
+  className,
+}: {
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-4", className)}>
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-9 w-full rounded-lg" />
+      <div className="flex items-center gap-1.5">
+        <Skeleton className="h-3 w-3" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+}
 
 export function CalendarInstructions({ className }: { className?: string }) {
   const trpc = useTRPC();
@@ -51,7 +84,8 @@ export function CalendarInstructions({ className }: { className?: string }) {
   const feedQueryKey = trpc.user.getCalendarFeed.queryKey();
 
   // Query - auto-refresh every 30s to keep "last accessed" timestamp current
-  const feedQuery = useQuery({
+  // Uses Suspense for initial loading state; errors bubble to ErrorBoundary
+  const { data: feed } = useSuspenseQuery({
     ...trpc.user.getCalendarFeed.queryOptions(),
     refetchInterval: 30_000,
   });
@@ -140,7 +174,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
     rotateMutation.isPending ||
     deleteMutation.isPending;
 
-  const feed = feedQuery.data;
+  // With useSuspenseQuery, feed is guaranteed to be defined
   const isEnabled = feed?.enabled && "feedUrl" in feed;
 
   const getIntegrations = useCallback((feedUrl: string | undefined) => {
@@ -194,28 +228,8 @@ export function CalendarInstructions({ className }: { className?: string }) {
   return (
     <>
       <div className={className}>
-        {/* Content */}
-        {feedQuery.isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-9 w-full rounded-lg" />
-            <div className="flex items-center gap-1.5">
-              <Skeleton className="h-3 w-3" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Skeleton className="h-10 w-full rounded-lg" />
-                <Skeleton className="h-10 w-full rounded-lg" />
-              </div>
-              <Skeleton className="h-10 w-full rounded-lg" />
-            </div>
-          </div>
-        ) : feedQuery.isError ? (
-          <p className="text-destructive text-sm">
-            Failed to load calendar feed settings
-          </p>
-        ) : isEnabled ? (
+        {/* Content - loading handled by Suspense, errors by ErrorBoundary */}
+        {isEnabled ? (
           <div className="space-y-4">
             {/* Security warning */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
