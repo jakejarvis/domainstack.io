@@ -50,6 +50,12 @@ export async function getOrCreateUserNotificationPreferences(
     .where(eq(userNotificationPreferences.userId, userId))
     .limit(1);
 
+  if (!row) {
+    throw new Error(
+      `Failed to get notification preferences for user ${userId} after upsert`,
+    );
+  }
+
   return mapPreferences(row);
 }
 

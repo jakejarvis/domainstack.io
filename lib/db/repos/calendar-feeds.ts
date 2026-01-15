@@ -121,7 +121,7 @@ export async function deleteCalendarFeed(userId: string): Promise<boolean> {
 
 export type CalendarFeedValidation =
   | { valid: true; userId: string; feedId: string }
-  | { valid: false; reason: "not_found" | "disabled" };
+  | { valid: false; reason: "invalid" };
 
 /**
  * Validate a calendar feed token and return the associated user ID.
@@ -140,12 +140,10 @@ export async function validateCalendarFeedToken(
     .where(eq(calendarFeeds.token, token))
     .limit(1);
 
-  if (!feed) {
-    return { valid: false, reason: "not_found" };
-  }
-
-  if (!feed.enabled) {
-    return { valid: false, reason: "disabled" };
+  // Return identical error for both "not found" and "disabled" to prevent
+  // enumeration attacks (attackers can't distinguish invalid vs disabled tokens)
+  if (!feed || !feed.enabled) {
+    return { valid: false, reason: "invalid" };
   }
 
   return { valid: true, userId: feed.userId, feedId: feed.id };

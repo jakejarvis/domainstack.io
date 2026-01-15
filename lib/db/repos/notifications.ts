@@ -133,10 +133,11 @@ export async function getUserNotifications(
   }
 
   // Get the cursor notification to find its sentAt timestamp
+  // Include userId check for defense-in-depth (prevents timing info leakage)
   const [cursorNotif] = await db
     .select()
     .from(notifications)
-    .where(eq(notifications.id, cursor))
+    .where(and(eq(notifications.id, cursor), eq(notifications.userId, userId)))
     .limit(1);
 
   if (!cursorNotif) {
