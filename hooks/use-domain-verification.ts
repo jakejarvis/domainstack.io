@@ -6,6 +6,10 @@ import type { VerificationMethod } from "@/lib/constants/verification";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
 import type { ResumeDomainData } from "@/lib/types/verification";
+import {
+  createInitialState,
+  verificationReducer,
+} from "@/lib/verification-state-machine";
 
 // ============================================================================
 // Types
@@ -20,185 +24,6 @@ interface UseDomainVerificationOptions {
   resumeDomain?: ResumeDomainData | null;
   /** Pre-fill the domain input (e.g., from domain report "Track" button) */
   prefillDomain?: string;
-}
-
-// ============================================================================
-// State Machine
-// ============================================================================
-
-/**
- * Unified state for the domain verification flow.
- * Using a discriminated union on `step` makes invalid states unrepresentable.
- */
-type VerificationFlowState =
-  | {
-      step: 1; // Enter domain
-      domain: string;
-      domainError: string;
-      hasAttemptedSubmit: boolean;
-    }
-  | {
-      step: 2; // Verify ownership
-      domain: string;
-      trackedDomainId: string;
-      verificationToken: string;
-      method: VerificationMethod;
-      verifyStatus: "idle" | "verifying" | "failed";
-      verifyError?: string;
-    }
-  | {
-      step: 3; // Success
-      domain: string;
-      trackedDomainId: string;
-    };
-
-type VerificationAction =
-  | { type: "SET_DOMAIN"; domain: string }
-  | { type: "SET_DOMAIN_ERROR"; error: string }
-  | { type: "ATTEMPT_SUBMIT" }
-  | {
-      type: "DOMAIN_ADDED";
-      trackedDomainId: string;
-      verificationToken: string;
-      resumed?: boolean;
-    }
-  | { type: "SET_METHOD"; method: VerificationMethod }
-  | { type: "START_VERIFICATION" }
-  | { type: "VERIFICATION_SUCCEEDED"; method: VerificationMethod | null }
-  | { type: "VERIFICATION_FAILED"; error?: string }
-  | { type: "GO_BACK" }
-  | { type: "RESET"; prefillDomain?: string }
-  | {
-      type: "RESUME";
-      data: ResumeDomainData;
-    }
-  | {
-      type: "SYNC_VERIFICATION_DATA";
-      domain?: string;
-      verificationToken?: string;
-      method?: VerificationMethod;
-    };
-
-function createInitialState(
-  resumeDomain?: ResumeDomainData | null,
-  prefillDomain?: string,
-): VerificationFlowState {
-  if (resumeDomain) {
-    return {
-      step: 2,
-      domain: resumeDomain.domainName,
-      trackedDomainId: resumeDomain.id,
-      verificationToken: resumeDomain.verificationToken,
-      method: resumeDomain.verificationMethod ?? "dns_txt",
-      verifyStatus: "idle",
-    };
-  }
-
-  return {
-    step: 1,
-    domain: prefillDomain ?? "",
-    domainError: "",
-    hasAttemptedSubmit: false,
-  };
-}
-
-function verificationReducer(
-  state: VerificationFlowState,
-  action: VerificationAction,
-): VerificationFlowState {
-  switch (action.type) {
-    case "SET_DOMAIN":
-      if (state.step !== 1) return state;
-      return {
-        ...state,
-        domain: action.domain,
-        // Clear error when user edits
-        domainError: state.domainError ? "" : state.domainError,
-      };
-
-    case "SET_DOMAIN_ERROR":
-      if (state.step !== 1) return state;
-      return { ...state, domainError: action.error };
-
-    case "ATTEMPT_SUBMIT":
-      if (state.step !== 1) return state;
-      return { ...state, hasAttemptedSubmit: true, domainError: "" };
-
-    case "DOMAIN_ADDED":
-      if (state.step !== 1) return state;
-      return {
-        step: 2,
-        domain: state.domain,
-        trackedDomainId: action.trackedDomainId,
-        verificationToken: action.verificationToken,
-        method: "dns_txt",
-        verifyStatus: "idle",
-      };
-
-    case "SET_METHOD":
-      if (state.step !== 2) return state;
-      return { ...state, method: action.method };
-
-    case "START_VERIFICATION":
-      if (state.step !== 2) return state;
-      return { ...state, verifyStatus: "verifying", verifyError: undefined };
-
-    case "VERIFICATION_SUCCEEDED":
-      if (state.step !== 2) return state;
-      return {
-        step: 3,
-        domain: state.domain,
-        trackedDomainId: state.trackedDomainId,
-      };
-
-    case "VERIFICATION_FAILED":
-      if (state.step !== 2) return state;
-      return {
-        ...state,
-        verifyStatus: "failed",
-        verifyError: action.error,
-      };
-
-    case "GO_BACK":
-      if (state.step !== 2) return state;
-      return {
-        step: 1,
-        domain: state.domain,
-        domainError: "",
-        hasAttemptedSubmit: false,
-      };
-
-    case "RESET":
-      return {
-        step: 1,
-        domain: action.prefillDomain ?? "",
-        domainError: "",
-        hasAttemptedSubmit: false,
-      };
-
-    case "RESUME":
-      // Allow resuming from any step
-      return {
-        step: 2,
-        domain: action.data.domainName,
-        trackedDomainId: action.data.id,
-        verificationToken: action.data.verificationToken,
-        method: action.data.verificationMethod ?? "dns_txt",
-        verifyStatus: "idle",
-      };
-
-    case "SYNC_VERIFICATION_DATA":
-      if (state.step !== 2) return state;
-      return {
-        ...state,
-        domain: action.domain ?? state.domain,
-        verificationToken: action.verificationToken ?? state.verificationToken,
-        method: action.method ?? state.method,
-      };
-
-    default:
-      return state;
-  }
 }
 
 // ============================================================================
@@ -435,73 +260,53 @@ export function useDomainVerification({
   }, [state.step, handleAddDomain, handleVerify, handleDone]);
 
   // ============================================================================
-  // Derived State (Memoized)
+  // Derived State
   // ============================================================================
 
-  const derived = useMemo(() => {
-    const isPrefilled = !!prefillDomain && !isResuming;
-    const isLoadingVerificationData =
-      isResuming && verificationDataQuery.isLoading;
-    const isVerificationDataQueryError =
-      isResuming && verificationDataQuery.isError;
+  // Query-related derived state
+  const isPrefilled = !!prefillDomain && !isResuming;
+  const isLoadingVerificationData =
+    isResuming && verificationDataQuery.isLoading;
+  const isVerificationDataQueryError =
+    isResuming && verificationDataQuery.isError;
 
-    // Step-specific derived state
-    const domainError = state.step === 1 ? state.domainError : "";
-    const hasAttemptedDomainSubmit =
-      state.step === 1 ? state.hasAttemptedSubmit : false;
-    const currentTrackedDomainId =
-      state.step === 2 || state.step === 3 ? state.trackedDomainId : null;
-    const currentVerificationToken =
-      state.step === 2 ? state.verificationToken : "";
-    const method: VerificationMethod =
-      state.step === 2 ? state.method : "dns_txt";
-    const isMissingVerificationData =
-      state.step === 2 &&
-      !isLoadingVerificationData &&
-      !state.verificationToken;
-    const isVerifying = state.step === 2 && state.verifyStatus === "verifying";
-    const hasFailed = state.step === 2 && state.verifyStatus === "failed";
-    const verificationError = state.step === 2 ? state.verifyError : undefined;
+  // Step-specific derived state (type-narrowed from discriminated union)
+  const domainError = state.step === 1 ? state.domainError : "";
+  const hasAttemptedDomainSubmit =
+    state.step === 1 ? state.hasAttemptedSubmit : false;
+  const trackedDomainIdDerived =
+    state.step === 2 || state.step === 3 ? state.trackedDomainId : null;
+  const verificationTokenDerived =
+    state.step === 2 ? state.verificationToken : "";
+  const method: VerificationMethod =
+    state.step === 2 ? state.method : "dns_txt";
 
-    // Can proceed logic
-    let canProceedValue = false;
+  // Verification status (step 2 only)
+  const isVerifying = state.step === 2 && state.verifyStatus === "verifying";
+  const hasFailed = state.step === 2 && state.verifyStatus === "failed";
+  const verificationError = state.step === 2 ? state.verifyError : undefined;
+  const isMissingVerificationData =
+    state.step === 2 && !isLoadingVerificationData && !state.verificationToken;
+
+  // Verification state object for consumers
+  const verificationState = useMemo(() => {
+    if (hasFailed)
+      return { status: "failed", error: verificationError } as const;
+    if (isVerifying) return { status: "verifying" } as const;
+    return { status: "idle" } as const;
+  }, [hasFailed, isVerifying, verificationError]);
+
+  // Can proceed to next step?
+  const canProceed = useMemo(() => {
     if (state.step === 1) {
       const normalized = normalizeDomainInput(state.domain);
-      canProceedValue =
-        isValidDomain(normalized) && !addDomainMutation.isPending;
-    } else if (state.step === 2) {
-      canProceedValue = state.verifyStatus !== "verifying";
-    } else {
-      canProceedValue = true;
+      return isValidDomain(normalized) && !addDomainMutation.isPending;
     }
-
-    return {
-      isPrefilled,
-      isLoadingVerificationData,
-      isVerificationDataQueryError,
-      domainError,
-      hasAttemptedDomainSubmit,
-      trackedDomainId: currentTrackedDomainId,
-      verificationToken: currentVerificationToken,
-      method,
-      isMissingVerificationData,
-      isVerifying,
-      hasFailed,
-      verificationState: hasFailed
-        ? ({ status: "failed", error: verificationError } as const)
-        : isVerifying
-          ? ({ status: "verifying" } as const)
-          : ({ status: "idle" } as const),
-      canProceedValue,
-    };
-  }, [
-    state,
-    prefillDomain,
-    isResuming,
-    verificationDataQuery.isLoading,
-    verificationDataQuery.isError,
-    addDomainMutation.isPending,
-  ]);
+    if (state.step === 2) {
+      return state.verifyStatus !== "verifying";
+    }
+    return true;
+  }, [state, addDomainMutation.isPending]);
 
   // ============================================================================
   // Return API (maintains backward compatibility)
@@ -512,13 +317,13 @@ export function useDomainVerification({
     step: state.step,
     domain: state.domain,
     setDomain,
-    domainError: derived.domainError,
-    method: derived.method,
+    domainError,
+    method,
     setMethod,
-    verificationToken: derived.verificationToken,
-    verificationState: derived.verificationState,
-    hasAttemptedDomainSubmit: derived.hasAttemptedDomainSubmit,
-    trackedDomainId: derived.trackedDomainId,
+    verificationToken: verificationTokenDerived,
+    verificationState,
+    hasAttemptedDomainSubmit,
+    trackedDomainId: trackedDomainIdDerived,
 
     // Handlers
     handleOpenChange,
@@ -526,7 +331,7 @@ export function useDomainVerification({
     handleVerify,
     handleReturnLater,
     goBack,
-    canProceed: derived.canProceedValue,
+    canProceed,
     refetchVerificationData: verificationDataQuery.refetch,
 
     // Query/mutation state
@@ -536,11 +341,11 @@ export function useDomainVerification({
 
     // Derived state
     isResuming,
-    isPrefilled: derived.isPrefilled,
-    isLoadingVerificationData: derived.isLoadingVerificationData,
-    isVerificationDataQueryError: derived.isVerificationDataQueryError,
-    isMissingVerificationData: derived.isMissingVerificationData,
-    isVerifying: derived.isVerifying,
-    hasFailed: derived.hasFailed,
+    isPrefilled,
+    isLoadingVerificationData,
+    isVerificationDataQueryError,
+    isMissingVerificationData,
+    isVerifying,
+    hasFailed,
   };
 }
