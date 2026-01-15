@@ -28,14 +28,11 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { createLogger } from "@/lib/logger/server";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { RegistrationContact } from "@/lib/types/domain/registration";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { ProviderInfo } from "@/lib/types/provider";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
-
-const logger = createLogger({ source: "db/repos/tracked-domains" });
 
 export interface CreateTrackedDomainParams {
   userId: string;
@@ -810,18 +807,13 @@ export async function resetNotificationOverrides(id: string) {
 
 /**
  * Delete a tracked domain.
+ *
+ * Returns true if the domain was deleted or didn't exist (DELETE is idempotent).
+ * Throws on database errors so callers can handle failures appropriately.
  */
-export async function deleteTrackedDomain(id: string) {
-  try {
-    await db.delete(userTrackedDomains).where(eq(userTrackedDomains.id, id));
-    return true;
-  } catch (err) {
-    logger.error(
-      { err, trackedDomainId: id },
-      "failed to delete tracked domain",
-    );
-    return false;
-  }
+export async function deleteTrackedDomain(id: string): Promise<boolean> {
+  await db.delete(userTrackedDomains).where(eq(userTrackedDomains.id, id));
+  return true;
 }
 
 export interface TrackedDomainForNotification {

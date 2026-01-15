@@ -41,7 +41,8 @@ export async function certificateExpiryWorkflow(
     return { skipped: true, reason: "invalid_valid_to_date" };
   }
 
-  const daysRemaining = differenceInDays(validTo, new Date());
+  // Note: We get current time in a step to ensure deterministic replay
+  const daysRemaining = await calculateDaysRemaining(validTo);
   const MAX_THRESHOLD_DAYS = 14;
 
   // Detect renewal: If certificate is renewed beyond our notification window
@@ -144,6 +145,14 @@ async function fetchCertificate(
   );
 
   return await getEarliestCertificate(trackedDomainId);
+}
+
+async function calculateDaysRemaining(validTo: Date): Promise<number> {
+  "use step";
+
+  // Getting current time inside a step ensures deterministic replay
+  const now = new Date();
+  return differenceInDays(validTo, now);
 }
 
 async function clearRenewedNotifications(

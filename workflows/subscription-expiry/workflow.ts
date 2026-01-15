@@ -74,7 +74,8 @@ export async function subscriptionExpiryWorkflow(
     return { skipped: true, reason: "not_found" };
   }
 
-  const daysRemaining = differenceInDays(user.endsAt, new Date());
+  // Note: We get current time in a step to ensure deterministic replay
+  const daysRemaining = await calculateDaysRemaining(user.endsAt);
   const MAX_THRESHOLD_DAYS = 7;
 
   // Skip if beyond max threshold or already expired
@@ -131,6 +132,14 @@ async function fetchUserSubscription(
   );
 
   return await getUserWithEndingSubscription(userId);
+}
+
+async function calculateDaysRemaining(endsAt: Date): Promise<number> {
+  "use step";
+
+  // Getting current time inside a step ensures deterministic replay
+  const now = new Date();
+  return differenceInDays(endsAt, now);
 }
 
 async function updateExpiryTracking(
