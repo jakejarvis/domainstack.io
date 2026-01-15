@@ -216,7 +216,7 @@ export async function detectChangesWorkflow(
     };
 
     const registrationChange = await detectRegistrationChange(
-      snapshot.registration as RegistrationSnapshotData,
+      snapshot.registration,
       currentRegistration,
     );
 
@@ -524,7 +524,7 @@ export async function detectChangesWorkflow(
     };
 
     const certificateChange = await detectCertificateChange(
-      snapshot.certificate as CertificateSnapshotData,
+      snapshot.certificate,
       currentCertificate,
     );
 
@@ -623,21 +623,12 @@ export async function detectChangesWorkflow(
 
 // --- Step Functions ---
 
-interface SnapshotData {
-  domainName: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  registration: unknown;
-  certificate: unknown;
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
-}
+// Import SnapshotForMonitoring type for proper typing
+type SnapshotData = Awaited<
+  ReturnType<typeof import("@/lib/db/repos/snapshots").getSnapshot>
+>;
 
-async function fetchSnapshot(
-  trackedDomainId: string,
-): Promise<SnapshotData | null> {
+async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";
 
   const { getSnapshot } = await import("@/lib/db/repos/snapshots");

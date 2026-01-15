@@ -100,7 +100,7 @@ describe("domain router", () => {
 
       await expect(
         caller.domain.getRegistration({ domain: "not-a-domain" }),
-      ).rejects.toThrow("must be a valid and registrable");
+      ).rejects.toThrow("must be a valid registrable domain");
     });
 
     it("rejects domain with invalid TLD", async () => {
@@ -108,7 +108,7 @@ describe("domain router", () => {
 
       await expect(
         caller.domain.getRegistration({ domain: "example.invalidtld12345" }),
-      ).rejects.toThrow("must be a valid and registrable");
+      ).rejects.toThrow("must be a valid registrable domain");
     });
 
     it("normalizes domain to registrable form", async () => {

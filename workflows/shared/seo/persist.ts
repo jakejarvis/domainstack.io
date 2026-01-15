@@ -49,14 +49,18 @@ export async function persistSeoStep(
   try {
     const domainRecord = await ensureDomainRecord(domain);
 
+    // Empty objects satisfy the meta interfaces since all properties are optional
+    const emptyOpenGraph: OpenGraphMeta = {};
+    const emptyTwitter: TwitterMeta = {};
+    const emptyGeneral: GeneralMeta = {};
+
     await upsertSeo({
       domainId: domainRecord.id,
       sourceFinalUrl: response.source.finalUrl ?? null,
       sourceStatus: response.source.status ?? null,
-      metaOpenGraph:
-        response.meta?.openGraph ?? ({} as unknown as OpenGraphMeta),
-      metaTwitter: response.meta?.twitter ?? ({} as unknown as TwitterMeta),
-      metaGeneral: response.meta?.general ?? ({} as unknown as GeneralMeta),
+      metaOpenGraph: response.meta?.openGraph ?? emptyOpenGraph,
+      metaTwitter: response.meta?.twitter ?? emptyTwitter,
+      metaGeneral: response.meta?.general ?? emptyGeneral,
       previewTitle: response.preview?.title ?? null,
       previewDescription: response.preview?.description ?? null,
       previewImageUrl: response.preview?.image ?? null,

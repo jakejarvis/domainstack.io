@@ -3,8 +3,10 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
+  type CertificateSnapshotData,
   domainSnapshots,
   domains,
+  type RegistrationSnapshotData,
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
@@ -12,29 +14,8 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "db/repos/snapshots" });
 
-// =============================================================================
-// Types
-// =============================================================================
-
-/**
- * Registration snapshot data stored in JSONB.
- */
-export interface RegistrationSnapshotData {
-  registrarProviderId: string | null;
-  nameservers: { host: string }[];
-  transferLock: boolean | null;
-  statuses: string[];
-}
-
-/**
- * Certificate snapshot data stored in JSONB.
- */
-export interface CertificateSnapshotData {
-  caProviderId: string | null;
-  issuer: string;
-  validTo: string;
-  fingerprint: string | null;
-}
+// Re-export types from schema for consumers
+export type { CertificateSnapshotData, RegistrationSnapshotData };
 
 /**
  * Provider snapshot data (stored in separate columns).
@@ -77,8 +58,8 @@ export interface SnapshotForMonitoring {
   userId: string;
   domainId: string;
   domainName: string;
-  registration: unknown;
-  certificate: unknown;
+  registration: RegistrationSnapshotData;
+  certificate: CertificateSnapshotData;
   dnsProviderId: string | null;
   hostingProviderId: string | null;
   emailProviderId: string | null;
@@ -89,6 +70,21 @@ export interface SnapshotForMonitoring {
 // =============================================================================
 // Repository Functions
 // =============================================================================
+
+// Default empty snapshot data shapes
+const EMPTY_REGISTRATION: RegistrationSnapshotData = {
+  registrarProviderId: null,
+  nameservers: [],
+  transferLock: null,
+  statuses: [],
+};
+
+const EMPTY_CERTIFICATE: CertificateSnapshotData = {
+  caProviderId: null,
+  issuer: "",
+  validTo: "",
+  fingerprint: null,
+};
 
 /**
  * Create a new snapshot with initial data.
@@ -112,8 +108,8 @@ export async function createSnapshot(
 ): Promise<typeof domainSnapshots.$inferSelect | null> {
   const {
     trackedDomainId,
-    registration = {},
-    certificate = {},
+    registration = EMPTY_REGISTRATION,
+    certificate = EMPTY_CERTIFICATE,
     dnsProviderId = null,
     hostingProviderId = null,
     emailProviderId = null,

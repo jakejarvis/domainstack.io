@@ -565,7 +565,10 @@ export const seo = pgTable("seo", {
     .$type<string[]>()
     .notNull()
     .default(sql`'[]'::jsonb`),
-  errors: jsonb("errors").notNull().default(sql`'[]'::jsonb`),
+  errors: jsonb("errors")
+    .$type<{ html?: string; robots?: string }>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
@@ -627,6 +630,21 @@ export const screenshots = pgTable(
   (t) => [index("i_screenshots_expires").on(t.expiresAt)],
 );
 
+// Snapshot JSONB types - single source of truth for snapshot data shapes
+export interface RegistrationSnapshotData {
+  registrarProviderId: string | null;
+  nameservers: { host: string }[];
+  transferLock: boolean | null;
+  statuses: string[];
+}
+
+export interface CertificateSnapshotData {
+  caProviderId: string | null;
+  issuer: string;
+  validTo: string;
+  fingerprint: string | null;
+}
+
 // Domain snapshots (for change detection)
 export const domainSnapshots = pgTable("domain_snapshots", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -634,17 +652,21 @@ export const domainSnapshots = pgTable("domain_snapshots", {
     .notNull()
     .unique()
     .references(() => userTrackedDomains.id, { onDelete: "cascade" }),
-  // Registration snapshot (JSONB for flexibility)
-  // Contains: { registrarProviderId, nameservers[], transferLock, statuses[] }
-  registration: jsonb("registration").notNull().default(sql`'{}'::jsonb`),
+  // Registration snapshot (JSONB)
+  registration: jsonb("registration")
+    .$type<RegistrationSnapshotData>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   // Provider IDs snapshot (derived from hosting table)
   // These detect when DNS, hosting, or email providers change
   dnsProviderId: uuid("dns_provider_id").references(() => providers.id),
   hostingProviderId: uuid("hosting_provider_id").references(() => providers.id),
   emailProviderId: uuid("email_provider_id").references(() => providers.id),
-  // Certificate snapshot (JSONB for flexibility)
-  // Contains: { caProviderId, issuer, validTo, fingerprint }
-  certificate: jsonb("certificate").notNull().default(sql`'{}'::jsonb`),
+  // Certificate snapshot (JSONB)
+  certificate: jsonb("certificate")
+    .$type<CertificateSnapshotData>()
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

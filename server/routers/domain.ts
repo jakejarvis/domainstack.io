@@ -16,7 +16,8 @@ const DomainInputSchema = z
     if (!registrable) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: '"domain" must be a valid and registrable',
+        message:
+          '"domain" must be a valid registrable domain (e.g., example.com)',
       });
     }
     return { domain: registrable };
