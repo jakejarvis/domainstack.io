@@ -1137,8 +1137,12 @@ export async function unarchiveTrackedDomainWithLimitCheck(
 }
 
 /**
- * Archive the oldest active domains for a user.
+ * Archive the oldest active tracked domains for a user.
  * Used when downgrading to enforce tier limits.
+ *
+ * Uses atomic UPDATE with subquery to avoid TOCTOU race conditions
+ * where domains could be modified between SELECT and UPDATE.
+ *
  * @param userId - The user ID
  * @param count - Number of domains to archive
  * @returns Number of domains actually archived
@@ -1149,33 +1153,31 @@ export async function archiveOldestActiveDomains(
 ): Promise<number> {
   if (countToArchive <= 0) return 0;
 
-  // Find the oldest active domains
-  const domainsToArchive = await db
-    .select({ id: userTrackedDomains.id })
-    .from(userTrackedDomains)
-    .where(
-      and(
-        eq(userTrackedDomains.userId, userId),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    )
-    .orderBy(asc(userTrackedDomains.createdAt))
-    .limit(countToArchive);
-
-  if (domainsToArchive.length === 0) return 0;
-
-  const idsToArchive = domainsToArchive.map((d) => d.id);
-
-  // Archive all domains in a single batch update
+  // Atomic: UPDATE with subquery to find and archive in one operation
+  // This prevents race conditions where domains could be archived by
+  // another request between a separate SELECT and UPDATE
   const result = await db
     .update(userTrackedDomains)
     .set({ archivedAt: new Date() })
-    .where(inArray(userTrackedDomains.id, idsToArchive))
+    .where(
+      inArray(
+        userTrackedDomains.id,
+        db
+          .select({ id: userTrackedDomains.id })
+          .from(userTrackedDomains)
+          .where(
+            and(
+              eq(userTrackedDomains.userId, userId),
+              isNull(userTrackedDomains.archivedAt),
+            ),
+          )
+          .orderBy(asc(userTrackedDomains.createdAt))
+          .limit(countToArchive),
+      ),
+    )
     .returning({ id: userTrackedDomains.id });
 
-  const archivedCount = result.length;
-
-  return archivedCount;
+  return result.length;
 }
 
 export interface BulkOperationResult {
