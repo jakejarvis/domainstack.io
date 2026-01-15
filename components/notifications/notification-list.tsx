@@ -1,4 +1,7 @@
+"use client";
+
 import { XCircleIcon } from "@phosphor-icons/react/ssr";
+import { AnimatePresence, motion } from "motion/react";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
@@ -48,13 +51,22 @@ export function NotificationList({
         />
       ) : (
         <div className="divide-y">
-          {notifications.map((notification) => (
-            <NotificationCard
-              key={notification.id}
-              notification={notification}
-              onClick={() => onNotificationClick?.(notification)}
-            />
-          ))}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {notifications.map((notification) => (
+              <motion.div
+                key={notification.id}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+              >
+                <NotificationCard
+                  notification={notification}
+                  onClick={() => onNotificationClick?.(notification)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
           {/* Infinite scroll trigger */}
           {hasNextPage && (

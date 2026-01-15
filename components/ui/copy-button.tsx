@@ -7,6 +7,7 @@ import {
   XCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import clipboardCopy from "clipboard-copy";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button, type buttonVariants } from "@/components/ui/button";
@@ -80,7 +81,33 @@ export function CopyButton({
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
-      {copied ? <CheckIcon className="text-accent-green" /> : <ClipboardIcon />}
+      <span className="relative flex items-center justify-center">
+        <AnimatePresence mode="wait" initial={false}>
+          {copied ? (
+            <motion.span
+              key="check"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-center"
+            >
+              <CheckIcon className="text-accent-green" />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="clipboard"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-center"
+            >
+              <ClipboardIcon />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </span>
       <span className={cn(!showLabel && "sr-only")}>
         {copied ? "Copied" : "Copy"}
       </span>

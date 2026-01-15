@@ -9,18 +9,19 @@ export function DashboardBannerDismissable(
 ) {
   const [isDismissed, setIsDismissed] = useState(false);
 
-  if (isDismissed) return null;
-
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
-      >
-        <DashboardBanner {...props} onDismiss={() => setIsDismissed(true)} />
-      </motion.div>
+      {!isDismissed && (
+        <motion.div
+          key="banner"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+        >
+          <DashboardBanner {...props} onDismiss={() => setIsDismissed(true)} />
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

@@ -3,7 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 
 const alertVariants = cva({
-  base: "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm backdrop-blur-lg has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  base: "fade-in-0 slide-in-from-top-2 relative grid w-full animate-in grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border bg-card/40 px-4 py-3 text-sm backdrop-blur-lg duration-200 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   variants: {
     variant: {
       default: "text-card-foreground",
