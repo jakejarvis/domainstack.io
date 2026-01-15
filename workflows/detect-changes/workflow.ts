@@ -2,6 +2,7 @@ import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
 } from "@/lib/db/schema";
+import { statusesAreEqual } from "@/lib/registration-utils";
 import type { CertificatesResponse } from "@/lib/types/domain/certificates";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";
@@ -661,14 +662,10 @@ async function detectRegistrationChange(
 
   const transferLockChanged = previous.transferLock !== current.transferLock;
 
-  // Check status changes
+  // Check status changes (using normalized comparison to handle formatting differences)
   const snapshotStatuses = previous.statuses ?? [];
   const currentStatuses = current.statuses ?? [];
-  const prevStatuses = [...snapshotStatuses].sort((a, b) => a.localeCompare(b));
-  const currStatuses = [...currentStatuses].sort((a, b) => a.localeCompare(b));
-  const statusesChanged =
-    prevStatuses.length !== currStatuses.length ||
-    prevStatuses.some((status, i) => status !== currStatuses[i]);
+  const statusesChanged = !statusesAreEqual(snapshotStatuses, currentStatuses);
 
   // If nothing changed, return null
   if (
