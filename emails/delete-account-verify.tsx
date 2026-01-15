@@ -54,7 +54,7 @@ function DeleteAccountVerifyEmail({
       </EmailButton>
 
       <EmailMutedText>
-        This link will expire in 1 hour for security purposes.
+        This link will expire in 1&nbsp;hour for security purposes.
       </EmailMutedText>
 
       <EmailHr />

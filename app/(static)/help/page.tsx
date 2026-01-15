@@ -176,7 +176,7 @@ const faqSections = [
         question: "How long do I have to verify a domain?",
         answer: (
           <p>
-            You have 30 days to verify a domain after adding it. We&apos;ll
+            You have 30&nbsp;days to verify a domain after adding it. We&apos;ll
             automatically attempt to verify your domain periodically, so once
             you&apos;ve set up verification, it should be detected within
             minutes.
@@ -189,9 +189,9 @@ const faqSections = [
           <p>
             If you&apos;ve already verified a domain but we can no longer detect
             your verification record, you&apos;ll receive an email and have a
-            7-day grace period to fix it. If verification isn&apos;t restored
-            within that window, tracking will be revoked and you&apos;ll need to
-            re-verify.
+            7&#8209;day grace period to fix it. If verification isn&apos;t
+            restored within that window, tracking will be revoked and
+            you&apos;ll need to re-verify.
           </p>
         ),
       },
@@ -219,12 +219,12 @@ const faqSections = [
             <p>We send email notifications for:</p>
             <ul className="my-2">
               <li>
-                <strong>Domain expiration</strong> — 30, 14, 7, and 1 day before
-                your domain expires
+                <strong>Domain expiration</strong> — 30, 14, 7, and 1&nbsp;day
+                before your domain expires
               </li>
               <li>
-                <strong>Certificate expiration</strong> — 14, 7, 3, and 1 day
-                before your SSL certificate expires
+                <strong>Certificate expiration</strong> — 14, 7, 3, and
+                1&nbsp;day before your SSL certificate expires
               </li>
               <li>
                 <strong>Change detection</strong> — Updates to registration

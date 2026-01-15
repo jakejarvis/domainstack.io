@@ -135,7 +135,7 @@ export function DashboardContent({
           )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
             <HourglassSimpleMediumIcon className="size-4" />
-            <span>Verification takes less than 2 minutes</span>
+            <span>Verification takes less than 2&nbsp;minutes</span>
           </div>
         </EmptyContent>
       </Empty>

@@ -22,6 +22,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
           <MagnifyingGlassIcon />
         </InputGroupAddon>
         <InputGroupInput
+          name="domain-search"
           placeholder="Search domains…"
           value={value}
           onChange={(e) => onChange(e.target.value)}

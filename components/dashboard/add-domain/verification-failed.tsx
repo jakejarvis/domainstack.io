@@ -21,7 +21,7 @@ const TROUBLESHOOTING_TIPS: Record<
   dns_txt: {
     title: "DNS Record Troubleshooting",
     tips: [
-      "DNS changes can take up to 24-48 hours to propagate globally.",
+      "DNS changes can take up to 24–48\u00A0hours to propagate globally.",
       "Verify the TXT record exists in your DNS provider's dashboard.",
       "Ensure the hostname matches exactly (including the underscore prefix).",
       "Check that the value is copied correctly without extra spaces.",

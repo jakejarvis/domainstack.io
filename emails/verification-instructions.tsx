@@ -81,7 +81,7 @@ function VerificationInstructionsEmail({
           </EmailCodeText>
         </EmailSection>
         <EmailNoteText>
-          Note: DNS changes may take up to 48 hours to propagate.
+          Note: DNS changes may take up to 48&nbsp;hours to propagate.
         </EmailNoteText>
       </EmailSection>
 

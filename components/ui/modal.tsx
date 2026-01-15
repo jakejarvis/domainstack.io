@@ -64,7 +64,7 @@ function ModalContent({
   return (
     <ModalPortal data-slot="modal-portal">
       <ModalOverlay forceRender />
-      <DialogPrimitive.Viewport className="fixed inset-0 flex items-center justify-center overflow-hidden py-12">
+      <DialogPrimitive.Viewport className="fixed inset-0 flex items-center justify-center overflow-hidden overscroll-contain py-12">
         <DialogPrimitive.Popup
           data-slot="modal-content"
           className={cn(

@@ -142,7 +142,7 @@ Add a TXT record to your domain's DNS settings:
   Value:      ${dns_txt.value}
   TTL:        ${dns_txt.suggestedTTL} (${dns_txt.suggestedTTLLabel})
 
-Note: DNS changes may take up to 48 hours to propagate.
+Note: DNS changes may take up to 48\u00A0hours to propagate.
 
 ${"─".repeat(50)}
 OPTION 2: HTML File Upload
@@ -403,7 +403,10 @@ export function ShareInstructionsDialog({
                 <div className="min-w-0 flex-1">
                   <Input
                     id="email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
+                    spellCheck={false}
                     placeholder={`admin@${domain}`}
                     value={state.email}
                     onChange={handleEmailChange}
@@ -428,7 +431,7 @@ export function ShareInstructionsDialog({
                   {isEmailSending ? (
                     <>
                       <Spinner />
-                      <span className="hidden sm:inline">Sending...</span>
+                      <span className="hidden sm:inline">Sending…</span>
                     </>
                   ) : isEmailSent ? (
                     <>
