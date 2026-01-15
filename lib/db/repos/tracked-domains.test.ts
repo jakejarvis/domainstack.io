@@ -43,7 +43,6 @@ import {
   resetNotificationOverrides,
   revokeVerification,
   unarchiveTrackedDomain,
-  updateNotificationOverrides,
   verifyTrackedDomain,
 } from "./tracked-domains";
 
@@ -424,83 +423,23 @@ describe("findTrackedDomainWithDomainName", () => {
   });
 });
 
-describe("updateNotificationOverrides", () => {
-  it("updates notification overrides for a domain", async () => {
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-
-    const result = await updateNotificationOverrides(createdId, {
-      domainExpiry: { inApp: false, email: true },
-    });
-
-    expect(result).not.toBeNull();
-    if (!result) throw new Error("Expected result");
-
-    expect(result.notificationOverrides).toEqual({
-      domainExpiry: { inApp: false, email: true },
-    });
-  });
-
-  it("merges overrides with existing values", async () => {
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-
-    // Set first override
-    await updateNotificationOverrides(createdId, {
-      domainExpiry: { inApp: false, email: false },
-    });
-
-    // Set second override
-    const result = await updateNotificationOverrides(createdId, {
-      certificateExpiry: { inApp: true, email: true },
-    });
-
-    expect(result).not.toBeNull();
-    if (!result) throw new Error("Expected result");
-
-    expect(result.notificationOverrides).toEqual({
-      domainExpiry: { inApp: false, email: false },
-      certificateExpiry: { inApp: true, email: true },
-    });
-  });
-
-  it("returns null for non-existent domain", async () => {
-    const result = await updateNotificationOverrides(
-      "00000000-0000-0000-0000-000000000000",
-      { domainExpiry: { inApp: false, email: true } },
-    );
-    expect(result).toBeNull();
-  });
-});
-
 describe("resetNotificationOverrides", () => {
   it("resets all notification overrides to empty object", async () => {
-    const created = await createTrackedDomain({
-      userId: testUserId,
-      domainId: testDomainId,
-      verificationToken: "test-token",
-    });
-    expect(created).not.toBeNull();
-    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
-    const createdId = created!.id;
-
-    // Set some overrides first
-    await updateNotificationOverrides(createdId, {
-      domainExpiry: { inApp: false, email: false },
-      certificateExpiry: { inApp: true, email: true },
-    });
+    // Create domain with pre-set overrides directly via db
+    const created = await db
+      .insert(userTrackedDomains)
+      .values({
+        userId: testUserId,
+        domainId: testDomainId,
+        verificationToken: "test-token",
+        notificationOverrides: {
+          domainExpiry: { inApp: false, email: false },
+          certificateExpiry: { inApp: true, email: true },
+        },
+      })
+      .returning();
+    expect(created.length).toBe(1);
+    const createdId = created[0].id;
 
     // Reset
     const result = await resetNotificationOverrides(createdId);

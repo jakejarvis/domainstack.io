@@ -10,6 +10,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type {
@@ -789,55 +790,6 @@ export async function verifyTrackedDomain(
 }
 
 /**
- * Update notification overrides for a tracked domain.
- * Performs a partial merge: only fields with explicit values are updated,
- * undefined fields are left unchanged.
- *
- * To reset all overrides (inherit all from global), use `resetNotificationOverrides`.
- *
- * Returns null if the tracked domain doesn't exist.
- */
-export async function updateNotificationOverrides(
-  id: string,
-  overrides: NotificationOverrides,
-) {
-  // Get existing overrides to merge with new ones
-  const existing = await findTrackedDomainById(id);
-  if (!existing) return null;
-
-  // Merge existing overrides with new ones
-  // undefined values in new overrides means "don't change"
-  // explicit values replace existing ones
-  const mergedOverrides: NotificationOverrides = {
-    ...existing.notificationOverrides,
-  };
-
-  if (overrides.domainExpiry !== undefined) {
-    mergedOverrides.domainExpiry = overrides.domainExpiry;
-  }
-  if (overrides.certificateExpiry !== undefined) {
-    mergedOverrides.certificateExpiry = overrides.certificateExpiry;
-  }
-  if (overrides.registrationChanges !== undefined) {
-    mergedOverrides.registrationChanges = overrides.registrationChanges;
-  }
-  if (overrides.providerChanges !== undefined) {
-    mergedOverrides.providerChanges = overrides.providerChanges;
-  }
-  if (overrides.certificateChanges !== undefined) {
-    mergedOverrides.certificateChanges = overrides.certificateChanges;
-  }
-
-  const updated = await db
-    .update(userTrackedDomains)
-    .set({ notificationOverrides: mergedOverrides })
-    .where(eq(userTrackedDomains.id, id))
-    .returning();
-
-  return updated[0] ?? null;
-}
-
-/**
  * Reset all notification overrides for a tracked domain.
  * Domain will inherit all settings from global preferences.
  * Returns null if the tracked domain doesn't exist.
@@ -1029,18 +981,17 @@ export async function markVerificationSuccessful(id: string) {
  * Mark a domain's verification as failing.
  * Sets status to 'failing' and records when the failure started (if not already set).
  * Returns null if the tracked domain doesn't exist.
+ *
+ * Uses SQL COALESCE to atomically preserve the original failure timestamp,
+ * avoiding race conditions when multiple verification checks fail concurrently.
  */
 export async function markVerificationFailing(id: string) {
-  // First check if this is a new failure or an existing one
-  const existing = await findTrackedDomainById(id);
-  if (!existing) return null;
-
   const updated = await db
     .update(userTrackedDomains)
     .set({
       verificationStatus: "failing",
-      // Only set verificationFailedAt if it's not already set (first failure)
-      verificationFailedAt: existing.verificationFailedAt ?? new Date(),
+      // Atomically preserve existing failure timestamp, only set if null
+      verificationFailedAt: sql`COALESCE(${userTrackedDomains.verificationFailedAt}, NOW())`,
     })
     .where(eq(userTrackedDomains.id, id))
     .returning();

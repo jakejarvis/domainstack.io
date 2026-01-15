@@ -132,20 +132,14 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId, overrides } = input;
 
-      // Get tracked domain (single lookup)
+      // Get tracked domain and verify ownership in one check
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
       const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked) {
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 
@@ -209,20 +203,14 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      // Get tracked domain
+      // Get tracked domain and verify ownership in one check
+      // Return identical error for both "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
       const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked) {
+      if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Tracked domain not found",
-        });
-      }
-
-      // Ensure user owns this tracked domain
-      if (tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have access to this domain",
         });
       }
 

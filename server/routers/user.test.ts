@@ -350,15 +350,17 @@ describe("user router", () => {
       ).rejects.toThrow("not found");
     });
 
-    it("returns forbidden for domain owned by another user", async () => {
+    it("returns not found for domain owned by another user (prevents enumeration)", async () => {
       const caller = createAuthenticatedCaller(TEST_USER_2_ID);
 
+      // Security: Returns same error for "not found" and "wrong user"
+      // to prevent enumeration attacks via error differentiation
       await expect(
         caller.user.updateDomainNotificationOverrides({
           trackedDomainId: TEST_TRACKED_ID,
           overrides: { domainExpiry: { inApp: true, email: true } },
         }),
-      ).rejects.toThrow("do not have access");
+      ).rejects.toThrow("not found");
     });
   });
 

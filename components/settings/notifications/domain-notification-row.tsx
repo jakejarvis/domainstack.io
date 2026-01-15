@@ -30,7 +30,7 @@ interface DomainNotificationRowProps {
   onToggle: (
     category: NotificationCategory,
     type: "email" | "inApp",
-    value: boolean | undefined,
+    value: boolean,
   ) => void;
   onReset: () => void;
   disabled: boolean;
@@ -163,11 +163,8 @@ export function DomainNotificationRow({
                     <Switch
                       checked={inAppEffective}
                       onCheckedChange={(checked) => {
-                        onToggle(
-                          category,
-                          "inApp",
-                          checked === globalPref.inApp ? undefined : checked,
-                        );
+                        // Always pass explicit value - parent decides whether to clear override
+                        onToggle(category, "inApp", checked);
                       }}
                       disabled={disabled}
                       className={cn(
@@ -189,11 +186,8 @@ export function DomainNotificationRow({
                     <Switch
                       checked={emailEffective}
                       onCheckedChange={(checked) => {
-                        onToggle(
-                          category,
-                          "email",
-                          checked === globalPref.email ? undefined : checked,
-                        );
+                        // Always pass explicit value - parent decides whether to clear override
+                        onToggle(category, "email", checked);
                       }}
                       disabled={disabled}
                       className={cn(

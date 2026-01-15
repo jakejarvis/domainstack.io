@@ -141,7 +141,7 @@ describe("notifications router", () => {
       await db.insert(notifications).values({
         id: TEST_NOTIFICATION_ID,
         userId: TEST_USER_ID,
-        type: "domain_expiry",
+        type: "domain_expiry_30d",
         title: "Domain Expiring",
         message: "Your domain is expiring soon",
         sentAt: new Date(),
@@ -162,7 +162,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread Notification",
           message: "This is unread",
           sentAt: new Date(),
@@ -171,7 +171,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "certificate_expiry",
+          type: "certificate_expiry_30d",
           title: "Read Notification",
           message: "This is read",
           sentAt: new Date(),
@@ -193,7 +193,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread Notification",
           message: "This is unread",
           sentAt: new Date(),
@@ -202,7 +202,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "certificate_expiry",
+          type: "certificate_expiry_30d",
           title: "Read Notification",
           message: "This is read",
           sentAt: new Date(),
@@ -223,7 +223,7 @@ describe("notifications router", () => {
       await db.insert(notifications).values({
         id: TEST_NOTIFICATION_ID,
         userId: TEST_USER_2_ID,
-        type: "domain_expiry",
+        type: "domain_expiry_30d",
         title: "Other User Notification",
         message: "This belongs to another user",
         sentAt: new Date(),
@@ -242,7 +242,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Notification 1",
           message: "Message 1",
           sentAt: new Date(Date.now() - 3000),
@@ -250,7 +250,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Notification 2",
           message: "Message 2",
           sentAt: new Date(Date.now() - 2000),
@@ -258,7 +258,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_3_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Notification 3",
           message: "Message 3",
           sentAt: new Date(Date.now() - 1000),
@@ -292,7 +292,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread 1",
           message: "Message 1",
           sentAt: new Date(),
@@ -301,7 +301,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread 2",
           message: "Message 2",
           sentAt: new Date(),
@@ -310,7 +310,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_3_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Read",
           message: "Message 3",
           sentAt: new Date(),
@@ -330,7 +330,7 @@ describe("notifications router", () => {
       await db.insert(notifications).values({
         id: TEST_NOTIFICATION_ID,
         userId: TEST_USER_2_ID,
-        type: "domain_expiry",
+        type: "domain_expiry_30d",
         title: "Other User Notification",
         message: "This belongs to another user",
         sentAt: new Date(),
@@ -351,7 +351,7 @@ describe("notifications router", () => {
       await db.insert(notifications).values({
         id: TEST_NOTIFICATION_ID,
         userId: TEST_USER_ID,
-        type: "domain_expiry",
+        type: "domain_expiry_30d",
         title: "Unread",
         message: "Message",
         sentAt: new Date(),
@@ -386,7 +386,7 @@ describe("notifications router", () => {
       await db.insert(notifications).values({
         id: TEST_NOTIFICATION_ID,
         userId: TEST_USER_2_ID,
-        type: "domain_expiry",
+        type: "domain_expiry_30d",
         title: "Other User Notification",
         message: "This belongs to another user",
         sentAt: new Date(),
@@ -407,7 +407,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread 1",
           message: "Message 1",
           sentAt: new Date(),
@@ -416,7 +416,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "Unread 2",
           message: "Message 2",
           sentAt: new Date(),
@@ -450,7 +450,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_ID,
           userId: TEST_USER_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "User 1 Notification",
           message: "Message 1",
           sentAt: new Date(),
@@ -459,7 +459,7 @@ describe("notifications router", () => {
         {
           id: TEST_NOTIFICATION_2_ID,
           userId: TEST_USER_2_ID,
-          type: "domain_expiry",
+          type: "domain_expiry_30d",
           title: "User 2 Notification",
           message: "Message 2",
           sentAt: new Date(),

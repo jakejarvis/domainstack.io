@@ -188,39 +188,38 @@ export function NotificationsPanel() {
     trackedDomainId: string,
     category: NotificationCategory,
     type: "email" | "inApp",
-    value: boolean | undefined, // undefined = inherit
+    value: boolean,
   ) => {
     // Find the current domain
     const domain = domains.find((d) => d.id === trackedDomainId);
     if (!domain) return;
 
-    // Get current override for this category
+    // Get current override for this category and global prefs
     const currentOverride = domain.notificationOverrides[category];
+    const globalPref = globalPrefs[category];
 
-    if (value === undefined) {
-      // Clear the entire override for this category (inherit from global)
+    // Build the new override with both channels
+    // Schema requires BOTH channels to be defined (no partial overrides allowed)
+    const newOverride = {
+      email:
+        type === "email" ? value : (currentOverride?.email ?? globalPref.email),
+      inApp:
+        type === "inApp" ? value : (currentOverride?.inApp ?? globalPref.inApp),
+    };
+
+    // If both channels now match global, clear the override entirely (inherit)
+    if (
+      newOverride.email === globalPref.email &&
+      newOverride.inApp === globalPref.inApp
+    ) {
       updateDomainMutation.mutate({
         trackedDomainId,
         overrides: { [category]: undefined },
       });
     } else {
-      // Set or update the override
-      // Schema requires BOTH channels to be defined (no partial overrides allowed)
-      // When updating one channel, we must preserve the other channel's effective value
-      const updatedOverride = {
-        email:
-          type === "email"
-            ? value
-            : (currentOverride?.email ?? globalPrefs[category].email),
-        inApp:
-          type === "inApp"
-            ? value
-            : (currentOverride?.inApp ?? globalPrefs[category].inApp),
-      };
-
       updateDomainMutation.mutate({
         trackedDomainId,
-        overrides: { [category]: updatedOverride },
+        overrides: { [category]: newOverride },
       });
     }
   };
