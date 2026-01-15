@@ -1,7 +1,16 @@
 "use client";
 
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  ArrowCounterClockwiseIcon,
+  WarningIcon,
+} from "@phosphor-icons/react/ssr";
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { Suspense, useRef } from "react";
+import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
 import { DnsSection } from "@/components/domain/dns/dns-section";
@@ -19,6 +28,15 @@ import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
 import { sections } from "@/lib/constants/sections";
@@ -131,9 +149,18 @@ function SuspendedSeoSection({ domain }: { domain: string }) {
  */
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const { data: registration, isLoading: isRegistrationLoading } = useQuery({
-    ...trpc.domain.getRegistration.queryOptions({ domain }),
+  const registrationQueryOptions = trpc.domain.getRegistration.queryOptions({
+    domain,
+  });
+  const {
+    data: registration,
+    isLoading: isRegistrationLoading,
+    isError: isRegistrationError,
+    error: registrationError,
+  } = useQuery({
+    ...registrationQueryOptions,
     ...staticQueryOptions,
   });
   const domainId = registration?.data?.domainId;
@@ -151,6 +178,51 @@ export function DomainReportClient({ domain }: { domain: string }) {
   useDomainHistory(domain, {
     enabled: isRegistered,
   });
+
+  // Show error state if registration query failed
+  if (isRegistrationError) {
+    const isDev = process.env.NODE_ENV === "development";
+    return (
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <WarningIcon />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load domain report</EmptyTitle>
+          <EmptyDescription>
+            {isDev && registrationError
+              ? registrationError.message
+              : "We couldn't fetch registration data for this domain. Please try again."}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                queryClient.invalidateQueries({
+                  queryKey: registrationQueryOptions.queryKey,
+                })
+              }
+            >
+              <ArrowCounterClockwiseIcon />
+              Try again
+            </Button>
+            <CreateIssueButton
+              error={
+                registrationError instanceof Error
+                  ? registrationError
+                  : undefined
+              }
+              variant="ghost"
+              size="sm"
+            />
+          </div>
+        </EmptyContent>
+      </Empty>
+    );
+  }
 
   // For confirmed unregistered domains, show only the unregistered card
   if (!isRegistrationLoading && !isRegistered) {
