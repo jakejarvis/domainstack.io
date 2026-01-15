@@ -17,6 +17,7 @@ import {
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
+  handleSubscriptionUncanceled,
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
 import { addContact, removeContact, sendEmail } from "@/lib/resend";
@@ -242,6 +243,7 @@ export const auth = betterAuth({
                 onSubscriptionActive: handleSubscriptionActive,
                 onSubscriptionCanceled: handleSubscriptionCanceled,
                 onSubscriptionRevoked: handleSubscriptionRevoked,
+                onSubscriptionUncanceled: handleSubscriptionUncanceled,
               }),
             ],
           }),

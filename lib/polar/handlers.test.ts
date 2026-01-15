@@ -14,6 +14,9 @@ type SubscriptionCanceledPayload = Parameters<
 type SubscriptionRevokedPayload = Parameters<
   NonNullable<WebhooksOptions["onSubscriptionRevoked"]>
 >[0];
+type SubscriptionUncanceledPayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionUncanceled"]>
+>[0];
 
 // Mock the dependencies
 vi.mock("@/lib/db/repos/user-subscription", () => ({
@@ -53,6 +56,7 @@ import {
   handleSubscriptionCanceled,
   handleSubscriptionCreated,
   handleSubscriptionRevoked,
+  handleSubscriptionUncanceled,
 } from "./handlers";
 
 // Helper to create subscription data for webhook payloads
@@ -128,6 +132,16 @@ function createRevokedPayload(
     timestamp: new Date(),
     data: createSubscriptionData(overrides),
   } as SubscriptionRevokedPayload;
+}
+
+function createUncanceledPayload(
+  overrides: Parameters<typeof createSubscriptionData>[0] = {},
+): SubscriptionUncanceledPayload {
+  return {
+    type: "subscription.uncanceled",
+    timestamp: new Date(),
+    data: createSubscriptionData({ status: "active", ...overrides }),
+  } as SubscriptionUncanceledPayload;
 }
 
 describe("handleSubscriptionCreated", () => {
@@ -366,5 +380,35 @@ describe("handleSubscriptionRevoked", () => {
     await expect(
       handleSubscriptionRevoked(createRevokedPayload()),
     ).rejects.toThrow("Downgrade failed");
+  });
+});
+
+describe("handleSubscriptionUncanceled", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("clears subscription end date when user uncancels", async () => {
+    await handleSubscriptionUncanceled(createUncanceledPayload());
+
+    expect(clearSubscriptionEndsAt).toHaveBeenCalledWith("user-456");
+  });
+
+  it("does not clear end date when externalId (userId) is missing", async () => {
+    await handleSubscriptionUncanceled(
+      createUncanceledPayload({ userId: null }),
+    );
+
+    expect(clearSubscriptionEndsAt).not.toHaveBeenCalled();
+  });
+
+  it("re-throws errors from clearSubscriptionEndsAt for webhook retry", async () => {
+    vi.mocked(clearSubscriptionEndsAt).mockRejectedValue(
+      new Error("Database error"),
+    );
+
+    await expect(
+      handleSubscriptionUncanceled(createUncanceledPayload()),
+    ).rejects.toThrow("Database error");
   });
 });

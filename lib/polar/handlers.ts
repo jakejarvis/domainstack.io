@@ -35,6 +35,9 @@ type SubscriptionCanceledPayload = Parameters<
 type SubscriptionRevokedPayload = Parameters<
   NonNullable<WebhooksOptions["onSubscriptionRevoked"]>
 >[0];
+type SubscriptionUncanceledPayload = Parameters<
+  NonNullable<WebhooksOptions["onSubscriptionUncanceled"]>
+>[0];
 
 /**
  * Handle Polar subscription created webhook.
@@ -247,6 +250,52 @@ export async function handleSubscriptionRevoked(
     logger.error(
       { err, userId: customer.externalId },
       "failed to downgrade user",
+    );
+    throw err; // Re-throw to trigger webhook retry
+  }
+}
+
+/**
+ * Handle Polar subscription uncanceled webhook.
+ * Called when a user reverses a cancellation before the billing period ends.
+ *
+ * This clears the pending end date so the dashboard no longer shows
+ * "Subscription ending on X" and the expiry reminder cron stops sending emails.
+ */
+export async function handleSubscriptionUncanceled(
+  payload: SubscriptionUncanceledPayload,
+) {
+  const { customer } = payload.data;
+
+  logger.debug(
+    {
+      polarCustomerId: customer.id,
+      userId: customer.externalId,
+      subscriptionId: payload.data.id,
+    },
+    "subscription uncanceled (cancellation reversed)",
+  );
+
+  if (!customer.externalId) {
+    logger.error(
+      { polarCustomerId: customer.id },
+      "subscription webhook missing customer.externalId (userId)",
+    );
+    return;
+  }
+
+  try {
+    await clearSubscriptionEndsAt(customer.externalId);
+    logger.debug(
+      { userId: customer.externalId },
+      "cleared subscription end date",
+    );
+
+    analytics.track("subscription_uncanceled", {}, customer.externalId);
+  } catch (err) {
+    logger.error(
+      { err, userId: customer.externalId },
+      "failed to clear subscription end date",
     );
     throw err; // Re-throw to trigger webhook retry
   }
