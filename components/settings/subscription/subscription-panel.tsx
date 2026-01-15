@@ -113,17 +113,8 @@ export function SubscriptionPanel() {
               disabled={isCustomerPortalLoading}
               className="w-full"
             >
-              {isCustomerPortalLoading ? (
-                <>
-                  <Spinner />
-                  Loading…
-                </>
-              ) : (
-                <>
-                  <CreditCardIcon />
-                  Manage Subscription
-                </>
-              )}
+              {isCustomerPortalLoading ? <Spinner /> : <CreditCardIcon />}
+              Manage Subscription
             </Button>
             {subscription?.endsAt && (
               <p className="text-center text-muted-foreground text-xs">
@@ -166,8 +157,7 @@ export function SubscriptionPanel() {
                   ({PRO_TIER_INFO.yearly.savings})
                 </span>
               </div>
-              <UpgradeButton className="w-full">
-                <RocketLaunchIcon />
+              <UpgradeButton className="w-full" icon={RocketLaunchIcon}>
                 Upgrade to Pro
               </UpgradeButton>
             </div>

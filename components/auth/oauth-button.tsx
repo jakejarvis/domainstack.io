@@ -97,17 +97,8 @@ export function OAuthButton({
       onClick={handleSignIn}
       disabled={isAnyLoading}
     >
-      {isLoading ? (
-        <>
-          <Spinner className="size-5" />
-          Signing in...
-        </>
-      ) : (
-        <>
-          <Icon className="size-5" />
-          Continue with {provider.name}
-        </>
-      )}
+      {isLoading ? <Spinner className="size-5" /> : <Icon className="size-5" />}
+      Continue with {provider.name}
     </Button>
   );
 }

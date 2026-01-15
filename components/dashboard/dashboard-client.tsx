@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
@@ -35,7 +36,12 @@ import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 export function DashboardClient() {
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
-  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+  const [activeTab, setActiveTab] = useQueryState(
+    "view",
+    parseAsStringLiteral(["active", "archived"])
+      .withDefault("active")
+      .withOptions({ shallow: true, clearOnDefault: true }),
+  );
   const { viewMode, setViewMode } = useDashboardPreferences();
   const [sortOption, setSortOption] = useDashboardGridSort();
   const [tableInstance, setTableInstance] =

@@ -31,8 +31,7 @@ export function UpgradeBanner() {
       }
       dismissible
       action={
-        <UpgradeButton className="w-full md:w-auto">
-          <ShoppingCartIcon className="size-4" />
+        <UpgradeButton className="w-full md:w-auto" icon={ShoppingCartIcon}>
           Upgrade
         </UpgradeButton>
       }

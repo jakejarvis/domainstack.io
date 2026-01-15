@@ -244,8 +244,7 @@ export function AddDomainContent({
               </div>
 
               <div className="flex flex-col gap-2">
-                <UpgradeButton className="w-full">
-                  <RocketLaunchIcon />
+                <UpgradeButton className="w-full" icon={RocketLaunchIcon}>
                   Upgrade to Pro
                 </UpgradeButton>
                 {onClose && (

@@ -42,7 +42,10 @@ export function NotificationList({
       {isLoading ? (
         <NotificationListSkeleton />
       ) : isError ? (
-        <div className="flex flex-col items-center justify-center gap-1.5 py-12 text-sm">
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-1.5 py-12 text-sm"
+        >
           <XCircleIcon className="size-4" />
           Failed to load notifications
         </div>

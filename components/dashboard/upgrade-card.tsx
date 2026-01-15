@@ -53,8 +53,11 @@ export function UpgradeCard() {
         </div>
 
         {/* CTA Button - pushed to bottom */}
-        <UpgradeButton variant="outline" className="w-full">
-          <RocketLaunchIcon />
+        <UpgradeButton
+          variant="outline"
+          className="w-full"
+          icon={RocketLaunchIcon}
+        >
           Get Pro
         </UpgradeButton>
       </CardContent>

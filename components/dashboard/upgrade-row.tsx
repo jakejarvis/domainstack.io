@@ -52,8 +52,8 @@ export function UpgradeRow() {
           variant="outline"
           size="lg"
           className="w-full shrink-0 md:w-auto"
+          icon={RocketLaunchIcon}
         >
-          <RocketLaunchIcon />
           Get Pro
         </UpgradeButton>
       </div>

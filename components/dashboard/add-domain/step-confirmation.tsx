@@ -6,7 +6,7 @@ type StepConfirmationProps = {
 
 export function StepConfirmation({ domain }: StepConfirmationProps) {
   return (
-    <div className="space-y-4 text-center">
+    <div className="space-y-4 text-center" aria-live="polite">
       <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/10">
         <CheckCircleIcon className="size-6 text-success-foreground" />
       </div>

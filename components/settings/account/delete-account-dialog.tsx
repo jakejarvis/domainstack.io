@@ -182,7 +182,10 @@ export function DeleteAccountDialog({
             </div>
 
             {errorMessage && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm">
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive text-sm"
+              >
                 {errorMessage}
               </div>
             )}
@@ -200,17 +203,8 @@ export function DeleteAccountDialog({
                 disabled={isLoading}
                 className="cursor-pointer"
               >
-                {isLoading ? (
-                  <>
-                    <Spinner />
-                    Loading…
-                  </>
-                ) : (
-                  <>
-                    <HeartBreakIcon />
-                    I'm sure.
-                  </>
-                )}
+                {isLoading ? <Spinner /> : <HeartBreakIcon />}
+                I'm sure.
               </AlertDialogAction>
             </AlertDialogFooter>
           </>

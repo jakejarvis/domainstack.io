@@ -170,14 +170,8 @@ export function DashboardBanner({
               disabled={secondaryAction.loading || secondaryAction.disabled}
               className="text-muted-foreground hover:text-foreground"
             >
-              {secondaryAction.loading ? (
-                <>
-                  <Spinner />
-                  Loading…
-                </>
-              ) : (
-                secondaryAction.label
-              )}
+              {secondaryAction.loading && <Spinner />}
+              {secondaryAction.label}
             </Button>
           )}
           {isCustomAction && action}
@@ -186,14 +180,8 @@ export function DashboardBanner({
               onClick={handleActionClick}
               disabled={action.loading || action.disabled}
             >
-              {action.loading ? (
-                <>
-                  <Spinner />
-                  Loading…
-                </>
-              ) : (
-                action.label
-              )}
+              {action.loading && <Spinner />}
+              {action.label}
             </Button>
           )}
         </div>

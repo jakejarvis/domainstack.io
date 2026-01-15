@@ -75,6 +75,7 @@ export function TrackDomainButton({
     return (
       <Button variant="outline" disabled>
         <Spinner />
+        <span className="hidden sm:inline">Track</span>
       </Button>
     );
   }

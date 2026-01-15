@@ -195,17 +195,12 @@ export function SearchClient({
                     className="mx-1 h-8 disabled:pointer-events-none"
                     variant="ghost"
                   >
-                    {loading ? (
-                      <Spinner />
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px]">Inspect</span>
-                        <Kbd className="hidden text-[13px] sm:inline-flex">
-                          ⏎
-                        </Kbd>
-                        <ArrowRightIcon className="inline-flex sm:hidden" />
-                      </div>
-                    )}
+                    {loading && <Spinner />}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px]">Inspect</span>
+                      <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
+                      <ArrowRightIcon className="inline-flex sm:hidden" />
+                    </div>
                   </InputGroupButton>
                 </InputGroupAddon>
               )}
