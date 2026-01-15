@@ -30,10 +30,8 @@ export async function fetchDnsRecordsStep(
     providerOrderForLookup,
     queryDohProvider,
   } = await import("@/lib/dns-utils");
-  const { createLogger } = await import("@/lib/logger/server");
   const { ttlForDnsRecord } = await import("@/lib/ttl");
 
-  const logger = createLogger({ source: "dns-fetch" });
   const providers = providerOrderForLookup(domain);
   const types = DNS_RECORD_TYPES;
   const now = new Date();
@@ -123,8 +121,7 @@ export async function fetchDnsRecordsStep(
           recordsWithExpiry,
         },
       };
-    } catch (err) {
-      logger.info({ err, domain, provider: provider.key }, "provider failed");
+    } catch {
       // Try next provider
     }
   }

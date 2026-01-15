@@ -2,9 +2,6 @@ import "server-only";
 
 import * as ipaddr from "ipaddr.js";
 import { USER_AGENT } from "@/lib/constants/app";
-import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "cloudflare-ips" });
 
 /**
  * Cloudflare IP Ranges URL.
@@ -114,8 +111,7 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
     const ranges = await fetchCloudflareIpRanges();
     parseAndCacheRanges(ranges);
     return ranges;
-  } catch (err) {
-    logger.error(err);
+  } catch {
     // Return empty ranges on error
     return { ipv4Cidrs: [], ipv6Cidrs: [] };
   }

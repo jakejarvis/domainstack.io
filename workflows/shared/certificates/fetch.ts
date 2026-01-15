@@ -41,13 +41,10 @@ export async function fetchCertificateChainStep(
 
   // Dynamic imports for Node.js modules that aren't available in workflow context
   const tls = await import("node:tls");
-  const { createLogger } = await import("@/lib/logger/server");
   const { isExpectedDnsError } = await import("@/lib/dns-utils");
   const { isExpectedTlsError, parseAltNames, toName } = await import(
     "@/lib/tls-utils"
   );
-
-  const logger = createLogger({ source: "certificates-fetch" });
 
   type DetailedPeerCertificate = import("node:tls").DetailedPeerCertificate;
 
@@ -115,16 +112,13 @@ export async function fetchCertificateChainStep(
       return { success: true, chain };
     } catch (err) {
       if (isExpectedDnsError(err)) {
-        logger.debug({ err, domain }, "DNS resolution failed");
         return { success: false, error: "dns_error" };
       }
 
       if (isExpectedTlsError(err)) {
-        logger.debug({ err, domain }, "TLS handshake failed");
         return { success: false, error: "tls_error" };
       }
 
-      logger.warn({ err, domain }, "certificate fetch failed");
       return { success: false, error: "fetch_error" };
     }
   })();

@@ -114,7 +114,6 @@ async function sendNotificationInternal(
   const { createNotification, updateNotificationResendId } = await import(
     "@/lib/db/repos/notifications"
   );
-  const { createLogger } = await import("@/lib/logger/server");
   const { sendEmail } = await import("@/lib/resend");
 
   const {
@@ -130,61 +129,47 @@ async function sendNotificationInternal(
     emailSubject,
   } = options;
 
-  const logger = createLogger({ source: "notifications" });
-
   if (!shouldSendEmail && !shouldSendInApp) return false;
 
   const channels: string[] = [];
   if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  try {
-    // Create notification record
-    const notification = await createNotification({
-      userId,
-      trackedDomainId,
-      type: notificationType,
-      title,
-      message,
-      data: { domainName },
-      channels,
-    });
+  // Create notification record
+  const notification = await createNotification({
+    userId,
+    trackedDomainId,
+    type: notificationType,
+    title,
+    message,
+    data: { domainName },
+    channels,
+  });
 
-    if (!notification) {
-      logger.error(
-        { trackedDomainId, notificationType, domainName },
-        "Failed to create notification record",
-      );
-      throw new Error("Failed to create notification record in database");
-    }
-
-    // Send email notification if enabled and component provided
-    if (shouldSendEmail && emailComponent && emailSubject) {
-      const { data, error } = await sendEmail(
-        {
-          to: userEmail,
-          subject: emailSubject,
-          react: emailComponent,
-        },
-        idempotencyKey ? { idempotencyKey } : undefined,
-      );
-
-      if (error) throw new Error(`Resend error: ${error.message}`);
-
-      // Update notification with email ID
-      if (data?.id) {
-        await updateNotificationResendId(notification.id, data.id);
-      }
-    }
-
-    return true;
-  } catch (err) {
-    logger.error(
-      { err, domainName, userId, idempotencyKey },
-      `Error sending ${notificationType} notification`,
-    );
-    throw err;
+  if (!notification) {
+    throw new Error("Failed to create notification record in database");
   }
+
+  // Send email notification if enabled and component provided
+  if (shouldSendEmail && emailComponent && emailSubject) {
+    const { data, error } = await sendEmail(
+      {
+        to: userEmail,
+        subject: emailSubject,
+        react: emailComponent,
+      },
+      idempotencyKey ? { idempotencyKey } : undefined,
+    );
+
+    if (error) throw new Error(`Resend error: ${error.message}`);
+
+    // Update notification with email ID
+    if (data?.id) {
+      await updateNotificationResendId(notification.id, data.id);
+    }
+  }
+
+  return true;
 }
 
 // ============================================================================

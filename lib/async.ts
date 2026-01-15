@@ -1,7 +1,4 @@
 import "server-only";
-import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "async" });
 
 // ============================================================================
 // Timeout Utilities
@@ -361,10 +358,6 @@ export async function withTimeoutAndRetry<T>(
     {
       ...retryOptions,
       onRetry: (err, attempt, delay) => {
-        logger.debug(
-          { err, attempt: attempt + 1, delayMs: delay },
-          "operation failed, retrying",
-        );
         retryOptions.onRetry?.(err, attempt, delay);
       },
     },

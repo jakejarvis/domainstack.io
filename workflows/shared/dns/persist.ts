@@ -29,14 +29,10 @@ export async function persistDnsRecordsStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getStepMetadata } = await import("workflow");
   const { DNS_RECORD_TYPES } = await import("@/lib/constants/dns");
-  const { createLogger } = await import("@/lib/logger/server");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceDns } = await import("@/lib/db/repos/dns");
 
-  const { stepId } = getStepMetadata();
-  const logger = createLogger({ source: "dns-persist" });
   const types = DNS_RECORD_TYPES;
   const now = new Date();
 
@@ -77,15 +73,6 @@ export async function persistDnsRecordsStep(
       fetchedAt: now,
       recordsByType,
     });
-
-    logger.debug(
-      {
-        domain,
-        recordCount: fetchData.recordsWithExpiry.length,
-        stepId,
-      },
-      "dns records persisted",
-    );
 
     return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {

@@ -31,23 +31,13 @@ export async function lookupWhoisStep(
 
   // Dynamic imports for Node.js modules
   const { lookup } = await import("rdapper");
-  const { createLogger } = await import("@/lib/logger/server");
   const { USER_AGENT } = await import("@/lib/constants/app");
-
-  const logger = createLogger({ source: "registration-fetch" });
 
   // Fetch RDAP bootstrap data with Next.js Data Cache (1 week TTL)
   const bootstrapRes = await fetch(RDAP_BOOTSTRAP_URL, {
     headers: { "User-Agent": USER_AGENT },
     next: { revalidate: 604_800 }, // 1 week
   });
-
-  if (!bootstrapRes.ok) {
-    logger.warn(
-      { status: bootstrapRes.status },
-      "Failed to fetch RDAP bootstrap, using rdapper default",
-    );
-  }
 
   const bootstrapData = bootstrapRes.ok ? await bootstrapRes.json() : undefined;
 
@@ -65,22 +55,18 @@ export async function lookupWhoisStep(
         const isTimeout = isTimeoutError(error);
 
         if (isUnsupported) {
-          logger.info({ domain, err: error }, "unsupported TLD");
           return { success: false, error: "unsupported_tld" };
         }
 
         if (isTimeout) {
-          logger.warn({ domain, err: error }, "RDAP timeout");
           return { success: false, error: "timeout" };
         }
 
-        logger.warn({ err: error, domain }, "rdap lookup failed");
         return { success: false, error: "retry" };
       }
 
       return { success: true, recordJson: JSON.stringify(record) };
-    } catch (err) {
-      logger.warn({ err, domain }, "rdap lookup threw");
+    } catch {
       return { success: false, error: "retry" };
     }
   })();

@@ -6,9 +6,6 @@ import {
   INNGEST_EVENTS,
   type WorkflowFailedPayload,
 } from "@/lib/inngest/events";
-import { createLogger } from "@/lib/logger/server";
-
-const logger = createLogger({ source: "inngest/workflow-failure-handler" });
 
 /**
  * Handler for workflow failure events.
@@ -73,23 +70,6 @@ export const workflowFailureHandler = inngest.createFunction(
       },
       "system",
     );
-
-    // Log summary for Vercel logs
-    logger.info(
-      {
-        workflow,
-        domain,
-        section,
-        classification,
-        failedAt,
-      },
-      `processed workflow failure event: ${error}`,
-    );
-
-    // Future: Add alerting integrations here
-    // - Slack webhook for critical failures
-    // - Email digest for recurring failures
-    // - PagerDuty for production incidents
 
     return {
       processed: true,

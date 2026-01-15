@@ -30,14 +30,10 @@ export async function persistHostingStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getStepMetadata } = await import("workflow");
-  const { createLogger } = await import("@/lib/logger/server");
   const { ttlForHosting } = await import("@/lib/ttl");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertHosting } = await import("@/lib/db/repos/hosting");
 
-  const { stepId } = getStepMetadata();
-  const logger = createLogger({ source: "hosting-persist" });
   const now = new Date();
   const expiresAt = ttlForHosting(now);
 
@@ -58,8 +54,6 @@ export async function persistHostingStep(
       fetchedAt: now,
       expiresAt,
     });
-
-    logger.debug({ domain, stepId }, "persisted hosting data");
 
     return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {

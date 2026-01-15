@@ -35,14 +35,10 @@ export async function persistSeoStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getStepMetadata } = await import("workflow");
-  const { createLogger } = await import("@/lib/logger/server");
   const { ttlForSeo } = await import("@/lib/ttl");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { upsertSeo } = await import("@/lib/db/repos/seo");
 
-  const { stepId } = getStepMetadata();
-  const logger = createLogger({ source: "seo-persist" });
   const now = new Date();
   const expiresAt = ttlForSeo(now);
 
@@ -72,8 +68,6 @@ export async function persistSeoStep(
       fetchedAt: now,
       expiresAt,
     });
-
-    logger.debug({ domain, stepId }, "SEO data persisted");
 
     return { lastAccessedAt: domainRecord.lastAccessedAt ?? null };
   } catch (err) {

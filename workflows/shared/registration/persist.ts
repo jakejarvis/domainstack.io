@@ -29,15 +29,11 @@ export async function persistRegistrationStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getStepMetadata } = await import("workflow");
   const { getDomainTld } = await import("rdapper");
-  const { createLogger } = await import("@/lib/logger/server");
   const { ttlForRegistration } = await import("@/lib/ttl");
   const { upsertDomain } = await import("@/lib/db/repos/domains");
   const { upsertRegistration } = await import("@/lib/db/repos/registrations");
 
-  const { stepId } = getStepMetadata();
-  const logger = createLogger({ source: "registration-persist" });
   const now = new Date();
 
   try {
@@ -84,8 +80,6 @@ export async function persistRegistrationStep(
       })),
       rawResponse: response.rawResponse,
     });
-
-    logger.debug({ domain, stepId }, "registration persisted");
 
     return {
       domainId: domainRecord.id,

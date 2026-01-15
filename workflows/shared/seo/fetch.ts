@@ -22,12 +22,10 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
 
   // Dynamic imports for Node.js modules
   const { isExpectedDnsError } = await import("@/lib/dns-utils");
-  const { createLogger } = await import("@/lib/logger/server");
   const { safeFetch } = await import("@/lib/safe-fetch");
   const { parseHtmlMeta, selectPreview } = await import("@/lib/seo");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
 
-  const logger = createLogger({ source: "seo-fetch" });
   let finalUrl = `https://${domain}/`;
   let status: number | null = null;
 
@@ -98,7 +96,6 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
     };
   } catch (err) {
     if (isExpectedDnsError(err)) {
-      logger.debug({ err, domain }, "DNS resolution failed");
       return {
         success: false,
         finalUrl,
@@ -110,7 +107,6 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
     }
 
     if (isExpectedTlsError(err)) {
-      logger.debug({ err, domain }, "TLS error");
       return {
         success: false,
         finalUrl,
@@ -121,7 +117,6 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
       };
     }
 
-    logger.warn({ err, domain }, "HTML fetch failed");
     throw new RetryableError("HTML fetch failed", { retryAfter: "5s" });
   }
 }
@@ -192,11 +187,8 @@ export async function processOgImageStep(
 
   // Dynamic imports for Node.js modules
   const { optimizeImageCover } = await import("@/lib/image");
-  const { createLogger } = await import("@/lib/logger/server");
   const { safeFetch } = await import("@/lib/safe-fetch");
   const { storeImage } = await import("@/lib/storage");
-
-  const logger = createLogger({ source: "seo-og-image" });
 
   try {
     const asset = await safeFetch({
@@ -234,8 +226,7 @@ export async function processOgImageStep(
     });
 
     return { url };
-  } catch (err) {
-    logger.warn({ err, domain }, "OG image processing failed");
+  } catch {
     return { url: null };
   }
 }

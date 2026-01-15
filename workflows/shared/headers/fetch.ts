@@ -48,11 +48,9 @@ export async function fetchHeadersStep(
   const { getStatusCode } = await import("@readme/http-status-codes");
   const { isExpectedDnsError } = await import("@/lib/dns-utils");
   const { normalizeHeaders } = await import("@/lib/headers-utils");
-  const { createLogger } = await import("@/lib/logger/server");
   const { safeFetch } = await import("@/lib/safe-fetch");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
 
-  const logger = createLogger({ source: "headers-fetch" });
   const allowedHosts = [domain, `www.${domain}`];
 
   // Inline fetchHttpHeaders logic with dynamic imports
@@ -114,7 +112,6 @@ export async function fetchHeadersStep(
       }
 
       // Unknown error - return as fetch error (caller can decide to retry)
-      logger.warn({ err, domain }, "failed to fetch headers");
       return {
         success: false,
         error: "fetch_error",
