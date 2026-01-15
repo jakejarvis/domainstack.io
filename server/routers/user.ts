@@ -1,9 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
 import z from "zod";
 import { analytics } from "@/lib/analytics/server";
 import { BASE_URL } from "@/lib/constants/app";
-import { db } from "@/lib/db/client";
 import {
   deleteCalendarFeed,
   disableCalendarFeed,
@@ -15,13 +13,14 @@ import {
   countTrackedDomainsByStatus,
   findTrackedDomainById,
   resetNotificationOverrides,
+  updateNotificationOverrides,
 } from "@/lib/db/repos/tracked-domains";
 import {
   getOrCreateUserNotificationPreferences,
   updateUserNotificationPreferences,
 } from "@/lib/db/repos/user-notification-preferences";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
-import { accounts, userTrackedDomains } from "@/lib/db/schema";
+import { getLinkedAccounts } from "@/lib/db/repos/users";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 const NotificationChannelsSchema = z.object({
@@ -51,20 +50,9 @@ export const userRouter = createTRPCRouter({
    * Get the user's linked OAuth accounts.
    * Returns only provider IDs for security (no tokens or sensitive data).
    */
-  getLinkedAccounts: protectedProcedure.query(async ({ ctx }) => {
-    const linkedAccounts = await db
-      .select({
-        providerId: accounts.providerId,
-        createdAt: accounts.createdAt,
-      })
-      .from(accounts)
-      .where(eq(accounts.userId, ctx.user.id));
-
-    return linkedAccounts.map((account) => ({
-      providerId: account.providerId,
-      createdAt: account.createdAt,
-    }));
-  }),
+  getLinkedAccounts: protectedProcedure.query(async ({ ctx }) =>
+    getLinkedAccounts(ctx.user.id),
+  ),
 
   /**
    * Get user's subscription data including tier, limits, and current usage.
@@ -166,11 +154,10 @@ export const userRouter = createTRPCRouter({
       }
 
       // Update with merged overrides
-      const [updated] = await db
-        .update(userTrackedDomains)
-        .set({ notificationOverrides: mergedOverrides })
-        .where(eq(userTrackedDomains.id, trackedDomainId))
-        .returning();
+      const updated = await updateNotificationOverrides(
+        trackedDomainId,
+        mergedOverrides,
+      );
 
       if (!updated) {
         throw new TRPCError({

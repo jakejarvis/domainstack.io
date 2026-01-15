@@ -5,9 +5,8 @@ import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
 import { isUniqueViolation } from "@/lib/db/utils";
 import { createLogger } from "@/lib/logger/server";
-import { evalRule } from "@/lib/providers/detection";
+import { catalogRuleMatchesDiscovered } from "@/lib/providers/detection";
 import type { Provider } from "@/lib/providers/parser";
-import type { DetectionContext } from "@/lib/providers/rules";
 import { slugify } from "@/lib/slugify";
 
 const logger = createLogger({ source: "db/repos/providers" });
@@ -145,72 +144,6 @@ export async function getProviderNames(
  * Provider row type from database.
  */
 type ProviderRow = typeof providers.$inferSelect;
-
-/**
- * Check if a catalog provider's rules would match a discovered provider.
- *
- * For example:
- * - Catalog provider "Tuta" with mxSuffix "tutanota.de"
- * - Discovered provider named "mail.tutanota.de" (from MX record)
- * - Returns true because the catalog rule matches the discovered name
- */
-function catalogRuleMatchesDiscovered(
-  catalogProvider: Provider,
-  discoveredProvider: { name: string; domain: string | null },
-): boolean {
-  // Build detection context based on discovered provider's name/domain
-  // The discovered name is typically extracted from DNS records (MX/NS/etc.)
-  const ctx: DetectionContext = {
-    headers: {},
-    mx: [],
-    ns: [],
-  };
-
-  // Populate context based on category to test if catalog rules would match
-  switch (catalogProvider.category) {
-    case "email":
-      // Discovered email providers are typically auto-created from MX record hostnames
-      ctx.mx = [discoveredProvider.name];
-      if (discoveredProvider.domain) ctx.mx.push(discoveredProvider.domain);
-      break;
-    case "dns":
-      // Discovered DNS providers are typically auto-created from NS record hostnames
-      ctx.ns = [discoveredProvider.name];
-      if (discoveredProvider.domain) ctx.ns.push(discoveredProvider.domain);
-      break;
-    case "hosting":
-      // Hosting providers use header-based detection, harder to match retrospectively
-      // Skip rule-based matching for hosting
-      return false;
-    case "ca":
-      // CA providers use issuer string detection
-      if (discoveredProvider.name) {
-        ctx.issuer = discoveredProvider.name.toLowerCase();
-      }
-      break;
-    case "registrar":
-      // Registrar providers use registrar name detection
-      if (discoveredProvider.name) {
-        ctx.registrar = discoveredProvider.name.toLowerCase();
-      }
-      break;
-  }
-
-  try {
-    return evalRule(catalogProvider.rule, ctx);
-  } catch (err) {
-    logger.warn(
-      {
-        err,
-        discovered: discoveredProvider.name,
-        catalog: catalogProvider.name,
-        category: catalogProvider.category,
-      },
-      "failed to evaluate rule for catalog match",
-    );
-    return false;
-  }
-}
 
 /**
  * Upsert a catalog provider into the database.

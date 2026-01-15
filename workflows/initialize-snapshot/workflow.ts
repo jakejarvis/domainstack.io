@@ -190,17 +190,8 @@ async function fetchDomainStep(
 ): Promise<{ name: string } | null> {
   "use step";
 
-  const { eq } = await import("drizzle-orm");
-  const { db } = await import("@/lib/db/client");
-  const { domains } = await import("@/lib/db/schema");
-
-  const result = await db
-    .select({ name: domains.name })
-    .from(domains)
-    .where(eq(domains.id, domainId))
-    .limit(1);
-
-  return result[0] ?? null;
+  const { getDomainNameById } = await import("@/lib/db/repos/domains");
+  return getDomainNameById(domainId);
 }
 
 async function createSnapshotStep(params: {

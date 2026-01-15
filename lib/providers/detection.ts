@@ -220,3 +220,71 @@ export function detectCertificateAuthority(
     name,
   );
 }
+
+// ============================================================================
+// Catalog Provider Matching
+// ============================================================================
+
+/**
+ * Check if a catalog provider's rules would match a discovered provider.
+ *
+ * Used during catalog provider upsert to find and merge discovered providers
+ * that match a catalog provider's detection rules.
+ *
+ * For example:
+ * - Catalog provider "Tuta" with mxSuffix "tutanota.de"
+ * - Discovered provider named "mail.tutanota.de" (from MX record)
+ * - Returns true because the catalog rule matches the discovered name
+ *
+ * @param catalogProvider - Provider from Edge Config catalog with detection rules
+ * @param discoveredProvider - Provider discovered from DNS records (name/domain)
+ * @returns true if the catalog provider's rules would match the discovered provider
+ */
+export function catalogRuleMatchesDiscovered(
+  catalogProvider: Provider,
+  discoveredProvider: { name: string; domain: string | null },
+): boolean {
+  // Build detection context based on discovered provider's name/domain
+  // The discovered name is typically extracted from DNS records (MX/NS/etc.)
+  const ctx: DetectionContext = {
+    headers: {},
+    mx: [],
+    ns: [],
+  };
+
+  // Populate context based on category to test if catalog rules would match
+  switch (catalogProvider.category) {
+    case "email":
+      // Discovered email providers are typically auto-created from MX record hostnames
+      ctx.mx = [discoveredProvider.name];
+      if (discoveredProvider.domain) ctx.mx.push(discoveredProvider.domain);
+      break;
+    case "dns":
+      // Discovered DNS providers are typically auto-created from NS record hostnames
+      ctx.ns = [discoveredProvider.name];
+      if (discoveredProvider.domain) ctx.ns.push(discoveredProvider.domain);
+      break;
+    case "hosting":
+      // Hosting providers use header-based detection, harder to match retrospectively
+      // Skip rule-based matching for hosting
+      return false;
+    case "ca":
+      // CA providers use issuer string detection
+      if (discoveredProvider.name) {
+        ctx.issuer = discoveredProvider.name.toLowerCase();
+      }
+      break;
+    case "registrar":
+      // Registrar providers use registrar name detection
+      if (discoveredProvider.name) {
+        ctx.registrar = discoveredProvider.name.toLowerCase();
+      }
+      break;
+  }
+
+  try {
+    return evalRule(catalogProvider.rule, ctx);
+  } catch {
+    return false;
+  }
+}

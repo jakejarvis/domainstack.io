@@ -97,6 +97,22 @@ export async function getDomainById(id: string) {
 }
 
 /**
+ * Get domain name by ID.
+ * Lightweight query that only fetches the name column.
+ * Returns null if the domain doesn't exist.
+ */
+export async function getDomainNameById(
+  id: string,
+): Promise<{ name: string } | null> {
+  const rows = await db
+    .select({ name: domains.name })
+    .from(domains)
+    .where(eq(domains.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
  * Update lastAccessedAt timestamp for a domain.
  * Only updates if the domain hasn't been accessed in the last 5 minutes
  * to reduce unnecessary writes.

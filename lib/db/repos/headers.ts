@@ -2,7 +2,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { domains, httpHeaders } from "@/lib/db/schema";
-import { normalizeHeaders } from "@/lib/headers-utils";
+import { getHttpStatusMessage, normalizeHeaders } from "@/lib/headers-utils";
 import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 import type { CacheResult } from "./types";
 
@@ -78,17 +78,8 @@ export async function getCachedHeaders(
   const { expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
-  // Get status message
-  let statusMessage: string | undefined;
-  try {
-    const { getStatusCode } = await import("@readme/http-status-codes");
-    const statusInfo = getStatusCode(row.status);
-    statusMessage = statusInfo.message;
-  } catch {
-    statusMessage = undefined;
-  }
-
-  // Normalize headers
+  // Get status message and normalize headers
+  const statusMessage = await getHttpStatusMessage(row.status);
   const normalized = normalizeHeaders(row.headers as Header[]);
 
   return {

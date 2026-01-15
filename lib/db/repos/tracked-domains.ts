@@ -28,6 +28,7 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
+import { deduplicateDnsRecordsByValue } from "@/lib/dns-utils";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { RegistrationContact } from "@/lib/types/domain/registration";
 import type { NotificationOverrides } from "@/lib/types/notifications";
@@ -357,25 +358,6 @@ function transformToTrackedDomainWithDetails(
 }
 
 /**
- * Deduplicate tooltip records by value and priority.
- * Case-insensitive comparison for consistent deduplication.
- */
-function deduplicateTooltipRecords(records: DnsRecord[]): DnsRecord[] {
-  const seen = new Set<string>();
-  const deduplicated: DnsRecord[] = [];
-
-  for (const r of records) {
-    const key = `${r.value.trim().toLowerCase()}|${r.priority ?? ""}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduplicated.push(r);
-    }
-  }
-
-  return deduplicated;
-}
-
-/**
  * Fetch DNS records for multiple domains and group them by domain ID and type.
  * Returns a map of domainId → type → records for efficient lookup.
  */
@@ -451,15 +433,15 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
   // Deduplicate and sort records within each group
   for (const groups of recordsByDomain.values()) {
     // Sort A/AAAA records (hosting) alphabetically by value
-    groups.hosting = deduplicateTooltipRecords(groups.hosting).sort((a, b) =>
+    groups.hosting = deduplicateDnsRecordsByValue(groups.hosting).sort((a, b) =>
       a.value.localeCompare(b.value),
     );
     // Sort NS records (dns) alphabetically by value
-    groups.dns = deduplicateTooltipRecords(groups.dns).sort((a, b) =>
+    groups.dns = deduplicateDnsRecordsByValue(groups.dns).sort((a, b) =>
       a.value.localeCompare(b.value),
     );
     // Sort MX records (email) by priority, then alphabetically by value
-    groups.email = deduplicateTooltipRecords(groups.email).sort((a, b) => {
+    groups.email = deduplicateDnsRecordsByValue(groups.email).sort((a, b) => {
       const priorityA = a.priority ?? Number.MAX_SAFE_INTEGER;
       const priorityB = b.priority ?? Number.MAX_SAFE_INTEGER;
       if (priorityA !== priorityB) return priorityA - priorityB;
@@ -865,6 +847,27 @@ export async function resetNotificationOverrides(id: string) {
   const updated = await db
     .update(userTrackedDomains)
     .set({ notificationOverrides: {} })
+    .where(eq(userTrackedDomains.id, id))
+    .returning();
+
+  if (updated.length === 0) {
+    return null;
+  }
+
+  return updated[0];
+}
+
+/**
+ * Update notification overrides for a tracked domain.
+ * Returns null if the tracked domain doesn't exist.
+ */
+export async function updateNotificationOverrides(
+  id: string,
+  overrides: NotificationOverrides,
+) {
+  const updated = await db
+    .update(userTrackedDomains)
+    .set({ notificationOverrides: overrides })
     .where(eq(userTrackedDomains.id, id))
     .returning();
 

@@ -1,11 +1,14 @@
 import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
-import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType, domains } from "@/lib/db/schema";
-import { deduplicateDnsRecords, makeDnsRecordKey } from "@/lib/dns-utils";
+import {
+  deduplicateDnsRecords,
+  makeDnsRecordKey,
+  sortDnsRecordsByType,
+} from "@/lib/dns-utils";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 import type { CacheResult } from "./types";
 
@@ -201,43 +204,4 @@ export async function getCachedDns(
     stale,
     expiresAt: earliestExpiresAt,
   };
-}
-
-// Helper functions for getDns
-
-function sortDnsRecordsByType(
-  records: DnsRecord[],
-  order: readonly DnsRecordType[],
-): DnsRecord[] {
-  const byType: Record<DnsRecordType, DnsRecord[]> = {
-    A: [],
-    AAAA: [],
-    MX: [],
-    TXT: [],
-    NS: [],
-  };
-  for (const r of records) byType[r.type].push(r);
-
-  const sorted: DnsRecord[] = [];
-  for (const t of order) {
-    sorted.push(...sortDnsRecordsForType(byType[t], t));
-  }
-  return sorted;
-}
-
-function sortDnsRecordsForType(
-  arr: DnsRecord[],
-  type: DnsRecordType,
-): DnsRecord[] {
-  if (type === "MX") {
-    arr.sort((a, b) => {
-      const ap = a.priority ?? Number.MAX_SAFE_INTEGER;
-      const bp = b.priority ?? Number.MAX_SAFE_INTEGER;
-      if (ap !== bp) return ap - bp;
-      return a.value.localeCompare(b.value);
-    });
-    return arr;
-  }
-  arr.sort((a, b) => a.value.localeCompare(b.value));
-  return arr;
 }
