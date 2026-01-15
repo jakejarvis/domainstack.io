@@ -1,8 +1,5 @@
 import {
   ActivityIcon,
-  CaretDownIcon,
-  CheckIcon,
-  FunnelIcon,
   GlobeIcon,
   HourglassSimpleMediumIcon,
   MagnifyingGlassIcon,
@@ -11,41 +8,26 @@ import {
 } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
+import {
+  type FilterChip,
+  FilterChips,
+} from "@/components/dashboard/filter-chips";
+import { FilterDropdowns } from "@/components/dashboard/filter-dropdowns";
+import { FilterSearchInput } from "@/components/dashboard/filter-search-input";
+import { GridSortDropdown } from "@/components/dashboard/grid-sort-dropdown";
+import { MobileFiltersCollapsible } from "@/components/dashboard/mobile-filters-collapsible";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import {
-  MultiSelect,
-  type MultiSelectOption,
-} from "@/components/ui/multi-select";
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
-import type { HealthFilter, StatusFilter } from "@/lib/dashboard-utils";
-import {
-  type DashboardViewModeOptions,
-  SORT_OPTIONS,
-  type SortOption,
+import type {
+  DashboardViewModeOptions,
+  HealthFilter,
+  SortOption,
+  StatusFilter,
 } from "@/lib/dashboard-utils";
-import { cn } from "@/lib/utils";
 
 type DashboardFiltersProps = {
   search: string;
@@ -75,15 +57,6 @@ type DashboardFiltersProps = {
   table?: Table<any> | null;
 };
 
-/** Discriminated union for type-safe filter chip handling */
-type FilterChip = {
-  type: "search" | "status" | "health" | "tld" | "provider" | "domainId";
-  value: string;
-  label: string;
-  prefix?: string;
-  icon: React.ReactNode;
-};
-
 export function DashboardFilters({
   search,
   status,
@@ -107,93 +80,6 @@ export function DashboardFilters({
   onSortChange,
   table,
 }: DashboardFiltersProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Memoize TLD options to avoid re-allocating on every render
-  // TLDs are stored without leading dot but displayed with dot
-  // Include the dotted version as a keyword so search works with or without the dot
-  const tldOptions = useMemo(
-    () =>
-      availableTlds.map((t) => ({
-        value: t,
-        label: `.${t}`,
-        keywords: [`.${t}`], // Allow searching with the dot
-      })),
-    [availableTlds],
-  );
-
-  // Memoize provider sections for the multi-select
-  const providerSections = useMemo(() => {
-    const sections = [];
-
-    if (availableProviders.registrar.length > 0) {
-      sections.push({
-        label: "Registrar",
-        options: availableProviders.registrar.map((p) => ({
-          value: p.id,
-          label: p.name,
-          domain: p.domain,
-          id: p.id,
-          keywords: [p.name],
-        })),
-      });
-    }
-
-    if (availableProviders.dns.length > 0) {
-      sections.push({
-        label: "DNS",
-        options: availableProviders.dns.map((p) => ({
-          value: p.id,
-          label: p.name,
-          domain: p.domain,
-          id: p.id,
-          keywords: [p.name],
-        })),
-      });
-    }
-
-    if (availableProviders.hosting.length > 0) {
-      sections.push({
-        label: "Hosting",
-        options: availableProviders.hosting.map((p) => ({
-          value: p.id,
-          label: p.name,
-          domain: p.domain,
-          id: p.id,
-          keywords: [p.name],
-        })),
-      });
-    }
-
-    if (availableProviders.email.length > 0) {
-      sections.push({
-        label: "Email",
-        options: availableProviders.email.map((p) => ({
-          value: p.id,
-          label: p.name,
-          domain: p.domain,
-          id: p.id,
-          keywords: [p.name],
-        })),
-      });
-    }
-
-    if (availableProviders.ca.length > 0) {
-      sections.push({
-        label: "CA",
-        options: availableProviders.ca.map((p) => ({
-          value: p.id,
-          label: p.name,
-          domain: p.domain,
-          id: p.id,
-          keywords: [p.name],
-        })),
-      });
-    }
-
-    return sections;
-  }, [availableProviders]);
-
   // Flat map of all providers for chip rendering
   const allProvidersMap = useMemo(() => {
     const map = new Map<
@@ -205,7 +91,9 @@ export function DashboardFilters({
       }
     >();
 
-    for (const [categoryKey, providers] of Object.entries(availableProviders)) {
+    for (const [categoryKey, providerList] of Object.entries(
+      availableProviders,
+    )) {
       // Map category keys to display labels
       const categoryLabel =
         categoryKey === "registrar"
@@ -220,7 +108,7 @@ export function DashboardFilters({
                   ? "CA"
                   : undefined;
 
-      for (const provider of providers) {
+      for (const provider of providerList) {
         map.set(provider.id, {
           name: provider.name,
           category: categoryLabel,
@@ -240,67 +128,74 @@ export function DashboardFilters({
   }, [availableProviders]);
 
   // Get labels for active filters to show as chips
-  const activeFilterChips: FilterChip[] = [
-    // Domain ID chip (from notification deep links) - shown first for prominence
-    ...(domainId && filteredDomainName
-      ? [
-          {
-            type: "domainId" as const,
-            value: domainId,
-            label: filteredDomainName,
-            prefix: "Domain",
-            icon: <GlobeIcon className="size-3 text-muted-foreground" />,
-          },
-        ]
-      : []),
-    // Include search term as a chip if present
-    ...(search.length > 0
-      ? [
-          {
-            type: "search" as const,
-            value: search,
-            label: `"${search}"`,
-            icon: (
-              <MagnifyingGlassIcon className="size-3 text-muted-foreground" />
-            ),
-          },
-        ]
-      : []),
-    // Status chips (from health summary clicks)
-    ...status.map((s) => ({
-      type: "status" as const,
-      value: s,
-      label: s === "verified" ? "Verified" : "Pending Verification",
-      icon: (
-        <HourglassSimpleMediumIcon className="size-3 text-muted-foreground" />
-      ),
-    })),
-    ...health.map((h) => ({
-      type: "health" as const,
-      value: h,
-      label: HEALTH_OPTIONS.find((o) => o.value === h)?.label ?? h,
-      icon: <ActivityIcon className="size-3 text-muted-foreground" />,
-    })),
-    ...tlds.map((t) => ({
-      type: "tld" as const,
-      value: t,
-      label: `.${t}`, // Display with leading dot
-      prefix: "TLD",
-      icon: <GlobeIcon className="size-3 text-muted-foreground" />,
-    })),
-    ...providers.map((p) => ({
-      type: "provider" as const,
-      value: p,
-      label: allProvidersMap.get(p)?.name ?? p,
-      prefix: allProvidersMap.get(p)?.category ?? "",
-      icon: allProvidersMap.get(p)?.icon ?? null,
-    })),
-  ];
-
-  // Compute current sort option for grid view dropdown (may be undefined if stale)
-  const currentSort = sortOption
-    ? SORT_OPTIONS.find((o) => o.value === sortOption)
-    : undefined;
+  const activeFilterChips: FilterChip[] = useMemo(
+    () => [
+      // Domain ID chip (from notification deep links) - shown first for prominence
+      ...(domainId && filteredDomainName
+        ? [
+            {
+              type: "domainId" as const,
+              value: domainId,
+              label: filteredDomainName,
+              prefix: "Domain",
+              icon: <GlobeIcon className="size-3 text-muted-foreground" />,
+            },
+          ]
+        : []),
+      // Include search term as a chip if present
+      ...(search.length > 0
+        ? [
+            {
+              type: "search" as const,
+              value: search,
+              label: `"${search}"`,
+              icon: (
+                <MagnifyingGlassIcon className="size-3 text-muted-foreground" />
+              ),
+            },
+          ]
+        : []),
+      // Status chips (from health summary clicks)
+      ...status.map((s) => ({
+        type: "status" as const,
+        value: s,
+        label: s === "verified" ? "Verified" : "Pending Verification",
+        icon: (
+          <HourglassSimpleMediumIcon className="size-3 text-muted-foreground" />
+        ),
+      })),
+      ...health.map((h) => ({
+        type: "health" as const,
+        value: h,
+        label: HEALTH_OPTIONS.find((o) => o.value === h)?.label ?? h,
+        icon: <ActivityIcon className="size-3 text-muted-foreground" />,
+      })),
+      ...tlds.map((t) => ({
+        type: "tld" as const,
+        value: t,
+        label: `.${t}`, // Display with leading dot
+        prefix: "TLD",
+        icon: <GlobeIcon className="size-3 text-muted-foreground" />,
+      })),
+      ...providers.map((p) => ({
+        type: "provider" as const,
+        value: p,
+        label: allProvidersMap.get(p)?.name ?? p,
+        prefix: allProvidersMap.get(p)?.category ?? "",
+        icon: allProvidersMap.get(p)?.icon ?? null,
+      })),
+    ],
+    [
+      domainId,
+      filteredDomainName,
+      search,
+      status,
+      health,
+      tlds,
+      providers,
+      allProvidersMap,
+    ],
+  );
 
   const removeFilter = useCallback(
     (chip: FilterChip) => {
@@ -336,101 +231,17 @@ export function DashboardFilters({
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Left side: Search and filter dropdowns */}
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
-        {/* Search input */}
-        <div className="flex-1 lg:max-w-xs">
-          <InputGroup>
-            <InputGroupAddon>
-              <MagnifyingGlassIcon />
-            </InputGroupAddon>
-            <InputGroupInput
-              placeholder="Search domains..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-            <AnimatePresence initial={false}>
-              {search && (
-                <InputGroupAddon align="inline-end">
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{
-                      duration: 0.16,
-                      ease: [0.22, 1, 0.36, 1] as const,
-                    }}
-                  >
-                    <InputGroupButton
-                      size="icon-xs"
-                      onClick={() => onSearchChange("")}
-                      aria-label="Clear search"
-                    >
-                      <XIcon />
-                    </InputGroupButton>
-                  </motion.div>
-                </InputGroupAddon>
-              )}
-            </AnimatePresence>
-          </InputGroup>
-        </div>
-
-        {/* Filter dropdowns */}
-        <div className="flex flex-wrap gap-2">
-          <MultiSelect
-            label="Health"
-            icon={ActivityIcon}
-            options={HEALTH_OPTIONS}
-            selected={health}
-            onSelectionChange={onHealthChange}
-            popoverWidth="w-40"
-            className="cursor-pointer"
-          />
-          {availableTlds.length > 0 && (
-            <MultiSelect
-              label="TLD"
-              icon={GlobeIcon}
-              options={tldOptions}
-              selected={tlds}
-              onSelectionChange={onTldsChange}
-              searchable
-              popoverWidth="w-40"
-              className="cursor-pointer"
-            />
-          )}
-          {providerSections.length > 0 && (
-            <MultiSelect
-              label="Providers"
-              icon={PlugsIcon}
-              sections={providerSections}
-              selected={providers}
-              onSelectionChange={onProvidersChange}
-              searchable
-              className="cursor-pointer"
-              renderOption={(
-                option: MultiSelectOption<string> & {
-                  /** Optional domain for provider logo rendering */
-                  domain?: string | null;
-                  /** Optional provider ID for provider logo rendering */
-                  id?: string | null;
-                },
-              ) => (
-                <div className="flex items-center gap-1.5 px-0.5 py-[3px]">
-                  <ProviderLogo
-                    providerId={option.id}
-                    providerName={option.label}
-                    className="size-3.5 shrink-0"
-                  />
-                  <span className="max-w-[240px] truncate leading-none">
-                    {option.label}
-                  </span>
-                </div>
-              )}
-            />
-          )}
-        </div>
+        <FilterSearchInput value={search} onChange={onSearchChange} />
+        <FilterDropdowns
+          health={health}
+          tlds={tlds}
+          providers={providers}
+          availableTlds={availableTlds}
+          availableProviders={availableProviders}
+          onHealthChange={onHealthChange}
+          onTldsChange={onTldsChange}
+          onProvidersChange={onProvidersChange}
+        />
       </div>
 
       {/* Right side: View-specific controls and clear button */}
@@ -460,41 +271,11 @@ export function DashboardFilters({
         </AnimatePresence>
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" && onSortChange && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="outline"
-                  className="inline-flex h-9 items-center gap-1.5 px-3"
-                >
-                  <span className="text-muted-foreground">Sort:</span>
-                  {currentSort?.shortLabel ?? "Select"}
-                  {currentSort?.direction && (
-                    <span className="text-muted-foreground">
-                      {currentSort.direction === "asc" ? "↑" : "↓"}
-                    </span>
-                  )}
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              {SORT_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => onSortChange(option.value)}
-                  className="cursor-pointer gap-2"
-                >
-                  <CheckIcon
-                    className={cn(
-                      sortOption === option.value ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {option.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {viewMode === "grid" && sortOption && onSortChange && (
+          <GridSortDropdown
+            sortOption={sortOption}
+            onSortChange={onSortChange}
+          />
         )}
 
         {/* Column visibility - only for table view, hidden when collapsed (shown outside collapsible) */}
@@ -514,137 +295,18 @@ export function DashboardFilters({
 
       {/* Small/medium screens: collapsible */}
       <div className="lg:hidden">
-        <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
-          <div className="flex items-center gap-2">
-            <CollapsibleTrigger
-              render={
-                <Button variant="outline" className="flex-1 justify-between">
-                  <span className="flex items-center gap-2">
-                    <FunnelIcon className="text-muted-foreground" />
-                    <span className="text-sm">Filters</span>
-                    <AnimatePresence initial={false}>
-                      {hasActiveFilters && (
-                        <motion.span
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{
-                            duration: 0.16,
-                            ease: [0.22, 1, 0.36, 1] as const,
-                          }}
-                          className="ml-1 inline-flex"
-                        >
-                          <Badge variant="secondary">
-                            {activeFilterChips.length}
-                          </Badge>
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </span>
-                  <CaretDownIcon
-                    className={cn(
-                      "transition-transform",
-                      mobileOpen && "rotate-180",
-                    )}
-                  />
-                </Button>
-              }
-            />
-
-            {/* Column visibility - always visible in collapsed mode for table view */}
-            {viewMode === "table" && table && (
-              <DashboardTableColumnMenu table={table} />
-            )}
-          </div>
-
-          <CollapsibleContent
-            keepMounted
-            render={(contentProps) => {
-              const { children, ...rest } = contentProps;
-              return (
-                <div {...rest}>
-                  <motion.div
-                    initial={false}
-                    animate={
-                      mobileOpen
-                        ? { height: "auto", opacity: 1 }
-                        : { height: 0, opacity: 0 }
-                    }
-                    transition={{
-                      duration: 0.22,
-                      ease: [0.22, 1, 0.36, 1] as const,
-                    }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    {children}
-                  </motion.div>
-                </div>
-              );
-            }}
-          >
-            <div className="pt-3">{filterContent}</div>
-          </CollapsibleContent>
-        </Collapsible>
+        <MobileFiltersCollapsible
+          hasActiveFilters={hasActiveFilters}
+          activeFilterCount={activeFilterChips.length}
+          viewMode={viewMode}
+          table={table}
+        >
+          {filterContent}
+        </MobileFiltersCollapsible>
       </div>
 
       {/* Active filter chips */}
-      <AnimatePresence initial={false}>
-        {activeFilterChips.length > 0 && (
-          <motion.div
-            key="active-filter-chips"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{
-              duration: 0.18,
-              ease: [0.22, 1, 0.36, 1] as const,
-            }}
-            className="flex flex-wrap gap-2"
-          >
-            <AnimatePresence initial={false}>
-              {activeFilterChips.map((chip, index) => (
-                <motion.div
-                  key={
-                    chip.type === "search"
-                      ? "search"
-                      : `${chip.type}-${chip.value}`
-                  }
-                  layout="position"
-                  initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                  transition={{
-                    duration: 0.18,
-                    ease: [0.22, 1, 0.36, 1] as const,
-                    delay: Math.min(index * 0.01, 0.06),
-                  }}
-                  className="inline-flex"
-                >
-                  <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30">
-                    {chip.icon}
-                    <span className="flex items-center gap-1 text-xs leading-none">
-                      {chip.prefix && (
-                        <span className="shrink-0 text-muted-foreground">
-                          {chip.prefix}:
-                        </span>
-                      )}
-                      <span className="truncate">{chip.label}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFilter(chip)}
-                      className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
-                      aria-label={`Remove ${chip.type} filter`}
-                    >
-                      <XIcon className="size-3" />
-                    </button>
-                  </Badge>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FilterChips chips={activeFilterChips} onRemove={removeFilter} />
     </div>
   );
 }

@@ -1,0 +1,105 @@
+import { CaretDownIcon, FunnelIcon } from "@phosphor-icons/react/ssr";
+import type { Table } from "@tanstack/react-table";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
+import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
+import { cn } from "@/lib/utils";
+
+type MobileFiltersCollapsibleProps = {
+  hasActiveFilters: boolean;
+  activeFilterCount: number;
+  viewMode: DashboardViewModeOptions;
+  // biome-ignore lint/suspicious/noExplicitAny: Table generic type varies
+  table?: Table<any> | null;
+  children: React.ReactNode;
+};
+
+export function MobileFiltersCollapsible({
+  hasActiveFilters,
+  activeFilterCount,
+  viewMode,
+  table,
+  children,
+}: MobileFiltersCollapsibleProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <Collapsible open={mobileOpen} onOpenChange={setMobileOpen}>
+      <div className="flex items-center gap-2">
+        <CollapsibleTrigger
+          render={
+            <Button variant="outline" className="flex-1 justify-between">
+              <span className="flex items-center gap-2">
+                <FunnelIcon className="text-muted-foreground" />
+                <span className="text-sm">Filters</span>
+                <AnimatePresence initial={false}>
+                  {hasActiveFilters && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{
+                        duration: 0.16,
+                        ease: [0.22, 1, 0.36, 1] as const,
+                      }}
+                      className="ml-1 inline-flex"
+                    >
+                      <Badge variant="secondary">{activeFilterCount}</Badge>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </span>
+              <CaretDownIcon
+                className={cn(
+                  "transition-transform",
+                  mobileOpen && "rotate-180",
+                )}
+              />
+            </Button>
+          }
+        />
+
+        {/* Column visibility - always visible in collapsed mode for table view */}
+        {viewMode === "table" && table && (
+          <DashboardTableColumnMenu table={table} />
+        )}
+      </div>
+
+      <CollapsibleContent
+        keepMounted
+        render={(contentProps) => {
+          const { children: contentChildren, ...rest } = contentProps;
+          return (
+            <div {...rest}>
+              <motion.div
+                initial={false}
+                animate={
+                  mobileOpen
+                    ? { height: "auto", opacity: 1 }
+                    : { height: 0, opacity: 0 }
+                }
+                transition={{
+                  duration: 0.22,
+                  ease: [0.22, 1, 0.36, 1] as const,
+                }}
+                style={{ overflow: "hidden" }}
+              >
+                {contentChildren}
+              </motion.div>
+            </div>
+          );
+        }}
+      >
+        <div className="pt-3">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}

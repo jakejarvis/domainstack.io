@@ -1,0 +1,78 @@
+import { XIcon } from "@phosphor-icons/react/ssr";
+import { AnimatePresence, motion } from "motion/react";
+import { Badge } from "@/components/ui/badge";
+
+export type FilterChip = {
+  type: "search" | "status" | "health" | "tld" | "provider" | "domainId";
+  value: string;
+  label: string;
+  prefix?: string;
+  icon: React.ReactNode;
+};
+
+type FilterChipsProps = {
+  chips: FilterChip[];
+  onRemove: (chip: FilterChip) => void;
+};
+
+export function FilterChips({ chips, onRemove }: FilterChipsProps) {
+  if (chips.length === 0) {
+    return null;
+  }
+
+  return (
+    <AnimatePresence initial={false}>
+      <motion.div
+        key="active-filter-chips"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 8 }}
+        transition={{
+          duration: 0.18,
+          ease: [0.22, 1, 0.36, 1] as const,
+        }}
+        className="flex flex-wrap gap-2"
+      >
+        <AnimatePresence initial={false}>
+          {chips.map((chip, index) => (
+            <motion.div
+              key={
+                chip.type === "search" ? "search" : `${chip.type}-${chip.value}`
+              }
+              layout="position"
+              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{
+                duration: 0.18,
+                ease: [0.22, 1, 0.36, 1] as const,
+                delay: Math.min(index * 0.01, 0.06),
+              }}
+              className="inline-flex"
+            >
+              <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30">
+                {chip.icon}
+                <span className="flex items-center gap-1 text-xs leading-none">
+                  {chip.prefix && (
+                    <span className="shrink-0 text-muted-foreground">
+                      {chip.prefix}:
+                    </span>
+                  )}
+                  <span className="truncate">{chip.label}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRemove(chip)}
+                  className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
+                  aria-label={`Remove ${chip.type} filter`}
+                >
+                  <XIcon className="size-3" />
+                </button>
+              </Badge>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+    </AnimatePresence>
+  );
+}

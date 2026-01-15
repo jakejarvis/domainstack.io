@@ -8,8 +8,8 @@ import {
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
+import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
@@ -19,17 +19,9 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useBulkOperations } from "@/hooks/use-bulk-operations";
+import { useConfirmAction } from "@/hooks/use-confirm-action";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
@@ -41,19 +33,8 @@ import { useSession } from "@/lib/auth-client";
 import { sortDomains } from "@/lib/dashboard-utils";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
-type ConfirmAction =
-  | { type: "remove"; domainId: string; domainName: string }
-  | { type: "archive"; domainId: string; domainName: string }
-  | { type: "bulk-archive"; domainIds: string[]; count: number }
-  | { type: "bulk-delete"; domainIds: string[]; count: number };
-
 export function DashboardClient() {
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
-    null,
-  );
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
-  const [isBulkArchiving, setIsBulkArchiving] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const { viewMode, setViewMode } = useDashboardPreferences();
   const [sortOption, setSortOption] = useDashboardGridSort();
@@ -77,8 +58,6 @@ export function DashboardClient() {
     removeMutation,
     archiveMutation,
     unarchiveMutation,
-    bulkArchiveMutation,
-    bulkDeleteMutation,
   } = useTrackedDomains({ includeArchived: true });
 
   const domains = useMemo(
@@ -90,6 +69,7 @@ export function DashboardClient() {
     [allDomains],
   );
   const totalDomainsCount = domains.length;
+
   const {
     search,
     status,
@@ -129,6 +109,31 @@ export function DashboardClient() {
   );
   const selection = useDashboardSelection(filteredDomainIds);
 
+  // Bulk operations
+  const {
+    isBulkArchiving,
+    isBulkDeleting,
+    executeBulkArchive,
+    executeBulkDelete,
+  } = useBulkOperations({
+    onComplete: selection.clearSelection,
+  });
+
+  // Confirmation dialog
+  const confirmAction = useConfirmAction({
+    onConfirm: (action) => {
+      if (action.type === "remove") {
+        removeMutation.mutate({ trackedDomainId: action.domainId });
+      } else if (action.type === "archive") {
+        archiveMutation.mutate({ trackedDomainId: action.domainId });
+      } else if (action.type === "bulk-archive") {
+        void executeBulkArchive(action.domainIds);
+      } else if (action.type === "bulk-delete") {
+        void executeBulkDelete(action.domainIds);
+      }
+    },
+  });
+
   // Handle ?upgraded=true query param (after nuqs adapter)
   const searchParams = useSearchParams();
   useEffect(() => {
@@ -150,9 +155,6 @@ export function DashboardClient() {
 
   const handleVerify = useCallback(
     (domain: TrackedDomainWithDetails) => {
-      // Navigate to add-domain with resume params
-      // Only ID is strictly required for resumption;
-      // other params can be helpful hints but should be validated/fetched server-side
       const params = new URLSearchParams({
         resume: "true",
         id: domain.id,
@@ -169,114 +171,47 @@ export function DashboardClient() {
     [router],
   );
 
-  // Show confirmation dialog before removing
-  const handleRemove = useCallback((id: string, domainName: string) => {
-    setConfirmAction({ type: "remove", domainId: id, domainName });
-  }, []);
+  const handleRemove = useCallback(
+    (id: string, domainName: string) => {
+      confirmAction.requestConfirmation({
+        type: "remove",
+        domainId: id,
+        domainName,
+      });
+    },
+    [confirmAction],
+  );
 
-  // Show confirmation dialog before archiving
-  const handleArchive = useCallback((id: string, domainName: string) => {
-    setConfirmAction({ type: "archive", domainId: id, domainName });
-  }, []);
+  const handleArchive = useCallback(
+    (id: string, domainName: string) => {
+      confirmAction.requestConfirmation({
+        type: "archive",
+        domainId: id,
+        domainName,
+      });
+    },
+    [confirmAction],
+  );
 
-  // Bulk archive: show confirmation dialog
   const handleBulkArchive = useCallback(() => {
     const domainIds = selection.selectedArray;
     if (domainIds.length === 0) return;
-    setConfirmAction({
+    confirmAction.requestConfirmation({
       type: "bulk-archive",
       domainIds,
       count: domainIds.length,
     });
-  }, [selection.selectedArray]);
+  }, [selection.selectedArray, confirmAction]);
 
-  // Bulk delete: show confirmation dialog
   const handleBulkDelete = useCallback(() => {
     const domainIds = selection.selectedArray;
     if (domainIds.length === 0) return;
-    setConfirmAction({
+    confirmAction.requestConfirmation({
       type: "bulk-delete",
       domainIds,
       count: domainIds.length,
     });
-  }, [selection.selectedArray]);
-
-  // Execute bulk archive
-  const executeBulkArchive = useCallback(
-    async (domainIds: string[]) => {
-      setIsBulkArchiving(true);
-      try {
-        const result = await bulkArchiveMutation.mutateAsync({
-          trackedDomainIds: domainIds,
-        });
-        selection.clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Archived ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
-      } catch {
-        // Error handled in mutation onError
-      } finally {
-        setIsBulkArchiving(false);
-      }
-    },
-    [bulkArchiveMutation, selection],
-  );
-
-  // Execute bulk delete
-  const executeBulkDelete = useCallback(
-    async (domainIds: string[]) => {
-      setIsBulkDeleting(true);
-      try {
-        const result = await bulkDeleteMutation.mutateAsync({
-          trackedDomainIds: domainIds,
-        });
-        selection.clearSelection();
-        if (result.failedCount === 0) {
-          toast.success(
-            `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
-          );
-        } else {
-          toast.warning(
-            `Deleted ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
-          );
-        }
-      } catch {
-        // Error handled in mutation onError
-      } finally {
-        setIsBulkDeleting(false);
-      }
-    },
-    [bulkDeleteMutation, selection],
-  );
-
-  // Execute the confirmed action
-  const handleConfirmAction = useCallback(() => {
-    if (!confirmAction) return;
-
-    if (confirmAction.type === "remove") {
-      removeMutation.mutate({ trackedDomainId: confirmAction.domainId });
-    } else if (confirmAction.type === "archive") {
-      archiveMutation.mutate({ trackedDomainId: confirmAction.domainId });
-    } else if (confirmAction.type === "bulk-archive") {
-      void executeBulkArchive(confirmAction.domainIds);
-    } else if (confirmAction.type === "bulk-delete") {
-      void executeBulkDelete(confirmAction.domainIds);
-    }
-
-    setConfirmAction(null);
-  }, [
-    confirmAction,
-    removeMutation,
-    archiveMutation,
-    executeBulkArchive,
-    executeBulkDelete,
-  ]);
+  }, [selection.selectedArray, confirmAction]);
 
   const handleUnarchive = useCallback(
     (id: string) => {
@@ -284,51 +219,6 @@ export function DashboardClient() {
     },
     [unarchiveMutation],
   );
-
-  // Get confirmation dialog content based on action type
-  const getConfirmDialogContent = () => {
-    if (!confirmAction) {
-      return {
-        title: "",
-        description: "",
-        confirmLabel: "",
-        variant: "default" as const,
-      };
-    }
-
-    switch (confirmAction.type) {
-      case "remove":
-        return {
-          title: "Remove domain?",
-          description: `Are you sure you want to stop tracking ${confirmAction.domainName}?`,
-          confirmLabel: "Remove",
-          variant: "destructive" as const,
-        };
-      case "archive":
-        return {
-          title: "Archive domain?",
-          description: `Are you sure you want to archive ${confirmAction.domainName}? You can reactivate it later from the Archived section.`,
-          confirmLabel: "Archive",
-          variant: "default" as const,
-        };
-      case "bulk-archive":
-        return {
-          title: `Archive ${confirmAction.count} domains?`,
-          description: `Are you sure you want to archive ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}? You can reactivate them later from the Archived section.`,
-          confirmLabel: "Archive All",
-          variant: "default" as const,
-        };
-      case "bulk-delete":
-        return {
-          title: `Delete ${confirmAction.count} domains?`,
-          description: `Are you sure you want to stop tracking ${confirmAction.count} domain${confirmAction.count === 1 ? "" : "s"}?`,
-          confirmLabel: "Delete All",
-          variant: "destructive" as const,
-        };
-    }
-  };
-
-  const confirmDialogContent = getConfirmDialogContent();
 
   // Show loading until we have both query data AND session data
   const isLoading =
@@ -472,33 +362,14 @@ export function DashboardClient() {
       )}
 
       {/* Confirmation dialog for destructive actions */}
-      <AlertDialog
-        open={confirmAction !== null}
+      <ConfirmActionDialog
+        open={confirmAction.isOpen}
         onOpenChange={(open) => {
-          if (!open) setConfirmAction(null);
+          if (!open) confirmAction.cancel();
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmDialogContent.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDialogContent.description}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmAction}
-              variant={confirmDialogContent.variant}
-              className="cursor-pointer"
-            >
-              {confirmDialogContent.confirmLabel}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        content={confirmAction.dialogContent}
+        onConfirm={confirmAction.confirm}
+      />
     </div>
   );
 }
