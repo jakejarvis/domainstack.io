@@ -734,30 +734,29 @@ export interface TrackedDomainCounts {
 
 /**
  * Count active and archived tracked domains for a user.
- * Runs both count queries in parallel for efficiency.
- * More efficient than calling countActiveTrackedDomainsForUser and
- * countArchivedTrackedDomainsForUser sequentially.
+ * Uses a single query with conditional aggregation for efficiency.
+ *
+ * Optimized: Reduces from 2 parallel queries to 1 query with conditional counts.
  */
 export async function countTrackedDomainsByStatus(
   userId: string,
 ): Promise<TrackedDomainCounts> {
-  const userCondition = eq(userTrackedDomains.userId, userId);
-
-  // Run both count queries in parallel using type-safe Drizzle functions
-  const [activeResult, archivedResult] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(userTrackedDomains)
-      .where(and(userCondition, isNull(userTrackedDomains.archivedAt))),
-    db
-      .select({ count: count() })
-      .from(userTrackedDomains)
-      .where(and(userCondition, isNotNull(userTrackedDomains.archivedAt))),
-  ]);
+  // Single query with conditional aggregation
+  const [result] = await db
+    .select({
+      active: count(
+        sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NULL THEN 1 END`,
+      ),
+      archived: count(
+        sql`CASE WHEN ${userTrackedDomains.archivedAt} IS NOT NULL THEN 1 END`,
+      ),
+    })
+    .from(userTrackedDomains)
+    .where(eq(userTrackedDomains.userId, userId));
 
   return {
-    active: activeResult[0]?.count ?? 0,
-    archived: archivedResult[0]?.count ?? 0,
+    active: result?.active ?? 0,
+    archived: result?.archived ?? 0,
   };
 }
 

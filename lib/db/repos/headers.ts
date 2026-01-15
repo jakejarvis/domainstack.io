@@ -1,10 +1,9 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { httpHeaders } from "@/lib/db/schema";
+import { domains, httpHeaders } from "@/lib/db/schema";
 import { normalizeHeaders } from "@/lib/headers-utils";
 import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
-import { findDomainByName } from "./domains";
 import type { CacheResult } from "./types";
 
 export interface ReplaceHeadersParams {
@@ -51,25 +50,25 @@ export async function replaceHeaders(params: ReplaceHeadersParams) {
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `fetchHeadersStep` from workflows/shared/headers.
+ *
+ * Optimized: Uses a single query with JOIN to fetch domain and headers,
+ * reducing from 2 round trips to 1.
  */
 export async function getCachedHeaders(
   domain: string,
 ): Promise<CacheResult<HeadersResponse>> {
   const now = Date.now();
 
-  const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    return { data: null, stale: false, expiresAt: null };
-  }
-
+  // Single query: JOIN domains -> httpHeaders
   const [row] = await db
     .select({
       headers: httpHeaders.headers,
       status: httpHeaders.status,
       expiresAt: httpHeaders.expiresAt,
     })
-    .from(httpHeaders)
-    .where(eq(httpHeaders.domainId, existingDomain.id))
+    .from(domains)
+    .innerJoin(httpHeaders, eq(httpHeaders.domainId, domains.id))
+    .where(eq(domains.name, domain))
     .limit(1);
 
   if (!row) {

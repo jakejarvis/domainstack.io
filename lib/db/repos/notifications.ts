@@ -306,18 +306,30 @@ export async function hasRecentNotification(
 }
 
 /**
- * Get all notifications for a tracked domain.
+ * Get notifications for a tracked domain with optional pagination.
+ *
+ * @param trackedDomainId - The tracked domain ID to fetch notifications for
+ * @param limit - Maximum number of notifications to return (default: 100, use undefined for no limit)
+ * @param offset - Number of notifications to skip (default: 0)
  */
 export async function getNotificationsForTrackedDomain(
   trackedDomainId: string,
+  limit?: number,
+  offset = 0,
 ) {
-  const rows = await db
+  let query = db
     .select()
     .from(notifications)
     .where(eq(notifications.trackedDomainId, trackedDomainId))
-    .orderBy(desc(notifications.sentAt));
+    .orderBy(desc(notifications.sentAt))
+    .offset(offset)
+    .$dynamic();
 
-  return rows;
+  if (limit !== undefined) {
+    query = query.limit(limit);
+  }
+
+  return query;
 }
 
 /**

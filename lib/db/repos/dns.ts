@@ -4,10 +4,9 @@ import { eq, inArray, sql } from "drizzle-orm";
 import type { DnsRecordType } from "@/lib/constants/dns";
 import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
-import { dnsRecords, type dnsRecordType } from "@/lib/db/schema";
+import { dnsRecords, type dnsRecordType, domains } from "@/lib/db/schema";
 import { deduplicateDnsRecords, makeDnsRecordKey } from "@/lib/dns-utils";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
-import { findDomainByName } from "./domains";
 import type { CacheResult } from "./types";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;
@@ -140,6 +139,9 @@ export async function replaceDns(params: UpsertDnsParams) {
  *
  * Note: This queries the database cache. For fetching fresh data from
  * external DNS providers, use `fetchDnsRecordsStep` from workflows/shared/dns.
+ *
+ * Optimized: Uses a single query with JOIN to fetch domain and DNS records,
+ * reducing from 2 round trips to 1.
  */
 export async function getCachedDns(
   domain: string,
@@ -147,12 +149,7 @@ export async function getCachedDns(
   const nowMs = Date.now();
   const types = DNS_RECORD_TYPES;
 
-  const existingDomain = await findDomainByName(domain);
-
-  if (!existingDomain) {
-    return { data: null, stale: false, expiresAt: null };
-  }
-
+  // Single query: JOIN domains -> dnsRecords
   const rows = await db
     .select({
       type: dnsRecords.type,
@@ -164,8 +161,9 @@ export async function getCachedDns(
       resolver: dnsRecords.resolver,
       expiresAt: dnsRecords.expiresAt,
     })
-    .from(dnsRecords)
-    .where(eq(dnsRecords.domainId, existingDomain.id));
+    .from(domains)
+    .innerJoin(dnsRecords, eq(dnsRecords.domainId, domains.id))
+    .where(eq(domains.name, domain));
 
   if (rows.length === 0) {
     return { data: null, stale: false, expiresAt: null };

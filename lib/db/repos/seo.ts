@@ -2,7 +2,7 @@ import "server-only";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { seo as seoTable } from "@/lib/db/schema";
+import { blockedDomains, domains, seo as seoTable } from "@/lib/db/schema";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -10,7 +10,6 @@ import type {
   SeoResponse,
   TwitterMeta,
 } from "@/lib/types/domain/seo";
-import { findDomainByName } from "./domains";
 import type { CacheResult } from "./types";
 
 type SeoInsert = InferInsertModel<typeof seoTable>;
@@ -28,18 +27,16 @@ export async function upsertSeo(params: SeoInsert) {
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `fetchSeoStep` from workflows/shared/seo.
+ *
+ * Optimized: Uses a single query with JOINs to fetch domain, SEO data,
+ * and blocklist status, reducing from 3 round trips to 1.
  */
 export async function getCachedSeo(
   domain: string,
 ): Promise<CacheResult<SeoResponse>> {
   const nowMs = Date.now();
 
-  const existingDomain = await findDomainByName(domain);
-
-  if (!existingDomain) {
-    return { data: null, stale: false, expiresAt: null };
-  }
-
+  // Single query: JOIN domains -> seo, LEFT JOIN blockedDomains for blocklist check
   const [row] = await db
     .select({
       sourceFinalUrl: seoTable.sourceFinalUrl,
@@ -55,9 +52,14 @@ export async function getCachedSeo(
       robots: seoTable.robots,
       errors: seoTable.errors,
       expiresAt: seoTable.expiresAt,
+      // Will be non-null if domain is in blocklist
+      isBlocked: blockedDomains.domain,
     })
-    .from(seoTable)
-    .where(eq(seoTable.domainId, existingDomain.id));
+    .from(domains)
+    .innerJoin(seoTable, eq(seoTable.domainId, domains.id))
+    .leftJoin(blockedDomains, eq(domains.name, blockedDomains.domain))
+    .where(eq(domains.name, domain))
+    .limit(1);
 
   if (!row) {
     return { data: null, stale: false, expiresAt: null };
@@ -66,10 +68,8 @@ export async function getCachedSeo(
   const { expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
 
-  // Check blocklist for cached OG images
-  const { isDomainBlocked } = await import("./blocked-domains");
-  const blocked =
-    row.previewImageUploadedUrl && (await isDomainBlocked(domain));
+  // Check blocklist for cached OG images (isBlocked is non-null if domain is blocked)
+  const blocked = row.previewImageUploadedUrl && row.isBlocked !== null;
 
   const preview = row.canonicalUrl
     ? {

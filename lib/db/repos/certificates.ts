@@ -15,7 +15,6 @@ import type {
   CertificatesResponse,
 } from "@/lib/types/domain/certificates";
 import type { NotificationOverrides } from "@/lib/types/notifications";
-import { findDomainByName } from "./domains";
 import type { CacheResult } from "./types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
@@ -58,17 +57,16 @@ export async function replaceCertificates(params: UpsertCertificatesParams) {
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `fetchCertificateChainStep` from workflows/shared/certificates.
+ *
+ * Optimized: Uses a single query with JOINs to fetch domain and certificates,
+ * reducing from 2 round trips to 1.
  */
 export async function getCachedCertificates(
   domain: string,
 ): Promise<CacheResult<CertificatesResponse>> {
   const nowMs = Date.now();
 
-  const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    return { data: null, stale: false, expiresAt: null };
-  }
-
+  // Single query: JOIN domains -> certificates with provider lookup
   const existing = await db
     .select({
       issuer: certificates.issuer,
@@ -81,9 +79,10 @@ export async function getCachedCertificates(
       caProviderName: providers.name,
       expiresAt: certificates.expiresAt,
     })
-    .from(certificates)
+    .from(domains)
+    .innerJoin(certificates, eq(certificates.domainId, domains.id))
     .leftJoin(providers, eq(certificates.caProviderId, providers.id))
-    .where(eq(certificates.domainId, existingDomain.id))
+    .where(eq(domains.name, domain))
     .orderBy(certificates.validTo);
 
   if (existing.length === 0) {

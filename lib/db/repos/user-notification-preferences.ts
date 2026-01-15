@@ -28,27 +28,29 @@ const DEFAULT_PREFERENCES = {
 /**
  * Get user notification preferences, creating default preferences if they don't exist.
  *
- * Uses atomic insert-or-ignore pattern to avoid race conditions when multiple
- * concurrent requests try to create preferences for a new user.
+ * Uses atomic upsert with RETURNING to handle the get-or-create pattern in a single
+ * query, reducing from 2 round trips to 1.
+ *
+ * Optimized: Uses onConflictDoUpdate with a no-op SET to return the existing row
+ * when it already exists, avoiding a separate SELECT query.
  */
 export async function getOrCreateUserNotificationPreferences(
   userId: string,
 ): Promise<UserNotificationPreferencesData> {
-  // Atomic: insert default preferences if not exists (does nothing on conflict)
-  await db
+  // Atomic upsert with RETURNING: insert if not exists, or return existing row
+  // The onConflictDoUpdate with set: { userId } is a no-op that allows RETURNING to work
+  const [row] = await db
     .insert(userNotificationPreferences)
     .values({
       userId,
       ...DEFAULT_PREFERENCES,
     })
-    .onConflictDoNothing({ target: userNotificationPreferences.userId });
-
-  // Now guaranteed to exist - fetch and return
-  const [row] = await db
-    .select()
-    .from(userNotificationPreferences)
-    .where(eq(userNotificationPreferences.userId, userId))
-    .limit(1);
+    .onConflictDoUpdate({
+      target: userNotificationPreferences.userId,
+      // No-op update to allow RETURNING to work for existing rows
+      set: { userId },
+    })
+    .returning();
 
   if (!row) {
     throw new Error(

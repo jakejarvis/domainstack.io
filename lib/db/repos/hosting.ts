@@ -4,11 +4,11 @@ import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/lib/db/client";
 import {
+  domains,
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
-import { findDomainByName } from "./domains";
 import type { CacheResult } from "./types";
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;
@@ -19,21 +19,20 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
  *
  * Note: This queries the database cache. For fetching fresh data,
  * use `hostingOrchestrationWorkflow` from workflows/hosting-orchestration.
+ *
+ * Optimized: Uses a single query with JOINs to fetch domain and hosting data,
+ * reducing from 2 round trips to 1.
  */
 export async function getCachedHosting(
   domain: string,
 ): Promise<CacheResult<HostingResponse>> {
   const now = Date.now();
 
-  const existingDomain = await findDomainByName(domain);
-  if (!existingDomain) {
-    return { data: null, stale: false, expiresAt: null };
-  }
-
   const hp = alias(providersTable, "hp");
   const ep = alias(providersTable, "ep");
   const dp = alias(providersTable, "dp");
 
+  // Single query: JOIN domains -> hosting with provider lookups
   const [row] = await db
     .select({
       hostingProviderId: hp.id,
@@ -53,11 +52,12 @@ export async function getCachedHosting(
       geoLon: hostingTable.geoLon,
       expiresAt: hostingTable.expiresAt,
     })
-    .from(hostingTable)
+    .from(domains)
+    .innerJoin(hostingTable, eq(hostingTable.domainId, domains.id))
     .leftJoin(hp, eq(hp.id, hostingTable.hostingProviderId))
     .leftJoin(ep, eq(ep.id, hostingTable.emailProviderId))
     .leftJoin(dp, eq(dp.id, hostingTable.dnsProviderId))
-    .where(eq(hostingTable.domainId, existingDomain.id))
+    .where(eq(domains.name, domain))
     .limit(1);
 
   if (!row) {
