@@ -133,7 +133,7 @@ export const verifications = pgTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("verifications_identifier_idx").on(table.identifier)],
+  // Note: identifier index was removed as unused - verifications are queried by value (token), not identifier
 );
 
 export const userRelations = relations(users, ({ many }) => ({
@@ -224,7 +224,7 @@ export const userTrackedDomains = pgTable(
     index("i_tracked_domains_domain").on(t.domainId),
     index("i_tracked_domains_verified").on(t.verified),
     index("i_tracked_domains_status").on(t.verificationStatus),
-    index("i_tracked_domains_archived").on(t.archivedAt),
+    // Note: i_tracked_domains_archived was removed as redundant - covered by composite index below
     // Composite index for all userId queries (replaces single-column index):
     // Supports: WHERE userId = ? [AND archivedAt IS NULL] [ORDER BY createdAt DESC, id DESC]
     // Left-prefix property makes single-column i_tracked_domains_user redundant
@@ -275,6 +275,13 @@ export const notifications = pgTable(
     index("idx_notifications_user_read").on(t.userId, t.readAt),
     // Index for channels filtering
     index("idx_notifications_channels").using("gin", t.channels),
+    // Index for tracked domain queries (hasRecentNotification, getNotificationsForTrackedDomain, etc.)
+    index("idx_notifications_tracked_domain").on(t.trackedDomainId),
+    // Composite index for notification deduplication checks (trackedDomainId + type)
+    index("idx_notifications_tracked_domain_type").on(
+      t.trackedDomainId,
+      t.type,
+    ),
     // Ensure channels only contains valid values
     check(
       "ck_notifications_channels",
@@ -423,6 +430,7 @@ export const registrations = pgTable(
   (t) => [
     index("i_reg_registrar").on(t.registrarProviderId),
     index("i_reg_expires").on(t.expiresAt),
+    index("i_reg_expiration_date").on(t.expirationDate),
   ],
 );
 
@@ -534,44 +542,48 @@ export const hosting = pgTable(
 );
 
 // SEO (latest)
-export const seo = pgTable("seo", {
-  domainId: uuid("domain_id")
-    .primaryKey()
-    .references(() => domains.id, { onDelete: "cascade" }),
-  sourceFinalUrl: text("source_final_url"),
-  sourceStatus: integer("source_status"),
-  metaOpenGraph: jsonb("meta_open_graph")
-    .$type<OpenGraphMeta>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  metaTwitter: jsonb("meta_twitter")
-    .$type<TwitterMeta>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  metaGeneral: jsonb("meta_general")
-    .$type<GeneralMeta>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  previewTitle: text("preview_title"),
-  previewDescription: text("preview_description"),
-  previewImageUrl: text("preview_image_url"),
-  previewImageUploadedUrl: text("preview_image_uploaded_url"),
-  canonicalUrl: text("canonical_url"),
-  robots: jsonb("robots")
-    .$type<RobotsTxt>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  robotsSitemaps: jsonb("robots_sitemaps")
-    .$type<string[]>()
-    .notNull()
-    .default(sql`'[]'::jsonb`),
-  errors: jsonb("errors")
-    .$type<{ html?: string; robots?: string }>()
-    .notNull()
-    .default(sql`'{}'::jsonb`),
-  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-});
+export const seo = pgTable(
+  "seo",
+  {
+    domainId: uuid("domain_id")
+      .primaryKey()
+      .references(() => domains.id, { onDelete: "cascade" }),
+    sourceFinalUrl: text("source_final_url"),
+    sourceStatus: integer("source_status"),
+    metaOpenGraph: jsonb("meta_open_graph")
+      .$type<OpenGraphMeta>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    metaTwitter: jsonb("meta_twitter")
+      .$type<TwitterMeta>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    metaGeneral: jsonb("meta_general")
+      .$type<GeneralMeta>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    previewTitle: text("preview_title"),
+    previewDescription: text("preview_description"),
+    previewImageUrl: text("preview_image_url"),
+    previewImageUploadedUrl: text("preview_image_uploaded_url"),
+    canonicalUrl: text("canonical_url"),
+    robots: jsonb("robots")
+      .$type<RobotsTxt>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    robotsSitemaps: jsonb("robots_sitemaps")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    errors: jsonb("errors")
+      .$type<{ html?: string; robots?: string }>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("i_seo_expires").on(t.expiresAt)],
+);
 
 // Favicons
 export const favicons = pgTable(
@@ -711,9 +723,7 @@ export const calendarFeeds = pgTable(
   (t) => [
     // One feed per user
     unique("u_calendar_feeds_user").on(t.userId),
-    // Token must be unique for lookups
+    // Token must be unique for lookups (unique constraint creates index automatically)
     unique("u_calendar_feeds_token").on(t.token),
-    // Fast token validation
-    index("i_calendar_feeds_token").on(t.token),
   ],
 );

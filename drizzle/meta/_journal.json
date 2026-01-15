@@ -120,6 +120,13 @@
       "when": 1768244105551,
       "tag": "0016_sudden_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1768451634602,
+      "tag": "0017_special_blonde_phantom",
+      "breakpoints": true
     }
   ]
 }
