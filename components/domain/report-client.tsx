@@ -37,15 +37,29 @@ function AllSkeletonsExceptRegistration() {
 }
 
 /**
+ * Query options to disable automatic refetching and retries.
+ * Report data is fetched once on page load and doesn't need continuous revalidation.
+ * Retries are disabled so errors surface immediately to the error boundary.
+ */
+const staticQueryOptions = {
+  staleTime: Number.POSITIVE_INFINITY,
+  retry: false,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+/**
  * Individual section components that fetch their own data.
  * Each is wrapped in its own Suspense + ErrorBoundary for independent loading/error states.
  */
 
 function SuspendedHostingSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getHosting.queryOptions({ domain }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getHosting.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.hosting} error={data.error} />;
@@ -55,9 +69,10 @@ function SuspendedHostingSection({ domain }: { domain: string }) {
 
 function SuspendedDnsSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getDnsRecords.queryOptions({ domain }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getDnsRecords.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.dns} error={data.error} />;
@@ -67,9 +82,10 @@ function SuspendedDnsSection({ domain }: { domain: string }) {
 
 function SuspendedCertificatesSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getCertificates.queryOptions({ domain }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getCertificates.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
 
   if (!data.success) {
     return (
@@ -81,9 +97,10 @@ function SuspendedCertificatesSection({ domain }: { domain: string }) {
 
 function SuspendedHeadersSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getHeaders.queryOptions({ domain }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getHeaders.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.headers} error={data.error} />;
@@ -93,9 +110,10 @@ function SuspendedHeadersSection({ domain }: { domain: string }) {
 
 function SuspendedSeoSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
-    trpc.domain.getSeo.queryOptions({ domain }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getSeo.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
 
   if (!data.success) {
     return <SectionFailedAlert section={sections.seo} error={data.error} />;
@@ -114,9 +132,10 @@ function SuspendedSeoSection({ domain }: { domain: string }) {
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
 
-  const { data: registration, isLoading: isRegistrationLoading } = useQuery(
-    trpc.domain.getRegistration.queryOptions({ domain }),
-  );
+  const { data: registration, isLoading: isRegistrationLoading } = useQuery({
+    ...trpc.domain.getRegistration.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
   const domainId = registration?.data?.domainId;
   const isRegistered = registration?.data?.isRegistered === true;
 
