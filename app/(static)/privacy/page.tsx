@@ -20,10 +20,10 @@ export default function PrivacyPage() {
       <section id="introduction">
         <h2>Introduction</h2>
         <p>
-          Domainstack (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;)
-          respects your privacy and is committed to protecting your personal
-          data. This privacy policy explains how we collect, use, and safeguard
-          your information when you use our domain intelligence platform.
+          Domainstack ("we," "our," or "us") respects your privacy and is
+          committed to protecting your personal data. This privacy policy
+          explains how we collect, use, and safeguard your information when you
+          use our domain intelligence platform.
         </p>
       </section>
 

@@ -20,9 +20,9 @@ export default function TermsPage() {
       <section id="acceptance-of-terms">
         <h2>Acceptance of Terms</h2>
         <p>
-          By accessing or using Domainstack (&quot;the Service&quot;), you agree
-          to be bound by these Terms of Service. If you do not agree to these
-          terms, please do not use the Service.
+          By accessing or using Domainstack ("the Service"), you agree to be
+          bound by these Terms of Service. If you do not agree to these terms,
+          please do not use the Service.
         </p>
       </section>
 
@@ -224,9 +224,9 @@ export default function TermsPage() {
       <section id="disclaimer-of-warranties">
         <h2>Disclaimer of Warranties</h2>
         <p>
-          THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot;
-          WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT WARRANT
-          THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.
+          THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES
+          OF ANY KIND, EXPRESS OR IMPLIED. WE DO NOT WARRANT THAT THE SERVICE
+          WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.
         </p>
       </section>
 

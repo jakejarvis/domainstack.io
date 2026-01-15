@@ -130,11 +130,11 @@ const faqSections = [
         question: "How do I track a domain?",
         answer: (
           <p>
-            From your dashboard, click &quot;Add Domain&quot; and enter the
-            domain name you want to track. You&apos;ll need to verify ownership
-            before tracking becomes active. Once verified, we&apos;ll monitor
-            the domain and send you notifications about critical changes (like
-            DNS updates) and before it or its certificate expires.
+            From your dashboard, click "Add Domain" and enter the domain name
+            you want to track. You&apos;ll need to verify ownership before
+            tracking becomes active. Once verified, we&apos;ll monitor the
+            domain and send you notifications about critical changes (like DNS
+            updates) and before it or its certificate expires.
           </p>
         ),
       },
@@ -357,7 +357,7 @@ const faqSections = [
         question: "How do I sign up?",
         answer: (
           <p>
-            Click &quot;Sign in&quot; in the header (or{" "}
+            Click "Sign in" in the header (or{" "}
             <Link href="/login">click here</Link>) and authenticate with one of
             the supported services. We use OAuth so you don&apos;t need to worry
             about a password. You can always change your linked account later in
@@ -369,10 +369,9 @@ const faqSections = [
         question: "How do I delete my account?",
         answer: (
           <p>
-            Go to your dashboard settings and scroll to the &quot;Danger
-            Zone&quot; section. Click &quot;Delete Account&quot; and confirm to
-            permanently remove your account and all associated data. This action
-            cannot be undone.
+            Go to your dashboard settings and scroll to the "Danger Zone"
+            section. Click "Delete Account" and confirm to permanently remove
+            your account and all associated data. This action cannot be undone.
           </p>
         ),
       },
