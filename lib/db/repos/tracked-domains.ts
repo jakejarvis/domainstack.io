@@ -199,6 +199,8 @@ export async function findTrackedDomainWithDomainName(
 }
 
 // Shared row type for the complex tracked domains query
+// Note: Certificate data (caId, caName, caDomain, certificateExpiryDate) is fetched
+// separately via fetchEarliestCertificatesForDomains to avoid full table scan
 interface TrackedDomainRow {
   id: string;
   userId: string;
@@ -229,10 +231,6 @@ interface TrackedDomainRow {
   emailId: string | null;
   emailName: string | null;
   emailDomain: string | null;
-  caId: string | null;
-  caName: string | null;
-  caDomain: string | null;
-  certificateExpiryDate: Date | null;
   registrationWhoisServer: string | null;
   registrationRdapServers: string[] | null;
   registrationSource: "rdap" | "whois" | null;
@@ -353,12 +351,8 @@ function transformToTrackedDomainWithDetails(
       domain: row.hostingDomain,
     },
     email: { id: row.emailId, name: row.emailName, domain: row.emailDomain },
-    ca: {
-      id: row.caId,
-      name: row.caName,
-      domain: row.caDomain,
-      certificateExpiryDate: row.certificateExpiryDate,
-    },
+    // Certificate data is attached separately via attachCertificates
+    ca: { ...EMPTY_CA_INFO },
   };
 }
 
@@ -477,29 +471,93 @@ async function fetchDnsRecordsForDomains(domainIds: string[]): Promise<
 }
 
 /**
- * Attach DNS records to tracked domain results.
+ * Fetch the earliest expiring certificate for each domain.
+ * Returns a map of domainId -> { caProviderId, caProviderName, caProviderDomain, validTo }
  */
-async function attachDnsRecords(
-  domains: TrackedDomainWithDetails[],
-): Promise<TrackedDomainWithDetails[]> {
-  if (domains.length === 0) {
-    return domains;
+async function fetchEarliestCertificatesForDomains(
+  domainIds: string[],
+): Promise<
+  Map<
+    string,
+    {
+      caProviderId: string | null;
+      caProviderName: string | null;
+      caProviderDomain: string | null;
+      validTo: Date;
+    }
+  >
+> {
+  if (domainIds.length === 0) {
+    return new Map();
   }
 
-  const domainIds = domains.map((d) => d.domainId);
-  const recordsByDomain = await fetchDnsRecordsForDomains(domainIds);
+  // Use DISTINCT ON to get the earliest expiring certificate per domain
+  // This is more efficient than a subquery in the main query because
+  // it only scans certificates for the specific domains we need
+  const rows = await db
+    .selectDistinctOn([certificates.domainId], {
+      domainId: certificates.domainId,
+      caProviderId: providers.id,
+      caProviderName: providers.name,
+      caProviderDomain: providers.domain,
+      validTo: certificates.validTo,
+    })
+    .from(certificates)
+    .leftJoin(providers, eq(certificates.caProviderId, providers.id))
+    .where(inArray(certificates.domainId, domainIds))
+    .orderBy(certificates.domainId, asc(certificates.validTo));
 
+  const result = new Map<
+    string,
+    {
+      caProviderId: string | null;
+      caProviderName: string | null;
+      caProviderDomain: string | null;
+      validTo: Date;
+    }
+  >();
+
+  for (const row of rows) {
+    result.set(row.domainId, {
+      caProviderId: row.caProviderId,
+      caProviderName: row.caProviderName,
+      caProviderDomain: row.caProviderDomain,
+      validTo: row.validTo,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Attach certificate data to tracked domain results.
+ */
+function attachCertificates(
+  domains: TrackedDomainWithDetails[],
+  certificatesByDomain: Map<
+    string,
+    {
+      caProviderId: string | null;
+      caProviderName: string | null;
+      caProviderDomain: string | null;
+      validTo: Date;
+    }
+  >,
+): TrackedDomainWithDetails[] {
   return domains.map((domain) => {
-    const records = recordsByDomain.get(domain.domainId);
-    if (!records) {
+    const cert = certificatesByDomain.get(domain.domainId);
+    if (!cert) {
       return domain;
     }
 
     return {
       ...domain,
-      hosting: { ...domain.hosting, records: records.hosting },
-      email: { ...domain.email, records: records.email },
-      dns: { ...domain.dns, records: records.dns },
+      ca: {
+        id: cert.caProviderId,
+        name: cert.caProviderName,
+        domain: cert.caProviderDomain,
+        certificateExpiryDate: cert.validTo,
+      },
     };
   });
 }
@@ -514,6 +572,10 @@ interface QueryTrackedDomainsOptions {
 /**
  * Internal helper to query tracked domains with full details.
  * Centralizes the complex select/join logic used by multiple public functions.
+ *
+ * Certificate data is fetched separately to avoid a full table scan of the
+ * certificates table. The subquery approach was causing PostgreSQL to
+ * materialize ALL certificates before joining, even when querying a single domain.
  */
 async function queryTrackedDomainsWithDetails(
   whereCondition: SQL,
@@ -529,19 +591,6 @@ async function queryTrackedDomainsWithDetails(
   const dnsProvider = alias(providers, "dns_provider");
   const hostingProvider = alias(providers, "hosting_provider");
   const emailProvider = alias(providers, "email_provider");
-  const caProvider = alias(providers, "ca_provider");
-
-  // Subquery to get the leaf certificate per domain (expires first)
-  // Leaf certificates expire before intermediate/root certificates in the chain
-  const latestCertificate = db
-    .selectDistinctOn([certificates.domainId], {
-      domainId: certificates.domainId,
-      caProviderId: certificates.caProviderId,
-      validTo: certificates.validTo,
-    })
-    .from(certificates)
-    .orderBy(certificates.domainId, certificates.validTo)
-    .as("latest_certificate");
 
   const rows = await db
     .select({
@@ -574,10 +623,6 @@ async function queryTrackedDomainsWithDetails(
       emailId: emailProvider.id,
       emailName: emailProvider.name,
       emailDomain: emailProvider.domain,
-      caId: caProvider.id,
-      caName: caProvider.name,
-      caDomain: caProvider.domain,
-      certificateExpiryDate: latestCertificate.validTo,
       registrationWhoisServer: registrations.whoisServer,
       registrationRdapServers: registrations.rdapServers,
       registrationSource: registrations.source,
@@ -599,16 +644,42 @@ async function queryTrackedDomainsWithDetails(
       eq(hosting.hostingProviderId, hostingProvider.id),
     )
     .leftJoin(emailProvider, eq(hosting.emailProviderId, emailProvider.id))
-    .leftJoin(latestCertificate, eq(domains.id, latestCertificate.domainId))
-    .leftJoin(caProvider, eq(latestCertificate.caProviderId, caProvider.id))
     .where(whereCondition)
     .orderBy(orderByColumn);
 
-  const domainsWithoutRecords = rows.map(transformToTrackedDomainWithDetails);
+  let domainsResult = rows.map(transformToTrackedDomainWithDetails);
 
-  return includeDnsRecords
-    ? attachDnsRecords(domainsWithoutRecords)
-    : domainsWithoutRecords;
+  if (domainsResult.length === 0) {
+    return domainsResult;
+  }
+
+  // Fetch certificates and DNS records in parallel for efficiency
+  const domainIds = domainsResult.map((d) => d.domainId);
+  const [certificatesByDomain, dnsRecordsByDomain] = await Promise.all([
+    fetchEarliestCertificatesForDomains(domainIds),
+    includeDnsRecords ? fetchDnsRecordsForDomains(domainIds) : null,
+  ]);
+
+  // Attach certificate data
+  domainsResult = attachCertificates(domainsResult, certificatesByDomain);
+
+  // Attach DNS records if requested
+  if (dnsRecordsByDomain) {
+    domainsResult = domainsResult.map((domain) => {
+      const records = dnsRecordsByDomain.get(domain.domainId);
+      if (!records) {
+        return domain;
+      }
+      return {
+        ...domain,
+        hosting: { ...domain.hosting, records: records.hosting },
+        email: { ...domain.email, records: records.email },
+        dns: { ...domain.dns, records: records.dns },
+      };
+    });
+  }
+
+  return domainsResult;
 }
 
 export interface GetTrackedDomainsOptions {
