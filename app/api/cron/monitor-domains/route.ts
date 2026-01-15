@@ -3,7 +3,7 @@ import { start } from "workflow/api";
 import { getMonitoredSnapshotIds } from "@/lib/db/repos/snapshots";
 import { createLogger } from "@/lib/logger/server";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
-import { monitorDomainWorkflow } from "@/workflows/monitor-domain";
+import { detectChangesWorkflow } from "@/workflows/detect-changes";
 
 const logger = createLogger({ source: "cron/monitor-domains" });
 
@@ -41,13 +41,13 @@ export async function GET(request: Request) {
       const batchResults = await Promise.all(
         batch.map(async (id) => {
           try {
-            const run = await start(monitorDomainWorkflow, [
+            const run = await start(detectChangesWorkflow, [
               { trackedDomainId: id },
             ]);
             // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
             await withConcurrencyHandling(run.returnValue, {
               trackedDomainId: id,
-              workflow: "monitor-domain",
+              workflow: "detect-changes",
             });
             return { id, success: true };
           } catch (err) {

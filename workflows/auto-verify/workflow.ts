@@ -15,6 +15,8 @@ export interface AutoVerifyWorkflowInput {
 export type AutoVerifyWorkflowResult =
   | {
       result: "verified";
+      trackedDomainId: string;
+      domainId: string;
       domainName: string;
       verifiedMethod: VerificationMethod;
       attempt: number;
@@ -24,19 +26,32 @@ export type AutoVerifyWorkflowResult =
 
 /**
  * Retry schedule for auto-verification attempts.
- * Front-loads checks when DNS propagation is most likely to have completed.
+ * Front-loads checks when DNS propagation is most likely to have completed,
+ * then continues with daily checks for domains that take longer to verify.
  *
- * Schedule: 1min → 3min → 10min → 30min → 1hr (then stop)
- * Total time covered: ~2 hours
+ * Schedule:
+ * - Quick checks: 1min → 3min → 10min → 30min → 1hr
+ * - Daily checks: Day 1 → Day 2 → Day 3 → Day 5 → Day 7 → Day 10 → Day 14 → Day 21 → Day 30
  *
- * After this, the daily cron job will catch any stragglers.
+ * Total time covered: ~30 days
  */
 const RETRY_DELAYS_MS = [
+  // Quick checks (first ~2 hours)
   60 * 1000, // 1 minute
   3 * 60 * 1000, // 3 minutes
   10 * 60 * 1000, // 10 minutes
   30 * 60 * 1000, // 30 minutes
   60 * 60 * 1000, // 1 hour
+  // Daily checks (for domains that take longer)
+  24 * 60 * 60 * 1000, // Day 1
+  24 * 60 * 60 * 1000, // Day 2
+  24 * 60 * 60 * 1000, // Day 3
+  2 * 24 * 60 * 60 * 1000, // Day 5 (skip day 4)
+  2 * 24 * 60 * 60 * 1000, // Day 7 (skip day 6)
+  3 * 24 * 60 * 60 * 1000, // Day 10 (skip days 8-9)
+  4 * 24 * 60 * 60 * 1000, // Day 14 (skip days 11-13)
+  7 * 24 * 60 * 60 * 1000, // Day 21 (skip days 15-20)
+  9 * 24 * 60 * 60 * 1000, // Day 30 (skip days 22-29)
 ] as const;
 
 /**
@@ -44,8 +59,8 @@ const RETRY_DELAYS_MS = [
  *
  * Uses sleep steps to implement a smart retry schedule that:
  * - Checks frequently at first (when verification is most likely to succeed)
- * - Backs off over time to avoid unnecessary checks
- * - Stops after ~2 hours (daily cron catches stragglers)
+ * - Backs off to daily checks for domains that take longer
+ * - Continues checking for up to 30 days
  */
 export async function autoVerifyWorkflow(
   input: AutoVerifyWorkflowInput,
@@ -87,10 +102,12 @@ export async function autoVerifyWorkflow(
 
     if (result.verified && result.method) {
       // Success! Mark the domain as verified
-      await markVerified(trackedDomainId, result.method);
+      const verified = await markVerified(trackedDomainId, result.method);
 
       return {
         result: "verified",
+        trackedDomainId: verified.trackedDomainId,
+        domainId: verified.domainId,
         domainName: currentDomainName,
         verifiedMethod: result.method,
         attempt: attempt + 1,
@@ -98,10 +115,11 @@ export async function autoVerifyWorkflow(
     }
   }
 
-  // All attempts exhausted - daily cron will catch it
+  // All attempts exhausted after 30 days
   return {
     result: "exhausted",
-    message: "Verification schedule complete. Daily cron will retry.",
+    message:
+      "Verification schedule complete after 30 days. Domain remains unverified.",
   };
 }
 
@@ -160,7 +178,7 @@ async function attemptVerification(
 async function markVerified(
   trackedDomainId: string,
   method: VerificationMethod,
-): Promise<void> {
+): Promise<{ trackedDomainId: string; domainId: string }> {
   "use step";
 
   const { verifyTrackedDomain } = await import(
@@ -174,4 +192,9 @@ async function markVerified(
       `Failed to mark domain as verified: trackedDomainId=${trackedDomainId}, method=${method}`,
     );
   }
+
+  return {
+    trackedDomainId: result.id,
+    domainId: result.domainId,
+  };
 }

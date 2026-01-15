@@ -18,9 +18,6 @@ export const INNGEST_EVENTS = {
   // Verification (event-driven)
   AUTO_VERIFY_PENDING_DOMAIN: "domain/verification.new",
 
-  // Snapshots (event-driven)
-  SNAPSHOT_INITIALIZE: "domain/snapshot.initialize",
-
   // Section revalidation (event-driven)
   SECTION_REVALIDATE: "domain/section.revalidate",
 

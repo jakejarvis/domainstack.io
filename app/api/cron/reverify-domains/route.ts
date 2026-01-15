@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import {
-  getPendingTrackedDomainIds,
-  getVerifiedTrackedDomainIds,
-} from "@/lib/db/repos/tracked-domains";
+import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { reverifyOwnershipWorkflow } from "@/workflows/reverify-ownership";
-import { verifyPendingWorkflow } from "@/workflows/verify-pending";
 
 const logger = createLogger({ source: "cron/reverify-domains" });
 
@@ -15,7 +11,8 @@ const logger = createLogger({ source: "cron/reverify-domains" });
 const BATCH_SIZE = 25;
 
 /**
- * Cron job to verify pending and re-verify existing domains.
+ * Cron job to re-verify existing domains (check ownership retention).
+ * Pending domain verification is handled by the auto-verify workflow.
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
@@ -29,41 +26,7 @@ export async function GET(request: Request) {
   try {
     logger.info("Starting reverify domains cron job");
 
-    // 1. Process Pending Domains
-    const pendingDomainIds = await getPendingTrackedDomainIds();
-    const pendingResults: { id: string; success: boolean }[] = [];
-
-    if (pendingDomainIds.length > 0) {
-      for (let i = 0; i < pendingDomainIds.length; i += BATCH_SIZE) {
-        const batch = pendingDomainIds.slice(i, i + BATCH_SIZE);
-
-        const batchResults = await Promise.all(
-          batch.map(async (id) => {
-            try {
-              const run = await start(verifyPendingWorkflow, [
-                { trackedDomainId: id },
-              ]);
-              // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
-              await withConcurrencyHandling(run.returnValue, {
-                trackedDomainId: id,
-                workflow: "verify-pending",
-              });
-              return { id, success: true };
-            } catch (err) {
-              logger.error(
-                { trackedDomainId: id, err },
-                "Failed to run verify pending workflow",
-              );
-              return { id, success: false };
-            }
-          }),
-        );
-
-        pendingResults.push(...batchResults);
-      }
-    }
-
-    // 2. Process Verified Domains (Re-verification)
+    // Process Verified Domains (Re-verification)
     const verifiedDomainIds = await getVerifiedTrackedDomainIds();
     const verifiedResults: { id: string; success: boolean }[] = [];
 
@@ -98,12 +61,9 @@ export async function GET(request: Request) {
     }
 
     const result = {
-      scheduledPending: pendingDomainIds.length,
-      pendingSuccessful: pendingResults.filter((r) => r.success).length,
-      pendingFailed: pendingResults.filter((r) => !r.success).length,
-      scheduledVerified: verifiedDomainIds.length,
-      verifiedSuccessful: verifiedResults.filter((r) => r.success).length,
-      verifiedFailed: verifiedResults.filter((r) => !r.success).length,
+      scheduled: verifiedDomainIds.length,
+      successful: verifiedResults.filter((r) => r.success).length,
+      failed: verifiedResults.filter((r) => !r.success).length,
     };
 
     logger.info(result, "Reverify domains completed");

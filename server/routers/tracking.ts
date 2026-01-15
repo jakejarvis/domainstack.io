@@ -23,6 +23,8 @@ import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
+import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
+import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "routers/tracking" });
 
@@ -270,6 +272,26 @@ export const trackingRouter = createTRPCRouter({
             message: "Failed to verify domain - it may have been deleted",
           });
         }
+
+        // After verification, create baseline snapshot for change detection
+        void start(createBaselineWorkflow, [
+          {
+            trackedDomainId: updated.id,
+            domainId: updated.domainId,
+          },
+        ]).catch((err) => {
+          // Track failure for observability and potential alerting
+          trackWorkflowFailureAsync({
+            workflow: "initialize-snapshot-trigger",
+            error: err instanceof Error ? err : new Error(String(err)),
+            classification: "fatal",
+            context: {
+              trackedDomainId: updated.id,
+              domainId: updated.domainId,
+              trigger: "manual_verification",
+            },
+          });
+        });
 
         return { verified: true, method: result.data.method };
       }

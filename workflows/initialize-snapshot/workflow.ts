@@ -35,9 +35,9 @@ export type InitializeSnapshotWorkflowResult =
   | { success: false; error: string };
 
 /**
- * Durable workflow to initialize a snapshot for a newly verified tracked domain.
+ * Durable workflow to create a baseline snapshot for a newly verified tracked domain.
  *
- * This establishes the baseline state for change detection by fetching
+ * This establishes the initial state for change detection by fetching
  * current registration, hosting, and certificate data.
  */
 export async function initializeSnapshotWorkflow(
@@ -56,8 +56,7 @@ export async function initializeSnapshotWorkflow(
 
   const domainName = domainRecord.name;
 
-  // Step 2: Fetch fresh data for this domain using shared steps (parallel where possible)
-  // First, fetch the independent data sources in parallel
+  // Step 2: Fetch fresh data for this domain (parallel where possible)
   const [registrationResult, dnsResult, headersResult, certificatesResult] =
     await Promise.all([
       lookupWhoisStep(domainName),
@@ -94,7 +93,6 @@ export async function initializeSnapshotWorkflow(
   }
 
   // Compute and persist hosting using DNS + headers data
-  // DNS always succeeds; only check headers
   let hostingData: HostingResponse | null = null;
   if (headersResult.success) {
     const a = dnsResult.data.records.find((d) => d.type === "A");
@@ -174,7 +172,7 @@ export async function initializeSnapshotWorkflow(
     email: hostingData?.emailProvider?.id ?? null,
   };
 
-  // Step 3: Create the snapshot
+  // Step 3: Create the baseline snapshot
   const snapshot = await createSnapshotStep({
     trackedDomainId,
     registration: registrationSnapshot,

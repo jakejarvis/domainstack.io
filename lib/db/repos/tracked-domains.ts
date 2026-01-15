@@ -27,14 +27,12 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { RegistrationContact } from "@/lib/types/domain/registration";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { ProviderInfo } from "@/lib/types/provider";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
-import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 
 const logger = createLogger({ source: "db/repos/tracked-domains" });
 
@@ -786,38 +784,6 @@ export async function verifyTrackedDomain(
     })
     .where(eq(userTrackedDomains.id, id))
     .returning();
-
-  // After verification, initialize snapshot for change detection
-  // This is done in the background to avoid blocking the user
-  const [trackedDomain] = updated;
-  if (trackedDomain) {
-    // Import dynamically to avoid circular dependencies
-    void import("@/lib/inngest/client")
-      .then(({ inngest }) =>
-        inngest.send({
-          name: INNGEST_EVENTS.SNAPSHOT_INITIALIZE,
-          data: {
-            trackedDomainId: trackedDomain.id,
-            domainId: trackedDomain.domainId,
-          },
-        }),
-      )
-      .catch((err) => {
-        // Track failure for observability and potential alerting
-        // The snapshot can be initialized later via the monitor-domains cron
-        // or when the user accesses domain data (SWR pattern will trigger workflows)
-        trackWorkflowFailureAsync({
-          workflow: "snapshot-initialize-trigger",
-          error: err instanceof Error ? err : new Error(String(err)),
-          classification: "fatal",
-          context: {
-            trackedDomainId: trackedDomain.id,
-            domainId: trackedDomain.domainId,
-            trigger: "verification_complete",
-          },
-        });
-      });
-  }
 
   return updated[0] ?? null;
 }

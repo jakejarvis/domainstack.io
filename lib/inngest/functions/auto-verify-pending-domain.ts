@@ -4,7 +4,9 @@ import { start } from "workflow/api";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
+import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
+import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
 
 /**
  * Event-driven function to auto-verify a pending domain.
@@ -38,6 +40,30 @@ export const autoVerifyPendingDomain = inngest.createFunction(
         workflow: "auto-verify",
       });
     });
+
+    // If verification succeeded, create baseline snapshot for change detection
+    if (result?.result === "verified") {
+      await step.run("start-snapshot-workflow", async () => {
+        void start(createBaselineWorkflow, [
+          {
+            trackedDomainId: result.trackedDomainId,
+            domainId: result.domainId,
+          },
+        ]).catch((err) => {
+          // Track failure for observability
+          trackWorkflowFailureAsync({
+            workflow: "initialize-snapshot-trigger",
+            error: err instanceof Error ? err : new Error(String(err)),
+            classification: "fatal",
+            context: {
+              trackedDomainId: result.trackedDomainId,
+              domainId: result.domainId,
+              trigger: "auto_verification_complete",
+            },
+          });
+        });
+      });
+    }
 
     return result;
   },
