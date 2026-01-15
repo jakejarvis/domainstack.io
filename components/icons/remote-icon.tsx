@@ -2,7 +2,7 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { Suspense, useState } from "react";
+import { Component, Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { simpleHash } from "@/lib/simple-hash";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,8 @@ function IconSkeleton({
   );
 }
 
+type FallbackIconProps = Omit<RemoteIconProps, "queryOptions">;
+
 function FallbackIcon({
   size = 32,
   className,
@@ -79,7 +81,7 @@ function FallbackIcon({
   fallbackIdentifier,
   alt,
   dataAttribute,
-}: Omit<RemoteIconProps, "queryOptions">) {
+}: FallbackIconProps) {
   const letter = fallbackIdentifier[0]?.toUpperCase() || "?";
   const backgroundColor =
     PLACEHOLDER_COLORS[
@@ -107,6 +109,34 @@ function FallbackIcon({
       {letter}
     </div>
   );
+}
+
+/**
+ * Error boundary that catches query failures and renders the fallback icon.
+ * This prevents favicon/logo workflow errors from crashing the entire page.
+ */
+class IconErrorBoundary extends Component<
+  { children: React.ReactNode; fallbackProps: FallbackIconProps },
+  { hasError: boolean }
+> {
+  constructor(props: {
+    children: React.ReactNode;
+    fallbackProps: FallbackIconProps;
+  }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <FallbackIcon {...this.props.fallbackProps} />;
+    }
+    return this.props.children;
+  }
 }
 
 function SuspendedIcon({
@@ -166,11 +196,14 @@ function SuspendedIcon({
  * with loading states, error handling, and letter avatar fallback.
  */
 export function RemoteIcon(props: RemoteIconProps) {
+  const { queryOptions: _, ...fallbackProps } = props;
   const { className, style } = props;
 
   return (
-    <Suspense fallback={<IconSkeleton className={className} style={style} />}>
-      <SuspendedIcon {...props} />
-    </Suspense>
+    <IconErrorBoundary fallbackProps={fallbackProps}>
+      <Suspense fallback={<IconSkeleton className={className} style={style} />}>
+        <SuspendedIcon {...props} />
+      </Suspense>
+    </IconErrorBoundary>
   );
 }
