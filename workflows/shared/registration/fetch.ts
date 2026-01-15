@@ -9,6 +9,13 @@ import { RetryableError } from "workflow";
 import type { FetchRegistrationResult, RdapLookupResult } from "./types";
 
 /**
+ * RDAP Bootstrap Registry URL from IANA.
+ * This JSON file maps TLDs to their authoritative RDAP servers.
+ * @see https://datatracker.ietf.org/doc/html/rfc7484
+ */
+const RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json";
+
+/**
  * Step: Lookup domain registration via rdapper (WHOIS/RDAP).
  *
  * Unsupported TLD and lookup_failed are permanent failures.
@@ -25,15 +32,28 @@ export async function lookupWhoisStep(
   // Dynamic imports for Node.js modules
   const { lookup } = await import("rdapper");
   const { createLogger } = await import("@/lib/logger/server");
-  const { getRdapBootstrapData } = await import("@/lib/rdap-bootstrap");
+  const { USER_AGENT } = await import("@/lib/constants/app");
 
   const logger = createLogger({ source: "registration-fetch" });
 
-  // Inline lookupRdap logic with dynamic imports
+  // Fetch RDAP bootstrap data with Next.js Data Cache (1 week TTL)
+  const bootstrapRes = await fetch(RDAP_BOOTSTRAP_URL, {
+    headers: { "User-Agent": USER_AGENT },
+    next: { revalidate: 604_800 }, // 1 week
+  });
+
+  if (!bootstrapRes.ok) {
+    logger.warn(
+      { status: bootstrapRes.status },
+      "Failed to fetch RDAP bootstrap, using rdapper default",
+    );
+  }
+
+  const bootstrapData = bootstrapRes.ok ? await bootstrapRes.json() : undefined;
+
+  // Inline lookupRdap logic
   const result = await (async (): Promise<RdapLookupResult> => {
     try {
-      const bootstrapData = await getRdapBootstrapData();
-
       const { ok, record, error } = await lookup(domain, {
         timeoutMs: 5000,
         customBootstrapData: bootstrapData,

@@ -5,6 +5,7 @@
  * and notification sending for monitoring workflows.
  */
 
+import type { NotificationType } from "@/lib/constants/notifications";
 import type { NotificationOverrides } from "@/lib/types/notifications";
 
 export interface NotificationChannels {
@@ -22,13 +23,37 @@ export async function determineNotificationChannelsStep(
 ): Promise<NotificationChannels> {
   "use step";
 
-  const { determineNotificationChannels } = await import("@/lib/notifications");
-
-  return await determineNotificationChannels(
-    userId,
-    trackedDomainId,
-    preferenceType,
+  const { findTrackedDomainById } = await import(
+    "@/lib/db/repos/tracked-domains"
   );
+  const { getOrCreateUserNotificationPreferences } = await import(
+    "@/lib/db/repos/user-notification-preferences"
+  );
+
+  const trackedDomain = await findTrackedDomainById(trackedDomainId);
+  if (!trackedDomain) {
+    return { shouldSendEmail: false, shouldSendInApp: false };
+  }
+
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+
+  // Check for per-domain overrides first
+  const override = trackedDomain.notificationOverrides[preferenceType];
+
+  if (override !== undefined) {
+    // Use domain-specific override
+    return {
+      shouldSendEmail: override.email,
+      shouldSendInApp: override.inApp,
+    };
+  }
+
+  // Fall back to global preferences
+  const globalPref = globalPrefs[preferenceType];
+  return {
+    shouldSendEmail: globalPref.email,
+    shouldSendInApp: globalPref.inApp,
+  };
 }
 
 /**
@@ -48,10 +73,128 @@ export async function resolveProviderNamesStep(
   return await getProviderNames(providerIds);
 }
 
+// ============================================================================
+// Shared notification sending logic (used by send*NotificationStep functions)
+// ============================================================================
+
+/**
+ * Consolidated logic for creating a notification record and optionally sending an email.
+ * Used by all domain monitoring notification steps to ensure consistent behavior.
+ *
+ * ## Idempotency Strategy
+ *
+ * This function uses a two-layer idempotency approach to handle workflow retries gracefully:
+ *
+ * 1. **Database-level deduplication**: Callers typically check `hasRecentNotification()` before
+ *    calling this function, preventing duplicate notifications within a time window (usually 30 days).
+ *    This protects against multiple workflow runs for the same event.
+ *
+ * 2. **Email-level idempotency**: Resend's idempotency key (format: `{stepId}`)
+ *    prevents duplicate emails if this function is retried within Resend's idempotency window (~24-48 hours).
+ *    This protects against transient failures during email sending.
+ *
+ * @throws {Error} If notification record creation fails or email sending fails
+ */
+async function sendNotificationInternal(
+  options: {
+    userId: string;
+    userEmail: string;
+    trackedDomainId: string;
+    domainName: string;
+    notificationType: NotificationType;
+    title: string;
+    message: string;
+    idempotencyKey?: string;
+    emailComponent?: React.ReactElement;
+    emailSubject?: string;
+  },
+  shouldSendEmail: boolean,
+  shouldSendInApp: boolean,
+): Promise<boolean> {
+  const { createNotification, updateNotificationResendId } = await import(
+    "@/lib/db/repos/notifications"
+  );
+  const { createLogger } = await import("@/lib/logger/server");
+  const { sendEmail } = await import("@/lib/resend");
+
+  const {
+    userId,
+    userEmail,
+    trackedDomainId,
+    domainName,
+    notificationType,
+    title,
+    message,
+    idempotencyKey,
+    emailComponent,
+    emailSubject,
+  } = options;
+
+  const logger = createLogger({ source: "notifications" });
+
+  if (!shouldSendEmail && !shouldSendInApp) return false;
+
+  const channels: string[] = [];
+  if (shouldSendEmail && emailComponent && emailSubject) channels.push("email");
+  if (shouldSendInApp) channels.push("in-app");
+
+  try {
+    // Create notification record
+    const notification = await createNotification({
+      userId,
+      trackedDomainId,
+      type: notificationType,
+      title,
+      message,
+      data: { domainName },
+      channels,
+    });
+
+    if (!notification) {
+      logger.error(
+        { trackedDomainId, notificationType, domainName },
+        "Failed to create notification record",
+      );
+      throw new Error("Failed to create notification record in database");
+    }
+
+    // Send email notification if enabled and component provided
+    if (shouldSendEmail && emailComponent && emailSubject) {
+      const { data, error } = await sendEmail(
+        {
+          to: userEmail,
+          subject: emailSubject,
+          react: emailComponent,
+        },
+        idempotencyKey ? { idempotencyKey } : undefined,
+      );
+
+      if (error) throw new Error(`Resend error: ${error.message}`);
+
+      // Update notification with email ID
+      if (data?.id) {
+        await updateNotificationResendId(notification.id, data.id);
+      }
+    }
+
+    return true;
+  } catch (err) {
+    logger.error(
+      { err, domainName, userId, idempotencyKey },
+      `Error sending ${notificationType} notification`,
+    );
+    throw err;
+  }
+}
+
+// ============================================================================
+// Notification sending steps
+// ============================================================================
+
 /**
  * Step: Send registration change notification via email and/or in-app.
  *
- * Imports email component and uses step ID as idempotency key.
+ * Uses step ID as idempotency key.
  */
 export async function sendRegistrationChangeNotificationStep(
   params: {
@@ -84,7 +227,6 @@ export async function sendRegistrationChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { sendNotification } = await import("@/lib/notifications");
   const { default: RegistrationChangeEmail } = await import(
     "@/emails/registration-change"
   );
@@ -97,7 +239,7 @@ export async function sendRegistrationChangeNotificationStep(
     changes: params.changes,
   });
 
-  return await sendNotification(
+  return await sendNotificationInternal(
     {
       userId: params.userId,
       userEmail: params.userEmail,
@@ -118,7 +260,7 @@ export async function sendRegistrationChangeNotificationStep(
 /**
  * Step: Send provider change notification via email and/or in-app.
  *
- * Imports email component and uses step ID as idempotency key.
+ * Uses step ID as idempotency key.
  */
 export async function sendProviderChangeNotificationStep(
   params: {
@@ -154,7 +296,6 @@ export async function sendProviderChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { sendNotification } = await import("@/lib/notifications");
   const { default: ProviderChangeEmail } = await import(
     "@/emails/provider-change"
   );
@@ -167,7 +308,7 @@ export async function sendProviderChangeNotificationStep(
     changes: params.changes,
   });
 
-  return await sendNotification(
+  return await sendNotificationInternal(
     {
       userId: params.userId,
       userEmail: params.userEmail,
@@ -188,7 +329,7 @@ export async function sendProviderChangeNotificationStep(
 /**
  * Step: Send certificate change notification via email and/or in-app.
  *
- * Imports email component and uses step ID as idempotency key.
+ * Uses step ID as idempotency key.
  */
 export async function sendCertificateChangeNotificationStep(
   params: {
@@ -218,7 +359,6 @@ export async function sendCertificateChangeNotificationStep(
   "use step";
 
   const { getStepMetadata } = await import("workflow");
-  const { sendNotification } = await import("@/lib/notifications");
   const { default: CertificateChangeEmail } = await import(
     "@/emails/certificate-change"
   );
@@ -232,7 +372,7 @@ export async function sendCertificateChangeNotificationStep(
     newValidTo: params.newValidTo,
   });
 
-  return await sendNotification(
+  return await sendNotificationInternal(
     {
       userId: params.userId,
       userEmail: params.userEmail,
