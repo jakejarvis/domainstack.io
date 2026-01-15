@@ -85,6 +85,7 @@
     "rdapper": "^0.13.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-error-boundary": "^6.0.3",
     "react-hotkeys-hook": "^5.2.3",
     "resend": "^6.7.0",
     "server-only": "0.0.1",

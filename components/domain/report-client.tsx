@@ -1,7 +1,16 @@
 "use client";
 
-import { useQuery, useSuspenseQueries } from "@tanstack/react-query";
+import {
+  ArrowCounterClockwiseIcon,
+  WarningIcon,
+} from "@phosphor-icons/react/ssr";
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { Suspense, useRef } from "react";
+import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
 import { DnsSection } from "@/components/domain/dns/dns-section";
@@ -19,6 +28,15 @@ import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
 import { sections } from "@/lib/constants/sections";
@@ -36,89 +54,89 @@ function AllSkeletonsExceptRegistration() {
   );
 }
 
-function SuspendedSections({
-  domain,
-  isRegistered,
-}: {
-  domain: string;
-  isRegistered: boolean;
-}) {
+/**
+ * Query options to disable automatic refetching and retries.
+ * Report data is fetched once on page load and doesn't need continuous revalidation.
+ * Retries are disabled so errors surface immediately to the error boundary.
+ */
+const staticQueryOptions = {
+  staleTime: Number.POSITIVE_INFINITY,
+  retry: false,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+/**
+ * Individual section components that fetch their own data.
+ * Each is wrapped in its own Suspense + ErrorBoundary for independent loading/error states.
+ */
+
+function SuspendedHostingSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
-  const [hosting, dns, certificates, headers, seo] = useSuspenseQueries({
-    queries: [
-      trpc.domain.getHosting.queryOptions({ domain }),
-      trpc.domain.getDnsRecords.queryOptions({ domain }),
-      trpc.domain.getCertificates.queryOptions({ domain }),
-      trpc.domain.getHeaders.queryOptions({ domain }),
-      trpc.domain.getSeo.queryOptions({ domain }),
-    ],
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getHosting.queryOptions({ domain }),
+    ...staticQueryOptions,
   });
 
-  if (!isRegistered) {
-    return <AllSkeletonsExceptRegistration />;
+  if (!data.success) {
+    return <SectionFailedAlert section={sections.hosting} error={data.error} />;
   }
+  return <HostingSection domain={domain} data={data.data} />;
+}
 
-  return (
-    <>
-      <SectionErrorBoundary sectionName="Hosting">
-        <Suspense fallback={<HostingSectionSkeleton />}>
-          {hosting.data.success ? (
-            <HostingSection domain={domain} data={hosting.data.data} />
-          ) : (
-            <SectionFailedAlert
-              section={sections.hosting}
-              error={hosting.data.error}
-            />
-          )}
-        </Suspense>
-      </SectionErrorBoundary>
-      <SectionErrorBoundary sectionName="DNS">
-        <Suspense fallback={<DnsSectionSkeleton />}>
-          {dns.data.success ? (
-            <DnsSection domain={domain} data={dns.data.data} />
-          ) : (
-            <SectionFailedAlert section={sections.dns} error={dns.data.error} />
-          )}
-        </Suspense>
-      </SectionErrorBoundary>
-      <SectionErrorBoundary sectionName="Certificates">
-        <Suspense fallback={<CertificatesSectionSkeleton />}>
-          {certificates.data.success ? (
-            <CertificatesSection
-              domain={domain}
-              data={certificates.data.data}
-            />
-          ) : (
-            <SectionFailedAlert
-              section={sections.certificates}
-              error={certificates.data.error}
-            />
-          )}
-        </Suspense>
-      </SectionErrorBoundary>
-      <SectionErrorBoundary sectionName="Headers">
-        <Suspense fallback={<HeadersSectionSkeleton />}>
-          {headers.data.success ? (
-            <HeadersSection domain={domain} data={headers.data.data} />
-          ) : (
-            <SectionFailedAlert
-              section={sections.headers}
-              error={headers.data.error}
-            />
-          )}
-        </Suspense>
-      </SectionErrorBoundary>
-      <SectionErrorBoundary sectionName="SEO">
-        <Suspense fallback={<SeoSectionSkeleton />}>
-          {seo.data.success ? (
-            <SeoSection domain={domain} data={seo.data.data} />
-          ) : (
-            <SectionFailedAlert section={sections.seo} error={seo.data.error} />
-          )}
-        </Suspense>
-      </SectionErrorBoundary>
-    </>
-  );
+function SuspendedDnsSection({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getDnsRecords.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
+
+  if (!data.success) {
+    return <SectionFailedAlert section={sections.dns} error={data.error} />;
+  }
+  return <DnsSection domain={domain} data={data.data} />;
+}
+
+function SuspendedCertificatesSection({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getCertificates.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
+
+  if (!data.success) {
+    return (
+      <SectionFailedAlert section={sections.certificates} error={data.error} />
+    );
+  }
+  return <CertificatesSection domain={domain} data={data.data} />;
+}
+
+function SuspendedHeadersSection({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getHeaders.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
+
+  if (!data.success) {
+    return <SectionFailedAlert section={sections.headers} error={data.error} />;
+  }
+  return <HeadersSection domain={domain} data={data.data} />;
+}
+
+function SuspendedSeoSection({ domain }: { domain: string }) {
+  const trpc = useTRPC();
+  const { data } = useSuspenseQuery({
+    ...trpc.domain.getSeo.queryOptions({ domain }),
+    ...staticQueryOptions,
+  });
+
+  if (!data.success) {
+    return <SectionFailedAlert section={sections.seo} error={data.error} />;
+  }
+  return <SeoSection domain={domain} data={data.data} />;
 }
 
 /**
@@ -131,11 +149,22 @@ function SuspendedSections({
  */
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const { data: registration, isLoading: isRegistrationLoading } = useQuery(
-    trpc.domain.getRegistration.queryOptions({ domain }),
-  );
+  const registrationQueryOptions = trpc.domain.getRegistration.queryOptions({
+    domain,
+  });
+  const {
+    data: registration,
+    isLoading: isRegistrationLoading,
+    isError: isRegistrationError,
+    error: registrationError,
+  } = useQuery({
+    ...registrationQueryOptions,
+    ...staticQueryOptions,
+  });
   const domainId = registration?.data?.domainId;
+  const isRegistered = registration?.data?.isRegistered === true;
 
   // Section navigation - tracks active section and header visibility for context injection
   const headerRef = useRef<HTMLDivElement>(null);
@@ -147,11 +176,56 @@ export function DomainReportClient({ domain }: { domain: string }) {
 
   // Add to search history for registered domains
   useDomainHistory(domain, {
-    enabled: registration?.data?.isRegistered === true,
+    enabled: isRegistered,
   });
 
+  // Show error state if registration query failed
+  if (isRegistrationError) {
+    const isDev = process.env.NODE_ENV === "development";
+    return (
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <WarningIcon />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load domain report</EmptyTitle>
+          <EmptyDescription>
+            {isDev && registrationError
+              ? registrationError.message
+              : "We couldn't fetch registration data for this domain. Please try again."}
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                queryClient.invalidateQueries({
+                  queryKey: registrationQueryOptions.queryKey,
+                })
+              }
+            >
+              <ArrowCounterClockwiseIcon />
+              Try again
+            </Button>
+            <CreateIssueButton
+              error={
+                registrationError instanceof Error
+                  ? registrationError
+                  : undefined
+              }
+              variant="ghost"
+              size="sm"
+            />
+          </div>
+        </EmptyContent>
+      </Empty>
+    );
+  }
+
   // For confirmed unregistered domains, show only the unregistered card
-  if (!isRegistrationLoading && !registration?.data?.isRegistered) {
+  if (!isRegistrationLoading && !isRegistered) {
     return <DomainUnregisteredCard domain={domain} />;
   }
 
@@ -161,7 +235,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
       <DomainReportHeader
         domain={domain}
         domainId={domainId}
-        isRegistered={registration?.data?.isRegistered}
+        isRegistered={isRegistered}
         ref={headerRef}
       />
 
@@ -174,7 +248,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
         onSectionClick={scrollToSection}
       />
 
-      {/* Content area - individual sections have their own Suspense boundaries BUT we still need a boundary here for the header to render immediately */}
+      {/* Content area - each section independently fetches data within its own error boundary */}
       <div className="space-y-4">
         {isRegistrationLoading ? (
           <RegistrationSectionSkeleton />
@@ -182,12 +256,42 @@ export function DomainReportClient({ domain }: { domain: string }) {
           <RegistrationSection domain={domain} data={registration?.data} />
         )}
 
-        <Suspense fallback={<AllSkeletonsExceptRegistration />}>
-          <SuspendedSections
-            domain={domain}
-            isRegistered={registration?.data?.isRegistered === true}
-          />
-        </Suspense>
+        {/* Show skeletons until we confirm domain is registered */}
+        {!isRegistered ? (
+          <AllSkeletonsExceptRegistration />
+        ) : (
+          <>
+            <SectionErrorBoundary sectionName="Hosting">
+              <Suspense fallback={<HostingSectionSkeleton />}>
+                <SuspendedHostingSection domain={domain} />
+              </Suspense>
+            </SectionErrorBoundary>
+
+            <SectionErrorBoundary sectionName="DNS">
+              <Suspense fallback={<DnsSectionSkeleton />}>
+                <SuspendedDnsSection domain={domain} />
+              </Suspense>
+            </SectionErrorBoundary>
+
+            <SectionErrorBoundary sectionName="Certificates">
+              <Suspense fallback={<CertificatesSectionSkeleton />}>
+                <SuspendedCertificatesSection domain={domain} />
+              </Suspense>
+            </SectionErrorBoundary>
+
+            <SectionErrorBoundary sectionName="Headers">
+              <Suspense fallback={<HeadersSectionSkeleton />}>
+                <SuspendedHeadersSection domain={domain} />
+              </Suspense>
+            </SectionErrorBoundary>
+
+            <SectionErrorBoundary sectionName="SEO">
+              <Suspense fallback={<SeoSectionSkeleton />}>
+                <SuspendedSeoSection domain={domain} />
+              </Suspense>
+            </SectionErrorBoundary>
+          </>
+        )}
       </div>
     </div>
   );

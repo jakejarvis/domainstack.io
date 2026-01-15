@@ -152,8 +152,13 @@ function SuspendedIcon({
 
   const { data: result } = useSuspenseQuery<IconWorkflowResult>({
     ...queryOptions,
+    // Disable retries - icons should fail fast to fallback
     retry: false,
     retryOnMount: false,
+    // Disable refetching - icons don't need continuous revalidation
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const url = result.data?.url;

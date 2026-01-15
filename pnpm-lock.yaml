@@ -180,6 +180,9 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      react-error-boundary:
+        specifier: ^6.0.3
+        version: 6.0.3(react@19.2.3)
       react-hotkeys-hook:
         specifier: ^5.2.3
         version: 5.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -6336,6 +6339,11 @@ packages:
 
   react-dom@19.2.3:
     resolution: {integrity: sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==}
+    peerDependencies:
+      react: 19.2.3
+
+  react-error-boundary@6.0.3:
+    resolution: {integrity: sha512-5guqn2UYpCFjE8UDMA8J7Kke+YSGBFrKQRJb3XdcaGZXYINZfQXgBt3ifY6MvjkN7QROc5A8zclyoSCwrcRUKw==}
     peerDependencies:
       react: 19.2.3
 
@@ -13885,6 +13893,10 @@ snapshots:
     dependencies:
       react: 19.2.3
       scheduler: 0.27.0
+
+  react-error-boundary@6.0.3(react@19.2.3):
+    dependencies:
+      react: 19.2.3
 
   react-hook-form@7.71.1(react@19.2.3):
     dependencies:
