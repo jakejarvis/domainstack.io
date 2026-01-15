@@ -37,7 +37,7 @@ export async function reverifyOwnershipWorkflow(
   }
 
   // Step 2: Check ownership using the existing verification method
-  const result = await checkOwnership(
+  const result = await verifyDomainOwnershipByMethod(
     domain.domainName,
     domain.verificationToken,
     domain.verificationMethod,
@@ -106,18 +106,6 @@ async function fetchDomain(
   );
 
   return await getTrackedDomainForReverification(trackedDomainId);
-}
-
-async function checkOwnership(
-  domainName: string,
-  token: string,
-  method: VerificationMethod,
-): Promise<{ verified: boolean; method: VerificationMethod | null }> {
-  "use step";
-
-  // Call the shared verification step directly - no child workflow needed
-  // Use the specific method since we're re-verifying with the original method
-  return await verifyDomainOwnershipByMethod(domainName, token, method);
 }
 
 async function markSuccess(trackedDomainId: string): Promise<void> {

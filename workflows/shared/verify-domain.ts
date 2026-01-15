@@ -45,22 +45,6 @@ export async function verifyDomainByMetaTag(
 }
 
 /**
- * Step: Verify domain ownership by trying all methods in order.
- * Returns on first successful verification.
- *
- * This is a durable workflow step that wraps the verification logic.
- */
-export async function verifyDomainOwnership(
-  domain: string,
-  token: string,
-): Promise<VerificationResult> {
-  "use step";
-
-  const { verifyDomain } = await import("@/lib/verification");
-  return await verifyDomain(domain, token);
-}
-
-/**
  * Step: Verify domain ownership using a specific method only.
  *
  * This is a durable workflow step that wraps the verification logic.

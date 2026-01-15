@@ -27,13 +27,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Special case for OpenGraph images: /example.com/opengraph-image
-  // This pattern is used by Next.js OG image generation for the dynamic route [domain]/opengraph-image.tsx
-  // We should skip middleware processing for this specific suffix to allow the route to handle it.
-  if (pathname.endsWith("/opengraph-image")) {
-    return NextResponse.next();
-  }
-
   // Quick redirect for unauthenticated users trying to access protected routes
   // This is NOT for security - just a faster redirect path before hitting the page
   // The actual security check happens in the page/layout server components
@@ -95,6 +88,6 @@ export const config = {
     // Exclude API and Next internals/static assets for performance and to avoid side effects
     // Static files use (?:[?#]|$) to match exactly (not as prefixes) so domains like "favicon.icon.com" are not excluded
     // Also exclude .well-known/* for Vercel Workflow internal paths
-    "/((?!api/|_next/|_vercel/|_proxy/|\\.well-known/|(?:favicon.ico|icon.svg|robots.txt|manifest.webmanifest|opensearch.xml)(?:[?#]|$)).*)",
+    "/((?!api/|_next/|_vercel/|_proxy/|\\.well-known/|(?:favicon.ico|icon.svg|apple-icon.png|robots.txt|manifest.webmanifest|opensearch.xml)(?:[?#]|$)).*)",
   ],
 };

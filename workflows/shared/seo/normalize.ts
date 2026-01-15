@@ -9,41 +9,6 @@ import type { SeoResponse } from "@/lib/types/domain/seo";
 import type { HtmlFetchData, RobotsFetchData } from "./types";
 
 /**
- * Build SeoResponse from fetch results.
- *
- * This is a pure function that combines HTML, robots, and OG image data
- * into the final SeoResponse format.
- */
-function buildSeoResponse(
-  htmlResult: HtmlFetchData,
-  robotsResult: RobotsFetchData,
-  uploadedImageUrl: string | null,
-): SeoResponse {
-  return {
-    meta: htmlResult.meta,
-    robots: robotsResult.robots,
-    preview: htmlResult.preview
-      ? {
-          ...htmlResult.preview,
-          imageUploaded: uploadedImageUrl,
-        }
-      : null,
-    source: {
-      finalUrl: htmlResult.finalUrl,
-      status: htmlResult.status,
-    },
-    ...(htmlResult.error || robotsResult.error
-      ? {
-          errors: {
-            ...(htmlResult.error ? { html: htmlResult.error } : {}),
-            ...(robotsResult.error ? { robots: robotsResult.error } : {}),
-          },
-        }
-      : {}),
-  };
-}
-
-/**
  * Step: Build SeoResponse from fetch results.
  *
  * @param htmlData - Result from fetchHtmlStep
@@ -58,8 +23,26 @@ export async function buildSeoResponseStep(
 ): Promise<SeoResponse> {
   "use step";
 
-  return buildSeoResponse(htmlData, robotsData, uploadedImageUrl);
+  return {
+    meta: htmlData.meta,
+    robots: robotsData.robots,
+    preview: htmlData.preview
+      ? {
+          ...htmlData.preview,
+          imageUploaded: uploadedImageUrl,
+        }
+      : null,
+    source: {
+      finalUrl: htmlData.finalUrl,
+      status: htmlData.status,
+    },
+    ...(htmlData.error || robotsData.error
+      ? {
+          errors: {
+            ...(htmlData.error ? { html: htmlData.error } : {}),
+            ...(robotsData.error ? { robots: robotsData.error } : {}),
+          },
+        }
+      : {}),
+  };
 }
-
-// Export for testing
-export { buildSeoResponse };

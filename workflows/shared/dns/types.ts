@@ -8,13 +8,6 @@
 import type { DnsRecord } from "@/lib/types/domain/dns";
 
 /**
- * DNS operations don't have permanent typed errors.
- * All failures are transient and thrown as RetryableError.
- * The step will either succeed or exhaust retries (workflow fails).
- */
-export type DnsError = never;
-
-/**
  * Internal data structure for step-to-step transfer.
  * Includes expiry metadata not exposed in the public response.
  */

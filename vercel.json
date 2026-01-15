@@ -7,6 +7,11 @@
       "PUPPETEER_SKIP_DOWNLOAD": "1"
     }
   },
+  "functions": {
+    "app/.well-known/workflow/v1/step/route.js": {
+      "memory": 3009
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/cleanup-stale-domains",

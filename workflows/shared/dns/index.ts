@@ -6,4 +6,4 @@
 
 export { fetchDnsRecordsStep } from "./fetch";
 export { persistDnsRecordsStep } from "./persist";
-export type { DnsError, DnsFetchData, FetchDnsResult } from "./types";
+export type { DnsFetchData } from "./types";

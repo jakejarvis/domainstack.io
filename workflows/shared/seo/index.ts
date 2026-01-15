@@ -10,6 +10,4 @@ export { persistSeoStep } from "./persist";
 export type {
   HtmlFetchData,
   RobotsFetchData,
-  SeoError,
-  SeoPersistData,
 } from "./types";

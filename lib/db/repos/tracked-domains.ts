@@ -932,27 +932,6 @@ export async function getVerifiedTrackedDomainIds(): Promise<string[]> {
 }
 
 /**
- * Get pending tracked domain IDs.
- * Used by the reverification scheduler.
- */
-export async function getPendingTrackedDomainIds(): Promise<string[]> {
-  const rows = await db
-    .select({
-      id: userTrackedDomains.id,
-    })
-    .from(userTrackedDomains)
-    .where(
-      and(
-        eq(userTrackedDomains.verified, false),
-        isNull(userTrackedDomains.verifiedAt),
-        isNull(userTrackedDomains.archivedAt),
-      ),
-    );
-
-  return rows.map((r) => r.id);
-}
-
-/**
  * Get a single tracked domain for notification.
  * Used by the domain expiry worker.
  */

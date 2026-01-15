@@ -26,6 +26,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "workflow": "workflow inspect runs --web",
     "knip": "knip"
   },
   "dependencies": {

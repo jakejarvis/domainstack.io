@@ -8,12 +8,6 @@
 import type { ProviderRef } from "@/lib/types/domain/provider-ref";
 
 /**
- * Hosting doesn't have typed errors - it always succeeds with provider detection.
- * Unknown providers are represented as null values.
- */
-export type HostingError = never;
-
-/**
  * Internal data structure for GeoIP lookup result.
  */
 export interface GeoIpData {

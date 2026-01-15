@@ -1,7 +1,7 @@
 import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
-} from "@/lib/db/repos/snapshots";
+} from "@/lib/db/schema";
 import type { CertificatesResponse } from "@/lib/types/domain/certificates";
 import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { RegistrationResponse } from "@/lib/types/domain/registration";

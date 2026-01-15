@@ -14,18 +14,6 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "db/repos/snapshots" });
 
-// Re-export types from schema for consumers
-export type { CertificateSnapshotData, RegistrationSnapshotData };
-
-/**
- * Provider snapshot data (stored in separate columns).
- */
-export interface ProviderSnapshotData {
-  dnsProviderId: string | null;
-  hostingProviderId: string | null;
-  emailProviderId: string | null;
-}
-
 /**
  * Parameters for creating a new snapshot.
  */
