@@ -1,7 +1,7 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 
 import { type Cell, flexRender } from "@tanstack/react-table";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
@@ -11,26 +11,24 @@ type VerifiedTableRowProps = {
   isSelected: boolean;
 };
 
-const rowMotionProps = {
-  layout: "position" as const,
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -6 },
-  transition: {
-    duration: 0.16,
-    ease: [0.22, 1, 0.36, 1] as const,
-  },
-};
-
 export function VerifiedTableRow({
   rowId,
   cells,
   isSelected,
 }: VerifiedTableRowProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <motion.tr
       key={rowId}
-      {...rowMotionProps}
+      layout={shouldReduceMotion ? false : "position"}
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -6 }}
+      transition={{
+        duration: shouldReduceMotion ? 0.1 : 0.16,
+        ease: [0.22, 1, 0.36, 1] as const,
+      }}
       className={cn(
         "group min-w-full transition-colors hover:bg-muted/30",
         isSelected && "bg-primary/5",

@@ -295,7 +295,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                                 data-disable-progress={
                                   opensNatively ? true : undefined
                                 }
-                                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-md py-4 text-center transition-colors hover:bg-accent focus:bg-accent focus:outline-none"
+                                className="flex w-full flex-col items-center justify-center gap-2.5 rounded-md py-4 text-center transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
                                 <Icon className="size-5 text-foreground/90" />
                                 <span className="text-foreground/75 text-xs leading-none">

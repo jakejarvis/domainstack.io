@@ -4,7 +4,7 @@ import {
   CaretUpIcon,
   SealQuestionIcon,
 } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Fragment, useState } from "react";
 import { CertificateAlert } from "@/components/domain/certificate-alert";
 import { KeyValue } from "@/components/domain/key-value";
@@ -124,6 +124,7 @@ export function CertificatesSection({
   domain?: string;
   data?: CertificatesResponse | null;
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const [showAll, setShowAll] = useState(false);
   const certificates = data?.certificates ?? [];
   const error = data?.error;
@@ -159,11 +160,22 @@ export function CertificatesSection({
               {showAll && (
                 <motion.div
                   key="cert-chain"
-                  initial={{ height: 0, opacity: 0 }}
+                  initial={{
+                    height: shouldReduceMotion ? "auto" : 0,
+                    opacity: 0,
+                  }}
                   animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  style={{ overflow: "hidden" }}
+                  exit={{
+                    height: shouldReduceMotion ? "auto" : 0,
+                    opacity: 0,
+                  }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0.1 : 0.25,
+                    ease: "easeOut",
+                  }}
+                  style={{
+                    overflow: shouldReduceMotion ? undefined : "hidden",
+                  }}
                 >
                   <div className="my-3 flex justify-center">
                     <ArrowUpIcon

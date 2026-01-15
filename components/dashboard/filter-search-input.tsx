@@ -1,5 +1,5 @@
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -13,6 +13,8 @@ type FilterSearchInputProps = {
 };
 
 export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="flex-1 lg:max-w-xs">
       <InputGroup>
@@ -20,7 +22,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
           <MagnifyingGlassIcon />
         </InputGroupAddon>
         <InputGroupInput
-          placeholder="Search domains..."
+          placeholder="Search domains…"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"
@@ -32,11 +34,11 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
           {value && (
             <InputGroupAddon align="inline-end">
               <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
                 transition={{
-                  duration: 0.16,
+                  duration: shouldReduceMotion ? 0.1 : 0.16,
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
               >

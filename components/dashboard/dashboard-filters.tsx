@@ -7,7 +7,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
 import {
@@ -80,6 +80,8 @@ export function DashboardFilters({
   onSortChange,
   table,
 }: DashboardFiltersProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   // Flat map of all providers for chip rendering
   const allProvidersMap = useMemo(() => {
     const map = new Map<
@@ -250,11 +252,11 @@ export function DashboardFilters({
         <AnimatePresence initial={false}>
           {hasActiveFilters && (
             <motion.div
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
+              exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
               transition={{
-                duration: 0.18,
+                duration: shouldReduceMotion ? 0.1 : 0.18,
                 ease: [0.22, 1, 0.36, 1] as const,
               }}
             >

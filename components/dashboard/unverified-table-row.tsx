@@ -2,7 +2,7 @@
 
 import { PlayIcon, TrashIcon } from "@phosphor-icons/react/ssr";
 import { type Cell, flexRender } from "@tanstack/react-table";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
@@ -16,17 +16,6 @@ type UnverifiedTableRowProps = {
   onRemove: (id: string, domainName: string) => void;
 };
 
-const rowMotionProps = {
-  layout: "position" as const,
-  initial: { opacity: 0, y: 6 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -6 },
-  transition: {
-    duration: 0.16,
-    ease: [0.22, 1, 0.36, 1] as const,
-  },
-};
-
 export function UnverifiedTableRow({
   rowId,
   cells,
@@ -35,6 +24,8 @@ export function UnverifiedTableRow({
   onVerify,
   onRemove,
 }: UnverifiedTableRowProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   // Find cells by column ID for maintainability
   const cellMap = new Map(cells.map((cell) => [cell.column.id, cell]));
   const selectCell = cellMap.get("select");
@@ -49,7 +40,14 @@ export function UnverifiedTableRow({
   return (
     <motion.tr
       key={rowId}
-      {...rowMotionProps}
+      layout={shouldReduceMotion ? false : "position"}
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -6 }}
+      transition={{
+        duration: shouldReduceMotion ? 0.1 : 0.16,
+        ease: [0.22, 1, 0.36, 1] as const,
+      }}
       className={cn(
         "group min-w-full transition-colors hover:bg-muted/30",
         isSelected && "bg-primary/5",

@@ -25,7 +25,7 @@ export function UpgradeButton({
       {isCheckoutLoading ? (
         <>
           <Spinner />
-          Loading...
+          Loading…
         </>
       ) : (
         children

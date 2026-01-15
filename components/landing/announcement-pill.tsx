@@ -5,13 +5,14 @@ import {
   ShootingStarIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import useLocalStorageState from "use-local-storage-state";
 
 const STORAGE_KEY = "announcement-dismissed-accounts-launch";
 
 export function AnnouncementPill() {
+  const shouldReduceMotion = useReducedMotion();
   const [dismissed, setDismissed] = useLocalStorageState(STORAGE_KEY, {
     defaultValue: false,
   });
@@ -26,10 +27,20 @@ export function AnnouncementPill() {
     <AnimatePresence>
       {!dismissed && (
         <motion.div
-          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+          initial={{
+            opacity: 0,
+            y: shouldReduceMotion ? 0 : -10,
+            scale: shouldReduceMotion ? 1 : 0.95,
+          }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          exit={{
+            opacity: 0,
+            scale: shouldReduceMotion ? 1 : 0.95,
+          }}
+          transition={{
+            duration: shouldReduceMotion ? 0.15 : 0.3,
+            ease: [0.22, 1, 0.36, 1],
+          }}
           className="absolute right-0 bottom-full left-0 z-10 mb-8 flex items-center justify-center"
         >
           <div className="relative inline-flex items-center rounded-full border border-black/10 bg-gradient-to-r from-black/[0.02] to-black/[0.04] text-sm backdrop-blur-sm transition-all hover:border-black/20 hover:from-black/[0.04] hover:to-black/[0.06] dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04] dark:hover:border-white/20 dark:hover:from-white/[0.04] dark:hover:to-white/[0.06]">

@@ -403,7 +403,7 @@ export function AddDomainContent({
                       }
                     >
                       {isVerifying ? <Spinner /> : <CheckIcon />}
-                      {isVerifying ? "Checking..." : "Check Now"}
+                      {isVerifying ? "Checking…" : "Check Now"}
                     </Button>
                   </div>
                 </>

@@ -5,7 +5,7 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
@@ -63,6 +63,8 @@ export function DashboardContent({
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
+  const shouldReduceMotion = useReducedMotion();
+
   useEffect(() => {
     setHasHydrated(true);
   }, []);
@@ -145,12 +147,21 @@ export function DashboardContent({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={viewMode}
-          initial={hasHydrated ? { opacity: 0, y: 8 } : false}
+          initial={
+            hasHydrated ? { opacity: 0, y: shouldReduceMotion ? 0 : 8 } : false
+          }
           animate={{ opacity: 1, y: 0 }}
-          exit={hasHydrated ? { opacity: 0, y: -8 } : undefined}
+          exit={
+            hasHydrated
+              ? { opacity: 0, y: shouldReduceMotion ? 0 : -8 }
+              : undefined
+          }
           transition={
             hasHydrated
-              ? { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const }
+              ? {
+                  duration: shouldReduceMotion ? 0.1 : 0.18,
+                  ease: [0.22, 1, 0.36, 1] as const,
+                }
               : { duration: 0 }
           }
         >

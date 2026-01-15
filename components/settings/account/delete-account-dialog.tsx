@@ -203,7 +203,7 @@ export function DeleteAccountDialog({
                 {isLoading ? (
                   <>
                     <Spinner />
-                    Loading...
+                    Loading…
                   </>
                 ) : (
                   <>

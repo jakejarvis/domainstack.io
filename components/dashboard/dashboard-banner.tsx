@@ -173,7 +173,7 @@ export function DashboardBanner({
               {secondaryAction.loading ? (
                 <>
                   <Spinner />
-                  Loading...
+                  Loading…
                 </>
               ) : (
                 secondaryAction.label
@@ -189,7 +189,7 @@ export function DashboardBanner({
               {action.loading ? (
                 <>
                   <Spinner />
-                  Loading...
+                  Loading…
                 </>
               ) : (
                 action.label

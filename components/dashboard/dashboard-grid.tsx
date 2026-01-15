@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { UpgradeCard } from "@/components/dashboard/upgrade-card";
@@ -56,7 +56,7 @@ const GridItem = memo(function GridItem({
     <motion.div
       className="group relative h-full"
       animate={{ scale: isSelected ? 1.01 : 1 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: 0.1 }}
     >
       {/* Selection ring overlay */}
       <div
@@ -103,6 +103,8 @@ export function DashboardGrid({
   onRemove,
   onArchive,
 }: DashboardGridProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
   const isFirstMountRef = useRef(true);
   useEffect(() => {
@@ -110,17 +112,20 @@ export function DashboardGrid({
   }, []);
 
   const ease = [0.22, 1, 0.36, 1] as const;
-  const duration = 0.18;
+  const duration = shouldReduceMotion ? 0.1 : 0.18;
   const layoutTransition = { duration, ease } as const;
 
   const getItemMotionProps = (index: number) => {
-    const delay = isFirstMountRef.current ? Math.min(index * 0.05, 0.3) : 0;
+    const delay =
+      isFirstMountRef.current && !shouldReduceMotion
+        ? Math.min(index * 0.05, 0.3)
+        : 0;
 
     return {
-      layout: "position" as const,
-      initial: { opacity: 0, y: 10 },
+      layout: shouldReduceMotion ? false : ("position" as const),
+      initial: { opacity: 0, y: shouldReduceMotion ? 0 : 10 },
       animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: -10 },
+      exit: { opacity: 0, y: shouldReduceMotion ? 0 : -10 },
       transition: {
         // Stagger only the "enter" fade/slide; never delay layout reflow.
         opacity: { duration, ease, delay },

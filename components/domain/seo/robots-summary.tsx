@@ -12,7 +12,7 @@ import {
   WaveformIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { PillCount } from "@/components/domain/pill-count";
 import {
@@ -394,6 +394,7 @@ function GroupsAccordion({
   highlight: (text: string, q: string) => React.ReactNode;
   only?: "all" | "allow" | "disallow";
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const defaultIdx = useMemo(
     () => groups.findIndex((g) => g.userAgents.includes("*")),
     [groups],
@@ -418,11 +419,17 @@ function GroupsAccordion({
         return (
           <motion.div
             key={stableKey}
-            initial={{ opacity: 0, height: 0 }}
+            initial={{
+              opacity: 0,
+              height: shouldReduceMotion ? "auto" : 0,
+            }}
             animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            style={{ overflow: "hidden" }}
+            exit={{ opacity: 0, height: shouldReduceMotion ? "auto" : 0 }}
+            transition={{
+              duration: shouldReduceMotion ? 0.1 : 0.2,
+              ease: "easeOut",
+            }}
+            style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
           >
             <AccordionItem value={`g-${idx}`} className="border-border/65">
               <AccordionTrigger className="group/accordion cursor-pointer px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">

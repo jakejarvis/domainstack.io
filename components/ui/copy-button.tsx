@@ -7,7 +7,7 @@ import {
   XCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import clipboardCopy from "clipboard-copy";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button, type buttonVariants } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export function CopyButton({
   size = "icon-sm",
   className,
 }: CopyButtonProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -86,10 +87,16 @@ export function CopyButton({
           {copied ? (
             <motion.span
               key="check"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+              }
+              animate={
+                shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
+              }
+              exit={
+                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+              }
+              transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
               className="flex items-center justify-center"
             >
               <CheckIcon className="text-accent-green" />
@@ -97,10 +104,16 @@ export function CopyButton({
           ) : (
             <motion.span
               key="clipboard"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+              }
+              animate={
+                shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
+              }
+              exit={
+                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+              }
+              transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
               className="flex items-center justify-center"
             >
               <ClipboardIcon />

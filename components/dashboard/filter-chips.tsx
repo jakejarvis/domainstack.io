@@ -1,5 +1,5 @@
 import { XIcon } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Badge } from "@/components/ui/badge";
 
 export type FilterChip = {
@@ -16,6 +16,8 @@ type FilterChipsProps = {
 };
 
 export function FilterChips({ chips, onRemove }: FilterChipsProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   if (chips.length === 0) {
     return null;
   }
@@ -24,11 +26,11 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
     <AnimatePresence initial={false}>
       <motion.div
         key="active-filter-chips"
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
+        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
         transition={{
-          duration: 0.18,
+          duration: shouldReduceMotion ? 0.1 : 0.18,
           ease: [0.22, 1, 0.36, 1] as const,
         }}
         className="flex flex-wrap gap-2"
@@ -39,14 +41,22 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
               key={
                 chip.type === "search" ? "search" : `${chip.type}-${chip.value}`
               }
-              layout="position"
-              initial={{ opacity: 0, y: 6, scale: 0.98 }}
+              layout={shouldReduceMotion ? false : "position"}
+              initial={{
+                opacity: 0,
+                y: shouldReduceMotion ? 0 : 6,
+                scale: shouldReduceMotion ? 1 : 0.98,
+              }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              exit={{
+                opacity: 0,
+                y: shouldReduceMotion ? 0 : -6,
+                scale: shouldReduceMotion ? 1 : 0.98,
+              }}
               transition={{
-                duration: 0.18,
+                duration: shouldReduceMotion ? 0.1 : 0.18,
                 ease: [0.22, 1, 0.36, 1] as const,
-                delay: Math.min(index * 0.01, 0.06),
+                delay: shouldReduceMotion ? 0 : Math.min(index * 0.01, 0.06),
               }}
               className="inline-flex"
             >

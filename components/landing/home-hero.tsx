@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,8 @@ type HomeHeroProps = {
 };
 
 export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   const rotatingWords = [
     "registration",
     "DNS records",
@@ -67,7 +69,10 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
         aria-atomic="true"
         initial={false}
         animate={{ width: measuredWidth ?? undefined }}
-        transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+        transition={{
+          duration: shouldReduceMotion ? 0.1 : 0.85,
+          ease: [0.22, 1, 0.36, 1],
+        }}
         style={{ width: measuredWidth ?? undefined }}
       >
         <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
@@ -75,13 +80,25 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={rotatingWords[index]}
-                initial={{ y: "100%", opacity: 0, x: 0 }}
-                animate={{ y: 0, opacity: 1, x: 0 }}
-                exit={{ y: "-100%", opacity: 0, x: 0 }}
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { y: "100%", opacity: 0, x: 0 }
+                }
+                animate={
+                  shouldReduceMotion
+                    ? { opacity: 1 }
+                    : { y: 0, opacity: 1, x: 0 }
+                }
+                exit={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { y: "-100%", opacity: 0, x: 0 }
+                }
                 transition={{
                   type: "tween",
                   ease: [0.22, 1, 0.36, 1],
-                  duration: 0.5,
+                  duration: shouldReduceMotion ? 0.15 : 0.5,
                 }}
                 className="inline-block will-change-[transform,opacity]"
               >

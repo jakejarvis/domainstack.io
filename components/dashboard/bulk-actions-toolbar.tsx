@@ -1,5 +1,5 @@
 import { ArchiveIcon, TrashIcon, XIcon } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -32,16 +32,21 @@ export function BulkActionsToolbar({
   isDeleting = false,
   className,
 }: BulkActionsToolbarProps) {
+  const shouldReduceMotion = useReducedMotion();
   const isLoading = isArchiving || isDeleting;
 
   return (
     <AnimatePresence>
       {selectedCount > 0 && (
         <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
+          transition={
+            shouldReduceMotion
+              ? { duration: 0.15 }
+              : { type: "spring", damping: 25, stiffness: 300 }
+          }
           className={cn(
             "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl sm:inset-x-auto",
             className,

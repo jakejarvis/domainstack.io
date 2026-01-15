@@ -1,7 +1,7 @@
 "use client";
 
 import { XCircleIcon } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
@@ -35,6 +35,8 @@ export function NotificationList({
   onNotificationClick,
   onClosePopover,
 }: NotificationListProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <ScrollArea viewportRef={scrollAreaRef} className="min-h-0 flex-1 bg-card">
       {isLoading ? (
@@ -55,10 +57,16 @@ export function NotificationList({
             {notifications.map((notification) => (
               <motion.div
                 key={notification.id}
-                initial={{ opacity: 0, height: 0 }}
+                initial={{
+                  opacity: 0,
+                  height: shouldReduceMotion ? "auto" : 0,
+                }}
                 animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
+                exit={{ opacity: 0, height: shouldReduceMotion ? "auto" : 0 }}
+                transition={{
+                  duration: shouldReduceMotion ? 0.1 : 0.2,
+                  ease: "easeInOut",
+                }}
               >
                 <NotificationCard
                   notification={notification}

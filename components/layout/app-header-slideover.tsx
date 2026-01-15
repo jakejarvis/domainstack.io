@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useHeaderSearchFocus } from "@/components/search/header-search-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -11,6 +11,7 @@ export function AppHeaderSlideOver({
 }) {
   const { isSearchFocused } = useHeaderSearchFocus();
   const isMobile = useIsMobile();
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <motion.div
@@ -18,13 +19,17 @@ export function AppHeaderSlideOver({
       animate={{
         // Only animate on mobile; on desktop keep fully visible
         opacity: isMobile ? (isSearchFocused ? 0 : 1) : 1,
-        x: isMobile ? (isSearchFocused ? 16 : 0) : 0,
+        x: isMobile && !shouldReduceMotion ? (isSearchFocused ? 16 : 0) : 0,
       }}
-      transition={{
-        type: "spring",
-        stiffness: 600,
-        damping: 35,
-      }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0.1 }
+          : {
+              type: "spring",
+              stiffness: 600,
+              damping: 35,
+            }
+      }
       initial={false}
       style={{ pointerEvents: isSearchFocused && isMobile ? "none" : "auto" }}
     >

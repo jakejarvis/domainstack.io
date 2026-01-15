@@ -103,6 +103,7 @@ export function SectionNav({
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="flex min-w-0 cursor-pointer items-center gap-2"
+            aria-label={`Scroll to top - ${domain}`}
           >
             <Favicon domain={domain} className="shrink-0" />
             <span className="max-w-32 truncate font-medium text-[15px]">

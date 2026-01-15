@@ -1,6 +1,6 @@
 import { CaretDownIcon, FunnelIcon } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export function MobileFiltersCollapsible({
   table,
   children,
 }: MobileFiltersCollapsibleProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -43,11 +44,14 @@ export function MobileFiltersCollapsible({
                 <AnimatePresence initial={false}>
                   {hasActiveFilters && (
                     <motion.span
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{
+                        opacity: 0,
+                        scale: shouldReduceMotion ? 1 : 0.9,
+                      }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
+                      exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.9 }}
                       transition={{
-                        duration: 0.16,
+                        duration: shouldReduceMotion ? 0.1 : 0.16,
                         ease: [0.22, 1, 0.36, 1] as const,
                       }}
                       className="ml-1 inline-flex"
@@ -84,13 +88,13 @@ export function MobileFiltersCollapsible({
                 animate={
                   mobileOpen
                     ? { height: "auto", opacity: 1 }
-                    : { height: 0, opacity: 0 }
+                    : { height: shouldReduceMotion ? "auto" : 0, opacity: 0 }
                 }
                 transition={{
-                  duration: 0.22,
+                  duration: shouldReduceMotion ? 0.1 : 0.22,
                   ease: [0.22, 1, 0.36, 1] as const,
                 }}
-                style={{ overflow: "hidden" }}
+                style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
               >
                 {contentChildren}
               </motion.div>

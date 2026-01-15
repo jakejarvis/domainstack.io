@@ -116,7 +116,7 @@ export function SubscriptionPanel() {
               {isCustomerPortalLoading ? (
                 <>
                   <Spinner />
-                  Loading...
+                  Loading…
                 </>
               ) : (
                 <>
