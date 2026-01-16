@@ -4,6 +4,7 @@ import {
   ArrowCounterClockwiseIcon,
   WarningIcon,
 } from "@phosphor-icons/react/ssr";
+import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
@@ -54,11 +55,15 @@ function SectionErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 /**
  * Error boundary for individual domain sections.
  * Catches rendering errors and provides a fallback UI without crashing the entire page.
+ * Integrates with React Query to reset cached errors on retry.
  */
 export function SectionErrorBoundary({ children, sectionName }: Props) {
+  const { reset } = useQueryErrorResetBoundary();
+
   return (
     <ErrorBoundary
       FallbackComponent={SectionErrorFallback}
+      onReset={reset}
       onError={(error, errorInfo) => {
         analytics.trackException(error, {
           section: sectionName,

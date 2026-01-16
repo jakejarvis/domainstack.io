@@ -7,6 +7,7 @@ import {
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
+import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { Suspense, useState } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import {
@@ -51,6 +52,7 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
 export function CalendarFeedPopover() {
   const [open, setOpen] = useState(false);
+  const { reset } = useQueryErrorResetBoundary();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,7 +105,10 @@ export function CalendarFeedPopover() {
 
           <Separator className="bg-muted" />
 
-          <ErrorBoundary FallbackComponent={PopoverErrorFallback}>
+          <ErrorBoundary
+            FallbackComponent={PopoverErrorFallback}
+            onReset={reset}
+          >
             <Suspense
               fallback={
                 <CalendarInstructionsSkeleton className="bg-background/50 p-4" />
