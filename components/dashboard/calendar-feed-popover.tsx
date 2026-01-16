@@ -105,7 +105,9 @@ export function CalendarFeedPopover() {
 
           <ErrorBoundary FallbackComponent={PopoverErrorFallback}>
             <Suspense
-              fallback={<CalendarInstructionsSkeleton className="p-4" />}
+              fallback={
+                <CalendarInstructionsSkeleton className="bg-background/50 p-4" />
+              }
             >
               <CalendarInstructions className="bg-background/50 p-4" />
             </Suspense>

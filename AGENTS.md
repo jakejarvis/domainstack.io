@@ -371,3 +371,59 @@ const mutation = useMutation({
   onSettled: () => void queryClient.invalidateQueries({ queryKey }),
 });
 ```
+
+### Suspense with TanStack Query
+
+Use `useSuspenseQuery` for declarative data fetching with React Suspense boundaries.
+Exemplar: `components/domain/report-client.tsx`
+
+**When to use Suspense:**
+- Simple read-only queries without `enabled` flag
+- Components that render data immediately (no conditional logic)
+- Parallel independent data sections that can load separately
+
+**When NOT to use Suspense:**
+- Queries with `enabled` option (conditional fetching)
+- Hooks with mutations and optimistic updates (e.g., `useTrackedDomains`)
+- Lazy-loaded data (hover triggers, infinite scroll)
+- Polling-based queries
+
+**Pattern:**
+```tsx
+// Parent wraps with boundaries
+<ErrorBoundary fallback={<ErrorFallback />}>
+  <Suspense fallback={<MySkeleton />}>
+    <MyComponent />
+  </Suspense>
+</ErrorBoundary>
+
+// Component uses useSuspenseQuery - data is guaranteed non-null
+function MyComponent() {
+  const { data } = useSuspenseQuery(
+    trpc.myRouter.myQuery.queryOptions()
+  );
+  return <div>{data.value}</div>;
+}
+```
+
+**Parallel queries:**
+```tsx
+function MyComponent() {
+  const [query1, query2] = useSuspenseQueries({
+    queries: [
+      trpc.router1.query1.queryOptions(),
+      trpc.router2.query2.queryOptions(),
+    ],
+  });
+  // Both are guaranteed to have data
+}
+```
+
+**Error boundaries:**
+- Use `SectionErrorBoundary` for domain report sections
+- Use `SettingsErrorBoundary` for settings panels
+- Create context-specific boundaries with `CreateIssueButton` for error reporting
+
+**Skeleton requirements:**
+- MUST mirror final content layout to prevent CLS
+- Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`)
