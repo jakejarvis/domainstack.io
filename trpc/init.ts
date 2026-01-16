@@ -25,6 +25,12 @@ type ProcedureMeta = {
    * ```
    */
   rateLimit?: RateLimitConfig;
+
+  /**
+   * Skip rate limiting for this procedure.
+   * Use for lightweight/cached endpoints that don't need throttling.
+   */
+  skipRateLimit?: boolean;
 };
 
 export const createContext = async (opts?: { req?: Request }) => {
@@ -102,28 +108,39 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
 });
 
 /**
- * Middleware to enforce rate limiting based on client IP.
+ * Middleware to enforce rate limiting.
+ *
+ * Rate limit key priority:
+ * 1. Authenticated user ID (more accurate per-user limits)
+ * 2. Client IP address (fallback for anonymous requests)
  *
  * Reads rate limit config from procedure meta.
  * Configure per-procedure: `.meta({ rateLimit: { requests: 10, window: "1 m" } })`
  *
  * Fail-open strategy:
- * - No IP available: Skip rate limiting, allow request
+ * - No identifier available: Skip rate limiting, allow request
  * - Redis timeout/error: Allow request (handled by library with 2s timeout)
  *
  * On success, adds rate limit info to context for downstream use.
  * On failure, throws TOO_MANY_REQUESTS with retry timing.
  */
 const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
-  // Fail open: no IP = skip rate limiting entirely
-  if (!ctx.ip) {
+  // Allow procedures to opt-out via meta
+  if (meta?.skipRateLimit) {
+    return next();
+  }
+
+  // Use user ID for authenticated requests, fall back to IP for anonymous
+  const rateLimitKey = ctx.session?.user?.id ?? ctx.ip;
+
+  // Fail open: no identifier = skip rate limiting entirely
+  if (!rateLimitKey) {
     return next();
   }
 
   const limiter = getRateLimiter(meta?.rateLimit);
-  const { success, limit, remaining, reset, pending } = await limiter.limit(
-    ctx.ip,
-  );
+  const { success, limit, remaining, reset, pending } =
+    await limiter.limit(rateLimitKey);
 
   // Handle analytics write in background (non-blocking)
   after(() => void pending);
@@ -176,7 +193,8 @@ export const publicProcedure = t.procedure.use(withLogging);
  * Rate-limited procedure for public endpoints exposed to external consumers.
  * Use this for MCP tools, public APIs, and other endpoints that need throttling.
  *
- * Fail-open: Requests without identifiable IP are allowed without rate limiting.
+ * Rate limit key: user ID (if authenticated) or IP address (anonymous).
+ * Fail-open: Requests without identifiable key are allowed without rate limiting.
  */
 export const rateLimitedProcedure = publicProcedure.use(withRateLimit);
 
@@ -185,6 +203,17 @@ export const rateLimitedProcedure = publicProcedure.use(withRateLimit);
  * Use this for all domain data endpoints (dns, hosting, seo, etc).
  */
 export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);
+
+/**
+ * Rate-limited domain procedure combining access tracking and rate limiting.
+ * Order: logging -> rate limit -> domain access tracking
+ *
+ * Use for public domain lookup endpoints (DNS, WHOIS, hosting, etc).
+ * Configure limits via meta: `.meta({ rateLimit: { requests: 20, window: "1 m" } })`
+ */
+export const rateLimitedDomainProcedure = publicProcedure
+  .use(withRateLimit)
+  .use(withDomainAccessUpdate);
 
 /**
  * Middleware to ensure user is authenticated.
@@ -240,6 +269,16 @@ const withProTier = t.middleware(async (opts) => {
  * Use this for all endpoints that require a logged-in user.
  */
 export const protectedProcedure = publicProcedure.use(withAuth);
+
+/**
+ * Rate-limited protected procedure for authenticated expensive operations.
+ * Order: logging -> auth -> rate limit
+ *
+ * Rate limits by user ID (more accurate than IP for authenticated users).
+ * Use for operations like domain verification, email sending, etc.
+ */
+export const rateLimitedProtectedProcedure =
+  protectedProcedure.use(withRateLimit);
 
 /**
  * Pro-only procedure requiring Pro subscription.

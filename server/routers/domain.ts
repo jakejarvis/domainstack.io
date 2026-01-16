@@ -5,8 +5,8 @@ import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { withSwrCache } from "@/lib/workflow/swr";
 import {
   createTRPCRouter,
-  domainProcedure,
   publicProcedure,
+  rateLimitedDomainProcedure,
 } from "@/trpc/init";
 
 const DomainInputSchema = z
@@ -29,7 +29,8 @@ export const domainRouter = createTRPCRouter({
    * Performs WHOIS/RDAP lookup with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getRegistration: domainProcedure
+  getRegistration: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedRegistration } = await import(
@@ -51,7 +52,8 @@ export const domainRouter = createTRPCRouter({
    * Queries multiple DoH providers with automatic fallback.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getDnsRecords: domainProcedure
+  getDnsRecords: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedDns } = await import("@/lib/db/repos/dns");
@@ -73,7 +75,8 @@ export const domainRouter = createTRPCRouter({
    * Uses the hostingOrchestrationWorkflow which handles the full dependency chain
    * (DNS → headers → hosting) with proper durability and error handling.
    */
-  getHosting: domainProcedure
+  getHosting: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedHosting } = await import("@/lib/db/repos/hosting");
@@ -95,7 +98,8 @@ export const domainRouter = createTRPCRouter({
    * Performs TLS handshake with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getCertificates: domainProcedure
+  getCertificates: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedCertificates } = await import(
@@ -117,7 +121,8 @@ export const domainRouter = createTRPCRouter({
    * Probes the domain with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getHeaders: domainProcedure
+  getHeaders: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedHeaders } = await import("@/lib/db/repos/headers");
@@ -136,17 +141,20 @@ export const domainRouter = createTRPCRouter({
    * Fetches HTML, robots.txt, and OG images with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getSeo: domainProcedure.input(DomainInputSchema).query(async ({ input }) => {
-    const { getCachedSeo } = await import("@/lib/db/repos/seo");
-    const { seoWorkflow } = await import("@/workflows/seo");
+  getSeo: rateLimitedDomainProcedure
+    .meta({ rateLimit: { requests: 30, window: "1 m" } })
+    .input(DomainInputSchema)
+    .query(async ({ input }) => {
+      const { getCachedSeo } = await import("@/lib/db/repos/seo");
+      const { seoWorkflow } = await import("@/workflows/seo");
 
-    return withSwrCache({
-      workflowName: "seo",
-      domain: input.domain,
-      getCached: () => getCachedSeo(input.domain),
-      startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
-    });
-  }),
+      return withSwrCache({
+        workflowName: "seo",
+        domain: input.domain,
+        getCached: () => getCachedSeo(input.domain),
+        startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
+      });
+    }),
 
   /**
    * Get a favicon for a domain using a durable workflow.
