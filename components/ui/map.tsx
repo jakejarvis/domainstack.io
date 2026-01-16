@@ -329,7 +329,10 @@ function MapMarkerContent({ children, className }: MapMarkerContentProps) {
 
 function DefaultMarkerIcon() {
   return (
-    <div className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg" />
+    <div
+      aria-hidden="true"
+      className="relative h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg"
+    />
   );
 }
 

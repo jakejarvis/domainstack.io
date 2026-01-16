@@ -274,6 +274,7 @@ export function MultiSelect<T extends string>({
                               >
                                 <Checkbox
                                   checked={isSelected}
+                                  tabIndex={-1}
                                   className="pointer-events-none"
                                 />
                                 {optionRenderer(option)}
@@ -301,6 +302,7 @@ export function MultiSelect<T extends string>({
                         >
                           <Checkbox
                             checked={isSelected}
+                            tabIndex={-1}
                             className="pointer-events-none"
                           />
                           {optionRenderer(option)}

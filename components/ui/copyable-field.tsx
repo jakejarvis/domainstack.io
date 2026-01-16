@@ -53,6 +53,7 @@ export function CopyableField({
           <button
             type="button"
             onClick={handleSelect}
+            aria-label="Select text"
             className="h-full w-full min-w-0 cursor-text bg-transparent pr-2 pl-3 text-left font-mono text-[13px] outline-none"
           >
             <span ref={contentRef} className="inline-block whitespace-nowrap">

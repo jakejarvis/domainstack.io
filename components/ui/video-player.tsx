@@ -71,7 +71,13 @@ function VideoPlayerPlayButton({
   className,
   ...props
 }: React.ComponentProps<typeof MediaPlayButton>) {
-  return <MediaPlayButton className={cn("p-2.5", className)} {...props} />;
+  return (
+    <MediaPlayButton
+      aria-label="Play"
+      className={cn("p-2.5", className)}
+      {...props}
+    />
+  );
 }
 
 function VideoPlayerSeekBackwardButton({
@@ -79,7 +85,11 @@ function VideoPlayerSeekBackwardButton({
   ...props
 }: React.ComponentProps<typeof MediaSeekBackwardButton>) {
   return (
-    <MediaSeekBackwardButton className={cn("p-2.5", className)} {...props} />
+    <MediaSeekBackwardButton
+      aria-label="Seek backward"
+      className={cn("p-2.5", className)}
+      {...props}
+    />
   );
 }
 
@@ -88,7 +98,11 @@ function VideoPlayerSeekForwardButton({
   ...props
 }: React.ComponentProps<typeof MediaSeekForwardButton>) {
   return (
-    <MediaSeekForwardButton className={cn("p-2.5", className)} {...props} />
+    <MediaSeekForwardButton
+      aria-label="Seek forward"
+      className={cn("p-2.5", className)}
+      {...props}
+    />
   );
 }
 
@@ -96,7 +110,13 @@ function VideoPlayerMuteButton({
   className,
   ...props
 }: React.ComponentProps<typeof MediaMuteButton>) {
-  return <MediaMuteButton className={cn("p-2.5", className)} {...props} />;
+  return (
+    <MediaMuteButton
+      aria-label="Mute"
+      className={cn("p-2.5", className)}
+      {...props}
+    />
+  );
 }
 
 function VideoPlayerContent({

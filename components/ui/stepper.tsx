@@ -411,17 +411,17 @@ function StepperSeparator({ className }: React.ComponentProps<"div">) {
 
 StepperSeparator.displayName = "StepperSeparator";
 
-function StepperTitle({ children, className }: React.ComponentProps<"h3">) {
+function StepperTitle({ children, className }: React.ComponentProps<"span">) {
   const { state } = useStepItem();
 
   return (
-    <h3
+    <span
       data-slot="stepper-title"
       data-state={state}
       className={cn("font-medium text-sm leading-none", className)}
     >
       {children}
-    </h3>
+    </span>
   );
 }
 
