@@ -1,4 +1,5 @@
 import { get } from "@vercel/edge-config";
+import { cache } from "react";
 import { createLogger } from "@/lib/logger/server";
 import {
   type ProviderCatalog,
@@ -30,7 +31,7 @@ const logger = createLogger({ source: "edge-config" });
  *
  * @returns Array of suggested domain names (empty array if unavailable)
  */
-export async function getDefaultSuggestions(): Promise<string[]> {
+export const getDefaultSuggestions = cache(async (): Promise<string[]> => {
   // If EDGE_CONFIG is not set, return empty array
   if (!process.env.EDGE_CONFIG) {
     return [];
@@ -57,7 +58,7 @@ export async function getDefaultSuggestions(): Promise<string[]> {
 
     return [];
   }
-}
+});
 
 /**
  * Fetches the provider catalog from Vercel Edge Config.
@@ -82,34 +83,36 @@ export async function getDefaultSuggestions(): Promise<string[]> {
  *
  * @returns Validated ProviderCatalog or null if unavailable/invalid
  */
-export async function getProviderCatalog(): Promise<ProviderCatalog | null> {
-  // If EDGE_CONFIG is not set, return null
-  if (!process.env.EDGE_CONFIG) {
-    return null;
-  }
-
-  try {
-    const raw = await get<unknown>("provider_catalog");
-
-    if (!raw) {
-      logger.warn("provider_catalog key not found in Edge Config");
+export const getProviderCatalog = cache(
+  async (): Promise<ProviderCatalog | null> => {
+    // If EDGE_CONFIG is not set, return null
+    if (!process.env.EDGE_CONFIG) {
       return null;
     }
 
-    const result = safeParseProviderCatalog(raw);
+    try {
+      const raw = await get<unknown>("provider_catalog");
 
-    if (!result.success) {
-      logger.error(result.error, "failed to parse provider catalog");
+      if (!raw) {
+        logger.warn("provider_catalog key not found in Edge Config");
+        return null;
+      }
+
+      const result = safeParseProviderCatalog(raw);
+
+      if (!result.success) {
+        logger.error(result.error, "failed to parse provider catalog");
+        return null;
+      }
+
+      return result.data;
+    } catch (err) {
+      // Log unexpected errors but still fail gracefully
+      logger.error(err, "failed to fetch provider catalog");
       return null;
     }
-
-    return result.data;
-  } catch (err) {
-    // Log unexpected errors but still fail gracefully
-    logger.error(err, "failed to fetch provider catalog");
-    return null;
-  }
-}
+  },
+);
 
 /**
  * Fetches the screenshot blocklist source URLs from Vercel Edge Config.

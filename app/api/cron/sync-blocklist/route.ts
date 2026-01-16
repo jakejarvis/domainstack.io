@@ -36,11 +36,9 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fetch and parse all blocklists
-    const allDomains: string[] = [];
-
-    for (const sourceUrl of sources) {
-      try {
+    // Fetch and parse all blocklists in parallel
+    const fetchResults = await Promise.allSettled(
+      sources.map(async (sourceUrl) => {
         const response = await fetchWithTimeoutAndRetry(
           sourceUrl,
           {},
@@ -52,14 +50,12 @@ export async function GET(request: Request) {
             { sourceUrl, status: response.status },
             "Failed to fetch blocklist",
           );
-          continue;
+          return [];
         }
 
         const text = await response.text();
         const lines = text.split("\n");
-
-        // Track per-source count for accurate logging
-        const countBefore = allDomains.length;
+        const domains: string[] = [];
 
         // Parse domains from blocklist format
         // OISD uses wildcard format: *.example.com or example.com
@@ -76,14 +72,26 @@ export async function GET(request: Request) {
             !domain.startsWith(".") &&
             !domain.endsWith(".")
           ) {
-            allDomains.push(domain.toLowerCase());
+            domains.push(domain.toLowerCase());
           }
         }
 
-        const parsedCount = allDomains.length - countBefore;
-        logger.info({ sourceUrl, count: parsedCount }, "Parsed blocklist");
-      } catch (err) {
-        logger.error({ err, sourceUrl }, "Error fetching blocklist");
+        logger.info({ sourceUrl, count: domains.length }, "Parsed blocklist");
+        return domains;
+      }),
+    );
+
+    // Collect all domains from successful fetches
+    const allDomains: string[] = [];
+    for (let i = 0; i < fetchResults.length; i++) {
+      const result = fetchResults[i];
+      if (result.status === "fulfilled") {
+        allDomains.push(...result.value);
+      } else {
+        logger.error(
+          { err: result.reason, sourceUrl: sources[i] },
+          "Error fetching blocklist",
+        );
       }
     }
 

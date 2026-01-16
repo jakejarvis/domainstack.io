@@ -38,9 +38,10 @@ export function HomeSearchSuggestionsClient({
   const { history, isHistoryLoaded, clearHistory } = useDomainHistory();
 
   const displayedSuggestions = useMemo(() => {
+    const historySet = new Set(history);
     const merged = [
       ...history,
-      ...defaultSuggestions.filter((d) => !history.includes(d)),
+      ...defaultSuggestions.filter((d) => !historySet.has(d)),
     ];
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);

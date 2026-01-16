@@ -28,11 +28,11 @@ export function DnsSection({
       TXT: [],
       NS: [],
     };
-    records
-      ?.filter((r) => r.value !== "")
-      .forEach((r) => {
+    for (const r of records ?? []) {
+      if (r.value !== "") {
         byType[r.type].push(r);
-      });
+      }
+    }
     return byType;
   }, [records]);
 

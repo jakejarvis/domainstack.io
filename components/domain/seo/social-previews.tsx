@@ -1,7 +1,7 @@
 import { SiDiscord, SiFacebook, SiX } from "@icons-pack/react-simple-icons";
 import { ImageBrokenIcon } from "@phosphor-icons/react/ssr";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type SocialPreviewProvider =
@@ -26,6 +26,7 @@ export function SocialPreviews({
 }) {
   const [selectedTab, setSelectedTab] =
     useState<SocialPreviewProvider>("twitter");
+  const [, startTransition] = useTransition();
 
   return (
     <div className="mt-6 space-y-3">
@@ -34,7 +35,9 @@ export function SocialPreviews({
       </div>
       <Tabs
         value={selectedTab}
-        onValueChange={(v) => setSelectedTab(v as typeof selectedTab)}
+        onValueChange={(v) =>
+          startTransition(() => setSelectedTab(v as typeof selectedTab))
+        }
       >
         <TabsList className="h-11 gap-1 md:justify-start">
           <TabsTrigger value="twitter" data-1p-ignore>

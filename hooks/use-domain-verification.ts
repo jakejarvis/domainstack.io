@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
 import type { VerificationMethod } from "@/lib/constants/verification";
@@ -47,6 +47,10 @@ export function useDomainVerification({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  // Store callback in ref to avoid re-creating handleVerify when onSuccess changes
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
   // ============================================================================
   // Mutations & Queries
   // ============================================================================
@@ -90,16 +94,21 @@ export function useDomainVerification({
   // Effects for External State Sync
   // ============================================================================
 
+  // Extract primitives for effect dependencies (avoids re-running on unrelated state changes)
+  const currentStep = state.step;
+  const currentTrackedDomainId =
+    state.step === 2 || state.step === 3 ? state.trackedDomainId : null;
+
   // Sync when resumeDomain prop changes (e.g., TrackDomainButton switches modes)
   useEffect(() => {
     if (resumeDomain && open) {
       // Skip if we're already tracking this exact domain
-      if (state.step === 2 && state.trackedDomainId === resumeDomain.id) {
+      if (currentStep === 2 && currentTrackedDomainId === resumeDomain.id) {
         return;
       }
       dispatch({ type: "RESUME", data: resumeDomain });
     }
-  }, [resumeDomain, open, state]);
+  }, [resumeDomain, open, currentStep, currentTrackedDomainId]);
 
   // Sync when verification data query returns
   useEffect(() => {
@@ -116,16 +125,17 @@ export function useDomainVerification({
   }, [verificationDataQuery.data]);
 
   // Sync prefillDomain when it changes (and we're not resuming)
+  const currentDomain = state.domain;
   useEffect(() => {
     if (
       !resumeDomain &&
       prefillDomain !== undefined &&
-      state.step === 1 &&
-      state.domain !== prefillDomain
+      currentStep === 1 &&
+      currentDomain !== prefillDomain
     ) {
       dispatch({ type: "SET_DOMAIN", domain: prefillDomain });
     }
-  }, [prefillDomain, resumeDomain, state]);
+  }, [prefillDomain, resumeDomain, currentStep, currentDomain]);
 
   // ============================================================================
   // Handlers
@@ -210,7 +220,7 @@ export function useDomainVerification({
           domain: state.domain,
           method: result.method,
         });
-        onSuccess();
+        onSuccessRef.current();
       } else {
         dispatch({ type: "VERIFICATION_FAILED" });
         analytics.track("domain_verification_failed", {
@@ -227,7 +237,7 @@ export function useDomainVerification({
         error: "exception",
       });
     }
-  }, [state, verifyDomainMutation, onSuccess]);
+  }, [state, verifyDomainMutation]);
 
   const handleReturnLater = useCallback(() => {
     toast.info("Domain saved", {

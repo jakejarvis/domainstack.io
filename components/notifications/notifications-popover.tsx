@@ -12,7 +12,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -41,6 +41,7 @@ export function NotificationsPopover() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
   const [open, setOpen] = useState(false);
+  const [, startTransition] = useTransition();
   const autoMarkedThisOpenRef = useRef(false);
   const unreadCountQueryKey = trpc.notifications.unreadCount.queryKey();
 
@@ -269,7 +270,7 @@ export function NotificationsPopover() {
                   maybeAutoMarkAllRead();
                 }
 
-                setView(nextView);
+                startTransition(() => setView(nextView));
               }}
             >
               <TabsList className="grid w-full grid-cols-2">

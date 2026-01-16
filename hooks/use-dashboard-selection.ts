@@ -18,7 +18,7 @@ export function useDashboardSelection<T extends string = string>(
   /** Currently visible item IDs (defaults to allIds). Used for pagination-aware "select all". */
   visibleIds?: T[],
 ) {
-  const [selectedIds, setSelectedIds] = useState<Set<T>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<T>>(() => new Set());
 
   // Use visibleIds if provided, otherwise default to allIds
   const effectiveVisibleIds = visibleIds ?? allIds;
@@ -72,24 +72,27 @@ export function useDashboardSelection<T extends string = string>(
 
   // Toggle all visible items (select all visible if not all visible selected, otherwise clear visible)
   const toggleAll = useCallback(() => {
-    const allVisibleSelected = effectiveVisibleIds.every((id) =>
-      selectedIds.has(id),
-    );
+    setSelectedIds((prev) => {
+      const allVisibleSelected = effectiveVisibleIds.every((id) =>
+        prev.has(id),
+      );
 
-    if (allVisibleSelected && effectiveVisibleIds.length > 0) {
-      // Deselect all visible items
-      setSelectedIds((prev) => {
+      if (allVisibleSelected && effectiveVisibleIds.length > 0) {
+        // Deselect all visible items
         const next = new Set(prev);
         for (const id of effectiveVisibleIds) {
           next.delete(id);
         }
         return next;
-      });
-    } else {
+      }
       // Select all visible items
-      selectAll();
-    }
-  }, [effectiveVisibleIds, selectedIds, selectAll]);
+      const next = new Set(prev);
+      for (const id of effectiveVisibleIds) {
+        next.add(id);
+      }
+      return next;
+    });
+  }, [effectiveVisibleIds]);
 
   // Keyboard handler for Escape to clear selection
   // Use ref to avoid re-attaching listener on every selection change

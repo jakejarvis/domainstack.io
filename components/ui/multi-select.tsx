@@ -75,6 +75,9 @@ export function MultiSelect<T extends string>({
     }
   }, [open, searchable]);
 
+  // Convert selected array to Set for O(1) lookup in render loop
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
   const { contains } = ComboboxPrimitive.useFilter({
     multiple: true,
   });
@@ -262,7 +265,7 @@ export function MultiSelect<T extends string>({
                         </ComboboxPrimitive.GroupLabel>
                         <ComboboxPrimitive.Collection>
                           {(option: MultiSelectOption<T>) => {
-                            const isSelected = selected.includes(option.value);
+                            const isSelected = selectedSet.has(option.value);
                             return (
                               <ComboboxPrimitive.Item
                                 key={option.value}
@@ -289,7 +292,7 @@ export function MultiSelect<T extends string>({
                     className="scroll-py-1 p-1 text-foreground"
                   >
                     {(option: MultiSelectOption<T>) => {
-                      const isSelected = selected.includes(option.value);
+                      const isSelected = selectedSet.has(option.value);
                       return (
                         <ComboboxPrimitive.Item
                           key={option.value}

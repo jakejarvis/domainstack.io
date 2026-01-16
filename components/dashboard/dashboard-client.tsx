@@ -8,7 +8,13 @@ import {
 import type { Table } from "@tanstack/react-table";
 import { useSearchParams } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
 import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
@@ -22,7 +28,10 @@ import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-en
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
 import { Button } from "@/components/ui/button";
 import { useBulkOperations } from "@/hooks/use-bulk-operations";
-import { useConfirmAction } from "@/hooks/use-confirm-action";
+import {
+  type ConfirmAction,
+  useConfirmAction,
+} from "@/hooks/use-confirm-action";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
 import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
@@ -76,6 +85,8 @@ export function DashboardClient() {
   );
   const totalDomainsCount = domains.length;
 
+  const [, startTransition] = useTransition();
+
   const {
     search,
     status,
@@ -84,11 +95,11 @@ export function DashboardClient() {
     providers,
     domainId,
     filteredDomainName,
-    setSearch,
-    setStatus,
-    setHealth,
-    setTlds,
-    setProviders,
+    setSearch: setSearchImmediate,
+    setStatus: setStatusImmediate,
+    setHealth: setHealthImmediate,
+    setTlds: setTldsImmediate,
+    setProviders: setProvidersImmediate,
     clearDomainId,
     filteredDomains: filteredUnsorted,
     availableTlds,
@@ -98,6 +109,32 @@ export function DashboardClient() {
     applyHealthFilter,
     stats,
   } = useDashboardFilters(domains);
+
+  // Wrap filter setters with startTransition for non-blocking updates
+  const setSearch = useCallback(
+    (value: string) => startTransition(() => setSearchImmediate(value)),
+    [setSearchImmediate],
+  );
+  const setStatus = useCallback(
+    (value: Parameters<typeof setStatusImmediate>[0]) =>
+      startTransition(() => setStatusImmediate(value)),
+    [setStatusImmediate],
+  );
+  const setHealth = useCallback(
+    (value: Parameters<typeof setHealthImmediate>[0]) =>
+      startTransition(() => setHealthImmediate(value)),
+    [setHealthImmediate],
+  );
+  const setTlds = useCallback(
+    (value: Parameters<typeof setTldsImmediate>[0]) =>
+      startTransition(() => setTldsImmediate(value)),
+    [setTldsImmediate],
+  );
+  const setProviders = useCallback(
+    (value: Parameters<typeof setProvidersImmediate>[0]) =>
+      startTransition(() => setProvidersImmediate(value)),
+    [setProvidersImmediate],
+  );
 
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
@@ -126,8 +163,8 @@ export function DashboardClient() {
   });
 
   // Confirmation dialog
-  const confirmAction = useConfirmAction({
-    onConfirm: (action) => {
+  const handleConfirmAction = useCallback(
+    (action: ConfirmAction) => {
       if (action.type === "remove") {
         removeMutation.mutate({ trackedDomainId: action.domainId });
       } else if (action.type === "archive") {
@@ -138,6 +175,11 @@ export function DashboardClient() {
         void executeBulkDelete(action.domainIds);
       }
     },
+    [removeMutation, archiveMutation, executeBulkArchive, executeBulkDelete],
+  );
+
+  const confirmAction = useConfirmAction({
+    onConfirm: handleConfirmAction,
   });
 
   // Handle ?upgraded=true query param (after nuqs adapter)

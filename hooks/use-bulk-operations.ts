@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 
@@ -9,6 +9,10 @@ type UseBulkOperationsOptions = {
 export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
   const [isBulkArchiving, setIsBulkArchiving] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Store callback in ref to avoid re-creating functions when onComplete changes
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   const { bulkArchiveMutation, bulkDeleteMutation } = useTrackedDomains({
     includeArchived: true,
@@ -21,7 +25,7 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         const result = await bulkArchiveMutation.mutateAsync({
           trackedDomainIds: domainIds,
         });
-        onComplete?.();
+        onCompleteRef.current?.();
         if (result.failedCount === 0) {
           toast.success(
             `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
@@ -37,7 +41,7 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         setIsBulkArchiving(false);
       }
     },
-    [bulkArchiveMutation, onComplete],
+    [bulkArchiveMutation],
   );
 
   const executeBulkDelete = useCallback(
@@ -47,7 +51,7 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         const result = await bulkDeleteMutation.mutateAsync({
           trackedDomainIds: domainIds,
         });
-        onComplete?.();
+        onCompleteRef.current?.();
         if (result.failedCount === 0) {
           toast.success(
             `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
@@ -63,7 +67,7 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         setIsBulkDeleting(false);
       }
     },
-    [bulkDeleteMutation, onComplete],
+    [bulkDeleteMutation],
   );
 
   return {

@@ -13,7 +13,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react/ssr";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { PillCount } from "@/components/domain/pill-count";
 import {
   Accordion,
@@ -104,6 +104,7 @@ export function RobotsSummary({
 
   const [query, setQuery] = useState("");
   const [only, setOnly] = useState<"all" | "allow" | "disallow">("all");
+  const [, startTransition] = useTransition();
 
   const rankAgents = useCallback((agents: string[]): number => {
     const joined = agents.join(",").toLowerCase();
@@ -141,12 +142,13 @@ export function RobotsSummary({
       const hasEmptyDisallow = g.rules.some(
         (r) => r.type === "disallow" && !isNonEmpty(r),
       );
-      const visible = g.rules
-        .filter(isNonEmpty)
-        .filter((r) => (only === "all" ? true : r.type === only))
-        .filter((r) =>
-          query ? r.value.toLowerCase().includes(query.toLowerCase()) : true,
-        );
+      const queryLower = query?.toLowerCase();
+      const visible = g.rules.filter(
+        (r) =>
+          isNonEmpty(r) &&
+          (only === "all" || r.type === only) &&
+          (!queryLower || r.value.toLowerCase().includes(queryLower)),
+      );
       return { ...g, rules: visible, hasEmptyAllow, hasEmptyDisallow } as {
         userAgents: string[];
         rules: {
@@ -199,7 +201,9 @@ export function RobotsSummary({
                   name="robots-filter"
                   placeholder="Filter rules…"
                   value={query}
-                  onChange={(e) => setQuery(e.currentTarget.value)}
+                  onChange={(e) =>
+                    startTransition(() => setQuery(e.currentTarget.value))
+                  }
                   aria-label="Filter robots rules"
                   autoComplete="off"
                   autoCorrect="off"
@@ -227,7 +231,7 @@ export function RobotsSummary({
                 value={[only]}
                 onValueChange={(groupValue) => {
                   const next = groupValue[0] as typeof only | undefined;
-                  setOnly(next ?? "all");
+                  startTransition(() => setOnly(next ?? "all"));
                 }}
                 spacing={1}
                 className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
@@ -281,8 +285,10 @@ export function RobotsSummary({
                   variant="link"
                   className="px-1"
                   onClick={() => {
-                    setQuery("");
-                    setOnly("all");
+                    startTransition(() => {
+                      setQuery("");
+                      setOnly("all");
+                    });
                   }}
                 >
                   Reset filters

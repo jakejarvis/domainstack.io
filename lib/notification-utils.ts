@@ -15,6 +15,14 @@ import {
   DOMAIN_THRESHOLD_TO_TYPE,
 } from "@/lib/constants/notifications";
 
+// Pre-sorted thresholds (ascending) for efficient lookup - sort once at module load
+const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort(
+  (a, b) => a - b,
+);
+const SORTED_CERTIFICATE_THRESHOLDS = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort(
+  (a, b) => a - b,
+);
+
 /**
  * Generate a stable idempotency key for Resend.
  * This ensures that if a step retries, Resend won't send duplicate emails.
@@ -34,9 +42,7 @@ export function generateIdempotencyKey(...parts: string[]): string {
 export function getDomainExpiryNotificationType(
   daysRemaining: number,
 ): NotificationType | null {
-  // Sort ascending so we find the smallest (most urgent) threshold first
-  const sortedThresholds = [...DOMAIN_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
-  for (const threshold of sortedThresholds) {
+  for (const threshold of SORTED_DOMAIN_THRESHOLDS) {
     if (daysRemaining <= threshold) {
       return DOMAIN_THRESHOLD_TO_TYPE[threshold];
     }
@@ -53,11 +59,7 @@ export function getDomainExpiryNotificationType(
 export function getCertificateExpiryNotificationType(
   daysRemaining: number,
 ): NotificationType | null {
-  // Sort ascending so we find the smallest (most urgent) threshold first
-  const sortedThresholds = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort(
-    (a, b) => a - b,
-  );
-  for (const threshold of sortedThresholds) {
+  for (const threshold of SORTED_CERTIFICATE_THRESHOLDS) {
     if (daysRemaining <= threshold) {
       return CERTIFICATE_THRESHOLD_TO_TYPE[threshold];
     }

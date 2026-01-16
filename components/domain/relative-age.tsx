@@ -25,8 +25,14 @@ export function RelativeAgeString({
     } catch {}
   }, [from]);
 
-  // make SSR happy
-  if (!text) return null;
+  // Render invisible placeholder during SSR to prevent layout shift
+  if (!text) {
+    return (
+      <span className={cn("invisible", className)} aria-hidden>
+        (loading)
+      </span>
+    );
+  }
 
   return <span className={cn(className)}>({text})</span>;
 }

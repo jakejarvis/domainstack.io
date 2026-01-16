@@ -61,6 +61,8 @@ export function useDashboardTableSort(options?: {
   SortingState,
   (updater: SortingState | ((old: SortingState) => SortingState)) => void,
 ] {
+  const onSortChange = options?.onSortChange;
+
   const [sortParam, setSortParam] = useQueryState(
     "sort",
     parseAsString.withDefault(DEFAULT_SORT).withOptions({
@@ -91,9 +93,9 @@ export function useDashboardTableSort(options?: {
         typeof updater === "function" ? updater(sorting) : updater;
       const serialized = serializeSortState(newSorting);
       setSortParam(serialized);
-      options?.onSortChange?.();
+      onSortChange?.();
     },
-    [sorting, setSortParam, options],
+    [sorting, setSortParam, onSortChange],
   );
 
   return [sorting, setSerializedSorting];

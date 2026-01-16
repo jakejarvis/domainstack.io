@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 export type ConfirmAction =
   | { type: "remove"; domainId: string; domainName: string }
@@ -66,16 +66,20 @@ export function useConfirmAction({ onConfirm }: UseConfirmActionOptions) {
     null,
   );
 
+  // Store callback in ref to avoid re-creating confirm when onConfirm changes
+  const onConfirmRef = useRef(onConfirm);
+  onConfirmRef.current = onConfirm;
+
   const requestConfirmation = useCallback((action: ConfirmAction) => {
     setPendingAction(action);
   }, []);
 
   const confirm = useCallback(() => {
     if (pendingAction) {
-      onConfirm(pendingAction);
+      onConfirmRef.current(pendingAction);
       setPendingAction(null);
     }
-  }, [pendingAction, onConfirm]);
+  }, [pendingAction]);
 
   const cancel = useCallback(() => {
     setPendingAction(null);
