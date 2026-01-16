@@ -175,7 +175,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
     deleteMutation.isPending;
 
   // With useSuspenseQuery, feed is guaranteed to be defined
-  const isEnabled = feed?.enabled && "feedUrl" in feed;
+  const isEnabled = feed.enabled && "feedUrl" in feed;
 
   const getIntegrations = useCallback((feedUrl: string | undefined) => {
     if (!feedUrl) {

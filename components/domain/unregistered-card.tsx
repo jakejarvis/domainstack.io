@@ -46,14 +46,14 @@ export function DomainUnregisteredCard({
           </p>
         </div>
 
-        {canShowRegistrarLinks ? (
+        {canShowRegistrarLinks && (
           // Silently fail on pricing errors - this is supplementary info
           <ErrorBoundary fallback={null}>
             <Suspense fallback={<RegistrarLinksSkeleton />}>
               <RegistrarLinks domain={domain} tld={tld} />
             </Suspense>
           </ErrorBoundary>
-        ) : null}
+        )}
       </div>
     </div>
   );

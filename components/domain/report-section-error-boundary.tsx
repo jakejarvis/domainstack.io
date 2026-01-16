@@ -20,6 +20,7 @@ import { analytics } from "@/lib/analytics/client";
 
 interface Props {
   children: React.ReactNode;
+  /** Display name for the report section (e.g., "Registration", "DNS") */
   sectionName: string;
 }
 

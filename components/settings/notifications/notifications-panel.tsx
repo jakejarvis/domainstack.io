@@ -54,7 +54,6 @@ export function NotificationsPanel() {
       trpc.user.getNotificationPreferences.queryOptions(),
     ],
   });
-  const domainsData = domainsResult.data;
   const globalPrefsData = globalPrefsResult.data;
 
   // Mutations with optimistic updates
@@ -97,12 +96,14 @@ export function NotificationsPanel() {
     onMutate: async ({ trackedDomainId, overrides }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<typeof domainsData>({
+      const previousDomains = queryClient.getQueriesData<
+        typeof domainsResult.data
+      >({
         queryKey: domainsQueryKey,
       });
 
       // Optimistically update the domain's overrides in all query variants
-      queryClient.setQueriesData<typeof domainsData>(
+      queryClient.setQueriesData<typeof domainsResult.data>(
         { queryKey: domainsQueryKey },
         (old) =>
           old
@@ -143,12 +144,14 @@ export function NotificationsPanel() {
     onMutate: async ({ trackedDomainId }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<typeof domainsData>({
+      const previousDomains = queryClient.getQueriesData<
+        typeof domainsResult.data
+      >({
         queryKey: domainsQueryKey,
       });
 
       // Optimistically reset the domain's overrides in all query variants
-      queryClient.setQueriesData<typeof domainsData>(
+      queryClient.setQueriesData<typeof domainsResult.data>(
         { queryKey: domainsQueryKey },
         (old) =>
           old
@@ -240,7 +243,7 @@ export function NotificationsPanel() {
   };
 
   // With useSuspenseQueries, data is guaranteed to be defined
-  const domains = domainsData;
+  const domains = domainsResult.data;
   const verifiedDomains = domains
     .filter((d) => d.verified)
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
