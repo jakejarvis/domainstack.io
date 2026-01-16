@@ -1,5 +1,6 @@
 import { QuestionIcon } from "@phosphor-icons/react/ssr";
-import { HostingMapClient } from "@/components/domain/hosting/hosting-map-client";
+import dynamic from "next/dynamic";
+import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
@@ -14,6 +15,17 @@ import {
 import { sections } from "@/lib/constants/sections";
 import { countryCodeToEmoji } from "@/lib/country-emoji";
 import type { HostingGeo, HostingResponse } from "@/lib/types/domain/hosting";
+
+const HostingMapClient = dynamic(
+  () =>
+    import("@/components/domain/hosting/hosting-map-client").then(
+      (m) => m.HostingMapClient,
+    ),
+  {
+    ssr: false,
+    loading: () => <HostingMapSkeleton />,
+  },
+);
 
 function formatLocation(geo: HostingGeo): string {
   const parts = [geo.city, geo.region, geo.country].filter(Boolean);
