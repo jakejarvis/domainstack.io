@@ -26,6 +26,7 @@ interface Props {
 
 function SectionErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const isDev = process.env.NODE_ENV === "development";
+  const errorObj = error instanceof Error ? error : undefined;
 
   return (
     <Empty className="border border-dashed">
@@ -35,8 +36,8 @@ function SectionErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         </EmptyMedia>
         <EmptyTitle>Something went wrong</EmptyTitle>
         <EmptyDescription>
-          {isDev && error
-            ? error.message
+          {isDev && errorObj
+            ? errorObj.message
             : "This section encountered an error and couldn't be displayed."}
         </EmptyDescription>
       </EmptyHeader>
@@ -46,7 +47,7 @@ function SectionErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
             <ArrowCounterClockwiseIcon />
             Try again
           </Button>
-          <CreateIssueButton error={error} variant="ghost" size="sm" />
+          <CreateIssueButton error={errorObj} variant="ghost" size="sm" />
         </div>
       </EmptyContent>
     </Empty>
@@ -66,10 +67,12 @@ export function SectionErrorBoundary({ children, sectionName }: Props) {
       FallbackComponent={SectionErrorFallback}
       onReset={reset}
       onError={(error, errorInfo) => {
-        analytics.trackException(error, {
-          section: sectionName,
-          componentStack: errorInfo.componentStack,
-        });
+        if (error instanceof Error) {
+          analytics.trackException(error, {
+            section: sectionName,
+            componentStack: errorInfo.componentStack,
+          });
+        }
       }}
     >
       {children}

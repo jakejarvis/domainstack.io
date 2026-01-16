@@ -23,6 +23,7 @@ interface Props {
  */
 function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const isDev = process.env.NODE_ENV === "development";
+  const errorObj = error instanceof Error ? error : undefined;
 
   return (
     <CardHeader className="px-0 pt-0 pb-2">
@@ -31,14 +32,14 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         Failed to load
       </CardTitle>
       <CardDescription>
-        {isDev && error ? error.message : "Something went wrong."}
+        {isDev && errorObj ? errorObj.message : "Something went wrong."}
       </CardDescription>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
           <ArrowCounterClockwiseIcon />
           Try again
         </Button>
-        <CreateIssueButton error={error} variant="ghost" size="sm" />
+        <CreateIssueButton error={errorObj} variant="ghost" size="sm" />
       </div>
     </CardHeader>
   );
@@ -57,11 +58,13 @@ export function SettingsErrorBoundary({ children, sectionName }: Props) {
       FallbackComponent={SettingsErrorFallback}
       onReset={reset}
       onError={(error, errorInfo) => {
-        analytics.trackException(error, {
-          section: sectionName,
-          context: "settings",
-          componentStack: errorInfo.componentStack,
-        });
+        if (error instanceof Error) {
+          analytics.trackException(error, {
+            section: sectionName,
+            context: "settings",
+            componentStack: errorInfo.componentStack,
+          });
+        }
       }}
     >
       {children}

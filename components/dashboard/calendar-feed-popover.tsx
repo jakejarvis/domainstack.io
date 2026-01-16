@@ -35,6 +35,8 @@ import {
  * Compact error fallback for popover content.
  */
 function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+  const errorObj = error instanceof Error ? error : undefined;
+
   return (
     <div className="flex flex-col items-center gap-2 p-4 text-center">
       <WarningIcon className="size-5 text-destructive" />
@@ -44,7 +46,7 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
           <ArrowCounterClockwiseIcon />
           Try again
         </Button>
-        <CreateIssueButton error={error} variant="ghost" size="sm" />
+        <CreateIssueButton error={errorObj} variant="ghost" size="sm" />
       </div>
     </div>
   );
