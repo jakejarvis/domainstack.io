@@ -37,8 +37,12 @@ describe("lib/ratelimit/api", () => {
     vi.setSystemTime(new Date("2026-01-16T12:00:00Z"));
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe("checkRateLimit", () => {
-    it("allows request when IP is null (fail-open) without headers", async () => {
+    it("allows request when identifier is null (fail-open) without headers", async () => {
       const result = await checkRateLimit(null);
 
       expect(result.success).toBe(true);
@@ -118,7 +122,7 @@ describe("lib/ratelimit/api", () => {
       }
     });
 
-    it("allows request when IP is undefined (fail-open)", async () => {
+    it("allows request when identifier is undefined (fail-open)", async () => {
       const result = await checkRateLimit(undefined);
 
       expect(result.success).toBe(true);

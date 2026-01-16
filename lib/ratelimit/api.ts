@@ -36,10 +36,10 @@ function buildHeaders(info: RateLimitInfo): RateLimitHeaders {
  * Check rate limit for an API route request.
  *
  * Fail-open strategy:
- * - No IP provided: Allow request (skip rate limiting)
+ * - No identifier provided: Allow request (skip rate limiting)
  * - Redis timeout/error: Allow request (handled by library)
  *
- * @param ip - Client IP address, or undefined/null if unavailable
+ * @param identifier - Rate limit key (user ID or IP address), or undefined/null if unavailable
  * @returns Success with headers to apply, or failure with pre-built 429 Response
  *
  * @example
@@ -61,15 +61,15 @@ function buildHeaders(info: RateLimitInfo): RateLimitHeaders {
  * ```
  */
 export async function checkRateLimit(
-  ip: string | null | undefined,
+  identifier: string | null | undefined,
 ): Promise<RateLimitSuccess | RateLimitFailure> {
-  // Fail open: no IP = allow request without rate limiting
-  if (!ip) {
+  // Fail open: no identifier = allow request without rate limiting
+  if (!identifier) {
     return { success: true };
   }
 
   const { success, limit, remaining, reset, pending } =
-    await ratelimit.limit(ip);
+    await ratelimit.limit(identifier);
 
   // Handle analytics write in background (non-blocking)
   waitUntil(pending);
@@ -77,7 +77,8 @@ export async function checkRateLimit(
   const info = { limit, remaining, reset };
 
   if (!success) {
-    const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+    // Ensure minimum 1 second to prevent tight retry loops from clock skew
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
     return {
       success: false,
       error: new Response(
