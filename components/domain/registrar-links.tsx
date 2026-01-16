@@ -1,5 +1,5 @@
 import { SiCloudflare } from "@icons-pack/react-simple-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/lib/analytics/client";
-import { extractTldClient } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +57,11 @@ const REGISTRAR_PROVIDERS: Record<
   },
 } as const;
 
-function RegistrarLinksSkeleton({ className }: { className?: string }) {
+/**
+ * Skeleton for RegistrarLinks.
+ * Exported for use as Suspense fallback in parent components.
+ */
+export function RegistrarLinksSkeleton({ className }: { className?: string }) {
   const providerCount = Object.keys(REGISTRAR_PROVIDERS ?? {}).length;
 
   return (
@@ -87,34 +90,30 @@ function formatPrice(value: string): string | null {
   }
 }
 
+/**
+ * Displays registrar pricing links for a given domain.
+ * Parent must extract and validate TLD before rendering.
+ * Uses Suspense for loading state - wrap with Suspense boundary.
+ */
 export function RegistrarLinks({
   domain,
+  tld,
   className,
 }: {
   domain: string;
+  /** TLD extracted from domain (e.g., "com", "io"). Must be validated by parent. */
+  tld: string;
   className?: string;
 }) {
   const trpc = useTRPC();
   const analytics = useAnalytics();
 
-  // Extract TLD from the domain on the client side
-  const tld = extractTldClient(domain);
-
-  const { data, isLoading } = useQuery(
-    trpc.registrar.getPricing.queryOptions(
-      { tld: tld ?? "" },
-      {
-        // Keep in cache indefinitely during session
-        staleTime: Number.POSITIVE_INFINITY,
-        // Don't fetch if no TLD
-        enabled: !!tld,
-      },
-    ),
-  );
-
-  if (isLoading) {
-    return <RegistrarLinksSkeleton className={className} />;
-  }
+  // Suspense handles loading state; data is guaranteed defined
+  const { data } = useSuspenseQuery({
+    ...trpc.registrar.getPricing.queryOptions({ tld }),
+    // Keep in cache indefinitely during session
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 
   const providers = data?.data?.providers ?? [];
   if (providers.length === 0) return null;

@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import { useSelectedLayoutSegment } from "next/navigation";
 import {
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -17,6 +18,11 @@ import {
 import { createPortal } from "react-dom";
 import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
+import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
+import {
+  LinkedAccountsSkeleton,
+  NotificationsSkeleton,
+} from "@/components/settings/settings-skeleton";
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
 import {
   ResponsiveTooltip,
@@ -92,11 +98,19 @@ function SettingsPanels({ className }: { className?: string }) {
       </TabsContent>
 
       <TabsContent value="notifications" className={className}>
-        <NotificationsPanel />
+        <SettingsErrorBoundary sectionName="Notifications">
+          <Suspense fallback={<NotificationsSkeleton />}>
+            <NotificationsPanel />
+          </Suspense>
+        </SettingsErrorBoundary>
       </TabsContent>
 
       <TabsContent value="account" className={className}>
-        <AccountPanel />
+        <SettingsErrorBoundary sectionName="Account">
+          <Suspense fallback={<LinkedAccountsSkeleton />}>
+            <AccountPanel />
+          </Suspense>
+        </SettingsErrorBoundary>
       </TabsContent>
     </>
   );

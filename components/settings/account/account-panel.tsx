@@ -1,10 +1,13 @@
 import { FingerprintIcon } from "@phosphor-icons/react/ssr";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
-import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,16 +43,14 @@ export function AccountPanel() {
   // Handle auth callback errors from URL params (account linking)
   useAuthCallback();
 
-  // Query for linked accounts
-  const linkedAccountsQuery = useQuery(
+  // Query for linked accounts - uses Suspense for loading/error states
+  const { data: linkedAccounts } = useSuspenseQuery(
     trpc.user.getLinkedAccounts.queryOptions(),
   );
   const linkedAccountsQueryKey = trpc.user.getLinkedAccounts.queryKey();
 
   // Set of linked provider IDs for quick lookup
-  const linkedProviderIds = new Set(
-    linkedAccountsQuery.data?.map((a) => a.providerId) ?? [],
-  );
+  const linkedProviderIds = new Set(linkedAccounts.map((a) => a.providerId));
 
   // Check if user can unlink (must have at least 2 linked accounts)
   const canUnlink = linkedProviderIds.size > 1;
@@ -104,14 +105,14 @@ export function AccountPanel() {
       await queryClient.cancelQueries({ queryKey: linkedAccountsQueryKey });
 
       // Snapshot the previous value
-      const previousAccounts = queryClient.getQueryData<
-        typeof linkedAccountsQuery.data
-      >(linkedAccountsQueryKey);
+      const previousAccounts = queryClient.getQueryData<typeof linkedAccounts>(
+        linkedAccountsQueryKey,
+      );
 
       // Optimistically update to remove the account
       queryClient.setQueryData(
         linkedAccountsQueryKey,
-        (old: typeof linkedAccountsQuery.data) =>
+        (old: typeof linkedAccounts | undefined) =>
           old?.filter((a) => a.providerId !== providerId),
       );
 
@@ -149,21 +150,6 @@ export function AccountPanel() {
   const providerToUnlink = unlinkingProvider
     ? enabledProviders.find((p) => p.id === unlinkingProvider)
     : null;
-
-  if (linkedAccountsQuery.isLoading) {
-    return <LinkedAccountsSkeleton />;
-  }
-
-  if (linkedAccountsQuery.isError) {
-    return (
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle>Providers</CardTitle>
-        <CardDescription className="text-destructive">
-          Failed to load providers
-        </CardDescription>
-      </CardHeader>
-    );
-  }
 
   return (
     <>

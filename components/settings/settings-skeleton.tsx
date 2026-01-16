@@ -55,45 +55,59 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * Skeleton for a single notification row.
- * Shows placeholder for icon, label, and toggle.
+ * Skeleton for a single global notification row.
+ * Matches GlobalNotificationRow: icon + label + info icon + 2 switches (Web/Email).
  */
-function NotificationRowSkeleton({ className }: { className?: string }) {
+function GlobalNotificationRowSkeleton({ className }: { className?: string }) {
   return (
     <div
-      className={cn("flex items-center gap-3 rounded-xl px-3 py-3", className)}
+      className={cn(
+        "flex flex-col gap-2 pt-2 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-3 sm:pb-3",
+        "border-border/40 border-b last:border-b-0",
+        className,
+      )}
     >
-      {/* Icon placeholder */}
-      <Skeleton className="size-9 shrink-0 rounded-lg" />
-
-      {/* Label placeholder */}
-      <div className="flex flex-1 items-center gap-1.5">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="size-3.5 rounded-full" />
+      {/* Icon + Label */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <Skeleton className="size-8 shrink-0 rounded-md sm:size-9" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="size-3.5" />
+        </div>
       </div>
 
-      {/* Toggle placeholder */}
-      <Skeleton className="h-5 w-9 rounded-full" />
+      {/* Two switches (Web + Email) */}
+      <div className="flex items-center gap-8 pl-12 sm:gap-6 sm:pl-0">
+        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
+          <Skeleton className="h-3 w-6 sm:hidden" />
+          <Skeleton className="h-5 w-9 rounded-full" />
+        </div>
+        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
+          <Skeleton className="h-3 w-8 sm:hidden" />
+          <Skeleton className="h-5 w-9 rounded-full" />
+        </div>
+      </div>
     </div>
   );
 }
 
 /**
  * Skeleton for the calendar feed section.
- * Shows placeholders for header, description, and enable button.
+ * Matches the Calendar Feed header in NotificationsPanel.
  */
 function CalendarFeedSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <CardHeader className="mb-2 px-0 pt-0 pb-2">
-        <div className="flex items-center gap-2">
-          <Skeleton className="size-5 rounded" />
-          <Skeleton className="h-6 w-28" />
+      <CardHeader className="px-0 pt-0 pb-2">
+        <div className="mb-1 flex items-center gap-2 leading-none">
+          <Skeleton className="size-4.5" />
+          <Skeleton className="h-5 w-28" />
         </div>
-        <Skeleton className="mt-1 h-4 w-80" />
+        <Skeleton className="h-4 w-72" />
       </CardHeader>
-      <CardContent className="space-y-4 px-0 pt-1">
-        <Skeleton className="h-10 w-44 rounded-lg" />
+      <CardContent className="px-0 pt-2">
+        {/* Enable button placeholder */}
+        <Skeleton className="h-9 w-full rounded-lg" />
       </CardContent>
     </div>
   );
@@ -101,32 +115,61 @@ function CalendarFeedSkeleton({ className }: { className?: string }) {
 
 /**
  * Skeleton for the notification settings section.
- * Shows placeholders for header, 3 notification rows, and collapsible trigger.
+ * Matches NotificationsPanel: Global Preferences (5 rows) + Domain Preferences + Calendar Feed.
  */
 export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
-    <div className={className}>
-      <CardHeader className="mb-2 px-0 pt-0 pb-2">
-        <Skeleton className="h-6 w-40" />
-        <div className="mt-1 flex items-center gap-1.5">
-          <Skeleton className="h-4 w-32" />
+    <div className={cn("max-w-full overflow-x-hidden", className)}>
+      {/* Global Preferences section */}
+      <CardHeader className="px-0 pt-0 pb-2">
+        <div className="mb-1 flex items-center gap-2 leading-none">
+          <Skeleton className="size-4.5" />
+          <Skeleton className="h-5 w-36" />
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
           <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-6 w-40 rounded-sm" />
         </div>
       </CardHeader>
-      <CardContent className="space-y-5 px-0 pt-1 pb-0">
+      <CardContent className="px-0 pt-1">
+        {/* Column headers (hidden on mobile) */}
+        <div className="hidden items-center justify-end gap-6 sm:flex">
+          <Skeleton className="h-3 w-8" />
+          <Skeleton className="h-3 w-10" />
+        </div>
+
+        {/* 5 notification category rows */}
         <div className="space-y-1">
-          <NotificationRowSkeleton />
-          <NotificationRowSkeleton />
-          <NotificationRowSkeleton />
+          <GlobalNotificationRowSkeleton />
+          <GlobalNotificationRowSkeleton />
+          <GlobalNotificationRowSkeleton />
+          <GlobalNotificationRowSkeleton />
+          <GlobalNotificationRowSkeleton />
         </div>
-        <Separator className="my-6 bg-muted" />
-        <div className="flex w-full items-center justify-between rounded-lg px-3 py-3">
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="size-4 rounded-sm" />
-        </div>
-        <Separator className="my-6 bg-muted" />
-        <CalendarFeedSkeleton />
       </CardContent>
+
+      <Separator className="mt-3 mb-6 bg-muted" />
+
+      {/* Domain Preferences section */}
+      <CardHeader className="px-0 pt-0 pb-2">
+        <div className="mb-1 flex items-center gap-2 leading-none">
+          <Skeleton className="size-4.5" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+        <Skeleton className="h-4 w-80" />
+      </CardHeader>
+      <CardContent className="mt-1.5 px-0">
+        {/* Info note placeholder (shown when no verified domains) */}
+        <div className="flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
+          <Skeleton className="mt-0.5 size-3.5 shrink-0" />
+          <Skeleton className="h-3 w-64" />
+        </div>
+      </CardContent>
+
+      <Separator className="my-6 bg-muted" />
+
+      {/* Calendar Feed section */}
+      <CalendarFeedSkeleton />
     </div>
   );
 }
@@ -177,24 +220,29 @@ function DangerZoneSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * Skeleton for the linked accounts section.
- * Shows placeholders for header and 4 provider rows.
+ * Skeleton for the Account panel (linked accounts section).
+ * Matches AccountPanel: "Login Providers" header + provider rows + danger zone.
  */
 export function LinkedAccountsSkeleton({ className }: { className?: string }) {
   return (
-    <div className={className}>
-      <CardHeader className="mb-2 px-0 pt-0 pb-2">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="mt-1 h-4 w-72" />
+    <div className={cn("max-w-full overflow-x-hidden", className)}>
+      <CardHeader className="px-0 pt-0 pb-2">
+        <div className="mb-1 flex items-center gap-2 leading-none">
+          <Skeleton className="size-4.5" />
+          <Skeleton className="h-5 w-28" />
+        </div>
+        <Skeleton className="h-4 w-80" />
       </CardHeader>
-      <CardContent className="space-y-3 px-0 pt-1 pb-0">
+      <CardContent className="space-y-3 px-0 pt-1">
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
         <LinkedAccountRowSkeleton />
-        <Separator className="my-6 bg-muted" />
-        <DangerZoneSkeleton />
       </CardContent>
+
+      <Separator className="my-6 bg-muted" />
+
+      <DangerZoneSkeleton />
     </div>
   );
 }
