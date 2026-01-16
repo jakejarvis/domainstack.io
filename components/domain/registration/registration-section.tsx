@@ -63,7 +63,10 @@ export function RegistrationSection({
     >
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
-          <WarningCircleIcon className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200" />
+          <WarningCircleIcon
+            className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200"
+            aria-hidden="true"
+          />
           <div className="space-y-1">
             <p className="font-medium text-yellow-800 dark:text-yellow-200">
               Registration Data Unavailable
@@ -95,7 +98,10 @@ export function RegistrationSection({
                 <ResponsiveTooltipTrigger
                   nativeButton={false}
                   render={
-                    <SealCheckIcon className="!size-3.5 text-muted-foreground/80" />
+                    <SealCheckIcon
+                      className="!size-3.5 text-muted-foreground/80"
+                      aria-hidden="true"
+                    />
                   }
                 />
                 <ResponsiveTooltipContent>
@@ -141,7 +147,10 @@ export function RegistrationSection({
             }
             leading={
               data.privacyEnabled || !registrant ? (
-                <DetectiveIcon className="text-muted-foreground" />
+                <DetectiveIcon
+                  className="text-muted-foreground"
+                  aria-hidden="true"
+                />
               ) : undefined
             }
           />

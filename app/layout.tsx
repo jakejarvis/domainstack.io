@@ -58,10 +58,20 @@ export default function RootLayout({
       </head>
       <body className="relative min-h-svh overscroll-none font-sans tabular-nums antialiased">
         <Providers>
+          {/* Skip to main content link for keyboard navigation */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:font-medium focus:text-foreground focus:shadow-lg focus:ring-2 focus:ring-ring"
+          >
+            Skip to content
+          </a>
+
           {/* App Shell */}
           <div className="isolate flex min-h-svh flex-col">
             <AppHeader />
-            <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+            <main id="main-content" className="flex min-h-0 flex-1 flex-col">
+              {children}
+            </main>
             <AppFooter />
           </div>
 

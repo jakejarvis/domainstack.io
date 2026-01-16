@@ -27,8 +27,12 @@ export function ExportButton({
             variant="outline"
             onClick={handleExport}
             disabled={!enabled || !allDataLoaded}
+            aria-label="Export report"
           >
-            <DownloadSimpleIcon className="sm:text-muted-foreground" />
+            <DownloadSimpleIcon
+              className="sm:text-muted-foreground"
+              aria-hidden="true"
+            />
             <span className="hidden sm:inline-block">Export</span>
           </Button>
         }

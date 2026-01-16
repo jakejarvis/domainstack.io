@@ -349,11 +349,16 @@ export function ShareInstructionsDialog({
                 Copy all instructions as text
               </p>
             </div>
-            <Button variant="outline" onClick={handleCopy} className="shrink-0">
+            <Button
+              variant="outline"
+              onClick={handleCopy}
+              className="shrink-0"
+              aria-label="Copy to clipboard"
+            >
               {isCopied ? (
-                <CheckIcon className="text-green-600" />
+                <CheckIcon className="text-green-600" aria-hidden="true" />
               ) : (
-                <CopyIcon />
+                <CopyIcon aria-hidden="true" />
               )}
               <span className="hidden sm:inline">
                 {isCopied ? "Copied" : "Copy"}
@@ -376,8 +381,9 @@ export function ShareInstructionsDialog({
               variant="outline"
               onClick={handleDownload}
               className="shrink-0"
+              aria-label="Download instructions"
             >
-              <DownloadIcon />
+              <DownloadIcon aria-hidden="true" />
               <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
@@ -427,6 +433,7 @@ export function ShareInstructionsDialog({
                   variant="outline"
                   disabled={isEmailDisabled}
                   className="shrink-0"
+                  aria-label="Send email"
                 >
                   {isEmailSending ? (
                     <>
@@ -435,12 +442,12 @@ export function ShareInstructionsDialog({
                     </>
                   ) : isEmailSent ? (
                     <>
-                      <CheckIcon />
+                      <CheckIcon aria-hidden="true" />
                       <span className="hidden sm:inline">Sent!</span>
                     </>
                   ) : (
                     <>
-                      <PaperPlaneTiltIcon />
+                      <PaperPlaneTiltIcon aria-hidden="true" />
                       <span className="hidden sm:inline">Send</span>
                     </>
                   )}

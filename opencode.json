@@ -1,0 +1,9 @@
+{
+  "mcp": {
+    "next-devtools": {
+      "type": "local",
+      "command": ["npx", "next-devtools-mcp@latest"]
+    }
+  },
+  "$schema": "https://opencode.ai/config.json"
+}

@@ -181,7 +181,7 @@ export function SearchClient({
                     <Spinner />
                   ) : (
                     <Kbd className="mx-1 hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-                      {isFocused ? "Esc" : isMac ? "⌘ K" : "Ctrl+K"}
+                      {isFocused ? "Esc" : isMac ? "⌘\u00A0K" : "Ctrl\u00A0K"}
                     </Kbd>
                   )}
                 </InputGroupAddon>

@@ -30,7 +30,10 @@ export function AppHeader() {
           <Suspense
             fallback={
               <div className="mr-1.5 ml-2.5 inline-flex shrink-0 items-center gap-2">
-                <SiGithub className="flex size-3.5 shrink-0" />
+                <SiGithub
+                  className="flex size-3.5 shrink-0"
+                  aria-hidden="true"
+                />
                 <Skeleton className="h-[15px] w-[28px]" />
               </div>
             }

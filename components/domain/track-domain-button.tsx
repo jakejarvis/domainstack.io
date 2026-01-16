@@ -73,7 +73,7 @@ export function TrackDomainButton({
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" disabled>
+      <Button variant="outline" disabled aria-label="Track domain">
         <Spinner />
         <span className="hidden sm:inline">Track</span>
       </Button>
@@ -89,10 +89,14 @@ export function TrackDomainButton({
             <Button
               variant="outline"
               nativeButton={false}
+              aria-label="View in dashboard"
               render={
                 <Link href="/dashboard">
-                  <SealCheckIcon className="text-success-foreground" />
-                  <span className="hidden">View in dashboard</span>
+                  <SealCheckIcon
+                    className="text-success-foreground"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">View in dashboard</span>
                 </Link>
               }
             />
@@ -108,12 +112,12 @@ export function TrackDomainButton({
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <WarningCircleIcon className="text-accent-orange" />
+      <WarningCircleIcon className="text-accent-orange" aria-hidden="true" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (
     <>
-      <TargetIcon className="text-accent-purple" />
+      <TargetIcon className="text-accent-purple" aria-hidden="true" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
@@ -122,18 +126,25 @@ export function TrackDomainButton({
     ? "Complete verification for this domain"
     : "Get alerts for this domain";
 
+  const ariaLabel = isPendingVerification ? "Verify domain" : "Track domain";
+
   return (
     <Tooltip>
       <TooltipTrigger
         render={
           session?.user ? (
-            <Button variant="outline" onClick={handleButtonClick}>
+            <Button
+              variant="outline"
+              onClick={handleButtonClick}
+              aria-label={ariaLabel}
+            >
               {buttonContent}
             </Button>
           ) : (
             <Button
               variant="outline"
               nativeButton={false}
+              aria-label={ariaLabel}
               render={
                 <Link href="/login" scroll={false}>
                   {buttonContent}

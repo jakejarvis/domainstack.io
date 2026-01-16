@@ -38,7 +38,10 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <CaretDownIcon className="pointer-events-none absolute top-1/2 right-0 size-4 shrink-0 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-180" />
+        <CaretDownIcon
+          className="pointer-events-none absolute top-1/2 right-0 size-4 shrink-0 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-180"
+          aria-hidden="true"
+        />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );

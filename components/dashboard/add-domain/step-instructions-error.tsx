@@ -27,15 +27,20 @@ export function StepInstructionsError({
           {error || "Something went wrong. Please try again."}
         </p>
       </div>
-      <Button variant="outline" onClick={onRetry} disabled={isRetrying}>
+      <Button
+        variant="outline"
+        onClick={onRetry}
+        disabled={isRetrying}
+        aria-label="Retry"
+      >
         {isRetrying ? (
           <>
             <Spinner />
-            <span className="hidden sm:inline">Retrying...</span>
+            <span className="hidden sm:inline">Retrying…</span>
           </>
         ) : (
           <>
-            <ArrowClockwiseIcon />
+            <ArrowClockwiseIcon aria-hidden="true" />
             <span className="hidden sm:inline">Retry</span>
           </>
         )}

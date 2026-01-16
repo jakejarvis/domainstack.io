@@ -203,7 +203,11 @@ export function DeleteAccountDialog({
                 disabled={isLoading}
                 className="cursor-pointer"
               >
-                {isLoading ? <Spinner /> : <HeartBreakIcon />}
+                {isLoading ? (
+                  <Spinner />
+                ) : (
+                  <HeartBreakIcon aria-hidden="true" />
+                )}
                 I'm sure.
               </AlertDialogAction>
             </AlertDialogFooter>

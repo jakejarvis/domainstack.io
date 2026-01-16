@@ -379,7 +379,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
             {enableMutation.isPending ? (
               <>
                 <Spinner />
-                Enabling...
+                Enabling…
               </>
             ) : (
               <>

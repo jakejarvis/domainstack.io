@@ -30,6 +30,7 @@ function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
         <CircleIcon
           className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary"
           weight="fill"
+          aria-hidden="true"
         />
       </RadioPrimitive.Indicator>
     </RadioPrimitive.Root>

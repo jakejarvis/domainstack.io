@@ -69,7 +69,10 @@ export function DomainReportHeader({
           >
             {domain}
           </h2>
-          <Spinner className="ml-0.5 size-3.5 flex-shrink-0 text-foreground/65" />
+          <Spinner
+            className="ml-0.5 size-3.5 flex-shrink-0 text-foreground/65"
+            aria-hidden="true"
+          />
         </span>
       )}
 
