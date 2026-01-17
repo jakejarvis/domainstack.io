@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
 };
 
-const MCP_URL = "https://domainstack.io/api/mcp/mcp";
+const MCP_URL = "https://domainstack.io/api/mcp";
 
 // Cursor deeplink: cursor://anysphere.cursor-deeplink/mcp/install?name=...&config=...
 // https://cursor.com/docs/context/mcp/install-links

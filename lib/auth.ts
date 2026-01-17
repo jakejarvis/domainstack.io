@@ -120,7 +120,7 @@ export const auth = betterAuth({
   secondaryStorage: {
     get: async (key) => {
       const value = await redis?.get<string>(key);
-      return typeof value === "string" ? value : JSON.stringify(value); // JSON.stringify needed for Redis compatibility
+      return value ? JSON.stringify(value) : null; // JSON.stringify needed for Redis compatibility
     },
     set: async (key, value, ttl) => {
       if (ttl) {

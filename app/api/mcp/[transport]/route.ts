@@ -274,7 +274,7 @@ function createMcpHandlerWithContext(request: Request) {
     },
     {
       redisUrl: process.env.REDIS_URL,
-      basePath: "/api/mcp",
+      basePath: "/api",
       maxDuration: 800,
       verboseLogs: process.env.NODE_ENV === "development",
     },
