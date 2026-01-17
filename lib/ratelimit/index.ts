@@ -2,6 +2,13 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { getRedis } from "@/lib/redis";
 
 /**
+ * Global prefix for all rate limit keys.
+ * Namespaces rate limiting in Redis for dashboard visibility
+ * and to avoid collisions with other Redis usage.
+ */
+const RATE_LIMIT_PREFIX = "@upstash/ratelimit";
+
+/**
  * Ephemeral in-memory cache to reduce Redis calls.
  * Shared across all requests in the same process.
  */
@@ -79,15 +86,10 @@ export function getRateLimiter(
   const key = configKey(config);
   let limiter = limiters.get(key);
   if (!limiter) {
-    // Build prefix: use name if provided, otherwise fall back to config-based key
-    const prefix = config.name
-      ? `ratelimit:${config.name}`
-      : `ratelimit:${config.requests}/${config.window}`;
-
     limiter = new Ratelimit({
       redis: getRedis(),
       limiter: Ratelimit.slidingWindow(config.requests, config.window),
-      prefix,
+      prefix: `${RATE_LIMIT_PREFIX}:${key}`,
       ephemeralCache: cache,
       timeout: 2000,
       analytics: true,
