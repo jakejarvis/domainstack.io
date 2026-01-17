@@ -6,6 +6,7 @@ import {
   OpenAI as OpenAIIcon,
   Windsurf as WindsurfIcon,
 } from "@lobehub/icons";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Image from "next/image";
 import {
@@ -108,9 +109,9 @@ export default function McpPage() {
           >
             Model Context Protocol (MCP)
           </a>{" "}
-          server that allows AI assistants like Claude to look up domain
-          information directly. This enables natural language queries about
-          domains without leaving your conversation.
+          server that allows AI assistants to look up domain information
+          directly. This enables natural language queries about domains without
+          leaving your conversation.
         </p>
       </section>
 
@@ -154,6 +155,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://code.claude.com/docs/en/mcp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Claude Code docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -201,6 +214,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Claude docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -246,6 +271,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://docs.cursor.com/context/mcp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Cursor docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -308,6 +345,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View VS Code docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -342,6 +391,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://docs.windsurf.com/windsurf/cascade/mcp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Windsurf docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -375,6 +436,18 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://docs.cline.bot/mcp/configuring-mcp-servers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Cline docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -399,6 +472,18 @@ export default function McpPage() {
                 :
               </p>
               <CodeBlock>{`[features]\nrmcp_client = true`}</CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://developers.openai.com/codex/mcp/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Codex docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
 
@@ -415,6 +500,18 @@ export default function McpPage() {
             <AccordionContent className="pt-1 text-foreground/90">
               <p>Run this command to add Domainstack to Gemini CLI:</p>
               <CodeBlock>{`gemini mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Need help?{" "}
+                <a
+                  href="https://geminicli.com/docs/tools/mcp-server/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-0.5"
+                >
+                  View Gemini CLI docs
+                  <ArrowSquareOutIcon className="!size-3" />
+                </a>
+              </p>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
