@@ -143,7 +143,7 @@ const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
     await limiter.limit(rateLimitKey);
 
   // Handle analytics write in background (non-blocking)
-  after(() => void pending);
+  after(() => pending);
 
   if (!success) {
     const retryAfter = Math.ceil((reset - Date.now()) / 1000);

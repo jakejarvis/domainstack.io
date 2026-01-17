@@ -1,5 +1,5 @@
 /* @vitest-environment node */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoist mock functions so they're available before module imports
 const { mockLimit, MockRatelimit, mockIpAddress, mockGetSession } = vi.hoisted(
