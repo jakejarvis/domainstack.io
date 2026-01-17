@@ -27,7 +27,7 @@
 - **Next.js 16** (App Router), **React 19**, **TypeScript**
 - **Tailwind CSS v4** + **shadcn/ui** + [**Base UI**](https://x.com/colmtuite/status/1999535911126565050)
 - **tRPC** + **TanStack Query** & **TanStack Table**
-- **Postgres** (PlanetScale) + **Drizzle ORM**
+- **Postgres** (PlanetScale) + **Drizzle ORM** + **Upstash Redis** (rate limiting)
 - **Better Auth** (OAuth)
 - **Polar** (subscriptions)
 - **Inngest** + [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)

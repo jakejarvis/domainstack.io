@@ -268,6 +268,27 @@ throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
 throw new TRPCError({ code: "NOT_FOUND", message: "Domain not found" });
 ```
 
+### Rate Limiting
+Use Upstash Redis for rate limiting via the `withRateLimit` middleware:
+```typescript
+import { publicProcedure, withRateLimit } from "@/trpc/init";
+
+export const myRouter = createTRPCRouter({
+  expensiveOperation: publicProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 10, window: "1 m" } })
+    .mutation(async ({ input }) => {
+      // Rate limited to 10 requests per minute per user/IP
+    }),
+});
+```
+
+- Middleware uses user ID for authenticated requests, IP for anonymous
+- Each procedure gets its own bucket (keyed by procedure path)
+- On limit exceeded: throws `TOO_MANY_REQUESTS` with retry timing
+- Client-side: `rateLimitLink` in tRPC client shows toasts automatically
+- For API routes, use `checkRateLimit()` from `@/lib/ratelimit/api`
+
 ## Logging
 
 Server-side only using Pino (object-first API):
