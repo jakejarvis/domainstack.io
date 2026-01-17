@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Run } from "workflow/api";
 import type { CacheResult } from "@/lib/db/repos/types";
 import { createLogger } from "@/lib/logger/server";
 import { getDeduplicationKey, startWithDeduplication } from "./deduplication";
@@ -7,7 +8,7 @@ import { trackWorkflowFailureAsync } from "./observability";
 import type { WorkflowResult } from "./types";
 
 /** Safety valve timeout for background revalidation (5 minutes) */
-const BACKGROUND_REVALIDATION_TIMEOUT_MS = 5 * 60 * 1000;
+const BACKGROUND_REVALIDATION_TTL_SECONDS = 5 * 60;
 
 const logger = createLogger({ source: "workflow/swr" });
 
@@ -57,9 +58,9 @@ export interface SwrOptions<T> {
   /**
    * Function to start the workflow.
    * Should call `start(workflow, [input])` and return the Run object.
-   * The helper will decide whether to await returnValue or not.
+   * The helper uses the runId for distributed deduplication across instances.
    */
-  startWorkflow: () => Promise<{ returnValue: Promise<WorkflowResult<T>> }>;
+  startWorkflow: () => Promise<Run<WorkflowResult<T>>>;
 }
 
 /**
@@ -105,31 +106,27 @@ export async function withSwrCache<T>(
       "returning stale data, triggering background revalidation",
     );
 
-    // Start workflow in background (fire and forget)
-    // Use deduplication to avoid duplicate background runs
     const key = getDeduplicationKey(workflowName, domain);
 
-    // Fire-and-forget: start the workflow but don't await returnValue
-    // Use maxPendingMs as safety valve to prevent hung workflows from blocking future revalidation
-    void startWithDeduplication(
-      key,
-      async () => {
-        const run = await startWorkflow();
-        // Await returnValue here so the deduplication entry stays alive
-        // until the workflow completes (prevents duplicate starts)
-        return run.returnValue;
-      },
-      { maxPendingMs: BACKGROUND_REVALIDATION_TIMEOUT_MS },
-    )
-      .then(() => {
-        // Track successful background revalidation
-        logger.debug(
-          { domain, workflow: workflowName },
-          "background revalidation succeeded",
-        );
+    // Fire-and-forget: start the workflow in the background
+    // Uses distributed deduplication to avoid duplicate runs across instances
+    void startWithDeduplication(key, startWorkflow, {
+      ttlSeconds: BACKGROUND_REVALIDATION_TTL_SECONDS,
+    })
+      .then(({ deduplicated, source }) => {
+        if (deduplicated) {
+          logger.debug(
+            { domain, workflow: workflowName, source },
+            "background revalidation attached to existing run",
+          );
+        } else {
+          logger.debug(
+            { domain, workflow: workflowName },
+            "background revalidation succeeded",
+          );
+        }
       })
       .catch((err) => {
-        // Track for observability (logs + Inngest event → PostHog)
         trackWorkflowFailureAsync({
           workflow: workflowName,
           domain,
@@ -148,16 +145,25 @@ export async function withSwrCache<T>(
   }
 
   // Step 4: No cached data - run workflow and wait for result
+  // Uses distributed deduplication: if another instance is running the same
+  // workflow, we subscribe to that run instead of starting a duplicate.
   logger.debug(
     { domain, workflow: workflowName },
     "cache miss, running workflow",
   );
 
   const key = getDeduplicationKey(workflowName, domain);
-  const result = await startWithDeduplication(key, async () => {
-    const run = await startWorkflow();
-    return run.returnValue;
-  });
+  const { result, deduplicated, source } = await startWithDeduplication(
+    key,
+    startWorkflow,
+  );
+
+  if (deduplicated) {
+    logger.debug(
+      { domain, workflow: workflowName, source },
+      "attached to existing workflow run",
+    );
+  }
 
   if (result.success) {
     return {
