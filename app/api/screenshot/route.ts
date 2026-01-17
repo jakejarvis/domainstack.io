@@ -59,6 +59,7 @@ export async function POST(
 ): Promise<NextResponse<ScreenshotStartResponse | { error: string }>> {
   // Rate limit: 10 requests/minute for expensive screenshot workflow
   const rateLimit = await checkRateLimit(request, {
+    name: "api:screenshot:post",
     requests: 10,
     window: "1 m",
   });
@@ -194,6 +195,7 @@ export async function GET(
 ): Promise<NextResponse<ScreenshotStatusResponse | { error: string }>> {
   // Rate limit: 120 requests/minute for polling (allows ~2 req/sec)
   const rateLimit = await checkRateLimit(request, {
+    name: "api:screenshot:get",
     requests: 120,
     window: "1 m",
   });

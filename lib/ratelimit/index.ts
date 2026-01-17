@@ -16,6 +16,12 @@ export type RateLimitWindow = "1 s" | "10 s" | "1 m" | "10 m" | "1 h" | "1 d";
  * Rate limit configuration for a procedure.
  */
 export type RateLimitConfig = {
+  /**
+   * Unique name identifying this rate limit bucket.
+   * Used in Redis key prefix for per-endpoint isolation.
+   * Examples: "screenshot:post", "dns:lookup", "trpc:getDomain"
+   */
+  name?: string;
   /** Maximum requests allowed in the window */
   requests: number;
   /** Time window (e.g., "1 m", "10 s", "1 h") */
@@ -38,24 +44,33 @@ const limiters = new Map<string, Ratelimit>();
 
 /**
  * Generate a cache key for a rate limit config.
+ * Includes name for per-endpoint isolation.
  */
 function configKey(config: RateLimitConfig): string {
-  return `${config.requests}/${config.window}`;
+  const base = `${config.requests}/${config.window}`;
+  return config.name ? `${config.name}:${base}` : base;
 }
 
 /**
  * Get or create a rate limiter for the specified configuration.
  *
- * Limiters are cached by their config to avoid creating duplicates
- * when multiple procedures share the same rate limit.
+ * Limiters are cached by their config key (name + requests + window) to avoid
+ * creating duplicates when multiple calls share the same rate limit.
  *
- * @param config - Rate limit configuration (requests + window)
+ * @param config - Rate limit configuration (name, requests, window)
  * @returns Configured Ratelimit instance
  *
  * @example
  * ```ts
- * const limiter = getRateLimiter({ requests: 10, window: "1 m" });
- * const result = await limiter.limit(ip);
+ * // Named rate limiter (recommended for per-endpoint isolation)
+ * const limiter = getRateLimiter({
+ *   name: "screenshot:post",
+ *   requests: 10,
+ *   window: "1 m",
+ * });
+ *
+ * // Anonymous rate limiter (shared bucket for same config)
+ * const limiter = getRateLimiter({ requests: 60, window: "1 m" });
  * ```
  */
 export function getRateLimiter(
@@ -64,10 +79,15 @@ export function getRateLimiter(
   const key = configKey(config);
   let limiter = limiters.get(key);
   if (!limiter) {
+    // Build prefix: use name if provided, otherwise fall back to config-based key
+    const prefix = config.name
+      ? `ratelimit:${config.name}`
+      : `ratelimit:${config.requests}/${config.window}`;
+
     limiter = new Ratelimit({
       redis: getRedis(),
       limiter: Ratelimit.slidingWindow(config.requests, config.window),
-      prefix: `@upstash/ratelimit:${key}`,
+      prefix,
       ephemeralCache: cache,
       timeout: 2000,
       analytics: true,
