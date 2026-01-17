@@ -12,6 +12,27 @@ import type { Context } from "@/trpc/init";
 const domainSchema = z.string().min(1, "Domain is required");
 
 /**
+ * Available sections for domain_report bundle tool.
+ */
+const REPORT_SECTIONS = [
+  "dns",
+  "registration",
+  "hosting",
+  "certificates",
+  "headers",
+  "seo",
+] as const;
+
+type ReportSection = (typeof REPORT_SECTIONS)[number];
+
+const sectionsSchema = z
+  .array(z.enum(REPORT_SECTIONS))
+  .optional()
+  .describe(
+    "Sections to include in the report. If omitted, all sections are included.",
+  );
+
+/**
  * Helper to format SwrResult for MCP tool response.
  * Strips internal metadata (rateLimit, cached, stale) and returns clean JSON.
  */
@@ -151,6 +172,91 @@ function createMcpHandlerWithContext(request: Request) {
         async ({ domain }) => {
           const result = await trpc.domain.getSeo({ domain });
           return formatToolResponse(result);
+        },
+      );
+
+      // ─────────────────────────────────────────────────────────────────────
+      // Domain Report Bundle Tool
+      // ─────────────────────────────────────────────────────────────────────
+      server.tool(
+        "domain_report",
+        "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
+        {
+          domain: domainSchema.describe(
+            "Domain to look up (e.g., example.com)",
+          ),
+          sections: sectionsSchema,
+        },
+        async ({ domain, sections }) => {
+          // Default to all sections if not specified
+          const requestedSections: ReportSection[] =
+            sections && sections.length > 0 ? sections : [...REPORT_SECTIONS];
+
+          // Define section fetchers
+          const sectionFetchers: Record<
+            ReportSection,
+            () => Promise<{ success: boolean; data?: unknown; error?: string }>
+          > = {
+            registration: () => trpc.domain.getRegistration({ domain }),
+            dns: () => trpc.domain.getDnsRecords({ domain }),
+            hosting: () => trpc.domain.getHosting({ domain }),
+            certificates: () => trpc.domain.getCertificates({ domain }),
+            headers: () => trpc.domain.getHeaders({ domain }),
+            seo: () => trpc.domain.getSeo({ domain }),
+          };
+
+          // Execute requested sections in parallel
+          const results = await Promise.all(
+            requestedSections.map(async (section) => {
+              try {
+                const result = await sectionFetchers[section]();
+                if (result.success) {
+                  // Strip internal metadata
+                  const { ...data } = result.data as Record<string, unknown>;
+                  delete data.rateLimit;
+                  delete data.cached;
+                  delete data.stale;
+                  return { section, success: true, data };
+                }
+                return { section, success: false, error: result.error };
+              } catch (err) {
+                return {
+                  section,
+                  success: false,
+                  error: err instanceof Error ? err.message : "Unknown error",
+                };
+              }
+            }),
+          );
+
+          // Build response object
+          const report: Record<string, unknown> = { domain };
+          const errors: { section: string; error: string }[] = [];
+
+          for (const result of results) {
+            if (result.success) {
+              report[result.section] = result.data;
+            } else {
+              report[result.section] = null;
+              errors.push({
+                section: result.section,
+                error: result.error ?? "Unknown error",
+              });
+            }
+          }
+
+          // Include errors summary if any sections failed
+          if (errors.length > 0) {
+            report.errors = errors;
+          }
+
+          return {
+            content: [
+              { type: "text" as const, text: JSON.stringify(report, null, 2) },
+            ],
+            // Mark as partial error if some sections failed but not all
+            isError: errors.length === requestedSections.length,
+          };
         },
       );
     },
