@@ -452,12 +452,28 @@ export async function getOrStartWorkflow<T>(
   // Store in memory for same-instance deduplication
   pendingRunIds.set(key, run.runId);
 
-  // Clean up in-memory entry after TTL (Redis will be the source of truth after this)
-  const cleanupTimeout = setTimeout(() => {
+  // Clean up helper that guards against removing a different run's entry
+  const cleanupEntry = () => {
     if (pendingRunIds.get(key) === run.runId) {
       pendingRunIds.delete(key);
     }
-  }, ttlSeconds * 1000);
+  };
+
+  // Watch for workflow completion asynchronously to clean up early
+  // This prevents returning stale runIds for completed workflows
+  getRun(run.runId)
+    .status.then((status) => {
+      if (status === "completed" || status === "failed") {
+        cleanupEntry();
+      }
+    })
+    .catch(() => {
+      // Run not found or error - clean up anyway
+      cleanupEntry();
+    });
+
+  // Safety valve: clean up after TTL even if completion detection fails
+  const cleanupTimeout = setTimeout(cleanupEntry, ttlSeconds * 1000);
   cleanupTimeout.unref?.();
 
   // Store run ID in Redis
