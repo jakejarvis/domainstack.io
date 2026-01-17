@@ -109,11 +109,7 @@ export const analytics = {
       });
     };
 
-    after(() => {
-      void doIdentify().catch(() => {
-        // no-op - graceful degradation
-      });
-    });
+    after(() => doIdentify());
   },
 
   track: (
@@ -143,11 +139,7 @@ export const analytics = {
       });
     };
 
-    after(() => {
-      void doTrack().catch(() => {
-        // no-op - graceful degradation
-      });
-    });
+    after(() => doTrack());
   },
 
   /**
@@ -176,10 +168,6 @@ export const analytics = {
       client.captureException(error, resolvedDistinctId, properties);
     };
 
-    after(() => {
-      void doTrack().catch(() => {
-        // no-op - graceful degradation
-      });
-    });
+    after(() => doTrack());
   },
 };
