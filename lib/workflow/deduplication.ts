@@ -1,7 +1,21 @@
 import "server-only";
+
+import { getRun, type Run } from "workflow/api";
 import { createLogger } from "@/lib/logger/server";
+import { getRedis } from "@/lib/redis";
 
 const logger = createLogger({ source: "workflow/deduplication" });
+
+/**
+ * Redis key prefix for workflow run IDs.
+ */
+const WORKFLOW_KEY_PREFIX = "workflow:run";
+
+/**
+ * Default TTL for workflow run entries (5 minutes).
+ * Should be longer than the longest expected workflow duration.
+ */
+const DEFAULT_TTL_SECONDS = 5 * 60;
 
 /**
  * In-memory map of pending workflow runs, keyed by workflow+input hash.
@@ -9,29 +23,31 @@ const logger = createLogger({ source: "workflow/deduplication" });
  * This provides request-level deduplication within a single server instance.
  * Multiple concurrent requests for the same workflow+input will share the
  * same workflow run instead of starting duplicate runs.
- *
- * Note: This is per-instance deduplication only. In a multi-instance
- * deployment, some duplicate runs may still occur (which is fine - the
- * database operations are idempotent via upserts).
  */
 const pendingRuns = new Map<string, Promise<unknown>>();
 
-export type DeduplicationOptions<T> = {
+/**
+ * Options for workflow deduplication.
+ */
+export type DeduplicationOptions = {
   /**
-   * Keep the deduplication entry alive until this operation completes.
-   *
-   * This is useful when you want to return early (e.g. return a runId) but still
-   * prevent duplicate workflow *starts* while the underlying workflow is running.
+   * TTL for the Redis entry in seconds.
+   * Should be longer than the expected workflow duration.
+   * @default 300 (5 minutes)
    */
-  keepAliveUntil?: (result: T) => unknown | Promise<unknown>;
+  ttlSeconds?: number;
+};
 
-  /**
-   * Safety valve: evict a pending entry after this many ms to avoid poisoning
-   * a key forever if a promise hangs.
-   *
-   * Note: eviction may allow another workflow to start for the same key.
-   */
-  maxPendingMs?: number;
+/**
+ * Result from startWithDeduplication.
+ */
+export type DeduplicationResult<T> = {
+  /** The workflow result */
+  result: T;
+  /** Whether this request attached to an existing run */
+  deduplicated: boolean;
+  /** Source of deduplication: 'memory' (same instance), 'redis' (cross-instance), or 'new' */
+  source: "memory" | "redis" | "new";
 };
 
 /**
@@ -115,45 +131,26 @@ export function getDeduplicationKey(
 }
 
 /**
- * Start a workflow with request-level deduplication.
- *
- * If a workflow with the same name and input is already in progress,
- * returns the existing run's result instead of starting a new one.
- *
- * @param key - The deduplication key (use getDeduplicationKey)
- * @param startWorkflow - Function that starts the workflow and returns run.returnValue
- * @returns The workflow result
- *
- * @example
- * ```ts
- * const key = getDeduplicationKey("registration", { domain });
- * const result = await startWithDeduplication(key, async () => {
- *   const run = await start(registrationWorkflow, [{ domain }]);
- *   return run.returnValue;
- * });
- * ```
+ * Internal: Start workflow with in-memory-only deduplication.
+ * Used as a building block for the main startWithDeduplication function.
  */
-export async function startWithDeduplication<T>(
+async function startWithMemoryDeduplication<T>(
   key: string,
   startWorkflow: () => Promise<T>,
-  options: DeduplicationOptions<T> = {},
-): Promise<T> {
+  ttlMs: number,
+): Promise<{ result: T; attached: boolean }> {
   // Extract workflow name from key for safe logging (avoid leaking input data)
   const workflow = key.split(":")[0] ?? "unknown";
 
   // Check if there's already a pending run for this key
   const pending = pendingRuns.get(key);
   if (pending) {
-    logger.debug(`attaching to pending ${workflow} workflow`);
-    return pending as Promise<T>;
+    logger.debug({ workflow }, "attaching to in-memory pending run");
+    const result = (await pending) as T;
+    return { result, attached: true };
   }
 
-  // Start new workflow and store the promise.
-  //
-  // Important: wrap in Promise.resolve().then(...) so that if `startWorkflow`
-  // throws synchronously (despite its type), we still:
-  // - have a promise to store in `pendingRuns` for other callers to attach to
-  // - run cleanup via `.finally`
+  // Start new workflow and store the promise
   const basePromise = Promise.resolve().then(startWorkflow);
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -169,50 +166,261 @@ export async function startWithDeduplication<T>(
     }
   };
 
-  // If we aren't keeping the key alive, preserve the previous behavior:
-  // - callers awaiting the returned promise will only resolve after cleanup is done
-  // - this avoids subtle races in callers/tests that immediately start another run
-  let storedPromise: Promise<T>;
-  if (options.keepAliveUntil) {
-    storedPromise = basePromise;
-  } else {
-    storedPromise = basePromise.finally(() => cleanup(storedPromise));
-  }
-
+  const storedPromise = basePromise.finally(() => cleanup(storedPromise));
   pendingRuns.set(key, storedPromise);
-  logger.debug(`started new ${workflow} workflow`);
+  logger.debug({ workflow }, "started new workflow");
 
-  if (options.maxPendingMs && options.maxPendingMs > 0) {
+  // Safety valve timeout
+  if (ttlMs > 0) {
     timeoutId = setTimeout(() => {
       if (pendingRuns.get(key) === storedPromise) {
         pendingRuns.delete(key);
         logger.warn(
-          { workflow, maxPendingMs: options.maxPendingMs },
-          "evicted pending workflow deduplication entry after timeout",
+          { workflow, ttlMs },
+          "evicted pending workflow after timeout",
         );
       }
-    }, options.maxPendingMs);
-
+    }, ttlMs);
     // Best-effort: don't keep the process alive just because of this timer.
     // (Not available in all environments.)
     timeoutId.unref?.();
   }
 
-  if (options.keepAliveUntil) {
-    // Cleanup lifecycle:
-    // - Always clean up if start throws / rejects.
-    // - Keep the entry alive until keepAliveUntil settles.
-    void storedPromise
-      .then(async (result) => {
-        await options.keepAliveUntil?.(result);
-      })
-      .catch(() => {
-        // Swallow: errors propagate via `storedPromise` to callers, but we still want cleanup.
-      })
-      .finally(() => cleanup(storedPromise));
+  const result = await storedPromise;
+  return { result, attached: false };
+}
+
+/**
+ * Start a workflow with deduplication across server instances.
+ *
+ * Uses a two-tier approach:
+ * 1. In-memory Map for same-instance deduplication (fast path)
+ * 2. Redis for cross-instance deduplication (when available)
+ *
+ * When a duplicate request arrives:
+ * - Same instance: Attaches to existing promise (via in-memory Map)
+ * - Different instance: Gets runId from Redis, uses getRun() to await result
+ *
+ * Gracefully falls back to in-memory-only when Redis is unavailable.
+ *
+ * @param key - Deduplication key (use getDeduplicationKey)
+ * @param startWorkflow - Function that starts the workflow and returns a Run object
+ * @param options - Configuration options
+ * @returns The workflow result with deduplication metadata
+ *
+ * @example
+ * ```ts
+ * const key = getDeduplicationKey("registration", domain);
+ * const { result, deduplicated, source } = await startWithDeduplication(
+ *   key,
+ *   () => start(registrationWorkflow, [{ domain }]),
+ * );
+ * ```
+ */
+export async function startWithDeduplication<T>(
+  key: string,
+  startWorkflow: () => Promise<Run<T>>,
+  options: DeduplicationOptions = {},
+): Promise<DeduplicationResult<T>> {
+  const { ttlSeconds = DEFAULT_TTL_SECONDS } = options;
+  const ttlMs = ttlSeconds * 1000;
+  const redisKey = `${WORKFLOW_KEY_PREFIX}:${key}`;
+  const workflow = key.split(":")[0] ?? "unknown";
+
+  // Fast path: Check in-memory Map first (same-instance deduplication)
+  if (hasPendingRun(key)) {
+    const { result } = await startWithMemoryDeduplication(
+      key,
+      async () => {
+        const run = await startWorkflow();
+        return run.returnValue;
+      },
+      ttlMs,
+    );
+    return { result, deduplicated: true, source: "memory" };
   }
 
-  return storedPromise;
+  // Distributed path: Check Redis for existing run
+  const redis = getRedis();
+
+  if (redis) {
+    try {
+      const existingRunId = await redis.get<string>(redisKey);
+
+      if (existingRunId) {
+        logger.debug(
+          { workflow, runId: existingRunId },
+          "found existing run in Redis, subscribing",
+        );
+
+        try {
+          const run = getRun<T>(existingRunId);
+          const status = await run.status;
+
+          if (status === "running" || status === "completed") {
+            const result = await run.returnValue;
+            return { result, deduplicated: true, source: "redis" };
+          }
+
+          // Run failed or unknown status - fall through to start new
+          logger.debug(
+            { workflow, runId: existingRunId, status },
+            "existing run not usable, starting new",
+          );
+        } catch (err) {
+          logger.debug(
+            { workflow, runId: existingRunId, err },
+            "failed to get existing run, starting new",
+          );
+        }
+      }
+    } catch (err) {
+      logger.warn({ workflow, err }, "Redis error checking for existing run");
+    }
+  }
+
+  // No existing run found - start new workflow
+  const { result, attached } = await startWithMemoryDeduplication(
+    key,
+    async () => {
+      const run = await startWorkflow();
+
+      // Store run ID in Redis for cross-instance deduplication
+      if (redis) {
+        try {
+          await redis.set(redisKey, run.runId, { nx: true, ex: ttlSeconds });
+          logger.debug(
+            { workflow, runId: run.runId },
+            "stored run ID in Redis",
+          );
+        } catch (err) {
+          logger.warn({ workflow, err }, "failed to store run ID in Redis");
+        }
+      }
+
+      const returnValue = await run.returnValue;
+
+      // Clean up Redis entry on completion
+      if (redis) {
+        try {
+          await redis.del(redisKey);
+        } catch {
+          // Non-fatal: entry will expire via TTL anyway
+        }
+      }
+
+      return returnValue;
+    },
+    ttlMs,
+  );
+
+  // If we attached to an in-memory run, another call beat us after the Redis check
+  if (attached) {
+    return { result, deduplicated: true, source: "memory" };
+  }
+
+  return { result, deduplicated: false, source: "new" };
+}
+
+/**
+ * Result from getOrStartWorkflow.
+ */
+export type GetOrStartResult = {
+  /** The workflow run ID */
+  runId: string;
+  /** Whether a new workflow was started (false if attached to existing) */
+  started: boolean;
+};
+
+/**
+ * Get an existing workflow run or start a new one, returning the run ID immediately.
+ *
+ * This is useful for "fire and poll" patterns where the caller wants to return
+ * the run ID immediately without waiting for the workflow to complete.
+ *
+ * Uses Redis to track running workflows across instances. Falls back to
+ * always starting a new workflow if Redis is unavailable.
+ *
+ * @param key - Deduplication key (use getDeduplicationKey)
+ * @param startWorkflow - Function that starts the workflow and returns a Run object
+ * @param options - Configuration options
+ * @returns The run ID and whether a new workflow was started
+ *
+ * @example
+ * ```ts
+ * const key = getDeduplicationKey("screenshot", domain);
+ * const { runId, started } = await getOrStartWorkflow(
+ *   key,
+ *   () => start(screenshotWorkflow, [{ domain }]),
+ * );
+ * // Return runId to client for polling
+ * ```
+ */
+export async function getOrStartWorkflow<T>(
+  key: string,
+  startWorkflow: () => Promise<Run<T>>,
+  options: DeduplicationOptions = {},
+): Promise<GetOrStartResult> {
+  const { ttlSeconds = DEFAULT_TTL_SECONDS } = options;
+  const redisKey = `${WORKFLOW_KEY_PREFIX}:${key}`;
+  const workflow = key.split(":")[0] ?? "unknown";
+
+  const redis = getRedis();
+
+  // Check Redis for existing run
+  if (redis) {
+    try {
+      const existingRunId = await redis.get<string>(redisKey);
+
+      if (existingRunId) {
+        // Verify the run is still active
+        try {
+          const run = getRun(existingRunId);
+          const status = await run.status;
+
+          if (status === "running") {
+            logger.debug(
+              { workflow, runId: existingRunId },
+              "found existing running workflow in Redis",
+            );
+            return { runId: existingRunId, started: false };
+          }
+
+          // Run completed or failed - fall through to start new
+          logger.debug(
+            { workflow, runId: existingRunId, status },
+            "existing run completed, starting new",
+          );
+        } catch {
+          // Run not found - fall through to start new
+          logger.debug(
+            { workflow, runId: existingRunId },
+            "existing run not found, starting new",
+          );
+        }
+      }
+    } catch (err) {
+      logger.warn({ workflow, err }, "Redis error checking for existing run");
+    }
+  }
+
+  // Start new workflow
+  const run = await startWorkflow();
+
+  // Store run ID in Redis
+  if (redis) {
+    try {
+      await redis.set(redisKey, run.runId, { nx: true, ex: ttlSeconds });
+      logger.debug(
+        { workflow, runId: run.runId },
+        "stored new run ID in Redis",
+      );
+    } catch (err) {
+      logger.warn({ workflow, err }, "failed to store run ID in Redis");
+    }
+  }
+
+  return { runId: run.runId, started: true };
 }
 
 /**
@@ -231,9 +439,6 @@ export function getPendingRunCount(): number {
 
 /**
  * Clear all pending runs. FOR TESTING ONLY.
- *
- * This is exposed to allow tests to reset state between runs without
- * relying on arbitrary timeouts.
  */
 export function clearAllPendingRuns(): void {
   pendingRuns.clear();

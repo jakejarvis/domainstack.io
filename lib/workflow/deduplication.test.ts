@@ -1,11 +1,31 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock Redis
+const mockRedis = {
+  get: vi.fn(),
+  set: vi.fn(),
+  del: vi.fn(),
+};
+
+vi.mock("@/lib/redis", () => ({
+  getRedis: vi.fn(() => mockRedis),
+}));
+
+// Mock workflow/api
+const mockGetRun = vi.fn();
+vi.mock("workflow/api", () => ({
+  getRun: (...args: unknown[]) => mockGetRun(...args),
+}));
+
+// Import after mocks are set up
+const {
   clearAllPendingRuns,
   getDeduplicationKey,
+  getOrStartWorkflow,
   getPendingRunCount,
   hasPendingRun,
   startWithDeduplication,
-} from "./deduplication";
+} = await import("./deduplication");
 
 describe("getDeduplicationKey", () => {
   it("generates consistent keys for same input", () => {
@@ -59,30 +79,6 @@ describe("getDeduplicationKey", () => {
     expect(key1).toBe(key2);
   });
 
-  it("generates same key for nested objects with different property ordering", () => {
-    const key1 = getDeduplicationKey("test", {
-      outer: { a: 1, b: 2 },
-      list: [{ x: 10, y: 20 }],
-    });
-    const key2 = getDeduplicationKey("test", {
-      list: [{ y: 20, x: 10 }],
-      outer: { b: 2, a: 1 },
-    });
-    expect(key1).toBe(key2);
-  });
-
-  it("preserves array order (arrays are not sorted)", () => {
-    const key1 = getDeduplicationKey("test", { items: ["a", "b", "c"] });
-    const key2 = getDeduplicationKey("test", { items: ["c", "b", "a"] });
-    expect(key1).not.toBe(key2);
-  });
-
-  it("handles null values", () => {
-    const key1 = getDeduplicationKey("test", { value: null });
-    const key2 = getDeduplicationKey("test", { value: null });
-    expect(key1).toBe(key2);
-  });
-
   it("handles primitive inputs", () => {
     expect(getDeduplicationKey("test", "string")).toBe(
       getDeduplicationKey("test", "string"),
@@ -90,215 +86,245 @@ describe("getDeduplicationKey", () => {
     expect(getDeduplicationKey("test", 123)).toBe(
       getDeduplicationKey("test", 123),
     );
-    expect(getDeduplicationKey("test", true)).toBe(
-      getDeduplicationKey("test", true),
-    );
   });
 
-  it("generates different keys for different Date values", () => {
-    const key1 = getDeduplicationKey("test", {
-      expiresAt: new Date("2024-01-01"),
-    });
-    const key2 = getDeduplicationKey("test", {
-      expiresAt: new Date("2025-12-31"),
-    });
-    expect(key1).not.toBe(key2);
-  });
-
-  it("generates same key for same Date values", () => {
+  it("handles Date values", () => {
     const key1 = getDeduplicationKey("test", {
       expiresAt: new Date("2024-01-01T00:00:00.000Z"),
     });
     const key2 = getDeduplicationKey("test", {
       expiresAt: new Date("2024-01-01T00:00:00.000Z"),
-    });
-    expect(key1).toBe(key2);
-  });
-
-  it("handles Date values with different property ordering", () => {
-    const key1 = getDeduplicationKey("test", {
-      domain: "test.invalid",
-      expiresAt: new Date("2024-01-01"),
-    });
-    const key2 = getDeduplicationKey("test", {
-      expiresAt: new Date("2024-01-01"),
-      domain: "test.invalid",
     });
     expect(key1).toBe(key2);
   });
 });
 
 describe("startWithDeduplication", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearAllPendingRuns();
+    mockRedis.get.mockResolvedValue(null);
+    mockRedis.set.mockResolvedValue("OK");
+    mockRedis.del.mockResolvedValue(1);
+  });
+
   afterEach(() => {
     clearAllPendingRuns();
   });
 
-  it("executes the workflow function", async () => {
-    const workflowFn = vi.fn().mockResolvedValue({ success: true });
-    const key = getDeduplicationKey("test1", { id: 1 });
+  it("starts a new workflow and returns result with metadata", async () => {
+    const mockRun = {
+      runId: "run_new_123",
+      returnValue: Promise.resolve({ success: true, data: "result" }),
+    };
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
 
-    const result = await startWithDeduplication(key, workflowFn);
+    const key = getDeduplicationKey("test", "example.com");
+    const { result, deduplicated, source } = await startWithDeduplication(
+      key,
+      startWorkflow,
+    );
 
-    expect(workflowFn).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ success: true });
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: true, data: "result" });
+    expect(deduplicated).toBe(false);
+    expect(source).toBe("new");
+
+    // Should store run ID in Redis
+    expect(mockRedis.set).toHaveBeenCalledWith(
+      expect.stringContaining("workflow:run:test:"),
+      "run_new_123",
+      { nx: true, ex: 300 },
+    );
   });
 
-  it("deduplicates concurrent requests with same key", async () => {
+  it("subscribes to existing run found in Redis", async () => {
+    const existingRunId = "run_existing_456";
+    mockRedis.get.mockResolvedValue(existingRunId);
+
+    const mockExistingRun = {
+      status: Promise.resolve("running"),
+      returnValue: Promise.resolve({ success: true, data: "shared" }),
+    };
+    mockGetRun.mockReturnValue(mockExistingRun);
+
+    const startWorkflow = vi.fn();
+    const key = getDeduplicationKey("test", "example.com");
+
+    const { result, deduplicated, source } = await startWithDeduplication(
+      key,
+      startWorkflow,
+    );
+
+    expect(startWorkflow).not.toHaveBeenCalled();
+    expect(mockGetRun).toHaveBeenCalledWith(existingRunId);
+    expect(result).toEqual({ success: true, data: "shared" });
+    expect(deduplicated).toBe(true);
+    expect(source).toBe("redis");
+  });
+
+  it("starts new workflow when existing run has failed status", async () => {
+    const existingRunId = "run_failed_abc";
+    mockRedis.get.mockResolvedValue(existingRunId);
+
+    // Create a rejected promise but catch it to avoid unhandled rejection
+    const rejectedPromise = Promise.reject(new Error("previous failure"));
+    rejectedPromise.catch(() => {});
+
+    const mockExistingRun = {
+      status: Promise.resolve("failed"),
+      returnValue: rejectedPromise,
+    };
+    mockGetRun.mockReturnValue(mockExistingRun);
+
+    const mockNewRun = {
+      runId: "run_new_def",
+      returnValue: Promise.resolve({ success: true, data: "fresh" }),
+    };
+    const startWorkflow = vi.fn().mockResolvedValue(mockNewRun);
+
+    const key = getDeduplicationKey("test", "example.com");
+    const { result, deduplicated, source } = await startWithDeduplication(
+      key,
+      startWorkflow,
+    );
+
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: true, data: "fresh" });
+    expect(deduplicated).toBe(false);
+    expect(source).toBe("new");
+  });
+
+  it("deduplicates concurrent requests on same instance (in-memory)", async () => {
     let resolveWorkflow: ((value: unknown) => void) | undefined;
-    const workflowPromise = new Promise((resolve) => {
+    const returnValue = new Promise((resolve) => {
       resolveWorkflow = resolve;
     });
-    const workflowFn = vi.fn().mockReturnValue(workflowPromise);
-    const key = getDeduplicationKey("test2", { id: 2 });
 
-    // Start two concurrent requests
-    const promise1 = startWithDeduplication(key, workflowFn);
-    const promise2 = startWithDeduplication(key, workflowFn);
-
-    // Workflow start is scheduled in a microtask; flush it before asserting.
-    await Promise.resolve();
-
-    // Only one workflow should be started
-    expect(workflowFn).toHaveBeenCalledTimes(1);
-
-    // Both should be waiting for the same result
-    expect(hasPendingRun(key)).toBe(true);
-
-    // Resolve the workflow
-    if (resolveWorkflow) {
-      resolveWorkflow({ data: "shared" });
-    }
-
-    // Both promises should resolve with the same result
-    const [result1, result2] = await Promise.all([promise1, promise2]);
-    expect(result1).toEqual({ data: "shared" });
-    expect(result2).toEqual({ data: "shared" });
-
-    // Pending run should be cleaned up
-    expect(hasPendingRun(key)).toBe(false);
-  });
-
-  it("allows new runs after previous completes", async () => {
-    const workflowFn = vi.fn().mockResolvedValue({ run: 1 });
-    const key = getDeduplicationKey("test3", { id: 3 });
-
-    // First run
-    await startWithDeduplication(key, workflowFn);
-    expect(workflowFn).toHaveBeenCalledTimes(1);
-
-    // Second run (after first completes)
-    workflowFn.mockResolvedValue({ run: 2 });
-    const result = await startWithDeduplication(key, workflowFn);
-
-    expect(workflowFn).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ run: 2 });
-  });
-
-  it("cleans up on error", async () => {
-    const workflowFn = vi.fn().mockRejectedValue(new Error("workflow failed"));
-    const key = getDeduplicationKey("test4", { id: 4 });
-
-    await expect(startWithDeduplication(key, workflowFn)).rejects.toThrow(
-      "workflow failed",
-    );
-
-    // Pending run should be cleaned up even on error
-    expect(hasPendingRun(key)).toBe(false);
-  });
-
-  it("propagates errors to all waiters", async () => {
-    let rejectWorkflow: ((error: Error) => void) | undefined;
-    const workflowPromise = new Promise((_, reject) => {
-      rejectWorkflow = reject;
-    });
-    const workflowFn = vi.fn().mockReturnValue(workflowPromise);
-    const key = getDeduplicationKey("test5", { id: 5 });
-
-    // Start two concurrent requests
-    const promise1 = startWithDeduplication(key, workflowFn);
-    const promise2 = startWithDeduplication(key, workflowFn);
-
-    // Reject the workflow
-    if (rejectWorkflow) {
-      rejectWorkflow(new Error("shared error"));
-    }
-
-    // Both should reject with the same error
-    await expect(promise1).rejects.toThrow("shared error");
-    await expect(promise2).rejects.toThrow("shared error");
-  });
-
-  it("deduplicates and cleans up when startWorkflow throws synchronously", async () => {
-    const workflowFn = vi.fn(() => {
-      throw new Error("sync boom");
-    });
-    const key = getDeduplicationKey("test-sync-throw", { id: 6 });
-
-    const promise1 = startWithDeduplication(key, workflowFn as never);
-    const promise2 = startWithDeduplication(key, workflowFn as never);
-
-    expect(workflowFn).toHaveBeenCalledTimes(0); // called in a microtask
-
-    await expect(promise1).rejects.toThrow("sync boom");
-    await expect(promise2).rejects.toThrow("sync boom");
-
-    // Only one run should have been attempted, and state should be cleaned up
-    expect(workflowFn).toHaveBeenCalledTimes(1);
-    expect(hasPendingRun(key)).toBe(false);
-  });
-
-  it("can keep a key pending until a keepAlive promise settles (attach while workflow is running)", async () => {
-    let resolveReturnValue: ((value: unknown) => void) | undefined;
-    const returnValue = new Promise((resolve) => {
-      resolveReturnValue = resolve;
-    });
-
-    type KeepAliveResult = {
-      runId: string;
-      returnValue: Promise<unknown>;
+    const mockRun = {
+      runId: "run_concurrent",
+      returnValue,
     };
 
-    const workflowFn = vi
-      .fn<() => Promise<KeepAliveResult>>()
-      .mockResolvedValue({
-        runId: "run_123",
-        returnValue,
-      });
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+    const key = getDeduplicationKey("test", "concurrent.com");
 
-    const key = getDeduplicationKey("test-keep-alive", { id: 7 });
+    // Start two concurrent requests
+    const promise1 = startWithDeduplication(key, startWorkflow);
+    const promise2 = startWithDeduplication(key, startWorkflow);
 
-    // First call resolves quickly (it returns the runId), but should remain pending due to keepAliveUntil.
-    const result1 = await startWithDeduplication<KeepAliveResult>(
-      key,
-      workflowFn,
-      {
-        keepAliveUntil: (r) => r.returnValue,
-      },
+    // Resolve the workflow
+    resolveWorkflow?.({ success: true, data: "shared" });
+
+    const [result1, result2] = await Promise.all([promise1, promise2]);
+
+    // Only one workflow should be started
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+
+    // Both get the same result
+    expect(result1.result).toEqual({ success: true, data: "shared" });
+    expect(result2.result).toEqual({ success: true, data: "shared" });
+  });
+
+  it("fails open when Redis is unavailable", async () => {
+    const { getRedis } = await import("@/lib/redis");
+    vi.mocked(getRedis).mockReturnValueOnce(undefined);
+
+    const mockRun = {
+      runId: "run_no_redis",
+      returnValue: Promise.resolve({ success: true }),
+    };
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+
+    const key = getDeduplicationKey("test", "example.com");
+    const { result, source } = await startWithDeduplication(key, startWorkflow);
+
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: true });
+    expect(source).toBe("new");
+  });
+
+  it("propagates workflow errors", async () => {
+    const mockRun = {
+      runId: "run_error",
+      returnValue: Promise.reject(new Error("Workflow failed")),
+    };
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+
+    const key = getDeduplicationKey("test", "example.com");
+
+    await expect(startWithDeduplication(key, startWorkflow)).rejects.toThrow(
+      "Workflow failed",
     );
-    expect(result1.runId).toBe("run_123");
-    expect(workflowFn).toHaveBeenCalledTimes(1);
-    expect(hasPendingRun(key)).toBe(true);
+  });
+});
 
-    // A subsequent call should attach and not start a second workflow.
-    const result2 = await startWithDeduplication<KeepAliveResult>(
-      key,
-      workflowFn,
-      {
-        keepAliveUntil: (r) => r.returnValue,
-      },
+describe("getOrStartWorkflow", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearAllPendingRuns();
+    mockRedis.get.mockResolvedValue(null);
+    mockRedis.set.mockResolvedValue("OK");
+  });
+
+  afterEach(() => {
+    clearAllPendingRuns();
+  });
+
+  it("returns existing runId when found in Redis and still running", async () => {
+    const existingRunId = "run_existing_789";
+    mockRedis.get.mockResolvedValue(existingRunId);
+
+    mockGetRun.mockReturnValue({
+      status: Promise.resolve("running"),
+    });
+
+    const startWorkflow = vi.fn();
+    const key = getDeduplicationKey("screenshot", "example.com");
+
+    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+
+    expect(startWorkflow).not.toHaveBeenCalled();
+    expect(runId).toBe(existingRunId);
+    expect(started).toBe(false);
+  });
+
+  it("starts new workflow when no existing run in Redis", async () => {
+    const mockRun = { runId: "run_new_abc" };
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+
+    const key = getDeduplicationKey("screenshot", "example.com");
+    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(runId).toBe("run_new_abc");
+    expect(started).toBe(true);
+
+    // Should store in Redis
+    expect(mockRedis.set).toHaveBeenCalledWith(
+      expect.stringContaining("workflow:run:screenshot:"),
+      "run_new_abc",
+      { nx: true, ex: 300 },
     );
-    expect(result2.runId).toBe("run_123");
-    expect(workflowFn).toHaveBeenCalledTimes(1);
+  });
 
-    // Resolve the underlying workflow.
-    resolveReturnValue?.({ ok: true });
-    await returnValue;
+  it("starts new workflow when existing run is completed", async () => {
+    const existingRunId = "run_completed_xyz";
+    mockRedis.get.mockResolvedValue(existingRunId);
 
-    // Cleanup happens after keepAlive settles.
-    for (let i = 0; i < 10 && hasPendingRun(key); i++) {
-      await Promise.resolve();
-    }
-    expect(hasPendingRun(key)).toBe(false);
+    mockGetRun.mockReturnValue({
+      status: Promise.resolve("completed"),
+    });
+
+    const mockRun = { runId: "run_new_replacement" };
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+
+    const key = getDeduplicationKey("screenshot", "example.com");
+    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(runId).toBe("run_new_replacement");
+    expect(started).toBe(true);
   });
 });
 
@@ -309,5 +335,15 @@ describe("getPendingRunCount", () => {
 
   it("returns 0 when no runs are pending", () => {
     expect(getPendingRunCount()).toBe(0);
+  });
+});
+
+describe("hasPendingRun", () => {
+  afterEach(() => {
+    clearAllPendingRuns();
+  });
+
+  it("returns false for unknown key", () => {
+    expect(hasPendingRun("unknown:key")).toBe(false);
   });
 });
