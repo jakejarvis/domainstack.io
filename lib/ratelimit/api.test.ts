@@ -211,6 +211,28 @@ describe("lib/ratelimit/api", () => {
           expect(result.info?.remaining).toBe(0);
         }
       });
+
+      it("accepts custom rate limit config", async () => {
+        mockIpAddress.mockReturnValue("192.168.1.1");
+        mockLimit.mockResolvedValueOnce({
+          success: true,
+          limit: 10,
+          remaining: 9,
+          reset: Date.now() + 60000,
+          pending: Promise.resolve(),
+        });
+
+        const request = createMockRequest();
+        const result = await checkRateLimit(request, {
+          requests: 10,
+          window: "1 m",
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.info?.limit).toBe(10);
+        }
+      });
     });
   });
 });

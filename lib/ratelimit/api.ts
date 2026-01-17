@@ -1,5 +1,9 @@
 import { ipAddress, waitUntil } from "@vercel/functions";
-import { type RateLimitInfo, ratelimit } from "./index";
+import {
+  getRateLimiter,
+  type RateLimitConfig,
+  type RateLimitInfo,
+} from "./index";
 
 /**
  * Rate limit headers to include in responses.
@@ -72,6 +76,7 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
  * - Redis timeout/error: Allow request (handled by library)
  *
  * @param request - The incoming request
+ * @param config - Optional rate limit configuration (defaults to 60 req/min)
  * @returns Success with headers to apply, or failure with pre-built 429 Response
  *
  * @example
@@ -88,10 +93,20 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
  *     headers: rateLimit.headers,
  *   });
  * }
+ *
+ * // With custom config for expensive operations
+ * export async function POST(request: Request) {
+ *   const rateLimit = await checkRateLimit(request, {
+ *     requests: 10,
+ *     window: "1 m",
+ *   });
+ *   // ...
+ * }
  * ```
  */
 export async function checkRateLimit(
   request: Request,
+  config?: RateLimitConfig,
 ): Promise<RateLimitSuccess | RateLimitFailure> {
   // Resolve identifier: user ID (preferred) or IP address (fallback)
   const identifier = await resolveIdentifier(request);
@@ -101,8 +116,9 @@ export async function checkRateLimit(
     return { success: true };
   }
 
+  const limiter = getRateLimiter(config);
   const { success, limit, remaining, reset, pending } =
-    await ratelimit.limit(identifier);
+    await limiter.limit(identifier);
 
   // Handle analytics write in background (non-blocking)
   waitUntil(pending);

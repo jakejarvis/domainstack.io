@@ -5,6 +5,7 @@ import { analytics } from "@/lib/analytics/server";
 import { getDomainById } from "@/lib/db/repos/domains";
 import { getScreenshotByDomainId } from "@/lib/db/repos/screenshots";
 import { createLogger } from "@/lib/logger/server";
+import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
   getDeduplicationKey,
   startWithDeduplication,
@@ -50,10 +51,24 @@ type ScreenshotStatusResponse =
  * Start a screenshot workflow for a domain.
  * Accepts { domainId: string } in the request body.
  * Returns cached result immediately if available, otherwise starts workflow.
+ *
+ * Rate limited to 10 requests/minute (expensive operation).
  */
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<ScreenshotStartResponse | { error: string }>> {
+  // Rate limit: 10 requests/minute for expensive screenshot workflow
+  const rateLimit = await checkRateLimit(request, {
+    requests: 10,
+    window: "1 m",
+  });
+  if (!rateLimit.success) {
+    return new NextResponse(rateLimit.error.body, {
+      status: 429,
+      headers: rateLimit.error.headers,
+    });
+  }
+
   try {
     const body = await request.json();
     const { domainId } = body as { domainId?: string };
@@ -106,11 +121,14 @@ export async function POST(
           domain: domain.name,
         });
 
-        return NextResponse.json({
-          status: "completed",
-          cached: true,
-          data: { url: cachedScreenshot.url, blocked },
-        });
+        return NextResponse.json(
+          {
+            status: "completed",
+            cached: true,
+            data: { url: cachedScreenshot.url, blocked },
+          },
+          { headers: rateLimit.headers },
+        );
       }
     }
 
@@ -147,10 +165,13 @@ export async function POST(
       },
     );
 
-    return NextResponse.json({
-      status: "running",
-      runId: result.runId,
-    });
+    return NextResponse.json(
+      {
+        status: "running",
+        runId: result.runId,
+      },
+      { headers: rateLimit.headers },
+    );
   } catch (err) {
     logger.error({ err }, "failed to start screenshot workflow");
     return NextResponse.json(
@@ -165,10 +186,24 @@ export async function POST(
  *
  * Poll for screenshot workflow status.
  * Returns the current status and result when completed.
+ *
+ * Rate limited to 120 requests/minute (polling endpoint).
  */
 export async function GET(
   request: NextRequest,
 ): Promise<NextResponse<ScreenshotStatusResponse | { error: string }>> {
+  // Rate limit: 120 requests/minute for polling (allows ~2 req/sec)
+  const rateLimit = await checkRateLimit(request, {
+    requests: 120,
+    window: "1 m",
+  });
+  if (!rateLimit.success) {
+    return new NextResponse(rateLimit.error.body, {
+      status: 429,
+      headers: rateLimit.error.headers,
+    });
+  }
+
   const runId = request.nextUrl.searchParams.get("runId");
 
   if (!runId) {
@@ -187,26 +222,35 @@ export async function GET(
         success: result.success,
       });
 
-      return NextResponse.json({
-        status: "completed",
-        cached: false,
-        success: result.success,
-        data: result.data,
-        ...(result.success === false && { error: result.error }),
-      } as ScreenshotStatusResponse);
+      return NextResponse.json(
+        {
+          status: "completed",
+          cached: false,
+          success: result.success,
+          data: result.data,
+          ...(result.success === false && { error: result.error }),
+        } as ScreenshotStatusResponse,
+        { headers: rateLimit.headers },
+      );
     }
 
     if (status === "failed") {
       analytics.track("screenshot_api_workflow_failed", { runId });
 
-      return NextResponse.json({
-        status: "failed",
-        error: "workflow_failed",
-      });
+      return NextResponse.json(
+        {
+          status: "failed",
+          error: "workflow_failed",
+        },
+        { headers: rateLimit.headers },
+      );
     }
 
     // Still running
-    return NextResponse.json({ status: "running" });
+    return NextResponse.json(
+      { status: "running" },
+      { headers: rateLimit.headers },
+    );
   } catch (err) {
     logger.warn({ err, runId }, "failed to get workflow run status");
     return NextResponse.json({ error: "Run not found" }, { status: 404 });
