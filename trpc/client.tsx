@@ -10,6 +10,7 @@ import {
 } from "@trpc/client";
 import { useState } from "react";
 import superjson from "superjson";
+import { rateLimitLink } from "@/lib/ratelimit/trpc-link";
 import { TRPCProvider as Provider } from "@/lib/trpc/client";
 import type { AppRouter } from "@/server/routers/_app";
 import { makeQueryClient } from "@/trpc/query-client";
@@ -43,6 +44,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             process.env.NODE_ENV === "development" ||
             (opts.direction === "down" && opts.result instanceof Error),
         }),
+        rateLimitLink,
         httpBatchStreamLink({
           url: `${getBaseUrl()}/api/trpc`,
           transformer: superjson,

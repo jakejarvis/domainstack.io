@@ -1,35 +1,41 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { ipAddress } from "@vercel/functions";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
 import { updateLastAccessed } from "@/lib/db/repos/domains";
 import { createLogger } from "@/lib/logger/server";
+import {
+  getRateLimiter,
+  type RateLimitConfig,
+  type RateLimitInfo,
+} from "@/lib/ratelimit";
 
-const IP_HEADERS = ["x-real-ip", "x-forwarded-for", "cf-connecting-ip"];
+/**
+ * Procedure metadata for configuring middleware behavior.
+ */
+type ProcedureMeta = {
+  /**
+   * Rate limit configuration for this procedure.
+   * Defaults to 60 requests/minute if not specified.
+   *
+   * @example
+   * ```ts
+   * .meta({ rateLimit: { requests: 10, window: "1 m" } })
+   * ```
+   */
+  rateLimit?: RateLimitConfig;
 
-const resolveRequestIp = async () => {
-  try {
-    const headerList = await headers();
-    for (const name of IP_HEADERS) {
-      const value = headerList.get(name);
-      if (value) {
-        const first = value.split(",")[0]?.trim();
-        if (first) {
-          return first;
-        }
-      }
-    }
-  } catch {
-    // headers() is only available inside Next.js request lifecycle hooks.
-    // Ignore errors when invoked in tests or scripts.
-  }
-
-  return null;
+  /**
+   * Skip rate limiting for this procedure.
+   * Use for lightweight/cached endpoints that don't need throttling.
+   */
+  skipRateLimit?: boolean;
 };
 
 export const createContext = async (opts?: { req?: Request }) => {
   const req = opts?.req;
-  const ip = await resolveRequestIp();
+  const ip = req ? (ipAddress(req) ?? null) : null;
 
   // Get session if available (lazy-loaded to avoid circular deps)
   let session: { user: { id: string; name: string; email: string } } | null =
@@ -58,12 +64,9 @@ export const createContext = async (opts?: { req?: Request }) => {
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
 
-export const t = initTRPC
-  .context<Context>()
-  .meta<Record<string, unknown>>()
-  .create({
-    transformer: superjson,
-  });
+export const t = initTRPC.context<Context>().meta<ProcedureMeta>().create({
+  transformer: superjson,
+});
 
 export const createTRPCRouter = t.router;
 // biome-ignore lint/nursery/useDestructuring: this is easier
@@ -74,7 +77,7 @@ export const createCallerFactory = t.createCallerFactory;
  * Logs are automatically structured in JSON format.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, next }) => {
+export const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
   const procedureLogger = createLogger({ source: "trpc", path, type });
@@ -105,11 +108,98 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
 });
 
 /**
+ * Middleware to enforce rate limiting.
+ *
+ * Rate limit key priority:
+ * 1. Authenticated user ID (more accurate per-user limits)
+ * 2. Client IP address (fallback for anonymous requests)
+ *
+ * Reads rate limit config from procedure meta.
+ * Configure per-procedure: `.meta({ rateLimit: { requests: 10, window: "1 m" } })`
+ *
+ * Fail-open strategy:
+ * - No identifier available: Skip rate limiting, allow request
+ * - Redis timeout/error: Allow request (handled by library with 2s timeout)
+ *
+ * Response augmentation:
+ * - Success: Adds `rateLimit` field to response data with { limit, remaining, reset }
+ * - Failure: Throws TOO_MANY_REQUESTS with retry timing in message and cause
+ *
+ * Client-side utilities in `@/lib/ratelimit/client` can parse both cases.
+ */
+export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
+  // Allow procedures to opt-out via meta
+  if (meta?.skipRateLimit) {
+    return next();
+  }
+
+  // Use user ID for authenticated requests, fall back to IP for anonymous
+  const rateLimitKey = ctx.session?.user?.id ?? ctx.ip;
+
+  // Fail open: no identifier = skip rate limiting entirely
+  if (!rateLimitKey) {
+    return next();
+  }
+
+  // Build rate limit config with procedure path as the bucket name
+  // This ensures each procedure has its own rate limit bucket in Redis
+  const limiter = getRateLimiter({
+    name: path,
+    requests: meta?.rateLimit?.requests ?? 60,
+    window: meta?.rateLimit?.window ?? "1 m",
+  });
+  const { success, limit, remaining, reset, pending } =
+    await limiter.limit(rateLimitKey);
+
+  // Handle analytics write in background (non-blocking)
+  after(() => pending);
+
+  const rateLimitInfo = { limit, remaining, reset } satisfies RateLimitInfo;
+
+  if (!success) {
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: `Rate limit exceeded. Try again in ${retryAfter}s`,
+      // Include structured data in cause for client-side parsing
+      cause: { retryAfter, rateLimit: rateLimitInfo },
+    });
+  }
+
+  // Execute the procedure and wrap response with rate limit info
+  const result = await next({
+    ctx: {
+      ...ctx,
+      rateLimit: rateLimitInfo,
+    },
+  });
+
+  // Augment successful responses with rate limit metadata
+  // Only augment plain objects, not arrays or primitives
+  if (
+    result.ok &&
+    result.data &&
+    typeof result.data === "object" &&
+    !Array.isArray(result.data)
+  ) {
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        rateLimit: rateLimitInfo,
+      },
+    };
+  }
+
+  return result;
+});
+
+/**
  * Middleware to record that a domain was accessed by a user (for decay calculation).
  * Expects input to have a `domain` field.
  * Schedules the write to happen after the response is sent using Next.js after().
  */
-const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
+export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   // Check if input is a valid object with a domain property
   if (
     input &&
@@ -117,32 +207,16 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => {
-      void updateLastAccessed(input.domain as string).catch(() => {
-        // no-op - access tracking should never break the request
-      });
-    });
+    after(() => updateLastAccessed(input.domain as string));
   }
   return next();
 });
 
 /**
- * Public procedure with logging.
- * Use this for all public endpoints (e.g. health check, etc).
- */
-export const publicProcedure = t.procedure.use(withLogging);
-
-/**
- * Domain-specific procedure with "last accessed at" tracking.
- * Use this for all domain data endpoints (dns, hosting, seo, etc).
- */
-export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);
-
-/**
  * Middleware to ensure user is authenticated.
  * Throws UNAUTHORIZED if no valid session.
  */
-const withAuth = t.middleware(async ({ ctx, next }) => {
+export const withAuth = t.middleware(async ({ ctx, next }) => {
   if (!ctx.session?.user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -163,7 +237,7 @@ const withAuth = t.middleware(async ({ ctx, next }) => {
  * Middleware to ensure user has Pro subscription.
  * Throws FORBIDDEN if user is on free tier.
  */
-const withProTier = t.middleware(async (opts) => {
+export const withProTier = t.middleware(async (opts) => {
   const { getUserSubscription } = await import(
     "@/lib/db/repos/user-subscription"
   );
@@ -188,13 +262,13 @@ const withProTier = t.middleware(async (opts) => {
 });
 
 /**
+ * Public procedure with logging.
+ * Use this for all public endpoints (e.g. health check, etc).
+ */
+export const publicProcedure = t.procedure.use(withLogging);
+
+/**
  * Protected procedure requiring authentication.
  * Use this for all endpoints that require a logged-in user.
  */
 export const protectedProcedure = publicProcedure.use(withAuth);
-
-/**
- * Pro-only procedure requiring Pro subscription.
- * Use this for endpoints that should only be accessible to Pro users.
- */
-export const proOnlyProcedure = protectedProcedure.use(withProTier);

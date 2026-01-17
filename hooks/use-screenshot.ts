@@ -2,7 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
+import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
 
 /**
  * Response type from POST /api/screenshot
@@ -10,7 +12,8 @@ import { analytics } from "@/lib/analytics/client";
 type ScreenshotStartResponse =
   | { status: "completed"; data: ScreenshotData }
   | { status: "running"; runId: string }
-  | { status: "error"; error: string };
+  | { status: "error"; error: string }
+  | { status: "rate_limited"; retryAfter: number };
 
 /**
  * Response type from GET /api/screenshot?runId=xxx
@@ -19,7 +22,8 @@ type ScreenshotStatusResponse =
   | { status: "running" }
   | { status: "completed"; data: ScreenshotData }
   | { status: "failed"; error: string }
-  | { status: "error"; error: string };
+  | { status: "error"; error: string }
+  | { status: "rate_limited"; retryAfter: number };
 
 /**
  * Normalized screenshot data
@@ -156,12 +160,22 @@ export function useScreenshot({
       body: JSON.stringify({ domainId: id }),
     });
 
+    // Handle rate limiting
+    if (response.status === 429) {
+      const retryAfter = parseRetryAfterHeader(response);
+      return { status: "rate_limited", retryAfter } as const;
+    }
+
     if (!response.ok) {
       throw new Error(`Screenshot request failed: ${response.status}`);
     }
 
     return parseStartResponse(await response.json());
   }, []);
+
+  // Track rate limit state for retry scheduling
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Mutation to start the screenshot workflow
   const startMutation = useMutation({
@@ -177,6 +191,26 @@ export function useScreenshot({
       } else if (data.status === "running") {
         setRunId(data.runId);
         analytics.track("screenshot_requested", { domain });
+      } else if (data.status === "rate_limited") {
+        // Track when rate limit expires and schedule auto-retry
+        const retryAt = Date.now() + data.retryAfter * 1000;
+        setRateLimitedUntil(retryAt);
+        toast.error("Too many requests", {
+          description: `Please wait ${data.retryAfter} second${data.retryAfter !== 1 ? "s" : ""} before trying again.`,
+        });
+        analytics.track("screenshot_rate_limited", {
+          domain,
+          retryAfter: data.retryAfter,
+        });
+
+        // Schedule auto-retry after rate limit expires
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        retryTimeoutRef.current = setTimeout(() => {
+          hasStartedRef.current = false; // Allow restart
+          setRateLimitedUntil(null); // Clear rate limit state to trigger effect
+        }, data.retryAfter * 1000);
       }
     },
     onError: (error) => {
@@ -189,6 +223,13 @@ export function useScreenshot({
     queryKey: ["screenshot-status", runId],
     queryFn: async (): Promise<ScreenshotStatusResponse> => {
       const response = await fetch(`/api/screenshot?runId=${runId}`);
+
+      // Handle rate limiting during polling
+      if (response.status === 429) {
+        const retryAfter = parseRetryAfterHeader(response);
+        return { status: "rate_limited", retryAfter };
+      }
+
       if (!response.ok) {
         throw new Error(`Screenshot status poll failed: ${response.status}`);
       }
@@ -197,8 +238,13 @@ export function useScreenshot({
     enabled: !!runId,
     refetchInterval: (query) => {
       const { data } = query.state;
+      // Stop polling if not running or rate limited
       if (data?.status !== "running") {
-        return false; // Stop polling
+        // If rate limited, we'll resume polling after the limit expires
+        if (data?.status === "rate_limited") {
+          return data.retryAfter * 1000; // Back off for retry duration
+        }
+        return false; // Stop polling for completed/failed/error
       }
       return POLL_INTERVAL_MS;
     },
@@ -212,9 +258,28 @@ export function useScreenshot({
       setScreenshotData(statusQuery.data.data);
       queryClient.setQueryData(screenshotQueryKey, statusQuery.data.data);
       analytics.track("screenshot_loaded_from_api", { domain });
+      setRunId(null);
+    } else if (statusQuery.data.status === "rate_limited") {
+      // Show toast only once per rate limit event
+      toast.error("Too many requests", {
+        description: `Polling paused. Retrying in ${statusQuery.data.retryAfter} seconds.`,
+      });
+      // Don't clear runId - polling will resume with backoff
+    } else {
+      // failed or error status
+      setRunId(null);
     }
-    setRunId(null);
   }, [statusQuery.data, queryClient, screenshotQueryKey, domain]);
+
+  // Cleanup retry timeout on unmount
+  useEffect(
+    () => () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   // Reset and auto-start when domain/enabled/domainId changes
   useEffect(() => {
@@ -224,6 +289,11 @@ export function useScreenshot({
       startedForDomainRef.current = domain;
       setScreenshotData(null);
       setRunId(null);
+      setRateLimitedUntil(null);
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
     }
 
     // Skip if already started, disabled, no domainId, or have cached/current data
@@ -237,9 +307,22 @@ export function useScreenshot({
       return;
     }
 
+    // Skip if currently rate limited
+    if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
+      return;
+    }
+
     hasStartedRef.current = true;
     startMutation.mutate(domainId);
-  }, [domain, enabled, domainId, cachedData, screenshotData, startMutation]);
+  }, [
+    domain,
+    enabled,
+    domainId,
+    cachedData,
+    screenshotData,
+    startMutation,
+    rateLimitedUntil,
+  ]);
 
   // --- Derive the result ---
 
