@@ -7,6 +7,8 @@ interface ScrollAreaProps
   showFade?: boolean;
   showScrollbar?: boolean;
   viewportRef?: React.Ref<HTMLDivElement>;
+  /** Scroll direction - 'vertical' prevents horizontal scroll, 'horizontal' prevents vertical, 'both' allows both (default) */
+  orientation?: "vertical" | "horizontal" | "both";
 }
 
 function ScrollArea({
@@ -15,12 +17,16 @@ function ScrollArea({
   showFade = true,
   showScrollbar = true,
   viewportRef,
+  orientation = "both",
   ...props
 }: ScrollAreaProps) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative flex flex-col overflow-hidden", className)}
+      className={cn(
+        "relative flex min-w-0 flex-col overflow-hidden",
+        className,
+      )}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
@@ -28,9 +34,13 @@ function ScrollArea({
         ref={viewportRef}
         className={cn(
           // Base styles
-          "min-h-0 flex-1 overflow-auto rounded-[inherit] outline-none",
+          "min-h-0 min-w-0 flex-1 rounded-[inherit] outline-none",
           "scrollbar-hide",
           "focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          // Overflow based on orientation
+          orientation === "vertical" && "overflow-y-auto overflow-x-hidden",
+          orientation === "horizontal" && "overflow-x-auto overflow-y-hidden",
+          orientation === "both" && "overflow-auto",
           // Edge fade masks - composed for both axes, invisible when no overflow
           showFade &&
             "mask-intersect mask-[linear-gradient(to_bottom,transparent,black_min(48px,var(--scroll-area-overflow-y-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-y-end,0))),transparent),linear-gradient(to_right,transparent,black_min(48px,var(--scroll-area-overflow-x-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-x-end,0))),transparent)] [-webkit-mask-composite:source-in]",
@@ -42,8 +52,8 @@ function ScrollArea({
       </ScrollAreaPrimitive.Viewport>
       {showScrollbar && (
         <>
-          <ScrollBar orientation="vertical" />
-          <ScrollBar orientation="horizontal" />
+          {orientation !== "horizontal" && <ScrollBar orientation="vertical" />}
+          {orientation !== "vertical" && <ScrollBar orientation="horizontal" />}
         </>
       )}
       <ScrollAreaPrimitive.Corner />
