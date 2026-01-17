@@ -9,7 +9,9 @@ import type { Context } from "@/trpc/init";
  * Domain input schema for MCP tools.
  * Uses simple string validation - normalization happens in tRPC layer.
  */
-const domainSchema = z.string().min(1, "Domain is required");
+const domainSchema = z.object({
+  domain: z.string().min(1, "Domain is required"),
+});
 
 /**
  * Available sections for domain_report bundle tool.
@@ -76,13 +78,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // Domain Registration Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_registration",
-        "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_registration",
+          description:
+            "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getRegistration({ domain });
@@ -93,13 +95,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // DNS Records Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_dns",
-        "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_dns",
+          description:
+            "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getDnsRecords({ domain });
@@ -110,13 +112,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // Hosting Detection Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_hosting",
-        "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_hosting",
+          description:
+            "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getHosting({ domain });
@@ -127,13 +129,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // SSL Certificates Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_certificates",
-        "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_certificates",
+          description:
+            "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getCertificates({ domain });
@@ -144,13 +146,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // HTTP Headers Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_headers",
-        "Get HTTP response headers for a domain including security headers, caching headers, and server information",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_headers",
+          description:
+            "Get HTTP response headers for a domain including security headers, caching headers, and server information",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getHeaders({ domain });
@@ -161,13 +163,13 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // SEO Data Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_seo",
-        "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
+          title: "domain_seo",
+          description:
+            "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules",
+          inputSchema: domainSchema,
         },
         async ({ domain }) => {
           const result = await trpc.domain.getSeo({ domain });
@@ -178,14 +180,15 @@ function createMcpHandlerWithContext(request: Request) {
       // ─────────────────────────────────────────────────────────────────────
       // Domain Report Bundle Tool
       // ─────────────────────────────────────────────────────────────────────
-      server.tool(
+      server.registerTool(
         "domain_report",
-        "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
         {
-          domain: domainSchema.describe(
-            "Domain to look up (e.g., example.com)",
-          ),
-          sections: sectionsSchema,
+          title: "domain_report",
+          description:
+            "Get a comprehensive domain report combining multiple data sources. Returns registration, DNS, hosting, certificates, headers, and SEO data in a single call. Use the sections parameter to request only specific data.",
+          inputSchema: domainSchema.extend({
+            sections: sectionsSchema,
+          }),
         },
         async ({ domain, sections }) => {
           // Default to all sections if not specified
@@ -263,16 +266,16 @@ function createMcpHandlerWithContext(request: Request) {
     {
       serverInfo: {
         name: "domainstack",
-        version: "1.0.0",
+        version: process.env.VERCEL_GIT_COMMIT_SHA ?? "1.0.0",
       },
       capabilities: {
         tools: {},
       },
     },
     {
-      redisUrl: process.env.UPSTASH_REDIS_REST_URL,
+      redisUrl: process.env.REDIS_URL,
       basePath: "/api/mcp",
-      maxDuration: 60,
+      maxDuration: 800,
       verboseLogs: process.env.NODE_ENV === "development",
     },
   );
