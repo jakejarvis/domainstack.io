@@ -1,4 +1,4 @@
-import { waitUntil } from "@vercel/functions";
+import { ipAddress, waitUntil } from "@vercel/functions";
 import { type RateLimitInfo, ratelimit } from "./index";
 
 /**
@@ -33,21 +33,51 @@ function buildHeaders(info: RateLimitInfo): RateLimitHeaders {
 }
 
 /**
+ * Resolve rate limit identifier from request.
+ *
+ * Priority:
+ * 1. Authenticated user ID (more accurate per-user limits)
+ * 2. Client IP address (fallback for anonymous requests)
+ *
+ * @param request - The incoming request
+ * @returns User ID, IP address, or null if neither available
+ */
+async function resolveIdentifier(request: Request): Promise<string | null> {
+  // Try to get user ID from session
+  try {
+    const { auth } = await import("@/lib/auth");
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+    if (session?.user?.id) {
+      return session.user.id;
+    }
+  } catch {
+    // Auth not available or error - fall back to IP
+  }
+
+  // Fall back to IP address
+  return ipAddress(request) ?? null;
+}
+
+/**
  * Check rate limit for an API route request.
  *
+ * Rate limit key priority:
+ * 1. Authenticated user ID (more accurate per-user limits)
+ * 2. Client IP address (fallback for anonymous requests)
+ *
  * Fail-open strategy:
- * - No identifier provided: Allow request (skip rate limiting)
+ * - No identifier available: Allow request (skip rate limiting)
  * - Redis timeout/error: Allow request (handled by library)
  *
- * @param identifier - Rate limit key (user ID or IP address), or undefined/null if unavailable
+ * @param request - The incoming request
  * @returns Success with headers to apply, or failure with pre-built 429 Response
  *
  * @example
  * ```ts
- * import { ipAddress } from "@vercel/functions";
- *
  * export async function GET(request: Request) {
- *   const rateLimit = await checkRateLimit(ipAddress(request));
+ *   const rateLimit = await checkRateLimit(request);
  *
  *   if (!rateLimit.success) {
  *     return rateLimit.error;
@@ -61,8 +91,11 @@ function buildHeaders(info: RateLimitInfo): RateLimitHeaders {
  * ```
  */
 export async function checkRateLimit(
-  identifier: string | null | undefined,
+  request: Request,
 ): Promise<RateLimitSuccess | RateLimitFailure> {
+  // Resolve identifier: user ID (preferred) or IP address (fallback)
+  const identifier = await resolveIdentifier(request);
+
   // Fail open: no identifier = allow request without rate limiting
   if (!identifier) {
     return { success: true };
