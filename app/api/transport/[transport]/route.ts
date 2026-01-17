@@ -266,7 +266,7 @@ function createMcpHandlerWithContext(request: Request) {
     {
       serverInfo: {
         name: "domainstack",
-        version: process.env.VERCEL_GIT_COMMIT_SHA ?? "1.0.0",
+        version: `1.0.0${process.env.VERCEL_GIT_COMMIT_SHA ? `-${process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7)}` : ""}`,
       },
       capabilities: {
         tools: {},
@@ -274,7 +274,7 @@ function createMcpHandlerWithContext(request: Request) {
     },
     {
       redisUrl: process.env.REDIS_URL,
-      basePath: "/api",
+      basePath: "/api/transport",
       maxDuration: 800,
       verboseLogs: process.env.NODE_ENV === "development",
     },

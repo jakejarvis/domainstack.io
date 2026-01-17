@@ -28,7 +28,7 @@ function ScrollArea({
         ref={viewportRef}
         className={cn(
           // Base styles
-          "min-h-0 flex-1 overflow-auto overscroll-contain rounded-[inherit] outline-none",
+          "min-h-0 flex-1 overflow-auto rounded-[inherit] outline-none",
           "scrollbar-hide",
           "focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
           // Edge fade masks - composed for both axes, invisible when no overflow

@@ -49,7 +49,7 @@ export function CopyableField({
         {label}
       </FieldLabel>
       <InputGroup className="h-10 max-w-full">
-        <ScrollArea showScrollbar={false} className="w-0 min-w-0 flex-1">
+        <ScrollArea showScrollbar={false} className="w-full min-w-0 flex-1">
           <button
             type="button"
             onClick={handleSelect}
