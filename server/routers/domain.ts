@@ -6,7 +6,8 @@ import { withSwrCache } from "@/lib/workflow/swr";
 import {
   createTRPCRouter,
   publicProcedure,
-  rateLimitedDomainProcedure,
+  withDomainAccessUpdate,
+  withRateLimit,
 } from "@/trpc/init";
 
 const DomainInputSchema = z
@@ -29,7 +30,9 @@ export const domainRouter = createTRPCRouter({
    * Performs WHOIS/RDAP lookup with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getRegistration: rateLimitedDomainProcedure
+  getRegistration: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
@@ -52,7 +55,9 @@ export const domainRouter = createTRPCRouter({
    * Queries multiple DoH providers with automatic fallback.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getDnsRecords: rateLimitedDomainProcedure
+  getDnsRecords: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
@@ -75,7 +80,9 @@ export const domainRouter = createTRPCRouter({
    * Uses the hostingOrchestrationWorkflow which handles the full dependency chain
    * (DNS → headers → hosting) with proper durability and error handling.
    */
-  getHosting: rateLimitedDomainProcedure
+  getHosting: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
@@ -98,7 +105,9 @@ export const domainRouter = createTRPCRouter({
    * Performs TLS handshake with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getCertificates: rateLimitedDomainProcedure
+  getCertificates: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
@@ -121,7 +130,9 @@ export const domainRouter = createTRPCRouter({
    * Probes the domain with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getHeaders: rateLimitedDomainProcedure
+  getHeaders: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
@@ -141,7 +152,9 @@ export const domainRouter = createTRPCRouter({
    * Fetches HTML, robots.txt, and OG images with automatic retries.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    */
-  getSeo: rateLimitedDomainProcedure
+  getSeo: publicProcedure
+    .use(withRateLimit)
+    .use(withDomainAccessUpdate)
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {

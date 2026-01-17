@@ -77,7 +77,7 @@ export const createCallerFactory = t.createCallerFactory;
  * Logs are automatically structured in JSON format.
  * Errors are tracked in PostHog for centralized monitoring.
  */
-const withLogging = t.middleware(async ({ path, type, next }) => {
+export const withLogging = t.middleware(async ({ path, type, next }) => {
   const start = performance.now();
 
   const procedureLogger = createLogger({ source: "trpc", path, type });
@@ -121,10 +121,13 @@ const withLogging = t.middleware(async ({ path, type, next }) => {
  * - No identifier available: Skip rate limiting, allow request
  * - Redis timeout/error: Allow request (handled by library with 2s timeout)
  *
- * On success, adds rate limit info to context for downstream use.
- * On failure, throws TOO_MANY_REQUESTS with retry timing.
+ * Response augmentation:
+ * - Success: Adds `rateLimit` field to response data with { limit, remaining, reset }
+ * - Failure: Throws TOO_MANY_REQUESTS with retry timing in message and cause
+ *
+ * Client-side utilities in `@/lib/ratelimit/client` can parse both cases.
  */
-const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
+export const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
   // Allow procedures to opt-out via meta
   if (meta?.skipRateLimit) {
     return next();
@@ -145,20 +148,38 @@ const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
   // Handle analytics write in background (non-blocking)
   after(() => pending);
 
+  const rateLimitInfo = { limit, remaining, reset } satisfies RateLimitInfo;
+
   if (!success) {
-    const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
     throw new TRPCError({
       code: "TOO_MANY_REQUESTS",
       message: `Rate limit exceeded. Try again in ${retryAfter}s`,
+      // Include structured data in cause for client-side parsing
+      cause: { retryAfter, rateLimit: rateLimitInfo },
     });
   }
 
-  return next({
+  // Execute the procedure and wrap response with rate limit info
+  const result = await next({
     ctx: {
       ...ctx,
-      rateLimit: { limit, remaining, reset } satisfies RateLimitInfo,
+      rateLimit: rateLimitInfo,
     },
   });
+
+  // Augment successful responses with rate limit metadata
+  if (result.ok && result.data && typeof result.data === "object") {
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        rateLimit: rateLimitInfo,
+      },
+    };
+  }
+
+  return result;
 });
 
 /**
@@ -166,7 +187,7 @@ const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
  * Expects input to have a `domain` field.
  * Schedules the write to happen after the response is sent using Next.js after().
  */
-const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
+export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
   // Check if input is a valid object with a domain property
   if (
     input &&
@@ -174,52 +195,16 @@ const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => {
-      void updateLastAccessed(input.domain as string).catch(() => {
-        // no-op - access tracking should never break the request
-      });
-    });
+    after(() => updateLastAccessed(input.domain as string));
   }
   return next();
 });
 
 /**
- * Public procedure with logging.
- * Use this for all public endpoints (e.g. health check, etc).
- */
-export const publicProcedure = t.procedure.use(withLogging);
-
-/**
- * Rate-limited procedure for public endpoints exposed to external consumers.
- * Use this for MCP tools, public APIs, and other endpoints that need throttling.
- *
- * Rate limit key: user ID (if authenticated) or IP address (anonymous).
- * Fail-open: Requests without identifiable key are allowed without rate limiting.
- */
-export const rateLimitedProcedure = publicProcedure.use(withRateLimit);
-
-/**
- * Domain-specific procedure with "last accessed at" tracking.
- * Use this for all domain data endpoints (dns, hosting, seo, etc).
- */
-export const domainProcedure = publicProcedure.use(withDomainAccessUpdate);
-
-/**
- * Rate-limited domain procedure combining access tracking and rate limiting.
- * Order: logging -> rate limit -> domain access tracking
- *
- * Use for public domain lookup endpoints (DNS, WHOIS, hosting, etc).
- * Configure limits via meta: `.meta({ rateLimit: { requests: 20, window: "1 m" } })`
- */
-export const rateLimitedDomainProcedure = publicProcedure
-  .use(withRateLimit)
-  .use(withDomainAccessUpdate);
-
-/**
  * Middleware to ensure user is authenticated.
  * Throws UNAUTHORIZED if no valid session.
  */
-const withAuth = t.middleware(async ({ ctx, next }) => {
+export const withAuth = t.middleware(async ({ ctx, next }) => {
   if (!ctx.session?.user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -240,7 +225,7 @@ const withAuth = t.middleware(async ({ ctx, next }) => {
  * Middleware to ensure user has Pro subscription.
  * Throws FORBIDDEN if user is on free tier.
  */
-const withProTier = t.middleware(async (opts) => {
+export const withProTier = t.middleware(async (opts) => {
   const { getUserSubscription } = await import(
     "@/lib/db/repos/user-subscription"
   );
@@ -265,23 +250,13 @@ const withProTier = t.middleware(async (opts) => {
 });
 
 /**
+ * Public procedure with logging.
+ * Use this for all public endpoints (e.g. health check, etc).
+ */
+export const publicProcedure = t.procedure.use(withLogging);
+
+/**
  * Protected procedure requiring authentication.
  * Use this for all endpoints that require a logged-in user.
  */
 export const protectedProcedure = publicProcedure.use(withAuth);
-
-/**
- * Rate-limited protected procedure for authenticated expensive operations.
- * Order: logging -> auth -> rate limit
- *
- * Rate limits by user ID (more accurate than IP for authenticated users).
- * Use for operations like domain verification, email sending, etc.
- */
-export const rateLimitedProtectedProcedure =
-  protectedProcedure.use(withRateLimit);
-
-/**
- * Pro-only procedure requiring Pro subscription.
- * Use this for endpoints that should only be accessible to Pro users.
- */
-export const proOnlyProcedure = protectedProcedure.use(withProTier);
