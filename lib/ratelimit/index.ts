@@ -54,7 +54,9 @@ const limiters = new Map<string, Ratelimit>();
  * Includes name for per-endpoint isolation.
  */
 function configKey(config: RateLimitConfig): string {
-  const base = `${config.requests}/${config.window}`;
+  // Remove spaces from window for cleaner Redis keys (e.g., "1 m" -> "1m")
+  const window = config.window.replace(" ", "");
+  const base = `${config.requests}/${window}`;
   return config.name ? `${config.name}:${base}` : base;
 }
 

@@ -127,7 +127,7 @@ export const withLogging = t.middleware(async ({ path, type, next }) => {
  *
  * Client-side utilities in `@/lib/ratelimit/client` can parse both cases.
  */
-export const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
+export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
   // Allow procedures to opt-out via meta
   if (meta?.skipRateLimit) {
     return next();
@@ -141,7 +141,13 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
     return next();
   }
 
-  const limiter = getRateLimiter(meta?.rateLimit);
+  // Build rate limit config with procedure path as the bucket name
+  // This ensures each procedure has its own rate limit bucket in Redis
+  const limiter = getRateLimiter({
+    name: path,
+    requests: meta?.rateLimit?.requests ?? 60,
+    window: meta?.rateLimit?.window ?? "1 m",
+  });
   const { success, limit, remaining, reset, pending } =
     await limiter.limit(rateLimitKey);
 
