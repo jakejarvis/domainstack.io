@@ -15,6 +15,7 @@
 - **Fast & private**: No sign-up required for reports.
 - **Notifications & calendar sync**: Email/In-app alerts plus iCal feeds for expirations.
 - **Advanced dashboard**: Filtering, sorting, bulk actions, and multiple view modes.
+- **MCP server**: AI-assisted domain lookups via [Model Context Protocol](https://modelcontextprotocol.io/).
 - **Pro subscription**: Paid plan via Polar for higher tracking limits.
 - **Reliable backend**: Event-driven revalidation and TTL-based persistence.
 
@@ -76,6 +77,6 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## 📜 License
+## License
 
 [MIT](LICENSE)

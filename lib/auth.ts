@@ -20,9 +20,12 @@ import {
   handleSubscriptionUncanceled,
 } from "@/lib/polar/handlers";
 import { getProductsForCheckout } from "@/lib/polar/products";
+import { getRedis } from "@/lib/redis";
 import { addContact, removeContact, sendEmail } from "@/lib/resend";
 
 const logger = createLogger({ source: "auth" });
+
+const redis = getRedis();
 
 // Validate required env vars
 if (!process.env.BETTER_AUTH_SECRET) {
@@ -114,6 +117,22 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
+  secondaryStorage: {
+    get: async (key) => {
+      const value = await redis?.get<string>(key);
+      return value ? JSON.stringify(value) : null; // JSON.stringify needed for Redis compatibility
+    },
+    set: async (key, value, ttl) => {
+      if (ttl) {
+        await redis?.set<string>(key, value, { ex: ttl });
+      } else {
+        await redis?.set<string>(key, value);
+      }
+    },
+    delete: async (key) => {
+      await redis?.del(key);
+    },
+  },
   baseURL: BASE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   logger: {
@@ -211,6 +230,9 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 60 * 5, // 5 minutes
     },
+  },
+  rateLimit: {
+    storage: redis ? "secondary-storage" : "memory",
   },
   account: {
     accountLinking: {

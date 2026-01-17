@@ -88,3 +88,27 @@ vi.mock("workflow", async () => {
     })),
   };
 });
+
+// Mock rate limiter to avoid Redis timeouts in tests
+// The Upstash Ratelimit has a 2s timeout which causes slow tests
+vi.mock("@/lib/ratelimit", () => ({
+  getRateLimiter: vi.fn(() => ({
+    limit: vi.fn().mockResolvedValue({
+      success: true,
+      limit: 60,
+      remaining: 59,
+      reset: Date.now() + 60000,
+      pending: Promise.resolve(),
+    }),
+  })),
+  ratelimit: {
+    limit: vi.fn().mockResolvedValue({
+      success: true,
+      limit: 60,
+      remaining: 59,
+      reset: Date.now() + 60000,
+      pending: Promise.resolve(),
+    }),
+  },
+  DEFAULT_RATE_LIMIT: { requests: 60, window: "1 m" },
+}));

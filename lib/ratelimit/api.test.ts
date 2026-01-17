@@ -1,6 +1,10 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Unmock @/lib/ratelimit from global setup so we can test the actual implementation
+// This file tests the getRateLimiter function itself, so we need the real module
+vi.unmock("@/lib/ratelimit");
+
 // Hoist mock functions so they're available before module imports
 const { mockLimit, MockRatelimit, mockIpAddress, mockGetSession } = vi.hoisted(
   () => {

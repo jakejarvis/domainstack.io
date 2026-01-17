@@ -1,3 +1,4 @@
+import { SiModelcontextprotocol } from "@icons-pack/react-simple-icons";
 import {
   BookmarkIcon,
   CookieIcon,
@@ -15,6 +16,10 @@ export function AppFooter() {
         <Link href="/help">
           <LifebuoyIcon className="text-muted-foreground" />
           Help
+        </Link>
+        <Link href="/mcp">
+          <SiModelcontextprotocol className="text-muted-foreground" />
+          MCP
         </Link>
         <Link href="/bookmarklet">
           <BookmarkIcon className="text-muted-foreground" />
