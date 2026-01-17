@@ -111,12 +111,11 @@ export async function checkRateLimit(
   // Resolve identifier: user ID (preferred) or IP address (fallback)
   const identifier = await resolveIdentifier(request);
 
-  // Fail open: no identifier = allow request without rate limiting
-  if (!identifier) {
+  // Fail open: no Redis or no identifier = allow request without rate limiting
+  const limiter = getRateLimiter(config);
+  if (!limiter || !identifier) {
     return { success: true };
   }
-
-  const limiter = getRateLimiter(config);
   const { success, limit, remaining, reset, pending } =
     await limiter.limit(identifier);
 

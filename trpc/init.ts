@@ -129,17 +129,12 @@ export const withLogging = t.middleware(async ({ path, type, next }) => {
  */
 export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
   // Allow procedures to opt-out via meta
-  if (meta?.skipRateLimit) {
+  if (meta?.skipRateLimit || process.env.NODE_ENV === "development") {
     return next();
   }
 
   // Use user ID for authenticated requests, fall back to IP for anonymous
   const rateLimitKey = ctx.session?.user?.id ?? ctx.ip;
-
-  // Fail open: no identifier = skip rate limiting entirely
-  if (!rateLimitKey) {
-    return next();
-  }
 
   // Build rate limit config with procedure path as the bucket name
   // This ensures each procedure has its own rate limit bucket in Redis
@@ -148,6 +143,11 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, path, next }) => {
     requests: meta?.rateLimit?.requests ?? 60,
     window: meta?.rateLimit?.window ?? "1 m",
   });
+
+  // Fail open: no Redis or no identifier = skip rate limiting entirely
+  if (!limiter || !rateLimitKey) {
+    return next();
+  }
   const { success, limit, remaining, reset, pending } =
     await limiter.limit(rateLimitKey);
 

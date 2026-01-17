@@ -84,12 +84,18 @@ function configKey(config: RateLimitConfig): string {
  */
 export function getRateLimiter(
   config: RateLimitConfig = DEFAULT_RATE_LIMIT,
-): Ratelimit {
+): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) {
+    return null;
+  }
+
   const key = configKey(config);
+
   let limiter = limiters.get(key);
   if (!limiter) {
     limiter = new Ratelimit({
-      redis: getRedis(),
+      redis,
       limiter: Ratelimit.slidingWindow(config.requests, config.window),
       prefix: `${RATE_LIMIT_PREFIX}:${key}`,
       ephemeralCache: cache,
@@ -98,6 +104,7 @@ export function getRateLimiter(
     });
     limiters.set(key, limiter);
   }
+
   return limiter;
 }
 
