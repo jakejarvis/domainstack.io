@@ -192,8 +192,9 @@ export function useScreenshot({
         setRunId(data.runId);
         analytics.track("screenshot_requested", { domain });
       } else if (data.status === "rate_limited") {
-        // Track when rate limit expires
-        setRateLimitedUntil(Date.now() + data.retryAfter * 1000);
+        // Track when rate limit expires and schedule auto-retry
+        const retryAt = Date.now() + data.retryAfter * 1000;
+        setRateLimitedUntil(retryAt);
         toast.error("Too many requests", {
           description: `Please wait ${data.retryAfter} second${data.retryAfter !== 1 ? "s" : ""} before trying again.`,
         });
@@ -201,6 +202,15 @@ export function useScreenshot({
           domain,
           retryAfter: data.retryAfter,
         });
+
+        // Schedule auto-retry after rate limit expires
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        retryTimeoutRef.current = setTimeout(() => {
+          hasStartedRef.current = false; // Allow restart
+          setRateLimitedUntil(null); // Clear rate limit state to trigger effect
+        }, data.retryAfter * 1000);
       }
     },
     onError: (error) => {

@@ -169,7 +169,13 @@ export const withRateLimit = t.middleware(async ({ ctx, meta, next }) => {
   });
 
   // Augment successful responses with rate limit metadata
-  if (result.ok && result.data && typeof result.data === "object") {
+  // Only augment plain objects, not arrays or primitives
+  if (
+    result.ok &&
+    result.data &&
+    typeof result.data === "object" &&
+    !Array.isArray(result.data)
+  ) {
     return {
       ...result,
       data: {

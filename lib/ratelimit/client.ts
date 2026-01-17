@@ -22,6 +22,11 @@ export type RateLimitError = {
 export function isRateLimitError(error: unknown): boolean {
   if (!error) return false;
 
+  // Check for fetch Response with status 429
+  if (error instanceof Response) {
+    return error.status === 429;
+  }
+
   // tRPC error shape
   if (typeof error === "object" && error !== null) {
     const err = error as Record<string, unknown>;
