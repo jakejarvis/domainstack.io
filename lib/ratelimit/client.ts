@@ -1,5 +1,6 @@
+import { SpeedometerIcon } from "@phosphor-icons/react/dist/ssr";
+import { createElement } from "react";
 import { toast } from "sonner";
-import type { RateLimitInfo } from "./index";
 
 /**
  * Rate limit error details extracted from tRPC or API errors.
@@ -124,79 +125,10 @@ export function showRateLimitToast(error: unknown): boolean {
       retryAfter > 0
         ? `Please wait ${retryAfter} second${retryAfter !== 1 ? "s" : ""} before trying again.`
         : "Please wait a moment before trying again.",
+    icon: createElement(SpeedometerIcon, { className: "size-4" }),
   });
 
   return true;
-}
-
-/**
- * Handle an error with rate limit awareness.
- *
- * Shows rate limit toast if applicable, otherwise calls the fallback handler.
- * Useful for mutation error handlers.
- *
- * @example
- * ```ts
- * const mutation = useMutation({
- *   onError: (error) => {
- *     handleRateLimitError(error, () => {
- *       toast.error("Failed to save changes");
- *     });
- *   },
- * });
- * ```
- */
-export function handleRateLimitError(
-  error: unknown,
-  fallback: () => void,
-): void {
-  if (!showRateLimitToast(error)) {
-    fallback();
-  }
-}
-
-/**
- * Extract rate limit info from a successful tRPC response.
- *
- * Rate-limited procedures include `rateLimit` in their response data.
- * Returns null if not present (non-rate-limited procedure or error).
- */
-export function extractRateLimitInfo(data: unknown): RateLimitInfo | null {
-  if (!data || typeof data !== "object") return null;
-
-  const response = data as Record<string, unknown>;
-  if (!response.rateLimit || typeof response.rateLimit !== "object") {
-    return null;
-  }
-
-  const info = response.rateLimit as Record<string, unknown>;
-  if (
-    typeof info.limit !== "number" ||
-    typeof info.remaining !== "number" ||
-    typeof info.reset !== "number"
-  ) {
-    return null;
-  }
-
-  return {
-    limit: info.limit,
-    remaining: info.remaining,
-    reset: info.reset,
-  };
-}
-
-/**
- * Calculate seconds until rate limit reset from RateLimitInfo.
- */
-export function getSecondsUntilReset(info: RateLimitInfo): number {
-  return Math.max(0, Math.ceil((info.reset - Date.now()) / 1000));
-}
-
-/**
- * Check if rate limit is nearly exhausted (< 10% remaining).
- */
-export function isRateLimitNearlyExhausted(info: RateLimitInfo): boolean {
-  return info.remaining < info.limit * 0.1;
 }
 
 /**
