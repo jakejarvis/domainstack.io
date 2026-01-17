@@ -43,8 +43,8 @@ importers:
         specifier: ^0.42.2
         version: 0.42.2
       '@posthog/nextjs-config':
-        specifier: ^1.7.5
-        version: 1.7.5(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))
+        specifier: ^1.7.6
+        version: 1.7.6(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))
       '@react-email/components':
         specifier: ^1.0.4
         version: 1.0.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -2248,11 +2248,14 @@ packages:
     engines: {node: '>=14', npm: '>=6'}
     hasBin: true
 
+  '@posthog/core@1.10.0':
+    resolution: {integrity: sha512-Xk3JQ+cdychsvftrV3G9ZrN9W329lbyFW0pGJXFGKFQf8qr4upw2SgNg9BVorjSrfhoXZRnJGt/uNF4nGFBL5A==}
+
   '@posthog/core@1.9.1':
     resolution: {integrity: sha512-kRb1ch2dhQjsAapZmu6V66551IF2LnCbc1rnrQqnR7ArooVyJN9KOPXre16AJ3ObJz2eTfuP7x25BMyS2Y5Exw==}
 
-  '@posthog/nextjs-config@1.7.5':
-    resolution: {integrity: sha512-4fgelpSzfaBZJrpMtaKZVrXmxBR9Gd8LQIcJ2VOKwxnRLQ3grRmuuNCEkoylgn3vmI7wolPf45ShfwYy+88vVQ==}
+  '@posthog/nextjs-config@1.7.6':
+    resolution: {integrity: sha512-5bD8lbE1BvnwQ9SqEgN2dKTqlntgozIyGzsTUFt2CGuEl8g1NeqrCyENPjTlzEIJhgH8clMouhuhc66tgrBxcA==}
     engines: {node: '>=20'}
     peerDependencies:
       next: 16.1.2
@@ -2260,8 +2263,8 @@ packages:
   '@posthog/types@1.325.0':
     resolution: {integrity: sha512-cBOZvVwpL8VHnNmkOVNxVsbwuf0/Fbxl32SjveQGapvkDojzFbpuj9wQPzrzF/wtCukkPjlPEDKAG/f1c8oPVQ==}
 
-  '@posthog/webpack-plugin@1.2.5':
-    resolution: {integrity: sha512-Gf4ztaw9ACyBwY7JvMzA8hhBx722jf+IIp7s5MpRHJDoAoodfasbYmtdIN11Q9/TmoA/FNhScP923PG2f/IEgA==}
+  '@posthog/webpack-plugin@1.2.6':
+    resolution: {integrity: sha512-aiT4R4UAyB+ZN7vM9FgpVERCn6fnzYOKPMzXOFHhHn/XaMJ9cgTII8vAO2lmv8EdVmpl1raSM2mnBjXRY1ZkGA==}
     peerDependencies:
       webpack: ^5
 
@@ -9557,15 +9560,19 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  '@posthog/core@1.10.0':
+    dependencies:
+      cross-spawn: 7.0.6
+
   '@posthog/core@1.9.1':
     dependencies:
       cross-spawn: 7.0.6
 
-  '@posthog/nextjs-config@1.7.5(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))':
+  '@posthog/nextjs-config@1.7.6(next@16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))':
     dependencies:
       '@posthog/cli': 0.5.24
-      '@posthog/core': 1.9.1
-      '@posthog/webpack-plugin': 1.2.5(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))
+      '@posthog/core': 1.10.0
+      '@posthog/webpack-plugin': 1.2.6(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))
       next: 16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       semver: 7.7.3
     transitivePeerDependencies:
@@ -9574,10 +9581,10 @@ snapshots:
 
   '@posthog/types@1.325.0': {}
 
-  '@posthog/webpack-plugin@1.2.5(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))':
+  '@posthog/webpack-plugin@1.2.6(webpack@5.104.0(@swc/core@1.15.3)(esbuild@0.25.12))':
     dependencies:
       '@posthog/cli': 0.5.24
-      '@posthog/core': 1.9.1
+      '@posthog/core': 1.10.0
       webpack: 5.104.0(@swc/core@1.15.3)(esbuild@0.25.12)
     transitivePeerDependencies:
       - debug
