@@ -1,18 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock Redis
-const mockRedis = {
+// Hoist mocks to avoid TDZ errors from vi.mock hoisting in ESM
+const mockRedis = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
   del: vi.fn(),
-};
+}));
+
+const mockGetRun = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/redis", () => ({
   getRedis: vi.fn(() => mockRedis),
 }));
 
-// Mock workflow/api
-const mockGetRun = vi.fn();
 vi.mock("workflow/api", () => ({
   getRun: (...args: unknown[]) => mockGetRun(...args),
 }));
