@@ -27,6 +27,14 @@ const DEFAULT_TTL_SECONDS = 5 * 60;
 const pendingRuns = new Map<string, Promise<unknown>>();
 
 /**
+ * In-memory map of pending workflow run IDs for fire-and-poll patterns.
+ *
+ * Used by getOrStartWorkflow to prevent concurrent same-instance requests
+ * from both missing the Redis check and starting duplicate workflows.
+ */
+const pendingRunIds = new Map<string, string>();
+
+/**
  * Options for workflow deduplication.
  */
 export type DeduplicationOptions = {
@@ -262,16 +270,20 @@ export async function startWithDeduplication<T>(
             return { result, deduplicated: true, source: "redis" };
           }
 
-          // Run failed or unknown status - fall through to start new
+          // Run failed or unknown status - clear stale key before starting new
+          // Without this, the nx:true set below would fail and break deduplication
           logger.debug(
             { workflow, runId: existingRunId, status },
-            "existing run not usable, starting new",
+            "existing run not usable, clearing stale key",
           );
+          await redis.del(redisKey);
         } catch (err) {
+          // Run not found or error - clear stale key before starting new
           logger.debug(
             { workflow, runId: existingRunId, err },
-            "failed to get existing run, starting new",
+            "failed to get existing run, clearing stale key",
           );
+          await redis.del(redisKey).catch(() => {});
         }
       }
     } catch (err) {
@@ -285,14 +297,29 @@ export async function startWithDeduplication<T>(
     async () => {
       const run = await startWorkflow();
 
+      // Track whether we successfully stored the run ID (i.e., we own the key)
+      let ownsRedisKey = false;
+
       // Store run ID in Redis for cross-instance deduplication
       if (redis) {
         try {
-          await redis.set(redisKey, run.runId, { nx: true, ex: ttlSeconds });
-          logger.debug(
-            { workflow, runId: run.runId },
-            "stored run ID in Redis",
-          );
+          // nx:true means set only if key doesn't exist - returns "OK" on success, null if key exists
+          const setResult = await redis.set(redisKey, run.runId, {
+            nx: true,
+            ex: ttlSeconds,
+          });
+          ownsRedisKey = setResult === "OK";
+          if (ownsRedisKey) {
+            logger.debug(
+              { workflow, runId: run.runId },
+              "stored run ID in Redis",
+            );
+          } else {
+            logger.debug(
+              { workflow, runId: run.runId },
+              "another instance already owns Redis key",
+            );
+          }
         } catch (err) {
           logger.warn({ workflow, err }, "failed to store run ID in Redis");
         }
@@ -300,8 +327,9 @@ export async function startWithDeduplication<T>(
 
       const returnValue = await run.returnValue;
 
-      // Clean up Redis entry on completion
-      if (redis) {
+      // Clean up Redis entry on completion, but only if we own the key
+      // Deleting unconditionally could remove another instance's active run ID
+      if (redis && ownsRedisKey) {
         try {
           await redis.del(redisKey);
         } catch {
@@ -386,17 +414,20 @@ export async function getOrStartWorkflow<T>(
             return { runId: existingRunId, started: false };
           }
 
-          // Run completed or failed - fall through to start new
+          // Run completed or failed - clear stale key before starting new
+          // Without this, the nx:true set below would fail and break deduplication
           logger.debug(
             { workflow, runId: existingRunId, status },
-            "existing run completed, starting new",
+            "existing run completed, clearing stale key",
           );
+          await redis.del(redisKey);
         } catch {
-          // Run not found - fall through to start new
+          // Run not found - clear stale key before starting new
           logger.debug(
             { workflow, runId: existingRunId },
-            "existing run not found, starting new",
+            "existing run not found, clearing stale key",
           );
+          await redis.del(redisKey).catch(() => {});
         }
       }
     } catch (err) {
@@ -404,8 +435,30 @@ export async function getOrStartWorkflow<T>(
     }
   }
 
+  // Check in-memory for same-instance concurrent requests
+  // This prevents race conditions where multiple requests miss Redis and start duplicates
+  const pendingRunId = pendingRunIds.get(key);
+  if (pendingRunId) {
+    logger.debug(
+      { workflow, runId: pendingRunId },
+      "found in-memory pending run, returning existing",
+    );
+    return { runId: pendingRunId, started: false };
+  }
+
   // Start new workflow
   const run = await startWorkflow();
+
+  // Store in memory for same-instance deduplication
+  pendingRunIds.set(key, run.runId);
+
+  // Clean up in-memory entry after TTL (Redis will be the source of truth after this)
+  const cleanupTimeout = setTimeout(() => {
+    if (pendingRunIds.get(key) === run.runId) {
+      pendingRunIds.delete(key);
+    }
+  }, ttlSeconds * 1000);
+  cleanupTimeout.unref?.();
 
   // Store run ID in Redis
   if (redis) {
@@ -442,4 +495,5 @@ export function getPendingRunCount(): number {
  */
 export function clearAllPendingRuns(): void {
   pendingRuns.clear();
+  pendingRunIds.clear();
 }
