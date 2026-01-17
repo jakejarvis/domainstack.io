@@ -73,6 +73,7 @@
     "inngest": "^3.49.2",
     "ipaddr.js": "^2.3.0",
     "maplibre-gl": "^5.16.0",
+    "mcp-handler": "^1.0.7",
     "media-chrome": "^4.17.2",
     "motion": "^12.26.2",
     "ms": "3.0.0-canary.202508261828",
