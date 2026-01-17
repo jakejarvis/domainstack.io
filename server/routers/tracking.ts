@@ -35,7 +35,11 @@ import {
   getDeduplicationKey,
   startWithDeduplication,
 } from "@/lib/workflow/deduplication";
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  withRateLimit,
+} from "@/trpc/init";
 import {
   generateVerificationToken,
   verificationWorkflow,
@@ -216,6 +220,8 @@ export const trackingRouter = createTRPCRouter({
    * Can specify a method or try all methods.
    */
   verifyDomain: protectedProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 10, window: "1 m" } })
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
@@ -540,6 +546,8 @@ export const trackingRouter = createTRPCRouter({
    * Allows users to share verification instructions with someone who manages their domain.
    */
   sendVerificationInstructions: protectedProcedure
+    .use(withRateLimit)
+    .meta({ rateLimit: { requests: 5, window: "1 m" } })
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
