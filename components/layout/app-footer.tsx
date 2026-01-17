@@ -19,7 +19,7 @@ export function AppFooter() {
         </Link>
         <Link href="/mcp">
           <SiModelcontextprotocol className="text-muted-foreground" />
-          MCP
+          MCP (Beta)
         </Link>
         <Link href="/bookmarklet">
           <BookmarkIcon className="text-muted-foreground" />

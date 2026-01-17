@@ -37,7 +37,7 @@ export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
           type="button"
           onClick={handleSelect}
           aria-label="Select text"
-          className="h-full w-full min-w-0 cursor-text bg-transparent px-3.5 py-4 pr-13 text-left font-mono text-sm outline-none"
+          className="my-4 mr-4 ml-4 h-full w-full min-w-0 cursor-text bg-transparent text-left font-mono text-sm outline-none"
         >
           <pre ref={contentRef} className="inline-block">
             {children}

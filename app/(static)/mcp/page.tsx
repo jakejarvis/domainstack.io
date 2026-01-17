@@ -15,11 +15,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { CodeBlock } from "@/components/ui/code-block";
 import { BASE_URL } from "@/lib/constants/app";
 
 export const metadata: Metadata = {
-  title: "MCP Server",
+  title: "MCP (Beta)",
   description:
     "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
 };
@@ -94,7 +95,7 @@ export default function McpPage() {
   return (
     <>
       <header className="mb-8 border-border/50 border-b pb-8">
-        <h1>MCP Server</h1>
+        <h1>MCP Server (Beta)</h1>
         <p className="mt-2 text-muted-foreground">
           Connect AI assistants to Domainstack for domain intelligence.
         </p>
@@ -109,6 +110,7 @@ export default function McpPage() {
             rel="noopener noreferrer"
           >
             Model Context Protocol (MCP)
+            <ArrowSquareOutIcon />
           </a>{" "}
           server that allows AI assistants to look up domain information
           directly. This enables natural language queries about domains without
@@ -538,7 +540,7 @@ export default function McpPage() {
                 <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Parameters
                 </span>
-                <ul className="mt-2 space-y-1 text-sm">
+                <ul className="!pl-2 mt-2 space-y-1 text-sm [&_li]:list-none">
                   {tool.parameters.map((param) => (
                     <li key={param.name} className="font-mono">
                       <span className="text-foreground">{param.name}</span>
@@ -546,9 +548,9 @@ export default function McpPage() {
                         : {param.type}
                       </span>
                       {param.required && (
-                        <span className="ml-2 text-amber-600 text-xs dark:text-amber-500">
+                        <Badge variant="secondary" className="ml-2 leading-4">
                           required
-                        </span>
+                        </Badge>
                       )}
                       {"description" in param && (
                         <span className="ml-2 font-sans text-muted-foreground text-xs">
