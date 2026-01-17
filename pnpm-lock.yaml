@@ -172,8 +172,8 @@ importers:
         specifier: ^1.325.0
         version: 1.325.0
       posthog-node:
-        specifier: ^5.21.0
-        version: 5.21.0
+        specifier: ^5.21.1
+        version: 5.21.1
       puppeteer-core:
         specifier: 24.35.0
         version: 24.35.0(bufferutil@4.1.0)
@@ -2247,6 +2247,9 @@ packages:
     resolution: {integrity: sha512-xoymMukl5wo/bDlbSSYu8XFzfMuSpBcH/BNDR3q8oGUhSq6kO8LCF04XB8Splr0UX1fWuDhJ2s7R1zsVsBtFxw==}
     engines: {node: '>=14', npm: '>=6'}
     hasBin: true
+
+  '@posthog/core@1.10.0':
+    resolution: {integrity: sha512-Xk3JQ+cdychsvftrV3G9ZrN9W329lbyFW0pGJXFGKFQf8qr4upw2SgNg9BVorjSrfhoXZRnJGt/uNF4nGFBL5A==}
 
   '@posthog/core@1.9.1':
     resolution: {integrity: sha512-kRb1ch2dhQjsAapZmu6V66551IF2LnCbc1rnrQqnR7ArooVyJN9KOPXre16AJ3ObJz2eTfuP7x25BMyS2Y5Exw==}
@@ -6200,8 +6203,8 @@ packages:
   posthog-js@1.325.0:
     resolution: {integrity: sha512-u4A/QPtI742X4lnXmdr9fl00jwg22mUIs3SrbHg7i8Ju5uBa4CThV/2n+4XSXyre3LygOASshFxhzT3UMpcQPQ==}
 
-  posthog-node@5.21.0:
-    resolution: {integrity: sha512-M7v/+Zyz/z3ZDC4u896K2Lb/pLbPA1Czo6Tp/WeQ1vuBsJtJajqWO3vRev3BHFTP92nao5YCrU0aIM+Flwbv1A==}
+  posthog-node@5.21.1:
+    resolution: {integrity: sha512-xFRlaZTrVfIVrRfEZsI/DM6pdJqeX6iaRlo46nexhB1wfRcuIy1mtp76nkZSw3DDRXBczTo41K7raO2yS3dxzA==}
     engines: {node: '>=20'}
 
   potpack@2.1.0:
@@ -9556,6 +9559,10 @@ snapshots:
       rimraf: 6.1.2
     transitivePeerDependencies:
       - debug
+
+  '@posthog/core@1.10.0':
+    dependencies:
+      cross-spawn: 7.0.6
 
   '@posthog/core@1.9.1':
     dependencies:
@@ -13621,9 +13628,9 @@ snapshots:
       query-selector-shadow-dom: 1.0.1
       web-vitals: 4.2.4
 
-  posthog-node@5.21.0:
+  posthog-node@5.21.1:
     dependencies:
-      '@posthog/core': 1.9.1
+      '@posthog/core': 1.10.0
 
   potpack@2.1.0: {}
 

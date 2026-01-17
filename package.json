@@ -82,7 +82,7 @@
     "pg": "^8.17.1",
     "pino": "^10.2.0",
     "posthog-js": "^1.325.0",
-    "posthog-node": "^5.21.0",
+    "posthog-node": "^5.21.1",
     "puppeteer-core": "24.35.0",
     "rdapper": "^0.13.0",
     "react": "19.2.3",
