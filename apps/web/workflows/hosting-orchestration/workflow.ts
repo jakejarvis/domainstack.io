@@ -14,7 +14,7 @@ import {
   lookupGeoIpStep,
   persistHostingStep,
 } from "@/workflows/shared/hosting";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface HostingOrchestrationWorkflowInput {
   domain: string;

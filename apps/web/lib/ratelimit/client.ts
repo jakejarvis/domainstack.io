@@ -20,7 +20,7 @@ export type RateLimitError = {
  * - Fetch Response objects with status 429
  * - Error objects with message containing rate limit indicators
  */
-export function isRateLimitError(error: unknown): boolean {
+function isRateLimitError(error: unknown): boolean {
   if (!error) return false;
 
   // Check for fetch Response with status 429
@@ -61,7 +61,7 @@ export function isRateLimitError(error: unknown): boolean {
  * - Error cause with retryAfter property
  * - Falls back to 60 seconds if unparseable
  */
-export function extractRateLimitError(error: unknown): RateLimitError | null {
+function extractRateLimitError(error: unknown): RateLimitError | null {
   if (!isRateLimitError(error)) return null;
 
   let retryAfter = 60; // Default fallback
@@ -114,7 +114,7 @@ export function extractRateLimitError(error: unknown): RateLimitError | null {
  * }
  * ```
  */
-export function showRateLimitToast(error: unknown): boolean {
+export function showRateLimitError(error: unknown): boolean {
   const rateLimitError = extractRateLimitError(error);
   if (!rateLimitError) return false;
 

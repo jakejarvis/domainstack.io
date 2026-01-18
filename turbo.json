@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*.local"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
       "env": [
         "BETTER_AUTH_SECRET",
@@ -41,8 +41,8 @@
       "persistent": true,
       "cache": false
     },
-    "typecheck": {
-      "dependsOn": ["^typecheck"],
+    "check-types": {
+      "dependsOn": ["^check-types"],
       "outputs": []
     },
     "lint": {
@@ -54,16 +54,12 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"],
       "env": ["CI"]
-    },
-    "test:run": {
-      "dependsOn": ["^build"],
-      "outputs": []
     },
     "test:coverage": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "env": ["CI"]
     },
     "db:generate": {
       "cache": false
@@ -79,7 +75,7 @@
       "cache": false
     }
   },
-  "globalDependencies": ["**/.env*.local"],
+  "globalDependencies": ["**/.env*"],
   "globalEnv": [
     "CI",
     "NODE_ENV",

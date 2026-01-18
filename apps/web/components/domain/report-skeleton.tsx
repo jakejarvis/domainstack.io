@@ -63,7 +63,7 @@ function SectionNavSkeleton() {
         )}
       >
         {/* Skeleton tabs - horizontally scrollable on mobile, centered on desktop */}
-        <div className="scrollbar-hide flex flex-1 items-center gap-1 overflow-x-auto px-1 md:justify-center">
+        <div className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto px-1 md:justify-center">
           {[125, 140, 130, 145, 135, 130].map((width, index) => (
             <Skeleton
               key={`tab-${index}-${width}`}

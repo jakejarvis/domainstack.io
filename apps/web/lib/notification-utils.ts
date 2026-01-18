@@ -134,39 +134,6 @@ export function getNotificationSeverity(type: string): NotificationSeverity {
   return "info";
 }
 
-/** Get colors based on severity and read status */
-export function getSeverityColors(
-  severity: NotificationSeverity,
-  isRead: boolean,
-) {
-  if (isRead) {
-    // Muted colors for read notifications
-    return {
-      bg: "bg-muted",
-      text: "text-muted-foreground",
-    };
-  }
-
-  // Vibrant colors for unread notifications
-  switch (severity) {
-    case "critical":
-      return {
-        bg: "bg-destructive/10",
-        text: "text-destructive",
-      };
-    case "warning":
-      return {
-        bg: "bg-amber-500/10",
-        text: "text-amber-600 dark:text-amber-500",
-      };
-    default:
-      return {
-        bg: "bg-primary/10",
-        text: "text-primary",
-      };
-  }
-}
-
 /** Get the unread indicator color based on severity */
 export function getUnreadIndicatorColor(severity: NotificationSeverity) {
   switch (severity) {

@@ -35,7 +35,7 @@ function ScrollArea({
         className={cn(
           // Base styles
           "min-h-0 min-w-0 flex-1 rounded-[inherit] outline-none",
-          "scrollbar-hide",
+          "no-scrollbar",
           "focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
           // Overflow based on orientation
           orientation === "vertical" && "overflow-y-auto overflow-x-hidden",

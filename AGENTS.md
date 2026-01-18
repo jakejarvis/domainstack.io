@@ -17,8 +17,8 @@ For full workflow details: `bd prime`
 **CRITICAL:** Before declaring victory on any task and before committing to git, the following three commands must pass with NO WARNINGS:
 
 1. `pnpm lint` — Must pass with zero warnings
-2. `pnpm typecheck` — Must pass with zero warnings
-3. `pnpm test:run` — Must pass with zero warnings
+2. `pnpm check-types` — Must pass with zero warnings
+3. `pnpm test` — Must pass with zero warnings
 
 Do not proceed with commits until all three checks are clean.
 
@@ -27,7 +27,7 @@ Do not proceed with commits until all three checks are clean.
 ### Development
 - `pnpm dev` — Start Next.js dev server at http://localhost:3000
 - `pnpm build` — Compile production bundle
-- `pnpm typecheck` — Run `tsc --noEmit` for type diagnostics
+- `pnpm check-types` — Run `tsc --noEmit` for type diagnostics
 
 ### Linting & Formatting
 - `pnpm lint` — Run Biome lint (`--write` to auto-fix; add `--unsafe` to sort Tailwind classes, etc)
@@ -35,9 +35,9 @@ Do not proceed with commits until all three checks are clean.
 
 ### Testing
 - `pnpm test` — Run Vitest in watch mode
-- `pnpm test:run` — Run all tests once
-- `pnpm test:run path/to/file.test.ts` — Run a single test file
-- `pnpm test:run -t "test name"` — Run tests matching a pattern
+- `pnpm test` — Run all tests once
+- `pnpm test path/to/file.test.ts` — Run a single test file
+- `pnpm test -t "test name"` — Run tests matching a pattern
 - `pnpm test:coverage` — Run tests with coverage report
 
 ### Database

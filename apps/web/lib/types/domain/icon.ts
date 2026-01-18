@@ -21,8 +21,3 @@ export type FaviconResponse = IconResponse;
  * Semantic alias for provider logo responses.
  */
 export type ProviderLogoResponse = IconResponse;
-
-/**
- * Semantic alias for screenshot responses.
- */
-export type ScreenshotResponse = IconResponse;

@@ -6,7 +6,7 @@ import {
   persistRegistrationStep,
   type RegistrationError,
 } from "@/workflows/shared/registration";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface RegistrationWorkflowInput {
   domain: string;

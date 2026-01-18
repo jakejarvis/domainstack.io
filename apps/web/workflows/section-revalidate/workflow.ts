@@ -23,7 +23,7 @@ import {
   normalizeAndBuildResponseStep,
   persistRegistrationStep,
 } from "@/workflows/shared/registration";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 import {
   buildSeoResponseStep,
   fetchHtmlStep,

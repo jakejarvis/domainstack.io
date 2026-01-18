@@ -5,7 +5,7 @@ import {
   type HeadersError,
   persistHeadersStep,
 } from "@/workflows/shared/headers";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface HeadersWorkflowInput {
   domain: string;

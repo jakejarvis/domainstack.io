@@ -32,7 +32,7 @@ function createHeaderContext(headers: Header[]): HeaderDetectionContext {
 /**
  * Evaluate a single detection rule against the provided context.
  */
-export function evalRule(rule: Rule, ctx: DetectionContext): boolean {
+function evalRule(rule: Rule, ctx: DetectionContext): boolean {
   const get = (name: string) => ctx.headers[name.toLowerCase()];
   const anyDns = (arr: string[], suf: string) =>
     arr.some((h) => h === suf || h.endsWith(`.${suf}`));

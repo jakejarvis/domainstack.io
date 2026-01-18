@@ -3,7 +3,7 @@
 import type { TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 import type { AppRouter } from "@/server/routers/_app";
-import { showRateLimitToast } from "./client";
+import { showRateLimitError } from "./client";
 
 /**
  * tRPC link that intercepts rate limit errors and shows a toast.
@@ -28,7 +28,7 @@ export const rateLimitLink: TRPCLink<AppRouter> = () => {
         },
         error(err) {
           // Show toast for rate limit errors
-          showRateLimitToast(err);
+          showRateLimitError(err);
           // Still pass the error through for handlers to process
           observer.error(err);
         },

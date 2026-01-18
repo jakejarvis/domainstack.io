@@ -1,7 +1,7 @@
 import type { SeoResponse } from "@/lib/types/domain/seo";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 import {
   buildSeoResponseStep,
   fetchHtmlStep,

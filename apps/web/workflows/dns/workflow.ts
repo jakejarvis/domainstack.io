@@ -4,7 +4,7 @@ import {
   fetchDnsRecordsStep,
   persistDnsRecordsStep,
 } from "@/workflows/shared/dns";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface DnsWorkflowInput {
   domain: string;

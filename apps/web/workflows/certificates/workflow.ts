@@ -6,7 +6,7 @@ import {
   persistCertificatesStep,
   processChainStep,
 } from "@/workflows/shared/certificates";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/revalidation/schedule-batch";
+import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface CertificatesWorkflowInput {
   domain: string;
