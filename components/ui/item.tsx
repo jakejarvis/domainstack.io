@@ -1,5 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
+import { IconBadge } from "@/components/ui/icon-badge";
 import { Separator } from "@/components/ui/separator";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 
@@ -82,7 +83,6 @@ const itemMediaVariants = cva({
   variants: {
     variant: {
       default: "bg-transparent",
-      icon: "size-8 rounded-full bg-muted [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-foreground/85",
       image:
         "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
     },
@@ -92,23 +92,48 @@ const itemMediaVariants = cva({
   },
 });
 
+type ItemMediaVariant = "default" | "icon" | "image";
+
+interface ItemMediaProps
+  extends Omit<useRender.ComponentProps<"div">, "children"> {
+  variant?: ItemMediaVariant;
+  children?: React.ReactNode;
+}
+
 function ItemMedia({
   variant = "default",
   className,
   render,
+  children,
   ...props
-}: useRender.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(itemMediaVariants({ variant }), className),
-    }),
-    state: {
-      slot: "item-media",
-      variant,
-    },
-  });
+}: ItemMediaProps) {
+  // For icon variant, wrap children in IconBadge
+  if (variant === "icon") {
+    return (
+      <IconBadge
+        data-slot="item-media"
+        size="sm"
+        className={cn(
+          "group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start",
+          className,
+        )}
+      >
+        {children}
+      </IconBadge>
+    );
+  }
+
+  const cvaVariant = variant === "image" ? "image" : "default";
+
+  return (
+    <div
+      data-slot="item-media"
+      className={cn(itemMediaVariants({ variant: cvaVariant }), className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }
 
 function ItemContent({

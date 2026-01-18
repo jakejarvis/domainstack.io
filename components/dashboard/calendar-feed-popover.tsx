@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ArrowCounterClockwiseIcon,
+  ArrowClockwiseIcon,
   CalendarIcon,
   RssSimpleIcon,
   WarningIcon,
@@ -42,11 +42,11 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
       <WarningIcon className="size-5 text-destructive" />
       <p className="text-muted-foreground text-sm">Failed to load</p>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
-          <ArrowCounterClockwiseIcon />
-          Try again
+        <Button size="sm" onClick={resetErrorBoundary}>
+          <ArrowClockwiseIcon />
+          Retry
         </Button>
-        <CreateIssueButton error={errorObj} variant="ghost" size="sm" />
+        <CreateIssueButton error={errorObj} variant="outline" size="sm" />
       </div>
     </div>
   );

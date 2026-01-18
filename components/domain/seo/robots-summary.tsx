@@ -3,7 +3,7 @@ import {
   AsteriskIcon,
   CaretRightIcon,
   CheckCircleIcon,
-  CircleIcon,
+  CircleHalfIcon,
   DotsThreeVerticalIcon,
   FunnelIcon,
   HourglassSimpleMediumIcon,
@@ -241,7 +241,7 @@ export function RobotsSummary({
                   variant="outline"
                   className="h-full"
                 >
-                  <CircleIcon
+                  <CircleHalfIcon
                     className="size-3.5 text-accent-blue"
                     aria-hidden
                   />

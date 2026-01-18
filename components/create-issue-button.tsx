@@ -1,6 +1,6 @@
 "use client";
 
-import { BugIcon } from "@phosphor-icons/react/ssr";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
@@ -73,8 +73,8 @@ export function CreateIssueButton(props: CreateIssueButtonProps) {
       nativeButton={false}
       render={
         <a href={issueUrl} target="_blank" rel="noopener">
-          <BugIcon />
-          Create GitHub issue
+          <SiGithub />
+          File a bug report
         </a>
       }
     />

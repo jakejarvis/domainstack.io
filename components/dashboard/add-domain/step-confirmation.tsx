@@ -1,4 +1,5 @@
 import { CheckCircleIcon } from "@phosphor-icons/react/ssr";
+import { IconBadge } from "@/components/ui/icon-badge";
 
 type StepConfirmationProps = {
   domain: string;
@@ -7,9 +8,9 @@ type StepConfirmationProps = {
 export function StepConfirmation({ domain }: StepConfirmationProps) {
   return (
     <div className="space-y-4 text-center" aria-live="polite">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/10">
-        <CheckCircleIcon className="size-6 text-success-foreground" />
-      </div>
+      <IconBadge size="lg" color="success" className="mx-auto">
+        <CheckCircleIcon className="size-6" />
+      </IconBadge>
       <div>
         <h3 className="font-semibold">Domain verified!</h3>
         <p className="text-muted-foreground text-sm">

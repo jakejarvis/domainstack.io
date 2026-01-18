@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  ArrowCounterClockwiseIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react/ssr";
 import {
   useQuery,
   useQueryClient,
@@ -198,7 +195,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
         <EmptyContent>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button
-              variant="outline"
               size="sm"
               onClick={() =>
                 queryClient.invalidateQueries({
@@ -206,8 +202,8 @@ export function DomainReportClient({ domain }: { domain: string }) {
                 })
               }
             >
-              <ArrowCounterClockwiseIcon />
-              Try again
+              <ArrowClockwiseIcon />
+              Retry
             </Button>
             <CreateIssueButton
               error={
@@ -215,7 +211,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
                   ? registrationError
                   : undefined
               }
-              variant="ghost"
+              variant="outline"
               size="sm"
             />
           </div>

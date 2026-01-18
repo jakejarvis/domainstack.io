@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  ArrowCounterClockwiseIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react/ssr";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -44,10 +41,10 @@ function SectionErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
       <EmptyContent>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
-            <ArrowCounterClockwiseIcon />
-            Try again
+            <ArrowClockwiseIcon />
+            Retry
           </Button>
-          <CreateIssueButton error={errorObj} variant="ghost" size="sm" />
+          <CreateIssueButton error={errorObj} variant="outline" size="sm" />
         </div>
       </EmptyContent>
     </Empty>

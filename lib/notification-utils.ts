@@ -69,6 +69,22 @@ export function getCertificateExpiryNotificationType(
 
 export type NotificationSeverity = "critical" | "warning" | "info";
 
+/** Map severity to ShadedIcon color variants */
+export function getSeverityIconColor(
+  severity: NotificationSeverity,
+  isRead: boolean,
+): "muted" | "destructive" | "warning" | "primary" {
+  if (isRead) return "muted";
+  switch (severity) {
+    case "critical":
+      return "destructive";
+    case "warning":
+      return "warning";
+    default:
+      return "primary";
+  }
+}
+
 /** Map notification types to icons */
 export function getNotificationIcon(type: string) {
   if (type.startsWith("domain_expiry")) {

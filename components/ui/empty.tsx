@@ -1,6 +1,7 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cn, cva, type VariantProps } from "@/lib/utils";
+import { IconBadge } from "@/components/ui/icon-badge";
+import { cn, cva } from "@/lib/utils";
 
 function Empty({
   className,
@@ -47,7 +48,6 @@ const emptyMediaVariants = cva({
   variants: {
     variant: {
       default: "bg-transparent",
-      icon: "flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-6",
     },
   },
   defaultVariants: {
@@ -55,23 +55,43 @@ const emptyMediaVariants = cva({
   },
 });
 
+type EmptyMediaVariant = "default" | "icon";
+
+interface EmptyMediaProps
+  extends Omit<useRender.ComponentProps<"div">, "children"> {
+  variant?: EmptyMediaVariant;
+  children?: React.ReactNode;
+}
+
 function EmptyMedia({
   variant = "default",
   className,
-  render,
+  children,
   ...props
-}: useRender.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(emptyMediaVariants({ variant }), className),
-    }),
-    state: {
-      slot: "empty-icon",
-      variant,
-    },
-  });
+}: EmptyMediaProps) {
+  // For icon variant, wrap children in IconBadge
+  if (variant === "icon") {
+    return (
+      <IconBadge
+        data-slot="empty-icon"
+        size="md"
+        shape="rounded"
+        className={cn("mb-2", className)}
+      >
+        {children}
+      </IconBadge>
+    );
+  }
+
+  return (
+    <div
+      data-slot="empty-icon"
+      className={cn(emptyMediaVariants({ variant }), className)}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }
 
 function EmptyTitle({

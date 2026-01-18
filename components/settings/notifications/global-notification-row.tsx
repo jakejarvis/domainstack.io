@@ -1,4 +1,5 @@
 import { InfoIcon } from "@phosphor-icons/react/ssr";
+import { IconBadge } from "@/components/ui/icon-badge";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -44,16 +45,14 @@ export function GlobalNotificationRow({
       {/* Icon + Label */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {/* Icon indicator */}
-        <div
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-md transition-colors sm:size-9",
-            anyEnabled
-              ? "bg-primary/10 text-primary"
-              : "bg-muted text-muted-foreground",
-          )}
+        <IconBadge
+          size="sm"
+          shape="rounded"
+          color={anyEnabled ? "primary" : "default"}
+          className="rounded-md transition-colors sm:size-9"
         >
           <Icon className="size-4" />
-        </div>
+        </IconBadge>
 
         {/* Label with info tooltip */}
         <div className="flex min-w-0 flex-1">

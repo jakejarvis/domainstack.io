@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { IconBadge } from "@/components/ui/icon-badge";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/lib/trpc/client";
@@ -340,9 +341,9 @@ export function ShareInstructionsDialog({
         <div className="space-y-4 pt-2">
           {/* Option 1: Copy to clipboard */}
           <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-              <ClipboardIcon className="size-4 text-muted-foreground" />
-            </div>
+            <IconBadge size="md" color="muted">
+              <ClipboardIcon className="size-4" />
+            </IconBadge>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm">Copy to clipboard</p>
               <p className="text-muted-foreground text-xs">
@@ -368,9 +369,9 @@ export function ShareInstructionsDialog({
 
           {/* Option 2: Download as file */}
           <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-              <FileTextIcon className="size-4 text-muted-foreground" />
-            </div>
+            <IconBadge size="md" color="muted">
+              <FileTextIcon className="size-4" />
+            </IconBadge>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-sm">Download as file</p>
               <p className="text-muted-foreground text-xs">
@@ -391,9 +392,9 @@ export function ShareInstructionsDialog({
           {/* Option 3: Send via email */}
           <div className="rounded-lg border border-border/50 p-3">
             <div className="mb-3 flex items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                <AtIcon className="size-4 text-muted-foreground" />
-              </div>
+              <IconBadge size="md" color="muted">
+                <AtIcon className="size-4" />
+              </IconBadge>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">Send via email</p>
                 <p className="text-muted-foreground text-xs">

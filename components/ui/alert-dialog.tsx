@@ -1,5 +1,6 @@
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { IconBadge, type IconBadgeProps } from "@/components/ui/icon-badge";
 import { cn } from "@/lib/utils";
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
@@ -99,16 +100,16 @@ function AlertDialogFooter({
 
 function AlertDialogMedia({
   className,
+  size = "lg",
+  color = "destructive",
   ...props
-}: React.ComponentProps<"div">) {
+}: Omit<IconBadgeProps, "shape">) {
   return (
-    <div
+    <IconBadge
       data-slot="alert-dialog-media"
-      className={cn(
-        "mb-2 inline-flex size-12 items-center justify-center rounded-full bg-destructive/10",
-        "sm:row-span-2 *:[svg:not([class*='size-'])]:size-6 *:[svg:not([class*='text-'])]:text-destructive",
-        className,
-      )}
+      size={size}
+      color={color}
+      className={cn("mb-2 sm:row-span-2", className)}
       {...props}
     />
   );

@@ -40,12 +40,11 @@ export default function RootError(props: {
           </p>
         ) : null}
         <div className="mt-6 flex flex-col items-center justify-center gap-3">
-          <Button onClick={() => reset()}>
+          <Button size="sm" onClick={() => reset()}>
             <ArrowClockwiseIcon />
-            Try again
+            Retry
           </Button>
-
-          <CreateIssueButton variant="outline" error={error} />
+          <CreateIssueButton error={error} variant="outline" size="sm" />
         </div>
       </div>
     </div>
