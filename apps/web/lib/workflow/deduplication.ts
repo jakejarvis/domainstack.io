@@ -273,7 +273,13 @@ export async function startWithDeduplication<T>(
           const run = getRun<T>(existingRunId);
           const status = await run.status;
 
-          if (status === "running" || status === "completed") {
+          // Treat pending, running, and completed as active/usable runs.
+          // "pending" workflows are newly started but not yet executing - still valid.
+          if (
+            status === "pending" ||
+            status === "running" ||
+            status === "completed"
+          ) {
             const result = await run.returnValue;
             return { result, deduplicated: true, source: "redis" };
           }
@@ -414,10 +420,12 @@ export async function getOrStartWorkflow<T>(
           const run = getRun(existingRunId);
           const status = await run.status;
 
-          if (status === "running") {
+          // Treat pending and running as active workflows.
+          // "pending" workflows are newly started but not yet executing - still valid.
+          if (status === "pending" || status === "running") {
             logger.debug(
-              { workflow, runId: existingRunId },
-              "found existing running workflow in Redis",
+              { workflow, runId: existingRunId, status },
+              "found existing active workflow in Redis",
             );
             return { runId: existingRunId, started: false };
           }

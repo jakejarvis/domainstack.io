@@ -30,11 +30,10 @@ Do not proceed with commits until all three checks are clean.
 - `pnpm check-types` — Run `tsc --noEmit` for type diagnostics
 
 ### Linting & Formatting
-- `pnpm lint` — Run Biome lint (`--write` to auto-fix; add `--unsafe` to sort Tailwind classes, etc)
+- `pnpm lint` — Run Biome lint (add `--write` to auto-fix, `--write --unsafe` to sort Tailwind classes, etc)
 - `pnpm format` — Apply Biome formatting
 
 ### Testing
-- `pnpm test` — Run Vitest in watch mode
 - `pnpm test` — Run all tests once
 - `pnpm test path/to/file.test.ts` — Run a single test file
 - `pnpm test -t "test name"` — Run tests matching a pattern
@@ -374,12 +373,16 @@ if (stale) {
 Use deduplication for concurrent requests:
 ```typescript
 import { startWithDeduplication, getDeduplicationKey } from "@/lib/workflow";
+import { start } from "workflow/api";
 
 const key = getDeduplicationKey("registration", domain);
-const result = await startWithDeduplication(key, async () => {
-  const run = await start(registrationWorkflow, [{ domain }]);
-  return run.returnValue;
-});
+const { result, deduplicated, source } = await startWithDeduplication(
+  key,
+  () => start(registrationWorkflow, [{ domain }]),
+);
+// result: T - the workflow return value
+// deduplicated: boolean - true if attached to existing run
+// source: "memory" | "redis" | "new" - where deduplication occurred
 ```
 
 ### Protected tRPC Procedures
