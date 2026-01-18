@@ -1,0 +1,87 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"],
+      "env": [
+        "BETTER_AUTH_SECRET",
+        "BLOB_READ_WRITE_TOKEN",
+        "BLOB_SIGNING_SECRET",
+        "CRON_SECRET",
+        "DATABASE_URL",
+        "DYNADOT_API_KEY",
+        "EDGE_CONFIG",
+        "EXTERNAL_USER_AGENT",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "GITLAB_CLIENT_ID",
+        "GITLAB_CLIENT_SECRET",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "INNGEST_EVENT_KEY",
+        "INNGEST_SIGNING_KEY",
+        "IPLOCATE_API_KEY",
+        "LOGO_DEV_PUBLISHABLE_KEY",
+        "POLAR_ACCESS_TOKEN",
+        "POLAR_WEBHOOK_SECRET",
+        "REDIS_URL",
+        "RESEND_API_KEY",
+        "RESEND_FROM_EMAIL",
+        "UPSTASH_REDIS_REST_TOKEN",
+        "UPSTASH_REDIS_REST_URL",
+        "VERCEL_CLIENT_ID",
+        "VERCEL_CLIENT_SECRET"
+      ]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "persistent": true,
+      "cache": false
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"],
+      "outputs": []
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "format": {
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "env": ["CI"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "env": ["CI"]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:studio": {
+      "persistent": true,
+      "cache": false
+    }
+  },
+  "globalDependencies": ["**/.env*"],
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL",
+    "npm_lifecycle_event"
+  ]
+}

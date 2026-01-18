@@ -1,0 +1,25 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+overrides:
+  next: "16.1.3"
+  react: "19.2.3"
+  react-dom: "19.2.3"
+  "@types/react": "19.2.8"
+  "@types/react-dom": "19.2.3"
+
+publicHoistPattern:
+  - "@sparticuz/chromium"
+  - puppeteer-core
+
+onlyBuiltDependencies:
+  - "@posthog/cli"
+  - "@swc/core"
+  - "bufferutil"
+  - "core-js"
+  - "esbuild"
+  - "msw"
+  - "protobufjs"
+  - "puppeteer"
+  - "sharp"

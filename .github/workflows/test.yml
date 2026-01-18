@@ -32,10 +32,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+        run: pnpm --filter @domainstack/web exec playwright install chromium --with-deps
 
       - name: Run typechecks
-        run: pnpm typecheck
+        run: pnpm check-types
         continue-on-error: true
 
       - name: Run lints

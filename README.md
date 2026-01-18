@@ -38,8 +38,8 @@
 - [**Logo.dev**](https://www.logo.dev)
 - [**IPLocate.io**](https://www.iplocate.io/)
 - **PostHog** (analytics)
-- **Puppeteer** (screenshots)
-- **Vitest** + **Playwright**, **Biome**
+- **Turborepo** (monorepo)
+- **Vitest** + **Playwright** (testing), **Biome** (linting)
 
 ## Development
 
@@ -53,10 +53,10 @@ pnpm install
 
 ### 2. Configure environment variables
 
-Create `.env.local` and populate [required variables](.env.example):
+Create `.env.local` in the `apps/web` directory and populate [required variables](apps/web/.env.example):
 
 ```bash
-cp .env.example .env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 At minimum, you'll need `DATABASE_URL` pointing to a Postgres database.
