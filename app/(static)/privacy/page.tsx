@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <header className="mb-8 border-border/50 border-b pb-8">
+      <header>
         <h1>Privacy Policy</h1>
         <p className="mt-2 text-muted-foreground text-sm">
           Last updated: December 8, 2025

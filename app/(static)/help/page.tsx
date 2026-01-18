@@ -53,7 +53,7 @@ const faqSections = [
         answer: (
           <>
             <p>Each domain report includes:</p>
-            <ul className="my-2">
+            <ul>
               <li>
                 <strong>Registration data</strong> — Registrar, creation date,
                 expiration date, and WHOIS/RDAP information
@@ -146,7 +146,7 @@ const faqSections = [
               We offer three verification methods — use whichever is easiest for
               you:
             </p>
-            <ul className="my-2">
+            <ul>
               <li>
                 <strong>DNS TXT record</strong> — Add a TXT record to your apex
                 domain
@@ -217,7 +217,7 @@ const faqSections = [
         answer: (
           <>
             <p>We send email notifications for:</p>
-            <ul className="my-2">
+            <ul>
               <li>
                 <strong>Domain expiration</strong> — 30, 14, 7, and 1&nbsp;day
                 before your domain expires
@@ -280,7 +280,7 @@ const faqSections = [
         answer: (
           <>
             <p>The Pro plan includes the following benefits:</p>
-            <ul className="my-2">
+            <ul>
               <li>
                 Track up to {PLAN_QUOTAS.pro} domains (increased from{" "}
                 {PLAN_QUOTAS.free})
@@ -382,7 +382,7 @@ const faqSections = [
 export default function HelpPage() {
   return (
     <>
-      <header className="mb-8 border-border/50 border-b pb-8">
+      <header>
         <h1>Help & FAQ</h1>
         <p className="mt-2 text-muted-foreground">
           Everything you need to know about using Domainstack.
@@ -413,7 +413,7 @@ export default function HelpPage() {
                     <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
                       {item.question}
                     </AccordionTrigger>
-                    <AccordionContent className="pt-1 text-foreground/90">
+                    <AccordionContent className="pt-1">
                       {item.answer}
                     </AccordionContent>
                   </AccordionItem>

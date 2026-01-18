@@ -1,3 +1,4 @@
+import { SiModelcontextprotocol } from "@icons-pack/react-simple-icons";
 import {
   Claude as ClaudeIcon,
   Cline as ClineIcon,
@@ -82,10 +83,10 @@ const tools = [
       { name: "domain", type: "string", required: true },
       {
         name: "sections",
-        type: "array",
+        type: "string[]",
         required: false,
         description:
-          'Optional array of sections: "dns", "registration", "hosting", "certificates", "headers", "seo". Defaults to all.',
+          'Array of section(s) to compile: "dns", "registration", "hosting", "certificates", "headers", "seo". Defaults to all.',
       },
     ],
   },
@@ -94,10 +95,19 @@ const tools = [
 export default function McpPage() {
   return (
     <>
-      <header className="mb-8 border-border/50 border-b pb-8">
-        <h1>MCP Server (Beta)</h1>
+      <header>
+        <h1 className="flex items-center gap-2.5">
+          <SiModelcontextprotocol className="text-foreground/70" />
+          MCP Server
+          <Badge
+            variant="secondary"
+            className="ml-1 text-[13px] tracking-normal"
+          >
+            Beta
+          </Badge>
+        </h1>
         <p className="mt-2 text-muted-foreground">
-          Connect AI assistants to Domainstack for domain intelligence.
+          Connect AI assistants to Domainstack for instant domain intelligence.
         </p>
       </header>
 
@@ -121,10 +131,7 @@ export default function McpPage() {
       <section id="setup">
         <h2>Setup</h2>
 
-        <Accordion
-          defaultValue={["claude-code"]}
-          className="w-full rounded-lg border border-border/50 bg-muted/20"
-        >
+        <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
           <AccordionItem
             value="claude-code"
             className="border-border/30 border-b px-4 last:border-none"
@@ -138,9 +145,9 @@ export default function McpPage() {
             <AccordionContent className="pt-1 text-foreground/90">
               <p>Run this command to add Domainstack to Claude Code:</p>
               <CodeBlock>{`claude mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground">
                 Or add this snippet to your project&apos;s{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   .mcp.json
                 </code>{" "}
                 file:
@@ -158,7 +165,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://code.claude.com/docs/en/mcp"
@@ -192,13 +199,13 @@ export default function McpPage() {
                 . Set the server URL to:
               </p>
               <CodeBlock>{MCP_URL}</CodeBlock>
-              <p className="mt-2 text-muted-foreground text-sm">
+              <p className="mt-2 text-muted-foreground">
                 Alternatively, edit your{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   claude_desktop_config.json
                 </code>{" "}
                 (on macOS:{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   ~/Library/Application
                   Support/Claude/claude_desktop_config.json
                 </code>
@@ -217,7 +224,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
@@ -256,7 +263,7 @@ export default function McpPage() {
               <p>
                 Click the button above to install automatically, or add this
                 snippet to{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   ~/.cursor/mcp.json
                 </code>
                 :
@@ -274,7 +281,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://docs.cursor.com/context/mcp"
@@ -312,7 +319,7 @@ export default function McpPage() {
               <p className="mb-4 flex justify-center text-center">
                 <a
                   href={VSCODE_DEEPLINK}
-                  className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-sm text-white leading-none transition-colors hover:bg-[#005ba4]"
+                  className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
                   data-disable-progress
                 >
                   <svg
@@ -348,7 +355,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
@@ -376,7 +383,7 @@ export default function McpPage() {
             <AccordionContent className="pt-1 text-foreground/90">
               <p>
                 Add this snippet to your Windsurf MCP config (
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   ~/.windsurf/mcp.json
                 </code>
                 ):
@@ -394,7 +401,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://docs.windsurf.com/windsurf/cascade/mcp"
@@ -439,7 +446,7 @@ export default function McpPage() {
                   2,
                 )}
               </CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://docs.cline.bot/mcp/configuring-mcp-servers"
@@ -467,15 +474,15 @@ export default function McpPage() {
             <AccordionContent className="pt-1 text-foreground/90">
               <p>Run this command to add Domainstack to Codex:</p>
               <CodeBlock>{`codex mcp add domainstack --url ${MCP_URL}`}</CodeBlock>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground">
                 Enable remote MCP client support by adding this to your{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
+                <code className="rounded bg-muted px-1.5 py-0.5">
                   ~/.codex/config.toml
                 </code>
                 :
               </p>
               <CodeBlock>{`[features]\nrmcp_client = true`}</CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://developers.openai.com/codex/mcp/"
@@ -503,7 +510,7 @@ export default function McpPage() {
             <AccordionContent className="pt-1 text-foreground/90">
               <p>Run this command to add Domainstack to Gemini CLI:</p>
               <CodeBlock>{`gemini mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="!text-xs mt-2 text-muted-foreground">
                 Need help?{" "}
                 <a
                   href="https://geminicli.com/docs/tools/mcp-server/"
@@ -533,16 +540,16 @@ export default function McpPage() {
               className="rounded-lg border border-border/50 bg-muted/20 p-4"
             >
               <h3 className="font-mono text-base">{tool.name}</h3>
-              <p className="mt-2 text-foreground/80 text-sm">
+              <p className="!text-[14px] mt-2 text-foreground/80">
                 {tool.description}
               </p>
               <div className="mt-3">
-                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <span className="!text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Parameters
                 </span>
-                <ul className="!pl-2 mt-2 space-y-1 text-sm [&_li]:list-none">
+                <ul className="!pl-2 mt-2 space-y-1 [&_li]:list-none">
                   {tool.parameters.map((param) => (
-                    <li key={param.name} className="font-mono">
+                    <li key={param.name} className="!text-[14px] font-mono">
                       <span className="text-foreground">{param.name}</span>
                       <span className="text-muted-foreground">
                         : {param.type}
@@ -553,7 +560,7 @@ export default function McpPage() {
                         </Badge>
                       )}
                       {"description" in param && (
-                        <span className="ml-2 font-sans text-muted-foreground text-xs">
+                        <span className="!text-xs ml-2 font-sans text-muted-foreground">
                           {param.description}
                         </span>
                       )}
@@ -570,36 +577,30 @@ export default function McpPage() {
         <h2>Example Prompts</h2>
         <p>Once configured, you can ask questions like:</p>
         <ul>
-          <li>&quot;What hosting provider does stripe.com use?&quot;</li>
-          <li>&quot;When does the github.com domain expire?&quot;</li>
-          <li>&quot;Show me the DNS records for vercel.com&quot;</li>
-          <li>&quot;What SSL certificate does cloudflare.com have?&quot;</li>
+          <li>&ldquo;Which hosting provider does stripe.com use?&rdquo;</li>
+          <li>&ldquo;When does the github.com domain expire?&rdquo;</li>
+          <li>&ldquo;Show me the DNS records for vercel.com&rdquo;</li>
+          <li>&ldquo;What SSL certificate does nytimes.com have?&rdquo;</li>
           <li>
-            &quot;Give me a full report on linear.app including DNS and
-            hosting&quot;
+            &ldquo;Give me a full report on linear.app including DNS and
+            hosting.&rdquo;
           </li>
-          <li>&quot;Check the SEO metadata for nextjs.org&quot;</li>
+          <li>&ldquo;Check the SEO metadata for nextjs.org.&rdquo;</li>
         </ul>
       </section>
 
       <section id="rate-limits">
         <h2>Rate Limits</h2>
         <p>
-          The MCP server is rate limited to{" "}
-          <strong>30 requests per minute</strong> per IP address. This applies
-          across all tool calls. If you exceed the limit, requests will return a
-          429 error with a{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
-            Retry-After
-          </code>{" "}
+          The MCP server is dynamically rate limited to meet demand. This
+          applies across all tool calls. If you exceed the limit, requests will
+          return a 429 error with a{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">Retry-After</code>{" "}
           header.
         </p>
         <p>
-          For most conversational use cases, this limit is more than sufficient.
           The{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
-            domain_report
-          </code>{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">domain_report</code>{" "}
           tool is useful for reducing the number of calls when you need multiple
           data types.
         </p>
@@ -633,8 +634,8 @@ export default function McpPage() {
           </li>
         </ul>
         <p>
-          If data appears stale, a background refresh is triggered automatically
-          and fresh data will be available on the next request.
+          If data appears stale, a background refresh was likely triggered
+          automatically and fresh data will be available soon.
         </p>
       </section>
     </>
