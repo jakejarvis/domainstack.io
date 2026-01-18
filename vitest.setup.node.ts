@@ -89,6 +89,13 @@ vi.mock("workflow", async () => {
   };
 });
 
+// Mock Redis client to return undefined by default in tests
+// This makes code fall back to non-distributed behavior
+// Tests that need Redis can override with vi.mocked(getRedis).mockReturnValue(...)
+vi.mock("@/lib/redis", () => ({
+  getRedis: vi.fn(() => undefined),
+}));
+
 // Mock rate limiter to avoid Redis timeouts in tests
 // The Upstash Ratelimit has a 2s timeout which causes slow tests
 vi.mock("@/lib/ratelimit", () => ({

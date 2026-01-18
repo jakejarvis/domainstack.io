@@ -25,10 +25,15 @@ export {
   wasAlreadyHandled,
   withConcurrencyHandling,
 } from "./concurrency";
-// Workflow deduplication
-export type { DeduplicationOptions } from "./deduplication";
+// Workflow deduplication (Redis-backed with in-memory fast path)
+export type {
+  DeduplicationOptions,
+  DeduplicationResult,
+  GetOrStartResult,
+} from "./deduplication";
 export {
   getDeduplicationKey,
+  getOrStartWorkflow,
   getPendingRunCount,
   hasPendingRun,
   startWithDeduplication,

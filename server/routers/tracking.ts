@@ -254,16 +254,15 @@ export const trackingRouter = createTRPCRouter({
         trackedDomainId,
         method: method ?? "all",
       });
-      const result = await startWithDeduplication(key, async () => {
-        const workflowRun = await start(verificationWorkflow, [
+      const { result } = await startWithDeduplication(key, () =>
+        start(verificationWorkflow, [
           {
             domain: tracked.domainName,
             token: tracked.verificationToken,
             method: method ?? undefined,
           },
-        ]);
-        return workflowRun.returnValue;
-      });
+        ]),
+      );
 
       if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified
