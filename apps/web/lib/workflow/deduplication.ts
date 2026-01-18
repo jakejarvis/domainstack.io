@@ -27,12 +27,20 @@ const DEFAULT_TTL_SECONDS = 5 * 60;
 const pendingRuns = new Map<string, Promise<unknown>>();
 
 /**
- * In-memory map of pending workflow run IDs for fire-and-poll patterns.
+ * In-memory map of pending workflow start promises for fire-and-poll patterns.
  *
  * Used by getOrStartWorkflow to prevent concurrent same-instance requests
  * from both missing the Redis check and starting duplicate workflows.
+ * Stores the promise itself (not the resolved value) so concurrent requests
+ * can await the same start operation.
  */
-const pendingRunIds = new Map<string, string>();
+const pendingStarts = new Map<string, Promise<Run<unknown>>>();
+
+/**
+ * In-memory map of resolved run IDs from pendingStarts.
+ * Allows quick lookup after the start promise resolves without re-awaiting.
+ */
+const resolvedRunIds = new Map<string, string>();
 
 /**
  * Options for workflow deduplication.
@@ -436,26 +444,47 @@ export async function getOrStartWorkflow<T>(
   }
 
   // Check in-memory for same-instance concurrent requests
-  // This prevents race conditions where multiple requests miss Redis and start duplicates
-  const pendingRunId = pendingRunIds.get(key);
-  if (pendingRunId) {
+  // First check resolved IDs (fast path for already-started workflows)
+  const resolvedRunId = resolvedRunIds.get(key);
+  if (resolvedRunId) {
     logger.debug(
-      { workflow, runId: pendingRunId },
-      "found in-memory pending run, returning existing",
+      { workflow, runId: resolvedRunId },
+      "found resolved run ID in memory, returning existing",
     );
-    return { runId: pendingRunId, started: false };
+    return { runId: resolvedRunId, started: false };
   }
 
-  // Start new workflow
-  const run = await startWorkflow();
+  // Check pending start promise (handles concurrent requests during startup)
+  const pendingStart = pendingStarts.get(key);
+  if (pendingStart) {
+    logger.debug({ workflow }, "attaching to pending start promise");
+    const run = await pendingStart;
+    return { runId: run.runId, started: false };
+  }
 
-  // Store in memory for same-instance deduplication
-  pendingRunIds.set(key, run.runId);
+  // No existing run found - create and store promise BEFORE starting workflow
+  // This is critical: storing the promise first prevents race conditions
+  const startPromise = Promise.resolve().then(startWorkflow);
+  pendingStarts.set(key, startPromise as Promise<Run<unknown>>);
+
+  let run: Run<T>;
+  try {
+    run = await startPromise;
+  } catch (err) {
+    // If workflow start fails, clean up and re-throw
+    pendingStarts.delete(key);
+    throw err;
+  }
+
+  // Store resolved run ID for quick lookups
+  resolvedRunIds.set(key, run.runId);
+  // Clean up the pending promise now that we have the resolved value
+  pendingStarts.delete(key);
 
   // Clean up helper that guards against removing a different run's entry
   const cleanupEntry = () => {
-    if (pendingRunIds.get(key) === run.runId) {
-      pendingRunIds.delete(key);
+    if (resolvedRunIds.get(key) === run.runId) {
+      resolvedRunIds.delete(key);
     }
   };
 
@@ -471,7 +500,7 @@ export async function getOrStartWorkflow<T>(
       // Transient status lookup failures should NOT clear the entry.
       // Clearing on any error would allow duplicate workflow starts when
       // the workflow API is temporarily unreachable (e.g., Redis down).
-      // The safety valve timeout (line 476) handles cleanup if needed.
+      // The safety valve timeout handles cleanup if needed.
     });
 
   // Safety valve: clean up after TTL even if completion detection fails
@@ -513,5 +542,6 @@ export function getPendingRunCount(): number {
  */
 export function clearAllPendingRuns(): void {
   pendingRuns.clear();
-  pendingRunIds.clear();
+  pendingStarts.clear();
+  resolvedRunIds.clear();
 }
