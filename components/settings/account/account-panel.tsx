@@ -1,13 +1,10 @@
 import { FingerprintIcon } from "@phosphor-icons/react/ssr";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
+import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,17 +40,13 @@ export function AccountPanel() {
   // Handle auth callback errors from URL params (account linking)
   useAuthCallback();
 
-  // Query for linked accounts - uses Suspense for loading/error states
-  const { data: linkedAccounts } = useSuspenseQuery(
-    trpc.user.getLinkedAccounts.queryOptions(),
-  );
+  // Query for linked accounts
+  const {
+    data: linkedAccounts,
+    isLoading,
+    isError,
+  } = useQuery(trpc.user.getLinkedAccounts.queryOptions());
   const linkedAccountsQueryKey = trpc.user.getLinkedAccounts.queryKey();
-
-  // Set of linked provider IDs for quick lookup
-  const linkedProviderIds = new Set(linkedAccounts.map((a) => a.providerId));
-
-  // Check if user can unlink (must have at least 2 linked accounts)
-  const canUnlink = linkedProviderIds.size > 1;
 
   // Handle linking a provider
   const handleLink = async (provider: OAuthProvider) => {
@@ -145,6 +138,21 @@ export function AccountPanel() {
   const handleUnlink = (providerId: string) => {
     unlinkMutation.mutate(providerId);
   };
+
+  // Loading and error states (after all hooks)
+  if (isLoading) {
+    return <LinkedAccountsSkeleton />;
+  }
+
+  if (isError || !linkedAccounts) {
+    throw new Error("Failed to load linked accounts");
+  }
+
+  // Set of linked provider IDs for quick lookup
+  const linkedProviderIds = new Set(linkedAccounts.map((a) => a.providerId));
+
+  // Check if user can unlink (must have at least 2 linked accounts)
+  const canUnlink = linkedProviderIds.size > 1;
 
   // Get the provider config being unlinked for the dialog
   const providerToUnlink = unlinkingProvider

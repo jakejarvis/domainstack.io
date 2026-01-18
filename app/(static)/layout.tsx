@@ -19,7 +19,7 @@ export default function StaticLayout({
               "prose-headings:font-semibold prose-strong:font-semibold",
               "prose-a:decoration-muted-foreground/90 prose-a:hover:text-foreground/70",
               // External link icons
-              "prose-a:[&_svg]:ml-1 prose-a:[&_svg]:inline-block prose-a:[&_svg]:size-3.5 prose-a:[&_svg]:-translate-y-0.5 prose-a:[&_svg]:text-foreground/70",
+              "prose-a:[&_svg]:mr-0.5 prose-a:[&_svg]:ml-1 prose-a:[&_svg]:inline-block prose-a:[&_svg]:size-3.5 prose-a:[&_svg]:-translate-y-0.5 prose-a:[&_svg]:text-foreground/70",
               "[&>header]:mb-6 [&>header]:border-border/50 [&>header]:border-b [&>header]:pb-6",
               "[&>section]:scroll-mt-24",
             )}

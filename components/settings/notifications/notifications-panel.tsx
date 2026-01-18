@@ -4,11 +4,7 @@ import {
   InfoIcon,
   SlidersHorizontalIcon,
 } from "@phosphor-icons/react/ssr";
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQueries,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { toast } from "sonner";
 import {
@@ -18,6 +14,7 @@ import {
 import { DomainNotificationRow } from "@/components/settings/notifications/domain-notification-row";
 import { GlobalNotificationRow } from "@/components/settings/notifications/global-notification-row";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
+import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   CardContent,
   CardDescription,
@@ -47,16 +44,15 @@ export function NotificationsPanel() {
   const domainsQueryKey = trpc.tracking.listDomains.queryKey();
   const globalPrefsQueryKey = trpc.user.getNotificationPreferences.queryKey();
 
-  // Queries - both run in parallel with Suspense for loading state
-  const [domainsResult, globalPrefsResult] = useSuspenseQueries({
+  // Queries - both run in parallel
+  const [domainsResult, globalPrefsResult] = useQueries({
     queries: [
       trpc.tracking.listDomains.queryOptions(),
       trpc.user.getNotificationPreferences.queryOptions(),
     ],
   });
-  const globalPrefsData = globalPrefsResult.data;
 
-  // Mutations with optimistic updates
+  // Mutations with optimistic updates (must be called before early returns)
   const updateGlobalMutation = useMutation({
     ...trpc.user.updateGlobalNotificationPreferences.mutationOptions(),
     onMutate: async (newPrefs) => {
@@ -181,6 +177,36 @@ export function NotificationsPanel() {
     },
   });
 
+  // Loading and error states (after all hooks)
+  const isLoading = domainsResult.isLoading || globalPrefsResult.isLoading;
+  const isError = domainsResult.isError || globalPrefsResult.isError;
+
+  if (isLoading) {
+    return <NotificationsSkeleton />;
+  }
+
+  if (isError || !domainsResult.data || !globalPrefsResult.data) {
+    throw new Error("Failed to load notification settings");
+  }
+
+  // Data is now guaranteed to be defined
+  const domains = domainsResult.data;
+  const globalPrefsData = globalPrefsResult.data;
+
+  const defaultGlobalPrefs: UserNotificationPreferences = {
+    domainExpiry: { inApp: true, email: true },
+    certificateExpiry: { inApp: true, email: true },
+    registrationChanges: { inApp: true, email: true },
+    providerChanges: { inApp: true, email: true },
+    certificateChanges: { inApp: true, email: true },
+  };
+
+  // Merge defaults with saved preferences to ensure new fields are always present
+  const globalPrefs: UserNotificationPreferences = {
+    ...defaultGlobalPrefs,
+    ...globalPrefsData,
+  };
+
   const handleGlobalToggle = (
     category: NotificationCategory,
     type: "email" | "inApp",
@@ -242,25 +268,9 @@ export function NotificationsPanel() {
     resetDomainMutation.mutate({ trackedDomainId });
   };
 
-  // With useSuspenseQueries, data is guaranteed to be defined
-  const domains = domainsResult.data;
   const verifiedDomains = domains
     .filter((d) => d.verified)
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
-
-  const defaultGlobalPrefs: UserNotificationPreferences = {
-    domainExpiry: { inApp: true, email: true },
-    certificateExpiry: { inApp: true, email: true },
-    registrationChanges: { inApp: true, email: true },
-    providerChanges: { inApp: true, email: true },
-    certificateChanges: { inApp: true, email: true },
-  };
-
-  // Merge defaults with saved preferences to ensure new fields are always present
-  const globalPrefs: UserNotificationPreferences = {
-    ...defaultGlobalPrefs,
-    ...globalPrefsData,
-  };
 
   const isPending =
     updateGlobalMutation.isPending ||

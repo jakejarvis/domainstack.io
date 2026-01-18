@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { VideoPlayer, VideoPlayerContent } from "@/components/ui/video-player";
 import { APPLE_SHORTCUT_ID, BASE_URL } from "@/lib/constants/app";
 
-export function BookmarkletContent({ className }: { className?: string }) {
+export function BookmarkletContent() {
   // a little hack to "unsafely" use raw javascript as a link
   const hrefScript = (element: HTMLAnchorElement | null) => {
     if (!element) return;
@@ -36,8 +36,8 @@ export function BookmarkletContent({ className }: { className?: string }) {
   };
 
   return (
-    <div className={className}>
-      <div className="mb-4 space-y-3.5">
+    <>
+      <div className="mb-4 space-y-4">
         <p className="text-muted-foreground text-sm">
           Drag the button below to your bookmarks bar. Then, press it on any
           site and the report for that domain will open in a new tab, like
@@ -45,7 +45,6 @@ export function BookmarkletContent({ className }: { className?: string }) {
         </p>
         <div className="flex justify-center">
           <Button
-            variant="outline"
             size="lg"
             nativeButton={false}
             // biome-ignore lint/a11y/useValidAnchor: set by hrefScript above
@@ -64,7 +63,7 @@ export function BookmarkletContent({ className }: { className?: string }) {
         </div>
       </div>
 
-      <Separator className="my-4 bg-border/80 dark:bg-border/50" />
+      <Separator className="my-5 bg-border/80 dark:bg-border/50" />
 
       <Accordion
         multiple
@@ -199,6 +198,6 @@ export function BookmarkletContent({ className }: { className?: string }) {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-    </div>
+    </>
   );
 }

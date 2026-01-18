@@ -27,6 +27,12 @@ let nextConfig: NextConfig = {
     },
   },
   rewrites: async () => [
+    // Rewrite /settings to default tab without a client-side navigation flash.
+    // IMPORTANT: If the first tab ever changes, we also need to change this rewrite.
+    {
+      source: "/settings",
+      destination: "/settings/subscription",
+    },
     {
       source: "/dashboard/feed.ics",
       has: [
