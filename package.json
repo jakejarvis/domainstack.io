@@ -26,6 +26,10 @@
     "db:migrate": "turbo run db:migrate",
     "db:studio": "turbo run db:studio"
   },
+  "dependencies": {
+    "@sparticuz/chromium": "143.0.4",
+    "puppeteer-core": "24.35.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",
     "turbo": "^2.7.5",

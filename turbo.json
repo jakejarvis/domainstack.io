@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turborepo.com/schema.json",
+  "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "tasks": {
     "build": {
@@ -25,13 +25,6 @@
         "INNGEST_SIGNING_KEY",
         "IPLOCATE_API_KEY",
         "LOGO_DEV_PUBLISHABLE_KEY",
-        "NEXT_PUBLIC_GITHUB_OAUTH_ENABLED",
-        "NEXT_PUBLIC_GITLAB_OAUTH_ENABLED",
-        "NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED",
-        "NEXT_PUBLIC_MAPBOX_TOKEN",
-        "NEXT_PUBLIC_POLAR_MONTHLY_PRODUCT_ID",
-        "NEXT_PUBLIC_POLAR_YEARLY_PRODUCT_ID",
-        "NEXT_PUBLIC_VERCEL_OAUTH_ENABLED",
         "POLAR_ACCESS_TOKEN",
         "POLAR_WEBHOOK_SECRET",
         "REDIS_URL",

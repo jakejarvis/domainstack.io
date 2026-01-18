@@ -102,7 +102,14 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
   const { getBrowser, createPage } = await import("@/lib/puppeteer");
 
   // Get a browser instance, may reuse an existing one if available
-  const browser = await getBrowser();
+  let browser: import("@/lib/puppeteer").Browser | null = null;
+  try {
+    browser = await getBrowser();
+  } catch (err) {
+    throw new FatalError(
+      `Failed to get browser instance: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 
   let page: import("@/lib/puppeteer").Page | null = null;
   try {

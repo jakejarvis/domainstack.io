@@ -9,6 +9,10 @@ overrides:
   "@types/react": "19.2.8"
   "@types/react-dom": "19.2.3"
 
+publicHoistPattern:
+  - "@sparticuz/chromium"
+  - puppeteer-core
+
 onlyBuiltDependencies:
   - "@posthog/cli"
   - "@swc/core"

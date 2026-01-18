@@ -18,7 +18,7 @@ let nextConfig: NextConfig = {
   ],
   outputFileTracingIncludes: {
     "/.well-known/workflow/v1/step": [
-      "node_modules/@sparticuz/chromium/bin/**",
+      "../../node_modules/@sparticuz/chromium/bin/**",
     ],
   },
   logging: {
