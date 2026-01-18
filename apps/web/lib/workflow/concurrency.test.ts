@@ -436,7 +436,7 @@ describe("concurrent step execution patterns", () => {
     it("simulates hosting-orchestration parallel step pattern", async () => {
       const { withConcurrencyHandling } = await import("./concurrency");
 
-      // This mirrors the pattern in hostingOrchestrationWorkflow
+      // This mirrors the pattern in hostingWorkflow
       type DnsResult = { records: Array<{ type: string; value: string }> };
       type HeadersResult =
         | {

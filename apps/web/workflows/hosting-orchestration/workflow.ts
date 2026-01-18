@@ -16,20 +16,18 @@ import {
 } from "@/workflows/shared/hosting";
 import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
-export interface HostingOrchestrationWorkflowInput {
+export interface HostingWorkflowInput {
   domain: string;
 }
 
-export type HostingOrchestrationWorkflowResult =
-  WorkflowResult<HostingResponse>;
+export type HostingWorkflowResult = WorkflowResult<HostingResponse>;
 
 /**
- * Durable hosting orchestration workflow that handles the full dependency chain:
+ * Durable hosting workflow that handles the full dependency chain:
  * DNS → headers → hosting detection.
  *
  * This workflow orchestrates all the steps needed to compute hosting providers,
- * including fetching DNS records and headers if needed. It replaces the complex
- * manual orchestration logic that was previously in the router.
+ * including fetching DNS records and headers if needed.
  *
  * Steps:
  * 1. Fetch DNS records (parallel with headers)
@@ -40,9 +38,9 @@ export type HostingOrchestrationWorkflowResult =
  * 6. Persist hosting data
  * 7. Schedule revalidation for all updated sections
  */
-export async function hostingOrchestrationWorkflow(
-  input: HostingOrchestrationWorkflowInput,
-): Promise<HostingOrchestrationWorkflowResult> {
+export async function hostingWorkflow(
+  input: HostingWorkflowInput,
+): Promise<HostingWorkflowResult> {
   "use workflow";
 
   const { domain } = input;
