@@ -40,9 +40,19 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     createTRPCClient<AppRouter>({
       links: [
         loggerLink({
-          enabled: (opts) =>
-            process.env.NODE_ENV === "development" ||
-            (opts.direction === "down" && opts.result instanceof Error),
+          enabled: (opts) => {
+            // Always log in development
+            if (process.env.NODE_ENV === "development") return true;
+            // Log errors in production, but filter out expected prerender termination errors
+            if (opts.direction === "down" && opts.result instanceof Error) {
+              const { cause } = opts.result as { cause?: { digest?: string } };
+              // Silence "fetch() rejected during prerender" errors - these are expected
+              // when client components use useSuspenseQuery during static generation
+              if (cause?.digest === "HANGING_PROMISE_REJECTION") return false;
+              return true;
+            }
+            return false;
+          },
         }),
         rateLimitLink,
         httpBatchStreamLink({
