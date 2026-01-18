@@ -1,0 +1,14 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+onlyBuiltDependencies:
+  - "@posthog/cli"
+  - "@swc/core"
+  - "bufferutil"
+  - "core-js"
+  - "esbuild"
+  - "msw"
+  - "protobufjs"
+  - "puppeteer"
+  - "sharp"

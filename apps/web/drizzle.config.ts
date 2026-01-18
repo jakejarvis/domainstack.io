@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 
 // Load common local envs first if present, then default .env
 dotenv.config({ path: ".env.local" });
-dotenv.config();
+dotenv.config({ path: ".env" });
 
 import { defineConfig } from "drizzle-kit";
 

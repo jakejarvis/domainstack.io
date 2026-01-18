@@ -8,16 +8,21 @@
   "files": {
     "ignoreUnknown": true,
     "includes": [
-      "**",
-      "!node_modules",
-      "!.next",
-      "!dist",
-      "!build",
-      "!coverage",
-      "!drizzle",
-      "!public",
+      "apps/**",
+      "packages/**",
+      "*.ts",
+      "*.js",
+      "*.json",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/dist",
+      "!**/build",
+      "!**/coverage",
+      "!**/drizzle",
+      "!**/public",
       "!.github",
-      "!.vscode"
+      "!.vscode",
+      "!.turbo"
     ]
   },
   "formatter": {
