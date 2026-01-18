@@ -7,7 +7,6 @@ vi.mock("./deduplication", () => ({
     (workflow: string, domain: string) => `${workflow}:${domain}`,
   ),
   startWithDeduplication: vi.fn(),
-  hasPendingRun: vi.fn(() => false),
 }));
 
 // Get the mocked functions

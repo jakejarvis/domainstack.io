@@ -243,20 +243,7 @@ export async function startWithDeduplication<T>(
   const redisKey = `${WORKFLOW_KEY_PREFIX}:${key}`;
   const workflow = key.split(":")[0] ?? "unknown";
 
-  // Fast path: Check in-memory Map first (same-instance deduplication)
-  if (hasPendingRun(key)) {
-    const { result } = await startWithMemoryDeduplication(
-      key,
-      async () => {
-        const run = await startWorkflow();
-        return run.returnValue;
-      },
-      ttlMs,
-    );
-    return { result, deduplicated: true, source: "memory" };
-  }
-
-  // Distributed path: Check Redis for existing run
+  // Check Redis for existing run (distributed deduplication)
   const redis = getRedis();
 
   if (redis) {
@@ -529,20 +516,6 @@ export async function getOrStartWorkflow<T>(
   }
 
   return { runId: run.runId, started: true };
-}
-
-/**
- * Check if a workflow run is currently pending for the given key.
- */
-export function hasPendingRun(key: string): boolean {
-  return pendingRuns.has(key);
-}
-
-/**
- * Get the current count of pending runs (for monitoring/debugging).
- */
-export function getPendingRunCount(): number {
-  return pendingRuns.size;
 }
 
 /**

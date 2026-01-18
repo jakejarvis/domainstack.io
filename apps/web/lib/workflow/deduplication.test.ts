@@ -22,8 +22,6 @@ const {
   clearAllPendingRuns,
   getDeduplicationKey,
   getOrStartWorkflow,
-  getPendingRunCount,
-  hasPendingRun,
   startWithDeduplication,
 } = await import("./deduplication");
 
@@ -325,25 +323,5 @@ describe("getOrStartWorkflow", () => {
     expect(startWorkflow).toHaveBeenCalledTimes(1);
     expect(runId).toBe("run_new_replacement");
     expect(started).toBe(true);
-  });
-});
-
-describe("getPendingRunCount", () => {
-  afterEach(() => {
-    clearAllPendingRuns();
-  });
-
-  it("returns 0 when no runs are pending", () => {
-    expect(getPendingRunCount()).toBe(0);
-  });
-});
-
-describe("hasPendingRun", () => {
-  afterEach(() => {
-    clearAllPendingRuns();
-  });
-
-  it("returns false for unknown key", () => {
-    expect(hasPendingRun("unknown:key")).toBe(false);
   });
 });
