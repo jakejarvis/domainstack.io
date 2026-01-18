@@ -382,9 +382,9 @@ const faqSections = [
 export default function HelpPage() {
   return (
     <>
-      <header>
-        <h1>Help & FAQ</h1>
-        <p className="mt-2 text-muted-foreground">
+      <header className="not-prose">
+        <h1 className="font-semibold text-2xl tracking-tight">Help & FAQ</h1>
+        <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
           Everything you need to know about using Domainstack.
         </p>
       </header>
@@ -398,31 +398,27 @@ export default function HelpPage() {
         </p>
       </section>
 
-      <section>
-        <div className="space-y-8">
-          {faqSections.map((section) => (
-            <div key={section.title}>
-              <h2 className="mb-4">{section.title}</h2>
-              <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
-                {section.items.map((item) => (
-                  <AccordionItem
-                    key={item.question}
-                    value={item.question}
-                    className="border-border/30 border-b px-4 last:border-none"
-                  >
-                    <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-                      {item.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-1">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          ))}
-        </div>
-      </section>
+      {faqSections.map((section) => (
+        <section key={section.title}>
+          <h2>{section.title}</h2>
+          <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
+            {section.items.map((item) => (
+              <AccordionItem
+                key={item.question}
+                value={item.question}
+                className="border-border/30 border-b px-4 last:border-none [&>h3]:m-0"
+              >
+                <AccordionTrigger className="not-prose cursor-pointer text-left text-foreground tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+                  {item.question}
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 leading-relaxed *:first:mt-1 *:last:mb-1">
+                  {item.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
+      ))}
 
       <section id="contact">
         <h2>Still have questions?</h2>

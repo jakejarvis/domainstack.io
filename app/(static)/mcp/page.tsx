@@ -7,9 +7,10 @@ import {
   OpenAI as OpenAIIcon,
   Windsurf as WindsurfIcon,
 } from "@lobehub/icons";
-import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -37,6 +38,252 @@ const CURSOR_DEEPLINK = `cursor://anysphere.cursor-deeplink/mcp/install?name=dom
 // https://code.visualstudio.com/docs/copilot/chat/mcp-servers#_url-handler
 const VSCODE_CONFIG = { name: "domainstack", type: "http", url: MCP_URL };
 const VSCODE_DEEPLINK = `vscode:mcp/install?${encodeURIComponent(JSON.stringify(VSCODE_CONFIG))}`;
+
+const VSCodeIcon = ({ className }: { className?: string }) => (
+  <svg
+    role="img"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="currentColor"
+    className={className}
+  >
+    <title>VS Code</title>
+    <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
+  </svg>
+);
+
+type SetupItem = {
+  id: string;
+  icon: ReactNode;
+  label: string;
+  content: ReactNode;
+  docsUrl: string;
+  docsLabel: string;
+};
+
+const setupItems: SetupItem[] = [
+  {
+    id: "claude-code",
+    icon: <ClaudeIcon className="size-4 text-muted-foreground" />,
+    label: "Claude Code",
+    docsUrl: "https://code.claude.com/docs/en/mcp",
+    docsLabel: "View Claude Code docs",
+    content: (
+      <>
+        <p>Run this command to add Domainstack to Claude Code:</p>
+        <CodeBlock>{`claude mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
+        <p>
+          Or add this snippet to your project&apos;s{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">.mcp.json</code>{" "}
+          file:
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            { mcpServers: { domainstack: { url: MCP_URL } } },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "claude-desktop",
+    icon: <ClaudeIcon className="size-4 text-muted-foreground" />,
+    label: "Claude.ai / Claude Desktop",
+    docsUrl:
+      "https://modelcontextprotocol.io/docs/develop/connect-remote-servers",
+    docsLabel: "View Claude docs",
+    content: (
+      <>
+        <p>
+          Open Claude Desktop and navigate to{" "}
+          <strong>
+            Settings &rarr; Connectors &rarr; Add Custom Connector
+          </strong>
+          . Set the server URL to:
+        </p>
+        <CodeBlock>{MCP_URL}</CodeBlock>
+        <p>
+          Alternatively, edit your{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            claude_desktop_config.json
+          </code>{" "}
+          (on macOS:{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            ~/Library/Application Support/Claude/claude_desktop_config.json
+          </code>
+          ):
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            { mcpServers: { domainstack: { url: MCP_URL } } },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "cursor",
+    icon: <CursorIcon className="size-4 text-muted-foreground" />,
+    label: "Cursor",
+    docsUrl: "https://docs.cursor.com/context/mcp",
+    docsLabel: "View Cursor docs",
+    content: (
+      <>
+        <p className="mb-4 flex justify-center text-center">
+          <a href={CURSOR_DEEPLINK} data-disable-progress>
+            <Image
+              src="https://cursor.com/deeplink/mcp-install-light.svg"
+              alt="Add domainstack MCP server to Cursor"
+              width={128}
+              height={32}
+            />
+          </a>
+        </p>
+        <p>
+          Click the button above to install automatically, or add this snippet
+          to{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            ~/.cursor/mcp.json
+          </code>
+          :
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            { mcpServers: { domainstack: { url: MCP_URL } } },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "vscode",
+    icon: <VSCodeIcon className="size-4 text-muted-foreground" />,
+    label: "VS Code",
+    docsUrl: "https://code.visualstudio.com/docs/copilot/chat/mcp-servers",
+    docsLabel: "View VS Code docs",
+    content: (
+      <>
+        <p className="mb-4 flex justify-center text-center">
+          <a
+            href={VSCODE_DEEPLINK}
+            className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
+            data-disable-progress
+          >
+            <VSCodeIcon className="mt-[3px] inline-block size-4" />
+            Install in VS Code
+          </a>
+        </p>
+        <p>
+          Click the button above to install automatically, or add this snippet
+          to your VS Code settings:
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            {
+              mcp: {
+                servers: { domainstack: { type: "http", url: MCP_URL } },
+              },
+            },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "codex",
+    icon: <OpenAIIcon className="size-4 text-muted-foreground" />,
+    label: "Codex CLI",
+    docsUrl: "https://developers.openai.com/codex/mcp/",
+    docsLabel: "View Codex docs",
+    content: (
+      <>
+        <p>Run this command to add Domainstack to Codex:</p>
+        <CodeBlock>{`codex mcp add domainstack --url ${MCP_URL}`}</CodeBlock>
+        <p className="text-muted-foreground">
+          Enable remote MCP client support by adding this to your{" "}
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            ~/.codex/config.toml
+          </code>
+          :
+        </p>
+        <CodeBlock>{`[features]\nrmcp_client = true`}</CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "gemini",
+    icon: <GeminiIcon className="size-4 text-muted-foreground" />,
+    label: "Gemini CLI",
+    docsUrl: "https://geminicli.com/docs/tools/mcp-server/",
+    docsLabel: "View Gemini CLI docs",
+    content: (
+      <>
+        <p>Run this command to add Domainstack to Gemini CLI:</p>
+        <CodeBlock>{`gemini mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "windsurf",
+    icon: <WindsurfIcon className="size-4 text-muted-foreground" />,
+    label: "Windsurf",
+    docsUrl: "https://docs.windsurf.com/windsurf/cascade/mcp",
+    docsLabel: "View Windsurf docs",
+    content: (
+      <>
+        <p>
+          Add this snippet to your Windsurf MCP config (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            ~/.windsurf/mcp.json
+          </code>
+          ):
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            { mcpServers: { domainstack: { serverUrl: MCP_URL } } },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+  {
+    id: "cline",
+    icon: <ClineIcon className="size-4 text-muted-foreground" />,
+    label: "Cline",
+    docsUrl: "https://docs.cline.bot/mcp/configuring-mcp-servers",
+    docsLabel: "View Cline docs",
+    content: (
+      <>
+        <p>
+          Open Cline, click the hamburger menu, go to{" "}
+          <strong>MCP Servers &rarr; Remote Servers</strong>, and add this
+          snippet:
+        </p>
+        <CodeBlock>
+          {JSON.stringify(
+            {
+              mcpServers: {
+                domainstack: { url: MCP_URL, type: "streamableHttp" },
+              },
+            },
+            null,
+            2,
+          )}
+        </CodeBlock>
+      </>
+    ),
+  },
+];
 
 const tools = [
   {
@@ -95,13 +342,13 @@ const tools = [
 export default function McpPage() {
   return (
     <>
-      <header>
-        <h1 className="flex items-center gap-2.5">
+      <header className="not-prose">
+        <h1 className="flex items-center gap-2.5 font-semibold text-2xl tracking-tight">
           <SiModelcontextprotocol className="text-foreground/70" />
           MCP Server
           <Badge
             variant="secondary"
-            className="ml-1 text-[13px] tracking-normal"
+            className="ml-0.5 text-[13px] tracking-normal"
           >
             Beta
           </Badge>
@@ -131,399 +378,37 @@ export default function McpPage() {
       <section id="setup">
         <h2>Setup</h2>
 
-        <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
-          <AccordionItem
-            value="claude-code"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <ClaudeIcon className="size-4 text-muted-foreground" />
-                Claude Code
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>Run this command to add Domainstack to Claude Code:</p>
-              <CodeBlock>{`claude mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
-              <p className="text-muted-foreground">
-                Or add this snippet to your project&apos;s{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  .mcp.json
-                </code>{" "}
-                file:
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcpServers: {
-                      domainstack: {
-                        url: MCP_URL,
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://code.claude.com/docs/en/mcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Claude Code docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="claude-desktop"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <ClaudeIcon className="size-4 text-muted-foreground" />
-                Claude.ai / Claude Desktop
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>
-                Open Claude Desktop and navigate to{" "}
-                <strong>
-                  Settings &rarr; Connectors &rarr; Add Custom Connector
-                </strong>
-                . Set the server URL to:
-              </p>
-              <CodeBlock>{MCP_URL}</CodeBlock>
-              <p className="mt-2 text-muted-foreground">
-                Alternatively, edit your{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  claude_desktop_config.json
-                </code>{" "}
-                (on macOS:{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  ~/Library/Application
-                  Support/Claude/claude_desktop_config.json
-                </code>
-                ):
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcpServers: {
-                      domainstack: {
-                        url: MCP_URL,
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://modelcontextprotocol.io/docs/develop/connect-remote-servers"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Claude docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="cursor"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <CursorIcon className="size-4 text-muted-foreground" />
-                Cursor
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p className="mb-4 flex justify-center text-center">
-                <a href={CURSOR_DEEPLINK} data-disable-progress>
-                  <Image
-                    src="https://cursor.com/deeplink/mcp-install-light.svg"
-                    alt="Add domainstack MCP server to Cursor"
-                    width={128}
-                    height={32}
-                  />
-                </a>
-              </p>
-              <p>
-                Click the button above to install automatically, or add this
-                snippet to{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  ~/.cursor/mcp.json
-                </code>
-                :
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcpServers: {
-                      domainstack: {
-                        url: MCP_URL,
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://docs.cursor.com/context/mcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Cursor docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="vscode"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <svg
-                  role="img"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  className="size-4 text-muted-foreground"
-                >
-                  <title>VS Code</title>
-                  <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
-                </svg>
-                VS Code
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p className="mb-4 flex justify-center text-center">
-                <a
-                  href={VSCODE_DEEPLINK}
-                  className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
-                  data-disable-progress
-                >
-                  <svg
-                    role="img"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    className="mt-[3px] inline-block size-4"
+        <Accordion className="not-prose w-full rounded-lg border border-border/50 bg-muted/20">
+          {setupItems.map((item) => (
+            <AccordionItem
+              key={item.id}
+              value={item.id}
+              className="border-border/30 border-b px-4 last:border-none"
+            >
+              <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+                <span className="flex items-center gap-2.5">
+                  {item.icon}
+                  {item.label}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 text-foreground/90 leading-relaxed">
+                {item.content}
+                <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
+                  <InfoIcon className="mr-[1px] size-3" />
+                  Need help?
+                  <a
+                    href={item.docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 underline underline-offset-2"
                   >
-                    <title>VS Code</title>
-                    <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
-                  </svg>
-                  Install in VS Code
-                </a>
-              </p>
-              <p>
-                Click the button above to install automatically, or add this
-                snippet to your VS Code settings:
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcp: {
-                      servers: {
-                        domainstack: {
-                          type: "http",
-                          url: MCP_URL,
-                        },
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View VS Code docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="windsurf"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <WindsurfIcon className="size-4 text-muted-foreground" />
-                Windsurf
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>
-                Add this snippet to your Windsurf MCP config (
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  ~/.windsurf/mcp.json
-                </code>
-                ):
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcpServers: {
-                      domainstack: {
-                        serverUrl: MCP_URL,
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://docs.windsurf.com/windsurf/cascade/mcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Windsurf docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="cline"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <ClineIcon className="size-4 text-muted-foreground" />
-                Cline
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>
-                Open Cline, click the hamburger menu, go to{" "}
-                <strong>MCP Servers &rarr; Remote Servers</strong>, and add this
-                snippet:
-              </p>
-              <CodeBlock>
-                {JSON.stringify(
-                  {
-                    mcpServers: {
-                      domainstack: {
-                        url: MCP_URL,
-                        type: "streamableHttp",
-                      },
-                    },
-                  },
-                  null,
-                  2,
-                )}
-              </CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://docs.cline.bot/mcp/configuring-mcp-servers"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Cline docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="codex"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <OpenAIIcon className="size-4 text-muted-foreground" />
-                Codex CLI
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>Run this command to add Domainstack to Codex:</p>
-              <CodeBlock>{`codex mcp add domainstack --url ${MCP_URL}`}</CodeBlock>
-              <p className="text-muted-foreground">
-                Enable remote MCP client support by adding this to your{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5">
-                  ~/.codex/config.toml
-                </code>
-                :
-              </p>
-              <CodeBlock>{`[features]\nrmcp_client = true`}</CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://developers.openai.com/codex/mcp/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Codex docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="gemini"
-            className="border-border/30 border-b px-4 last:border-none"
-          >
-            <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
-              <span className="flex items-center gap-2.5">
-                <GeminiIcon className="size-4 text-muted-foreground" />
-                Gemini CLI
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 text-foreground/90">
-              <p>Run this command to add Domainstack to Gemini CLI:</p>
-              <CodeBlock>{`gemini mcp add domainstack --transport http ${MCP_URL}`}</CodeBlock>
-              <p className="!text-xs mt-2 text-muted-foreground">
-                Need help?{" "}
-                <a
-                  href="https://geminicli.com/docs/tools/mcp-server/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-0.5"
-                >
-                  View Gemini CLI docs
-                  <ArrowSquareOutIcon className="!size-3" />
-                </a>
-              </p>
-            </AccordionContent>
-          </AccordionItem>
+                    {item.docsLabel}
+                    <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
+                  </a>
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
       </section>
 
@@ -537,30 +422,33 @@ export default function McpPage() {
           {tools.map((tool) => (
             <div
               key={tool.name}
-              className="rounded-lg border border-border/50 bg-muted/20 p-4"
+              className="not-prose space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4"
             >
               <h3 className="font-mono text-base">{tool.name}</h3>
-              <p className="!text-[14px] mt-2 text-foreground/80">
+              <p className="text-foreground/80 text-sm leading-relaxed">
                 {tool.description}
               </p>
-              <div className="mt-3">
-                <span className="!text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div>
+                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                   Parameters
                 </span>
-                <ul className="!pl-2 mt-2 space-y-1 [&_li]:list-none">
+                <ul className="mt-2 space-y-1 pl-2 [&_li]:list-none">
                   {tool.parameters.map((param) => (
-                    <li key={param.name} className="!text-[14px] font-mono">
+                    <li key={param.name} className="font-mono text-sm">
                       <span className="text-foreground">{param.name}</span>
                       <span className="text-muted-foreground">
                         : {param.type}
                       </span>
                       {param.required && (
-                        <Badge variant="secondary" className="ml-2 leading-4">
-                          required
+                        <Badge
+                          variant="secondary"
+                          className="ml-2 lowercase leading-4"
+                        >
+                          Required
                         </Badge>
                       )}
                       {"description" in param && (
-                        <span className="!text-xs ml-2 font-sans text-muted-foreground">
+                        <span className="ml-2 font-sans text-muted-foreground text-xs">
                           {param.description}
                         </span>
                       )}
@@ -594,15 +482,11 @@ export default function McpPage() {
         <p>
           The MCP server is dynamically rate limited to meet demand. This
           applies across all tool calls. If you exceed the limit, requests will
-          return a 429 error with a{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">Retry-After</code>{" "}
-          header.
+          return a 429 error with a <code>Retry-After</code> header.
         </p>
         <p>
-          The{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">domain_report</code>{" "}
-          tool is useful for reducing the number of calls when you need multiple
-          data types.
+          The <code>domain_report</code> tool is useful for reducing the number
+          of calls when you need multiple data types.
         </p>
       </section>
 

@@ -8,6 +8,7 @@ import {
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -47,16 +48,14 @@ export default function SettingsLayout({
       <div className="container mx-auto max-w-3xl px-4 py-8">
         <Suspense
           fallback={
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
-                <div className="h-8 w-28 animate-pulse rounded bg-muted" />
-                <div className="mt-2 h-5 w-80 animate-pulse rounded bg-muted" />
+                <Skeleton className="h-8 w-28" />
+                <Skeleton className="mt-2 h-5 w-80" />
               </div>
-              <Card className="overflow-hidden p-0">
-                <div className="w-full">
-                  <SettingsSkeletonTabsList className="px-6 pt-6 pb-2" />
-                  <SettingsSkeletonPanels className="px-6 pt-2 pb-4" />
-                </div>
+              <Card className="overflow-hidden p-3">
+                <SettingsSkeletonTabsList />
+                <SettingsSkeletonPanels className="mt-2 p-2" />
               </Card>
             </div>
           }

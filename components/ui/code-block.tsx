@@ -29,7 +29,7 @@ export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
       {copyable && (
         <CopyButton
           value={children}
-          className="!bg-background hover:!bg-background absolute top-3 right-0 z-10 h-6 w-12 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          className="!bg-background hover:!bg-background absolute top-3.5 right-0 z-10 h-6 w-12 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
         />
       )}
       <ScrollArea className="max-h-64 w-full min-w-0 flex-1" showFade={false}>
@@ -37,7 +37,7 @@ export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
           type="button"
           onClick={handleSelect}
           aria-label="Select text"
-          className="my-4 h-full w-full min-w-0 cursor-text bg-transparent pr-[50px] pl-4 text-left font-mono text-[13px] outline-none"
+          className="my-4 h-full w-full min-w-0 cursor-text bg-transparent pr-[50px] pl-4 text-left font-mono text-[13px] leading-5 outline-none"
         >
           <pre ref={contentRef} className="inline-block">
             {children}
