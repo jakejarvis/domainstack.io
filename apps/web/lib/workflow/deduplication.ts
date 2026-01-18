@@ -468,8 +468,10 @@ export async function getOrStartWorkflow<T>(
       }
     })
     .catch(() => {
-      // Run not found or error - clean up anyway
-      cleanupEntry();
+      // Transient status lookup failures should NOT clear the entry.
+      // Clearing on any error would allow duplicate workflow starts when
+      // the workflow API is temporarily unreachable (e.g., Redis down).
+      // The safety valve timeout (line 476) handles cleanup if needed.
     });
 
   // Safety valve: clean up after TTL even if completion detection fails
