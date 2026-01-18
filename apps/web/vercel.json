@@ -7,7 +7,7 @@
   },
   "functions": {
     "app/.well-known/workflow/v1/step/route.js": {
-      "memory": 3009
+      "maxDuration": 800
     }
   },
   "crons": [

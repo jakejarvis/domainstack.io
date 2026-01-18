@@ -329,18 +329,35 @@ describe("myFunction", () => {
 
 ## Project Structure
 
-- `app/` — Next.js App Router (default to server components)
-- `components/` — Reusable UI primitives
-- `hooks/` — Shared React hooks
-- `lib/` — Domain utilities and shared modules
-- `lib/db/` — Drizzle schema and repository layer
-- `lib/domain/` — Core domain lookup implementations
-- `lib/inngest/` — Background job functions
-- `lib/workflow/` — Workflow utilities (deduplication, SWR, errors)
-- `server/routers/` — tRPC router definitions
-- `workflows/` — Vercel Workflow definitions
-- `emails/` — React Email templates
-- `trpc/` — tRPC client setup
+This is a **Turborepo monorepo** with the following structure:
+
+```
+domainstack.io/
+├── apps/
+│   └── web/                    # Next.js application (@domainstack/web)
+│       ├── app/                # Next.js App Router
+│       ├── components/         # Reusable UI primitives
+│       ├── hooks/              # Shared React hooks
+│       ├── lib/                # Domain utilities and shared modules
+│       │   ├── db/             # Drizzle schema and repository layer
+│       │   ├── inngest/        # Background job functions
+│       │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
+│       ├── server/routers/     # tRPC router definitions
+│       ├── workflows/          # Vercel Workflow definitions
+│       ├── emails/             # React Email templates
+│       ├── trpc/               # tRPC client setup
+│       ├── package.json        # App dependencies
+│       ├── tsconfig.json       # Extends root tsconfig
+│       └── vercel.json         # Vercel deployment config
+├── packages/                   # Shared packages (future extraction)
+├── turbo.json                  # Turborepo task configuration
+├── pnpm-workspace.yaml         # pnpm workspace definition
+├── package.json                # Root workspace config
+├── tsconfig.json               # Base TypeScript config
+└── biome.json                  # Linting/formatting config
+```
+
+All commands run from the **monorepo root** via Turborepo.
 
 ## Key Patterns
 
