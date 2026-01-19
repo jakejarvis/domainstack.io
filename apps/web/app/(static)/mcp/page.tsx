@@ -1,16 +1,12 @@
-import { SiModelcontextprotocol } from "@icons-pack/react-simple-icons";
 import {
-  Claude as ClaudeIcon,
-  Cline as ClineIcon,
-  Cursor as CursorIcon,
-  Gemini as GeminiIcon,
-  OpenAI as OpenAIIcon,
-  Windsurf as WindsurfIcon,
-} from "@lobehub/icons";
+  SiClaude,
+  SiGooglegemini,
+  SiModelcontextprotocol,
+  SiWindsurf,
+} from "@icons-pack/react-simple-icons";
 import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Image from "next/image";
-import type { ReactNode } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -39,24 +35,11 @@ const CURSOR_DEEPLINK = `cursor://anysphere.cursor-deeplink/mcp/install?name=dom
 const VSCODE_CONFIG = { name: "domainstack", type: "http", url: MCP_URL };
 const VSCODE_DEEPLINK = `vscode:mcp/install?${encodeURIComponent(JSON.stringify(VSCODE_CONFIG))}`;
 
-const VSCodeIcon = ({ className }: { className?: string }) => (
-  <svg
-    role="img"
-    viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
-    fill="currentColor"
-    className={className}
-  >
-    <title>VS Code</title>
-    <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
-  </svg>
-);
-
 type SetupItem = {
   id: string;
-  icon: ReactNode;
+  icon: React.ReactNode;
   label: string;
-  content: ReactNode;
+  content: React.ReactNode;
   docsUrl: string;
   docsLabel: string;
 };
@@ -64,7 +47,7 @@ type SetupItem = {
 const setupItems: SetupItem[] = [
   {
     id: "claude-code",
-    icon: <ClaudeIcon className="size-4 text-muted-foreground" />,
+    icon: <SiClaude className="size-4 text-muted-foreground" />,
     label: "Claude Code",
     docsUrl: "https://code.claude.com/docs/en/mcp",
     docsLabel: "View Claude Code docs",
@@ -89,7 +72,7 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "claude-desktop",
-    icon: <ClaudeIcon className="size-4 text-muted-foreground" />,
+    icon: <SiClaude className="size-4 text-muted-foreground" />,
     label: "Claude.ai / Claude Desktop",
     docsUrl:
       "https://modelcontextprotocol.io/docs/develop/connect-remote-servers",
@@ -127,7 +110,18 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "cursor",
-    icon: <CursorIcon className="size-4 text-muted-foreground" />,
+    icon: (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        className="size-4 text-muted-foreground"
+      >
+        <title>Cursor</title>
+        <path d="M11.503.131 1.891 5.678a.84.84 0 0 0-.42.726v11.188c0 .3.162.575.42.724l9.609 5.55a1 1 0 0 0 .998 0l9.61-5.55a.84.84 0 0 0 .42-.724V6.404a.84.84 0 0 0-.42-.726L12.497.131a1.01 1.01 0 0 0-.996 0M2.657 6.338h18.55c.263 0 .43.287.297.515L12.23 22.918c-.062.107-.229.064-.229-.06V12.335a.59.59 0 0 0-.295-.51l-9.11-5.257c-.109-.063-.064-.23.061-.23" />
+      </svg>
+    ),
     label: "Cursor",
     docsUrl: "https://docs.cursor.com/context/mcp",
     docsLabel: "View Cursor docs",
@@ -163,7 +157,18 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "vscode",
-    icon: <VSCodeIcon className="size-4 text-muted-foreground" />,
+    icon: (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        className="size-4 text-muted-foreground"
+      >
+        <title>VS Code</title>
+        <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
+      </svg>
+    ),
     label: "VS Code",
     docsUrl: "https://code.visualstudio.com/docs/copilot/chat/mcp-servers",
     docsLabel: "View VS Code docs",
@@ -175,7 +180,16 @@ const setupItems: SetupItem[] = [
             className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
             data-disable-progress
           >
-            <VSCodeIcon className="mt-[3px] inline-block size-4" />
+            <svg
+              role="img"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              className="mt-[3px] inline-block size-4"
+            >
+              <title>VS Code</title>
+              <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
+            </svg>
             Install in VS Code
           </a>
         </p>
@@ -199,7 +213,18 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "codex",
-    icon: <OpenAIIcon className="size-4 text-muted-foreground" />,
+    icon: (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+        className="size-4 text-muted-foreground"
+      >
+        <title>Codex</title>
+        <path d="M22.282 9.821a6 6 0 0 0-.516-4.91a6.05 6.05 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a6 6 0 0 0-3.998 2.9a6.05 6.05 0 0 0 .743 7.097a5.98 5.98 0 0 0 .51 4.911a6.05 6.05 0 0 0 6.515 2.9A6 6 0 0 0 13.26 24a6.06 6.06 0 0 0 5.772-4.206a6 6 0 0 0 3.997-2.9a6.06 6.06 0 0 0-.747-7.073M13.26 22.43a4.48 4.48 0 0 1-2.876-1.04l.141-.081l4.779-2.758a.8.8 0 0 0 .392-.681v-6.737l2.02 1.168a.07.07 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494M3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085l4.783 2.759a.77.77 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646M2.34 7.896a4.5 4.5 0 0 1 2.366-1.973V11.6a.77.77 0 0 0 .388.677l5.815 3.354l-2.02 1.168a.08.08 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.08.08 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667m2.01-3.023l-.141-.085l-4.774-2.782a.78.78 0 0 0-.785 0L9.409 9.23V6.897a.07.07 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.8.8 0 0 0-.393.681zm1.097-2.365l2.602-1.5l2.607 1.5v2.999l-2.597 1.5l-2.607-1.5Z" />
+      </svg>
+    ),
     label: "Codex CLI",
     docsUrl: "https://developers.openai.com/codex/mcp/",
     docsLabel: "View Codex docs",
@@ -220,7 +245,7 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "gemini",
-    icon: <GeminiIcon className="size-4 text-muted-foreground" />,
+    icon: <SiGooglegemini className="size-4 text-muted-foreground" />,
     label: "Gemini CLI",
     docsUrl: "https://geminicli.com/docs/tools/mcp-server/",
     docsLabel: "View Gemini CLI docs",
@@ -233,7 +258,7 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "windsurf",
-    icon: <WindsurfIcon className="size-4 text-muted-foreground" />,
+    icon: <SiWindsurf className="size-4 text-muted-foreground" />,
     label: "Windsurf",
     docsUrl: "https://docs.windsurf.com/windsurf/cascade/mcp",
     docsLabel: "View Windsurf docs",
@@ -258,7 +283,19 @@ const setupItems: SetupItem[] = [
   },
   {
     id: "cline",
-    icon: <ClineIcon className="size-4 text-muted-foreground" />,
+    icon: (
+      <svg
+        role="img"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="size-4 text-muted-foreground"
+      >
+        <title>Cline</title>
+        <path d="M17.035 3.991c2.75 0 4.98 2.24 4.98 5.003v1.667l1.45 2.896a1.01 1.01 0 01-.002.909l-1.448 2.864v1.668c0 2.762-2.23 5.002-4.98 5.002H7.074c-2.751 0-4.98-2.24-4.98-5.002V17.33l-1.48-2.855a1.01 1.01 0 01-.003-.927l1.482-2.887V8.994c0-2.763 2.23-5.003 4.98-5.003h9.962zM8.265 9.6a2.274 2.274 0 00-2.274 2.274v4.042a2.274 2.274 0 004.547 0v-4.042A2.274 2.274 0 008.265 9.6zm7.326 0a2.274 2.274 0 00-2.274 2.274v4.042a2.274 2.274 0 104.548 0v-4.042A2.274 2.274 0 0015.59 9.6z"></path>
+        <path d="M12.054 5.558a2.779 2.779 0 100-5.558 2.779 2.779 0 000 5.558z"></path>
+      </svg>
+    ),
     label: "Cline",
     docsUrl: "https://docs.cline.bot/mcp/configuring-mcp-servers",
     docsLabel: "View Cline docs",
