@@ -1,5 +1,5 @@
 export {
-  type InitializeSnapshotWorkflowInput as CreateBaselineWorkflowInput,
-  type InitializeSnapshotWorkflowResult as CreateBaselineWorkflowResult,
-  initializeSnapshotWorkflow as createBaselineWorkflow,
+  type InitializeSnapshotWorkflowInput,
+  type InitializeSnapshotWorkflowResult,
+  initializeSnapshotWorkflow,
 } from "./workflow";

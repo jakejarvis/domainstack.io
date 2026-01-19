@@ -1,7 +1,6 @@
 import type { SeoResponse } from "@/lib/types/domain/seo";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 import {
   buildSeoResponseStep,
   fetchHtmlStep,
@@ -24,7 +23,10 @@ export type SeoWorkflowResult = WorkflowResult<SeoResponse>;
  * 3. Fetch and store OG image (if present)
  * 4. Build response from fetch results
  * 5. Persist to database (creates domain record if needed)
- * 6. Schedule revalidation
+ *
+ * Revalidation is handled by SWR (stale-while-revalidate) pattern at the
+ * data access layer - when stale data is accessed, a background refresh
+ * is triggered automatically.
  */
 export async function seoWorkflow(
   input: SeoWorkflowInput,
@@ -64,14 +66,7 @@ export async function seoWorkflow(
   );
 
   // Step 5: Persist to database
-  const { lastAccessedAt } = await persistSeoStep(
-    domain,
-    response,
-    uploadedImageUrl,
-  );
-
-  // Step 6: Schedule revalidation
-  await scheduleRevalidationBatchStep(domain, ["seo"], lastAccessedAt);
+  await persistSeoStep(domain, response, uploadedImageUrl);
 
   return {
     success: true,

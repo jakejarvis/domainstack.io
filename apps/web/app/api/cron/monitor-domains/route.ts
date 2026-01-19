@@ -7,7 +7,7 @@ import {
 import { createLogger } from "@/lib/logger/server";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { detectChangesWorkflow } from "@/workflows/detect-changes";
-import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
+import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "cron/monitor-domains" });
 
@@ -84,7 +84,7 @@ async function createBaselineSnapshots(): Promise<{
     const batchResults = await Promise.all(
       batch.map(async ({ trackedDomainId, domainId }) => {
         try {
-          const run = await start(createBaselineWorkflow, [
+          const run = await start(initializeSnapshotWorkflow, [
             { trackedDomainId, domainId },
           ]);
           await withConcurrencyHandling(run.returnValue, {

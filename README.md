@@ -17,7 +17,7 @@
 - **Advanced dashboard**: Filtering, sorting, bulk actions, and multiple view modes.
 - **MCP server**: AI-assisted domain lookups via [Model Context Protocol](https://modelcontextprotocol.io/).
 - **Pro subscription**: Paid plan via Polar for higher tracking limits.
-- **Reliable backend**: Event-driven revalidation and TTL-based persistence.
+- **Reliable backend**: SWR caching with cron-based cache warming.
 
 <p align="center">
 <a href="https://domainstack.io/github.com"><img width="600" height="315" alt="og" src="https://github.com/user-attachments/assets/4f327128-df7c-4b19-8648-cb7c85ac95b1" /></a>
@@ -31,7 +31,7 @@
 - **Postgres** (PlanetScale) + **Drizzle ORM** + **Upstash Redis** (rate limiting)
 - **Better Auth** (OAuth)
 - **Polar** (subscriptions)
-- **Inngest** + [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)
+- [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)
 - **Resend** + **React Email**
 - **Vercel** (Edge Config, Blob Storage)
 - [**mapcn**](https://mapcn.vercel.app/) + [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps)

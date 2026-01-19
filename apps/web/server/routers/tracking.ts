@@ -22,7 +22,7 @@ import {
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { createLogger } from "@/lib/logger/server";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
-import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
+import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "routers/tracking" });
 
@@ -284,7 +284,7 @@ export const trackingRouter = createTRPCRouter({
         }
 
         // After verification, create baseline snapshot for change detection
-        void start(createBaselineWorkflow, [
+        void start(initializeSnapshotWorkflow, [
           {
             trackedDomainId: updated.id,
             domainId: updated.domainId,

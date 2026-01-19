@@ -309,7 +309,7 @@ Client-side: Use `analytics.trackException(error, context)` for errors.
 - Tests live next to the code they test
 
 ### Mocking
-- Analytics, logger, and Inngest are globally mocked in `vitest.setup.node.ts`
+- Analytics and logger are globally mocked in `vitest.setup.node.ts`
 - Use `vi.hoisted` for ESM module mocks
 - Use PGlite (`@/lib/db/pglite`) for isolated database testing
 - Mock `@vercel/blob` for storage tests
@@ -339,7 +339,6 @@ domainstack.io/
 │       ├── hooks/              # Shared React hooks
 │       ├── lib/                # Domain utilities and shared modules
 │       │   ├── db/             # Drizzle schema and repository layer
-│       │   ├── inngest/        # Background job functions
 │       │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
 │       ├── server/routers/     # tRPC router definitions
 │       ├── workflows/          # Vercel Workflow definitions
