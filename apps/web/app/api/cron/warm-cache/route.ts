@@ -28,6 +28,23 @@ const BATCH_SIZE = 10;
 const LOOKBACK_HOURS = 24;
 
 /**
+ * Lookup map from section to its cache getter function.
+ * Provides compile-time safety: if a new section is added to the Section type,
+ * TypeScript will error until it's added here.
+ */
+const sectionCacheGetters: Record<
+  Section,
+  (domain: string) => Promise<{ stale: boolean; data: unknown }>
+> = {
+  dns: getCachedDns,
+  headers: getCachedHeaders,
+  hosting: getCachedHosting,
+  certificates: getCachedCertificates,
+  seo: getCachedSeo,
+  registration: getCachedRegistration,
+};
+
+/**
  * Check if a section is stale for a given domain.
  */
 async function isSectionStale(
@@ -35,36 +52,13 @@ async function isSectionStale(
   section: Section,
 ): Promise<boolean> {
   try {
-    switch (section) {
-      case "dns": {
-        const result = await getCachedDns(domain);
-        return result.stale || result.data === null;
-      }
-      case "headers": {
-        const result = await getCachedHeaders(domain);
-        return result.stale || result.data === null;
-      }
-      case "hosting": {
-        const result = await getCachedHosting(domain);
-        return result.stale || result.data === null;
-      }
-      case "certificates": {
-        const result = await getCachedCertificates(domain);
-        return result.stale || result.data === null;
-      }
-      case "seo": {
-        const result = await getCachedSeo(domain);
-        return result.stale || result.data === null;
-      }
-      case "registration": {
-        const result = await getCachedRegistration(domain);
-        return result.stale || result.data === null;
-      }
-      default:
-        return false;
-    }
-  } catch {
-    // If we can't check, assume stale
+    const result = await sectionCacheGetters[section](domain);
+    return result.stale || result.data === null;
+  } catch (err) {
+    logger.debug(
+      { domain, section, err },
+      "Failed to check staleness, assuming stale",
+    );
     return true;
   }
 }
@@ -90,10 +84,8 @@ async function getStaleSections(domain: string): Promise<Section[]> {
  *
  * This job proactively refreshes stale data for domains that have been
  * accessed recently, ensuring users get fresh data on their next visit.
- *
- * This replaces the previous Inngest-based scheduled revalidation with
- * a simpler approach: instead of scheduling future refreshes after each
- * data persist, we periodically refresh stale data for active domains.
+ * Instead of scheduling future refreshes after each data persist, we
+ * periodically refresh stale data for active domains.
  */
 export async function GET(request: Request) {
   // Verify the request is from Vercel Cron
@@ -116,6 +108,7 @@ export async function GET(request: Request) {
         domains: 0,
         sectionsRefreshed: 0,
         sectionsSkipped: 0,
+        sectionsFailed: 0,
       });
     }
 
@@ -126,6 +119,7 @@ export async function GET(request: Request) {
 
     let sectionsRefreshed = 0;
     let sectionsSkipped = 0;
+    let sectionsFailed = 0;
 
     // Process domains in batches
     for (let i = 0; i < recentDomains.length; i += BATCH_SIZE) {
@@ -144,16 +138,25 @@ export async function GET(request: Request) {
             // Refresh stale sections
             await Promise.all(
               staleSections.map(async (section) => {
-                const key = getDeduplicationKey("section-revalidate", domain);
-                const { started } = await startDeduplicated(
-                  `${key}:${section}`,
-                  () => start(sectionRevalidateWorkflow, [{ domain, section }]),
-                );
+                try {
+                  const key = getDeduplicationKey("section-revalidate", domain);
+                  const { started } = await startDeduplicated(
+                    `${key}:${section}`,
+                    () =>
+                      start(sectionRevalidateWorkflow, [{ domain, section }]),
+                  );
 
-                if (started) {
-                  sectionsRefreshed++;
-                } else {
-                  sectionsSkipped++;
+                  if (started) {
+                    sectionsRefreshed++;
+                  } else {
+                    sectionsSkipped++;
+                  }
+                } catch (err) {
+                  sectionsFailed++;
+                  logger.error(
+                    { domain, section, err },
+                    "Failed to refresh section",
+                  );
                 }
               }),
             );
@@ -168,6 +171,7 @@ export async function GET(request: Request) {
       domains: recentDomains.length,
       sectionsRefreshed,
       sectionsSkipped,
+      sectionsFailed,
     };
 
     logger.info(result, "Warm-cache cron completed");

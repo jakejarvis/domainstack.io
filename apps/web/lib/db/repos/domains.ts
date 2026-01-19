@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gt, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { getDomainTld } from "rdapper";
 import { db } from "@/lib/db/client";
 import { domains } from "@/lib/db/schema";
@@ -149,7 +149,7 @@ export async function updateLastAccessed(name: string): Promise<void> {
  * Used by the warm-cache cron to refresh data for recently-accessed domains.
  *
  * @param hoursAgo - How many hours back to look (default: 24)
- * @returns Array of domain names
+ * @returns Array of domain names ordered by most recently accessed, capped at 500
  */
 export async function getRecentlyAccessedDomains(
   hoursAgo = 24,
@@ -159,7 +159,9 @@ export async function getRecentlyAccessedDomains(
   const rows = await db
     .select({ name: domains.name })
     .from(domains)
-    .where(and(gt(domains.lastAccessedAt, cutoff)));
+    .where(gt(domains.lastAccessedAt, cutoff))
+    .orderBy(desc(domains.lastAccessedAt))
+    .limit(500);
 
   return rows.map((r) => r.name);
 }
