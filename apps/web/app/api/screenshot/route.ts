@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
   getDeduplicationKey,
-  getOrStartWorkflow,
+  startDeduplicated,
 } from "@/lib/workflow/deduplication";
 import {
   type ScreenshotWorkflowResult,
@@ -141,7 +141,7 @@ export async function POST(
     // Cache miss - start workflow with deduplication
     // Uses Redis to deduplicate across instances, returning existing runId if already running
     const key = getDeduplicationKey("screenshot", domain.name);
-    const { runId, started } = await getOrStartWorkflow(
+    const { runId, started } = await startDeduplicated(
       key,
       () => start(screenshotWorkflow, [{ domain: domain.name }]),
       { ttlSeconds: 5 * 60 }, // 5 minute TTL

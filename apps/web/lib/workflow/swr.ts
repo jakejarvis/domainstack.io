@@ -4,7 +4,7 @@ import type { Run } from "workflow/api";
 import { analytics } from "@/lib/analytics/server";
 import type { CacheResult } from "@/lib/db/repos/types";
 import { createLogger } from "@/lib/logger/server";
-import { getDeduplicationKey, startWithDeduplication } from "./deduplication";
+import { getDeduplicationKey, runDeduplicated } from "./deduplication";
 import type { WorkflowResult } from "./types";
 
 /** Safety valve timeout for background revalidation (5 minutes) */
@@ -110,7 +110,7 @@ export async function withSwrCache<T>(
 
     // Fire-and-forget: start the workflow in the background
     // Uses distributed deduplication to avoid duplicate runs across instances
-    void startWithDeduplication(key, startWorkflow, {
+    void runDeduplicated(key, startWorkflow, {
       ttlSeconds: BACKGROUND_REVALIDATION_TTL_SECONDS,
     })
       .then(({ deduplicated, source }) => {
@@ -166,7 +166,7 @@ export async function withSwrCache<T>(
   );
 
   const key = getDeduplicationKey(workflowName, domain);
-  const { result, deduplicated, source } = await startWithDeduplication(
+  const { result, deduplicated, source } = await runDeduplicated(
     key,
     startWorkflow,
   );

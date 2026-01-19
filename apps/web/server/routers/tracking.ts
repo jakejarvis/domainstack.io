@@ -32,7 +32,7 @@ import { sendEmail } from "@/lib/resend";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import {
   getDeduplicationKey,
-  startWithDeduplication,
+  runDeduplicated,
 } from "@/lib/workflow/deduplication";
 import {
   createTRPCRouter,
@@ -253,7 +253,7 @@ export const trackingRouter = createTRPCRouter({
         trackedDomainId,
         method: method ?? "all",
       });
-      const { result } = await startWithDeduplication(key, () =>
+      const { result } = await runDeduplicated(key, () =>
         start(verificationWorkflow, [
           {
             domain: tracked.domainName,

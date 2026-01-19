@@ -21,8 +21,8 @@ vi.mock("workflow/api", () => ({
 const {
   clearAllPendingRuns,
   getDeduplicationKey,
-  getOrStartWorkflow,
-  startWithDeduplication,
+  runDeduplicated,
+  startDeduplicated,
 } = await import("./deduplication");
 
 describe("getDeduplicationKey", () => {
@@ -97,7 +97,7 @@ describe("getDeduplicationKey", () => {
   });
 });
 
-describe("startWithDeduplication", () => {
+describe("runDeduplicated", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearAllPendingRuns();
@@ -118,7 +118,7 @@ describe("startWithDeduplication", () => {
     const startWorkflow = vi.fn().mockResolvedValue(mockRun);
 
     const key = getDeduplicationKey("test", "example.com");
-    const { result, deduplicated, source } = await startWithDeduplication(
+    const { result, deduplicated, source } = await runDeduplicated(
       key,
       startWorkflow,
     );
@@ -159,7 +159,7 @@ describe("startWithDeduplication", () => {
     const startWorkflow = vi.fn();
     const key = getDeduplicationKey("test", "example.com");
 
-    const { result, deduplicated, source } = await startWithDeduplication(
+    const { result, deduplicated, source } = await runDeduplicated(
       key,
       startWorkflow,
     );
@@ -192,7 +192,7 @@ describe("startWithDeduplication", () => {
     const startWorkflow = vi.fn().mockResolvedValue(mockNewRun);
 
     const key = getDeduplicationKey("test", "example.com");
-    const { result, deduplicated, source } = await startWithDeduplication(
+    const { result, deduplicated, source } = await runDeduplicated(
       key,
       startWorkflow,
     );
@@ -218,8 +218,8 @@ describe("startWithDeduplication", () => {
     const key = getDeduplicationKey("test", "concurrent.com");
 
     // Start two concurrent requests
-    const promise1 = startWithDeduplication(key, startWorkflow);
-    const promise2 = startWithDeduplication(key, startWorkflow);
+    const promise1 = runDeduplicated(key, startWorkflow);
+    const promise2 = runDeduplicated(key, startWorkflow);
 
     // Resolve the workflow
     resolveWorkflow?.({ success: true, data: "shared" });
@@ -245,7 +245,7 @@ describe("startWithDeduplication", () => {
     const startWorkflow = vi.fn().mockResolvedValue(mockRun);
 
     const key = getDeduplicationKey("test", "example.com");
-    const { result, source } = await startWithDeduplication(key, startWorkflow);
+    const { result, source } = await runDeduplicated(key, startWorkflow);
 
     expect(startWorkflow).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ success: true });
@@ -261,7 +261,7 @@ describe("startWithDeduplication", () => {
 
     const key = getDeduplicationKey("test", "example.com");
 
-    await expect(startWithDeduplication(key, startWorkflow)).rejects.toThrow(
+    await expect(runDeduplicated(key, startWorkflow)).rejects.toThrow(
       "Workflow failed",
     );
   });
@@ -282,7 +282,7 @@ describe("startWithDeduplication", () => {
     const key = getDeduplicationKey("test", "example.com");
 
     // First caller wins
-    const result1 = await startWithDeduplication(key, startWorkflow);
+    const result1 = await runDeduplicated(key, startWorkflow);
 
     expect(startWorkflow).toHaveBeenCalledTimes(1);
     expect(result1.deduplicated).toBe(false);
@@ -305,7 +305,7 @@ describe("startWithDeduplication", () => {
     mockGetRun.mockReturnValue(mockWinnerRun);
 
     const startWorkflow2 = vi.fn();
-    const result2 = await startWithDeduplication(key, startWorkflow2);
+    const result2 = await runDeduplicated(key, startWorkflow2);
 
     // Second caller should NOT start a new workflow
     expect(startWorkflow2).not.toHaveBeenCalled();
@@ -314,7 +314,7 @@ describe("startWithDeduplication", () => {
   });
 });
 
-describe("getOrStartWorkflow", () => {
+describe("startDeduplicated", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearAllPendingRuns();
@@ -337,7 +337,7 @@ describe("getOrStartWorkflow", () => {
     const startWorkflow = vi.fn();
     const key = getDeduplicationKey("screenshot", "example.com");
 
-    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+    const { runId, started } = await startDeduplicated(key, startWorkflow);
 
     expect(startWorkflow).not.toHaveBeenCalled();
     expect(runId).toBe(existingRunId);
@@ -349,7 +349,7 @@ describe("getOrStartWorkflow", () => {
     const startWorkflow = vi.fn().mockResolvedValue(mockRun);
 
     const key = getDeduplicationKey("screenshot", "example.com");
-    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+    const { runId, started } = await startDeduplicated(key, startWorkflow);
 
     expect(startWorkflow).toHaveBeenCalledTimes(1);
     expect(runId).toBe("run_new_abc");
@@ -385,7 +385,7 @@ describe("getOrStartWorkflow", () => {
     const startWorkflow = vi.fn().mockResolvedValue(mockRun);
 
     const key = getDeduplicationKey("screenshot", "example.com");
-    const { runId, started } = await getOrStartWorkflow(key, startWorkflow);
+    const { runId, started } = await startDeduplicated(key, startWorkflow);
 
     expect(startWorkflow).toHaveBeenCalledTimes(1);
     expect(runId).toBe("run_new_replacement");
