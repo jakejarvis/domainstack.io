@@ -39,6 +39,10 @@
       "schedule": "25 * * * *"
     },
     {
+      "path": "/api/cron/warm-cache",
+      "schedule": "45 */4 * * *"
+    },
+    {
       "path": "/api/cron/sync-blocklist",
       "schedule": "0 2 * * 0"
     }

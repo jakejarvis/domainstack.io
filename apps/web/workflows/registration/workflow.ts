@@ -6,7 +6,6 @@ import {
   persistRegistrationStep,
   type RegistrationError,
 } from "@/workflows/shared/registration";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface RegistrationWorkflowInput {
   domain: string;
@@ -23,7 +22,10 @@ export type RegistrationWorkflowResult = WorkflowResult<
  * 1. Lookup via rdapper (WHOIS/RDAP - the slow operation)
  * 2. Normalize registrar provider
  * 3. Persist to database
- * 4. Schedule revalidation
+ *
+ * Revalidation is handled by SWR (stale-while-revalidate) pattern at the
+ * data access layer - when stale data is accessed, a background refresh
+ * is triggered automatically.
  */
 export async function registrationWorkflow(
   input: RegistrationWorkflowInput,
@@ -47,18 +49,11 @@ export async function registrationWorkflow(
   // Step 3: Persist to database (only for registered domains)
   let domainId: string | undefined;
   if (normalizedResult.isRegistered) {
-    const { domainId: id, lastAccessedAt } = await persistRegistrationStep(
+    const { domainId: id } = await persistRegistrationStep(
       domain,
       normalizedResult,
     );
     domainId = id;
-
-    // Step 4: Schedule revalidation (only if we persisted)
-    await scheduleRevalidationBatchStep(
-      domain,
-      ["registration"],
-      lastAccessedAt,
-    );
   }
 
   return {

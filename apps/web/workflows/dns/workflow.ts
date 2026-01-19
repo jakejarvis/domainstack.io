@@ -4,7 +4,6 @@ import {
   fetchDnsRecordsStep,
   persistDnsRecordsStep,
 } from "@/workflows/shared/dns";
-import { scheduleRevalidationBatchStep } from "@/workflows/shared/schedule-batch";
 
 export interface DnsWorkflowInput {
   domain: string;
@@ -21,7 +20,10 @@ export type DnsWorkflowResult = WorkflowResult<DnsRecordsResponse>;
  * independently retryable steps:
  * 1. Fetch from DoH providers with fallback
  * 2. Persist to database (creates domain record if needed)
- * 3. Schedule revalidation
+ *
+ * Revalidation is handled by SWR (stale-while-revalidate) pattern at the
+ * data access layer - when stale data is accessed, a background refresh
+ * is triggered automatically.
  */
 export async function dnsWorkflow(
   input: DnsWorkflowInput,
@@ -34,13 +36,7 @@ export async function dnsWorkflow(
   const fetchResult = await fetchDnsRecordsStep(domain);
 
   // Step 2: Persist to database
-  const { lastAccessedAt } = await persistDnsRecordsStep(
-    domain,
-    fetchResult.data,
-  );
-
-  // Step 3: Schedule revalidation
-  await scheduleRevalidationBatchStep(domain, ["dns"], lastAccessedAt);
+  await persistDnsRecordsStep(domain, fetchResult.data);
 
   return {
     success: true,

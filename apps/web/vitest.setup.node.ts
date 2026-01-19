@@ -31,18 +31,6 @@ vi.mock("@/lib/logger/server", () => ({
   createLogger: vi.fn(() => createMockLogger()),
 }));
 
-// Mock Inngest client to prevent network calls
-vi.mock("@/lib/inngest/client", () => ({
-  inngest: {
-    send: vi.fn(),
-    createFunction: vi.fn((config, trigger, handler) => ({
-      config,
-      trigger,
-      handler,
-    })),
-  },
-}));
-
 // Mock Next.js after() to execute callbacks immediately in tests
 // In production, after() schedules work after the response is sent
 vi.mock("next/server", async () => {

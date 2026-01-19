@@ -39,20 +39,17 @@ export const TTL_HEADERS = 12 * ONE_HOUR; // 12 hours
 export const TTL_HOSTING = ONE_DAY; // 24 hours
 export const TTL_SEO = ONE_DAY; // 24 hours
 
-// ===== Background Job Revalidation =====
-// How often Inngest jobs attempt to refresh each section's data.
-// These intervals determine "freshness" - shorter = more up-to-date but more load.
+// ===== SWR Staleness Thresholds =====
+// These define when cached data is considered "stale" and triggers background refresh.
+// Used by withSwrCache() wrapper and warm-cache cron to determine refresh eligibility.
 //
 // Strategy:
-// - Refresh at 100% of TTL (when cache expires): DNS, Hosting, SEO, Registration
-// - Refresh at 50% of TTL (proactive refresh): Headers (6h for 12h TTL)
-// - Refresh at 25% of TTL (aggressive): Certificates (6h for 24h window)
-//
-// Note: Actual refresh timing is bounded by these minimums via scheduleRevalidation().
-// If a domain tries to schedule sooner, it gets pushed to the minimum interval.
-export const REVALIDATE_MIN_DNS = TTL_DNS_DEFAULT; // 1h (refresh when expires)
-export const REVALIDATE_MIN_HEADERS = TTL_HEADERS / 2; // 6h (proactive: refresh at 50% of 12h)
-export const REVALIDATE_MIN_HOSTING = TTL_HOSTING; // 24h (refresh when expires)
-export const REVALIDATE_MIN_CERTIFICATES = TTL_CERTIFICATES_WINDOW / 4; // 6h (aggressive: refresh at 25% of 24h)
-export const REVALIDATE_MIN_SEO = TTL_SEO; // 24h (refresh when expires)
-export const REVALIDATE_MIN_REGISTRATION = TTL_REGISTRATION_REGISTERED; // 24h (refresh when expires)
+// - 100% of TTL: DNS, Hosting, SEO, Registration (refresh when cache expires)
+// - 50% of TTL: Headers (proactive refresh at 6h for 12h TTL)
+// - 25% of TTL: Certificates (aggressive refresh at 6h for 24h window)
+export const STALE_THRESHOLD_DNS = TTL_DNS_DEFAULT; // 1h
+export const STALE_THRESHOLD_HEADERS = TTL_HEADERS / 2; // 6h
+export const STALE_THRESHOLD_HOSTING = TTL_HOSTING; // 24h
+export const STALE_THRESHOLD_CERTIFICATES = TTL_CERTIFICATES_WINDOW / 4; // 6h
+export const STALE_THRESHOLD_SEO = TTL_SEO; // 24h
+export const STALE_THRESHOLD_REGISTRATION = TTL_REGISTRATION_REGISTERED; // 24h

@@ -17,7 +17,6 @@
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "inngest": "inngest-cli dev --no-discovery -u http://localhost:3000/api/inngest",
     "workflow": "workflow inspect runs --web",
     "knip": "knip"
   },
@@ -63,7 +62,7 @@
     "ical-generator": "10.0.1-develop.12",
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
-    "inngest": "^3.49.3",
+
     "ipaddr.js": "^2.3.0",
     "maplibre-gl": "^5.16.0",
     "mcp-handler": "^1.0.7",
@@ -116,7 +115,7 @@
     "babel-plugin-react-compiler": "19.1.0-rc.3",
     "bufferutil": "^4.1.0",
     "drizzle-kit": "^0.31.8",
-    "inngest-cli": "^1.16.0",
+
     "knip": "^5.82.1",
     "msw": "^2.12.7",
     "pino-pretty": "^13.1.3",
