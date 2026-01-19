@@ -87,9 +87,7 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedHosting } = await import("@/lib/db/repos/hosting");
-      const { hostingWorkflow } = await import(
-        "@/workflows/hosting-orchestration"
-      );
+      const { hostingWorkflow } = await import("@/workflows/hosting");
 
       return withSwrCache({
         domain: input.domain,

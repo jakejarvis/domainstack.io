@@ -27,9 +27,6 @@ const BATCH_SIZE = 10;
 // How many hours back to look for recently accessed domains
 const LOOKBACK_HOURS = 24;
 
-// Short TTL for deduplication - just prevent concurrent refreshes
-const DEDUP_TTL_SECONDS = 60;
-
 /**
  * Check if a section is stale for a given domain.
  */
@@ -151,7 +148,6 @@ export async function GET(request: Request) {
                 const { started } = await startDeduplicated(
                   `${key}:${section}`,
                   () => start(sectionRevalidateWorkflow, [{ domain, section }]),
-                  { ttlSeconds: DEDUP_TTL_SECONDS },
                 );
 
                 if (started) {
