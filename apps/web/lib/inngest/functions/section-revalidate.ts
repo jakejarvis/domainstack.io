@@ -1,12 +1,15 @@
 import "server-only";
 
 import { start } from "workflow/api";
+import { analytics } from "@/lib/analytics/server";
 import type { Section } from "@/lib/constants/sections";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { createLogger } from "@/lib/logger/server";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
-import { trackWorkflowFailure } from "@/lib/workflow/observability";
 import { sectionRevalidateWorkflow } from "@/workflows/section-revalidate";
+
+const logger = createLogger({ source: "inngest/section-revalidate" });
 
 /**
  * Background revalidation function for a single domain+section.
@@ -35,17 +38,29 @@ export const sectionRevalidate = inngest.createFunction(
         domain: string;
         section: Section;
       };
-      await trackWorkflowFailure({
-        workflow: "section-revalidate",
-        domain: eventData.domain,
-        section: eventData.section,
-        error,
-        classification: "retries_exhausted",
-        context: {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        {
+          workflow: "section-revalidate",
+          domain: eventData.domain,
+          section: eventData.section,
           inngestRunId: event.data.run_id,
-          retriesExhausted: true,
         },
-      });
+        `workflow failed: ${errorMessage}`,
+      );
+      analytics.track(
+        "workflow_failed",
+        {
+          workflow: "section-revalidate",
+          domain: eventData.domain,
+          section: eventData.section,
+          classification: "retries_exhausted",
+          error: errorMessage,
+          inngestRunId: event.data.run_id,
+        },
+        "system",
+      );
     },
   },
   { event: INNGEST_EVENTS.SECTION_REVALIDATE },

@@ -1,12 +1,15 @@
 import "server-only";
 
 import { start } from "workflow/api";
+import { analytics } from "@/lib/analytics/server";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
+import { createLogger } from "@/lib/logger/server";
 import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
-import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
+
+const logger = createLogger({ source: "inngest/auto-verify-pending-domain" });
 
 /**
  * Event-driven function to auto-verify a pending domain.
@@ -50,17 +53,28 @@ export const autoVerifyPendingDomain = inngest.createFunction(
             domainId: result.domainId,
           },
         ]).catch((err) => {
-          // Track failure for observability
-          trackWorkflowFailureAsync({
-            workflow: "initialize-snapshot-trigger",
-            error: err instanceof Error ? err : new Error(String(err)),
-            classification: "fatal",
-            context: {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          logger.error(
+            {
+              workflow: "initialize-snapshot-trigger",
               trackedDomainId: result.trackedDomainId,
               domainId: result.domainId,
               trigger: "auto_verification_complete",
             },
-          });
+            `workflow failed: ${errorMessage}`,
+          );
+          analytics.track(
+            "workflow_failed",
+            {
+              workflow: "initialize-snapshot-trigger",
+              classification: "fatal",
+              error: errorMessage,
+              trackedDomainId: result.trackedDomainId,
+              domainId: result.domainId,
+              trigger: "auto_verification_complete",
+            },
+            "system",
+          );
         });
       });
     }

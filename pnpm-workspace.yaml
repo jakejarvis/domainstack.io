@@ -1,25 +1,26 @@
 packages:
-  - "apps/*"
-  - "packages/*"
-
-overrides:
-  next: "16.1.3"
-  react: "19.2.3"
-  react-dom: "19.2.3"
-  "@types/react": "19.2.8"
-  "@types/react-dom": "19.2.3"
-
-publicHoistPattern:
-  - "@sparticuz/chromium"
-  - puppeteer-core
+  - apps/*
+  - packages/*
 
 onlyBuiltDependencies:
-  - "@posthog/cli"
-  - "@swc/core"
-  - "bufferutil"
-  - "core-js"
-  - "esbuild"
-  - "msw"
-  - "protobufjs"
-  - "puppeteer"
-  - "sharp"
+  - '@posthog/cli'
+  - '@swc/core'
+  - bufferutil
+  - core-js
+  - esbuild
+  - inngest-cli
+  - msw
+  - protobufjs
+  - puppeteer
+  - sharp
+
+overrides:
+  '@types/react': 19.2.8
+  '@types/react-dom': 19.2.3
+  next: 16.1.3
+  react: 19.2.3
+  react-dom: 19.2.3
+
+publicHoistPattern:
+  - '@sparticuz/chromium'
+  - puppeteer-core

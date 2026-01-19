@@ -23,7 +23,6 @@ import { getUserSubscription } from "@/lib/db/repos/user-subscription";
 import { inngest } from "@/lib/inngest/client";
 import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
-import { trackWorkflowFailureAsync } from "@/lib/workflow/observability";
 import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "routers/tracking" });
@@ -285,17 +284,28 @@ export const trackingRouter = createTRPCRouter({
             domainId: updated.domainId,
           },
         ]).catch((err) => {
-          // Track failure for observability and potential alerting
-          trackWorkflowFailureAsync({
-            workflow: "initialize-snapshot-trigger",
-            error: err instanceof Error ? err : new Error(String(err)),
-            classification: "fatal",
-            context: {
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          logger.error(
+            {
+              workflow: "initialize-snapshot-trigger",
               trackedDomainId: updated.id,
               domainId: updated.domainId,
               trigger: "manual_verification",
             },
-          });
+            `workflow failed: ${errorMessage}`,
+          );
+          analytics.track(
+            "workflow_failed",
+            {
+              workflow: "initialize-snapshot-trigger",
+              classification: "fatal",
+              error: errorMessage,
+              trackedDomainId: updated.id,
+              domainId: updated.domainId,
+              trigger: "manual_verification",
+            },
+            "system",
+          );
         });
 
         return { verified: true, method: result.data.method };
