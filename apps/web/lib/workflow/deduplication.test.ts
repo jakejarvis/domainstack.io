@@ -128,11 +128,21 @@ describe("startWithDeduplication", () => {
     expect(deduplicated).toBe(false);
     expect(source).toBe("new");
 
-    // Should store run ID in Redis
-    expect(mockRedis.set).toHaveBeenCalledWith(
+    // Should first claim the key, then update with run ID
+    expect(mockRedis.set).toHaveBeenCalledTimes(2);
+    // First call: claim placeholder with short TTL
+    expect(mockRedis.set).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("workflow:run:test:"),
+      expect.stringContaining("claiming:"),
+      { nx: true, ex: 30 },
+    );
+    // Second call: actual runId with normal TTL
+    expect(mockRedis.set).toHaveBeenNthCalledWith(
+      2,
       expect.stringContaining("workflow:run:test:"),
       "run_new_123",
-      { nx: true, ex: 300 },
+      { ex: 300 },
     );
   });
 
@@ -298,11 +308,21 @@ describe("getOrStartWorkflow", () => {
     expect(runId).toBe("run_new_abc");
     expect(started).toBe(true);
 
-    // Should store in Redis
-    expect(mockRedis.set).toHaveBeenCalledWith(
+    // Should first claim the key, then update with run ID
+    expect(mockRedis.set).toHaveBeenCalledTimes(2);
+    // First call: claim placeholder with short TTL
+    expect(mockRedis.set).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining("workflow:run:screenshot:"),
+      expect.stringContaining("claiming:"),
+      { nx: true, ex: 30 },
+    );
+    // Second call: actual runId with normal TTL
+    expect(mockRedis.set).toHaveBeenNthCalledWith(
+      2,
       expect.stringContaining("workflow:run:screenshot:"),
       "run_new_abc",
-      { nx: true, ex: 300 },
+      { ex: 300 },
     );
   });
 

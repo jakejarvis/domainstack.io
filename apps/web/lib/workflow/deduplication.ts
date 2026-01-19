@@ -18,6 +18,49 @@ const WORKFLOW_KEY_PREFIX = "workflow:run";
 const DEFAULT_TTL_SECONDS = 5 * 60;
 
 /**
+ * Prefix for claim placeholders in Redis.
+ * Used to claim the key before starting a workflow to prevent race conditions.
+ */
+const CLAIMING_PREFIX = "claiming:";
+
+/**
+ * TTL for claim placeholders (30 seconds).
+ * Short enough to recover quickly if a claimer crashes, long enough for workflow startup.
+ */
+const CLAIM_TTL_SECONDS = 30;
+
+/**
+ * Maximum time to wait for a claim to resolve to a runId (ms).
+ */
+const CLAIM_WAIT_TIMEOUT_MS = 5000;
+
+/**
+ * Interval between polls when waiting for a claim to resolve (ms).
+ */
+const CLAIM_POLL_INTERVAL_MS = 100;
+
+/**
+ * Check if a Redis value is a claim placeholder vs a real runId.
+ */
+function isClaimPlaceholder(value: string): boolean {
+  return value.startsWith(CLAIMING_PREFIX);
+}
+
+/**
+ * Generate a unique claim placeholder.
+ */
+function generateClaimPlaceholder(): string {
+  return `${CLAIMING_PREFIX}${crypto.randomUUID()}`;
+}
+
+/**
+ * Sleep for a given duration.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * In-memory map of pending workflow runs, keyed by workflow+input hash.
  *
  * This provides request-level deduplication within a single server instance.
@@ -243,111 +286,170 @@ export async function startWithDeduplication<T>(
   const redisKey = `${WORKFLOW_KEY_PREFIX}:${key}`;
   const workflow = key.split(":")[0] ?? "unknown";
 
-  // Check Redis for existing run (distributed deduplication)
   const redis = getRedis();
 
+  // Helper to try attaching to an existing run by ID
+  const tryAttachToRun = async (
+    runId: string,
+  ): Promise<DeduplicationResult<T> | null> => {
+    try {
+      const run = getRun<T>(runId);
+      const status = await run.status;
+
+      // Treat pending, running, and completed as active/usable runs
+      if (
+        status === "pending" ||
+        status === "running" ||
+        status === "completed"
+      ) {
+        const result = await run.returnValue;
+        return { result, deduplicated: true, source: "redis" };
+      }
+
+      // Run failed or unknown status - not usable
+      logger.debug({ workflow, runId, status }, "existing run not usable");
+      return null;
+    } catch (err) {
+      logger.debug({ workflow, runId, err }, "failed to get existing run");
+      return null;
+    }
+  };
+
+  // Helper to wait for a claim to resolve to a runId
+  const waitForRunId = async (): Promise<string | null> => {
+    const deadline = Date.now() + CLAIM_WAIT_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await sleep(CLAIM_POLL_INTERVAL_MS);
+      try {
+        const value = await redis?.get<string>(redisKey);
+        if (!value) {
+          // Key was deleted (claimer failed/aborted) - we can try to claim
+          return null;
+        }
+        if (!isClaimPlaceholder(value)) {
+          // It's a real runId now
+          return value;
+        }
+        // Still a claim placeholder, keep waiting
+      } catch {
+        // Redis error during poll, keep trying
+      }
+    }
+    // Timed out waiting for claim to resolve
+    logger.debug({ workflow }, "timed out waiting for claim to resolve");
+    return null;
+  };
+
+  // Distributed deduplication via Redis
   if (redis) {
     try {
-      const existingRunId = await redis.get<string>(redisKey);
+      // Check if there's already a value (runId or claim)
+      const existingValue = await redis.get<string>(redisKey);
 
-      if (existingRunId) {
-        logger.debug(
-          { workflow, runId: existingRunId },
-          "found existing run in Redis, subscribing",
-        );
-
-        try {
-          const run = getRun<T>(existingRunId);
-          const status = await run.status;
-
-          // Treat pending, running, and completed as active/usable runs.
-          // "pending" workflows are newly started but not yet executing - still valid.
-          if (
-            status === "pending" ||
-            status === "running" ||
-            status === "completed"
-          ) {
-            const result = await run.returnValue;
-            return { result, deduplicated: true, source: "redis" };
+      if (existingValue) {
+        if (isClaimPlaceholder(existingValue)) {
+          // Another instance is claiming - wait for them to set the runId
+          logger.debug({ workflow }, "found claim placeholder, waiting");
+          const runId = await waitForRunId();
+          if (runId) {
+            const attached = await tryAttachToRun(runId);
+            if (attached) return attached;
           }
-
-          // Run failed or unknown status - clear stale key before starting new
-          // Without this, the nx:true set below would fail and break deduplication
+          // Claim timed out or run not usable - fall through to try claiming
+        } else {
+          // It's a runId - try to attach
           logger.debug(
-            { workflow, runId: existingRunId, status },
-            "existing run not usable, clearing stale key",
+            { workflow, runId: existingValue },
+            "found existing run in Redis",
           );
-          await redis.del(redisKey);
-        } catch (err) {
-          // Run not found or error - clear stale key before starting new
-          logger.debug(
-            { workflow, runId: existingRunId, err },
-            "failed to get existing run, clearing stale key",
-          );
+          const attached = await tryAttachToRun(existingValue);
+          if (attached) return attached;
+          // Run not usable - clear stale key and try to claim
           await redis.del(redisKey).catch(() => {});
         }
       }
+
+      // Try to claim the key before starting the workflow
+      const claimPlaceholder = generateClaimPlaceholder();
+      const claimResult = await redis.set(redisKey, claimPlaceholder, {
+        nx: true,
+        ex: CLAIM_TTL_SECONDS,
+      });
+
+      if (claimResult === "OK") {
+        // We claimed the key - now start the workflow
+        logger.debug({ workflow }, "claimed Redis key, starting workflow");
+
+        const { result, attached } = await startWithMemoryDeduplication(
+          key,
+          async () => {
+            const run = await startWorkflow();
+
+            // Update the claim placeholder with the actual runId
+            try {
+              await redis.set(redisKey, run.runId, { ex: ttlSeconds });
+              logger.debug(
+                { workflow, runId: run.runId },
+                "updated claim with run ID",
+              );
+            } catch (err) {
+              logger.warn(
+                { workflow, err },
+                "failed to update claim with run ID",
+              );
+            }
+
+            const returnValue = await run.returnValue;
+
+            // Clean up Redis entry on completion
+            try {
+              await redis.del(redisKey);
+            } catch {
+              // Non-fatal: entry will expire via TTL anyway
+            }
+
+            return returnValue;
+          },
+          ttlMs,
+        );
+
+        if (attached) {
+          return { result, deduplicated: true, source: "memory" };
+        }
+        return { result, deduplicated: false, source: "new" };
+      }
+
+      // Claim failed - another instance beat us, wait for their runId
+      logger.debug({ workflow }, "claim failed, waiting for other instance");
+      const runId = await waitForRunId();
+      if (runId) {
+        const attached = await tryAttachToRun(runId);
+        if (attached) return attached;
+      }
+
+      // If we still can't attach, fall through to memory-only deduplication
+      logger.debug(
+        { workflow },
+        "could not attach after claim wait, using memory-only",
+      );
     } catch (err) {
-      logger.warn({ workflow, err }, "Redis error checking for existing run");
+      logger.warn({ workflow, err }, "Redis error in deduplication");
     }
   }
 
-  // No existing run found - start new workflow
+  // Fallback: memory-only deduplication (Redis unavailable or failed)
   const { result, attached } = await startWithMemoryDeduplication(
     key,
     async () => {
       const run = await startWorkflow();
-
-      // Track whether we successfully stored the run ID (i.e., we own the key)
-      let ownsRedisKey = false;
-
-      // Store run ID in Redis for cross-instance deduplication
-      if (redis) {
-        try {
-          // nx:true means set only if key doesn't exist - returns "OK" on success, null if key exists
-          const setResult = await redis.set(redisKey, run.runId, {
-            nx: true,
-            ex: ttlSeconds,
-          });
-          ownsRedisKey = setResult === "OK";
-          if (ownsRedisKey) {
-            logger.debug(
-              { workflow, runId: run.runId },
-              "stored run ID in Redis",
-            );
-          } else {
-            logger.debug(
-              { workflow, runId: run.runId },
-              "another instance already owns Redis key",
-            );
-          }
-        } catch (err) {
-          logger.warn({ workflow, err }, "failed to store run ID in Redis");
-        }
-      }
-
-      const returnValue = await run.returnValue;
-
-      // Clean up Redis entry on completion, but only if we own the key
-      // Deleting unconditionally could remove another instance's active run ID
-      if (redis && ownsRedisKey) {
-        try {
-          await redis.del(redisKey);
-        } catch {
-          // Non-fatal: entry will expire via TTL anyway
-        }
-      }
-
-      return returnValue;
+      return run.returnValue;
     },
     ttlMs,
   );
 
-  // If we attached to an in-memory run, another call beat us after the Redis check
   if (attached) {
     return { result, deduplicated: true, source: "memory" };
   }
-
   return { result, deduplicated: false, source: "new" };
 }
 
@@ -396,69 +498,177 @@ export async function getOrStartWorkflow<T>(
 
   const redis = getRedis();
 
-  // Check Redis for existing run
+  // Helper to check if a runId is active (pending or running)
+  const isRunActive = async (runId: string): Promise<boolean> => {
+    try {
+      const run = getRun(runId);
+      const status = await run.status;
+      return status === "pending" || status === "running";
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper to wait for a claim to resolve to a runId
+  const waitForRunId = async (): Promise<string | null> => {
+    const deadline = Date.now() + CLAIM_WAIT_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      await sleep(CLAIM_POLL_INTERVAL_MS);
+      try {
+        const value = await redis?.get<string>(redisKey);
+        if (!value) {
+          // Key was deleted - we can try to claim
+          return null;
+        }
+        if (!isClaimPlaceholder(value)) {
+          // It's a real runId now
+          return value;
+        }
+      } catch {
+        // Redis error during poll, keep trying
+      }
+    }
+    return null;
+  };
+
+  // Distributed deduplication via Redis
   if (redis) {
     try {
-      const existingRunId = await redis.get<string>(redisKey);
+      const existingValue = await redis.get<string>(redisKey);
 
-      if (existingRunId) {
-        // Verify the run is still active
-        try {
-          const run = getRun(existingRunId);
-          const status = await run.status;
-
-          // Treat pending and running as active workflows.
-          // "pending" workflows are newly started but not yet executing - still valid.
-          if (status === "pending" || status === "running") {
+      if (existingValue) {
+        if (isClaimPlaceholder(existingValue)) {
+          // Another instance is claiming - wait for them to set the runId
+          logger.debug({ workflow }, "found claim placeholder, waiting");
+          const runId = await waitForRunId();
+          if (runId && (await isRunActive(runId))) {
             logger.debug(
-              { workflow, runId: existingRunId, status },
+              { workflow, runId },
+              "attached to run after claim wait",
+            );
+            return { runId, started: false };
+          }
+          // Claim timed out or run not active - fall through to try claiming
+        } else {
+          // It's a runId - check if still active
+          if (await isRunActive(existingValue)) {
+            logger.debug(
+              { workflow, runId: existingValue },
               "found existing active workflow in Redis",
             );
-            return { runId: existingRunId, started: false };
+            return { runId: existingValue, started: false };
           }
-
-          // Run completed or failed - clear stale key before starting new
-          // Without this, the nx:true set below would fail and break deduplication
+          // Run not active - clear stale key
           logger.debug(
-            { workflow, runId: existingRunId, status },
-            "existing run completed, clearing stale key",
-          );
-          await redis.del(redisKey);
-        } catch {
-          // Run not found - clear stale key before starting new
-          logger.debug(
-            { workflow, runId: existingRunId },
-            "existing run not found, clearing stale key",
+            { workflow, runId: existingValue },
+            "existing run not active, clearing stale key",
           );
           await redis.del(redisKey).catch(() => {});
         }
       }
+
+      // Try to claim the key before starting the workflow
+      const claimPlaceholder = generateClaimPlaceholder();
+      const claimResult = await redis.set(redisKey, claimPlaceholder, {
+        nx: true,
+        ex: CLAIM_TTL_SECONDS,
+      });
+
+      if (claimResult === "OK") {
+        // We claimed the key - now start the workflow with in-memory deduplication
+        logger.debug({ workflow }, "claimed Redis key, starting workflow");
+
+        // Check in-memory first (same-instance concurrent requests)
+        const resolvedRunId = resolvedRunIds.get(key);
+        if (resolvedRunId) {
+          // Another call on this instance already started - update claim with their runId
+          await redis.set(redisKey, resolvedRunId, { ex: ttlSeconds });
+          return { runId: resolvedRunId, started: false };
+        }
+
+        const pendingStart = pendingStarts.get(key);
+        if (pendingStart) {
+          const run = await pendingStart;
+          await redis.set(redisKey, run.runId, { ex: ttlSeconds });
+          return { runId: run.runId, started: false };
+        }
+
+        // Start new workflow
+        const startPromise = Promise.resolve().then(startWorkflow);
+        pendingStarts.set(key, startPromise as Promise<Run<unknown>>);
+
+        let run: Run<T>;
+        try {
+          run = await startPromise;
+        } catch (err) {
+          pendingStarts.delete(key);
+          // Release the claim on failure
+          await redis.del(redisKey).catch(() => {});
+          throw err;
+        }
+
+        // Update claim with actual runId
+        resolvedRunIds.set(key, run.runId);
+        pendingStarts.delete(key);
+
+        try {
+          await redis.set(redisKey, run.runId, { ex: ttlSeconds });
+          logger.debug(
+            { workflow, runId: run.runId },
+            "updated claim with run ID",
+          );
+        } catch (err) {
+          logger.warn({ workflow, err }, "failed to update claim with run ID");
+        }
+
+        // Set up cleanup
+        const cleanupEntry = () => {
+          if (resolvedRunIds.get(key) === run.runId) {
+            resolvedRunIds.delete(key);
+          }
+        };
+
+        getRun(run.runId)
+          .status.then((status) => {
+            if (status === "completed" || status === "failed") {
+              cleanupEntry();
+            }
+          })
+          .catch(() => {});
+
+        const cleanupTimeout = setTimeout(cleanupEntry, ttlSeconds * 1000);
+        cleanupTimeout.unref?.();
+
+        return { runId: run.runId, started: true };
+      }
+
+      // Claim failed - another instance beat us, wait for their runId
+      logger.debug({ workflow }, "claim failed, waiting for other instance");
+      const runId = await waitForRunId();
+      if (runId && (await isRunActive(runId))) {
+        return { runId, started: false };
+      }
+
+      // Could not attach via Redis - fall through to memory-only
+      logger.debug({ workflow }, "could not attach after claim wait");
     } catch (err) {
-      logger.warn({ workflow, err }, "Redis error checking for existing run");
+      logger.warn({ workflow, err }, "Redis error in deduplication");
     }
   }
 
-  // Check in-memory for same-instance concurrent requests
-  // First check resolved IDs (fast path for already-started workflows)
+  // Fallback: memory-only deduplication (Redis unavailable or failed)
   const resolvedRunId = resolvedRunIds.get(key);
   if (resolvedRunId) {
-    logger.debug(
-      { workflow, runId: resolvedRunId },
-      "found resolved run ID in memory, returning existing",
-    );
     return { runId: resolvedRunId, started: false };
   }
 
-  // Check pending start promise (handles concurrent requests during startup)
   const pendingStart = pendingStarts.get(key);
   if (pendingStart) {
-    logger.debug({ workflow }, "attaching to pending start promise");
     const run = await pendingStart;
     return { runId: run.runId, started: false };
   }
 
-  // No existing run found - create and store promise BEFORE starting workflow
-  // This is critical: storing the promise first prevents race conditions
+  // Start new workflow
   const startPromise = Promise.resolve().then(startWorkflow);
   pendingStarts.set(key, startPromise as Promise<Run<unknown>>);
 
@@ -466,54 +676,29 @@ export async function getOrStartWorkflow<T>(
   try {
     run = await startPromise;
   } catch (err) {
-    // If workflow start fails, clean up and re-throw
     pendingStarts.delete(key);
     throw err;
   }
 
-  // Store resolved run ID for quick lookups
   resolvedRunIds.set(key, run.runId);
-  // Clean up the pending promise now that we have the resolved value
   pendingStarts.delete(key);
 
-  // Clean up helper that guards against removing a different run's entry
   const cleanupEntry = () => {
     if (resolvedRunIds.get(key) === run.runId) {
       resolvedRunIds.delete(key);
     }
   };
 
-  // Watch for workflow completion asynchronously to clean up early
-  // This prevents returning stale runIds for completed workflows
   getRun(run.runId)
     .status.then((status) => {
       if (status === "completed" || status === "failed") {
         cleanupEntry();
       }
     })
-    .catch(() => {
-      // Transient status lookup failures should NOT clear the entry.
-      // Clearing on any error would allow duplicate workflow starts when
-      // the workflow API is temporarily unreachable (e.g., Redis down).
-      // The safety valve timeout handles cleanup if needed.
-    });
+    .catch(() => {});
 
-  // Safety valve: clean up after TTL even if completion detection fails
   const cleanupTimeout = setTimeout(cleanupEntry, ttlSeconds * 1000);
   cleanupTimeout.unref?.();
-
-  // Store run ID in Redis
-  if (redis) {
-    try {
-      await redis.set(redisKey, run.runId, { nx: true, ex: ttlSeconds });
-      logger.debug(
-        { workflow, runId: run.runId },
-        "stored new run ID in Redis",
-      );
-    } catch (err) {
-      logger.warn({ workflow, err }, "failed to store run ID in Redis");
-    }
-  }
 
   return { runId: run.runId, started: true };
 }
