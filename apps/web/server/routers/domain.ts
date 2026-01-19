@@ -77,7 +77,7 @@ export const domainRouter = createTRPCRouter({
    * Detects providers from DNS records and HTTP headers.
    * Uses stale-while-revalidate: returns stale data immediately while refreshing in background.
    *
-   * Uses the hostingOrchestrationWorkflow which handles the full dependency chain
+   * Uses the hostingWorkflow which handles the full dependency chain
    * (DNS → headers → hosting) with proper durability and error handling.
    */
   getHosting: publicProcedure
@@ -87,16 +87,15 @@ export const domainRouter = createTRPCRouter({
     .input(DomainInputSchema)
     .query(async ({ input }) => {
       const { getCachedHosting } = await import("@/lib/db/repos/hosting");
-      const { hostingOrchestrationWorkflow } = await import(
+      const { hostingWorkflow } = await import(
         "@/workflows/hosting-orchestration"
       );
 
       return withSwrCache({
         domain: input.domain,
         getCached: () => getCachedHosting(input.domain),
-        startWorkflow: () =>
-          start(hostingOrchestrationWorkflow, [{ domain: input.domain }]),
-        workflowName: "hosting-orchestration",
+        startWorkflow: () => start(hostingWorkflow, [{ domain: input.domain }]),
+        workflowName: "hosting",
       });
     }),
 

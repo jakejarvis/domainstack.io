@@ -18,7 +18,7 @@ type HostingInsert = InferInsertModel<typeof hostingTable>;
  * Returns data even if expired, with `stale: true` flag.
  *
  * Note: This queries the database cache. For fetching fresh data,
- * use `hostingOrchestrationWorkflow` from workflows/hosting-orchestration.
+ * use `hostingWorkflow` from workflows/hosting-orchestration.
  *
  * Optimized: Uses a single query with JOINs to fetch domain and hosting data,
  * reducing from 2 round trips to 1.

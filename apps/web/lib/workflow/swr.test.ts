@@ -61,13 +61,16 @@ describe("withSwrCache", () => {
 
       const workflowResult = { success: true, data: { id: 1, name: "fresh" } };
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_123",
         returnValue: Promise.resolve(workflowResult),
       });
 
-      // Mock startWithDeduplication to just run the function
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      // Mock startWithDeduplication to call the function and return result
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       const result = await withSwrCache({
         workflowName: "test",
@@ -94,7 +97,7 @@ describe("withSwrCache", () => {
       });
     });
 
-    it("passes maxPendingMs safety valve to startWithDeduplication", async () => {
+    it("passes ttlSeconds to startWithDeduplication", async () => {
       const getCached = vi.fn().mockResolvedValue({
         data: { id: 1 },
         stale: true,
@@ -102,12 +105,15 @@ describe("withSwrCache", () => {
       });
 
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_456",
         returnValue: Promise.resolve({ success: true, data: { id: 1 } }),
       });
 
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       await withSwrCache({
         workflowName: "test",
@@ -116,11 +122,11 @@ describe("withSwrCache", () => {
         startWorkflow,
       });
 
-      // Check that maxPendingMs was passed (5 minutes = 300000ms)
+      // Check that ttlSeconds was passed (5 minutes = 300 seconds)
       expect(startWithDeduplication).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Function),
-        { maxPendingMs: 5 * 60 * 1000 },
+        { ttlSeconds: 300 },
       );
     });
 
@@ -153,7 +159,6 @@ describe("withSwrCache", () => {
       });
 
       // Wait for the rejected promise to be handled
-      // The rejection is caught and logged internally - we verify no unhandled rejection
       await new Promise((resolve) => setTimeout(resolve, 10));
     });
   });
@@ -168,12 +173,16 @@ describe("withSwrCache", () => {
 
       const workflowResult = { success: true, data: { id: 2, name: "new" } };
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_123",
         returnValue: Promise.resolve(workflowResult),
       });
 
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      // Mock startWithDeduplication to call startWorkflow and return result
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       const result = await withSwrCache({
         workflowName: "test",
@@ -205,12 +214,15 @@ describe("withSwrCache", () => {
         error: "RDAP lookup failed",
       };
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_456",
         returnValue: Promise.resolve(workflowResult),
       });
 
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       const result = await withSwrCache({
         workflowName: "test",
@@ -235,12 +247,15 @@ describe("withSwrCache", () => {
 
       const workflowResult = { success: false, data: null };
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_789",
         returnValue: Promise.resolve(workflowResult),
       });
 
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       const result = await withSwrCache({
         workflowName: "test",
@@ -266,12 +281,15 @@ describe("withSwrCache", () => {
       });
 
       const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_key_test",
         returnValue: Promise.resolve({ success: true, data: {} }),
       });
 
-      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) =>
-        fn(),
-      );
+      vi.mocked(startWithDeduplication).mockImplementation(async (_key, fn) => {
+        const run = await fn();
+        const result = await run.returnValue;
+        return { result, deduplicated: false, source: "new" as const };
+      });
 
       await withSwrCache({
         workflowName: "registration",

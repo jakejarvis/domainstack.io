@@ -8,7 +8,7 @@ import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
   getDeduplicationKey,
-  startWithDeduplication,
+  getOrStartWorkflow,
 } from "@/lib/workflow/deduplication";
 import {
   type ScreenshotWorkflowResult,
@@ -112,8 +112,13 @@ export async function POST(
               "@/lib/db/repos/blocked-domains"
             );
             blocked = await isDomainBlocked(domainName);
-          } catch {
-            // Fall back to false if check fails
+          } catch (err) {
+            // Log error but fall back to unblocked to avoid breaking screenshots
+            // for transient database issues. Blocked domains are a soft protection.
+            logger.warn(
+              { err, domain: domain.name },
+              "failed to check block status, defaulting to unblocked",
+            );
             blocked = false;
           }
         }
@@ -134,42 +139,40 @@ export async function POST(
     }
 
     // Cache miss - start workflow with deduplication
-    // (prevents duplicate workflows if multiple requests arrive simultaneously)
+    // Uses Redis to deduplicate across instances, returning existing runId if already running
     const key = getDeduplicationKey("screenshot", domain.name);
-    const result = await startWithDeduplication(
+    const { runId, started } = await getOrStartWorkflow(
       key,
-      async () => {
-        const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
-
-        logger.debug(
-          { domainId, domain: domain.name, runId: run.runId },
-          "screenshot workflow started",
-        );
-
-        analytics.track("screenshot_api_workflow_started", {
-          domain: domain.name,
-          runId: run.runId,
-        });
-
-        return {
-          runId: run.runId,
-          returnValue: run.returnValue,
-        };
-      },
-      {
-        // Keep the deduplication entry alive for the duration of the workflow,
-        // even though this endpoint returns early with `runId`.
-        keepAliveUntil: (r) => r.returnValue,
-        // Safety valve to avoid poisoning this key forever if something hangs.
-        // Screenshot runs should normally complete much faster than this.
-        maxPendingMs: 5 * 60 * 1000,
-      },
+      () => start(screenshotWorkflow, [{ domain: domain.name }]),
+      { ttlSeconds: 5 * 60 }, // 5 minute TTL
     );
+
+    if (started) {
+      logger.debug(
+        { domainId, domain: domain.name, runId },
+        "screenshot workflow started",
+      );
+
+      analytics.track("screenshot_api_workflow_started", {
+        domain: domain.name,
+        runId,
+      });
+    } else {
+      logger.debug(
+        { domainId, domain: domain.name, runId },
+        "attached to existing screenshot workflow",
+      );
+
+      analytics.track("screenshot_api_workflow_attached", {
+        domain: domain.name,
+        runId,
+      });
+    }
 
     return NextResponse.json(
       {
         status: "running",
-        runId: result.runId,
+        runId,
       },
       { headers: rateLimit.headers },
     );
