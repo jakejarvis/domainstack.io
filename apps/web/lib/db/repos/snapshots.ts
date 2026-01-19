@@ -217,6 +217,34 @@ export async function getMonitoredSnapshotIds(): Promise<string[]> {
 }
 
 /**
+ * Get verified, non-archived tracked domains that don't have snapshots yet.
+ * Used by the monitoring scheduler to create baseline snapshots.
+ */
+export async function getVerifiedDomainsWithoutSnapshots(): Promise<
+  Array<{ trackedDomainId: string; domainId: string }>
+> {
+  const rows = await db
+    .select({
+      trackedDomainId: userTrackedDomains.id,
+      domainId: userTrackedDomains.domainId,
+    })
+    .from(userTrackedDomains)
+    .leftJoin(
+      domainSnapshots,
+      eq(userTrackedDomains.id, domainSnapshots.trackedDomainId),
+    )
+    .where(
+      and(
+        eq(userTrackedDomains.verified, true),
+        isNull(userTrackedDomains.archivedAt),
+        isNull(domainSnapshots.id), // No snapshot exists
+      ),
+    );
+
+  return rows;
+}
+
+/**
  * Get full snapshot data for a single domain.
  * Used by the monitoring worker.
  */

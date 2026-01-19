@@ -20,9 +20,8 @@ import {
   verifyTrackedDomain,
 } from "@/lib/db/repos/tracked-domains";
 import { getUserSubscription } from "@/lib/db/repos/user-subscription";
-import { inngest } from "@/lib/inngest/client";
-import { INNGEST_EVENTS } from "@/lib/inngest/events";
 import { createLogger } from "@/lib/logger/server";
+import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { createBaselineWorkflow } from "@/workflows/initialize-snapshot";
 
 const logger = createLogger({ source: "routers/tracking" });
@@ -33,6 +32,7 @@ import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import {
   getDeduplicationKey,
   runDeduplicated,
+  startDeduplicated,
 } from "@/lib/workflow/deduplication";
 import {
   createTRPCRouter,
@@ -194,14 +194,20 @@ export const trackingRouter = createTRPCRouter({
 
       const tracked = result.trackedDomain;
 
-      // Trigger auto-verification schedule in the background
-      // This will check at 1min, 3min, 10min, 30min, 1hr intervals
-      await inngest.send({
-        name: INNGEST_EVENTS.AUTO_VERIFY_PENDING_DOMAIN,
-        data: {
-          trackedDomainId: tracked.id,
-          domainName: domain,
-        },
+      // Trigger auto-verification workflow in the background
+      // Uses deduplication to prevent duplicate workflows for the same domain.
+      // The workflow handles a 30-day retry schedule with increasing delays.
+      const key = getDeduplicationKey("auto-verify", tracked.id);
+      void startDeduplicated(
+        key,
+        () => start(autoVerifyWorkflow, [{ trackedDomainId: tracked.id }]),
+        { ttlSeconds: 30 * 24 * 60 * 60 }, // 30 days (matches workflow schedule)
+      ).catch((err) => {
+        // Log but don't fail the request - user can still manually verify
+        logger.error(
+          { err, trackedDomainId: tracked.id },
+          "failed to start auto-verify workflow",
+        );
       });
 
       analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);

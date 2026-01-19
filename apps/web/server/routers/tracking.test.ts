@@ -31,13 +31,6 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
-// Mock inngest client to avoid sending real events
-vi.mock("@/lib/inngest/client", () => ({
-  inngest: {
-    send: vi.fn().mockResolvedValue({ ids: ["test-event-id"] }),
-  },
-}));
-
 // Mock resend to avoid sending real emails
 vi.mock("@/lib/resend", () => ({
   sendEmail: vi.fn().mockResolvedValue({ error: null }),
@@ -51,7 +44,6 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { inngest } from "@/lib/inngest/client";
 import { sendEmail } from "@/lib/resend";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
@@ -268,18 +260,15 @@ describe("tracking router", () => {
       expect(result.resumed).toBe(false);
     });
 
-    it("triggers auto-verification event", async () => {
+    it("triggers auto-verification workflow", async () => {
       const caller = createAuthenticatedCaller();
 
-      await caller.tracking.addDomain({ domain: TEST_DOMAIN });
+      const result = await caller.tracking.addDomain({ domain: TEST_DOMAIN });
 
-      expect(inngest.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: "domain/verification.new",
-          data: expect.objectContaining({
-            domainName: TEST_DOMAIN,
-          }),
-        }),
+      // Auto-verify workflow is started via startDeduplicated which calls start()
+      expect(start).toHaveBeenCalledWith(
+        expect.any(Function), // autoVerifyWorkflow
+        [{ trackedDomainId: result.id }],
       );
     });
 
