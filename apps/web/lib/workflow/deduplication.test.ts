@@ -265,6 +265,53 @@ describe("startWithDeduplication", () => {
       "Workflow failed",
     );
   });
+
+  it("handles claim race condition by waiting for winner's runId", async () => {
+    // Simulate cross-instance race: second caller loses the claim but attaches to winner's run
+    const mockRun = {
+      runId: "run_winner",
+      returnValue: Promise.resolve({ success: true, data: "winner" }),
+    };
+
+    // First call succeeds in claiming
+    mockRedis.set.mockResolvedValueOnce("OK");
+    // First call updates claim with runId
+    mockRedis.set.mockResolvedValueOnce("OK");
+
+    const startWorkflow = vi.fn().mockResolvedValue(mockRun);
+    const key = getDeduplicationKey("test", "example.com");
+
+    // First caller wins
+    const result1 = await startWithDeduplication(key, startWorkflow);
+
+    expect(startWorkflow).toHaveBeenCalledTimes(1);
+    expect(result1.deduplicated).toBe(false);
+    expect(result1.source).toBe("new");
+
+    // Now simulate second caller that loses the claim race
+    // Reset mocks for second call
+    vi.clearAllMocks();
+    mockRedis.get.mockResolvedValue(null); // No existing value initially
+    mockRedis.set.mockResolvedValue(null); // Claim fails (another instance owns it)
+    // After poll, finds the winner's runId
+    mockRedis.get
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce("run_winner");
+
+    const mockWinnerRun = {
+      status: Promise.resolve("running"),
+      returnValue: Promise.resolve({ success: true, data: "winner" }),
+    };
+    mockGetRun.mockReturnValue(mockWinnerRun);
+
+    const startWorkflow2 = vi.fn();
+    const result2 = await startWithDeduplication(key, startWorkflow2);
+
+    // Second caller should NOT start a new workflow
+    expect(startWorkflow2).not.toHaveBeenCalled();
+    expect(result2.deduplicated).toBe(true);
+    expect(result2.source).toBe("redis");
+  });
 });
 
 describe("getOrStartWorkflow", () => {

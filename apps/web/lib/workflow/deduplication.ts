@@ -331,8 +331,9 @@ export async function startWithDeduplication<T>(
           return value;
         }
         // Still a claim placeholder, keep waiting
-      } catch {
-        // Redis error during poll, keep trying
+      } catch (err) {
+        // Redis error during poll - log but keep trying
+        logger.debug({ workflow, err }, "Redis error during claim poll");
       }
     }
     // Timed out waiting for claim to resolve
@@ -365,7 +366,9 @@ export async function startWithDeduplication<T>(
           const attached = await tryAttachToRun(existingValue);
           if (attached) return attached;
           // Run not usable - clear stale key and try to claim
-          await redis.del(redisKey).catch(() => {});
+          await redis.del(redisKey).catch((err) => {
+            logger.debug({ workflow, err }, "failed to delete stale key");
+          });
         }
       }
 
@@ -404,8 +407,9 @@ export async function startWithDeduplication<T>(
             // Clean up Redis entry on completion
             try {
               await redis.del(redisKey);
-            } catch {
+            } catch (err) {
               // Non-fatal: entry will expire via TTL anyway
+              logger.debug({ workflow, err }, "failed to clean up Redis key");
             }
 
             return returnValue;
@@ -470,7 +474,7 @@ export type GetOrStartResult = {
  * the run ID immediately without waiting for the workflow to complete.
  *
  * Uses Redis to track running workflows across instances. Falls back to
- * always starting a new workflow if Redis is unavailable.
+ * in-memory-only deduplication when Redis is unavailable.
  *
  * @param key - Deduplication key (use getDeduplicationKey)
  * @param startWorkflow - Function that starts the workflow and returns a Run object
@@ -504,7 +508,10 @@ export async function getOrStartWorkflow<T>(
       const run = getRun(runId);
       const status = await run.status;
       return status === "pending" || status === "running";
-    } catch {
+    } catch (err) {
+      // Log error but treat as inactive - we'll try to start a new workflow
+      // which will either succeed (if old one is truly gone) or deduplicate
+      logger.debug({ workflow, runId, err }, "failed to check run status");
       return false;
     }
   };
@@ -524,8 +531,9 @@ export async function getOrStartWorkflow<T>(
           // It's a real runId now
           return value;
         }
-      } catch {
-        // Redis error during poll, keep trying
+      } catch (err) {
+        // Redis error during poll - log but keep trying
+        logger.debug({ workflow, err }, "Redis error during claim poll");
       }
     }
     return null;
@@ -563,7 +571,9 @@ export async function getOrStartWorkflow<T>(
             { workflow, runId: existingValue },
             "existing run not active, clearing stale key",
           );
-          await redis.del(redisKey).catch(() => {});
+          await redis.del(redisKey).catch((err) => {
+            logger.debug({ workflow, err }, "failed to delete stale key");
+          });
         }
       }
 
@@ -603,7 +613,9 @@ export async function getOrStartWorkflow<T>(
         } catch (err) {
           pendingStarts.delete(key);
           // Release the claim on failure
-          await redis.del(redisKey).catch(() => {});
+          await redis.del(redisKey).catch((delErr) => {
+            logger.debug({ workflow, err: delErr }, "failed to release claim");
+          });
           throw err;
         }
 
@@ -634,7 +646,14 @@ export async function getOrStartWorkflow<T>(
               cleanupEntry();
             }
           })
-          .catch(() => {});
+          .catch((err) => {
+            // Clean up on error - if we can't check status, the entry isn't useful
+            logger.debug(
+              { workflow, runId: run.runId, err },
+              "failed to check run status for cleanup",
+            );
+            cleanupEntry();
+          });
 
         const cleanupTimeout = setTimeout(cleanupEntry, ttlSeconds * 1000);
         cleanupTimeout.unref?.();
@@ -695,7 +714,14 @@ export async function getOrStartWorkflow<T>(
         cleanupEntry();
       }
     })
-    .catch(() => {});
+    .catch((err) => {
+      // Clean up on error - if we can't check status, the entry isn't useful
+      logger.debug(
+        { workflow, runId: run.runId, err },
+        "failed to check run status for cleanup",
+      );
+      cleanupEntry();
+    });
 
   const cleanupTimeout = setTimeout(cleanupEntry, ttlSeconds * 1000);
   cleanupTimeout.unref?.();

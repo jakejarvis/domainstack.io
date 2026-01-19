@@ -112,8 +112,13 @@ export async function POST(
               "@/lib/db/repos/blocked-domains"
             );
             blocked = await isDomainBlocked(domainName);
-          } catch {
-            // Fall back to false if check fails
+          } catch (err) {
+            // Log error but fall back to unblocked to avoid breaking screenshots
+            // for transient database issues. Blocked domains are a soft protection.
+            logger.warn(
+              { err, domain: domain.name },
+              "failed to check block status, defaulting to unblocked",
+            );
             blocked = false;
           }
         }
