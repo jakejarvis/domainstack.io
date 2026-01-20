@@ -39,15 +39,7 @@ import { cn } from "@/lib/utils";
 import { getToolTitle } from "./utils";
 
 /** Tool card that auto-expands when the tool completes */
-function AutoExpandTool({
-  toolPart,
-  messageId,
-  index,
-}: {
-  toolPart: ToolUIPart;
-  messageId: string;
-  index: number;
-}) {
+function AutoExpandTool({ toolPart }: { toolPart: ToolUIPart }) {
   const isComplete =
     toolPart.state === "output-available" || toolPart.state === "output-error";
 
@@ -61,7 +53,7 @@ function AutoExpandTool({
   }, [isComplete]);
 
   return (
-    <Tool key={`${messageId}-${index}`} open={open} onOpenChange={setOpen}>
+    <Tool open={open} onOpenChange={setOpen}>
       <ToolHeader
         title={getToolTitle(toolPart.type)}
         type={toolPart.type}
@@ -196,8 +188,6 @@ export function ChatClient({
                         <AutoExpandTool
                           key={`${message.id}-${index}`}
                           toolPart={part as ToolUIPart}
-                          messageId={message.id}
-                          index={index}
                         />
                       );
                     }

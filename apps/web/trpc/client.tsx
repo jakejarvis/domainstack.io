@@ -80,11 +80,15 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ReactQueryStreamedHydration queryClient={queryClient}>
+      <ReactQueryStreamedHydration>
         <Provider trpcClient={trpcClient} queryClient={queryClient}>
           {children}
           {process.env.NODE_ENV === "development" && (
-            <ReactQueryDevtools initialIsOpen={false} />
+            <ReactQueryDevtools
+              initialIsOpen={false}
+              // don't cover chat fab
+              buttonPosition="bottom-left"
+            />
           )}
         </Provider>
       </ReactQueryStreamedHydration>
