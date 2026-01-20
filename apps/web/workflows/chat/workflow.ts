@@ -52,14 +52,14 @@ export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
   const systemPrompt = await buildSystemPromptStep(domain);
 
   // Create agent with domain tools
+  // Per AI SDK best practices: use temperature: 0 for deterministic tool calls
   const agent = new DurableAgent({
     model: getModelStep,
     tools,
     system: systemPrompt,
-    headers: {
-      "http-referer": "https://domainstack.io",
-      "x-title": "Domainstack",
-    },
+    // Temperature 0 ensures consistent tool calling behavior across models
+    // See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#temperature-settings
+    temperature: 0,
     experimental_telemetry: {
       isEnabled: true,
       functionId: "chatWorkflow",

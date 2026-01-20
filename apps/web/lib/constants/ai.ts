@@ -8,8 +8,12 @@
 /**
  * Default AI model for the chat endpoint.
  * Can be overridden via Edge Config key: `ai_chat_model`
+ *
+ * IMPORTANT: For reliable tool calling, use models known to support
+ * it well.
+ * See: https://vercel.com/ai-gateway/models (Provider support table)
  */
-export const DEFAULT_CHAT_MODEL = "google/gemini-2.5-flash-lite";
+export const DEFAULT_CHAT_MODEL = "google/gemini-2.5-flash";
 
 /**
  * Friendly chatbot name.

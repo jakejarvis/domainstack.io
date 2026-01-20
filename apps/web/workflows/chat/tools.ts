@@ -11,8 +11,18 @@
 import { tool } from "ai";
 import { z } from "zod";
 
+/**
+ * Schema for domain tool inputs.
+ * Using .describe() to help LLMs understand the expected format.
+ * See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#tool--structured-data-schemas
+ */
 const domainSchema = z.object({
-  domain: z.string().min(1, "Domain is required"),
+  domain: z
+    .string()
+    .min(1, "Domain is required")
+    .describe(
+      "The root domain name to look up (e.g., 'example.com', 'example.org'). Must be a root domain, NOT a subdomain - WHOIS lookups don't work for subdomains like 'www.example.com' or 'api.example.com'. Do not include protocol (http/https).",
+    ),
 });
 
 /**
@@ -222,43 +232,56 @@ async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
 /**
  * Creates domain intelligence tools bound to a tool context.
  * Each tool executes as a durable workflow step with automatic retries.
+ *
+ * Tool configuration follows AI SDK best practices:
+ * - strict: true - ensures valid tool calls when supported by provider
+ * - Descriptive descriptions - help LLM understand when/how to use each tool
+ * - Schema with .describe() - helps LLM understand expected input format
+ *
+ * See: https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#strict-mode
  */
 export function createDomainToolset(ctx: ToolContext) {
   return {
     getRegistration: tool({
       description:
-        "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information",
+        "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getRegistrationStep(domain, ctx),
     }),
     getDnsRecords: tool({
       description:
-        "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records",
+        "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getDnsRecordsStep(domain, ctx),
     }),
     getHosting: tool({
       description:
-        "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers",
+        "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getHostingStep(domain, ctx),
     }),
     getCertificates: tool({
       description:
-        "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain",
+        "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getCertificatesStep(domain, ctx),
     }),
     getHeaders: tool({
       description:
-        "Get HTTP response headers for a domain including security headers, caching headers, and server information",
+        "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getHeadersStep(domain, ctx),
     }),
     getSeo: tool({
       description:
-        "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules",
+        "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
       inputSchema: domainSchema,
+      strict: true,
       execute: async ({ domain }) => getSeoStep(domain, ctx),
     }),
   };
