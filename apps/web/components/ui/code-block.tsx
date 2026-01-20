@@ -45,10 +45,10 @@ export const CodeBlock = ({
 
   if (!title) {
     return (
-      <div data-slot="code-block" className="group relative">
+      <div data-slot="code-block" className="group/code-block relative">
         <CodeBlockComponent />
         <CopyButton
-          className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/code-block:opacity-100"
           value={ref.current?.innerText ?? ""}
         />
       </div>
