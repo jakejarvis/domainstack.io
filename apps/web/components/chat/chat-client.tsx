@@ -2,7 +2,7 @@
 
 import { RobotIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Conversation,
   ConversationContent,
@@ -69,19 +69,23 @@ export function ChatClient({
     ? `Ask about ${domain}\u2026`
     : "Ask about a domain\u2026";
 
-  const suggestions = domain
-    ? [
-        `Who owns ${domain}?`,
-        "What DNS records are configured?",
-        "What hosting provider is used?",
-        `Is ${domain}'s SSL certificate valid?`,
-      ]
-    : [
-        "Look up vercel.com",
-        "What DNS records does github.com have?",
-        "Who is the registrar for stackoverflow.com?",
-        "Check SSL for reddit.com",
-      ];
+  const suggestions = useMemo(
+    () =>
+      domain
+        ? [
+            `Who owns ${domain}?`,
+            "What DNS records are configured?",
+            "What hosting provider is used?",
+            `Is ${domain}'s SSL certificate valid?`,
+          ]
+        : [
+            "Look up vercel.com",
+            "What DNS records does github.com have?",
+            "Who is the registrar for stackoverflow.com?",
+            "Check SSL for reddit.com",
+          ],
+    [domain],
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputLength(e.target.value.length);
