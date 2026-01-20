@@ -6,7 +6,6 @@ import {
   PaperclipIcon,
   PaperPlaneRightIcon,
   PlusIcon,
-  SpinnerGapIcon,
   SquareIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -68,6 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -1057,7 +1057,7 @@ export const PromptInputSubmit = ({
   let ariaLabel = "Send message";
 
   if (status === "submitted") {
-    Icon = <SpinnerGapIcon className="size-4 animate-spin" />;
+    Icon = <Spinner className="size-4" />;
     ariaLabel = "Sending\u2026";
   } else if (status === "streaming") {
     Icon = <SquareIcon className="size-4" weight="fill" />;

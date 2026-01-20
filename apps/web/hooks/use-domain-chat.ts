@@ -68,20 +68,34 @@ export function useDomainChat() {
         }),
         onChatSendMessage: (response, options) => {
           // Store messages for restoration on page reload
-          localStorage.setItem(
-            STORAGE_KEY_MESSAGES,
-            JSON.stringify(options.messages),
-          );
+          try {
+            localStorage.setItem(
+              STORAGE_KEY_MESSAGES,
+              JSON.stringify(options.messages),
+            );
+          } catch (err) {
+            // localStorage may fail (quota exceeded, private browsing, etc.)
+            const error = err instanceof Error ? err : new Error(String(err));
+            analytics.trackException(error, { context: "chat-storage-write" });
+          }
 
           // Store the workflow run ID for stream resumption
           const workflowRunId = response.headers.get("x-workflow-run-id");
           if (workflowRunId) {
-            localStorage.setItem(STORAGE_KEY_RUN_ID, workflowRunId);
+            try {
+              localStorage.setItem(STORAGE_KEY_RUN_ID, workflowRunId);
+            } catch {
+              // Non-critical - stream resumption will still work within session
+            }
           }
         },
         onChatEnd: () => {
           // Clear the active run ID when chat completes (but keep messages)
-          localStorage.removeItem(STORAGE_KEY_RUN_ID);
+          try {
+            localStorage.removeItem(STORAGE_KEY_RUN_ID);
+          } catch {
+            // Non-critical - stale run ID will be ignored on next session
+          }
         },
       }),
     [domain],
@@ -127,7 +141,16 @@ export function useDomainChat() {
 
     // Save messages to localStorage
     if (chat.messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(chat.messages));
+      try {
+        localStorage.setItem(
+          STORAGE_KEY_MESSAGES,
+          JSON.stringify(chat.messages),
+        );
+      } catch (err) {
+        // localStorage may fail (quota exceeded, private browsing, etc.)
+        const error = err instanceof Error ? err : new Error(String(err));
+        analytics.trackException(error, { context: "chat-storage-persist" });
+      }
     }
   }, [chat.messages]);
 

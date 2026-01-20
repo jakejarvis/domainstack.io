@@ -103,6 +103,13 @@ export async function GET(
     } else if (error.message.includes("network")) {
       errorMessage = "Network error. Please check your connection.";
       statusCode = 502;
+    } else if (
+      !error.message.includes("not found") &&
+      !error.message.includes("expired")
+    ) {
+      // Unexpected error - use 500 instead of misleading 404
+      errorMessage = "An unexpected error occurred. Please try again.";
+      statusCode = 500;
     }
 
     return NextResponse.json(

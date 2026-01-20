@@ -4,10 +4,8 @@ import { ArrowDownIcon } from "@phosphor-icons/react";
 import {
   type ComponentProps,
   type HTMLAttributes,
-  type MutableRefObject,
   type ReactNode,
   useCallback,
-  useEffect,
 } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { Button } from "@/components/ui/button";
@@ -78,25 +76,6 @@ export const ConversationEmptyState = ({
     )}
   </div>
 );
-
-export type ScrollToBottomRef = MutableRefObject<(() => void) | null>;
-
-export type ConversationScrollAnchorProps = {
-  scrollRef: ScrollToBottomRef;
-};
-
-/** Captures scrollToBottom function into a ref for use outside the Conversation tree */
-export const ConversationScrollAnchor = ({
-  scrollRef,
-}: ConversationScrollAnchorProps) => {
-  const { scrollToBottom } = useStickToBottomContext();
-
-  useEffect(() => {
-    scrollRef.current = () => scrollToBottom();
-  }, [scrollRef, scrollToBottom]);
-
-  return null;
-};
 
 export type ConversationScrollButtonProps = ComponentProps<typeof Button>;
 

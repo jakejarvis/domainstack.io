@@ -2,14 +2,12 @@
 
 import { RobotIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
-  ConversationScrollAnchor,
   ConversationScrollButton,
-  type ScrollToBottomRef,
 } from "@/components/ai-elements/conversation";
 import {
   Message,
@@ -97,7 +95,6 @@ export function ChatClient({
 }: ChatClientProps) {
   const [inputLength, setInputLength] = useState(0);
   const { showToolCalls } = useAiPreferences();
-  const scrollToBottomRef: ScrollToBottomRef = useRef(null);
 
   const placeholder = domain
     ? `Ask about ${domain}\u2026`
@@ -129,7 +126,6 @@ export function ChatClient({
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
     setInputLength(0);
-    scrollToBottomRef.current?.();
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -154,52 +150,64 @@ export function ChatClient({
   return (
     <>
       <Conversation className={cn("min-h-0 flex-1", conversationClassName)}>
-        {messages.length === 0 ? (
-          <ConversationEmptyState
-            icon={
-              <RobotIcon className={iconSize === "lg" ? "size-8" : "size-6"} />
-            }
-            title={
-              iconSize === "lg"
-                ? "Ask me anything about domains!"
-                : "Ask me anything!"
-            }
-            description={
-              domain
-                ? `I can look up DNS, WHOIS, SSL, and more for ${domain}`
-                : "I can look up DNS records, WHOIS data, SSL certificates, and more"
-            }
-          />
-        ) : (
-          <ConversationContent className="gap-4 p-3">
-            {messages.map((message) => (
-              <Message key={message.id} from={message.role}>
-                <MessageContent>
-                  {message.parts.map((part, index) => {
-                    if (part.type === "text") {
-                      return (
-                        <MessageResponse key={`${message.id}-${index}`}>
-                          {part.text}
-                        </MessageResponse>
-                      );
-                    }
-                    if (part.type.startsWith("tool-") && showToolCalls) {
-                      return (
-                        <AutoExpandTool
-                          key={`${message.id}-${index}`}
-                          toolPart={part as ToolUIPart}
-                        />
-                      );
-                    }
-                    return null;
-                  })}
-                </MessageContent>
-              </Message>
-            ))}
-            {showLoading && <Shimmer className="text-sm">Thinking...</Shimmer>}
-          </ConversationContent>
-        )}
-        <ConversationScrollAnchor scrollRef={scrollToBottomRef} />
+        <ConversationContent
+          className={cn(
+            messages.length === 0
+              ? "h-full items-center justify-center"
+              : "gap-4 p-3",
+          )}
+          aria-live="polite"
+        >
+          {messages.length === 0 ? (
+            <ConversationEmptyState
+              icon={
+                <RobotIcon
+                  className={iconSize === "lg" ? "size-8" : "size-6"}
+                />
+              }
+              title={
+                iconSize === "lg"
+                  ? "Ask me anything about domains!"
+                  : "Ask me anything!"
+              }
+              description={
+                domain
+                  ? `I can look up DNS, WHOIS, SSL, and more for ${domain}`
+                  : "I can look up DNS records, WHOIS data, SSL certificates, and more"
+              }
+            />
+          ) : (
+            <>
+              {messages.map((message) => (
+                <Message key={message.id} from={message.role}>
+                  <MessageContent>
+                    {message.parts.map((part, index) => {
+                      if (part.type === "text") {
+                        return (
+                          <MessageResponse key={`${message.id}-${index}`}>
+                            {part.text}
+                          </MessageResponse>
+                        );
+                      }
+                      if (part.type.startsWith("tool-") && showToolCalls) {
+                        return (
+                          <AutoExpandTool
+                            key={`${message.id}-${index}`}
+                            toolPart={part as ToolUIPart}
+                          />
+                        );
+                      }
+                      return null;
+                    })}
+                  </MessageContent>
+                </Message>
+              ))}
+              {showLoading && (
+                <Shimmer className="text-sm">Thinking...</Shimmer>
+              )}
+            </>
+          )}
+        </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
 

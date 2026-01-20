@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   type CSSProperties,
   type ElementType,
@@ -28,6 +28,7 @@ const ShimmerComponent = ({
   const MotionComponent = motion.create(
     Component as keyof JSX.IntrinsicElements,
   );
+  const shouldReduceMotion = useReducedMotion();
 
   const dynamicSpread = useMemo(
     () => (children?.length ?? 0) * spread,
@@ -51,7 +52,7 @@ const ShimmerComponent = ({
         } as CSSProperties
       }
       transition={{
-        repeat: Number.POSITIVE_INFINITY,
+        repeat: shouldReduceMotion ? 0 : Number.POSITIVE_INFINITY,
         duration,
         ease: "linear",
       }}

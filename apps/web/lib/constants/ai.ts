@@ -31,19 +31,19 @@ export const MAX_MESSAGE_LENGTH = 500;
  * Older messages are truncated to stay within this limit.
  * This controls context window usage and costs.
  */
-export const MAX_CONVERSATION_MESSAGES = 20;
+export const MAX_CONVERSATION_MESSAGES = 12;
 
 /**
  * Maximum output tokens the model can generate per response.
  * Prevents runaway responses and controls costs.
  */
-export const MAX_OUTPUT_TOKENS = 2048;
+export const MAX_OUTPUT_TOKENS = 4096;
 
 /**
  * Maximum number of tool calls (steps) per request.
  * Prevents infinite loops and controls execution time.
  */
-export const MAX_TOOL_STEPS = 5;
+export const MAX_TOOL_STEPS = 8;
 
 // =============================================================================
 // Rate Limits

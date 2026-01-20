@@ -1,7 +1,7 @@
 /**
- * Domain lookup tool steps for the chat workflow.
- * Each tool is a durable step with automatic retries.
+ * Domain lookup tools for the chat workflow.
  *
+ * Each tool wraps a durable step function with automatic retries.
  * Node.js modules (like tRPC, database) are imported INSIDE step functions
  * to keep them out of the workflow sandbox.
  */
@@ -35,7 +35,8 @@ function formatToolResult(result: {
 
 /**
  * Format an error for tool response and log it.
- * Returns a JSON string with error message for the AI to interpret.
+ * Returns a JSON string with sanitized error message for the AI to interpret.
+ * Internal details (hostnames, database errors, etc.) are logged but not exposed.
  */
 async function handleToolError(
   err: unknown,
@@ -47,8 +48,37 @@ async function handleToolError(
   const logger = createLogger({ source: "chat/tools" });
   logger.error({ err, domain, tool: toolName }, "tool step failed");
 
-  const message = err instanceof Error ? err.message : "Unknown error";
-  return JSON.stringify({ error: message });
+  // Sanitize error messages to avoid leaking internal details
+  const rawMessage = err instanceof Error ? err.message : "Unknown error";
+  const lowerMessage = rawMessage.toLowerCase();
+
+  let userMessage = "Unable to fetch data. Please try again.";
+
+  // Map specific error patterns to user-friendly messages
+  if (lowerMessage.includes("timeout") || lowerMessage.includes("timed out")) {
+    userMessage = "Request timed out. The domain may be slow to respond.";
+  } else if (lowerMessage.includes("rate limit")) {
+    userMessage = "Rate limit exceeded. Please wait a moment and try again.";
+  } else if (
+    lowerMessage.includes("not found") ||
+    lowerMessage.includes("enotfound") ||
+    lowerMessage.includes("dns")
+  ) {
+    userMessage = `Could not resolve ${domain}. The domain may not exist or DNS may be misconfigured.`;
+  } else if (
+    lowerMessage.includes("certificate") ||
+    lowerMessage.includes("ssl") ||
+    lowerMessage.includes("tls")
+  ) {
+    userMessage = `Could not establish secure connection to ${domain}.`;
+  } else if (
+    lowerMessage.includes("refused") ||
+    lowerMessage.includes("unreachable")
+  ) {
+    userMessage = `Could not connect to ${domain}. The server may be down.`;
+  }
+
+  return JSON.stringify({ error: userMessage });
 }
 
 /**
@@ -68,7 +98,6 @@ async function getRegistrationStep(
 ): Promise<string> {
   "use step";
   try {
-    // Import inside step to keep Node.js modules out of workflow sandbox
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getRegistration({ domain });
