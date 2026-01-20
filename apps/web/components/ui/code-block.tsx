@@ -24,7 +24,10 @@ export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
   };
 
   return (
-    <div className="group relative w-full overflow-hidden rounded-lg border border-border/50 bg-background">
+    <div
+      data-slot="code-block"
+      className="group relative w-full overflow-hidden rounded-lg border border-border/50 bg-background"
+    >
       {copyable && (
         <CopyButton
           value={children}
