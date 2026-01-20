@@ -830,7 +830,7 @@ export type PromptInputTextareaProps = ComponentProps<
 export const PromptInputTextarea = ({
   onChange,
   className,
-  placeholder = "What would you like to know?",
+  placeholder = "What would you like to know\u2026",
   ...props
 }: PromptInputTextareaProps) => {
   const controller = useOptionalPromptInputController();
@@ -1283,7 +1283,8 @@ export const PromptInputSpeechButton = ({
       }
       className={cn(
         "relative transition-all duration-200",
-        isListening && "animate-pulse bg-accent text-accent-foreground",
+        isListening &&
+          "animate-pulse bg-accent text-accent-foreground motion-reduce:animate-none",
         speechError && "text-destructive",
         className,
       )}

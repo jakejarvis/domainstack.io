@@ -122,7 +122,7 @@ export function ChatTrigger() {
         <>
           {fabButton}
           <Drawer open={open} onOpenChange={setOpen}>
-            <DrawerContent className="flex max-h-[85vh] flex-col">
+            <DrawerContent className="flex max-h-[85vh] flex-col overscroll-contain">
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
                   <ChatsIcon className="size-4" />
@@ -154,7 +154,7 @@ export function ChatTrigger() {
             align="end"
             sideOffset={12}
             collisionPadding={16}
-            className="flex h-[min(480px,70vh)] w-[380px] flex-col gap-0 bg-background/95 p-0 backdrop-blur-sm"
+            className="flex h-[min(480px,70vh)] w-[380px] flex-col gap-0 overscroll-contain bg-background/95 p-0 backdrop-blur-sm"
           >
             <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-border/60 border-b px-4 py-3">
               <PopoverTitle className="flex items-center gap-2">

@@ -104,7 +104,7 @@ export function ChatClient({
     () =>
       domain
         ? [
-            `Is ${domain} missing any imporant security headers?`,
+            `Is ${domain} missing any important security headers?`,
             `When does ${domain} expire?`,
             `Which email provider does ${domain} use?`,
             "What DNS records are configured?",
@@ -203,9 +203,7 @@ export function ChatClient({
                   </MessageContent>
                 </Message>
               ))}
-              {showLoading && (
-                <Shimmer className="text-sm">Thinking...</Shimmer>
-              )}
+              {showLoading && <Shimmer className="text-sm">Thinking…</Shimmer>}
             </>
           )}
         </ConversationContent>

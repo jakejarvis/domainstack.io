@@ -115,10 +115,18 @@ export const MessageAction = ({
     );
   }
 
+  // When no tooltip, label is required for accessibility
+  const accessibleName = label || tooltip;
+
   return (
-    <Button size={size} variant={variant} {...props}>
+    <Button
+      size={size}
+      variant={variant}
+      aria-label={accessibleName}
+      {...props}
+    >
       {children}
-      <span className="sr-only">{label || tooltip}</span>
+      {accessibleName && <span className="sr-only">{accessibleName}</span>}
     </Button>
   );
 };
