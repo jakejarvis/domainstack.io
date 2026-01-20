@@ -33,41 +33,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { cn } from "@/lib/utils";
-
-/** Suggestions for the empty state based on context */
-const DOMAIN_SUGGESTIONS = [
-  "Who owns this domain?",
-  "What DNS records are configured?",
-  "What hosting provider is used?",
-  "Is the SSL certificate valid?",
-];
-
-const GENERAL_SUGGESTIONS = [
-  "Look up vercel.com",
-  "What DNS records does github.com have?",
-  "Who is the registrar for stackoverflow.com?",
-  "Check SSL for reddit.com",
-];
-
-/** Map tool names to human-readable titles */
-const TOOL_TITLES: Record<string, string> = {
-  getRegistration: "Looking up WHOIS data",
-  getDnsRecords: "Fetching DNS records",
-  getHosting: "Detecting hosting provider",
-  getCertificates: "Checking SSL certificate",
-  getHeaders: "Analyzing HTTP headers",
-  getSeo: "Fetching SEO metadata",
-};
-
-function getToolTitle(type: string): string {
-  // type is like "tool-getRegistration"
-  const toolName = type.replace(/^tool-/, "");
-  return TOOL_TITLES[toolName] ?? toolName;
-}
+import { getToolTitle } from "./utils";
 
 export interface ChatClientProps {
   messages: UIMessage[];
   sendMessage: (params: { text: string }) => void;
+  clearMessages: () => void;
   status: ChatStatus;
   domain?: string;
   error?: string | null;
@@ -83,6 +54,7 @@ export interface ChatClientProps {
 export function ChatClient({
   messages,
   sendMessage,
+  clearMessages,
   status,
   domain,
   error,
@@ -97,11 +69,19 @@ export function ChatClient({
     ? `Ask about ${domain}\u2026`
     : "Ask about a domain\u2026";
 
-  const suggestions = domain ? DOMAIN_SUGGESTIONS : GENERAL_SUGGESTIONS;
-
-  const handleSuggestionClick = (suggestion: string) => {
-    sendMessage({ text: suggestion });
-  };
+  const suggestions = domain
+    ? [
+        `Who owns ${domain}?`,
+        "What DNS records are configured?",
+        "What hosting provider is used?",
+        `Is ${domain}'s SSL certificate valid?`,
+      ]
+    : [
+        "Look up vercel.com",
+        "What DNS records does github.com have?",
+        "Who is the registrar for stackoverflow.com?",
+        "Check SSL for reddit.com",
+      ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputLength(e.target.value.length);
@@ -111,6 +91,11 @@ export function ChatClient({
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
     setInputLength(0);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    clearMessages();
+    sendMessage({ text: suggestion });
   };
 
   return (
@@ -145,7 +130,6 @@ export function ChatClient({
                         </MessageResponse>
                       );
                     }
-                    // Handle tool parts (type starts with "tool-")
                     if (part.type.startsWith("tool-")) {
                       const toolPart = part as ToolUIPart;
                       const isComplete =
@@ -219,6 +203,7 @@ export function ChatClient({
             )}
           </div>
         )}
+
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             placeholder={placeholder}

@@ -36,8 +36,9 @@ export async function GET(
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     isAuthenticated = !!session?.user?.id;
-  } catch {
-    // Auth error - treat as anonymous
+  } catch (err) {
+    // Auth error - treat as anonymous, but log for debugging
+    logger.debug({ err }, "auth session check failed, treating as anonymous");
   }
 
   // Apply rate limits based on auth status
@@ -84,10 +85,24 @@ export async function GET(
     });
   } catch (err) {
     logger.warn({ err, runId }, "failed to reconnect to chat stream");
+
+    // Provide more specific error messages based on error type
+    const error = err instanceof Error ? err : new Error(String(err));
+    let errorMessage = "Chat session not found or expired";
+    let statusCode = 404;
+
+    if (error.message.includes("timeout")) {
+      errorMessage = "Connection timed out. Please try again.";
+      statusCode = 408;
+    } else if (error.message.includes("network")) {
+      errorMessage = "Network error. Please check your connection.";
+      statusCode = 502;
+    }
+
     return NextResponse.json(
-      { error: "Run not found" },
+      { error: errorMessage },
       {
-        status: 404,
+        status: statusCode,
         headers: rateLimit.headers,
       },
     );

@@ -6,6 +6,7 @@ import {
   PaperclipIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { createCodePlugin } from "@streamdown/code";
 import type { FileUIPart, UIMessage } from "ai";
 import {
   type ComponentProps,
@@ -15,6 +16,7 @@ import {
   type ReactElement,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { Streamdown } from "streamdown";
@@ -27,6 +29,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+
+/** Code highlighting plugin with light/dark theme support */
+const codePlugin = createCodePlugin({
+  themes: ["one-light", "one-dark-pro"],
+});
 
 export type MessageProps = ComponentProps<"div"> & {
   from: UIMessage["role"];
@@ -196,14 +203,18 @@ export const MessageBranchContent = ({
   ...props
 }: MessageBranchContentProps) => {
   const { currentBranch, setBranches, branches } = useMessageBranch();
-  const childrenArray = Array.isArray(children) ? children : [children];
+  // Memoize children array to prevent unnecessary re-renders
+  const childrenArray = useMemo(
+    () => (Array.isArray(children) ? children : [children]),
+    [children],
+  );
 
   // Use useEffect to update branches when they change
   useEffect(() => {
     if (branches.length !== childrenArray.length) {
       setBranches(childrenArray);
     }
-  }, [childrenArray, branches, setBranches]);
+  }, [childrenArray, branches.length, setBranches]);
 
   return childrenArray.map((branch, index) => (
     <div
@@ -319,6 +330,7 @@ export const MessageResponse = memo(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className,
       )}
+      plugins={{ code: codePlugin }}
       {...props}
     />
   ),

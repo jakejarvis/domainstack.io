@@ -1,25 +1,8 @@
 "use client";
 
-import {
-  ChatDotsIcon,
-  ChatsIcon,
-  CheckIcon,
-  CopyIcon,
-  GearIcon,
-  TrashIcon,
-  XIcon,
-} from "@phosphor-icons/react";
-import type { UIMessage } from "ai";
-import { useEffect, useState } from "react";
-import { ChatClient } from "@/components/chat/chat-client";
+import { ChatDotsIcon, ChatsIcon, XIcon } from "@phosphor-icons/react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Drawer,
   DrawerContent,
@@ -27,20 +10,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from "@/components/ui/item";
-import { Label } from "@/components/ui/label";
-import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -50,174 +25,9 @@ import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { useDomainChat } from "@/hooks/use-domain-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
-
-const fabClassName = "fixed right-6 bottom-6 z-40 rounded-full shadow-lg";
-
-function formatMessagesAsMarkdown(messages: UIMessage[]): string {
-  return messages
-    .map((message) => {
-      const role = message.role === "user" ? "User" : "Assistant";
-      const textParts = message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("\n\n");
-      return `**${role}:** ${textParts}`;
-    })
-    .join("\n\n---\n\n");
-}
-
-function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    if (typeof window === "undefined" || !navigator?.clipboard?.writeText) {
-      return;
-    }
-
-    try {
-      const markdown = formatMessagesAsMarkdown(messages);
-      await navigator.clipboard.writeText(markdown);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Silently fail
-    }
-  };
-
-  const Icon = copied ? CheckIcon : CopyIcon;
-  const label = copied ? "Copied!" : "Copy conversation";
-
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleCopy}
-            aria-label={label}
-          />
-        }
-      >
-        <Icon className="size-4" />
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function ClearChatButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={onClick}
-            aria-label="Clear chat"
-          />
-        }
-      >
-        <TrashIcon className="size-4" />
-      </TooltipTrigger>
-      <TooltipContent>Clear chat</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function ChatSettingsButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Settings"
-            onClick={onClick}
-          />
-        }
-      >
-        <GearIcon className="size-4" />
-      </TooltipTrigger>
-      <TooltipContent>Settings</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function ChatSettingsDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const { hideAiFeatures, setHideAiFeatures } = useAiPreferences();
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal>
-      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>Chat Settings</DialogTitle>
-        </DialogHeader>
-        <Item size="sm" variant="default" className="rounded-lg p-0">
-          <ItemContent>
-            <ItemTitle>
-              <Label htmlFor="hide-ai" className="cursor-pointer">
-                Hide AI features
-              </Label>
-            </ItemTitle>
-            <ItemDescription className="text-xs">
-              {hideAiFeatures ? (
-                <>
-                  To restore, visit any page with{" "}
-                  <code className="rounded bg-muted px-1 text-[11px]">
-                    ?show_ai=1
-                  </code>
-                </>
-              ) : (
-                <>Removes the chat button from all pages</>
-              )}
-            </ItemDescription>
-          </ItemContent>
-          <Switch
-            id="hide-ai"
-            checked={hideAiFeatures}
-            onCheckedChange={setHideAiFeatures}
-          />
-        </Item>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ChatHeaderActions({
-  messages,
-  onClear,
-  onSettingsClick,
-}: {
-  messages: UIMessage[];
-  onClear: () => void;
-  onSettingsClick: () => void;
-}) {
-  return (
-    <>
-      {messages.length > 0 && (
-        <>
-          <CopyConversationButton messages={messages} />
-          <ClearChatButton onClick={onClear} />
-        </>
-      )}
-      <ChatSettingsButton onClick={onSettingsClick} />
-    </>
-  );
-}
+import { ChatClient } from "./chat-client";
+import { ChatHeaderActions } from "./chat-header-actions";
+import { ChatSettingsDialog } from "./chat-settings-dialog";
 
 export function ChatTrigger() {
   const [open, setOpen] = useState(false);
@@ -255,6 +65,20 @@ export function ChatTrigger() {
     }
   }, [hideAiFeatures, setHideAiFeatures]);
 
+  // Memoize props passed to ChatClient to prevent unnecessary re-renders
+  const chatClientProps = useMemo(
+    () => ({
+      messages,
+      sendMessage,
+      clearMessages,
+      status,
+      domain,
+      error,
+      onClearError: clearError,
+    }),
+    [messages, sendMessage, clearMessages, status, domain, error, clearError],
+  );
+
   // Don't render until mounted (localStorage has been read)
   // Then hide if AI features are hidden and settings dialog is closed
   if (!mounted || (hideAiFeatures && !settingsOpen)) {
@@ -267,31 +91,36 @@ export function ChatTrigger() {
     setSettingsOpen(true);
   };
 
-  const chatClientProps = {
-    messages,
-    sendMessage,
-    status,
-    domain,
-    error,
-    onClearError: clearError,
-  };
-
   // Show chat UI only when AI features are not hidden
   const showChatUI = !hideAiFeatures;
+
+  // Shared FAB button
+  const fabButton = (
+    <Button
+      variant="default"
+      size="icon-lg"
+      aria-label={`Chat with ${CHATBOT_NAME}`}
+      className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg"
+      onClick={isMobile ? () => setOpen(true) : undefined}
+    >
+      <ChatDotsIcon className="size-5 text-background/95" weight="fill" />
+    </Button>
+  );
+
+  // Shared header actions
+  const headerActions = (
+    <ChatHeaderActions
+      messages={messages}
+      onClear={clearMessages}
+      onSettingsClick={handleSettingsClick}
+    />
+  );
 
   return (
     <>
       {showChatUI && isMobile && (
         <>
-          <Button
-            variant="default"
-            size="icon-lg"
-            onClick={() => setOpen(true)}
-            aria-label={`Chat with ${CHATBOT_NAME}`}
-            className={fabClassName}
-          >
-            <ChatDotsIcon className="size-5 text-background/95" weight="fill" />
-          </Button>
+          {fabButton}
           <Drawer open={open} onOpenChange={setOpen}>
             <DrawerContent className="flex max-h-[85vh] flex-col">
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
@@ -299,13 +128,7 @@ export function ChatTrigger() {
                   <ChatsIcon className="size-4" />
                   {CHATBOT_NAME}
                 </DrawerTitle>
-                <div className="flex items-center gap-1">
-                  <ChatHeaderActions
-                    messages={messages}
-                    onClear={clearMessages}
-                    onSettingsClick={handleSettingsClick}
-                  />
-                </div>
+                <div className="flex items-center gap-1">{headerActions}</div>
               </DrawerHeader>
               <ChatClient
                 {...chatClientProps}
@@ -317,28 +140,11 @@ export function ChatTrigger() {
           </Drawer>
         </>
       )}
+
       {showChatUI && !isMobile && (
         <Popover open={open} onOpenChange={setOpen}>
           <Tooltip>
-            <TooltipTrigger
-              render={
-                <PopoverTrigger
-                  render={
-                    <Button
-                      variant="default"
-                      size="icon-lg"
-                      aria-label={`Chat with ${CHATBOT_NAME}`}
-                      className={fabClassName}
-                    >
-                      <ChatDotsIcon
-                        className="size-5 text-background/95"
-                        weight="fill"
-                      />
-                    </Button>
-                  }
-                />
-              }
-            />
+            <TooltipTrigger render={<PopoverTrigger render={fabButton} />} />
             <TooltipContent side="left" sideOffset={8}>
               Chat with {CHATBOT_NAME}
             </TooltipContent>
@@ -356,11 +162,7 @@ export function ChatTrigger() {
                 {CHATBOT_NAME}
               </PopoverTitle>
               <div className="-mr-2 flex items-center gap-1">
-                <ChatHeaderActions
-                  messages={messages}
-                  onClear={clearMessages}
-                  onSettingsClick={handleSettingsClick}
-                />
+                {headerActions}
                 <Tooltip>
                   <TooltipTrigger
                     render={
@@ -382,6 +184,7 @@ export function ChatTrigger() {
           </PopoverContent>
         </Popover>
       )}
+
       <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );

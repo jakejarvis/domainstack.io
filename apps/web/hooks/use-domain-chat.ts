@@ -6,42 +6,41 @@ import type { UIMessage } from "ai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const STORAGE_PREFIX = "domain-chat";
+const STORAGE_KEY_RUN_ID = "chat-run-id";
+const STORAGE_KEY_MESSAGES = "chat-messages";
 
-function getStorageKeys(domain?: string) {
-  const suffix = domain ? `-${domain}` : "";
-  return {
-    runId: `${STORAGE_PREFIX}-run-id${suffix}`,
-    messages: `${STORAGE_PREFIX}-messages${suffix}`,
-  };
+function getStoredRunId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return localStorage.getItem(STORAGE_KEY_RUN_ID) ?? undefined;
 }
 
-function getStoredRunId(domain?: string): string | undefined {
+function getStoredMessages(): UIMessage[] | undefined {
   if (typeof window === "undefined") return undefined;
-  return localStorage.getItem(getStorageKeys(domain).runId) ?? undefined;
-}
-
-function getStoredMessages(domain?: string): UIMessage[] | undefined {
-  if (typeof window === "undefined") return undefined;
-  const stored = localStorage.getItem(getStorageKeys(domain).messages);
+  const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
   if (!stored) return undefined;
   try {
     return JSON.parse(stored) as UIMessage[];
-  } catch {
+  } catch (error) {
+    console.warn(
+      "Failed to parse stored chat messages, clearing storage:",
+      error,
+    );
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
     return undefined;
   }
 }
 
-function clearStorage(domain?: string) {
+function clearStorage() {
   if (typeof window === "undefined") return;
-  const keys = getStorageKeys(domain);
-  localStorage.removeItem(keys.runId);
-  localStorage.removeItem(keys.messages);
+  localStorage.removeItem(STORAGE_KEY_RUN_ID);
+  localStorage.removeItem(STORAGE_KEY_MESSAGES);
 }
 
 /**
- * Custom hook wrapping useChat with domain context.
- * Automatically extracts domain from URL params on /[domain] pages.
+ * Chat hook with global message history.
+ *
+ * The current domain (from URL params) is passed as context to the AI,
+ * but the conversation history is shared across all pages.
  *
  * Uses WorkflowChatTransport for:
  * - Automatic reconnection after network issues or timeouts
@@ -58,57 +57,61 @@ export function useDomainChat() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Get stored run ID for stream resumption (computed once on mount)
-  const activeRunId = useMemo(() => getStoredRunId(domain), [domain]);
-
-  // Track whether we've restored messages to avoid doing it multiple times
-  const hasRestoredMessages = useRef(false);
+  const activeRunId = useMemo(() => getStoredRunId(), []);
 
   // Configure workflow transport with domain in body and persistence callbacks
-  const transport = useMemo(() => {
-    const keys = getStorageKeys(domain);
+  const transport = useMemo(
+    () =>
+      new WorkflowChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => ({
+          body: { messages, domain },
+        }),
+        onChatSendMessage: (response, options) => {
+          // Store messages for restoration on page reload
+          localStorage.setItem(
+            STORAGE_KEY_MESSAGES,
+            JSON.stringify(options.messages),
+          );
 
-    return new WorkflowChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest: ({ messages }) => ({
-        body: { messages, domain },
+          // Store the workflow run ID for stream resumption
+          const workflowRunId = response.headers.get("x-workflow-run-id");
+          if (workflowRunId) {
+            localStorage.setItem(STORAGE_KEY_RUN_ID, workflowRunId);
+          }
+        },
+        onChatEnd: () => {
+          // Clear the active run ID when chat completes (but keep messages)
+          localStorage.removeItem(STORAGE_KEY_RUN_ID);
+        },
       }),
-      onChatSendMessage: (response, options) => {
-        // Store messages for restoration on page reload
-        localStorage.setItem(keys.messages, JSON.stringify(options.messages));
-
-        // Store the workflow run ID for stream resumption
-        const workflowRunId = response.headers.get("x-workflow-run-id");
-        if (workflowRunId) {
-          localStorage.setItem(keys.runId, workflowRunId);
-        }
-      },
-      onChatEnd: () => {
-        // Clear the active run ID when chat completes (but keep messages)
-        localStorage.removeItem(keys.runId);
-      },
-    });
-  }, [domain]);
+    [domain],
+  );
 
   const chat = useChat({
     transport,
     resume: !!activeRunId,
     onError: (error) => {
-      // Extract user-friendly error message
       const message = getUserFriendlyError(error);
       setSubmitError(message);
     },
   });
 
-  // Restore messages from localStorage on mount
-  useEffect(() => {
-    if (hasRestoredMessages.current) return;
-    hasRestoredMessages.current = true;
+  // Keep setMessages ref up to date to avoid chat object in deps
+  const setMessagesRef = useRef(chat.setMessages);
+  setMessagesRef.current = chat.setMessages;
 
-    const storedMessages = getStoredMessages(domain);
+  // Restore messages from localStorage once on mount
+  const hasRestored = useRef(false);
+  useEffect(() => {
+    if (hasRestored.current) return;
+    hasRestored.current = true;
+
+    const storedMessages = getStoredMessages();
     if (storedMessages && storedMessages.length > 0) {
-      chat.setMessages(storedMessages);
+      setMessagesRef.current(storedMessages);
     }
-  }, [domain, chat]);
+  }, []);
 
   // Clear error when user starts typing or retries
   const clearError = useCallback(() => {
@@ -119,8 +122,8 @@ export function useDomainChat() {
   const clearMessages = useCallback(() => {
     chat.setMessages([]);
     setSubmitError(null);
-    clearStorage(domain);
-  }, [chat, domain]);
+    clearStorage();
+  }, [chat]);
 
   // Wrap sendMessage to validate and clear errors
   const sendMessage = useCallback(

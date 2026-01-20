@@ -27,8 +27,11 @@ import {
   RATE_LIMIT_ANONYMOUS,
   RATE_LIMIT_AUTHENTICATED,
 } from "@/lib/constants/ai";
+import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import { chatWorkflow } from "@/workflows/chat";
+
+const logger = createLogger({ source: "api/chat" });
 
 /**
  * Zod schema for chat request validation.
@@ -81,8 +84,9 @@ export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     userId = session?.user?.id ?? null;
-  } catch {
-    // Auth error - treat as anonymous
+  } catch (err) {
+    // Auth error - treat as anonymous, but log for debugging
+    logger.debug({ err }, "auth session check failed, treating as anonymous");
   }
 
   // Apply rate limits based on auth status
@@ -132,14 +136,22 @@ export async function POST(request: Request) {
   const ip = ipAddress(request) ?? null;
 
   // Start the chat workflow with serializable inputs only
-  const run = await start(chatWorkflow, [{ messages, domain, ip, userId }]);
+  try {
+    const run = await start(chatWorkflow, [{ messages, domain, ip, userId }]);
 
-  // Return streaming response
-  return createUIMessageStreamResponse({
-    stream: run.readable,
-    headers: {
-      "x-workflow-run-id": run.runId,
-      ...rateLimit.headers,
-    },
-  });
+    // Return streaming response
+    return createUIMessageStreamResponse({
+      stream: run.readable,
+      headers: {
+        "x-workflow-run-id": run.runId,
+        ...rateLimit.headers,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, domain }, "failed to start chat workflow");
+    return NextResponse.json(
+      { error: "Failed to start chat. Please try again." },
+      { status: 500, headers: rateLimit.headers },
+    );
+  }
 }

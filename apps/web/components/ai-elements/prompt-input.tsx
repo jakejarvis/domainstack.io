@@ -691,10 +691,14 @@ export const PromptInput = ({
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(null);
+        reader.onerror = () => {
+          console.warn("Failed to read blob as data URL:", reader.error);
+          resolve(null);
+        };
         reader.readAsDataURL(blob);
       });
-    } catch {
+    } catch (error) {
+      console.warn("Failed to convert blob URL to data URL:", error);
       return null;
     }
   };
@@ -755,8 +759,9 @@ export const PromptInput = ({
                   controller.textInput.clear();
                 }
               })
-              .catch(() => {
+              .catch((error) => {
                 // Don't clear on error - user may want to retry
+                console.warn("Message submission failed:", error);
               });
           } else {
             // Sync function completed without throwing, clear attachments
@@ -765,12 +770,14 @@ export const PromptInput = ({
               controller.textInput.clear();
             }
           }
-        } catch {
+        } catch (error) {
           // Don't clear on error - user may want to retry
+          console.warn("Message submission failed:", error);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         // Don't clear on error - user may want to retry
+        console.warn("Failed to convert attachments:", error);
       });
   };
 
@@ -1167,10 +1174,20 @@ export const PromptInputSpeechButton = ({
   ...props
 }: PromptInputSpeechButtonProps) => {
   const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(
     null,
   );
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Store callbacks in refs to avoid recreating SpeechRecognition
+  const onTranscriptionChangeRef = useRef(onTranscriptionChange);
+  const textareaRefRef = useRef(textareaRef);
+
+  // Keep refs up to date
+  useEffect(() => {
+    onTranscriptionChangeRef.current = onTranscriptionChange;
+    textareaRefRef.current = textareaRef;
+  }, [onTranscriptionChange, textareaRef]);
 
   useEffect(() => {
     if (
@@ -1187,6 +1204,7 @@ export const PromptInputSpeechButton = ({
 
       speechRecognition.onstart = () => {
         setIsListening(true);
+        setSpeechError(null);
       };
 
       speechRecognition.onend = () => {
@@ -1203,21 +1221,32 @@ export const PromptInputSpeechButton = ({
           }
         }
 
-        if (finalTranscript && textareaRef?.current) {
-          const textarea = textareaRef.current;
+        if (finalTranscript && textareaRefRef.current?.current) {
+          const textarea = textareaRefRef.current.current;
           const currentValue = textarea.value;
           const newValue =
             currentValue + (currentValue ? " " : "") + finalTranscript;
 
           textarea.value = newValue;
           textarea.dispatchEvent(new Event("input", { bubbles: true }));
-          onTranscriptionChange?.(newValue);
+          onTranscriptionChangeRef.current?.(newValue);
         }
       };
 
       speechRecognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
+        console.warn("Speech recognition error:", event.error);
         setIsListening(false);
+        // Surface user-friendly error messages
+        const errorMessages: Record<string, string> = {
+          "not-allowed": "Microphone access denied",
+          "no-speech": "No speech detected",
+          "audio-capture": "Microphone not available",
+          network: "Network error",
+          aborted: "Recognition aborted",
+        };
+        setSpeechError(
+          errorMessages[event.error] ?? "Speech recognition failed",
+        );
       };
 
       recognitionRef.current = speechRecognition;
@@ -1229,7 +1258,7 @@ export const PromptInputSpeechButton = ({
         recognitionRef.current.stop();
       }
     };
-  }, [textareaRef, onTranscriptionChange]);
+  }, []);
 
   const toggleListening = useCallback(() => {
     if (!recognition) {
@@ -1245,13 +1274,22 @@ export const PromptInputSpeechButton = ({
 
   return (
     <PromptInputButton
+      aria-label={
+        speechError
+          ? speechError
+          : isListening
+            ? "Stop listening"
+            : "Start voice input"
+      }
       className={cn(
         "relative transition-all duration-200",
         isListening && "animate-pulse bg-accent text-accent-foreground",
+        speechError && "text-destructive",
         className,
       )}
       disabled={!recognition}
       onClick={toggleListening}
+      title={speechError ?? undefined}
       {...props}
     >
       <MicrophoneIcon className="size-4" />
