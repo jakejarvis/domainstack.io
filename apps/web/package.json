@@ -48,7 +48,7 @@
     "@vercel/edge-config": "^1.4.3",
     "@vercel/functions": "^3.3.6",
     "@vercel/otel": "^2.1.0",
-    "better-auth": "^1.4.15",
+    "better-auth": "^1.4.16",
     "cheerio": "^1.1.2",
     "clipboard-copy": "^4.0.1",
     "clsx": "^2.1.1",
