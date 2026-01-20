@@ -130,6 +130,7 @@ export function useDomainChat() {
   // Persist messages to localStorage whenever they change
   // Skip the initial empty state and restoration
   const isInitialized = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally using .length to avoid re-running on every reference change
   useEffect(() => {
     // Skip first render (empty messages)
     if (!isInitialized.current) {
@@ -152,7 +153,7 @@ export function useDomainChat() {
         analytics.trackException(error, { context: "chat-storage-persist" });
       }
     }
-  }, [chat.messages]);
+  }, [chat.messages.length]);
 
   // Clear error when user starts typing or retries
   const clearError = useCallback(() => {

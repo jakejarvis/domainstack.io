@@ -1,7 +1,7 @@
 "use client";
 
 import { ChatDotsIcon, ChatsIcon, XIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -65,19 +65,16 @@ export function ChatTrigger() {
     }
   }, [hideAiFeatures, setHideAiFeatures]);
 
-  // Memoize props passed to ChatClient to prevent unnecessary re-renders
-  const chatClientProps = useMemo(
-    () => ({
-      messages,
-      sendMessage,
-      clearMessages,
-      status,
-      domain,
-      error,
-      onClearError: clearError,
-    }),
-    [messages, sendMessage, clearMessages, status, domain, error, clearError],
-  );
+  // Props passed to ChatClient (no useMemo needed since ChatClient is not memoized)
+  const chatClientProps = {
+    messages,
+    sendMessage,
+    clearMessages,
+    status,
+    domain,
+    error,
+    onClearError: clearError,
+  };
 
   // Don't render until mounted (localStorage has been read)
   // Then hide if AI features are hidden and settings dialog is closed
