@@ -127,10 +127,12 @@ export function useDomainChat() {
     }
   }, []);
 
-  // Persist messages to localStorage when message count changes
+  // Persist messages to localStorage when:
+  // - Message count changes (new message added)
+  // - Status changes to 'ready' (streaming completed, final content available)
   // Skip the initial empty state and restoration
   const isInitialized = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally using .length to avoid re-running on every reference change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
   useEffect(() => {
     // Skip first render (empty messages)
     if (!isInitialized.current) {
@@ -153,7 +155,7 @@ export function useDomainChat() {
         analytics.trackException(error, { context: "chat-storage-persist" });
       }
     }
-  }, [chat.messages.length]);
+  }, [chat.messages.length, chat.status]);
 
   // Clear error when user starts typing or retries
   const clearError = useCallback(() => {

@@ -491,6 +491,6 @@ Differentiated by auth status and endpoint.
 4. **System prompt defense**: Refuses off-topic questions, ignores override attempts
 
 ### Adding New Tools
-1. Define tool in `workflows/chat/tools.ts` using `createDomainTools()`
+1. Define tool in `workflows/chat/tools.ts` using `createDomainToolset()`
 2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
 3. Tools call tRPC procedures which have their own rate limits

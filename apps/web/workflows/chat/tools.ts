@@ -223,7 +223,7 @@ async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
  * Creates domain intelligence tools bound to a tool context.
  * Each tool executes as a durable workflow step with automatic retries.
  */
-export function createDomainTools(ctx: ToolContext) {
+export function createDomainToolset(ctx: ToolContext) {
   return {
     getRegistration: tool({
       description:
