@@ -31,7 +31,7 @@
     "@polar-sh/better-auth": "^1.6.4",
     "@polar-sh/sdk": "^0.42.2",
     "@posthog/nextjs-config": "^1.7.6",
-    "@react-email/components": "^1.0.4",
+    "@react-email/components": "^1.0.6",
     "@readme/http-status-codes": "^9.0.6",
     "@sparticuz/chromium": "143.0.4",
     "@tanstack/react-query": "^5.90.19",
