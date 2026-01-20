@@ -104,16 +104,17 @@ export function ChatClient({
     () =>
       domain
         ? [
-            `Who owns ${domain}?`,
+            `Is ${domain} missing any imporant security headers?`,
+            `When does ${domain} expire?`,
+            `Which email provider does ${domain} use?`,
             "What DNS records are configured?",
-            "What hosting provider is used?",
             `Is ${domain}'s SSL certificate valid?`,
           ]
         : [
             "Look up vercel.com",
-            "What DNS records does github.com have?",
+            "What security headers does chatgpt.com have?",
             "Who is the registrar for stackoverflow.com?",
-            "Check SSL for reddit.com",
+            "Check SSL for github.com",
           ],
     [domain],
   );
