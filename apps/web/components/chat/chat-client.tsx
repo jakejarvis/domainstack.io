@@ -127,8 +127,8 @@ export function ChatClient({
     () =>
       domain
         ? [
-            `Is ${domain} missing any important security headers?`,
             `When does ${domain} expire?`,
+            `Is ${domain} missing any important security headers?`,
             `Which email provider does ${domain} use?`,
             "What DNS records are configured?",
             `Is ${domain}'s SSL certificate valid?`,
@@ -180,7 +180,10 @@ export function ChatClient({
     <>
       <Conversation
         stickyInstance={stickyInstance}
-        className={cn("min-h-0 flex-1", conversationClassName)}
+        className={cn(
+          "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:h-full",
+          conversationClassName,
+        )}
       >
         <ConversationContent
           className={cn(

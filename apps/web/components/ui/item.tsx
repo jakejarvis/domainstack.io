@@ -95,13 +95,15 @@ const itemMediaVariants = cva({
 type ItemMediaVariant = "default" | "icon" | "image";
 
 interface ItemMediaProps
-  extends Omit<useRender.ComponentProps<"div">, "children"> {
+  extends Omit<useRender.ComponentProps<typeof IconBadge>, "children"> {
   variant?: ItemMediaVariant;
   children?: React.ReactNode;
 }
 
 function ItemMedia({
   variant = "default",
+  size = "md",
+  color = "muted",
   className,
   render,
   children,
@@ -112,7 +114,8 @@ function ItemMedia({
     return (
       <IconBadge
         data-slot="item-media"
-        size="sm"
+        size={size}
+        color={color}
         className={cn(
           "group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start",
           className,

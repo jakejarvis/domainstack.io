@@ -1065,8 +1065,12 @@ export const PromptInputSubmit = ({
   }
   // For "ready" and "error", use the default arrow icon (allows retry)
 
-  // Disable during submitted state (waiting for first response)
-  const isDisabled = disabled ?? status === "submitted";
+  // Determine if button should be disabled:
+  // - streaming: always enabled (stop button should always be clickable)
+  // - submitted: always disabled (waiting for first response chunk)
+  // - ready/error: respect the disabled prop (typically based on empty input)
+  const isDisabled =
+    status === "streaming" ? false : (disabled ?? status === "submitted");
 
   return (
     <InputGroupButton
