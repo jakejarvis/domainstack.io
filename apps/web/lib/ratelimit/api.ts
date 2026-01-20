@@ -59,9 +59,14 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
   } catch (err) {
     // Auth not available or error - fall back to IP
     // Log at debug level to avoid noise but maintain visibility
-    const { createLogger } = await import("@/lib/logger/server");
-    const logger = createLogger({ source: "ratelimit/api" });
-    logger.debug({ err }, "auth session check failed, using IP");
+    // Guard logging so errors don't escape the catch and break fail-open behavior
+    try {
+      const { createLogger } = await import("@/lib/logger/server");
+      const logger = createLogger({ source: "ratelimit/api" });
+      logger.debug({ err }, "auth session check failed, using IP");
+    } catch {
+      // Logging failed - silently continue to IP fallback
+    }
   }
 
   // Fall back to IP address
