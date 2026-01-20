@@ -1,7 +1,9 @@
 /**
  * Domain lookup tools for the chat workflow.
  *
- * Each tool wraps a durable step function with automatic retries.
+ * Each tool wraps a durable step function. The Workflow SDK provides
+ * automatic retries for failed steps by default.
+ *
  * Node.js modules (like tRPC, database) are imported INSIDE step functions
  * to keep them out of the workflow sandbox.
  */
@@ -34,6 +36,34 @@ function formatToolResult(result: {
 }
 
 /**
+ * Check if an error is an expected network/domain error vs an unexpected bug.
+ * Expected errors: network issues, DNS failures, timeouts, rate limits, etc.
+ * Unexpected errors: import failures, type errors, programming bugs
+ */
+function isExpectedError(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  const expectedPatterns = [
+    "timeout",
+    "timed out",
+    "rate limit",
+    "not found",
+    "enotfound",
+    "dns",
+    "certificate",
+    "ssl",
+    "tls",
+    "refused",
+    "unreachable",
+    "network",
+    "econnreset",
+    "econnrefused",
+    "socket",
+    "fetch failed",
+  ];
+  return expectedPatterns.some((pattern) => lowerMessage.includes(pattern));
+}
+
+/**
  * Format an error for tool response and log it.
  * Returns a JSON string with sanitized error message for the AI to interpret.
  * Internal details (hostnames, database errors, etc.) are logged but not exposed.
@@ -46,11 +76,21 @@ async function handleToolError(
   // Import logger inside to keep Node.js modules out of workflow sandbox
   const { createLogger } = await import("@/lib/logger/server");
   const logger = createLogger({ source: "chat/tools" });
-  logger.error({ err, domain, tool: toolName }, "tool step failed");
 
   // Sanitize error messages to avoid leaking internal details
   const rawMessage = err instanceof Error ? err.message : "Unknown error";
   const lowerMessage = rawMessage.toLowerCase();
+
+  // Log at appropriate level: warn for expected errors, error for unexpected
+  const isExpected = isExpectedError(rawMessage);
+  if (isExpected) {
+    logger.warn({ err, domain, tool: toolName }, "tool step failed (expected)");
+  } else {
+    logger.error(
+      { err, domain, tool: toolName },
+      "tool step failed (unexpected)",
+    );
+  }
 
   let userMessage = "Unable to fetch data. Please try again.";
 

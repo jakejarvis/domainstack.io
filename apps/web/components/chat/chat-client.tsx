@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { cn } from "@/lib/utils";
-import { getToolTitle } from "./utils";
+import { getToolStatusMessage } from "./utils";
 
 /** Tool card that auto-expands when the tool completes */
 function AutoExpandTool({
@@ -72,7 +72,7 @@ function AutoExpandTool({
   return (
     <Tool open={open} onOpenChange={setOpen}>
       <ToolHeader
-        title={getToolTitle(toolPart.type)}
+        title={getToolStatusMessage(toolPart.type)}
         type={toolPart.type}
         state={effectiveState}
       />

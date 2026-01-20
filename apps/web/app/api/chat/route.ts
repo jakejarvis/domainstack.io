@@ -132,7 +132,7 @@ export async function POST(request: Request) {
   const { messages: rawMessages, domain } = parseResult.data;
 
   // Truncate conversation history to prevent abuse
-  // Keep most recent messages, always including the last user message
+  // Keep the most recent messages within limit
   const messages = rawMessages.slice(-MAX_CONVERSATION_MESSAGES) as UIMessage[];
 
   // Get IP for rate limiting in tools

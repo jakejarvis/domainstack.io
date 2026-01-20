@@ -127,7 +127,7 @@ export function useDomainChat() {
     }
   }, []);
 
-  // Persist messages to localStorage whenever they change
+  // Persist messages to localStorage when message count changes
   // Skip the initial empty state and restoration
   const isInitialized = useRef(false);
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally using .length to avoid re-running on every reference change

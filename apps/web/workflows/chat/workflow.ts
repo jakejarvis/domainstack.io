@@ -86,7 +86,7 @@ export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
 
   // Create agent with domain tools
   const agent = new DurableAgent({
-    model: () => getModelStep(userId, ip, domain),
+    model: getModelStep,
     tools: createDomainTools(toolCtx),
     system: buildSystemPrompt(domain),
     headers: {

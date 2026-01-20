@@ -30,8 +30,11 @@ export const MAX_MESSAGE_LENGTH = 500;
  * Maximum number of messages to send to the API.
  * Older messages are truncated to stay within this limit.
  * This controls context window usage and costs.
+ *
+ * Note: Server will validate up to 2x this limit to account for
+ * user+assistant message pairs in conversation history.
  */
-export const MAX_CONVERSATION_MESSAGES = 12;
+export const MAX_CONVERSATION_MESSAGES = 10;
 
 /**
  * Maximum output tokens the model can generate per response.

@@ -90,8 +90,6 @@ export async function GET(
       headers: rateLimit.headers,
     });
   } catch (err) {
-    logger.warn({ err, runId }, "failed to reconnect to chat stream");
-
     // Provide more specific error messages based on error type
     const error = err instanceof Error ? err : new Error(String(err));
     let errorMessage = "Chat session not found or expired";
@@ -110,6 +108,19 @@ export async function GET(
       // Unexpected error - use 500 instead of misleading 404
       errorMessage = "An unexpected error occurred. Please try again.";
       statusCode = 500;
+    }
+
+    // Log at appropriate severity: error for 500s, warn for expected errors
+    if (statusCode === 500) {
+      logger.error(
+        { err, runId, statusCode },
+        "unexpected error reconnecting to chat stream",
+      );
+    } else {
+      logger.warn(
+        { err, runId, statusCode },
+        "failed to reconnect to chat stream",
+      );
     }
 
     return NextResponse.json(
