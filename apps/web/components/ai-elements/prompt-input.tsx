@@ -1070,7 +1070,7 @@ export const PromptInputSubmit = ({
   // - submitted: always disabled (waiting for first response chunk)
   // - ready/error: respect the disabled prop (typically based on empty input)
   const isDisabled =
-    status === "streaming" ? false : (disabled ?? status === "submitted");
+    status === "streaming" ? false : status === "submitted" || disabled;
 
   return (
     <InputGroupButton

@@ -24,6 +24,9 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const ref = useRef<HTMLPreElement>(null);
 
+  // Read the text content when copy is triggered, not at render time
+  const getValue = useCallback(() => ref.current?.innerText ?? "", []);
+
   const CodeBlockComponent = useCallback(
     (props: { className?: string }) => (
       <pre
@@ -49,7 +52,7 @@ export const CodeBlock = ({
         <CodeBlockComponent />
         <CopyButton
           className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/code-block:opacity-100"
-          value={ref.current?.innerText ?? ""}
+          value={getValue}
         />
       </div>
     );
@@ -69,7 +72,7 @@ export const CodeBlock = ({
         <CardTitle className="flex-1 font-mono font-normal text-sm tracking-tight">
           {title}
         </CardTitle>
-        <CopyButton value={ref.current?.innerText ?? ""} />
+        <CopyButton value={getValue} />
       </CardHeader>
       <CardContent className="p-0">
         <CodeBlockComponent className="line-numbers rounded-none border-none" />

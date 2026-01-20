@@ -154,6 +154,7 @@ export function ChatClient({
 
   const handleSuggestionClick = (suggestion: string) => {
     clearMessages();
+    onClearError?.();
     sendMessage({ text: suggestion });
   };
 

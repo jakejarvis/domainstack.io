@@ -181,7 +181,7 @@ export const ToolOutput = ({
     return null;
   }
 
-  const formattedOutput = output ? formatToolOutput(output) : null;
+  const formattedOutput = output != null ? formatToolOutput(output) : null;
 
   return (
     <div
