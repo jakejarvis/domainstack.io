@@ -37,13 +37,32 @@ import { cn } from "@/lib/utils";
 import { getToolTitle } from "./utils";
 
 /** Tool card that auto-expands when the tool completes */
-function AutoExpandTool({ toolPart }: { toolPart: ToolUIPart }) {
+function AutoExpandTool({
+  toolPart,
+  isStreamComplete,
+}: {
+  toolPart: ToolUIPart;
+  /** Whether the stream has finished (status is "ready") */
+  isStreamComplete: boolean;
+}) {
+  // If stream is done but tool never got output, treat as error
+  const isStuckPending =
+    isStreamComplete && toolPart.state === "input-available";
+
+  const effectiveState: ToolUIPart["state"] = isStuckPending
+    ? "output-error"
+    : toolPart.state;
+
+  const effectiveErrorText = isStuckPending
+    ? "Tool execution failed. The model may not support tool calling."
+    : toolPart.errorText;
+
   const isComplete =
-    toolPart.state === "output-available" || toolPart.state === "output-error";
+    effectiveState === "output-available" || effectiveState === "output-error";
 
   const [open, setOpen] = useState(isComplete);
 
-  // Auto-expand when tool completes
+  // Auto-expand when tool completes (or errors)
   useEffect(() => {
     if (isComplete) {
       setOpen(true);
@@ -55,11 +74,11 @@ function AutoExpandTool({ toolPart }: { toolPart: ToolUIPart }) {
       <ToolHeader
         title={getToolTitle(toolPart.type)}
         type={toolPart.type}
-        state={toolPart.state}
+        state={effectiveState}
       />
       <ToolContent>
         <ToolInput input={toolPart.input} />
-        <ToolOutput output={toolPart.output} errorText={toolPart.errorText} />
+        <ToolOutput output={toolPart.output} errorText={effectiveErrorText} />
       </ToolContent>
     </Tool>
   );
@@ -195,6 +214,7 @@ export function ChatClient({
                           <AutoExpandTool
                             key={`${message.id}-${index}`}
                             toolPart={part as ToolUIPart}
+                            isStreamComplete={status === "ready"}
                           />
                         );
                       }
