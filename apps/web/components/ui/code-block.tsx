@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { CopyButton } from "@/components/ui/copy-button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CodeBlockProps {
   copyable?: boolean;
@@ -25,25 +24,28 @@ export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
   };
 
   return (
-    <div className="group relative my-4 max-w-full rounded-lg border border-border/50 bg-background">
+    <div className="group relative w-full overflow-hidden rounded-lg border border-border/50 bg-background">
       {copyable && (
         <CopyButton
           value={children}
           className="!bg-background hover:!bg-background absolute top-3.5 right-0 z-10 h-6 w-12 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
         />
       )}
-      <ScrollArea className="max-h-64 w-full min-w-0 flex-1" showFade={false}>
+      <div className="max-h-64 overflow-auto overscroll-contain">
         <button
           type="button"
           onClick={handleSelect}
           aria-label="Select text"
-          className="my-4 h-full w-full min-w-0 cursor-text bg-transparent pr-[50px] pl-4 text-left font-mono text-[13px] leading-5 outline-none"
+          className="block w-full cursor-text bg-transparent text-left outline-none"
         >
-          <pre ref={contentRef} className="inline-block">
+          <pre
+            ref={contentRef}
+            className="my-4 whitespace-pre pr-[50px] pl-4 font-mono text-[13px] leading-5"
+          >
             {children}
           </pre>
         </button>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

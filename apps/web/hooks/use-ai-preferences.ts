@@ -7,10 +7,12 @@ const STORAGE_KEY = "ai-preferences";
 
 interface AiPreferences {
   hideAiFeatures: boolean;
+  showToolCalls: boolean;
 }
 
 const defaultPreferences: AiPreferences = {
   hideAiFeatures: false,
+  showToolCalls: false,
 };
 
 /**
@@ -30,8 +32,20 @@ export function useAiPreferences() {
     [setPreferences],
   );
 
+  const setShowToolCalls = useCallback(
+    (show: boolean) => {
+      setPreferences((prev) => ({ ...prev, showToolCalls: show }));
+    },
+    [setPreferences],
+  );
+
   return {
-    hideAiFeatures: preferences.hideAiFeatures,
+    // Coalesce with defaults to handle existing localStorage missing new fields
+    hideAiFeatures:
+      preferences.hideAiFeatures ?? defaultPreferences.hideAiFeatures,
     setHideAiFeatures,
+    showToolCalls:
+      preferences.showToolCalls ?? defaultPreferences.showToolCalls,
+    setShowToolCalls,
   };
 }

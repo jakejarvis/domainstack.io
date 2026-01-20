@@ -42,8 +42,10 @@ export type MessageProps = ComponentProps<"div"> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
-      "group flex w-full max-w-[95%] flex-col gap-2",
-      from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
+      "group flex w-full flex-col gap-2",
+      from === "user"
+        ? "is-user ml-auto max-w-[95%] justify-end"
+        : "is-assistant",
       className,
     )}
     {...props}

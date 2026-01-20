@@ -2,12 +2,14 @@
 
 import { RobotIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
+  ConversationScrollAnchor,
   ConversationScrollButton,
+  type ScrollToBottomRef,
 } from "@/components/ai-elements/conversation";
 import {
   Message,
@@ -31,9 +33,47 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { Button } from "@/components/ui/button";
+import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { cn } from "@/lib/utils";
 import { getToolTitle } from "./utils";
+
+/** Tool card that auto-expands when the tool completes */
+function AutoExpandTool({
+  toolPart,
+  messageId,
+  index,
+}: {
+  toolPart: ToolUIPart;
+  messageId: string;
+  index: number;
+}) {
+  const isComplete =
+    toolPart.state === "output-available" || toolPart.state === "output-error";
+
+  const [open, setOpen] = useState(isComplete);
+
+  // Auto-expand when tool completes
+  useEffect(() => {
+    if (isComplete) {
+      setOpen(true);
+    }
+  }, [isComplete]);
+
+  return (
+    <Tool key={`${messageId}-${index}`} open={open} onOpenChange={setOpen}>
+      <ToolHeader
+        title={getToolTitle(toolPart.type)}
+        type={toolPart.type}
+        state={toolPart.state}
+      />
+      <ToolContent>
+        <ToolInput input={toolPart.input} />
+        <ToolOutput output={toolPart.output} errorText={toolPart.errorText} />
+      </ToolContent>
+    </Tool>
+  );
+}
 
 export interface ChatClientProps {
   messages: UIMessage[];
@@ -64,6 +104,8 @@ export function ChatClient({
   inputClassName,
 }: ChatClientProps) {
   const [inputLength, setInputLength] = useState(0);
+  const { showToolCalls } = useAiPreferences();
+  const scrollToBottomRef: ScrollToBottomRef = useRef(null);
 
   const placeholder = domain
     ? `Ask about ${domain}\u2026`
@@ -95,12 +137,27 @@ export function ChatClient({
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
     setInputLength(0);
+    scrollToBottomRef.current?.();
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     clearMessages();
     sendMessage({ text: suggestion });
   };
+
+  // Show loading indicator when waiting for response or when streaming but no text yet
+  // (e.g., after tool calls complete but before the final text response starts)
+  const lastMessage = messages[messages.length - 1];
+  const hasVisibleText =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some(
+      (part) => part.type === "text" && part.text.trim().length > 0,
+    );
+  const showLoading =
+    status === "submitted" ||
+    (status === "streaming" &&
+      lastMessage?.role === "assistant" &&
+      !hasVisibleText);
 
   return (
     <>
@@ -134,29 +191,14 @@ export function ChatClient({
                         </MessageResponse>
                       );
                     }
-                    if (part.type.startsWith("tool-")) {
-                      const toolPart = part as ToolUIPart;
-                      const isComplete =
-                        toolPart.state === "output-available" ||
-                        toolPart.state === "output-error";
+                    if (part.type.startsWith("tool-") && showToolCalls) {
                       return (
-                        <Tool
+                        <AutoExpandTool
                           key={`${message.id}-${index}`}
-                          defaultOpen={isComplete}
-                        >
-                          <ToolHeader
-                            title={getToolTitle(part.type)}
-                            type={part.type as ToolUIPart["type"]}
-                            state={toolPart.state}
-                          />
-                          <ToolContent>
-                            <ToolInput input={toolPart.input} />
-                            <ToolOutput
-                              output={toolPart.output}
-                              errorText={toolPart.errorText}
-                            />
-                          </ToolContent>
-                        </Tool>
+                          toolPart={part as ToolUIPart}
+                          messageId={message.id}
+                          index={index}
+                        />
                       );
                     }
                     return null;
@@ -164,11 +206,10 @@ export function ChatClient({
                 </MessageContent>
               </Message>
             ))}
-            {status === "submitted" && (
-              <Shimmer className="text-sm">Thinking...</Shimmer>
-            )}
+            {showLoading && <Shimmer className="text-sm">Thinking...</Shimmer>}
           </ConversationContent>
         )}
+        <ConversationScrollAnchor scrollRef={scrollToBottomRef} />
         <ConversationScrollButton />
       </Conversation>
 

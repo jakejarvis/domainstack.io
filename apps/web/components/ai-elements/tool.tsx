@@ -73,20 +73,15 @@ export const ToolHeader = ({
   ...props
 }: ToolHeaderProps) => (
   <CollapsibleTrigger
-    className={cn(
-      "group flex w-full items-center justify-between gap-4 p-3",
-      className,
-    )}
+    className={cn("group flex w-full items-center gap-3 p-3", className)}
     {...props}
   >
-    <div className="flex items-center gap-2">
-      <WrenchIcon className="size-4 text-muted-foreground" />
-      <span className="font-medium text-sm">
-        {title ?? type.split("-").slice(1).join("-")}
-      </span>
-      {getStatusBadge(state)}
-    </div>
-    <CaretDownIcon className="size-4 text-muted-foreground transition-transform group-data-[open]:rotate-180" />
+    <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
+    <span className="min-w-0 flex-1 truncate text-left font-medium text-sm">
+      {title ?? type.split("-").slice(1).join("-")}
+    </span>
+    {getStatusBadge(state)}
+    <CaretDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[open]:rotate-180" />
   </CollapsibleTrigger>
 );
 
@@ -101,7 +96,10 @@ export type ToolInputProps = ComponentProps<"div"> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-  <div className={cn("space-y-2 overflow-hidden p-4", className)} {...props}>
+  <div
+    className={cn("min-w-0 space-y-2 overflow-hidden p-4", className)}
+    {...props}
+  >
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
       Parameters
     </h4>
@@ -133,16 +131,17 @@ export const ToolOutput = ({
   }
 
   return (
-    <div className={cn("space-y-2 p-4", className)} {...props}>
+    <div
+      className={cn("min-w-0 space-y-2 overflow-hidden p-4", className)}
+      {...props}
+    >
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
         {errorText ? "Error" : "Result"}
       </h4>
       <div
         className={cn(
           "overflow-x-auto rounded-md text-xs [&_table]:w-full",
-          errorText
-            ? "bg-destructive/10 text-destructive"
-            : "bg-muted/50 text-foreground",
+          errorText && "bg-destructive/10 text-destructive",
         )}
       >
         {errorText && <div>{errorText}</div>}

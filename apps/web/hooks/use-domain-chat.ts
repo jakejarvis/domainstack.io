@@ -113,6 +113,24 @@ export function useDomainChat() {
     }
   }, []);
 
+  // Persist messages to localStorage whenever they change
+  // Skip the initial empty state and restoration
+  const isInitialized = useRef(false);
+  useEffect(() => {
+    // Skip first render (empty messages)
+    if (!isInitialized.current) {
+      if (chat.messages.length > 0) {
+        isInitialized.current = true;
+      }
+      return;
+    }
+
+    // Save messages to localStorage
+    if (chat.messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(chat.messages));
+    }
+  }, [chat.messages]);
+
   // Clear error when user starts typing or retries
   const clearError = useCallback(() => {
     setSubmitError(null);
