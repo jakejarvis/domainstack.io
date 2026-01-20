@@ -9,7 +9,6 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import { Loader } from "@/components/ai-elements/loader";
 import {
   Message,
   MessageContent,
@@ -22,6 +21,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
   Tool,
@@ -160,7 +160,9 @@ export function ChatClient({
                 </MessageContent>
               </Message>
             ))}
-            {status === "streaming" && <Loader />}
+            {status === "submitted" && (
+              <Shimmer className="text-sm">Thinking...</Shimmer>
+            )}
           </ConversationContent>
         )}
         <ConversationScrollButton />
