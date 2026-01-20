@@ -138,10 +138,10 @@ export function useDomainChat() {
 
   // Clear all messages and storage
   const clearMessages = useCallback(() => {
-    chat.setMessages([]);
+    setMessagesRef.current([]);
     setSubmitError(null);
     clearStorage();
-  }, [chat]);
+  }, []);
 
   // Wrap sendMessage to validate and clear errors
   const sendMessage = useCallback(

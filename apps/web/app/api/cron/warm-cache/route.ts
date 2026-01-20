@@ -106,6 +106,7 @@ export async function GET(request: Request) {
       logger.info("No recently accessed domains to warm");
       return NextResponse.json({
         domains: 0,
+        domainsFailed: 0,
         sectionsRefreshed: 0,
         sectionsSkipped: 0,
         sectionsFailed: 0,

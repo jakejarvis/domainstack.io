@@ -57,7 +57,12 @@ export async function GET(
 
   const { runId } = await params;
   const startIndexParam = request.nextUrl.searchParams.get("startIndex");
-  const startIndex = startIndexParam ? Number.parseInt(startIndexParam, 10) : 0;
+  const parsedIndex = startIndexParam
+    ? Number.parseInt(startIndexParam, 10)
+    : 0;
+  // Validate startIndex is a non-negative integer, default to 0 if invalid
+  const startIndex =
+    Number.isNaN(parsedIndex) || parsedIndex < 0 ? 0 : parsedIndex;
 
   try {
     const run = getRun(runId);

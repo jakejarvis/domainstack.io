@@ -118,7 +118,8 @@ export const ToolOutput = ({
   errorText,
   ...props
 }: ToolOutputProps) => {
-  if (!(output || errorText)) {
+  // Use explicit null/undefined check to allow falsy values like 0, false, or ""
+  if (output == null && !errorText) {
     return null;
   }
 

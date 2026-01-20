@@ -151,7 +151,8 @@ export async function getBlocklistSources(): Promise<string[]> {
 /**
  * Fetches the AI chat model identifier from Vercel Edge Config.
  *
- * Returns default model if Edge Config is not configured or the key doesn't exist.
+ * Returns null if Edge Config is not configured or the key doesn't exist.
+ * The caller should fall back to a default model when null is returned.
  *
  * Edge Config key: `ai_chat_model`
  *
@@ -162,7 +163,7 @@ export async function getBlocklistSources(): Promise<string[]> {
  * }
  * ```
  *
- * @returns AI Gateway model identifier (null if not available)
+ * @returns AI Gateway model identifier, or null if unavailable
  */
 export async function getAiChatModel(): Promise<string | null> {
   if (!process.env.EDGE_CONFIG) {

@@ -1,11 +1,12 @@
-import type { HTMLAttributes } from "react";
+import { type HTMLAttributes, useId } from "react";
 import { cn } from "@/lib/utils";
 
 type LoaderIconProps = {
   size?: number;
+  clipPathId: string;
 };
 
-const LoaderIcon = ({ size = 16 }: LoaderIconProps) => (
+const LoaderIcon = ({ size = 16, clipPathId }: LoaderIconProps) => (
   <svg
     height={size}
     strokeLinejoin="round"
@@ -14,7 +15,7 @@ const LoaderIcon = ({ size = 16 }: LoaderIconProps) => (
     width={size}
   >
     <title>Loader</title>
-    <g clipPath="url(#clip0_2393_1490)">
+    <g clipPath={`url(#${clipPathId})`}>
       <path d="M8 0V4" stroke="currentColor" strokeWidth="1.5" />
       <path
         d="M8 16V12"
@@ -72,7 +73,7 @@ const LoaderIcon = ({ size = 16 }: LoaderIconProps) => (
       />
     </g>
     <defs>
-      <clipPath id="clip0_2393_1490">
+      <clipPath id={clipPathId}>
         <rect fill="white" height="16" width="16" />
       </clipPath>
     </defs>
@@ -83,14 +84,17 @@ export type LoaderProps = HTMLAttributes<HTMLDivElement> & {
   size?: number;
 };
 
-export const Loader = ({ className, size = 16, ...props }: LoaderProps) => (
-  <div
-    className={cn(
-      "inline-flex animate-spin items-center justify-center",
-      className,
-    )}
-    {...props}
-  >
-    <LoaderIcon size={size} />
-  </div>
-);
+export const Loader = ({ className, size = 16, ...props }: LoaderProps) => {
+  const clipPathId = useId();
+  return (
+    <div
+      className={cn(
+        "inline-flex animate-spin items-center justify-center",
+        className,
+      )}
+      {...props}
+    >
+      <LoaderIcon clipPathId={clipPathId} size={size} />
+    </div>
+  );
+};

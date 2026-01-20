@@ -45,25 +45,27 @@ const logger = createLogger({ source: "api/chat" });
 const chatRequestSchema = z.object({
   messages: z
     .array(
-      z.object({
-        id: z.string(),
-        role: z.enum(["user", "assistant", "system"]),
-        parts: z.array(
-          z.union([
-            z.object({
-              type: z.literal("text"),
-              text: z.string().max(MAX_MESSAGE_LENGTH, {
-                message: `Message text exceeds ${MAX_MESSAGE_LENGTH} characters`,
+      z
+        .object({
+          id: z.string(),
+          role: z.enum(["user", "assistant", "system"]),
+          parts: z.array(
+            z.union([
+              z.object({
+                type: z.literal("text"),
+                text: z.string().max(MAX_MESSAGE_LENGTH, {
+                  message: `Message text exceeds ${MAX_MESSAGE_LENGTH} characters`,
+                }),
               }),
-            }),
-            // Allow other part types (tool calls, etc.) to pass through
-            z
-              .object({ type: z.string() })
-              .passthrough(),
-          ]),
-        ),
-        // Allow additional fields from UIMessage
-      }),
+              // Allow other part types (tool calls, etc.) to pass through
+              z
+                .object({ type: z.string() })
+                .passthrough(),
+            ]),
+          ),
+        })
+        // Allow additional fields from UIMessage (metadata, createdAt, etc.)
+        .passthrough(),
     )
     .min(1, { message: "At least one message is required" })
     .max(MAX_CONVERSATION_MESSAGES * 2, {
