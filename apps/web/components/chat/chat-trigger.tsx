@@ -151,7 +151,7 @@ export function ChatTrigger() {
             align="end"
             sideOffset={12}
             collisionPadding={16}
-            className="flex h-[min(480px,70vh)] w-[380px] flex-col gap-0 overscroll-contain bg-background/95 p-0 backdrop-blur-sm"
+            className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background/95 p-0 backdrop-blur-sm"
           >
             <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-border/60 border-b px-4 py-3">
               <PopoverTitle className="flex items-center gap-2">

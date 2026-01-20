@@ -2,7 +2,8 @@
 
 import { RobotIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useStickToBottom } from "use-stick-to-bottom";
 import {
   Conversation,
   ConversationContent,
@@ -115,6 +116,9 @@ export function ChatClient({
   const [inputLength, setInputLength] = useState(0);
   const { showToolCalls } = useAiPreferences();
 
+  // Prepare to share scroll state between the different components
+  const stickyInstance = useStickToBottom();
+
   const placeholder = domain
     ? `Ask about ${domain}\u2026`
     : "Ask about a domain\u2026";
@@ -138,19 +142,24 @@ export function ChatClient({
     [domain],
   );
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputLength(e.target.value.length);
-    onClearError?.();
-  };
+  const handleScrollToBottom = useCallback(() => {
+    void stickyInstance.scrollToBottom();
+  }, [stickyInstance.scrollToBottom]);
 
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
+    handleScrollToBottom();
     setInputLength(0);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     clearMessages();
     sendMessage({ text: suggestion });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputLength(e.target.value.length);
+    onClearError?.();
   };
 
   // Show loading indicator when waiting for response or when streaming but no text yet
@@ -169,12 +178,15 @@ export function ChatClient({
 
   return (
     <>
-      <Conversation className={cn("min-h-0 flex-1", conversationClassName)}>
+      <Conversation
+        stickyInstance={stickyInstance}
+        className={cn("min-h-0 flex-1", conversationClassName)}
+      >
         <ConversationContent
           className={cn(
             messages.length === 0
               ? "h-full items-center justify-center"
-              : "gap-4 p-3",
+              : "gap-4 px-3 py-4",
           )}
           aria-live="polite"
         >
@@ -227,7 +239,9 @@ export function ChatClient({
             </>
           )}
         </ConversationContent>
-        <ConversationScrollButton />
+        {!stickyInstance.isNearBottom && (
+          <ConversationScrollButton onClick={handleScrollToBottom} />
+        )}
       </Conversation>
 
       <div

@@ -1,54 +1,79 @@
 "use client";
 
-import { useRef } from "react";
-import { CopyButton } from "@/components/ui/copy-button";
+import { type CSSProperties, type ReactNode, useCallback, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { CopyButton } from "./copy-button";
 
-interface CodeBlockProps {
-  copyable?: boolean;
-  children: string;
-}
+type CodeBlockProps = {
+  children: ReactNode;
+  className?: string;
+  icon?: ReactNode;
+  style?: CSSProperties;
+  tabIndex?: number;
+  title?: string;
+};
 
-export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
-  const contentRef = useRef<HTMLPreElement>(null);
+export const CodeBlock = ({
+  children,
+  className,
+  icon,
+  style,
+  tabIndex,
+  title,
+}: CodeBlockProps) => {
+  const ref = useRef<HTMLPreElement>(null);
 
-  const handleSelect = () => {
-    if (!contentRef.current) return;
-    const selection = window.getSelection();
+  const CodeBlockComponent = useCallback(
+    (props: { className?: string }) => (
+      <pre
+        className={cn(
+          "not-prose flex-1 overflow-x-auto rounded-sm border border-border/60 bg-background p-3 text-[13px] leading-normal outline-none",
+          "[&>code]:grid",
+          className,
+          props.className,
+        )}
+        ref={ref}
+        style={style}
+        tabIndex={tabIndex}
+      >
+        {children}
+      </pre>
+    ),
+    [children, style, tabIndex, className],
+  );
 
-    if (!selection) return;
-    const range = document.createRange();
-
-    range.selectNodeContents(contentRef.current);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  };
+  if (!title) {
+    return (
+      <div data-slot="code-block" className="group relative">
+        <CodeBlockComponent />
+        <CopyButton
+          className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+          value={ref.current?.innerText ?? ""}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div
+    <Card
       data-slot="code-block"
-      className="group relative w-full overflow-hidden rounded-lg border border-border/50 bg-background"
+      className="not-prose gap-0 overflow-hidden rounded-sm p-0 shadow-none"
     >
-      {copyable && (
-        <CopyButton
-          value={children}
-          className="!bg-background hover:!bg-background absolute top-3.5 right-0 z-10 h-6 w-12 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+      <CardHeader className="flex items-center gap-2 border-b bg-sidebar py-1.5! pr-1.5 pl-4 text-muted-foreground">
+        <div
+          className="size-3.5 shrink-0"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required for icon prop."
+          dangerouslySetInnerHTML={{ __html: icon as unknown as TrustedHTML }}
         />
-      )}
-      <div className="max-h-64 overflow-auto overscroll-contain">
-        <button
-          type="button"
-          onClick={handleSelect}
-          aria-label="Select text"
-          className="block w-full cursor-text bg-transparent text-left outline-none"
-        >
-          <pre
-            ref={contentRef}
-            className="my-4 whitespace-pre pr-[50px] pl-4 font-mono text-[13px] leading-5"
-          >
-            {children}
-          </pre>
-        </button>
-      </div>
-    </div>
+        <CardTitle className="flex-1 font-mono font-normal text-sm tracking-tight">
+          {title}
+        </CardTitle>
+        <CopyButton value={ref.current?.innerText ?? ""} />
+      </CardHeader>
+      <CardContent className="p-0">
+        <CodeBlockComponent className="line-numbers rounded-none border-none" />
+      </CardContent>
+    </Card>
   );
-}
+};

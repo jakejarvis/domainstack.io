@@ -19,12 +19,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { Spinner } from "../ui/spinner";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
-    className={cn("not-prose mb-4 w-full rounded-md border", className)}
+    className={cn(
+      "not-prose mb-4 w-full rounded-md border border-border/60",
+      className,
+    )}
     {...props}
   />
 );
@@ -49,9 +53,7 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
 
   const icons: Record<string, ReactNode> = {
     "input-streaming": <CircleIcon className="size-4" />,
-    "input-available": (
-      <ClockIcon className="size-4 animate-pulse motion-reduce:animate-none" />
-    ),
+    "input-available": <Spinner className="size-4" />,
     "approval-requested": <ClockIcon className="size-4 text-yellow-600" />,
     "approval-responded": <CheckCircleIcon className="size-4 text-blue-600" />,
     "output-available": <CheckCircleIcon className="size-4 text-green-600" />,
@@ -60,7 +62,10 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
   };
 
   return (
-    <Badge className="gap-1.5 rounded-full text-xs" variant="secondary">
+    <Badge
+      className="gap-1.5 rounded-full py-1 text-xs leading-none"
+      variant="secondary"
+    >
       {icons[status]}
       {labels[status]}
     </Badge>
@@ -117,6 +122,54 @@ export type ToolOutputProps = ComponentProps<"div"> & {
   errorText: ToolUIPart["errorText"];
 };
 
+/**
+ * Extract and format the tool output for display.
+ * Handles nested structures like { type: "text", value: "..." } from AI SDK.
+ */
+function formatToolOutput(output: ToolUIPart["output"]): string {
+  // Handle text content objects from AI SDK
+  if (
+    typeof output === "object" &&
+    output !== null &&
+    !isValidElement(output) &&
+    "type" in output &&
+    output.type === "text" &&
+    "value" in output &&
+    typeof output.value === "string"
+  ) {
+    // Try to parse the value as JSON for pretty printing
+    try {
+      const parsed = JSON.parse(output.value);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      // Not valid JSON, return as-is
+      return output.value;
+    }
+  }
+
+  // Handle regular objects
+  if (
+    typeof output === "object" &&
+    output !== null &&
+    !isValidElement(output)
+  ) {
+    return JSON.stringify(output, null, 2);
+  }
+
+  // Handle strings - try to parse as JSON for pretty printing
+  if (typeof output === "string") {
+    try {
+      const parsed = JSON.parse(output);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return output;
+    }
+  }
+
+  // Fallback for other types
+  return String(output);
+}
+
 export const ToolOutput = ({
   className,
   output,
@@ -128,13 +181,7 @@ export const ToolOutput = ({
     return null;
   }
 
-  let Output = <div>{output as ReactNode}</div>;
-
-  if (typeof output === "object" && !isValidElement(output)) {
-    Output = <CodeBlock>{JSON.stringify(output, null, 2)}</CodeBlock>;
-  } else if (typeof output === "string") {
-    Output = <CodeBlock>{output}</CodeBlock>;
-  }
+  const formattedOutput = output ? formatToolOutput(output) : null;
 
   return (
     <div
@@ -146,12 +193,12 @@ export const ToolOutput = ({
       </h4>
       <div
         className={cn(
-          "overflow-x-auto rounded-md text-xs [&_table]:w-full",
+          "overflow-x-auto text-xs",
           errorText && "bg-destructive/10 text-destructive",
         )}
       >
         {errorText && <div>{errorText}</div>}
-        {Output}
+        {formattedOutput && <CodeBlock>{formattedOutput}</CodeBlock>}
       </div>
     </div>
   );

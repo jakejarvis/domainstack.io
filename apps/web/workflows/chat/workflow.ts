@@ -33,7 +33,7 @@ export interface ChatWorkflowInput {
 
 /**
  * Chat workflow that uses DurableAgent for streaming responses.
- * Single-tustern: clienonversation history.
+ * Single-turn pattern: client owns conversation history.
  */
 export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
   "use workflow";
