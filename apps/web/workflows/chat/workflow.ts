@@ -10,7 +10,7 @@
  * Node.js modules are imported inside "use step" functions.
  */
 
-import { type CompatibleLanguageModel, DurableAgent } from "@workflow/ai/agent";
+import { DurableAgent } from "@workflow/ai/agent";
 import {
   convertToModelMessages,
   type UIMessage,
@@ -19,10 +19,10 @@ import {
 import { getWritable } from "workflow";
 import {
   CHATBOT_NAME,
-  DEFAULT_CHAT_MODEL,
   MAX_OUTPUT_TOKENS,
   MAX_TOOL_STEPS,
 } from "@/lib/constants/ai";
+import { getModelStep } from "./gateway";
 import { createDomainTools, type ToolContext } from "./tools";
 
 export interface ChatWorkflowInput {
@@ -69,28 +69,6 @@ Remember, your ONLY purpose is to help users look up information about domains u
 }
 
 /**
- * Fetch the AI model ID from Edge Config.
- * Runs as a step to keep Node.js modules out of workflow sandbox.
- */
-async function getModelStep(): Promise<CompatibleLanguageModel> {
-  "use step";
-
-  const { createGateway } = await import("@ai-sdk/gateway");
-  const gateway = createGateway({
-    headers: {
-      // Opt into the Vercel leaderboard: https://vercel.com/docs/ai-gateway/app-attribution
-      "http-referer": "https://domainstack.io",
-      "x-title": "Domainstack",
-    },
-  });
-
-  const { getAiChatModel } = await import("@/lib/edge-config");
-  const model = await getAiChatModel();
-
-  return gateway(model ?? DEFAULT_CHAT_MODEL) as CompatibleLanguageModel;
-}
-
-/**
  * Chat workflow that uses DurableAgent for streaming responses.
  * Single-turn pattern: client owns conversation history.
  */
@@ -108,7 +86,7 @@ export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
 
   // Create agent with domain tools
   const agent = new DurableAgent({
-    model: getModelStep,
+    model: () => getModelStep(userId, ip, domain),
     tools: createDomainTools(toolCtx),
     system: buildSystemPrompt(domain),
     headers: {

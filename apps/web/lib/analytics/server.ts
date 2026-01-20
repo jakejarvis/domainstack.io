@@ -15,7 +15,7 @@ import type {
 // calling client.shutdown() after each capture so the client stays usable.
 let sharedClient: PostHog | null = null;
 
-function getServerPosthog(): PostHog | null {
+export function getServerPosthog(): PostHog | null {
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     return null;
   }
