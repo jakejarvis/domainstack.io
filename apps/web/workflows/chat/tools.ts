@@ -34,6 +34,24 @@ function formatToolResult(result: {
 }
 
 /**
+ * Format an error for tool response and log it.
+ * Returns a JSON string with error message for the AI to interpret.
+ */
+async function handleToolError(
+  err: unknown,
+  domain: string,
+  toolName: string,
+): Promise<string> {
+  // Import logger inside to keep Node.js modules out of workflow sandbox
+  const { createLogger } = await import("@/lib/logger/server");
+  const logger = createLogger({ source: "chat/tools" });
+  logger.error({ err, domain, tool: toolName }, "tool step failed");
+
+  const message = err instanceof Error ? err.message : "Unknown error";
+  return JSON.stringify({ error: message });
+}
+
+/**
  * Context passed to tool steps.
  * Must be serializable - no functions or complex objects.
  */
@@ -49,11 +67,15 @@ async function getRegistrationStep(
   ctx: ToolContext,
 ): Promise<string> {
   "use step";
-  // Import inside step to keep Node.js modules out of workflow sandbox
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getRegistration({ domain });
-  return formatToolResult(result);
+  try {
+    // Import inside step to keep Node.js modules out of workflow sandbox
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getRegistration({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getRegistration");
+  }
 }
 
 async function getDnsRecordsStep(
@@ -61,10 +83,14 @@ async function getDnsRecordsStep(
   ctx: ToolContext,
 ): Promise<string> {
   "use step";
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getDnsRecords({ domain });
-  return formatToolResult(result);
+  try {
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getDnsRecords({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getDnsRecords");
+  }
 }
 
 async function getHostingStep(
@@ -72,10 +98,14 @@ async function getHostingStep(
   ctx: ToolContext,
 ): Promise<string> {
   "use step";
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getHosting({ domain });
-  return formatToolResult(result);
+  try {
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getHosting({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getHosting");
+  }
 }
 
 async function getCertificatesStep(
@@ -83,10 +113,14 @@ async function getCertificatesStep(
   ctx: ToolContext,
 ): Promise<string> {
   "use step";
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getCertificates({ domain });
-  return formatToolResult(result);
+  try {
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getCertificates({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getCertificates");
+  }
 }
 
 async function getHeadersStep(
@@ -94,18 +128,26 @@ async function getHeadersStep(
   ctx: ToolContext,
 ): Promise<string> {
   "use step";
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getHeaders({ domain });
-  return formatToolResult(result);
+  try {
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getHeaders({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getHeaders");
+  }
 }
 
 async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
   "use step";
-  const { createCaller } = await import("@/server/routers/_app");
-  const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
-  const result = await trpc.domain.getSeo({ domain });
-  return formatToolResult(result);
+  try {
+    const { createCaller } = await import("@/server/routers/_app");
+    const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
+    const result = await trpc.domain.getSeo({ domain });
+    return formatToolResult(result);
+  } catch (err) {
+    return handleToolError(err, domain, "getSeo");
+  }
 }
 
 /**

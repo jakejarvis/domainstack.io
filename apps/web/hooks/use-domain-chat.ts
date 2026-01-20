@@ -5,6 +5,7 @@ import { WorkflowChatTransport } from "@workflow/ai";
 import type { UIMessage } from "ai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { analytics } from "@/lib/analytics/client";
 
 const STORAGE_KEY_RUN_ID = "chat-run-id";
 const STORAGE_KEY_MESSAGES = "chat-messages";
@@ -20,11 +21,9 @@ function getStoredMessages(): UIMessage[] | undefined {
   if (!stored) return undefined;
   try {
     return JSON.parse(stored) as UIMessage[];
-  } catch (error) {
-    console.warn(
-      "Failed to parse stored chat messages, clearing storage:",
-      error,
-    );
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    analytics.trackException(error, { context: "chat-storage-parse" });
     localStorage.removeItem(STORAGE_KEY_MESSAGES);
     return undefined;
   }
@@ -92,6 +91,7 @@ export function useDomainChat() {
     transport,
     resume: !!activeRunId,
     onError: (error) => {
+      analytics.trackException(error, { context: "chat-send", domain });
       const message = getUserFriendlyError(error);
       setSubmitError(message);
     },

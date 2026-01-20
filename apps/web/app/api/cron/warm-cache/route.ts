@@ -55,9 +55,9 @@ async function isSectionStale(
     const result = await sectionCacheGetters[section](domain);
     return result.stale || result.data === null;
   } catch (err) {
-    logger.debug(
+    logger.error(
       { domain, section, err },
-      "Failed to check staleness, assuming stale",
+      "failed to check staleness, assuming stale",
     );
     return true;
   }
@@ -120,6 +120,7 @@ export async function GET(request: Request) {
     let sectionsRefreshed = 0;
     let sectionsSkipped = 0;
     let sectionsFailed = 0;
+    let domainsFailed = 0;
 
     // Process domains in batches
     for (let i = 0; i < recentDomains.length; i += BATCH_SIZE) {
@@ -161,7 +162,8 @@ export async function GET(request: Request) {
               }),
             );
           } catch (err) {
-            logger.error({ domain, err }, "Failed to warm cache for domain");
+            domainsFailed++;
+            logger.error({ domain, err }, "failed to warm cache for domain");
           }
         }),
       );
@@ -169,6 +171,7 @@ export async function GET(request: Request) {
 
     const result = {
       domains: recentDomains.length,
+      domainsFailed,
       sectionsRefreshed,
       sectionsSkipped,
       sectionsFailed,

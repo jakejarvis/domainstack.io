@@ -107,7 +107,8 @@ export async function POST(request: Request) {
   let body: unknown;
   try {
     body = await request.json();
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, "invalid JSON in chat request body");
     return NextResponse.json(
       { error: "Invalid JSON in request body" },
       { status: 400, headers: rateLimit.headers },

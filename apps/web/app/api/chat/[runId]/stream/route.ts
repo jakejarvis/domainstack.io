@@ -65,6 +65,7 @@ export async function GET(
     // Check if run exists by checking status
     const status = await run.status;
     if (status === "failed") {
+      logger.error({ runId }, "chat workflow failed");
       return NextResponse.json(
         { error: "Workflow failed" },
         {
