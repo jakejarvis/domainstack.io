@@ -52,19 +52,26 @@ export function useDomainChat() {
   // Decode domain from URL (it may be URL-encoded)
   const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
 
+  // Keep domain in a ref so prepareSendMessagesRequest always reads the latest value.
+  // useChat doesn't properly react to transport prop changes, so we create the
+  // transport once and use a ref to always get the current domain.
+  const domainRef = useRef(domain);
+  domainRef.current = domain;
+
   // Track submission errors separately for better UX
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Get stored run ID for stream resumption (computed once on mount)
   const activeRunId = useMemo(() => getStoredRunId(), []);
 
-  // Configure workflow transport with domain in body and persistence callbacks
+  // Configure workflow transport with domain in body and persistence callbacks.
+  // Created once - uses domainRef to always get the current domain value.
   const transport = useMemo(
     () =>
       new WorkflowChatTransport({
         api: "/api/chat",
         prepareSendMessagesRequest: ({ messages }) => ({
-          body: { messages, domain },
+          body: { messages, domain: domainRef.current },
         }),
         onChatSendMessage: (response, options) => {
           // Store messages for restoration on page reload
@@ -98,7 +105,7 @@ export function useDomainChat() {
           }
         },
       }),
-    [domain],
+    [],
   );
 
   const chat = useChat({
