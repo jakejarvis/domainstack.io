@@ -74,16 +74,18 @@ export default function RootLayout({
               {children}
             </main>
             <AppFooter />
+
+            {/* Fixed-positioned elements that should be inside flex context for Safari */}
+            <Suspense fallback={null}>
+              <CookiePromptGeofenced />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ChatTrigger />
+            </Suspense>
           </div>
+          <Toaster />
 
           {modal}
-          <Toaster />
-          <Suspense fallback={null}>
-            <CookiePromptGeofenced />
-          </Suspense>
-          <Suspense fallback={null}>
-            <ChatTrigger />
-          </Suspense>
         </Providers>
         <Analytics />
       </body>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChatDotsIcon, ChatsIcon, XIcon } from "@phosphor-icons/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +30,14 @@ import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
 
+const MotionButton = motion.create(Button);
+
 export function ChatTrigger() {
   const [open, setOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const isMobile = useIsMobile();
+  const prefersReducedMotion = useReducedMotion();
   const { hideAiFeatures, setHideAiFeatures } = useAiPreferences();
   const {
     messages,
@@ -77,8 +81,13 @@ export function ChatTrigger() {
   };
 
   // Don't render until mounted (localStorage has been read)
-  // Then hide if AI features are hidden and settings dialog is closed
-  if (!mounted || (hideAiFeatures && !settingsOpen)) {
+  // Keep settings dialog available if it was open when AI features got hidden
+  if (!mounted) {
+    return null;
+  }
+
+  // If AI features are hidden, only render the settings dialog (if open)
+  if (hideAiFeatures && !settingsOpen) {
     return null;
   }
 
@@ -91,17 +100,21 @@ export function ChatTrigger() {
   // Show chat UI only when AI features are not hidden
   const showChatUI = !hideAiFeatures;
 
-  // Shared FAB button
+  // Shared FAB button with entrance animation
   const fabButton = (
-    <Button
+    <MotionButton
       variant="default"
       size="icon-lg"
       aria-label={`Chat with ${CHATBOT_NAME}`}
-      className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg"
+      className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg transition-none"
       onClick={isMobile ? () => setOpen(true) : undefined}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
     >
       <ChatDotsIcon className="size-5 text-background/95" weight="fill" />
-    </Button>
+    </MotionButton>
   );
 
   // Shared header actions
@@ -115,9 +128,9 @@ export function ChatTrigger() {
 
   return (
     <>
-      {showChatUI && isMobile && (
+      {isMobile && (
         <>
-          {fabButton}
+          <AnimatePresence>{showChatUI && fabButton}</AnimatePresence>
           <Drawer open={open} onOpenChange={setOpen}>
             <DrawerContent className="flex max-h-[85vh] flex-col overscroll-contain">
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
@@ -138,14 +151,20 @@ export function ChatTrigger() {
         </>
       )}
 
-      {showChatUI && !isMobile && (
+      {!isMobile && (
         <Popover open={open} onOpenChange={setOpen}>
-          <Tooltip>
-            <TooltipTrigger render={<PopoverTrigger render={fabButton} />} />
-            <TooltipContent side="left" sideOffset={8}>
-              Chat with {CHATBOT_NAME}
-            </TooltipContent>
-          </Tooltip>
+          <AnimatePresence>
+            {showChatUI && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={<PopoverTrigger render={fabButton} />}
+                />
+                <TooltipContent side="left" sideOffset={8}>
+                  Chat with {CHATBOT_NAME}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </AnimatePresence>
           <PopoverContent
             side="top"
             align="end"
