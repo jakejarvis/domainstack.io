@@ -19,6 +19,17 @@ import {
 import { getWritable } from "workflow";
 import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@/lib/constants/ai";
 import { getModelStep } from "./gateway";
+import {
+  getStuckToolParts,
+  getToolErrorDetails,
+  getToolStepStats,
+  logChatStepFinishStep,
+  logChatStreamErrorStep,
+  logChatStreamWarningStep,
+  serializeError,
+  summarizeToolCalls,
+  summarizeToolResults,
+} from "./logging";
 import { buildSystemPromptStep } from "./prompt";
 import { createDomainToolset, type ToolContext } from "./tools";
 
@@ -72,10 +83,55 @@ export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
 
   // Stream response to workflow output
   // Errors will propagate to the stream and trigger onError on the client
-  await agent.stream({
+  const result = await agent.stream({
     messages: modelMessages,
     writable,
     maxSteps: MAX_TOOL_STEPS,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    collectUIMessages: true,
+    onStepFinish: async (step) => {
+      const toolCalls = Array.isArray(step.toolCalls) ? step.toolCalls : [];
+      const toolResults = Array.isArray(step.toolResults)
+        ? step.toolResults
+        : [];
+      const shouldLog =
+        toolCalls.length > 0 ||
+        toolResults.length > 0 ||
+        step.finishReason === "error";
+
+      if (!shouldLog) return;
+
+      await logChatStepFinishStep({
+        event: "chat_step_finish",
+        domain,
+        userId,
+        finishReason: step.finishReason,
+        usage: step.usage,
+        toolCalls: summarizeToolCalls(toolCalls),
+        toolResults: summarizeToolResults(toolResults),
+      });
+    },
+    onError: async ({ error }) => {
+      const errorDetails = serializeError(error);
+      const toolDetails = getToolErrorDetails(error);
+      await logChatStreamErrorStep({
+        event: "chat_stream_error",
+        domain,
+        userId,
+        error: errorDetails,
+        tool: toolDetails,
+      });
+    },
   });
+
+  const stuckTools = getStuckToolParts(result.uiMessages ?? []);
+  if (stuckTools.length > 0) {
+    await logChatStreamWarningStep({
+      event: "chat_tool_missing_result",
+      domain,
+      userId,
+      stuckTools,
+      stepStats: getToolStepStats(result.steps ?? []),
+    });
+  }
 }

@@ -1,4 +1,5 @@
 import type { CompatibleLanguageModel } from "@workflow/ai/agent";
+import { getStepMetadata, getWorkflowMetadata } from "workflow";
 
 /**
  * Create the AI model instance and wrap with PostHog tracing.
@@ -28,7 +29,6 @@ export async function getModelStep(): Promise<CompatibleLanguageModel> {
   const phClient = getServerPosthog();
   if (phClient) {
     // Get workflow run ID and step ID for PostHog trace correlation
-    const { getWorkflowMetadata, getStepMetadata } = await import("workflow");
     const { workflowRunId } = getWorkflowMetadata();
     const { stepId } = getStepMetadata();
 
