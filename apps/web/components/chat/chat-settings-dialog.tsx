@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
+import { BetaBadge } from "../beta-badge";
 
 export interface ChatSettingsDialogProps {
   open: boolean;
@@ -39,7 +40,10 @@ export function ChatSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Chat Settings</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="leading-none">Chat Settings</span>
+            <BetaBadge className="translate-y-[-1px]" />
+          </DialogTitle>
           <DialogDescription>Personalize your AI experience.</DialogDescription>
         </DialogHeader>
         <ItemGroup className="[&_[data-slot=item-media]]:!translate-y-[-1px] [&_[data-slot=item]]:!pr-4 [&_[data-slot=item]]:!pl-2 space-y-3 pb-1 [&_[data-slot=item-content]]:gap-0 [&_[data-slot=item]]:justify-between">

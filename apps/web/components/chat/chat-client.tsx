@@ -22,7 +22,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import {
   Tool,
@@ -239,7 +239,7 @@ export function ChatClient({
                   </MessageContent>
                 </Message>
               ))}
-              {showLoading && <Shimmer className="text-sm">Thinking…</Shimmer>}
+              {showLoading && <ShimmeringText text="Thinking…" />}
             </>
           )}
         </ConversationContent>

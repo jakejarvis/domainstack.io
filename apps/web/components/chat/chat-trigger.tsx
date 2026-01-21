@@ -3,6 +3,7 @@
 import { ChatDotsIcon, ChatsIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
+import { BetaBadge } from "@/components/beta-badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -112,6 +113,8 @@ export function ChatTrigger() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
       <ChatDotsIcon className="size-5 text-background/95" weight="fill" />
     </MotionButton>
@@ -132,11 +135,14 @@ export function ChatTrigger() {
         <>
           <AnimatePresence>{showChatUI && fabButton}</AnimatePresence>
           <Drawer open={open} onOpenChange={setOpen}>
-            <DrawerContent className="flex max-h-[85vh] flex-col overscroll-contain">
+            <DrawerContent className="flex h-[min(530px,85vh)] flex-col overscroll-contain">
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
                   <ChatsIcon className="size-4" />
-                  {CHATBOT_NAME}
+                  <span className="text-base leading-none tracking-tight">
+                    {CHATBOT_NAME}
+                  </span>
+                  <BetaBadge />
                 </DrawerTitle>
                 <div className="flex items-center gap-1">{headerActions}</div>
               </DrawerHeader>
@@ -175,7 +181,10 @@ export function ChatTrigger() {
             <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-border/60 border-b px-4 py-3">
               <PopoverTitle className="flex items-center gap-2">
                 <ChatsIcon className="size-4" />
-                {CHATBOT_NAME}
+                <span className="text-base leading-none tracking-tight">
+                  {CHATBOT_NAME}
+                </span>
+                <BetaBadge />
               </PopoverTitle>
               <div className="-mr-2 flex items-center gap-1">
                 {headerActions}
