@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatDotsIcon, ChatsIcon, XIcon } from "@phosphor-icons/react";
+import { ChatDotsIcon, ChatsIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
@@ -126,6 +126,7 @@ export function ChatTrigger() {
       messages={messages}
       onClear={clearMessages}
       onSettingsClick={handleSettingsClick}
+      onCloseClick={() => setOpen(false)}
     />
   );
 
@@ -144,7 +145,7 @@ export function ChatTrigger() {
                   </span>
                   <BetaBadge />
                 </DrawerTitle>
-                <div className="flex items-center gap-1">{headerActions}</div>
+                <div className="flex items-center gap-2">{headerActions}</div>
               </DrawerHeader>
               <ChatClient
                 {...chatClientProps}
@@ -188,21 +189,6 @@ export function ChatTrigger() {
               </PopoverTitle>
               <div className="-mr-2 flex items-center gap-1">
                 {headerActions}
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Close"
-                        onClick={() => setOpen(false)}
-                      />
-                    }
-                  >
-                    <XIcon className="size-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>Close</TooltipContent>
-                </Tooltip>
               </div>
             </PopoverHeader>
             <ChatClient {...chatClientProps} inputClassName="p-3" />

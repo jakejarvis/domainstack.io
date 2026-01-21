@@ -1,6 +1,7 @@
 "use client";
 
-import { BiohazardIcon, WrenchIcon } from "@phosphor-icons/react";
+import { BiohazardIcon, InfoIcon, WrenchIcon } from "@phosphor-icons/react";
+import { BetaBadge } from "@/components/beta-badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,7 +23,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
-import { BetaBadge } from "../beta-badge";
 
 export interface ChatSettingsDialogProps {
   open: boolean;
@@ -38,8 +38,8 @@ export function ChatSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
-      <DialogContent className="sm:max-w-md" showCloseButton={false}>
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="gap-0.5">
           <DialogTitle className="flex items-center gap-2">
             <span className="leading-none">Chat Settings</span>
             <BetaBadge className="translate-y-[-1px]" />
@@ -48,7 +48,7 @@ export function ChatSettingsDialog({
         </DialogHeader>
         <ItemGroup className="[&_[data-slot=item-media]]:!translate-y-[-1px] [&_[data-slot=item]]:!pr-4 [&_[data-slot=item]]:!pl-2 space-y-3 pb-1 [&_[data-slot=item-content]]:gap-0 [&_[data-slot=item]]:justify-between">
           <Item size="sm" variant="outline">
-            <Label htmlFor="show-tool-calls" className="cursor-pointer">
+            <Label htmlFor="show-tool-calls" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
                 <WrenchIcon />
               </ItemMedia>
@@ -68,7 +68,7 @@ export function ChatSettingsDialog({
             </ItemActions>
           </Item>
           <Item size="sm" variant="outline">
-            <Label htmlFor="hide-ai" className="cursor-pointer">
+            <Label htmlFor="hide-ai" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
                 <BiohazardIcon />
               </ItemMedia>
@@ -97,7 +97,13 @@ export function ChatSettingsDialog({
             </ItemActions>
           </Item>
         </ItemGroup>
-        <DialogFooter>
+        <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
+          <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-0">
+            <InfoIcon className="size-3.5 translate-y-[3px] text-muted-foreground" />
+            <p className="text-[13px] text-muted-foreground leading-normal">
+              These preferences only apply to the current browser.
+            </p>
+          </div>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>

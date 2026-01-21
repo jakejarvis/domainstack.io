@@ -5,6 +5,7 @@ import {
   CopyIcon,
   GearIcon,
   TrashIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import type { UIMessage } from "ai";
 import { useState } from "react";
@@ -110,16 +111,38 @@ function ChatSettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function CloseChatButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Close"
+            onClick={onClick}
+          />
+        }
+      >
+        <XIcon className="size-4" />
+      </TooltipTrigger>
+      <TooltipContent>Close</TooltipContent>
+    </Tooltip>
+  );
+}
+
 export interface ChatHeaderActionsProps {
   messages: UIMessage[];
   onClear: () => void;
   onSettingsClick: () => void;
+  onCloseClick: () => void;
 }
 
 export function ChatHeaderActions({
   messages,
   onClear,
   onSettingsClick,
+  onCloseClick,
 }: ChatHeaderActionsProps) {
   return (
     <>
@@ -130,6 +153,7 @@ export function ChatHeaderActions({
         </>
       )}
       <ChatSettingsButton onClick={onSettingsClick} />
+      <CloseChatButton onClick={onCloseClick} />
     </>
   );
 }

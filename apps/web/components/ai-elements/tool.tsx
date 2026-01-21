@@ -18,8 +18,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { Spinner } from "../ui/spinner";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 

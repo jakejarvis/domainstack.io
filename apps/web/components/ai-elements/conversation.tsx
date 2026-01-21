@@ -4,8 +4,8 @@ import { ArrowDownIcon } from "@phosphor-icons/react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import type { StickToBottomInstance } from "use-stick-to-bottom";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "../ui/scroll-area";
 
 export type ConversationProps = ComponentProps<typeof ScrollArea> & {
   stickyInstance: StickToBottomInstance;
