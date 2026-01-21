@@ -1,6 +1,6 @@
 "use client";
 
-import { SmileyXEyesIcon, WrenchIcon } from "@phosphor-icons/react";
+import { BiohazardIcon, WrenchIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -70,7 +70,7 @@ export function ChatSettingsDialog({
           <Item size="sm" variant="outline">
             <Label htmlFor="hide-ai" className="cursor-pointer">
               <ItemMedia variant="icon">
-                <SmileyXEyesIcon />
+                <BiohazardIcon />
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>Disable AI</ItemTitle>

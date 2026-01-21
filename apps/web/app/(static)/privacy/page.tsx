@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-          Last updated: December 8, 2025
+          Last updated: January 20, 2026
         </p>
       </header>
 
@@ -188,6 +188,110 @@ export default function PrivacyPage() {
           </a>
           .
         </p>
+      </section>
+
+      <section id="ai-assistant">
+        <h2>AI Assistant</h2>
+        <p>
+          We offer an optional AI-powered chat assistant ("Stacky") to help you
+          look up domain information using natural language.
+        </p>
+
+        <h3>How It Works</h3>
+        <p>
+          The AI assistant is powered by{" "}
+          <a
+            href="https://vercel.com/docs/ai-gateway"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Vercel AI Gateway
+            <ArrowSquareOutIcon />
+          </a>
+          , which routes Domainstack&apos;s requests to large language model
+          (LLM) providers. When you send a message:
+        </p>
+        <ul>
+          <li>
+            Your message and recent conversation history (up to 10 messages) are
+            sent to the AI service
+          </li>
+          <li>
+            The domain you&apos;re currently viewing may be included as context
+          </li>
+          <li>
+            The AI may use our domain lookup tools to fetch publicly available
+            information
+          </li>
+        </ul>
+
+        <h3>Conversation Storage</h3>
+        <p>We do not store your conversations on our servers. This means:</p>
+        <ul>
+          <li>Conversations are private to your device and browser</li>
+          <li>Clearing your browser data will delete your chat history</li>
+          <li>Conversations do not sync across devices or browsers</li>
+          <li>
+            You can clear your chat history at any time using the clear button
+          </li>
+        </ul>
+
+        <h3>Data Shared with AI Providers</h3>
+        <p>
+          When you use the AI assistant, your messages are processed by
+          third-party AI providers through Vercel AI Gateway. These providers
+          have their own privacy policies:
+        </p>
+        <ul>
+          <li>
+            <a
+              href="https://openai.com/policies/privacy-policy/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              OpenAI Privacy Policy
+              <ArrowSquareOutIcon />
+            </a>{" "}
+            (for OpenAI models)
+          </li>
+          <li>
+            <a
+              href="https://policies.google.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Privacy Policy
+              <ArrowSquareOutIcon />
+            </a>{" "}
+            (for Gemini models)
+          </li>
+          <li>
+            <a
+              href="https://www.anthropic.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Anthropic Privacy Policy
+              <ArrowSquareOutIcon />
+            </a>{" "}
+            (for Claude models)
+          </li>
+          <li>
+            <a
+              href="https://vercel.com/legal/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Vercel Privacy Policy
+              <ArrowSquareOutIcon />
+            </a>
+          </li>
+        </ul>
+        <p>
+          We do not share your personal account information with AI providers.
+          Messages are processed without your identity attached.
+        </p>
+        <p>The provider(s) used to process your conversations will vary.</p>
       </section>
 
       <section id="analytics">
