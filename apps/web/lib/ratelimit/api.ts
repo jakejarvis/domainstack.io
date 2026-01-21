@@ -1,9 +1,12 @@
 import { ipAddress, waitUntil } from "@vercel/functions";
+import { createLogger } from "@/lib/logger/server";
 import {
   getRateLimiter,
   type RateLimitConfig,
   type RateLimitInfo,
 } from "./index";
+
+const logger = createLogger({ source: "ratelimit/api" });
 
 /**
  * Rate limit headers to include in responses.
@@ -56,8 +59,9 @@ async function resolveIdentifier(request: Request): Promise<string | null> {
     if (session?.user?.id) {
       return session.user.id;
     }
-  } catch {
+  } catch (err) {
     // Auth not available or error - fall back to IP
+    logger.debug({ err }, "auth session check failed, using IP");
   }
 
   // Fall back to IP address

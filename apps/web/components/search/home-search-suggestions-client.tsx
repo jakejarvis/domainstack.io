@@ -78,7 +78,7 @@ export function HomeSearchSuggestionsClient({
     <ScrollArea
       className={cn("w-full", className)}
       showScrollbar={false}
-      viewportRef={scrollContainerRef}
+      scrollRef={scrollContainerRef}
     >
       <div className="flex gap-2 p-0.5">
         {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map(

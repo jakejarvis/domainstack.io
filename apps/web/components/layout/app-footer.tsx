@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import * as motion from "motion/react-client";
 import Link from "next/link";
-import { Badge } from "../ui/badge";
+import { BetaBadge } from "@/components/beta-badge";
 
 export function AppFooter() {
   return (
@@ -21,12 +21,7 @@ export function AppFooter() {
         <Link href="/mcp">
           <SiModelcontextprotocol className="text-muted-foreground" />
           MCP
-          <Badge
-            variant="secondary"
-            className="ml-[1px] px-1.5 py-0 text-[11px] tracking-normal"
-          >
-            Beta
-          </Badge>
+          <BetaBadge className="ml-[1px] translate-y-[-1px] px-1.5 py-0 text-[11px] tracking-normal" />
         </Link>
         <Link href="/bookmarklet">
           <BookmarkIcon className="text-muted-foreground" />

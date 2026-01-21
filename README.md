@@ -15,6 +15,7 @@
 - **Fast & private**: No sign-up required for reports.
 - **Notifications & calendar sync**: Email/In-app alerts plus iCal feeds for expirations.
 - **Advanced dashboard**: Filtering, sorting, bulk actions, and multiple view modes.
+- **AI chat assistant**: Ask questions about any domain in natural language; powered by durable streaming with automatic reconnection.
 - **MCP server**: AI-assisted domain lookups via [Model Context Protocol](https://modelcontextprotocol.io/).
 - **Pro subscription**: Paid plan via Polar for higher tracking limits.
 - **Reliable backend**: SWR caching with cron-based cache warming.
@@ -32,6 +33,7 @@
 - **Better Auth** (OAuth)
 - **Polar** (subscriptions)
 - [**Workflow DevKit**](https://useworkflow.dev/) (background jobs)
+- [**AI SDK**](https://ai-sdk.dev/) + [**AI Gateway**](https://vercel.com/ai-gateway)
 - **Resend** + **React Email**
 - **Vercel** (Edge Config, Blob Storage)
 - [**mapcn**](https://mapcn.vercel.app/) + [**CARTO Basemaps**](https://docs.carto.com/faqs/carto-basemaps)

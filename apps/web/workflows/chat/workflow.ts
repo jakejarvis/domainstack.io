@@ -1,0 +1,137 @@
+/**
+ * Chat workflow using DurableAgent for domain intelligence queries.
+ *
+ * Features:
+ * - Durable tool execution with automatic retries
+ * - Streaming responses via getWritable()
+ * - Resumable streams for client reconnection
+ *
+ * IMPORTANT: This workflow uses only serializable inputs.
+ * Node.js modules are imported inside "use step" functions.
+ */
+
+import { DurableAgent } from "@workflow/ai/agent";
+import {
+  convertToModelMessages,
+  type UIMessage,
+  type UIMessageChunk,
+} from "ai";
+import { getWritable } from "workflow";
+import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@/lib/constants/ai";
+import { getModelStep } from "./gateway";
+import {
+  getStuckToolParts,
+  getToolErrorDetails,
+  getToolStepStats,
+  logChatStepFinishStep,
+  logChatStreamErrorStep,
+  logChatStreamWarningStep,
+  serializeError,
+  summarizeToolCalls,
+  summarizeToolResults,
+} from "./logging";
+import { buildSystemPromptStep } from "./prompt";
+import { createDomainToolset, type ToolContext } from "./tools";
+
+export interface ChatWorkflowInput {
+  messages: UIMessage[];
+  domain?: string;
+  /** IP address for rate limiting - must be serializable */
+  ip: string | null;
+  /** User ID for telemetry - must be serializable */
+  userId: string | null;
+}
+
+/**
+ * Chat workflow that uses DurableAgent for streaming responses.
+ * Single-turn pattern: client owns conversation history.
+ */
+export async function chatWorkflow(input: ChatWorkflowInput): Promise<void> {
+  "use workflow";
+
+  const { messages, domain, ip, userId } = input;
+  const writable = getWritable<UIMessageChunk>();
+
+  // Create serializable tool context
+  const toolCtx: ToolContext = { ip };
+  const tools = createDomainToolset(toolCtx);
+
+  // Convert UI messages to model messages
+  const modelMessages = await convertToModelMessages(messages);
+
+  // Compile system prompt
+  const systemPrompt = await buildSystemPromptStep(domain);
+
+  // Create agent with domain tools
+  // Per AI SDK best practices: use temperature: 0 for deterministic tool calls
+  const agent = new DurableAgent({
+    model: getModelStep,
+    tools,
+    system: systemPrompt,
+    // Temperature 0 ensures consistent tool calling behavior across models
+    // See: https://ai-sdk.dev/docs/ai-sdk-core/prompt-engineering#temperature-settings
+    temperature: 0,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: "chatWorkflow",
+      metadata: {
+        domain,
+        userId,
+      },
+    },
+  });
+
+  // Stream response to workflow output
+  // Errors will propagate to the stream and trigger onError on the client
+  const result = await agent.stream({
+    messages: modelMessages,
+    writable,
+    maxSteps: MAX_TOOL_STEPS,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+    collectUIMessages: true,
+    onStepFinish: async (step) => {
+      const toolCalls = Array.isArray(step.toolCalls) ? step.toolCalls : [];
+      const toolResults = Array.isArray(step.toolResults)
+        ? step.toolResults
+        : [];
+      const shouldLog =
+        toolCalls.length > 0 ||
+        toolResults.length > 0 ||
+        step.finishReason === "error";
+
+      if (!shouldLog) return;
+
+      await logChatStepFinishStep({
+        event: "chat_step_finish",
+        domain,
+        userId,
+        finishReason: step.finishReason,
+        usage: step.usage,
+        toolCalls: summarizeToolCalls(toolCalls),
+        toolResults: summarizeToolResults(toolResults),
+      });
+    },
+    onError: async ({ error }) => {
+      const errorDetails = serializeError(error);
+      const toolDetails = getToolErrorDetails(error);
+      await logChatStreamErrorStep({
+        event: "chat_stream_error",
+        domain,
+        userId,
+        error: errorDetails,
+        tool: toolDetails,
+      });
+    },
+  });
+
+  const stuckTools = getStuckToolParts(result.uiMessages ?? []);
+  if (stuckTools.length > 0) {
+    await logChatStreamWarningStep({
+      event: "chat_tool_missing_result",
+      domain,
+      userId,
+      stuckTools,
+      stepStats: getToolStepStats(result.steps ?? []),
+    });
+  }
+}

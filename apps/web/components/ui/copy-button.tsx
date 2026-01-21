@@ -14,7 +14,7 @@ import { Button, type buttonVariants } from "@/components/ui/button";
 import { cn, type VariantProps } from "@/lib/utils";
 
 type CopyButtonProps = {
-  value: string;
+  value: string | (() => string);
   showLabel?: boolean;
   className?: string;
 } & VariantProps<typeof buttonVariants>;
@@ -52,7 +52,8 @@ export function CopyButton({
     }
 
     try {
-      await clipboardCopy(value);
+      const textToCopy = typeof value === "function" ? value() : value;
+      await clipboardCopy(textToCopy);
 
       toast.success("Copied!", {
         icon: <ClipboardTextIcon className="size-4" />,

@@ -467,3 +467,30 @@ function MyComponent() {
 **Skeleton requirements:**
 - MUST mirror final content layout to prevent CLS
 - Export skeleton components for reuse (e.g., `CalendarInstructionsSkeleton`)
+
+## AI Chat
+
+The AI chat assistant (`components/chat/`) provides natural language domain lookups using Vercel's Workflow SDK.
+
+### Architecture
+- **Client**: `useDomainChat` hook with session persistence via localStorage
+- **API**: `POST /api/chat` starts workflow, returns streaming response
+- **Workflow**: `workflows/chat/workflow.ts` uses `DurableAgent` for durable tool execution
+- **Tools**: `workflows/chat/tools.ts` defines domain lookup tools (WHOIS, DNS, SSL, etc.)
+
+### Constants (`lib/constants/ai.ts`)
+All chat limits are centralized for client/server consistency.
+
+### Rate Limits
+Differentiated by auth status and endpoint.
+
+### Security Layers
+1. **Rate limiting**: Per-user/IP via Upstash Redis
+2. **Input validation**: Zod schema validates message structure and length
+3. **Conversation truncation**: Only last N messages sent to model
+4. **System prompt defense**: Refuses off-topic questions, ignores override attempts
+
+### Adding New Tools
+1. Define tool in `workflows/chat/tools.ts` using `createDomainToolset()`
+2. Add human-readable title in `components/chat/utils.ts` (`TOOL_TITLES`)
+3. Tools call tRPC procedures which have their own rate limits

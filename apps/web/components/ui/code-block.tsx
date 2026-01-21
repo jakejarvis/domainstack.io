@@ -1,49 +1,85 @@
 "use client";
 
-import { useRef } from "react";
-import { CopyButton } from "@/components/ui/copy-button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { type CSSProperties, type ReactNode, useCallback, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { CopyButton } from "./copy-button";
 
-interface CodeBlockProps {
-  copyable?: boolean;
-  children: string;
-}
+type CodeBlockProps = {
+  children: ReactNode;
+  className?: string;
+  /** Raw SVG/HTML string for the icon */
+  icon?: string;
+  style?: CSSProperties;
+  tabIndex?: number;
+  title?: string;
+};
 
-export function CodeBlock({ copyable = true, children }: CodeBlockProps) {
-  const contentRef = useRef<HTMLPreElement>(null);
+export const CodeBlock = ({
+  children,
+  className,
+  icon,
+  style,
+  tabIndex,
+  title,
+}: CodeBlockProps) => {
+  const ref = useRef<HTMLPreElement>(null);
 
-  const handleSelect = () => {
-    if (!contentRef.current) return;
-    const selection = window.getSelection();
+  // Read the text content when copy is triggered, not at render time
+  const getValue = useCallback(() => ref.current?.innerText ?? "", []);
 
-    if (!selection) return;
-    const range = document.createRange();
+  const CodeBlockComponent = useCallback(
+    (props: { className?: string }) => (
+      <pre
+        className={cn(
+          "not-prose flex-1 overflow-x-auto rounded-sm border border-border/60 bg-background p-3 text-[13px] leading-normal outline-none",
+          "[&>code]:grid",
+          className,
+          props.className,
+        )}
+        ref={ref}
+        style={style}
+        tabIndex={tabIndex}
+      >
+        {children}
+      </pre>
+    ),
+    [children, style, tabIndex, className],
+  );
 
-    range.selectNodeContents(contentRef.current);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  };
+  if (!title) {
+    return (
+      <div data-slot="code-block" className="group/code-block relative">
+        <CodeBlockComponent />
+        <CopyButton
+          className="!bg-background hover:!bg-background absolute top-[5px] right-[5px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/code-block:opacity-100"
+          value={getValue}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="group relative my-4 max-w-full rounded-lg border border-border/50 bg-background">
-      {copyable && (
-        <CopyButton
-          value={children}
-          className="!bg-background hover:!bg-background absolute top-3.5 right-0 z-10 h-6 w-12 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-        />
-      )}
-      <ScrollArea className="max-h-64 w-full min-w-0 flex-1" showFade={false}>
-        <button
-          type="button"
-          onClick={handleSelect}
-          aria-label="Select text"
-          className="my-4 h-full w-full min-w-0 cursor-text bg-transparent pr-[50px] pl-4 text-left font-mono text-[13px] leading-5 outline-none"
-        >
-          <pre ref={contentRef} className="inline-block">
-            {children}
-          </pre>
-        </button>
-      </ScrollArea>
-    </div>
+    <Card
+      data-slot="code-block"
+      className="not-prose gap-0 overflow-hidden rounded-sm p-0 shadow-none"
+    >
+      <CardHeader className="flex items-center gap-2 border-b bg-sidebar py-1.5! pr-1.5 pl-4 text-muted-foreground">
+        {icon && (
+          <div
+            className="size-3.5 shrink-0"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: icon is a raw SVG string
+            dangerouslySetInnerHTML={{ __html: icon }}
+          />
+        )}
+        <CardTitle className="flex-1 font-mono font-normal text-sm tracking-tight">
+          {title}
+        </CardTitle>
+        <CopyButton value={getValue} />
+      </CardHeader>
+      <CardContent className="p-0">
+        <CodeBlockComponent className="line-numbers rounded-none border-none" />
+      </CardContent>
+    </Card>
   );
-}
+};

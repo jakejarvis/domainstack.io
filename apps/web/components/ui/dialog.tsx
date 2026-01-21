@@ -98,7 +98,7 @@ function DialogHeader({
     <div
       data-slot="dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-2 text-center has-data-[slot=dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=dialog-media]:gap-x-4 sm:place-items-start sm:gap-1 sm:text-left sm:has-data-[slot=dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=dialog-media]:grid-rows-[auto_1fr]",
+        "grid grid-rows-[auto_1fr] place-items-center text-center has-data-[slot=dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=dialog-media]:gap-x-4 sm:place-items-start sm:text-left sm:has-data-[slot=dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=dialog-media]:grid-rows-[auto_1fr]",
         className,
       )}
       {...props}
@@ -161,7 +161,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-balance text-muted-foreground text-sm sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-balance text-[13px] text-muted-foreground sm:group-has-data-[slot=dialog-media]/dialog-content:col-start-2 md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className,
       )}
       {...props}

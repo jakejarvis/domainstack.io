@@ -147,3 +147,34 @@ export async function getBlocklistSources(): Promise<string[]> {
     return [];
   }
 }
+
+/**
+ * Fetches the AI chat model identifier from Vercel Edge Config.
+ *
+ * Returns null if Edge Config is not configured or the key doesn't exist.
+ * The caller should fall back to a default model when null is returned.
+ *
+ * Edge Config key: `ai_chat_model`
+ *
+ * Expected schema:
+ * ```json
+ * {
+ *   "ai_chat_model": "anthropic/claude-sonnet-4.5"
+ * }
+ * ```
+ *
+ * @returns AI Gateway model identifier, or null if unavailable
+ */
+export async function getAiChatModel(): Promise<string | null> {
+  if (!process.env.EDGE_CONFIG) {
+    return null;
+  }
+
+  try {
+    const model = await get<string>("ai_chat_model");
+    return model ?? null;
+  } catch (err) {
+    logger.error(err, "failed to fetch AI chat model");
+    return null;
+  }
+}

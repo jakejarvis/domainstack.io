@@ -15,7 +15,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
-          Last updated: December 8, 2025
+          Last updated: January 20, 2026
         </p>
       </header>
 
@@ -90,6 +90,73 @@ export default function TermsPage() {
             rights
           </li>
         </ul>
+      </section>
+
+      <section id="ai-assistant">
+        <h2>AI Assistant</h2>
+        <p>
+          We provide an optional AI-powered chat assistant to help you look up
+          domain information using natural language. By using this feature, you
+          acknowledge and agree to the following:
+        </p>
+
+        <h3>Intended Use</h3>
+        <ul>
+          <li>
+            The AI assistant is designed solely for domain-related queries
+          </li>
+          <li>
+            It can look up WHOIS/RDAP records, DNS records, SSL certificates,
+            hosting information, and SEO metadata
+          </li>
+          <li>
+            The assistant will decline requests unrelated to domain information
+          </li>
+        </ul>
+
+        <h3>Limitations and Disclaimers</h3>
+        <ul>
+          <li>
+            <strong>AI responses may contain errors.</strong> The assistant uses
+            large language models that can make mistakes, misinterpret queries,
+            or provide incomplete information
+          </li>
+          <li>
+            <strong>Not a substitute for professional advice.</strong> Do not
+            rely on the AI assistant for legal, financial, or security decisions
+            regarding domains
+          </li>
+          <li>
+            <strong>Third-party data.</strong> Information retrieved by the
+            assistant comes from public sources and may not be current or
+            accurate
+          </li>
+          <li>
+            <strong>No guarantee of availability.</strong> The AI feature may be
+            modified, suspended, or discontinued at any time
+          </li>
+        </ul>
+
+        <h3>Acceptable Use</h3>
+        <p>You agree not to:</p>
+        <ul>
+          <li>
+            Attempt to manipulate, jailbreak, or bypass the assistant&apos;s
+            guidelines
+          </li>
+          <li>
+            Use the assistant to generate harmful, abusive, or illegal content
+          </li>
+          <li>Excessively query the assistant to circumvent rate limits</li>
+          <li>Use automated tools to interact with the AI assistant</li>
+        </ul>
+
+        <h3>Rate Limits</h3>
+        <p>
+          To ensure fair access for all users, the AI assistant is subject to
+          rate limits. Free users have lower limits than authenticated users.
+          Exceeding these limits will temporarily restrict access.
+        </p>
       </section>
 
       <section id="data-accuracy">

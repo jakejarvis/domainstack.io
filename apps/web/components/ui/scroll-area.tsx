@@ -6,7 +6,8 @@ interface ScrollAreaProps
   /** Enable edge fade that masks content into transparency (works on any background) */
   showFade?: boolean;
   showScrollbar?: boolean;
-  viewportRef?: React.Ref<HTMLDivElement>;
+  scrollRef?: React.Ref<HTMLDivElement>;
+  contentRef?: React.Ref<HTMLDivElement>;
   /** Scroll direction - 'vertical' prevents horizontal scroll, 'horizontal' prevents vertical, 'both' allows both (default) */
   orientation?: "vertical" | "horizontal" | "both";
 }
@@ -16,7 +17,8 @@ function ScrollArea({
   children,
   showFade = true,
   showScrollbar = true,
-  viewportRef,
+  scrollRef,
+  contentRef,
   orientation = "both",
   ...props
 }: ScrollAreaProps) {
@@ -31,7 +33,7 @@ function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        ref={viewportRef}
+        ref={scrollRef}
         className={cn(
           // Base styles
           "min-h-0 min-w-0 flex-1 rounded-[inherit] outline-none",
@@ -43,10 +45,13 @@ function ScrollArea({
           orientation === "both" && "overflow-auto",
           // Edge fade masks - composed for both axes, invisible when no overflow
           showFade &&
-            "mask-intersect mask-[linear-gradient(to_bottom,transparent,black_min(48px,var(--scroll-area-overflow-y-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-y-end,0))),transparent),linear-gradient(to_right,transparent,black_min(48px,var(--scroll-area-overflow-x-start,0)),black_calc(100%-min(48px,var(--scroll-area-overflow-x-end,0))),transparent)] [-webkit-mask-composite:source-in]",
+            "mask-intersect mask-[linear-gradient(to_bottom,transparent,black_min(24px,var(--scroll-area-overflow-y-start,0)),black_calc(100%-min(24px,var(--scroll-area-overflow-y-end,0))),transparent),linear-gradient(to_right,transparent,black_min(24px,var(--scroll-area-overflow-x-start,0)),black_calc(100%-min(24px,var(--scroll-area-overflow-x-end,0))),transparent)] [-webkit-mask-composite:source-in]",
         )}
       >
-        <ScrollAreaPrimitive.Content data-slot="scroll-area-content">
+        <ScrollAreaPrimitive.Content
+          data-slot="scroll-area-content"
+          ref={contentRef}
+        >
           {children}
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>

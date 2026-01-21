@@ -7,6 +7,7 @@ import {
 import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Image from "next/image";
+import { BetaBadge } from "@/components/beta-badge";
 import {
   Accordion,
   AccordionContent,
@@ -383,12 +384,7 @@ export default function McpPage() {
         <h1 className="flex items-center gap-2.5 font-semibold text-2xl tracking-tight">
           <SiModelcontextprotocol className="text-foreground/70" />
           MCP Server
-          <Badge
-            variant="secondary"
-            className="ml-0.5 text-[13px] tracking-normal"
-          >
-            Beta
-          </Badge>
+          <BetaBadge className="ml-0.5 font-semibold text-sm tracking-normal" />
         </h1>
         <p className="mt-2 text-muted-foreground">
           Connect AI assistants to Domainstack for instant domain intelligence.

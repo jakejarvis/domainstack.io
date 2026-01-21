@@ -1,0 +1,235 @@
+"use client";
+
+import { useChat } from "@ai-sdk/react";
+import { WorkflowChatTransport } from "@workflow/ai";
+import type { UIMessage } from "ai";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { analytics } from "@/lib/analytics/client";
+
+const STORAGE_KEY_RUN_ID = "chat-run-id";
+const STORAGE_KEY_MESSAGES = "chat-messages";
+
+function getStoredRunId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return localStorage.getItem(STORAGE_KEY_RUN_ID) ?? undefined;
+}
+
+function getStoredMessages(): UIMessage[] | undefined {
+  if (typeof window === "undefined") return undefined;
+  const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
+  if (!stored) return undefined;
+  try {
+    return JSON.parse(stored) as UIMessage[];
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    analytics.trackException(error, { context: "chat-storage-parse" });
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    return undefined;
+  }
+}
+
+function clearStorage() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY_RUN_ID);
+  localStorage.removeItem(STORAGE_KEY_MESSAGES);
+}
+
+/**
+ * Chat hook with global message history.
+ *
+ * The current domain (from URL params) is passed as context to the AI,
+ * but the conversation history is shared across all pages.
+ *
+ * Uses WorkflowChatTransport for:
+ * - Automatic reconnection after network issues or timeouts
+ * - Resumable streaming from the last chunk received
+ * - Session persistence via localStorage
+ */
+export function useDomainChat() {
+  const params = useParams<{ domain?: string }>();
+
+  // Decode domain from URL (it may be URL-encoded)
+  const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
+
+  // Keep domain in a ref so prepareSendMessagesRequest always reads the latest value.
+  // useChat doesn't properly react to transport prop changes, so we create the
+  // transport once and use a ref to always get the current domain.
+  const domainRef = useRef(domain);
+  domainRef.current = domain;
+
+  // Track submission errors separately for better UX
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Get stored run ID for stream resumption (computed once on mount)
+  const activeRunId = useMemo(() => getStoredRunId(), []);
+
+  // Configure workflow transport with domain in body and persistence callbacks.
+  // Created once - uses domainRef to always get the current domain value.
+  const transport = useMemo(
+    () =>
+      new WorkflowChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => ({
+          body: { messages, domain: domainRef.current },
+        }),
+        onChatSendMessage: (response, options) => {
+          // Store messages for restoration on page reload
+          try {
+            localStorage.setItem(
+              STORAGE_KEY_MESSAGES,
+              JSON.stringify(options.messages),
+            );
+          } catch (err) {
+            // localStorage may fail (quota exceeded, private browsing, etc.)
+            const error = err instanceof Error ? err : new Error(String(err));
+            analytics.trackException(error, { context: "chat-storage-write" });
+          }
+
+          // Store the workflow run ID for stream resumption
+          const workflowRunId = response.headers.get("x-workflow-run-id");
+          if (workflowRunId) {
+            try {
+              localStorage.setItem(STORAGE_KEY_RUN_ID, workflowRunId);
+            } catch {
+              // Non-critical - stream resumption will still work within session
+            }
+          }
+        },
+        onChatEnd: () => {
+          // Clear the active run ID when chat completes (but keep messages)
+          try {
+            localStorage.removeItem(STORAGE_KEY_RUN_ID);
+          } catch {
+            // Non-critical - stale run ID will be ignored on next session
+          }
+        },
+      }),
+    [],
+  );
+
+  const chat = useChat({
+    transport,
+    resume: !!activeRunId,
+    onError: (error) => {
+      analytics.trackException(error, { context: "chat-send", domain });
+      const message = getUserFriendlyError(error);
+      setSubmitError(message);
+    },
+  });
+
+  // Keep setMessages ref up to date to avoid chat object in deps
+  const setMessagesRef = useRef(chat.setMessages);
+  setMessagesRef.current = chat.setMessages;
+
+  // Restore messages from localStorage once on mount
+  const hasRestored = useRef(false);
+  useEffect(() => {
+    if (hasRestored.current) return;
+    hasRestored.current = true;
+
+    const storedMessages = getStoredMessages();
+    if (storedMessages && storedMessages.length > 0) {
+      setMessagesRef.current(storedMessages);
+    }
+  }, []);
+
+  // Persist messages to localStorage when:
+  // - Message count changes (new message added)
+  // - Status changes to 'ready' (streaming completed, final content available)
+  // Skip the initial empty state and restoration
+  const isInitialized = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
+  useEffect(() => {
+    // Skip first render (empty messages)
+    if (!isInitialized.current) {
+      if (chat.messages.length > 0) {
+        isInitialized.current = true;
+      }
+      return;
+    }
+
+    // Save messages to localStorage
+    if (chat.messages.length > 0) {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY_MESSAGES,
+          JSON.stringify(chat.messages),
+        );
+      } catch (err) {
+        // localStorage may fail (quota exceeded, private browsing, etc.)
+        const error = err instanceof Error ? err : new Error(String(err));
+        analytics.trackException(error, { context: "chat-storage-persist" });
+      }
+    }
+  }, [chat.messages.length, chat.status]);
+
+  // Clear error when user starts typing or retries
+  const clearError = useCallback(() => {
+    setSubmitError(null);
+  }, []);
+
+  // Clear all messages and storage
+  const clearMessages = useCallback(() => {
+    setMessagesRef.current([]);
+    setSubmitError(null);
+    clearStorage();
+  }, []);
+
+  // Wrap sendMessage to validate and clear errors
+  const sendMessage = useCallback(
+    (params: { text: string }) => {
+      const text = params.text.trim();
+      if (!text) {
+        setSubmitError("Please enter a message.");
+        return;
+      }
+      clearError();
+      chat.sendMessage({ text });
+    },
+    [chat, clearError],
+  );
+
+  // Combine SDK error with our submit error
+  const error =
+    submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null);
+
+  return {
+    ...chat,
+    sendMessage,
+    domain,
+    error,
+    clearError,
+    clearMessages,
+  };
+}
+
+/**
+ * Convert error to user-friendly message.
+ */
+function getUserFriendlyError(error: Error): string {
+  const message = error.message.toLowerCase();
+
+  // Network errors
+  if (message.includes("fetch") || message.includes("network")) {
+    return "Unable to connect. Please check your internet connection.";
+  }
+
+  // Rate limiting
+  if (message.includes("429") || message.includes("rate limit")) {
+    return "Too many requests. Please wait a moment and try again.";
+  }
+
+  // Server errors
+  if (message.includes("500") || message.includes("internal server")) {
+    return "Something went wrong on our end. Please try again.";
+  }
+
+  // Workflow not found (usually means workflow SDK not configured)
+  if (message.includes("workflow") || message.includes("run id")) {
+    return "Chat service is not available. Please try again later.";
+  }
+
+  // Default fallback
+  return "Something went wrong. Please try again.";
+}

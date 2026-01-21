@@ -18,7 +18,6 @@ import { createPortal } from "react-dom";
 import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
-
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
 import {
   ResponsiveTooltip,
