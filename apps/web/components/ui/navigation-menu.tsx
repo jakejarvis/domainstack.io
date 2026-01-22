@@ -31,6 +31,7 @@ function NavigationMenuList({
   ...props
 }: NavigationMenuPrimitive.List.Props) {
   return (
+    // @ts-expect-error - NavigationMenuList is not typed correctly, see https://github.com/mui/base-ui/pull/3775
     <NavigationMenuPrimitive.List
       data-slot="navigation-menu-list"
       className={cn(
@@ -47,6 +48,7 @@ function NavigationMenuItem({
   ...props
 }: NavigationMenuPrimitive.Item.Props) {
   return (
+    // @ts-expect-error - NavigationMenuItem is not typed correctly, see https://github.com/mui/base-ui/pull/3775
     <NavigationMenuPrimitive.Item
       data-slot="navigation-menu-item"
       className={cn("relative", className)}

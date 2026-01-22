@@ -65,7 +65,7 @@
     "drizzle-orm": "^0.45.1",
     "file-type": "^21.3.0",
     "geist": "^1.5.1",
-    "ical-generator": "10.0.1-develop.13",
+
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "ipaddr.js": "^2.3.0",
@@ -95,6 +95,7 @@
     "streamdown": "^2.1.0",
     "superjson": "^2.2.6",
     "tailwind-merge": "^3.4.0",
+    "ts-ics": "^2.4.0",
     "use-local-storage-state": "^19.5.0",
     "use-stick-to-bottom": "^1.1.1",
     "uuid": "^13.0.0",

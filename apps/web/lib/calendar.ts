@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import ical, { ICalCalendarMethod } from "ical-generator";
+import { generateIcsCalendar, type IcsCalendar, type IcsEvent } from "ts-ics";
 import { BASE_URL } from "@/lib/constants/app";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
@@ -33,38 +33,35 @@ export function generateCalendarFeed(
     (d) => d.verified && d.expirationDate !== null,
   );
 
-  const calendar = ical({
-    name: "Domain Expirations by Domainstack",
-    description:
-      "Expiration dates for your tracked domains. Powered by Domainstack.",
-    prodId: {
-      company: "Domainstack",
-      product: "Calendar Feed",
-      language: "EN",
-    },
-    // PUBLISH method is standard for subscription feeds
-    // (as opposed to REQUEST for meeting invitations)
-    method: ICalCalendarMethod.PUBLISH,
-  });
-
-  for (const domain of expiringDomains) {
-    // Skip if no expiration date (shouldn't happen after filtering)
-    if (!domain.expirationDate) continue;
-
-    calendar.createEvent({
+  const now = new Date();
+  const events: IcsEvent[] = expiringDomains
+    .filter((domain) => domain.expirationDate !== null)
+    .map((domain) => ({
       // Stable UID: uses trackedDomainId which is unique per user+domain
-      id: `${domain.id}@domainstack.io`,
-      // For all-day events, we just pass the date
-      start: domain.expirationDate,
-      allDay: true,
+      uid: `${domain.id}@domainstack.io`,
+      // Required: timestamp when this event was created/modified
+      stamp: { date: now },
+      // For all-day events, use DATE type (not DATE-TIME)
+      start: { date: domain.expirationDate as Date, type: "DATE" as const },
+      // All-day events need a duration of 1 day
+      duration: { days: 1 },
       summary: `🌐 ${domain.domainName} expires`,
       description: buildEventDescription(domain),
       url: `${BASE_URL}/dashboard?domainId=${domain.id}`,
-      categories: [{ name: "Domain Expiration" }],
-    });
-  }
+      categories: ["Domain Expiration"],
+    }));
 
-  const icsContent = calendar.toString();
+  const calendar: IcsCalendar = {
+    version: "2.0",
+    prodId: "-//Domainstack//Calendar Feed//EN",
+    // PUBLISH method is standard for subscription feeds
+    // (as opposed to REQUEST for meeting invitations)
+    method: "PUBLISH",
+    name: "Domain Expirations by Domainstack",
+    events,
+  };
+
+  const icsContent = generateIcsCalendar(calendar);
   const etag = computeEtag(expiringDomains);
 
   return {
