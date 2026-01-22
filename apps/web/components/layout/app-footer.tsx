@@ -21,7 +21,7 @@ export function AppFooter() {
         <Link href="/mcp">
           <SiModelcontextprotocol className="text-muted-foreground" />
           MCP
-          <BetaBadge className="ml-[1px] translate-y-[-1px] px-1.5 py-0 text-[11px] tracking-normal" />
+          <BetaBadge className="ml-[1px] px-1.5 py-0 text-[11px] tracking-normal" />
         </Link>
         <Link href="/bookmarklet">
           <BookmarkIcon className="text-muted-foreground" />

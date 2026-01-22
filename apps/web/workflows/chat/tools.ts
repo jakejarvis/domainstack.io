@@ -238,7 +238,7 @@ async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
  * - Descriptive descriptions - help LLM understand when/how to use each tool
  * - Schema with .describe() - helps LLM understand expected input format
  *
- * See: https://sdk.vercel.ai/docs/ai-sdk-core/tools-and-tool-calling#strict-mode
+ * See: https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#strict-mode
  */
 export function createDomainToolset(ctx: ToolContext) {
   return {

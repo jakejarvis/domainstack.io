@@ -243,7 +243,7 @@ export function ChatClient({
                 </Message>
               ))}
               {showLoading && (
-                <ShimmeringText text="Thinking…" className="text-[13px]" />
+                <ShimmeringText text="Thinking…" className="text-sm" />
               )}
             </>
           )}

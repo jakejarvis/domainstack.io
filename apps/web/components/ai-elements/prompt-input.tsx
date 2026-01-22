@@ -1,6 +1,6 @@
 "use client";
 
-import { PaperPlaneRightIcon, SquareIcon } from "@phosphor-icons/react";
+import { PaperPlaneRightIcon } from "@phosphor-icons/react";
 import type { ChatStatus, FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import {
@@ -331,8 +331,12 @@ export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
  * States:
  * - ready: Arrow icon, enabled - submit message
  * - submitted: Spinner icon, disabled - waiting for response
- * - streaming: Stop icon, enabled - click to stop generation
+ * - streaming: Spinner icon, disabled - response in progress
  * - error: Arrow icon, enabled - retry sending
+ *
+ * Note: Stream stopping is not supported when using resumable streams
+ * (WorkflowChatTransport with resume: true). The AI SDK docs state that
+ * "stream abort functionality is not compatible with stream resumption."
  */
 export const PromptInputSubmit = ({
   className,
@@ -347,21 +351,17 @@ export const PromptInputSubmit = ({
   let Icon = <PaperPlaneRightIcon className="size-4" />;
   let ariaLabel = "Send message";
 
-  if (status === "submitted") {
+  if (status === "submitted" || status === "streaming") {
     Icon = <Spinner className="size-4" />;
-    ariaLabel = "Sending\u2026";
-  } else if (status === "streaming") {
-    Icon = <SquareIcon className="size-4" weight="fill" />;
-    ariaLabel = "Stop generating";
+    ariaLabel = status === "submitted" ? "Sending\u2026" : "Generating\u2026";
   }
   // For "ready" and "error", use the default arrow icon (allows retry)
 
   // Determine if button should be disabled:
-  // - streaming: always enabled (stop button should always be clickable)
-  // - submitted: always disabled (waiting for first response chunk)
+  // - submitted/streaming: always disabled (response in progress)
   // - ready/error: respect the disabled prop (typically based on empty input)
   const isDisabled =
-    status === "streaming" ? false : status === "submitted" || disabled;
+    status === "submitted" || status === "streaming" || disabled;
 
   return (
     <InputGroupButton

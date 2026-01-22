@@ -43,6 +43,22 @@ function DrawerOverlay({
   );
 }
 
+function DrawerHandle({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Handle>) {
+  return (
+    <DrawerPrimitive.Handle
+      data-slot="drawer-handle"
+      className={cn(
+        "mx-auto mt-4 hidden h-2 w-[100px] shrink-0 cursor-grab rounded-full bg-muted active:cursor-grabbing group-data-[vaul-drawer-direction=bottom]/drawer-content:block",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 function DrawerContent({
   className,
   children,
@@ -63,7 +79,7 @@ function DrawerContent({
         )}
         {...props}
       >
-        <div className="mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+        <DrawerHandle />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
@@ -131,6 +147,7 @@ export {
   DrawerOverlay,
   DrawerTrigger,
   DrawerClose,
+  DrawerHandle,
   DrawerContent,
   DrawerHeader,
   DrawerFooter,

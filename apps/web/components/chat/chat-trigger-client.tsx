@@ -26,6 +26,7 @@ import {
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { useDomainChat } from "@/hooks/use-domain-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
 import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
@@ -47,6 +48,7 @@ export function ChatTriggerClient({
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
   const { hideAiFeatures, setHideAiFeatures } = useAiPreferences();
+  const { height: visualViewportHeight, isKeyboardOpen } = useVisualViewport();
   const {
     messages,
     sendMessage,
@@ -141,8 +143,15 @@ export function ChatTriggerClient({
       {isMobile && (
         <>
           <AnimatePresence>{showChatUI && fabButton}</AnimatePresence>
-          <Drawer open={open} onOpenChange={setOpen}>
-            <DrawerContent className="flex h-[min(530px,85vh)] flex-col overscroll-contain">
+          <Drawer open={open} onOpenChange={setOpen} handleOnly>
+            <DrawerContent
+              className="flex h-[min(530px,85dvh)] flex-col overscroll-contain"
+              style={
+                isKeyboardOpen
+                  ? { height: visualViewportHeight, maxHeight: "none" }
+                  : undefined
+              }
+            >
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
                   <LegoSmileyIcon className="size-4" />
