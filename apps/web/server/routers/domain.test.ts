@@ -18,7 +18,10 @@ vi.mock("@/lib/db/client", async () => {
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
-  start: vi.fn(),
+  start: vi.fn().mockResolvedValue({
+    runId: "mock-run-id",
+    returnValue: Promise.resolve({ success: true, data: {} }),
+  }),
 }));
 
 // Mock next/headers to avoid errors outside request context
@@ -213,14 +216,6 @@ describe("domain router", () => {
           },
         });
 
-      // Mock workflow for background revalidation
-      vi.mocked(start).mockResolvedValue({
-        returnValue: Promise.resolve({
-          success: true,
-          data: { isRegistered: true },
-        }),
-      } as never);
-
       const result = await caller.domain.getRegistration({
         domain: TEST_DOMAIN,
       });
@@ -232,8 +227,10 @@ describe("domain router", () => {
         expect(result.stale).toBe(true);
       }
 
-      // Background revalidation should be triggered
-      expect(start).toHaveBeenCalled();
+      // Background revalidation should be triggered (fire-and-forget)
+      await vi.waitFor(() => {
+        expect(start).toHaveBeenCalled();
+      });
     });
 
     it("runs workflow when no cached data exists", async () => {

@@ -65,7 +65,6 @@
     "drizzle-orm": "^0.45.1",
     "file-type": "^21.3.0",
     "geist": "^1.5.1",
-
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "ipaddr.js": "^2.3.0",

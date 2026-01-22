@@ -7,10 +7,6 @@ import { getScreenshotByDomainId } from "@/lib/db/repos/screenshots";
 import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
-  getDeduplicationKey,
-  startDeduplicated,
-} from "@/lib/workflow/deduplication";
-import {
   type ScreenshotWorkflowResult,
   screenshotWorkflow,
 } from "@/workflows/screenshot";
@@ -138,41 +134,23 @@ export async function POST(
       }
     }
 
-    // Cache miss - start workflow with deduplication
-    // Uses Redis to deduplicate across instances, returning existing runId if already running
-    const key = getDeduplicationKey("screenshot", domain.name);
-    const { runId, started } = await startDeduplicated(
-      key,
-      () => start(screenshotWorkflow, [{ domain: domain.name }]),
-      { ttlSeconds: 5 * 60 }, // 5 minute TTL
+    // Cache miss - start workflow
+    const run = await start(screenshotWorkflow, [{ domain: domain.name }]);
+
+    logger.debug(
+      { domainId, domain: domain.name, runId: run.runId },
+      "screenshot workflow started",
     );
 
-    if (started) {
-      logger.debug(
-        { domainId, domain: domain.name, runId },
-        "screenshot workflow started",
-      );
-
-      analytics.track("screenshot_api_workflow_started", {
-        domain: domain.name,
-        runId,
-      });
-    } else {
-      logger.debug(
-        { domainId, domain: domain.name, runId },
-        "attached to existing screenshot workflow",
-      );
-
-      analytics.track("screenshot_api_workflow_attached", {
-        domain: domain.name,
-        runId,
-      });
-    }
+    analytics.track("screenshot_api_workflow_started", {
+      domain: domain.name,
+      runId: run.runId,
+    });
 
     return NextResponse.json(
       {
         status: "running",
-        runId,
+        runId: run.runId,
       },
       { headers: rateLimit.headers },
     );

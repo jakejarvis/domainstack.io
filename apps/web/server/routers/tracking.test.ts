@@ -18,7 +18,10 @@ vi.mock("@/lib/db/client", async () => {
 
 // Mock workflow/api to avoid starting real workflows
 vi.mock("workflow/api", () => ({
-  start: vi.fn(),
+  start: vi.fn().mockResolvedValue({
+    runId: "mock-run-id",
+    returnValue: Promise.resolve({ success: true, data: {} }),
+  }),
 }));
 
 // Mock next/headers to avoid errors outside request context

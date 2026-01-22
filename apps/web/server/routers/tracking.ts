@@ -30,11 +30,6 @@ import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { sendEmail } from "@/lib/resend";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
 import {
-  getDeduplicationKey,
-  runDeduplicated,
-  startDeduplicated,
-} from "@/lib/workflow/deduplication";
-import {
   createTRPCRouter,
   protectedProcedure,
   withRateLimit,
@@ -195,20 +190,16 @@ export const trackingRouter = createTRPCRouter({
       const tracked = result.trackedDomain;
 
       // Trigger auto-verification workflow in the background
-      // Uses deduplication to prevent duplicate workflows for the same domain.
       // The workflow handles a 30-day retry schedule with increasing delays.
-      const key = getDeduplicationKey("auto-verify", tracked.id);
-      void startDeduplicated(
-        key,
-        () => start(autoVerifyWorkflow, [{ trackedDomainId: tracked.id }]),
-        { ttlSeconds: 30 * 24 * 60 * 60 }, // 30 days (matches workflow schedule)
-      ).catch((err) => {
-        // Log but don't fail the request - user can still manually verify
-        logger.error(
-          { err, trackedDomainId: tracked.id },
-          "failed to start auto-verify workflow",
-        );
-      });
+      void start(autoVerifyWorkflow, [{ trackedDomainId: tracked.id }]).catch(
+        (err: unknown) => {
+          // Log but don't fail the request - user can still manually verify
+          logger.error(
+            { err, trackedDomainId: tracked.id },
+            "failed to start auto-verify workflow",
+          );
+        },
+      );
 
       analytics.track("domain_added", { domain, resumed: false }, ctx.user.id);
 
@@ -253,21 +244,15 @@ export const trackingRouter = createTRPCRouter({
         return { verified: true, method: tracked.verificationMethod };
       }
 
-      // Run verification workflow with deduplication
-      // (prevents duplicate workflows if user clicks verify multiple times)
-      const key = getDeduplicationKey("verification", {
-        trackedDomainId,
-        method: method ?? "all",
-      });
-      const { result } = await runDeduplicated(key, () =>
-        start(verificationWorkflow, [
-          {
-            domain: tracked.domainName,
-            token: tracked.verificationToken,
-            method: method ?? undefined,
-          },
-        ]),
-      );
+      // Run verification workflow and wait for result
+      const run = await start(verificationWorkflow, [
+        {
+          domain: tracked.domainName,
+          token: tracked.verificationToken,
+          method: method ?? undefined,
+        },
+      ]);
+      const result = await run.returnValue;
 
       if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified

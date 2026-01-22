@@ -1,19 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withSwrCache } from "./swr";
 
-// Mock the deduplication module
-vi.mock("./deduplication", () => ({
-  getDeduplicationKey: vi.fn(
-    (workflow: string, domain: string) => `${workflow}:${domain}`,
-  ),
-  runDeduplicated: vi.fn(),
-}));
-
-// Get the mocked functions
-const { getDeduplicationKey, runDeduplicated } = await import(
-  "./deduplication"
-);
-
 describe("withSwrCache", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,7 +34,6 @@ describe("withSwrCache", () => {
       });
       expect(getCached).toHaveBeenCalledTimes(1);
       expect(startWorkflow).not.toHaveBeenCalled();
-      expect(runDeduplicated).not.toHaveBeenCalled();
     });
   });
 
@@ -65,13 +51,6 @@ describe("withSwrCache", () => {
         returnValue: Promise.resolve(workflowResult),
       });
 
-      // Mock runDeduplicated to call the function and return result
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
-      });
-
       const result = await withSwrCache({
         workflowName: "test",
         domain: "test.invalid",
@@ -87,61 +66,21 @@ describe("withSwrCache", () => {
         data: { id: 1, name: "stale" },
       });
 
-      // Background revalidation should be triggered
-      expect(runDeduplicated).toHaveBeenCalledTimes(1);
-      expect(getDeduplicationKey).toHaveBeenCalledWith("test", "test.invalid");
-
-      // Wait for background work to complete
+      // Background revalidation should be triggered (fire and forget)
       await vi.waitFor(() => {
         expect(startWorkflow).toHaveBeenCalledTimes(1);
       });
     });
 
-    it("passes ttlSeconds to runDeduplicated", async () => {
+    it("logs errors from background revalidation without affecting response", async () => {
       const getCached = vi.fn().mockResolvedValue({
         data: { id: 1 },
         stale: true,
         expiresAt: new Date(Date.now() - 1000),
       });
 
-      const startWorkflow = vi.fn().mockResolvedValue({
-        runId: "run_456",
-        returnValue: Promise.resolve({ success: true, data: { id: 1 } }),
-      });
-
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
-      });
-
-      await withSwrCache({
-        workflowName: "test",
-        domain: "test.invalid",
-        getCached,
-        startWorkflow,
-      });
-
-      // Check that ttlSeconds was passed (5 minutes = 300 seconds)
-      expect(runDeduplicated).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Function),
-        { ttlSeconds: 300 },
-      );
-    });
-
-    it("logs and tracks errors from background revalidation", async () => {
-      const getCached = vi.fn().mockResolvedValue({
-        data: { id: 1 },
-        stale: true,
-        expiresAt: new Date(Date.now() - 1000),
-      });
-
-      const startWorkflow = vi.fn();
       const testError = new Error("Background workflow failed");
-
-      // Mock runDeduplicated to reject
-      vi.mocked(runDeduplicated).mockRejectedValue(testError);
+      const startWorkflow = vi.fn().mockRejectedValue(testError);
 
       const result = await withSwrCache({
         workflowName: "test",
@@ -177,13 +116,6 @@ describe("withSwrCache", () => {
         returnValue: Promise.resolve(workflowResult),
       });
 
-      // Mock runDeduplicated to call startWorkflow and return result
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
-      });
-
       const result = await withSwrCache({
         workflowName: "test",
         domain: "test.invalid",
@@ -197,7 +129,6 @@ describe("withSwrCache", () => {
         stale: false,
         data: { id: 2, name: "new" },
       });
-      expect(runDeduplicated).toHaveBeenCalledTimes(1);
       expect(startWorkflow).toHaveBeenCalledTimes(1);
     });
 
@@ -216,12 +147,6 @@ describe("withSwrCache", () => {
       const startWorkflow = vi.fn().mockResolvedValue({
         runId: "run_456",
         returnValue: Promise.resolve(workflowResult),
-      });
-
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
       });
 
       const result = await withSwrCache({
@@ -251,12 +176,6 @@ describe("withSwrCache", () => {
         returnValue: Promise.resolve(workflowResult),
       });
 
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
-      });
-
       const result = await withSwrCache({
         workflowName: "test",
         domain: "test.invalid",
@@ -269,39 +188,6 @@ describe("withSwrCache", () => {
         error: "Workflow failed",
         data: null,
       });
-    });
-  });
-
-  describe("deduplication key generation", () => {
-    it("generates correct deduplication key", async () => {
-      const getCached = vi.fn().mockResolvedValue({
-        data: null,
-        stale: false,
-        expiresAt: null,
-      });
-
-      const startWorkflow = vi.fn().mockResolvedValue({
-        runId: "run_key_test",
-        returnValue: Promise.resolve({ success: true, data: {} }),
-      });
-
-      vi.mocked(runDeduplicated).mockImplementation(async (_key, fn) => {
-        const run = await fn();
-        const result = await run.returnValue;
-        return { result, deduplicated: false, source: "new" as const };
-      });
-
-      await withSwrCache({
-        workflowName: "registration",
-        domain: "another.invalid",
-        getCached,
-        startWorkflow,
-      });
-
-      expect(getDeduplicationKey).toHaveBeenCalledWith(
-        "registration",
-        "another.invalid",
-      );
     });
   });
 });
