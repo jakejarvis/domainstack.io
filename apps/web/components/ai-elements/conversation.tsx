@@ -22,7 +22,6 @@ export const Conversation = ({
       className={cn("min-h-0 flex-1", className)}
       scrollRef={scrollRef}
       contentRef={contentRef}
-      orientation="vertical"
       role="log"
       {...props}
     />

@@ -2,8 +2,9 @@
 
 import { type CSSProperties, type ReactNode, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyButton } from "@/components/ui/copy-button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { CopyButton } from "./copy-button";
 
 type CodeBlockProps = {
   children: ReactNode;
@@ -30,19 +31,24 @@ export const CodeBlock = ({
 
   const CodeBlockComponent = useCallback(
     (props: { className?: string }) => (
-      <pre
-        className={cn(
-          "not-prose flex-1 overflow-x-auto rounded-sm border border-border/60 bg-background p-3 text-[13px] leading-normal outline-none",
-          "[&>code]:grid",
-          className,
-          props.className,
-        )}
-        ref={ref}
-        style={style}
-        tabIndex={tabIndex}
+      <ScrollArea
+        className="w-full rounded-sm border border-border/60 bg-background"
+        scrollFade={false}
       >
-        {children}
-      </pre>
+        <pre
+          className={cn(
+            "not-prose p-3.5 text-[13px] leading-normal outline-none",
+            "[&>code]:grid",
+            className,
+            props.className,
+          )}
+          ref={ref}
+          style={style}
+          tabIndex={tabIndex}
+        >
+          {children}
+        </pre>
+      </ScrollArea>
     ),
     [children, style, tabIndex, className],
   );

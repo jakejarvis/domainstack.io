@@ -76,8 +76,10 @@ export function HomeSearchSuggestionsClient({
 
   return (
     <ScrollArea
-      className={cn("w-full", className)}
-      showScrollbar={false}
+      className={cn(
+        "w-full overflow-x-hidden [&_[data-slot=scroll-area-scrollbar]]:hidden",
+        className,
+      )}
       scrollRef={scrollContainerRef}
     >
       <div className="flex gap-2 p-0.5">

@@ -23,7 +23,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.18",
     "@ai-sdk/react": "^3.0.46",
-    "@base-ui/react": "^1.0.0",
+    "@base-ui/react": "^1.1.0",
     "@bprogress/next": "^3.2.12",
     "@ghostery/adblocker-puppeteer": "^2.13.4",
     "@icons-pack/react-simple-icons": "^13.8.0",

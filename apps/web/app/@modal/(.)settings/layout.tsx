@@ -36,7 +36,7 @@ export default function SettingsModalLayout() {
           </ModalDescription>
           <div id="settings-modal-tabs" className="mt-2 min-h-[1px]" />
         </ModalHeader>
-        <ScrollArea orientation="vertical" className="min-h-0 flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="min-w-0 p-5 [contain:inline-size]">
             <Suspense fallback={<SettingsSkeleton />}>
               <AuthorizedSettingsModalLayout />

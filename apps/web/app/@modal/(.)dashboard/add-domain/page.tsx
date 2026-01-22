@@ -15,7 +15,7 @@ export default function InterceptedAddDomainPage({
   return (
     <Modal>
       <ModalContent>
-        <ScrollArea orientation="vertical" className="min-h-0 flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="min-w-0 p-5 [contain:inline-size]">
             <Suspense fallback={<AddDomainSkeleton />}>
               <AuthorizedAddDomainContent searchParams={searchParams} />

@@ -279,7 +279,7 @@ export function RawDataDialog({
         </DialogHeader>
         <ScrollArea
           className="relative flex min-h-0 flex-1 overflow-hidden"
-          showFade={false}
+          scrollFade={false}
         >
           <div className="p-3">
             <pre className="font-mono text-foreground/90 text-xs leading-5">

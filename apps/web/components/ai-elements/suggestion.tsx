@@ -13,8 +13,7 @@ export const Suggestions = ({
   ...props
 }: SuggestionsProps) => (
   <ScrollArea
-    className="w-full overflow-x-auto whitespace-nowrap"
-    showScrollbar={false}
+    className="w-full overflow-x-auto whitespace-nowrap [&_[data-slot=scroll-area-scrollbar]]:hidden"
     {...props}
   >
     <div className={cn("flex w-max flex-nowrap items-center gap-2", className)}>
