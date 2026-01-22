@@ -1,6 +1,6 @@
 "use client";
 
-import { RobotIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import { ChatsIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
@@ -99,6 +99,8 @@ export interface ChatClientProps {
   conversationClassName?: string;
   /** Additional class for the input container */
   inputClassName?: string;
+  /** Pre-generated suggestions from server */
+  suggestions?: string[];
 }
 
 export function ChatClient({
@@ -112,6 +114,7 @@ export function ChatClient({
   iconSize = "sm",
   conversationClassName,
   inputClassName,
+  suggestions = [],
 }: ChatClientProps) {
   const [inputLength, setInputLength] = useState(0);
   const { showToolCalls } = useAiPreferences();
@@ -123,24 +126,19 @@ export function ChatClient({
     ? `Ask about ${domain}\u2026`
     : "Ask about a domain\u2026";
 
-  const suggestions = useMemo(
-    () =>
-      domain
-        ? [
-            `When does ${domain} expire?`,
-            `Is ${domain} missing any important security headers?`,
-            `Which email provider does ${domain} use?`,
-            "What DNS records are configured?",
-            `Is ${domain}'s SSL certificate valid?`,
-          ]
-        : [
-            "Look up vercel.com",
-            "What security headers does chatgpt.com have?",
-            "Who is the registrar for stackoverflow.com?",
-            "Check SSL for github.com",
-          ],
-    [domain],
-  );
+  // When viewing a domain report, generate domain-specific suggestions client-side.
+  // Otherwise, use the pre-generated suggestions from the server.
+  const displaySuggestions = useMemo(() => {
+    if (domain) {
+      return [
+        `When does ${domain} expire?`,
+        `Is ${domain} missing any important security headers?`,
+        `Which email provider does ${domain} use?`,
+        `Is ${domain}'s SSL certificate valid?`,
+      ];
+    }
+    return suggestions;
+  }, [domain, suggestions]);
 
   const handleScrollToBottom = useCallback(() => {
     void stickyInstance.scrollToBottom();
@@ -197,7 +195,7 @@ export function ChatClient({
           {messages.length === 0 ? (
             <ConversationEmptyState
               icon={
-                <RobotIcon
+                <ChatsIcon
                   className={iconSize === "lg" ? "size-8" : "size-6"}
                 />
               }
@@ -255,7 +253,7 @@ export function ChatClient({
         )}
       >
         <Suggestions className="justify-center">
-          {suggestions.map((suggestion) => (
+          {displaySuggestions.map((suggestion) => (
             <Suggestion
               key={suggestion}
               suggestion={suggestion}
