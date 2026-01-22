@@ -28,7 +28,7 @@
     "@ghostery/adblocker-puppeteer": "^2.13.4",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/instrumentation-pino": "^0.56.0",
+    "@opentelemetry/instrumentation-pino": "^0.57.0",
     "@phosphor-icons/react": "^2.1.10",
     "@polar-sh/better-auth": "^1.6.4",
     "@polar-sh/sdk": "^0.42.2",
