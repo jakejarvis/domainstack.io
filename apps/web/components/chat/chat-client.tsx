@@ -41,10 +41,13 @@ import { getToolStatusMessage } from "./utils";
 function AutoExpandTool({
   toolPart,
   isStreamComplete,
+  onExpand,
 }: {
   toolPart: ToolUIPart;
   /** Whether the stream has finished (status is "ready") */
   isStreamComplete: boolean;
+  /** Called when the tool auto-expands (e.g., to scroll into view) */
+  onExpand?: () => void;
 }) {
   // If stream is done but tool never got output, treat as error
   const isStuckPending =
@@ -67,8 +70,9 @@ function AutoExpandTool({
   useEffect(() => {
     if (isComplete) {
       setOpen(true);
+      onExpand?.();
     }
-  }, [isComplete]);
+  }, [isComplete, onExpand]);
 
   return (
     <Tool open={open} onOpenChange={setOpen}>
@@ -229,6 +233,7 @@ export function ChatClient({
                             key={`${message.id}-${index}`}
                             toolPart={part as ToolUIPart}
                             isStreamComplete={status === "ready"}
+                            onExpand={handleScrollToBottom}
                           />
                         );
                       }
@@ -237,7 +242,9 @@ export function ChatClient({
                   </MessageContent>
                 </Message>
               ))}
-              {showLoading && <ShimmeringText text="Thinking…" />}
+              {showLoading && (
+                <ShimmeringText text="Thinking…" className="text-[13px]" />
+              )}
             </>
           )}
         </ConversationContent>

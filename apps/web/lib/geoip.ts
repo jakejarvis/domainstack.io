@@ -54,8 +54,6 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
     );
     url.searchParams.set("apikey", apiKey);
 
-    logger.info({ ip }, "looking up IP geolocation");
-
     const res = await fetchWithTimeoutAndRetry(url.toString());
 
     if (!res.ok) {
@@ -147,8 +145,6 @@ export const lookupGeoIp = cache(async function lookupGeoIp(
       lat: typeof data.latitude === "number" ? data.latitude : null,
       lon: typeof data.longitude === "number" ? data.longitude : null,
     };
-
-    logger.info({ ip }, "IP geolocation complete");
 
     return { geo, owner, domain };
   } catch (err) {
