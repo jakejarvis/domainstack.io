@@ -45,7 +45,7 @@ export function LinkedAccountRow({
 
   return (
     <Item size="sm" variant="outline">
-      <ItemMedia variant="icon">
+      <ItemMedia variant="icon" iconVariant="muted">
         <Icon />
       </ItemMedia>
       <ItemContent>

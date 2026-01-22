@@ -164,7 +164,7 @@ export function DeleteAccountDialog({
             </AlertDialogHeader>
 
             <div className="space-y-3">
-              <div className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-destructive-foreground text-sm">
+              <div className="space-y-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm">
                 <p className="mb-3">
                   The following data will be{" "}
                   <span className="font-medium">permanently deleted:</span>

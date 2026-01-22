@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  FadersHorizontalIcon,
-  LayoutIcon,
+  GearIcon,
   MoonIcon,
   SignOutIcon,
+  StackIcon,
   SunIcon,
 } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
@@ -104,7 +104,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/dashboard">
-              <LayoutIcon weight="bold" />
+              <StackIcon />
               Dashboard
             </Link>
           }
@@ -113,7 +113,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/settings" scroll={false}>
-              <FadersHorizontalIcon weight="bold" />
+              <GearIcon />
               Settings
             </Link>
           }
@@ -121,16 +121,12 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
         <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
-          {theme === "dark" ? (
-            <SunIcon weight="bold" />
-          ) : (
-            <MoonIcon weight="bold" />
-          )}
+          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          <SignOutIcon weight="bold" className="text-danger-foreground" />
+          <SignOutIcon className="text-danger-foreground" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

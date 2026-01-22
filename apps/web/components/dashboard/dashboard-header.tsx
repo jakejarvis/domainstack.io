@@ -44,7 +44,7 @@ export function DashboardHeader({
       <div className="flex items-center gap-3">
         <h1 className="font-semibold text-2xl tracking-tight">
           Welcome back
-          {userName ? `, ${userName.split(" ")[0]}` : ""}!
+          {userName ? `, ${userName.split(" ")[0]}` : ""}
         </h1>
         {subscription?.plan === "pro" ? (
           subscription?.endsAt ? (
@@ -91,10 +91,12 @@ export function DashboardHeader({
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
               render={
-                <Button disabled>
-                  <PlusIcon />
-                  Add Domain
-                </Button>
+                <div>
+                  <Button disabled>
+                    <PlusIcon />
+                    Add Domain
+                  </Button>
+                </div>
               }
             />
             <ResponsiveTooltipContent className="!p-0">
@@ -105,10 +107,7 @@ export function DashboardHeader({
                   className="!px-2.5 !py-1.5 !h-auto gap-1 font-normal text-background text-xs"
                 >
                   Upgrade to add more domains
-                  <ArrowSquareOutIcon
-                    className="size-3 -translate-y-[2px]"
-                    weight="bold"
-                  />
+                  <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
                 </Button>
               ) : (
                 "Domain limit reached"

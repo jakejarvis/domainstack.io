@@ -49,8 +49,10 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
         {children}
       </motion.header>
 
-      {/* Spacer to prevent content jump when header is fixed on mobile */}
-      <div className="h-[var(--header-height,72px)] md:hidden" aria-hidden />
+      {/* Spacer to prevent content jump when header is fixed/absolute on mobile */}
+      {isMobile && (
+        <div className="h-[var(--header-height,72px)]" aria-hidden />
+      )}
     </>
   );
 }

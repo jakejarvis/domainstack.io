@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import { cn, cva } from "@/lib/utils";
 
 function Empty({
@@ -72,14 +72,9 @@ function EmptyMedia({
   // For icon variant, wrap children in IconBadge
   if (variant === "icon") {
     return (
-      <IconBadge
-        data-slot="empty-icon"
-        size="md"
-        shape="rounded"
-        className={cn("mb-2", className)}
-      >
+      <Icon data-slot="empty-icon" className={cn("mb-2", className)}>
         {children}
-      </IconBadge>
+      </Icon>
     );
   }
 

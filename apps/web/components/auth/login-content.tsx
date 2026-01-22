@@ -1,10 +1,11 @@
 "use client";
 
-import { FingerprintIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
+import { Logo } from "@/components/logo";
+import { Icon } from "@/components/ui/icon";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/oauth";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,9 @@ export function LoginContent({
 
   return (
     <div className={cn("flex flex-col items-center", className)}>
-      <div className="mb-5 flex size-14 items-center justify-center rounded-xl bg-primary/5 text-primary">
-        <FingerprintIcon className="size-7" />
-      </div>
+      <Icon size="xl" variant="muted" className="mb-5">
+        <Logo />
+      </Icon>
       <h1 className="mb-2 font-semibold text-xl tracking-tight">
         Welcome to Domainstack
       </h1>

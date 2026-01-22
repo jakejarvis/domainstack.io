@@ -1,5 +1,5 @@
 import { InfoIcon } from "@phosphor-icons/react/ssr";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -30,7 +30,7 @@ export function GlobalNotificationRow({
   disabled,
 }: GlobalNotificationRowProps) {
   const info = NOTIFICATION_CATEGORY_INFO[category];
-  const Icon = info.icon;
+  const IconComponent = info.icon;
 
   const anyEnabled = emailEnabled || inAppEnabled;
 
@@ -45,14 +45,9 @@ export function GlobalNotificationRow({
       {/* Icon + Label */}
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {/* Icon indicator */}
-        <IconBadge
-          size="sm"
-          shape="rounded"
-          color={anyEnabled ? "primary" : "default"}
-          className="rounded-md transition-colors sm:size-9"
-        >
-          <Icon className="size-4" />
-        </IconBadge>
+        <Icon variant={anyEnabled ? "default" : "muted"}>
+          <IconComponent />
+        </Icon>
 
         {/* Label with info tooltip */}
         <div className="flex min-w-0 flex-1">

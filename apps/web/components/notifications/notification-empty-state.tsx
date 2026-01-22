@@ -1,7 +1,7 @@
 import { ArrowRightIcon, ConfettiIcon } from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import { useRouter } from "@/hooks/use-router";
 
 interface NotificationEmptyStateProps {
@@ -17,13 +17,13 @@ export function NotificationEmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center p-10 text-center">
-      <IconBadge
+      <Icon
         size="lg"
-        color="muted"
+        variant="muted"
         className="mb-3 bg-accent/50 text-foreground/50 dark:bg-accent/30 dark:text-foreground/70"
       >
         <ConfettiIcon className="size-[22px]" />
-      </IconBadge>
+      </Icon>
       <p className="text-foreground/80 text-sm">All caught up!</p>
       <p className="mt-1 text-[13px] text-muted-foreground/80">
         No {variant === "inbox" ? "unread" : "archived"} notifications

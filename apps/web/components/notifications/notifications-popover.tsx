@@ -2,7 +2,7 @@ import {
   ArchiveIcon,
   BellSimpleIcon,
   ChecksIcon,
-  FadersHorizontalIcon,
+  GearIcon,
   TrayIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
@@ -240,7 +240,7 @@ export function NotificationsPopover() {
                     }}
                     render={
                       <Link href="/settings/notifications">
-                        <FadersHorizontalIcon className="text-foreground/90" />
+                        <GearIcon className="text-foreground/90" />
                         Settings
                       </Link>
                     }

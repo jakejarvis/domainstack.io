@@ -1,6 +1,6 @@
 import {
   BellSimpleIcon,
-  CalendarDotIcon,
+  CalendarDotsIcon,
   FingerprintIcon,
   IdentificationBadgeIcon,
   PlugsIcon,
@@ -88,7 +88,7 @@ export function getSeverityIconColor(
 /** Map notification types to icons */
 export function getNotificationIcon(type: string) {
   if (type.startsWith("domain_expiry")) {
-    return CalendarDotIcon;
+    return CalendarDotsIcon;
   }
   if (type.startsWith("certificate_expiry")) {
     return ShieldWarningIcon;

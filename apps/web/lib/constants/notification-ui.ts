@@ -1,6 +1,6 @@
 import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import {
-  CalendarDotIcon,
+  CalendarDotsIcon,
   FingerprintIcon,
   IdentificationBadgeIcon,
   PlugsIcon,
@@ -24,7 +24,7 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
   domainExpiry: {
     label: "Domain Expiration",
     description: "Alerts at 30, 14, 7, and 1 day before expiration",
-    icon: CalendarDotIcon,
+    icon: CalendarDotsIcon,
   },
   registrationChanges: {
     label: "Registration Changes",

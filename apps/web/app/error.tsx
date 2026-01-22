@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon } from "@phosphor-icons/react/ssr";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";

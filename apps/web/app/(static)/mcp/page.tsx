@@ -4,7 +4,10 @@ import {
   SiModelcontextprotocol,
   SiWindsurf,
 } from "@icons-pack/react-simple-icons";
-import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowSquareOutIcon,
+  BookOpenTextIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { BetaBadge } from "@/components/beta-badge";
@@ -178,7 +181,7 @@ const setupItems: SetupItem[] = [
         <p className="mb-4 flex justify-center text-center">
           <a
             href={VSCODE_DEEPLINK}
-            className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-2.5 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
+            className="!no-underline hover:!text-white inline-flex items-center gap-2 rounded-md bg-[#0066b8] p-3 font-medium text-white leading-none transition-colors hover:bg-[#005ba4]"
             data-disable-progress
           >
             <svg
@@ -186,7 +189,7 @@ const setupItems: SetupItem[] = [
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
               fill="currentColor"
-              className="mt-[3px] inline-block size-4"
+              className="inline-block size-4"
             >
               <title>VS Code</title>
               <path d="M23.15 2.587L18.21.21a1.49 1.49 0 0 0-1.705.29l-9.46 8.63l-4.12-3.128a1 1 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12L.326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a1 1 0 0 0 1.276.057l4.12-3.128l9.46 8.63a1.49 1.49 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352m-5.146 14.861L10.826 12l7.178-5.448z" />
@@ -427,7 +430,7 @@ export default function McpPage() {
               <AccordionContent className="pt-1 text-foreground/90 leading-relaxed">
                 {item.content}
                 <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
-                  <InfoIcon className="mr-[1px] size-3" />
+                  <BookOpenTextIcon className="mr-[1px] size-3" />
                   Need help?
                   <a
                     href={item.docsUrl}
@@ -457,17 +460,17 @@ export default function McpPage() {
               key={tool.name}
               className="not-prose space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4"
             >
-              <h3 className="font-mono text-base">{tool.name}</h3>
-              <p className="text-foreground/80 text-sm leading-relaxed">
+              <h3 className="font-mono text-[15px]">{tool.name}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {tool.description}
               </p>
               <div>
-                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                <span className="font-medium text-foreground/75 text-xs uppercase tracking-wide">
                   Parameters
                 </span>
                 <ul className="mt-2 space-y-1 pl-2 [&_li]:list-none">
                   {tool.parameters.map((param) => (
-                    <li key={param.name} className="font-mono text-sm">
+                    <li key={param.name} className="font-mono text-[13px]">
                       <span className="text-foreground">{param.name}</span>
                       <span className="text-muted-foreground">
                         : {param.type}
@@ -475,7 +478,7 @@ export default function McpPage() {
                       {param.required && (
                         <Badge
                           variant="secondary"
-                          className="ml-2 lowercase leading-4"
+                          className="ml-2 text-xs lowercase leading-4"
                         >
                           Required
                         </Badge>

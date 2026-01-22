@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon, type IconProps } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 
@@ -95,15 +95,16 @@ const itemMediaVariants = cva({
 type ItemMediaVariant = "default" | "icon" | "image";
 
 interface ItemMediaProps
-  extends Omit<useRender.ComponentProps<typeof IconBadge>, "children"> {
+  extends Omit<useRender.ComponentProps<typeof Icon>, "variant" | "children"> {
   variant?: ItemMediaVariant;
   children?: React.ReactNode;
+  iconVariant?: IconProps["variant"];
 }
 
 function ItemMedia({
   variant = "default",
-  size = "md",
-  color = "muted",
+  size = "default",
+  iconVariant = "default",
   className,
   render,
   children,
@@ -112,10 +113,10 @@ function ItemMedia({
   // For icon variant, wrap children in IconBadge
   if (variant === "icon") {
     return (
-      <IconBadge
+      <Icon
         data-slot="item-media"
         size={size}
-        color={color}
+        variant={iconVariant}
         className={cn(
           "group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start",
           className,
@@ -123,7 +124,7 @@ function ItemMedia({
         {...props}
       >
         {children}
-      </IconBadge>
+      </Icon>
     );
   }
 

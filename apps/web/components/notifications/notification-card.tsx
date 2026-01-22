@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import {
   getNotificationIcon,
   getNotificationSeverity,
@@ -19,9 +19,9 @@ export function NotificationCard({
   notification,
   onClick,
 }: NotificationCardProps) {
-  const Icon = getNotificationIcon(notification.type);
+  const IconComponent = getNotificationIcon(notification.type);
   const severity = getNotificationSeverity(notification.type);
-  const iconColor = getSeverityIconColor(severity, !!notification.readAt);
+  const _iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
 
   // Build href with domainId filter when notification is domain-specific
@@ -41,9 +41,9 @@ export function NotificationCard({
     >
       <div className="flex gap-3">
         {/* Icon */}
-        <IconBadge size="sm" shape="rounded" color={iconColor}>
-          <Icon className="size-4" />
-        </IconBadge>
+        <Icon size="sm" className="rounded-full">
+          <IconComponent />
+        </Icon>
 
         {/* Content */}
         <div className="min-w-0 flex-1">

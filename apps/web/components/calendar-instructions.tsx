@@ -1,9 +1,5 @@
-import {
-  SiApple,
-  SiGoogle,
-  SiImessage,
-  SiProton,
-} from "@icons-pack/react-simple-icons";
+import { SiApple, SiGoogle, SiProton } from "@icons-pack/react-simple-icons";
+import { OpenAiLogoIcon } from "@phosphor-icons/react";
 import {
   AppStoreLogoIcon,
   ArrowClockwiseIcon,
@@ -326,17 +322,18 @@ export function CalendarInstructions({ className }: { className?: string }) {
                     <DropdownMenuItem
                       render={
                         <a
-                          href={`https://t3.chat/new?${new URLSearchParams({
+                          href={`https://chatgpt.com/?${new URLSearchParams({
+                            hints: "search",
                             q: "How do I subscribe to an ics calendar feed in Microsoft Bob?",
                           })}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="justify-center text-[13px] text-foreground/90"
-                          aria-label="Ask AI"
+                          aria-label="Ask ChatGPT"
                         >
-                          <SiImessage />
+                          <OpenAiLogoIcon />
                           Other…
-                          <span className="sr-only">(Ask AI)</span>
+                          <span className="sr-only">(Ask ChatGPT)</span>
                         </a>
                       }
                     />

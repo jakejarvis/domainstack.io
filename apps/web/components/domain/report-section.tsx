@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -38,7 +38,7 @@ export function ReportSection({
   headerActions,
   children,
 }: ReportSectionProps) {
-  const Icon = icon;
+  const IconComponent = icon;
   // Loading adornment reflects props only; avoid client-only hydration gates
   const computedSlug = (slug ?? title)
     .toLowerCase()
@@ -67,11 +67,11 @@ export function ReportSection({
         />
         <div className="relative">
           <div className="p-5" id={headerId}>
-            <div className="flex w-full items-center gap-3 text-left">
-              {Icon && (
-                <IconBadge size="sm">
-                  <Icon className="size-4" />
-                </IconBadge>
+            <div className="flex w-full items-center gap-2 text-left">
+              {IconComponent && (
+                <Icon size="sm" className="rounded-full">
+                  <IconComponent />
+                </Icon>
               )}
               <div className="min-w-0 flex-1">
                 <CardTitle className="flex items-center gap-2">

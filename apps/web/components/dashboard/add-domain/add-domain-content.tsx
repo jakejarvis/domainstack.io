@@ -12,7 +12,7 @@ import { StepInstructionsError } from "@/components/dashboard/add-domain/step-in
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { Button } from "@/components/ui/button";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Stepper,
@@ -125,9 +125,9 @@ export function AddDomainContent({
     const errorContent = (
       <>
         <div className="mb-4 flex flex-col items-center text-center">
-          <IconBadge size="lg" color="destructive" className="mb-2">
-            <WarningCircleIcon className="size-6" />
-          </IconBadge>
+          <Icon size="lg" variant="destructive" className="mb-2">
+            <WarningCircleIcon />
+          </Icon>
           <h2 className="font-semibold text-lg leading-none tracking-tight">
             Unable to Load Subscription
           </h2>
@@ -162,9 +162,9 @@ export function AddDomainContent({
     const quotaContent = (
       <>
         <div className="mb-4 flex flex-col items-center text-center">
-          <IconBadge size="lg" color="warning" className="mb-3">
-            <GaugeIcon className="size-6" />
-          </IconBadge>
+          <Icon size="lg" variant="warning" className="mb-3">
+            <GaugeIcon />
+          </Icon>
           <h2 className="font-semibold text-lg tracking-tight">
             Domain Limit Reached
           </h2>
@@ -409,9 +409,9 @@ export function AddDomainContent({
                 </>
               ) : (
                 <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
-                  <IconBadge size="lg" color="destructive" className="mx-auto">
-                    <WarningCircleIcon className="size-6" />
-                  </IconBadge>
+                  <Icon size="lg" variant="destructive" className="mx-auto">
+                    <WarningCircleIcon />
+                  </Icon>
                   <div className="text-center" aria-live="polite">
                     <h3 className="font-semibold">Something went wrong</h3>
                     <p className="text-muted-foreground text-sm">

@@ -3,7 +3,7 @@ import {
   WarningCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
-import { IconBadge } from "@/components/ui/icon-badge";
+import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
 
 type StepInstructionsErrorProps = {
@@ -19,9 +19,9 @@ export function StepInstructionsError({
 }: StepInstructionsErrorProps) {
   return (
     <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
-      <IconBadge size="lg" color="destructive" className="mx-auto">
-        <WarningCircleIcon className="size-6" />
-      </IconBadge>
+      <Icon size="lg" variant="destructive" className="mx-auto">
+        <WarningCircleIcon />
+      </Icon>
       <div className="text-center" aria-live="polite">
         <h3 className="font-semibold">Unable to load verification details</h3>
         <p className="text-muted-foreground text-sm">

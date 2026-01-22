@@ -1,8 +1,8 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react/ssr";
+import { Button } from "@/components/ui/button";
+import { Icon, type IconProps } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import { Button } from "./button";
-import { IconBadge, type IconBadgeProps } from "./icon-badge";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -126,14 +126,14 @@ function DialogFooter({
 function DialogMedia({
   className,
   size = "lg",
-  color = "muted",
+  variant = "default",
   ...props
-}: Omit<IconBadgeProps, "shape">) {
+}: IconProps) {
   return (
-    <IconBadge
+    <Icon
       data-slot="dialog-media"
       size={size}
-      color={color}
+      variant={variant}
       className={cn("mb-2 sm:row-span-2", className)}
       {...props}
     />
