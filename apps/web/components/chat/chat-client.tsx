@@ -184,14 +184,14 @@ export function ChatClient({
       <Conversation
         stickyInstance={stickyInstance}
         className={cn(
-          "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:h-full",
+          "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
           conversationClassName,
         )}
       >
         <ConversationContent
           className={cn(
             messages.length === 0
-              ? "h-full items-center justify-center"
+              ? "items-center justify-center"
               : "gap-4 px-3 py-4",
           )}
           aria-live="polite"

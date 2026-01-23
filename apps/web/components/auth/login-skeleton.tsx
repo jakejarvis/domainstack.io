@@ -15,7 +15,7 @@ export function LoginSkeleton() {
       <Skeleton className="h-4 w-full max-w-76" />
 
       {/* Sign in button skeleton */}
-      <div className="my-6 flex w-full flex-row flex-wrap items-center gap-3">
+      <div className="my-6 flex w-full flex-wrap items-center gap-3">
         <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
         <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />
         <Skeleton className="h-10 w-full max-w-[400px] rounded-md" />

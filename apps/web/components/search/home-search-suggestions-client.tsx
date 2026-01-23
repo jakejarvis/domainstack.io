@@ -76,11 +76,9 @@ export function HomeSearchSuggestionsClient({
 
   return (
     <ScrollArea
-      className={cn(
-        "w-full overflow-x-hidden [&_[data-slot=scroll-area-scrollbar]]:hidden",
-        className,
-      )}
+      className={cn("w-full", className)}
       scrollRef={scrollContainerRef}
+      hideScrollbar
     >
       <div className="flex gap-2 p-0.5">
         {(isHistoryLoaded ? displayedSuggestions : defaultSuggestions).map(
@@ -115,7 +113,7 @@ export function HomeSearchSuggestionsClient({
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleClearHistory}
-                  className="flex-shrink-0"
+                  className="shrink-0"
                   aria-label="Clear history"
                 >
                   <XIcon />
@@ -126,7 +124,7 @@ export function HomeSearchSuggestionsClient({
             <TooltipContent>Clear history</TooltipContent>
           </Tooltip>
         ) : (
-          <div className="-ml-2 w-[1px] flex-shrink-0" />
+          <div className="-ml-2 w-[1px] shrink-0" />
         )}
       </div>
     </ScrollArea>

@@ -86,7 +86,7 @@ export function DashboardTableColumnMenu<TData>({
         align="end"
         className="flex min-w-44 flex-col overflow-hidden p-0"
       >
-        <ScrollArea className="h-auto min-h-0 flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="p-1">
             {allColumns.map((column) => {
               const { columnDef } = column;

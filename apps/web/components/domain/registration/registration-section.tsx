@@ -64,7 +64,7 @@ export function RegistrationSection({
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
           <WarningCircleIcon
-            className="mt-0.5 size-4 flex-shrink-0 text-yellow-800 dark:text-yellow-200"
+            className="mt-0.5 size-4 shrink-0 text-yellow-800 dark:text-yellow-200"
             aria-hidden="true"
           />
           <div className="space-y-1">

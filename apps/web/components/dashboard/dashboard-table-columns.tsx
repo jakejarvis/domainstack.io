@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils";
 
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {
-  // biome-ignore lint/correctness/noUnusedVariables: generic needs to match library definition
   interface ColumnMeta<TData extends RowData, TValue> {
     className?: string;
   }

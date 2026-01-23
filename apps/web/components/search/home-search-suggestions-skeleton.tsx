@@ -17,7 +17,7 @@ export function HomeSearchSuggestionsSkeleton({
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: fine for skeletons
               key={i}
-              className="flex h-8 flex-shrink-0 animate-pulse items-center gap-2 rounded-md bg-muted/15 px-2.5 ring-1 ring-border/60"
+              className="flex h-8 shrink-0 animate-pulse items-center gap-2 rounded-md bg-muted/15 px-2.5 ring-1 ring-border/60"
             >
               {/* Favicon placeholder */}
               <Skeleton className="size-4 rounded-sm" />

@@ -110,7 +110,7 @@ function NavigationMenuViewport({
         sideOffset={10}
         collisionPadding={{ top: 5, bottom: 5, left: 20, right: 20 }}
         className={cn(
-          "z-50 box-border w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out will-change-[top,left,right,bottom]",
+          "z-50 w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-200 ease-out will-change-[top,left,right,bottom]",
         )}
       >
         <NavigationMenuPrimitive.Popup

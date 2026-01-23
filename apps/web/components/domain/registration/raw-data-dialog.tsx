@@ -249,8 +249,8 @@ export function RawDataDialog({
           <DialogTitle className="flex items-center gap-1 text-base">
             <Favicon domain={domain} className="mr-1 size-5" />
             <span>
-              <span className="truncate">{domain}</span>{" "}
-              <span className="font-normal text-muted-foreground/90 text-sm">
+              <span className="truncate lowercase">{domain}</span>
+              <span className="ml-1.5 font-normal text-muted-foreground/90 text-sm">
                 ({format})
               </span>
             </span>
@@ -277,10 +277,7 @@ export function RawDataDialog({
             </span>
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea
-          className="relative flex min-h-0 flex-1 overflow-hidden"
-          scrollFade={false}
-        >
+        <ScrollArea className="min-h-0 flex-1" scrollFade={false}>
           <div className="p-3">
             <pre className="font-mono text-foreground/90 text-xs leading-5">
               <code

@@ -6,19 +6,26 @@ function ScrollArea({
   children,
   scrollFade = true,
   scrollbarGutter = false,
+  hideScrollbar = false,
   scrollRef,
   contentRef,
   ...props
 }: ScrollAreaPrimitive.Root.Props & {
+  /** Fade the edges of the scroll area to indicate scrollability */
   scrollFade?: boolean;
+  /** Leave extra space for the scrollbar, instead of it covering the content */
   scrollbarGutter?: boolean;
+  /** Completely hide scrollbars (useful for touch/gesture-only scroll areas) */
+  hideScrollbar?: boolean;
+  /** Ref for the outer viewport element */
   scrollRef?: React.Ref<HTMLDivElement>;
+  /** Ref for the inner content element */
   contentRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
-      className={cn("relative flex min-h-0 min-w-0", className)}
+      className={cn("relative flex min-h-0 min-w-0 overflow-hidden", className)}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
@@ -39,8 +46,12 @@ function ScrollArea({
           {children}
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
-      <ScrollBar orientation="vertical" />
-      <ScrollBar orientation="horizontal" />
+      {!hideScrollbar && (
+        <>
+          <ScrollBar orientation="vertical" />
+          <ScrollBar orientation="horizontal" />
+        </>
+      )}
       <ScrollAreaPrimitive.Corner data-slot="scroll-area-corner" />
     </ScrollAreaPrimitive.Root>
   );
@@ -57,19 +68,6 @@ function ScrollBar({
       orientation={orientation}
       className={cn(
         "m-1 flex opacity-0 transition-opacity delay-300 data-[orientation=horizontal]:h-1 data-[orientation=vertical]:w-1 data-[orientation=horizontal]:flex-col data-hovering:opacity-100 data-scrolling:opacity-100 data-hovering:delay-0 data-scrolling:delay-0 data-hovering:duration-100 data-scrolling:duration-100",
-        // // Base styles - hidden by default, appears on hover/scrolling
-        // "pointer-events-none relative flex rounded-full bg-black/10 opacity-0 transition-opacity duration-150 dark:bg-white/15",
-        // // Larger hit area via pseudo-element
-        // "before:absolute before:content-['']",
-        // // Vertical orientation
-        // "data-[orientation=vertical]:m-2 data-[orientation=vertical]:w-1",
-        // "data-[orientation=vertical]:before:left-1/2 data-[orientation=vertical]:before:h-full data-[orientation=vertical]:before:w-5 data-[orientation=vertical]:before:-translate-x-1/2",
-        // // Horizontal orientation
-        // "data-[orientation=horizontal]:m-2 data-[orientation=horizontal]:h-1",
-        // "data-[orientation=horizontal]:before:right-0 data-[orientation=horizontal]:before:-bottom-2 data-[orientation=horizontal]:before:left-0 data-[orientation=horizontal]:before:h-5",
-        // // Show on hover or scrolling
-        // "data-[hovering]:pointer-events-auto data-[hovering]:opacity-100",
-        // "data-[scrolling]:pointer-events-auto data-[scrolling]:opacity-100 data-[scrolling]:duration-0",
         className,
       )}
       {...props}

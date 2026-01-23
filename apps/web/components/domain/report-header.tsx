@@ -55,7 +55,7 @@ export function DomainReportHeader({
               {domain}
             </h2>
             <CameraIcon
-              className="mr-3 ml-0.5 size-3.5 flex-shrink-0 text-foreground/65"
+              className="mr-3 ml-0.5 size-3.5 shrink-0 text-foreground/65"
               aria-hidden
             />
           </a>
@@ -70,13 +70,13 @@ export function DomainReportHeader({
             {domain}
           </h2>
           <Spinner
-            className="ml-0.5 size-3.5 flex-shrink-0 text-foreground/65"
+            className="ml-0.5 size-3.5 shrink-0 text-foreground/65"
             aria-hidden="true"
           />
         </span>
       )}
 
-      <div className="flex flex-shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <TrackDomainButton domain={domain} enabled={isRegistered} />
         <ExportButton domain={domain} enabled={isRegistered} />
         <ToolsDropdown domain={domain} enabled={isRegistered} />

@@ -165,7 +165,7 @@ function SocialPreview({
     if (variant === "compact") {
       card = (
         <div className="mx-auto w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#eff3f4] bg-white text-black dark:border-[#2f3336] dark:bg-black dark:text-white">
-          <div className="flex items-stretch">
+          <div className="flex">
             <div className="relative min-h-[96px] w-24 shrink-0 self-stretch bg-[#f1f5f9] dark:bg-[#0f1419]">
               <PreviewImage
                 src={image}
