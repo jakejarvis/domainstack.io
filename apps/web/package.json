@@ -99,7 +99,7 @@
     "use-stick-to-bottom": "^1.1.1",
     "uuid": "^13.0.0",
     "vaul-base": "^1.0.0",
-    "workflow": "4.0.1-beta.49",
+    "workflow": "4.0.1-beta.50",
     "ws": "^8.19.0",
     "zod": "^4.3.5"
   },
