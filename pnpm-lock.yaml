@@ -128,8 +128,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0(@opentelemetry/api-logs@0.211.0)(@opentelemetry/api@1.9.0)(@opentelemetry/instrumentation@0.211.0(@opentelemetry/api@1.9.0))(@opentelemetry/resources@2.5.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.210.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.4.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.4.0(@opentelemetry/api@1.9.0))
       '@workflow/ai':
-        specifier: 4.0.1-beta.50
-        version: 4.0.1-beta.50(ai@6.0.48(zod@4.3.5))(workflow@4.0.1-beta.49(@aws-sdk/client-sts@3.971.0)(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(magicast@0.5.1)(next@16.1.4(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))
+        specifier: 4.0.1-beta.51
+        version: 4.0.1-beta.51(ai@6.0.48(zod@4.3.5))(workflow@4.0.1-beta.49(@aws-sdk/client-sts@3.971.0)(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(magicast@0.5.1)(next@16.1.4(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))
       ai:
         specifier: ^6.0.48
         version: 6.0.48(zod@4.3.5)
@@ -3725,11 +3725,11 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
-  '@workflow/ai@4.0.1-beta.50':
-    resolution: {integrity: sha512-YdI4NwLvQA0W4ubVzv2TXK8U6ExKf2gsYfGA4KxCKwQN8cG4BLjYRHRZcHlG3Uff5SeaiYO0PNIGOgLRkxpDQg==}
+  '@workflow/ai@4.0.1-beta.51':
+    resolution: {integrity: sha512-YMcLEng+ZActD2Uu/njCsQXMLZ5CrGslXDVoFFoBTbskda6LAgxdxp1h6GcuaCCEBxcaFU35051bzILYcO8nXg==}
     peerDependencies:
       ai: ^5 || ^6
-      workflow: 4.0.1-beta.49
+      workflow: 4.0.1-beta.50
 
   '@workflow/astro@4.0.0-beta.23':
     resolution: {integrity: sha512-BnVDltrbGePiFriRNXfUcVmPP55S1hXMTl0tt2c8gZjYVFGeMbM7ngb5440TlUVWOYQOqTGj+JjLVWhm76jLqw==}
@@ -11319,7 +11319,7 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
-  '@workflow/ai@4.0.1-beta.50(ai@6.0.48(zod@4.3.5))(workflow@4.0.1-beta.49(@aws-sdk/client-sts@3.971.0)(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(magicast@0.5.1)(next@16.1.4(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))':
+  '@workflow/ai@4.0.1-beta.51(ai@6.0.48(zod@4.3.5))(workflow@4.0.1-beta.49(@aws-sdk/client-sts@3.971.0)(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(magicast@0.5.1)(next@16.1.4(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3))':
     dependencies:
       '@ai-sdk/provider': 3.0.5
       ai: 6.0.48(zod@4.3.5)

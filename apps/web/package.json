@@ -52,7 +52,7 @@
     "@vercel/edge-config": "^1.4.3",
     "@vercel/functions": "^3.3.6",
     "@vercel/otel": "^2.1.0",
-    "@workflow/ai": "4.0.1-beta.50",
+    "@workflow/ai": "4.0.1-beta.51",
     "ai": "^6.0.48",
     "better-auth": "^1.4.17",
     "cheerio": "^1.1.2",
