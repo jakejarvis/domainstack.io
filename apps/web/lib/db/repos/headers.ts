@@ -64,6 +64,7 @@ export async function getCachedHeaders(
     .select({
       headers: httpHeaders.headers,
       status: httpHeaders.status,
+      fetchedAt: httpHeaders.fetchedAt,
       expiresAt: httpHeaders.expiresAt,
     })
     .from(domains)
@@ -72,10 +73,10 @@ export async function getCachedHeaders(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
   // Get status message and normalize headers
@@ -89,6 +90,7 @@ export async function getCachedHeaders(
       statusMessage,
     },
     stale,
+    fetchedAt,
     expiresAt,
   };
 }

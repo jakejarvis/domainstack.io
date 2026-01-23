@@ -73,10 +73,10 @@ export async function getCachedRegistration(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row.registration;
+  const { fetchedAt, expiresAt } = row.registration;
   const stale = expiresAt <= now;
 
   const registrarProvider = row.providerName
@@ -123,7 +123,7 @@ export async function getCachedRegistration(
     ),
   };
 
-  return { data: response, stale, expiresAt };
+  return { data: response, stale, fetchedAt, expiresAt };
 }
 
 /**

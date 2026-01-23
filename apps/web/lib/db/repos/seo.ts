@@ -51,6 +51,7 @@ export async function getCachedSeo(
       canonicalUrl: seoTable.canonicalUrl,
       robots: seoTable.robots,
       errors: seoTable.errors,
+      fetchedAt: seoTable.fetchedAt,
       expiresAt: seoTable.expiresAt,
       // Will be non-null if domain is in blocklist
       isBlocked: blockedDomains.domain,
@@ -62,10 +63,10 @@ export async function getCachedSeo(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= nowMs;
 
   // Check blocklist for cached OG images (isBlocked is non-null if domain is blocked)
@@ -103,5 +104,5 @@ export async function getCachedSeo(
     errors: row.errors as { html?: string; robots?: string },
   };
 
-  return { data: response, stale, expiresAt };
+  return { data: response, stale, fetchedAt, expiresAt };
 }

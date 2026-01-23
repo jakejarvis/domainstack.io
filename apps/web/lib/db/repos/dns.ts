@@ -162,6 +162,7 @@ export async function getCachedDns(
       priority: dnsRecords.priority,
       isCloudflare: dnsRecords.isCloudflare,
       resolver: dnsRecords.resolver,
+      fetchedAt: dnsRecords.fetchedAt,
       expiresAt: dnsRecords.expiresAt,
     })
     .from(domains)
@@ -169,8 +170,15 @@ export async function getCachedDns(
     .where(eq(domains.name, domain));
 
   if (rows.length === 0) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
+
+  // Find the earliest fetchedAt (oldest data) across all records
+  const earliestFetchedAt = rows.reduce<Date | null>((earliest, r) => {
+    if (!r.fetchedAt) return earliest;
+    if (!earliest) return r.fetchedAt;
+    return r.fetchedAt < earliest ? r.fetchedAt : earliest;
+  }, null);
 
   // Find the earliest expiration across all records
   const earliestExpiresAt = rows.reduce<Date | null>((earliest, r) => {
@@ -202,6 +210,7 @@ export async function getCachedDns(
       resolver: rows[0]?.resolver ?? null,
     },
     stale,
+    fetchedAt: earliestFetchedAt,
     expiresAt: earliestExpiresAt,
   };
 }

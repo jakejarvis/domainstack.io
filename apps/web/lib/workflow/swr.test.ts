@@ -15,6 +15,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: { id: 1, name: "test" },
         stale: false,
+        fetchedAt: new Date(Date.now() - 1000),
         expiresAt: new Date(Date.now() + 3600000),
       });
       const startWorkflow = vi.fn();
@@ -42,6 +43,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: { id: 1, name: "stale" },
         stale: true,
+        fetchedAt: new Date(Date.now() - 60000), // 1 minute ago
         expiresAt: new Date(Date.now() - 1000),
       });
 
@@ -76,6 +78,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: { id: 1 },
         stale: true,
+        fetchedAt: new Date(Date.now() - 60000),
         expiresAt: new Date(Date.now() - 1000),
       });
 
@@ -100,6 +103,74 @@ describe("withSwrCache", () => {
       // Wait for the rejected promise to be handled
       await new Promise((resolve) => setTimeout(resolve, 10));
     });
+
+    it("waits for fresh data when stale data exceeds maxAgeMs", async () => {
+      const getCached = vi.fn().mockResolvedValue({
+        data: { id: 1, name: "very stale" },
+        stale: true,
+        fetchedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        expiresAt: new Date(Date.now() - 1000),
+      });
+
+      const workflowResult = { success: true, data: { id: 2, name: "fresh" } };
+      const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_123",
+        returnValue: Promise.resolve(workflowResult),
+      });
+
+      const result = await withSwrCache({
+        workflowName: "test",
+        domain: "test.invalid",
+        getCached,
+        startWorkflow,
+        maxAgeMs: 60 * 60 * 1000, // 1 hour max
+      });
+
+      // Should wait for fresh data, not return stale
+      expect(result).toEqual({
+        success: true,
+        cached: false,
+        stale: false,
+        data: { id: 2, name: "fresh" },
+      });
+      expect(startWorkflow).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns stale data when within maxAgeMs", async () => {
+      const getCached = vi.fn().mockResolvedValue({
+        data: { id: 1, name: "stale" },
+        stale: true,
+        fetchedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+        expiresAt: new Date(Date.now() - 1000),
+      });
+
+      const workflowResult = { success: true, data: { id: 2, name: "fresh" } };
+      const startWorkflow = vi.fn().mockResolvedValue({
+        runId: "run_123",
+        returnValue: Promise.resolve(workflowResult),
+      });
+
+      const result = await withSwrCache({
+        workflowName: "test",
+        domain: "test.invalid",
+        getCached,
+        startWorkflow,
+        maxAgeMs: 60 * 60 * 1000, // 1 hour max
+      });
+
+      // Should return stale data since it's within maxAgeMs
+      expect(result).toEqual({
+        success: true,
+        cached: true,
+        stale: true,
+        data: { id: 1, name: "stale" },
+      });
+
+      // Background revalidation should still be triggered
+      await vi.waitFor(() => {
+        expect(startWorkflow).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   describe("cache miss (workflow execution)", () => {
@@ -107,6 +178,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: null,
         stale: false,
+        fetchedAt: null,
         expiresAt: null,
       });
 
@@ -136,6 +208,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: null,
         stale: false,
+        fetchedAt: null,
         expiresAt: null,
       });
 
@@ -167,6 +240,7 @@ describe("withSwrCache", () => {
       const getCached = vi.fn().mockResolvedValue({
         data: null,
         stale: false,
+        fetchedAt: null,
         expiresAt: null,
       });
 

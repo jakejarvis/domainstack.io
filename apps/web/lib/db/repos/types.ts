@@ -7,6 +7,8 @@ export interface CacheResult<T> {
   data: T | null;
   /** True if the data exists but has expired */
   stale: boolean;
+  /** When the data was originally fetched, or null if no data */
+  fetchedAt: Date | null;
   /** When the cache entry expires/expired, or null if no data */
   expiresAt: Date | null;
 }

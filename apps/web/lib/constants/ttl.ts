@@ -38,3 +38,40 @@ export const TTL_CERTIFICATES_EXPIRY_BUFFER = 2 * ONE_DAY; // 48 hours (start ag
 export const TTL_HEADERS = 12 * ONE_HOUR; // 12 hours
 export const TTL_HOSTING = ONE_DAY; // 24 hours
 export const TTL_SEO = ONE_DAY; // 24 hours
+
+// ===== Maximum Data Age (in milliseconds) =====
+// Absolute maximum age before refusing to return stale data.
+// If data is older than this, wait for fresh data instead of returning stale.
+// These are typically 2-4x the staleness TTL to allow some grace period
+// while still ensuring users don't see extremely outdated information.
+
+const ONE_MINUTE_MS = 60 * 1000;
+const ONE_HOUR_MS = ONE_MINUTE_MS * 60;
+const ONE_DAY_MS = ONE_HOUR_MS * 24;
+
+// Registration: Stale after 24h, max age 3 days
+// WHOIS data rarely changes, but we don't want week-old data
+export const MAX_AGE_REGISTRATION = 3 * ONE_DAY_MS;
+
+// DNS: Stale after 1h, max age 6 hours
+// DNS can change frequently, don't serve very old records
+export const MAX_AGE_DNS = 6 * ONE_HOUR_MS;
+
+// Certificates: Stale after 24h, max age 3 days
+// Certificate data is important for security monitoring
+export const MAX_AGE_CERTIFICATES = 3 * ONE_DAY_MS;
+
+// Headers: Stale after 12h, max age 2 days
+// HTTP headers can reveal important security/tech info
+export const MAX_AGE_HEADERS = 2 * ONE_DAY_MS;
+
+// Hosting: Stale after 24h, max age 3 days
+// Provider detection derived from DNS/headers
+export const MAX_AGE_HOSTING = 3 * ONE_DAY_MS;
+
+// SEO: Stale after 24h, max age 3 days
+// Meta tags and robots.txt change infrequently
+export const MAX_AGE_SEO = 3 * ONE_DAY_MS;
+
+// Favicon: No max age (cosmetic only, stale is fine)
+// Favicons are purely cosmetic and rarely change

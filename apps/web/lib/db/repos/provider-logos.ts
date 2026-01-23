@@ -36,6 +36,7 @@ export async function getProviderLogo(
     .select({
       url: providerLogos.url,
       notFound: providerLogos.notFound,
+      fetchedAt: providerLogos.fetchedAt,
       expiresAt: providerLogos.expiresAt,
     })
     .from(providerLogos)
@@ -43,7 +44,7 @@ export async function getProviderLogo(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
   // Only treat as having data if we have a definitive result:
@@ -52,15 +53,16 @@ export async function getProviderLogo(
   const isDefinitiveResult = row.url !== null || row.notFound === true;
 
   if (!isDefinitiveResult) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = expiresAt <= now;
 
   return {
     data: { url: row.url },
     stale,
+    fetchedAt,
     expiresAt,
   };
 }

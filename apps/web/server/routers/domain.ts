@@ -1,6 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
+import {
+  MAX_AGE_CERTIFICATES,
+  MAX_AGE_DNS,
+  MAX_AGE_HEADERS,
+  MAX_AGE_HOSTING,
+  MAX_AGE_REGISTRATION,
+  MAX_AGE_SEO,
+} from "@/lib/constants/ttl";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { withSwrCache } from "@/lib/workflow/swr";
 import {
@@ -47,6 +55,7 @@ export const domainRouter = createTRPCRouter({
         getCached: () => getCachedRegistration(input.domain),
         startWorkflow: () =>
           start(registrationWorkflow, [{ domain: input.domain }]),
+        maxAgeMs: MAX_AGE_REGISTRATION,
       });
     }),
 
@@ -69,6 +78,7 @@ export const domainRouter = createTRPCRouter({
         domain: input.domain,
         getCached: () => getCachedDns(input.domain),
         startWorkflow: () => start(dnsWorkflow, [{ domain: input.domain }]),
+        maxAgeMs: MAX_AGE_DNS,
       });
     }),
 
@@ -94,6 +104,7 @@ export const domainRouter = createTRPCRouter({
         getCached: () => getCachedHosting(input.domain),
         startWorkflow: () => start(hostingWorkflow, [{ domain: input.domain }]),
         workflowName: "hosting",
+        maxAgeMs: MAX_AGE_HOSTING,
       });
     }),
 
@@ -119,6 +130,7 @@ export const domainRouter = createTRPCRouter({
         getCached: () => getCachedCertificates(input.domain),
         startWorkflow: () =>
           start(certificatesWorkflow, [{ domain: input.domain }]),
+        maxAgeMs: MAX_AGE_CERTIFICATES,
       });
     }),
 
@@ -141,6 +153,7 @@ export const domainRouter = createTRPCRouter({
         domain: input.domain,
         getCached: () => getCachedHeaders(input.domain),
         startWorkflow: () => start(headersWorkflow, [{ domain: input.domain }]),
+        maxAgeMs: MAX_AGE_HEADERS,
       });
     }),
 
@@ -163,6 +176,7 @@ export const domainRouter = createTRPCRouter({
         domain: input.domain,
         getCached: () => getCachedSeo(input.domain),
         startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
+        maxAgeMs: MAX_AGE_SEO,
       });
     }),
 

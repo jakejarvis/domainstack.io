@@ -77,6 +77,7 @@ export async function getCachedCertificates(
       caProviderId: providers.id,
       caProviderDomain: providers.domain,
       caProviderName: providers.name,
+      fetchedAt: certificates.fetchedAt,
       expiresAt: certificates.expiresAt,
     })
     .from(domains)
@@ -86,8 +87,15 @@ export async function getCachedCertificates(
     .orderBy(certificates.validTo);
 
   if (existing.length === 0) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
+
+  // Find the earliest fetchedAt (oldest data) across all certificates
+  const earliestFetchedAt = existing.reduce<Date | null>((earliest, c) => {
+    if (!c.fetchedAt) return earliest;
+    if (!earliest) return c.fetchedAt;
+    return c.fetchedAt < earliest ? c.fetchedAt : earliest;
+  }, null);
 
   // Find the earliest expiration across all certificates
   const earliestExpiresAt = existing.reduce<Date | null>((earliest, c) => {
@@ -115,6 +123,7 @@ export async function getCachedCertificates(
   return {
     data: { certificates: chained },
     stale,
+    fetchedAt: earliestFetchedAt,
     expiresAt: earliestExpiresAt,
   };
 }

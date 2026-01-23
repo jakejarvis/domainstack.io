@@ -35,6 +35,7 @@ export async function getFaviconById(
     .select({
       url: favicons.url,
       notFound: favicons.notFound,
+      fetchedAt: favicons.fetchedAt,
       expiresAt: favicons.expiresAt,
     })
     .from(favicons)
@@ -42,7 +43,7 @@ export async function getFaviconById(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
   // Only treat as having data if we have a definitive result:
@@ -51,15 +52,16 @@ export async function getFaviconById(
   const isDefinitiveResult = row.url !== null || row.notFound === true;
 
   if (!isDefinitiveResult) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = expiresAt <= now;
 
   return {
     data: { url: row.url },
     stale,
+    fetchedAt,
     expiresAt,
   };
 }
@@ -76,6 +78,7 @@ export async function getFavicon(
     .select({
       url: favicons.url,
       notFound: favicons.notFound,
+      fetchedAt: favicons.fetchedAt,
       expiresAt: favicons.expiresAt,
     })
     .from(favicons)
@@ -84,7 +87,7 @@ export async function getFavicon(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
   // Only treat as having data if we have a definitive result:
@@ -93,15 +96,16 @@ export async function getFavicon(
   const isDefinitiveResult = row.url !== null || row.notFound === true;
 
   if (!isDefinitiveResult) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = expiresAt <= now;
 
   return {
     data: { url: row.url },
     stale,
+    fetchedAt,
     expiresAt,
   };
 }

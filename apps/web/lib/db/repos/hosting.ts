@@ -50,6 +50,7 @@ export async function getCachedHosting(
       geoCountryCode: hostingTable.geoCountryCode,
       geoLat: hostingTable.geoLat,
       geoLon: hostingTable.geoLon,
+      fetchedAt: hostingTable.fetchedAt,
       expiresAt: hostingTable.expiresAt,
     })
     .from(domains)
@@ -61,10 +62,10 @@ export async function getCachedHosting(
     .limit(1);
 
   if (!row) {
-    return { data: null, stale: false, expiresAt: null };
+    return { data: null, stale: false, fetchedAt: null, expiresAt: null };
   }
 
-  const { expiresAt } = row;
+  const { fetchedAt, expiresAt } = row;
   const stale = (expiresAt?.getTime?.() ?? 0) <= now;
 
   const result: HostingResponse = {
@@ -93,7 +94,7 @@ export async function getCachedHosting(
     },
   };
 
-  return { data: result, stale, expiresAt };
+  return { data: result, stale, fetchedAt, expiresAt };
 }
 
 export async function upsertHosting(params: HostingInsert) {
