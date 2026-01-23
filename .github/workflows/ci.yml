@@ -1,23 +1,26 @@
-name: Run tests and upload coverage
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -34,17 +37,17 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @domainstack/web exec playwright install chromium --with-deps
 
-      - name: Run typechecks
-        run: pnpm check-types
+      - name: Run Biome
         continue-on-error: true
-
-      - name: Run lints
         run: pnpm lint
+
+      - name: Run typecheck
         continue-on-error: true
+        run: pnpm check-types
 
       - name: Run tests with coverage report
-        run: pnpm test:coverage
         continue-on-error: true
+        run: pnpm test:coverage
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
