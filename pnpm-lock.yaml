@@ -260,8 +260,8 @@ importers:
         specifier: ^19.5.0
         version: 19.5.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       use-stick-to-bottom:
-        specifier: ^1.1.1
-        version: 1.1.1(react@19.2.3)
+        specifier: ^1.1.2
+        version: 1.1.2(react@19.2.3)
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -7394,8 +7394,8 @@ packages:
       '@types/react':
         optional: true
 
-  use-stick-to-bottom@1.1.1:
-    resolution: {integrity: sha512-JkDp0b0tSmv7HQOOpL1hT7t7QaoUBXkq045WWWOFDTlLGRzgIIyW7vyzOIJzY7L2XVIG7j1yUxeDj2LHm9Vwng==}
+  use-stick-to-bottom@1.1.2:
+    resolution: {integrity: sha512-ssUfMNvfH8a8hGLoAt5kcOsjbsVORknon2tbkECuf3EsVucFFBbyXl+Xnv3b58P8ZRuZelzO81fgb6M0eRo8cg==}
     peerDependencies:
       react: 19.2.3
 
@@ -15417,7 +15417,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.9
 
-  use-stick-to-bottom@1.1.1(react@19.2.3):
+  use-stick-to-bottom@1.1.2(react@19.2.3):
     dependencies:
       react: 19.2.3
 
