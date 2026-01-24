@@ -23,6 +23,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
+import { Icon } from "../ui/icon";
 
 export interface ChatSettingsDialogProps {
   open: boolean;
@@ -46,15 +47,17 @@ export function ChatSettingsDialog({
           </DialogTitle>
           <DialogDescription>Personalize your AI experience.</DialogDescription>
         </DialogHeader>
-        <ItemGroup className="[&_[data-slot=item-media]]:!translate-y-[-1px] [&_[data-slot=item]]:!pr-4 [&_[data-slot=item]]:!pl-2 space-y-3 pb-1 [&_[data-slot=item-content]]:gap-0 [&_[data-slot=item]]:justify-between">
-          <Item size="sm" variant="outline">
+        <ItemGroup className="space-y-1 pb-1">
+          <Item size="xs" variant="outline">
             <Label htmlFor="show-tool-calls" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
-                <WrenchIcon />
+                <Icon variant="muted" size="sm">
+                  <WrenchIcon />
+                </Icon>
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>Show tool calls</ItemTitle>
-                <ItemDescription className="text-xs">
+                <ItemDescription>
                   Display the underlying API calls in the conversation
                 </ItemDescription>
               </ItemContent>
@@ -67,14 +70,16 @@ export function ChatSettingsDialog({
               />
             </ItemActions>
           </Item>
-          <Item size="sm" variant="outline">
+          <Item size="xs" variant="outline">
             <Label htmlFor="hide-ai" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
-                <BiohazardIcon />
+                <Icon variant="muted" size="sm">
+                  <BiohazardIcon />
+                </Icon>
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>Disable AI</ItemTitle>
-                <ItemDescription className="text-xs">
+                <ItemDescription>
                   {hideAiFeatures ? (
                     <>
                       To restore, visit any page with{" "}

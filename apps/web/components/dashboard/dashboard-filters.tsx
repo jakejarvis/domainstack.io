@@ -1,7 +1,7 @@
 import {
   ActivityIcon,
   GlobeIcon,
-  HourglassSimpleMediumIcon,
+  HourglassMediumIcon,
   MagnifyingGlassIcon,
   PlugsIcon,
   XIcon,
@@ -162,9 +162,7 @@ export function DashboardFilters({
         type: "status" as const,
         value: s,
         label: s === "verified" ? "Verified" : "Pending Verification",
-        icon: (
-          <HourglassSimpleMediumIcon className="size-3 text-muted-foreground" />
-        ),
+        icon: <HourglassMediumIcon className="size-3 text-muted-foreground" />,
       })),
       ...health.map((h) => ({
         type: "health" as const,

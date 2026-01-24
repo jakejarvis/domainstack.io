@@ -1,25 +1,20 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { Icon, type IconProps } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { cn, cva, type VariantProps } from "@/lib/utils";
 
-function ItemGroup({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      role: "list",
-      className: cn("group/item-group flex flex-col", className),
-    }),
-    state: {
-      slot: "item-group",
-    },
-  });
+function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      role="list"
+      data-slot="item-group"
+      className={cn(
+        "group/item-group flex w-full flex-col gap-4 has-[[data-size=sm]]:gap-2.5 has-[[data-size=xs]]:gap-2",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 function ItemSeparator({
@@ -28,27 +23,26 @@ function ItemSeparator({
 }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
-      aria-hidden
       data-slot="item-separator"
       orientation="horizontal"
-      className={cn("my-0", className)}
+      className={cn("my-2", className)}
       {...props}
     />
   );
 }
 
 const itemVariants = cva({
-  base: "group/item flex flex-wrap items-center rounded-md border border-transparent text-sm outline-none transition-colors duration-100 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent/50",
+  base: "group/item flex w-full flex-wrap items-center rounded-lg border text-sm outline-none transition-colors duration-100 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-muted",
   variants: {
     variant: {
-      default: "bg-transparent",
-      outline:
-        "border-black/10 bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.02]",
-      muted: "bg-muted/50",
+      default: "border-transparent",
+      outline: "border-border/50",
+      muted: "border-transparent bg-muted/50",
     },
     size: {
-      default: "gap-4 p-4",
-      sm: "gap-2.5 px-4 py-3",
+      default: "gap-2.5 px-3 py-2.5",
+      sm: "gap-2.5 px-3 py-2.5",
+      xs: "gap-2 px-2.5 py-2 [[data-slot=dropdown-menu-content]_&]:p-0",
     },
   },
   defaultVariants: {
@@ -58,18 +52,21 @@ const itemVariants = cva({
 });
 
 function Item({
+  className,
   variant = "default",
   size = "default",
-  className,
   render,
   ...props
 }: useRender.ComponentProps<"div"> & VariantProps<typeof itemVariants>) {
   return useRender({
     defaultTagName: "div",
+    props: mergeProps<"div">(
+      {
+        className: cn(itemVariants({ variant, size, className })),
+      },
+      props,
+    ),
     render,
-    props: mergeProps<"div">(props, {
-      className: cn(itemVariants({ variant, size }), className),
-    }),
     state: {
       slot: "item",
       variant,
@@ -83,8 +80,9 @@ const itemMediaVariants = cva({
   variants: {
     variant: {
       default: "bg-transparent",
+      icon: "[&_svg:not([class*='size-'])]:size-4",
       image:
-        "size-10 overflow-hidden rounded-sm [&_img]:size-full [&_img]:object-cover",
+        "size-10 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
     },
   },
   defaultVariants: {
@@ -92,171 +90,94 @@ const itemMediaVariants = cva({
   },
 });
 
-type ItemMediaVariant = "default" | "icon" | "image";
-
-interface ItemMediaProps
-  extends Omit<useRender.ComponentProps<typeof Icon>, "variant" | "children"> {
-  variant?: ItemMediaVariant;
-  children?: React.ReactNode;
-  iconVariant?: IconProps["variant"];
-}
-
 function ItemMedia({
-  variant = "default",
-  size = "default",
-  iconVariant = "default",
   className,
-  render,
-  children,
+  variant = "default",
   ...props
-}: ItemMediaProps) {
-  // For icon variant, wrap children in IconBadge
-  if (variant === "icon") {
-    return (
-      <Icon
-        data-slot="item-media"
-        size={size}
-        variant={iconVariant}
-        className={cn(
-          "group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </Icon>
-    );
-  }
-
-  const cvaVariant = variant === "image" ? "image" : "default";
-
+}: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
   return (
     <div
       data-slot="item-media"
-      className={cn(itemMediaVariants({ variant: cvaVariant }), className)}
+      data-variant={variant}
+      className={cn(itemMediaVariants({ variant, className }))}
       {...props}
-    >
-      {children}
-    </div>
+    />
   );
 }
 
-function ItemContent({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(
-        "flex flex-1 flex-col gap-1 [&+[data-slot=item-content]]:flex-none",
+function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-content"
+      className={cn(
+        "flex flex-1 flex-col gap-1 group-data-[size=xs]/item:gap-0 [&+[data-slot=item-content]]:flex-none",
         className,
-      ),
-    }),
-    state: {
-      slot: "item-content",
-    },
-  });
+      )}
+      {...props}
+    />
+  );
 }
 
-function ItemTitle({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(
-        "flex w-fit items-center gap-2 font-medium text-sm",
+function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-title"
+      className={cn(
+        "line-clamp-1 flex w-fit items-center gap-2 font-medium text-sm leading-snug underline-offset-4",
         className,
-      ),
-    }),
-    state: {
-      slot: "item-title",
-    },
-  });
+      )}
+      {...props}
+    />
+  );
 }
 
-function ItemDescription({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"p">) {
-  return useRender({
-    defaultTagName: "p",
-    render,
-    props: mergeProps<"p">(props, {
-      className: cn(
-        "line-clamp-2 text-balance font-normal text-muted-foreground text-sm leading-normal",
-        "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
+function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
+  return (
+    <p
+      data-slot="item-description"
+      className={cn(
+        "line-clamp-2 text-left font-normal text-muted-foreground text-sm leading-normal group-data-[size=xs]/item:text-xs [&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
         className,
-      ),
-    }),
-    state: {
-      slot: "item-description",
-    },
-  });
+      )}
+      {...props}
+    />
+  );
 }
 
-function ItemActions({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn("flex items-center gap-2", className),
-    }),
-    state: {
-      slot: "item-actions",
-    },
-  });
+function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-actions"
+      className={cn("flex items-center gap-2", className)}
+      {...props}
+    />
+  );
 }
 
-function ItemHeader({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(
+function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-header"
+      className={cn(
         "flex basis-full items-center justify-between gap-2",
         className,
-      ),
-    }),
-    state: {
-      slot: "item-header",
-    },
-  });
+      )}
+      {...props}
+    />
+  );
 }
 
-function ItemFooter({
-  className,
-  render,
-  ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
-    defaultTagName: "div",
-    render,
-    props: mergeProps<"div">(props, {
-      className: cn(
+function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="item-footer"
+      className={cn(
         "flex basis-full items-center justify-between gap-2",
         className,
-      ),
-    }),
-    state: {
-      slot: "item-footer",
-    },
-  });
+      )}
+      {...props}
+    />
+  );
 }
 
 export {

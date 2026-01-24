@@ -1,7 +1,7 @@
 import {
   FunnelXIcon,
   GlobeIcon,
-  HourglassSimpleMediumIcon,
+  HourglassMediumIcon,
   PlusIcon,
 } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
@@ -134,7 +134,7 @@ export function DashboardContent({
             />
           )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
-            <HourglassSimpleMediumIcon className="size-4" />
+            <HourglassMediumIcon className="size-4" />
             <span>Verification takes less than 2&nbsp;minutes</span>
           </div>
         </EmptyContent>

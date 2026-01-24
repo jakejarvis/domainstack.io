@@ -1,20 +1,17 @@
 import {
   AtIcon,
   CheckIcon,
-  ClipboardIcon,
-  ClipboardTextIcon,
   CopyIcon,
   DownloadIcon,
   FileTextIcon,
   PaperPlaneTiltIcon,
   ShareNetworkIcon,
-  XCircleIcon,
 } from "@phosphor-icons/react/ssr";
 import { useMutation } from "@tanstack/react-query";
-import clipboardCopy from "clipboard-copy";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +22,22 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import { useTRPC } from "@/lib/trpc/client";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
@@ -253,31 +265,6 @@ export function ShareInstructionsDialog({
     },
   });
 
-  const handleCopy = useCallback(async () => {
-    try {
-      const formattedText = formatInstructionsForSharing(
-        domain,
-        verificationToken,
-      );
-      await clipboardCopy(formattedText);
-      dispatch({ type: "COPY_SUCCESS" });
-      toast.success("Copied!", {
-        description: "Instructions copied to clipboard.",
-        icon: <ClipboardTextIcon className="h-4 w-4" />,
-      });
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = setTimeout(() => {
-        dispatch({ type: "COPY_RESET" });
-      }, 2000);
-    } catch {
-      toast.error("Failed to copy", {
-        icon: <XCircleIcon className="h-4 w-4" />,
-      });
-    }
-  }, [domain, verificationToken]);
-
   const handleDownload = useCallback(() => {
     const result = downloadInstructionsFile(domain, verificationToken);
     if (result.success) {
@@ -314,7 +301,6 @@ export function ShareInstructionsDialog({
 
   // Derived state
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email.trim());
-  const isCopied = state.copyStatus === "copied";
   const isEmailSending = state.emailStatus === "sending";
   const isEmailSent = state.emailStatus === "sent";
   const isEmailDisabled = !isValidEmail || isEmailSending || isEmailSent;
@@ -338,126 +324,120 @@ export function ShareInstructionsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 pt-2">
+        <ItemGroup className="space-y-1">
           {/* Option 1: Copy to clipboard */}
-          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
-            <Icon size="sm" variant="muted">
-              <ClipboardIcon />
-            </Icon>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-sm">Copy to clipboard</p>
-              <p className="text-muted-foreground text-xs">
-                Copy all instructions as text
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleCopy}
-              className="shrink-0"
-              aria-label="Copy to clipboard"
-            >
-              {isCopied ? (
-                <CheckIcon className="text-green-600" aria-hidden="true" />
-              ) : (
-                <CopyIcon aria-hidden="true" />
-              )}
-              <span className="hidden sm:inline">
-                {isCopied ? "Copied" : "Copy"}
-              </span>
-            </Button>
-          </div>
+          <Item size="xs" variant="outline">
+            <ItemMedia variant="icon">
+              <Icon variant="muted" size="sm">
+                <CopyIcon />
+              </Icon>
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Copy to clipboard</ItemTitle>
+              <ItemDescription>Copy all instructions as text</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <CopyButton
+                value={formatInstructionsForSharing(domain, verificationToken)}
+                size="sm"
+                variant="outline"
+                className="px-2.5 text-[13px]"
+                showLabel
+              />
+            </ItemActions>
+          </Item>
 
           {/* Option 2: Download as file */}
-          <div className="flex items-center gap-3 rounded-lg border border-border/50 p-3">
-            <Icon size="sm" variant="muted">
-              <FileTextIcon />
-            </Icon>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-sm">Download as file</p>
-              <p className="text-muted-foreground text-xs">
-                Save as a text file for later
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              className="shrink-0"
-              aria-label="Download instructions"
-            >
-              <DownloadIcon aria-hidden="true" />
-              <span className="hidden sm:inline">Download</span>
-            </Button>
-          </div>
+          <Item size="xs" variant="outline">
+            <ItemMedia variant="icon">
+              <Icon variant="muted" size="sm">
+                <FileTextIcon />
+              </Icon>
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Download as file</ItemTitle>
+              <ItemDescription>Save as a text file for later</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                size="sm"
+                variant="outline"
+                className="px-2.5 text-[13px]"
+                onClick={handleDownload}
+                aria-label="Download instructions"
+              >
+                <DownloadIcon aria-hidden="true" />
+                Download
+              </Button>
+            </ItemActions>
+          </Item>
 
           {/* Option 3: Send via email */}
-          <div className="rounded-lg border border-border/50 p-3">
-            <div className="mb-3 flex items-center gap-3">
-              <Icon size="sm" variant="muted">
+          <Item size="xs" variant="outline">
+            <ItemMedia variant="icon">
+              <Icon variant="muted" size="sm">
                 <AtIcon />
               </Icon>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm">Send via email</p>
-                <p className="text-muted-foreground text-xs">
-                  We&apos;ll send instructions on your behalf
-                </p>
-              </div>
-            </div>
-            <Field>
-              <FieldLabel htmlFor="email" className="sr-only">
-                Email address
-              </FieldLabel>
-              <div className="flex gap-2">
-                <div className="min-w-0 flex-1">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    spellCheck={false}
-                    placeholder={`admin@${domain}`}
-                    value={state.email}
-                    onChange={handleEmailChange}
-                    onKeyDown={(e) => {
-                      if (
-                        e.key === "Enter" &&
-                        isValidEmail &&
-                        !isEmailSending
-                      ) {
-                        handleSendEmail();
-                      }
-                    }}
-                    disabled={isEmailSending || isEmailSent}
-                    data-1p-ignore
-                  />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>Send via email</ItemTitle>
+              <ItemDescription>
+                We&apos;ll send instructions on your behalf
+              </ItemDescription>
+            </ItemContent>
+            <ItemFooter>
+              <Field>
+                <FieldLabel htmlFor="email" className="sr-only">
+                  Email address
+                </FieldLabel>
+                <div className="flex gap-2">
+                  <InputGroup className="min-w-0 flex-1">
+                    <InputGroupInput
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      spellCheck={false}
+                      placeholder={`admin@${domain}`}
+                      value={state.email}
+                      onChange={handleEmailChange}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          isValidEmail &&
+                          !isEmailSending
+                        ) {
+                          handleSendEmail();
+                        }
+                      }}
+                      disabled={isEmailSending || isEmailSent}
+                      data-1p-ignore
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        variant="ghost"
+                        size="xs"
+                        onClick={handleSendEmail}
+                        disabled={isEmailDisabled}
+                        aria-label="Send email"
+                        className="gap-1.5 text-[13px]"
+                      >
+                        {isEmailSending ? (
+                          <Spinner />
+                        ) : isEmailSent ? (
+                          <CheckIcon aria-hidden="true" />
+                        ) : (
+                          <PaperPlaneTiltIcon aria-hidden="true" />
+                        )}
+                        Send
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
                 </div>
-                <Button
-                  onClick={handleSendEmail}
-                  variant="outline"
-                  disabled={isEmailDisabled}
-                  className="shrink-0"
-                  aria-label="Send email"
-                >
-                  {isEmailSending ? (
-                    <>
-                      <Spinner />
-                      <span className="hidden sm:inline">Sending…</span>
-                    </>
-                  ) : isEmailSent ? (
-                    <>
-                      <CheckIcon aria-hidden="true" />
-                      <span className="hidden sm:inline">Sent!</span>
-                    </>
-                  ) : (
-                    <>
-                      <PaperPlaneTiltIcon aria-hidden="true" />
-                      <span className="hidden sm:inline">Send</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Field>
-          </div>
-        </div>
+              </Field>
+            </ItemFooter>
+          </Item>
+        </ItemGroup>
       </DialogContent>
     </Dialog>
   );

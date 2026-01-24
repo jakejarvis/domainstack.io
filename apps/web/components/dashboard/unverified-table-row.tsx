@@ -1,6 +1,5 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 
-import { PlayIcon, TrashIcon } from "@phosphor-icons/react/ssr";
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -98,26 +97,23 @@ export function UnverifiedTableRow({
       )}
       {/* Span remaining detail columns with verify message */}
       <td colSpan={collapseCount}>
-        <div className="flex items-center gap-2.5">
-          <span className="mr-2 text-muted-foreground text-xs">
-            Verify ownership to see domain details
+        <div className="flex items-center gap-3">
+          <span className="text-muted-foreground text-xs">
+            Verify ownership to see domain details:
           </span>
           <Button
-            size="sm"
-            variant="outline"
+            size="xs"
             onClick={() => onVerify(original)}
-            className="px-2 text-[13px]"
+            className="text-[13px]"
           >
-            <PlayIcon className="text-accent-green" />
             Continue
           </Button>
           <Button
-            size="sm"
-            variant="outline"
+            size="xs"
+            variant="destructive"
             onClick={() => onRemove(original.id, original.domainName)}
-            className="px-2 text-[13px]"
+            className="text-[13px]"
           >
-            <TrashIcon className="text-danger-foreground" />
             Remove
           </Button>
         </div>

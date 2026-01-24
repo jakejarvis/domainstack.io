@@ -1,6 +1,11 @@
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -65,36 +70,37 @@ export function DashboardTablePagination({
       </div>
 
       {/* Page navigation */}
-      <div className="flex items-center gap-1">
-        {/* Page indicator */}
-        <span className="mr-2 text-muted-foreground text-xs">
-          {pageCount > 0 ? pageIndex + 1 : 0} of {pageCount}
-        </span>
-
-        {/* Previous page */}
-        <Button
-          variant="outline"
-          size="icon-xs"
-          onClick={() => onPageChange(pageIndex - 1)}
-          disabled={!canPreviousPage}
-          aria-label="Go to previous page"
-        >
-          <CaretLeftIcon />
-          <span className="sr-only">Previous page</span>
-        </Button>
-
-        {/* Next page */}
-        <Button
-          variant="outline"
-          size="icon-xs"
-          onClick={() => onPageChange(pageIndex + 1)}
-          disabled={!canNextPage}
-          aria-label="Go to next page"
-        >
-          <CaretRightIcon />
-          <span className="sr-only">Next page</span>
-        </Button>
-      </div>
+      <Pagination className="mx-0 w-auto">
+        <PaginationContent className="gap-1">
+          <PaginationItem>
+            <span className="mr-2 text-muted-foreground text-xs">
+              {pageCount > 0 ? pageIndex + 1 : 0} of {pageCount}
+            </span>
+          </PaginationItem>
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="icon-xs"
+              onClick={() => onPageChange(pageIndex - 1)}
+              disabled={!canPreviousPage}
+              aria-label="Go to previous page"
+            >
+              <CaretLeftIcon />
+            </Button>
+          </PaginationItem>
+          <PaginationItem>
+            <Button
+              variant="outline"
+              size="icon-xs"
+              onClick={() => onPageChange(pageIndex + 1)}
+              disabled={!canNextPage}
+              aria-label="Go to next page"
+            >
+              <CaretRightIcon />
+            </Button>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }

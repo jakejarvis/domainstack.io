@@ -1,9 +1,3 @@
-import {
-  CalendarIcon,
-  GlobeIcon,
-  InfoIcon,
-  SlidersHorizontalIcon,
-} from "@phosphor-icons/react/ssr";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { toast } from "sonner";
@@ -11,27 +5,21 @@ import {
   CalendarInstructions,
   CalendarInstructionsSkeleton,
 } from "@/components/calendar-instructions";
-import { DomainNotificationRow } from "@/components/settings/notifications/domain-notification-row";
-import { GlobalNotificationRow } from "@/components/settings/notifications/global-notification-row";
+import { DomainOverrides } from "@/components/settings/notifications/domain-overrides";
+import { NotificationMatrix } from "@/components/settings/notifications/notification-matrix";
+import {
+  SettingsCard,
+  SettingsCardSeparator,
+} from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
-import { Separator } from "@/components/ui/separator";
 import { useSession } from "@/lib/auth-client";
-import {
-  NOTIFICATION_CATEGORIES,
-  type NotificationCategory,
-} from "@/lib/constants/notifications";
+import type { NotificationCategory } from "@/lib/constants/notifications";
 import { useTRPC } from "@/lib/trpc/client";
 import type { UserNotificationPreferences } from "@/lib/types/notifications";
 
@@ -278,27 +266,20 @@ export function NotificationsPanel() {
     resetDomainMutation.isPending;
 
   return (
-    <div className="max-w-full overflow-x-hidden">
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <GlobeIcon className="size-4.5" />
-          Global Preferences
-        </CardTitle>
-        <CardDescription>
-          Alerts will be sent to{" "}
-          <span className="whitespace-nowrap rounded-sm border bg-card px-1.5 py-1 font-medium text-foreground">
-            {session?.user?.email}
-          </span>
-          .{" "}
-          <span className="text-muted-foreground">
-            (
+    <>
+      <SettingsCard
+        title="Global Preferences"
+        description={
+          <>
+            Alerts will be sent to{" "}
+            <span className="font-semibold">{session?.user?.email}</span>.{" "}
             <ResponsiveTooltip>
               <ResponsiveTooltipTrigger
                 render={
-                  <span className="cursor-help underline decoration-dotted underline-offset-3" />
+                  <span className="cursor-help text-muted-foreground underline decoration-dotted underline-offset-3" />
                 }
               >
-                Why can&rsquo;t I change this?
+                (Why can&rsquo;t I change this?)
               </ResponsiveTooltipTrigger>
               <ResponsiveTooltipContent>
                 <div className="space-y-2">
@@ -307,8 +288,7 @@ export function NotificationsPanel() {
                     account provider you chose at sign up.
                   </p>
                   <p>
-                    To change it, you can either sign in again with a different
-                    external account, or{" "}
+                    To change it, sign in with a different external account or{" "}
                     <a
                       href="/help#contact"
                       className="underline underline-offset-3"
@@ -322,95 +302,47 @@ export function NotificationsPanel() {
                 </div>
               </ResponsiveTooltipContent>
             </ResponsiveTooltip>
-            )
-          </span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-0 pt-1">
-        {/* Headers */}
-        <div className="hidden items-center justify-end gap-2 font-medium text-muted-foreground text-xs sm:flex sm:gap-6">
-          <div className="w-12 text-center sm:w-16">Web</div>
-          <div className="w-12 text-center sm:w-16">Email</div>
-        </div>
+          </>
+        }
+      >
+        <NotificationMatrix
+          preferences={globalPrefs}
+          onToggle={handleGlobalToggle}
+          disabled={isPending}
+        />
+      </SettingsCard>
 
-        {/* Global Notifications */}
-        <div className="space-y-1">
-          {NOTIFICATION_CATEGORIES.map((category) => (
-            <GlobalNotificationRow
-              key={category}
-              category={category}
-              emailEnabled={globalPrefs[category].email}
-              inAppEnabled={globalPrefs[category].inApp}
-              onToggle={(type, enabled) =>
-                handleGlobalToggle(category, type, enabled)
-              }
-              disabled={isPending}
-            />
-          ))}
-        </div>
-      </CardContent>
+      <SettingsCardSeparator />
 
-      <Separator className="mt-3 mb-6 bg-muted" />
+      <SettingsCard
+        title="Domain Overrides"
+        description="Customize notification settings for individual verified domains."
+      >
+        <DomainOverrides
+          domains={verifiedDomains.map((d) => ({
+            id: d.id,
+            domainName: d.domainName,
+            overrides: d.notificationOverrides,
+          }))}
+          globalPrefs={globalPrefs}
+          onToggle={handleDomainToggle}
+          onReset={handleResetDomain}
+          disabled={isPending}
+        />
+      </SettingsCard>
 
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <SlidersHorizontalIcon className="size-4.5" />
-          Domain Preferences
-        </CardTitle>
-        <CardDescription>
-          Override global notifications for individual verified domains.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="mt-1.5 px-0">
-        {/* Per-Domain Overrides Section */}
-        {verifiedDomains.length > 0 && (
-          <div className="space-y-2">
-            {/* Domain Rows */}
-            {verifiedDomains.map((domain) => (
-              <DomainNotificationRow
-                key={domain.id}
-                domainName={domain.domainName}
-                overrides={domain.notificationOverrides}
-                globalPrefs={globalPrefs}
-                onToggle={(category, type, value) =>
-                  handleDomainToggle(domain.id, category, type, value)
-                }
-                onReset={() => handleResetDomain(domain.id)}
-                disabled={isPending}
-              />
-            ))}
-          </div>
-        )}
+      <SettingsCardSeparator />
 
-        {/* Info note */}
-        {verifiedDomains.length === 0 && (
-          <div className="flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
-            <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-            <p className="text-muted-foreground text-xs">
-              Verify your domains to customize per-domain notifications.
-            </p>
-          </div>
-        )}
-      </CardContent>
-
-      <Separator className="my-6 bg-muted" />
-
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <CalendarIcon className="size-4.5" />
-          Calendar Feed
-        </CardTitle>
-        <CardDescription className="[&_a]:font-medium [&_a]:text-primary/85 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary">
-          Subscribe to domain expiration dates in your calendar app.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-0 pt-2">
+      <SettingsCard
+        title="Calendar Feed"
+        description="Subscribe to domain expiration dates in your calendar app."
+      >
         <SettingsErrorBoundary sectionName="Calendar Feed">
           <Suspense fallback={<CalendarInstructionsSkeleton />}>
             <CalendarInstructions />
           </Suspense>
         </SettingsErrorBoundary>
-      </CardContent>
-    </div>
+      </SettingsCard>
+    </>
   );
 }

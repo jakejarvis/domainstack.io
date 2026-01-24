@@ -1,8 +1,13 @@
 import { ArchiveIcon, TrashIcon, XIcon } from "@phosphor-icons/react/ssr";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { cn } from "@/lib/utils";
 
 type BulkActionsToolbarProps = {
@@ -32,100 +37,79 @@ export function BulkActionsToolbar({
   isDeleting = false,
   className,
 }: BulkActionsToolbarProps) {
-  const shouldReduceMotion = useReducedMotion();
+  if (selectedCount === 0) return null;
+
   const isLoading = isArchiving || isDeleting;
 
   return (
-    <AnimatePresence>
-      {selectedCount > 0 && (
-        <motion.div
-          initial={shouldReduceMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
-          animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
-          exit={shouldReduceMotion ? { opacity: 0 } : { y: 100, opacity: 0 }}
-          transition={
-            shouldReduceMotion
-              ? { duration: 0.15 }
-              : { type: "spring", damping: 25, stiffness: 300 }
-          }
-          className={cn(
-            "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl sm:inset-x-auto",
-            className,
-          )}
-        >
-          <div
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/20 bg-background/90 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-xl dark:border-white/20 dark:bg-background/95"
-            role="toolbar"
-            aria-label="Bulk actions"
-          >
-            {/* Left side: Select all + count */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={isAllSelected}
-                  indeterminate={isPartiallySelected}
-                  onCheckedChange={onToggleAll}
-                  disabled={isLoading}
-                  aria-label={
-                    isAllSelected ? "Deselect all" : `Select all ${totalCount}`
-                  }
-                  className="cursor-pointer"
-                />
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={onToggleAll}
-                  disabled={isLoading}
-                  className="pr-0 pl-0.5 text-sm"
-                >
-                  Select All ({totalCount})
-                </Button>
-              </div>
-
-              <Separator orientation="vertical" className="!h-6" />
-
+    <div
+      className={cn(
+        "fade-in-0 slide-in-from-bottom-4 motion-reduce:slide-in-from-bottom-0 fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg animate-in items-center justify-between gap-4 rounded-xl border border-black/15 bg-background/60 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl duration-200 sm:inset-x-auto dark:border-white/15",
+        className,
+      )}
+      role="toolbar"
+      aria-label="Bulk actions"
+    >
+      {/* Left: Select all checkbox + count */}
+      <ResponsiveTooltip>
+        <ResponsiveTooltipTrigger
+          render={
+            <Label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                checked={isAllSelected}
+                indeterminate={isPartiallySelected}
+                onCheckedChange={onToggleAll}
+                disabled={isLoading}
+              />
               <span
-                className="font-medium text-sm tabular-nums"
+                className="font-medium text-[13px] tabular-nums"
                 aria-live="polite"
               >
                 {selectedCount} selected
               </span>
-            </div>
+            </Label>
+          }
+        />
+        <ResponsiveTooltipContent>
+          {isAllSelected ? "Deselect all" : `Select all ${totalCount} domains`}
+        </ResponsiveTooltipContent>
+      </ResponsiveTooltip>
 
-            {/* Right side: Actions */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onArchive}
-                disabled={isLoading}
-              >
-                <ArchiveIcon />
-                Archive
-              </Button>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2">
+        <ButtonGroup>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onArchive}
+            disabled={isLoading}
+            className="text-[13px]"
+          >
+            <ArchiveIcon />
+            Archive
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={onDelete}
+            disabled={isLoading}
+            className="text-[13px]"
+          >
+            <TrashIcon />
+            Delete
+          </Button>
+        </ButtonGroup>
 
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onDelete}
-                disabled={isLoading}
-              >
-                <TrashIcon />
-                Delete
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onCancel}
-                disabled={isLoading}
-              >
-                <XIcon />
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onCancel}
+          disabled={isLoading}
+          aria-label="Cancel selection"
+        >
+          <XIcon />
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -55,37 +55,44 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * Skeleton for a single global notification row.
- * Matches GlobalNotificationRow: icon + label + info icon + 2 switches (Web/Email).
+ * Skeleton for the notification matrix.
+ * Matches NotificationMatrix: header row + 5 category rows with checkboxes.
  */
-function GlobalNotificationRowSkeleton({ className }: { className?: string }) {
+function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 pt-2 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pt-3 sm:pb-3",
-        "border-border/40 border-b last:border-b-0",
+        "rounded-xl border border-border/50 bg-muted/20",
         className,
       )}
     >
-      {/* Icon + Label */}
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <Skeleton className="size-8 shrink-0 rounded-md sm:size-9" />
-        <div className="flex items-center gap-1.5">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="size-3.5" />
+      {/* Header row */}
+      <div className="flex items-center border-border/50 border-b px-4 py-2.5">
+        <Skeleton className="h-3 w-20" />
+        <div className="ml-auto flex items-center gap-1">
+          <Skeleton className="h-3 w-14" />
+          <Skeleton className="h-3 w-14" />
         </div>
       </div>
 
-      {/* Two switches (Web + Email) */}
-      <div className="flex items-center gap-8 pl-12 sm:gap-6 sm:pl-0">
-        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
-          <Skeleton className="h-3 w-6 sm:hidden" />
-          <Skeleton className="h-5 w-9 rounded-full" />
-        </div>
-        <div className="flex items-center gap-3 sm:w-16 sm:justify-center">
-          <Skeleton className="h-3 w-8 sm:hidden" />
-          <Skeleton className="h-5 w-9 rounded-full" />
-        </div>
+      {/* Category rows */}
+      <div className="divide-y divide-border/30">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-center px-4 py-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Skeleton className="size-4 shrink-0" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="flex w-14 items-center justify-center">
+                <Skeleton className="size-4 rounded" />
+              </div>
+              <div className="flex w-14 items-center justify-center">
+                <Skeleton className="size-4 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -115,54 +122,32 @@ function CalendarFeedSkeleton({ className }: { className?: string }) {
 
 /**
  * Skeleton for the notification settings section.
- * Matches NotificationsPanel: Global Preferences (5 rows) + Domain Preferences + Calendar Feed.
+ * Matches NotificationsPanel: Global Preferences matrix + Domain Overrides + Calendar Feed.
  */
 export function NotificationsSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("max-w-full overflow-x-hidden", className)}>
       {/* Global Preferences section */}
-      <CardHeader className="px-0 pt-0 pb-2">
-        <div className="mb-1 flex items-center gap-2 leading-none">
-          <Skeleton className="size-4.5" />
-          <Skeleton className="h-5 w-36" />
-        </div>
-        <div className="flex flex-wrap items-center gap-1">
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-6 w-40 rounded-sm" />
-        </div>
+      <CardHeader className="gap-1 px-0 pt-0">
+        <Skeleton className="h-5 w-36" />
+        <Skeleton className="h-4 w-64" />
       </CardHeader>
-      <CardContent className="px-0 pt-1">
-        {/* Column headers (hidden on mobile) */}
-        <div className="hidden items-center justify-end gap-6 sm:flex">
-          <Skeleton className="h-3 w-8" />
-          <Skeleton className="h-3 w-10" />
-        </div>
-
-        {/* 5 notification category rows */}
-        <div className="space-y-1">
-          <GlobalNotificationRowSkeleton />
-          <GlobalNotificationRowSkeleton />
-          <GlobalNotificationRowSkeleton />
-          <GlobalNotificationRowSkeleton />
-          <GlobalNotificationRowSkeleton />
-        </div>
+      <CardContent className="px-0">
+        <NotificationMatrixSkeleton />
       </CardContent>
 
-      <Separator className="mt-3 mb-6 bg-muted" />
+      <Separator className="my-6 bg-muted" />
 
-      {/* Domain Preferences section */}
-      <CardHeader className="px-0 pt-0 pb-2">
-        <div className="mb-1 flex items-center gap-2 leading-none">
-          <Skeleton className="size-4.5" />
-          <Skeleton className="h-5 w-40" />
-        </div>
+      {/* Domain Overrides section */}
+      <CardHeader className="gap-1 px-0 pt-0">
+        <Skeleton className="h-5 w-36" />
         <Skeleton className="h-4 w-80" />
       </CardHeader>
-      <CardContent className="mt-1.5 px-0">
-        {/* Info note placeholder (shown when no verified domains) */}
-        <div className="flex items-start gap-2 rounded-xl bg-muted/30 px-3 py-2.5">
-          <Skeleton className="mt-0.5 size-3.5 shrink-0" />
-          <Skeleton className="h-3 w-64" />
+      <CardContent className="px-0">
+        {/* Empty state placeholder */}
+        <div className="flex items-center gap-3 rounded-xl border border-border/50 border-dashed bg-muted/10 px-4 py-6">
+          <Skeleton className="size-5" />
+          <Skeleton className="h-4 w-72" />
         </div>
       </CardContent>
 
@@ -249,7 +234,7 @@ export function LinkedAccountsSkeleton({ className }: { className?: string }) {
 
 /**
  * Skeleton for the tabs navigation.
- * Shows placeholders for tab triggers.
+ * Shows placeholders for tab triggers (line variant with full-width border).
  */
 export function SettingsSkeletonTabsList({
   className,
@@ -258,23 +243,23 @@ export function SettingsSkeletonTabsList({
 }) {
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex h-auto w-full items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+      <div className="flex h-10 w-full items-center border-muted border-b">
         {/* Subscription Tab (Active) */}
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-md bg-background/60 px-4 py-2.5 shadow-sm ring-1 ring-black/5 dark:bg-white/5 dark:shadow-none dark:ring-white/10">
-          <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="hidden h-3 w-16 sm:block" />
+        <div className="flex h-10 items-center gap-2 border-foreground border-b px-3">
+          <Skeleton className="size-4 rounded-sm" />
+          <Skeleton className="h-3.5 w-[76px]" />
         </div>
 
         {/* Notifications Tab */}
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
-          <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="hidden h-3 w-16 sm:block" />
+        <div className="flex h-10 items-center gap-2 px-3">
+          <Skeleton className="size-4 rounded-sm" />
+          <Skeleton className="h-3.5 w-[76px]" />
         </div>
 
         {/* Account Tab */}
-        <div className="flex flex-1 flex-col items-center gap-2 rounded-md px-4 py-2.5">
-          <Skeleton className="size-[18px] rounded-sm" />
-          <Skeleton className="hidden h-3 w-12 sm:block" />
+        <div className="flex h-10 items-center gap-2 px-3">
+          <Skeleton className="size-4 rounded-sm" />
+          <Skeleton className="h-3.5 w-[52px]" />
         </div>
       </div>
     </div>

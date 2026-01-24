@@ -113,7 +113,7 @@ export function StepVerifyOwnership({
           if (isVerificationMethod(value)) setMethod(value);
         }}
       >
-        <TabsList className="grid h-10 grid-cols-3">
+        <TabsList className="h-10 w-full">
           <TabsTrigger value="dns_txt" disabled={isVerifying}>
             DNS Record
           </TabsTrigger>

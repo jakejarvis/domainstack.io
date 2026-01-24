@@ -1,5 +1,5 @@
 import {
-  HourglassSimpleMediumIcon,
+  HourglassMediumIcon,
   SealCheckIcon,
   WarningIcon,
 } from "@phosphor-icons/react/ssr";
@@ -85,7 +85,7 @@ export function DomainStatusBadge({
   // Pending state
   return (
     <BadgeWithTooltip
-      icon={HourglassSimpleMediumIcon}
+      icon={HourglassMediumIcon}
       label="Pending"
       className={cn(
         "border-warning-border bg-warning/20 text-warning-foreground",

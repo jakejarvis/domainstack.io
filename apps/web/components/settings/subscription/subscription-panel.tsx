@@ -1,20 +1,14 @@
 import {
   CreditCardIcon,
-  GaugeIcon,
   GiftIcon,
   RocketLaunchIcon,
   ShootingStarIcon,
 } from "@phosphor-icons/react/ssr";
 import { format } from "date-fns";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -39,32 +33,23 @@ export function SubscriptionPanel() {
 
   if (isSubscriptionError) {
     return (
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <GaugeIcon className="size-4.5" />
-          Plan
-        </CardTitle>
-        <CardDescription className="text-destructive">
-          Failed to load subscription information
-        </CardDescription>
-      </CardHeader>
+      <SettingsCard
+        title="Plan"
+        description="Failed to load subscription information"
+      />
     );
   }
 
   return (
-    <div className="max-w-full overflow-x-hidden">
-      <CardHeader className="px-0 pt-0 pb-2">
-        <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-          <GaugeIcon className="size-4.5" />
-          Plan
-        </CardTitle>
-        <CardDescription>
-          {isPro
-            ? "You're on the Pro plan. Thank you for your support!"
-            : "Upgrade to Pro for more tracked domains."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 px-0 pt-2">
+    <SettingsCard
+      title="Plan"
+      description={
+        isPro
+          ? "You're on the Pro plan. Thank you for your support!"
+          : "Upgrade to Pro for more tracked domains."
+      }
+    >
+      <div className="space-y-4">
         {/* Current plan info */}
         <div className="flex items-center justify-between rounded-md border border-black/10 bg-muted/30 p-4 dark:border-white/10">
           <div>
@@ -163,7 +148,7 @@ export function SubscriptionPanel() {
             </div>
           </div>
         )}
-      </CardContent>
-    </div>
+      </div>
+    </SettingsCard>
   );
 }

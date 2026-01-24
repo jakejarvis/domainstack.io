@@ -24,6 +24,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
         <InputGroupInput
           name="domain-search"
           placeholder="Search domains…"
+          aria-label="Search domains"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"

@@ -1,9 +1,12 @@
-import { FingerprintIcon } from "@phosphor-icons/react/ssr";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DangerZoneCollapsible } from "@/components/settings/account/danger-zone-collapsible";
 import { LinkedAccountRow } from "@/components/settings/account/linked-account-row";
+import {
+  SettingsCard,
+  SettingsCardSeparator,
+} from "@/components/settings/settings-card";
 import { LinkedAccountsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   AlertDialog,
@@ -15,13 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { ItemGroup } from "@/components/ui/item";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { analytics } from "@/lib/analytics/client";
 import { linkSocial, unlinkAccount } from "@/lib/auth-client";
@@ -162,44 +159,40 @@ export function AccountPanel() {
   return (
     <>
       <div className="max-w-full overflow-x-hidden">
-        <CardHeader className="px-0 pt-0 pb-2">
-          <CardTitle className="mb-1 flex items-center gap-2 leading-none">
-            <FingerprintIcon className="size-4.5" />
-            Login Providers
-          </CardTitle>
-          <CardDescription>
-            Protect your account with additional third-party services.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 px-0 pt-1">
-          {[...enabledProviders]
-            .sort((a, b) => {
-              const aLinked = linkedProviderIds.has(a.id);
-              const bLinked = linkedProviderIds.has(b.id);
-              // Linked providers first, then alphabetically by name
-              if (aLinked !== bLinked) return bLinked ? 1 : -1;
-              return a.name.localeCompare(b.name);
-            })
-            .map((provider) => {
-              const isLinked = linkedProviderIds.has(provider.id);
-              const isLinking = linkingProvider === provider.id;
+        <SettingsCard
+          title="Login Providers"
+          description="Protect your account with additional third-party services."
+        >
+          <ItemGroup className="gap-2.5">
+            {[...enabledProviders]
+              .sort((a, b) => {
+                const aLinked = linkedProviderIds.has(a.id);
+                const bLinked = linkedProviderIds.has(b.id);
+                // Linked providers first, then alphabetically by name
+                if (aLinked !== bLinked) return bLinked ? 1 : -1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((provider) => {
+                const isLinked = linkedProviderIds.has(provider.id);
+                const isLinking = linkingProvider === provider.id;
 
-              return (
-                <LinkedAccountRow
-                  key={provider.id}
-                  provider={provider}
-                  isLinked={isLinked}
-                  canUnlink={canUnlink}
-                  isLinking={isLinking}
-                  unlinkMutation={unlinkMutation}
-                  onLink={() => handleLink(provider)}
-                  onUnlink={() => setUnlinkingProvider(provider.id)}
-                />
-              );
-            })}
-        </CardContent>
+                return (
+                  <LinkedAccountRow
+                    key={provider.id}
+                    provider={provider}
+                    isLinked={isLinked}
+                    canUnlink={canUnlink}
+                    isLinking={isLinking}
+                    unlinkMutation={unlinkMutation}
+                    onLink={() => handleLink(provider)}
+                    onUnlink={() => setUnlinkingProvider(provider.id)}
+                  />
+                );
+              })}
+          </ItemGroup>
+        </SettingsCard>
 
-        <Separator className="my-6 bg-muted" />
+        <SettingsCardSeparator />
 
         <DangerZoneCollapsible />
       </div>

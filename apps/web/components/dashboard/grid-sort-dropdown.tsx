@@ -1,4 +1,8 @@
-import { CheckIcon } from "@phosphor-icons/react/ssr";
+import {
+  CheckIcon,
+  SortAscendingIcon,
+  SortDescendingIcon,
+} from "@phosphor-icons/react/ssr";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,14 +29,18 @@ export function GridSortDropdown({
       <DropdownMenuTrigger
         render={
           <Button
-            variant="outline"
+            variant="ghost"
             className="inline-flex h-9 items-center gap-1.5 px-3"
           >
             <span className="text-muted-foreground">Sort:</span>
             {currentSort?.shortLabel ?? "Select"}
             {currentSort?.direction && (
               <span className="text-muted-foreground">
-                {currentSort.direction === "asc" ? "↑" : "↓"}
+                {currentSort.direction === "asc" ? (
+                  <SortAscendingIcon className="size-4 shrink-0 translate-y-[-1px]" />
+                ) : (
+                  <SortDescendingIcon className="size-4 shrink-0 translate-y-[-1px]" />
+                )}
               </span>
             )}
           </Button>

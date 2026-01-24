@@ -83,48 +83,44 @@ export function CopyButton({
       aria-label={copied ? "Copied" : "Copy to clipboard"}
       onClick={handleCopy}
     >
-      <span className="relative flex items-center justify-center">
-        <AnimatePresence mode="wait" initial={false}>
-          {copied ? (
-            <motion.span
-              key="check"
-              initial={
-                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-              }
-              animate={
-                shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
-              }
-              exit={
-                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-              }
-              transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
-              className="flex items-center justify-center"
-            >
-              <CheckIcon className="text-accent-green" />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="clipboard"
-              initial={
-                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-              }
-              animate={
-                shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
-              }
-              exit={
-                shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
-              }
-              transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
-              className="flex items-center justify-center"
-            >
-              <ClipboardIcon />
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </span>
-      <span className={cn(!showLabel && "sr-only")}>
-        {copied ? "Copied" : "Copy"}
-      </span>
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={
+              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+            }
+            animate={
+              shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
+            }
+            exit={
+              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+            }
+            transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
+            className="flex items-center justify-center"
+          >
+            <CheckIcon className="text-accent-green" />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="clipboard"
+            initial={
+              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+            }
+            animate={
+              shouldReduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }
+            }
+            exit={
+              shouldReduceMotion ? { opacity: 0 } : { scale: 0.5, opacity: 0 }
+            }
+            transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
+            className="flex items-center justify-center"
+          >
+            <ClipboardIcon />
+          </motion.span>
+        )}
+      </AnimatePresence>
+      {showLabel && "Copy"}
     </Button>
   );
 }

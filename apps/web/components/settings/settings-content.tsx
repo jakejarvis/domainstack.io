@@ -19,14 +19,8 @@ import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "@/hooks/use-router";
-import { cn } from "@/lib/utils";
 
 const SETTINGS_TABS = [
   {
@@ -56,29 +50,19 @@ function isSettingsTabValue(value: unknown): value is SettingsTabValue {
 
 function SettingsTabsList({ className }: { className?: string }) {
   return (
-    <TabsList className={cn("h-auto justify-start", className)}>
+    <TabsList variant="line" className={className}>
       {SETTINGS_TABS.map((tab) => {
         const Icon = tab.icon;
 
         return (
-          <ResponsiveTooltip key={tab.value}>
-            <ResponsiveTooltipTrigger
-              render={
-                <TabsTrigger
-                  value={tab.value}
-                  className="h-auto flex-col items-center gap-2 px-4 py-2.5"
-                >
-                  <Icon className="size-[18px]" weight="bold" aria-hidden />
-                  <span className="hidden text-[13px] leading-none sm:inline">
-                    {tab.label}
-                  </span>
-                </TabsTrigger>
-              }
-            />
-            <ResponsiveTooltipContent className="sm:hidden">
-              {tab.label}
-            </ResponsiveTooltipContent>
-          </ResponsiveTooltip>
+          <TabsTrigger
+            key={tab.value}
+            value={tab.value}
+            className="flex-initial gap-2 text-[13px] hover:text-foreground hover:[&_svg]:text-foreground"
+          >
+            <Icon className="size-4" aria-hidden />
+            {tab.label}
+          </TabsTrigger>
         );
       })}
     </TabsList>

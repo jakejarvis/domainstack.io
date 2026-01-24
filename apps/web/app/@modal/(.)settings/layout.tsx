@@ -26,7 +26,7 @@ export default function SettingsModalLayout() {
   return (
     <Modal>
       <ModalContent>
-        <ModalHeader>
+        <ModalHeader className="border-b-0 pb-0">
           <ModalTitle className="flex items-center gap-2">
             <GearIcon className="size-5" />
             Settings
@@ -34,7 +34,10 @@ export default function SettingsModalLayout() {
           <ModalDescription>
             Manage your subscription, notifications, and account preferences.
           </ModalDescription>
-          <div id="settings-modal-tabs" className="mt-2 min-h-[1px]" />
+          <div
+            id="settings-modal-tabs"
+            className="-mx-5 mt-3 [&_[data-slot=tabs-list]]:px-3.5"
+          />
         </ModalHeader>
         <ScrollArea className="min-h-0 flex-1">
           <div className="min-w-0 p-5 [contain:inline-size]">

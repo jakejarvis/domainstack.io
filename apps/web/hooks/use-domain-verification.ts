@@ -99,16 +99,28 @@ export function useDomainVerification({
   const currentTrackedDomainId =
     state.step === 2 || state.step === 3 ? state.trackedDomainId : null;
 
+  // Track the previous resumeDomain ID to detect when resuming ends
+  const prevResumeDomainIdRef = useRef(resumeDomain?.id);
+
   // Sync when resumeDomain prop changes (e.g., TrackDomainButton switches modes)
   useEffect(() => {
+    const wasResuming = !!prevResumeDomainIdRef.current;
+    const isNowResuming = !!resumeDomain;
+
     if (resumeDomain && open) {
       // Skip if we're already tracking this exact domain
       if (currentStep === 2 && currentTrackedDomainId === resumeDomain.id) {
+        prevResumeDomainIdRef.current = resumeDomain.id;
         return;
       }
       dispatch({ type: "RESUME", data: resumeDomain });
+    } else if (wasResuming && !isNowResuming) {
+      // Reset when resumeDomain is cleared (e.g., navigating from resume mode to fresh add)
+      dispatch({ type: "RESET", prefillDomain });
     }
-  }, [resumeDomain, open, currentStep, currentTrackedDomainId]);
+
+    prevResumeDomainIdRef.current = resumeDomain?.id;
+  }, [resumeDomain, open, currentStep, currentTrackedDomainId, prefillDomain]);
 
   // Sync when verification data query returns
   useEffect(() => {

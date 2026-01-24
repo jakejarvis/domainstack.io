@@ -44,8 +44,8 @@ export function LinkedAccountRow({
   }
 
   return (
-    <Item size="sm" variant="outline">
-      <ItemMedia variant="icon" iconVariant="muted">
+    <Item size="default" variant="outline">
+      <ItemMedia variant="icon" className="mx-1">
         <Icon />
       </ItemMedia>
       <ItemContent>
