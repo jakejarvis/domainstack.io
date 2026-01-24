@@ -34,6 +34,7 @@ type DashboardContentProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
+  onToggleMuted: (id: string, muted: boolean) => void;
   onClearFilters: () => void;
   onBulkArchive: () => void;
   onBulkDelete: () => void;
@@ -53,6 +54,7 @@ export function DashboardContent({
   onVerify,
   onRemove,
   onArchive,
+  onToggleMuted,
   onClearFilters,
   onBulkArchive,
   onBulkDelete,
@@ -173,6 +175,7 @@ export function DashboardContent({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
+              onToggleMuted={onToggleMuted}
               onTableReady={onTableReady}
             />
           ) : (
@@ -183,6 +186,7 @@ export function DashboardContent({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
+              onToggleMuted={onToggleMuted}
             />
           )}
         </motion.div>

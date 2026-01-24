@@ -40,8 +40,8 @@ import {
   getTrackedDomainsForUser,
   markVerificationFailing,
   markVerificationSuccessful,
-  resetNotificationOverrides,
   revokeVerification,
+  setDomainMuted,
   unarchiveTrackedDomain,
   verifyTrackedDomain,
 } from "./tracked-domains";
@@ -366,7 +366,7 @@ describe("getTrackedDomainsForUser", () => {
       verified: false,
       verificationToken: "test-token",
       verificationStatus: "unverified",
-      notificationOverrides: {},
+      muted: false,
     });
     expect(result[0].registrar).toEqual({
       id: null,
@@ -423,36 +423,51 @@ describe("findTrackedDomainWithDomainName", () => {
   });
 });
 
-describe("resetNotificationOverrides", () => {
-  it("resets all notification overrides to empty object", async () => {
-    // Create domain with pre-set overrides directly via db
-    const created = await db
-      .insert(userTrackedDomains)
-      .values({
-        userId: testUserId,
-        domainId: testDomainId,
-        verificationToken: "test-token",
-        notificationOverrides: {
-          domainExpiry: { inApp: false, email: false },
-          certificateExpiry: { inApp: true, email: true },
-        },
-      })
-      .returning();
-    expect(created.length).toBe(1);
-    const createdId = created[0].id;
+describe("setDomainMuted", () => {
+  it("sets muted to true", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
 
-    // Reset
-    const result = await resetNotificationOverrides(createdId);
+    const result = await setDomainMuted(createdId, true);
 
     expect(result).not.toBeNull();
     if (!result) throw new Error("Expected result");
 
-    expect(result.notificationOverrides).toEqual({});
+    expect(result.muted).toBe(true);
+  });
+
+  it("sets muted to false (unmute)", async () => {
+    const created = await createTrackedDomain({
+      userId: testUserId,
+      domainId: testDomainId,
+      verificationToken: "test-token",
+    });
+    expect(created).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: safe after expect(created).not.toBeNull()
+    const createdId = created!.id;
+
+    // First mute
+    await setDomainMuted(createdId, true);
+
+    // Then unmute
+    const result = await setDomainMuted(createdId, false);
+
+    expect(result).not.toBeNull();
+    if (!result) throw new Error("Expected result");
+
+    expect(result.muted).toBe(false);
   });
 
   it("returns null for non-existent domain", async () => {
-    const result = await resetNotificationOverrides(
+    const result = await setDomainMuted(
       "00000000-0000-0000-0000-000000000000",
+      true,
     );
     expect(result).toBeNull();
   });

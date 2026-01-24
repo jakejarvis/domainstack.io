@@ -33,6 +33,7 @@ type DashboardTableProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
+  onToggleMuted: (id: string, muted: boolean) => void;
   onTableReady?: (
     table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
   ) => void;
@@ -47,6 +48,7 @@ export function DashboardTable({
   onVerify,
   onRemove,
   onArchive,
+  onToggleMuted,
   onTableReady,
 }: DashboardTableProps) {
   const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
@@ -81,11 +83,19 @@ export function DashboardTable({
         onVerify,
         onRemove,
         onArchive,
+        onToggleMuted,
         withUnverifiedLast,
       }),
     // Note: selectedIds is accessed via ref (selectedIdsRef) to avoid recreating
     // columns on every selection change. The table re-renders cells independently.
-    [onToggleSelect, onRemove, onArchive, onVerify, withUnverifiedLast],
+    [
+      onToggleSelect,
+      onRemove,
+      onArchive,
+      onToggleMuted,
+      onVerify,
+      withUnverifiedLast,
+    ],
   );
 
   const table = useReactTable({

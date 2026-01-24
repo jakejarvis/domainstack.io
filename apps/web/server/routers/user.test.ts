@@ -311,7 +311,7 @@ describe("user router", () => {
     });
   });
 
-  describe("updateDomainNotificationOverrides", () => {
+  describe("setDomainMuted", () => {
     beforeEach(async () => {
       // Create tracked domain for these tests
       await db.insert(userTrackedDomains).values({
@@ -323,29 +323,42 @@ describe("user router", () => {
       });
     });
 
-    it("updates domain-specific notification overrides", async () => {
+    it("mutes a domain", async () => {
       const caller = createAuthenticatedCaller();
 
-      const result = await caller.user.updateDomainNotificationOverrides({
+      const result = await caller.user.setDomainMuted({
         trackedDomainId: TEST_TRACKED_ID,
-        overrides: {
-          domainExpiry: { inApp: false, email: false },
-        },
+        muted: true,
       });
 
-      expect(result.notificationOverrides.domainExpiry).toEqual({
-        inApp: false,
-        email: false,
+      expect(result.muted).toBe(true);
+    });
+
+    it("unmutes a domain", async () => {
+      const caller = createAuthenticatedCaller();
+
+      // First mute it
+      await caller.user.setDomainMuted({
+        trackedDomainId: TEST_TRACKED_ID,
+        muted: true,
       });
+
+      // Then unmute
+      const result = await caller.user.setDomainMuted({
+        trackedDomainId: TEST_TRACKED_ID,
+        muted: false,
+      });
+
+      expect(result.muted).toBe(false);
     });
 
     it("returns not found for non-existent domain", async () => {
       const caller = createAuthenticatedCaller();
 
       await expect(
-        caller.user.updateDomainNotificationOverrides({
+        caller.user.setDomainMuted({
           trackedDomainId: "c0000000-0000-1000-a000-000000000999",
-          overrides: { domainExpiry: { inApp: true, email: true } },
+          muted: true,
         }),
       ).rejects.toThrow("not found");
     });
@@ -356,45 +369,9 @@ describe("user router", () => {
       // Security: Returns same error for "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
       await expect(
-        caller.user.updateDomainNotificationOverrides({
+        caller.user.setDomainMuted({
           trackedDomainId: TEST_TRACKED_ID,
-          overrides: { domainExpiry: { inApp: true, email: true } },
-        }),
-      ).rejects.toThrow("not found");
-    });
-  });
-
-  describe("resetDomainNotificationOverrides", () => {
-    beforeEach(async () => {
-      // Create tracked domain with overrides
-      await db.insert(userTrackedDomains).values({
-        id: TEST_TRACKED_ID,
-        userId: TEST_USER_ID,
-        domainId: TEST_DOMAIN_ID,
-        verificationToken: "token",
-        verified: true,
-        notificationOverrides: {
-          domainExpiry: { inApp: false, email: false },
-        },
-      });
-    });
-
-    it("resets domain notification overrides to empty", async () => {
-      const caller = createAuthenticatedCaller();
-
-      const result = await caller.user.resetDomainNotificationOverrides({
-        trackedDomainId: TEST_TRACKED_ID,
-      });
-
-      expect(result.notificationOverrides).toEqual({});
-    });
-
-    it("returns not found for non-existent domain", async () => {
-      const caller = createAuthenticatedCaller();
-
-      await expect(
-        caller.user.resetDomainNotificationOverrides({
-          trackedDomainId: "c0000000-0000-1000-a000-000000000999",
+          muted: true,
         }),
       ).rejects.toThrow("not found");
     });

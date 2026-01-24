@@ -14,7 +14,6 @@ import type {
   Certificate,
   CertificatesResponse,
 } from "@/lib/types/domain/certificates";
-import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { CacheResult } from "./types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;
@@ -140,7 +139,7 @@ export interface TrackedDomainCertificate {
   userId: string;
   domainId: string;
   domainName: string;
-  notificationOverrides: NotificationOverrides;
+  muted: boolean;
   validTo: Date;
   issuer: string;
   userEmail: string;
@@ -184,7 +183,7 @@ export async function getEarliestCertificate(
       userId: userTrackedDomains.userId,
       domainId: userTrackedDomains.domainId,
       domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
+      muted: userTrackedDomains.muted,
       validTo: certificates.validTo,
       issuer: certificates.issuer,
       userEmail: users.email,

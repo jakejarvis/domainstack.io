@@ -6,7 +6,7 @@
  */
 
 import type { NotificationType } from "@/lib/constants/notifications";
-import type { NotificationOverrides } from "@/lib/types/notifications";
+import type { UserNotificationPreferences } from "@/lib/types/notifications";
 
 export interface NotificationChannels {
   shouldSendEmail: boolean;
@@ -15,11 +15,14 @@ export interface NotificationChannels {
 
 /**
  * Step: Determine which notification channels to use based on user preferences.
+ *
+ * If the domain is muted, returns false for both channels.
+ * Otherwise, falls back to global preferences.
  */
 export async function determineNotificationChannelsStep(
   userId: string,
   trackedDomainId: string,
-  preferenceType: keyof NotificationOverrides,
+  preferenceType: keyof UserNotificationPreferences,
 ): Promise<NotificationChannels> {
   "use step";
 
@@ -35,20 +38,13 @@ export async function determineNotificationChannelsStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
-
-  // Check for per-domain overrides first
-  const override = trackedDomain.notificationOverrides[preferenceType];
-
-  if (override !== undefined) {
-    // Use domain-specific override
-    return {
-      shouldSendEmail: override.email,
-      shouldSendInApp: override.inApp,
-    };
+  // Muted domains receive no notifications
+  if (trackedDomain.muted) {
+    return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
   // Fall back to global preferences
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
   const globalPref = globalPrefs[preferenceType];
   return {
     shouldSendEmail: globalPref.email,

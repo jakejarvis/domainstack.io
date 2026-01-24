@@ -12,8 +12,7 @@ import {
 import {
   countTrackedDomainsByStatus,
   findTrackedDomainById,
-  resetNotificationOverrides,
-  updateNotificationOverrides,
+  setDomainMuted,
 } from "@/lib/db/repos/tracked-domains";
 import {
   getOrCreateUserNotificationPreferences,
@@ -107,18 +106,18 @@ export const userRouter = createTRPCRouter({
     }),
 
   /**
-   * Update notification overrides for a specific tracked domain.
-   * Optimized to avoid double lookup by passing existing overrides directly.
+   * Set muted state for a specific tracked domain.
+   * Muted domains receive no notifications.
    */
-  updateDomainNotificationOverrides: protectedProcedure
+  setDomainMuted: protectedProcedure
     .input(
       z.object({
         trackedDomainId: z.string().uuid(),
-        overrides: UserNotificationPreferencesSchema,
+        muted: z.boolean(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { trackedDomainId, overrides } = input;
+      const { trackedDomainId, muted } = input;
 
       // Get tracked domain and verify ownership in one check
       // Return identical error for both "not found" and "wrong user"
@@ -131,90 +130,24 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      // Merge existing overrides with new ones (avoiding second lookup)
-      // Use Object.hasOwn to detect explicit undefined (clear override) vs missing key
-      const mergedOverrides = {
-        ...tracked.notificationOverrides,
-      };
-
-      if (Object.hasOwn(overrides, "domainExpiry")) {
-        mergedOverrides.domainExpiry = overrides.domainExpiry;
-      }
-      if (Object.hasOwn(overrides, "certificateExpiry")) {
-        mergedOverrides.certificateExpiry = overrides.certificateExpiry;
-      }
-      if (Object.hasOwn(overrides, "registrationChanges")) {
-        mergedOverrides.registrationChanges = overrides.registrationChanges;
-      }
-      if (Object.hasOwn(overrides, "providerChanges")) {
-        mergedOverrides.providerChanges = overrides.providerChanges;
-      }
-      if (Object.hasOwn(overrides, "certificateChanges")) {
-        mergedOverrides.certificateChanges = overrides.certificateChanges;
-      }
-
-      // Update with merged overrides
-      const updated = await updateNotificationOverrides(
-        trackedDomainId,
-        mergedOverrides,
-      );
+      const updated = await setDomainMuted(trackedDomainId, muted);
 
       if (!updated) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Failed to update overrides - domain may have been deleted",
+          message: "Failed to update domain - it may have been deleted",
         });
       }
 
       analytics.track(
-        "domain_notification_overrides_updated",
-        { ...overrides },
+        muted ? "domain_muted" : "domain_unmuted",
+        {},
         ctx.user.id,
       );
 
       return {
         id: updated.id,
-        notificationOverrides: updated.notificationOverrides,
-      };
-    }),
-
-  /**
-   * Reset all notification overrides for a domain (inherit from global).
-   */
-  resetDomainNotificationOverrides: protectedProcedure
-    .input(
-      z.object({
-        trackedDomainId: z.string().uuid(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { trackedDomainId } = input;
-
-      // Get tracked domain and verify ownership in one check
-      // Return identical error for both "not found" and "wrong user"
-      // to prevent enumeration attacks via error differentiation
-      const tracked = await findTrackedDomainById(trackedDomainId);
-      if (!tracked || tracked.userId !== ctx.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Tracked domain not found",
-        });
-      }
-
-      const updated = await resetNotificationOverrides(trackedDomainId);
-
-      if (!updated) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Failed to reset overrides - domain may have been deleted",
-        });
-      }
-
-      analytics.track("domain_notification_overrides_reset", {}, ctx.user.id);
-
-      return {
-        id: updated.id,
-        notificationOverrides: updated.notificationOverrides,
+        muted: updated.muted,
       };
     }),
 

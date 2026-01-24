@@ -63,7 +63,7 @@ export async function certificateExpiryWorkflow(
   }
 
   // Step 4: Check notification preferences
-  const prefs = await checkPreferences(cert.userId, cert.notificationOverrides);
+  const prefs = await checkPreferences(cert.userId, cert.muted);
   if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
     return { skipped: true, reason: "notifications_disabled" };
   }
@@ -130,9 +130,7 @@ interface CertificateData {
   domainName: string;
   validTo: Date | string | null;
   issuer: string;
-  notificationOverrides: {
-    certificateExpiry?: { email: boolean; inApp: boolean };
-  };
+  muted: boolean;
 }
 
 async function fetchCertificate(
@@ -169,11 +167,14 @@ async function clearRenewedNotifications(
 
 async function checkPreferences(
   userId: string,
-  notificationOverrides: {
-    certificateExpiry?: { email: boolean; inApp: boolean };
-  },
+  muted: boolean,
 ): Promise<{ shouldSendEmail: boolean; shouldSendInApp: boolean }> {
   "use step";
+
+  // Muted domains receive no notifications
+  if (muted) {
+    return { shouldSendEmail: false, shouldSendInApp: false };
+  }
 
   const { getOrCreateUserNotificationPreferences } = await import(
     "@/lib/db/repos/user-notification-preferences"
@@ -181,16 +182,7 @@ async function checkPreferences(
 
   const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
 
-  // Check for domain-specific override
-  const override = notificationOverrides.certificateExpiry;
-  if (override !== undefined) {
-    return {
-      shouldSendEmail: override.email,
-      shouldSendInApp: override.inApp,
-    };
-  }
-
-  // Fall back to global preferences
+  // Use global preferences
   return {
     shouldSendEmail: globalPrefs.certificateExpiry.email,
     shouldSendInApp: globalPrefs.certificateExpiry.inApp,

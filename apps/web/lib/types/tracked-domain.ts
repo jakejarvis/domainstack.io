@@ -8,7 +8,6 @@ import type {
   VerificationMethod,
   VerificationStatus,
 } from "@/lib/constants/verification";
-import type { NotificationOverrides } from "./notifications";
 import type { ProviderInfo } from "./provider";
 
 /**
@@ -27,7 +26,7 @@ export interface TrackedDomainWithDetails {
   verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
-  notificationOverrides: NotificationOverrides;
+  muted: boolean;
   createdAt: Date;
   verifiedAt: Date | null;
   archivedAt: Date | null;

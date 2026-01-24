@@ -12,6 +12,7 @@ type DashboardGridProps = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
+  onToggleMuted: (id: string, muted: boolean) => void;
 };
 
 // Stable empty Set to avoid creating new instance on every render
@@ -28,6 +29,7 @@ const GridItem = memo(function GridItem({
   onVerify,
   onRemove,
   onArchive,
+  onToggleMuted,
 }: {
   domain: TrackedDomainWithDetails;
   isSelected: boolean;
@@ -35,6 +37,7 @@ const GridItem = memo(function GridItem({
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive?: (id: string, domainName: string) => void;
+  onToggleMuted: (id: string, muted: boolean) => void;
 }) {
   const handleToggleSelect = useCallback(() => {
     onToggleSelect?.(domain.id);
@@ -51,6 +54,10 @@ const GridItem = memo(function GridItem({
   const handleArchive = useCallback(() => {
     onArchive?.(domain.id, domain.domainName);
   }, [onArchive, domain.id, domain.domainName]);
+
+  const handleToggleMuted = useCallback(() => {
+    onToggleMuted(domain.id, !domain.muted);
+  }, [onToggleMuted, domain.id, domain.muted]);
 
   return (
     <motion.div
@@ -84,10 +91,12 @@ const GridItem = memo(function GridItem({
         hosting={domain.hosting}
         email={domain.email}
         ca={domain.ca}
+        muted={domain.muted}
         isSelected={isSelected}
         onVerify={handleVerify}
         onRemove={handleRemove}
         onArchive={handleArchive}
+        onToggleMuted={handleToggleMuted}
         onToggleSelect={handleToggleSelect}
         className={cn("h-full", isSelected && "bg-primary/10")}
       />
@@ -102,6 +111,7 @@ export function DashboardGrid({
   onVerify,
   onRemove,
   onArchive,
+  onToggleMuted,
 }: DashboardGridProps) {
   const shouldReduceMotion = useReducedMotion();
 
@@ -151,6 +161,7 @@ export function DashboardGrid({
               onVerify={onVerify}
               onRemove={onRemove}
               onArchive={onArchive}
+              onToggleMuted={onToggleMuted}
             />
           </motion.div>
         ))}

@@ -31,7 +31,6 @@ import {
 import { deduplicateDnsRecordsByValue } from "@/lib/dns-utils";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { RegistrationContact } from "@/lib/types/domain/registration";
-import type { NotificationOverrides } from "@/lib/types/notifications";
 import type { ProviderInfo } from "@/lib/types/provider";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
@@ -214,7 +213,7 @@ interface TrackedDomainRow {
   verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
   lastVerifiedAt: Date | null;
-  notificationOverrides: NotificationOverrides;
+  muted: boolean;
   createdAt: Date;
   verifiedAt: Date | null;
   archivedAt: Date | null;
@@ -298,7 +297,7 @@ function transformToTrackedDomainWithDetails(
       verificationStatus: row.verificationStatus,
       verificationFailedAt: row.verificationFailedAt,
       lastVerifiedAt: row.lastVerifiedAt,
-      notificationOverrides: row.notificationOverrides,
+      muted: row.muted,
       createdAt: row.createdAt,
       verifiedAt: row.verifiedAt,
       archivedAt: row.archivedAt,
@@ -326,7 +325,7 @@ function transformToTrackedDomainWithDetails(
     verificationStatus: row.verificationStatus,
     verificationFailedAt: row.verificationFailedAt,
     lastVerifiedAt: row.lastVerifiedAt,
-    notificationOverrides: row.notificationOverrides,
+    muted: row.muted,
     createdAt: row.createdAt,
     verifiedAt: row.verifiedAt,
     archivedAt: row.archivedAt,
@@ -587,7 +586,7 @@ async function queryTrackedDomainsWithDetails(
       verificationStatus: userTrackedDomains.verificationStatus,
       verificationFailedAt: userTrackedDomains.verificationFailedAt,
       lastVerifiedAt: userTrackedDomains.lastVerifiedAt,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
+      muted: userTrackedDomains.muted,
       createdAt: userTrackedDomains.createdAt,
       verifiedAt: userTrackedDomains.verifiedAt,
       archivedAt: userTrackedDomains.archivedAt,
@@ -839,35 +838,14 @@ export async function verifyTrackedDomain(
 }
 
 /**
- * Reset all notification overrides for a tracked domain.
- * Domain will inherit all settings from global preferences.
+ * Set the muted state for a tracked domain.
+ * Muted domains receive no notifications.
  * Returns null if the tracked domain doesn't exist.
  */
-export async function resetNotificationOverrides(id: string) {
+export async function setDomainMuted(id: string, muted: boolean) {
   const updated = await db
     .update(userTrackedDomains)
-    .set({ notificationOverrides: {} })
-    .where(eq(userTrackedDomains.id, id))
-    .returning();
-
-  if (updated.length === 0) {
-    return null;
-  }
-
-  return updated[0];
-}
-
-/**
- * Update notification overrides for a tracked domain.
- * Returns null if the tracked domain doesn't exist.
- */
-export async function updateNotificationOverrides(
-  id: string,
-  overrides: NotificationOverrides,
-) {
-  const updated = await db
-    .update(userTrackedDomains)
-    .set({ notificationOverrides: overrides })
+    .set({ muted })
     .where(eq(userTrackedDomains.id, id))
     .returning();
 
@@ -894,7 +872,7 @@ export interface TrackedDomainForNotification {
   userId: string;
   domainId: string;
   domainName: string;
-  notificationOverrides: NotificationOverrides;
+  muted: boolean;
   expirationDate: Date | string | null;
   registrar: string | null;
   userEmail: string;
@@ -909,7 +887,7 @@ export interface TrackedDomainForReverification {
   verificationMethod: VerificationMethod;
   verificationStatus: VerificationStatus;
   verificationFailedAt: Date | null;
-  notificationOverrides: NotificationOverrides;
+  muted: boolean;
   userEmail: string;
   userName: string;
 }
@@ -949,7 +927,7 @@ export async function getTrackedDomainForNotification(
       userId: userTrackedDomains.userId,
       domainId: userTrackedDomains.domainId,
       domainName: domains.name,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
+      muted: userTrackedDomains.muted,
       expirationDate: registrations.expirationDate,
       registrar: registrarProvider.name,
       userEmail: users.email,
@@ -985,7 +963,7 @@ export async function getTrackedDomainForReverification(
       verificationMethod: userTrackedDomains.verificationMethod,
       verificationStatus: userTrackedDomains.verificationStatus,
       verificationFailedAt: userTrackedDomains.verificationFailedAt,
-      notificationOverrides: userTrackedDomains.notificationOverrides,
+      muted: userTrackedDomains.muted,
       userEmail: users.email,
       userName: users.name,
     })

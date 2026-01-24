@@ -365,6 +365,42 @@ export function useTrackedDomains(options: UseTrackedDomainsOptions = {}) {
     },
   });
 
+  // Mute/unmute mutation with optimistic updates
+  const muteMutation = useMutation({
+    ...trpc.user.setDomainMuted.mutationOptions(),
+    onMutate: async ({ trackedDomainId, muted }): Promise<MutationContext> => {
+      await cancelQueries();
+
+      // Snapshot all domain query variants
+      const previousDomains = queryClient.getQueriesData<DomainsData>({
+        queryKey: domainsQueryKey,
+      });
+
+      // Optimistically update muted state in all query variants
+      queryClient.setQueriesData<DomainsData>(
+        { queryKey: domainsQueryKey },
+        (old) => {
+          if (!old) return old;
+          return old.map((d) =>
+            d.id === trackedDomainId ? { ...d, muted } : d,
+          );
+        },
+      );
+
+      return { previousDomains };
+    },
+    onError: (_err, _variables, context) => {
+      rollback(context);
+      toast.error("Failed to update notification settings");
+    },
+    onSuccess: (_data, { muted }) => {
+      toast.success(muted ? "Domain muted" : "Domain unmuted");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
+    },
+  });
+
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: trpc.tracking.bulkRemoveDomains.mutationOptions().mutationFn,
@@ -428,6 +464,7 @@ export function useTrackedDomains(options: UseTrackedDomainsOptions = {}) {
     removeMutation,
     archiveMutation,
     unarchiveMutation,
+    muteMutation,
     bulkArchiveMutation,
     bulkDeleteMutation,
 

@@ -18,7 +18,7 @@ export interface NotificationData {
 }
 
 /** Notification channel toggles for in-app and email. */
-interface ChannelToggles {
+export interface ChannelToggles {
   inApp: boolean;
   email: boolean;
 }
@@ -33,16 +33,4 @@ export interface UserNotificationPreferences {
   registrationChanges: ChannelToggles;
   providerChanges: ChannelToggles;
   certificateChanges: ChannelToggles;
-}
-
-/**
- * Per-domain notification overrides.
- * undefined = inherit from global preferences.
- */
-export interface NotificationOverrides {
-  domainExpiry?: ChannelToggles;
-  certificateExpiry?: ChannelToggles;
-  registrationChanges?: ChannelToggles;
-  providerChanges?: ChannelToggles;
-  certificateChanges?: ChannelToggles;
 }

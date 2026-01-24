@@ -127,6 +127,13 @@
       "when": 1768451634602,
       "tag": "0017_special_blonde_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1769297986322,
+      "tag": "0018_puzzling_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@ import {
   CalendarInstructions,
   CalendarInstructionsSkeleton,
 } from "@/components/calendar-instructions";
-import { DomainOverrides } from "@/components/settings/notifications/domain-overrides";
+import { DomainMuteList } from "@/components/settings/notifications/domain-mute-list";
 import { NotificationMatrix } from "@/components/settings/notifications/notification-matrix";
 import {
   SettingsCard,
@@ -75,9 +75,9 @@ export function NotificationsPanel() {
     },
   });
 
-  const updateDomainMutation = useMutation({
-    ...trpc.user.updateDomainNotificationOverrides.mutationOptions(),
-    onMutate: async ({ trackedDomainId, overrides }) => {
+  const setDomainMutedMutation = useMutation({
+    ...trpc.user.setDomainMuted.mutationOptions(),
+    onMutate: async ({ trackedDomainId, muted }) => {
       await queryClient.cancelQueries({ queryKey: domainsQueryKey });
       // Snapshot all domain query variants for rollback
       const previousDomains = queryClient.getQueriesData<
@@ -86,22 +86,12 @@ export function NotificationsPanel() {
         queryKey: domainsQueryKey,
       });
 
-      // Optimistically update the domain's overrides in all query variants
+      // Optimistically update the domain's muted state in all query variants
       queryClient.setQueriesData<typeof domainsResult.data>(
         { queryKey: domainsQueryKey },
         (old) =>
           old
-            ? old.map((d) =>
-                d.id === trackedDomainId
-                  ? {
-                      ...d,
-                      notificationOverrides: {
-                        ...(d.notificationOverrides ?? {}),
-                        ...overrides,
-                      },
-                    }
-                  : d,
-              )
+            ? old.map((d) => (d.id === trackedDomainId ? { ...d, muted } : d))
             : old,
       );
 
@@ -115,50 +105,8 @@ export function NotificationsPanel() {
       }
       toast.error("Failed to update settings");
     },
-    onSuccess: () => {
-      toast.success("Domain settings updated");
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
-    },
-  });
-
-  const resetDomainMutation = useMutation({
-    ...trpc.user.resetDomainNotificationOverrides.mutationOptions(),
-    onMutate: async ({ trackedDomainId }) => {
-      await queryClient.cancelQueries({ queryKey: domainsQueryKey });
-      // Snapshot all domain query variants for rollback
-      const previousDomains = queryClient.getQueriesData<
-        typeof domainsResult.data
-      >({
-        queryKey: domainsQueryKey,
-      });
-
-      // Optimistically reset the domain's overrides in all query variants
-      queryClient.setQueriesData<typeof domainsResult.data>(
-        { queryKey: domainsQueryKey },
-        (old) =>
-          old
-            ? old.map((d) =>
-                d.id === trackedDomainId
-                  ? { ...d, notificationOverrides: {} }
-                  : d,
-              )
-            : old,
-      );
-
-      return { previousDomains };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousDomains) {
-        for (const [key, data] of context.previousDomains) {
-          queryClient.setQueryData(key, data);
-        }
-      }
-      toast.error("Failed to reset settings");
-    },
-    onSuccess: () => {
-      toast.success("Domain reset to global defaults");
+    onSuccess: (_data, variables) => {
+      toast.success(variables.muted ? "Domain muted" : "Domain unmuted");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: domainsQueryKey });
@@ -212,48 +160,8 @@ export function NotificationsPanel() {
     updateGlobalMutation.mutate({ [category]: updatedPref });
   };
 
-  const handleDomainToggle = (
-    trackedDomainId: string,
-    category: NotificationCategory,
-    type: "email" | "inApp",
-    value: boolean,
-  ) => {
-    // Find the current domain
-    const domain = domains.find((d) => d.id === trackedDomainId);
-    if (!domain) return;
-
-    // Get current override for this category and global prefs
-    const currentOverride = domain.notificationOverrides[category];
-    const globalPref = globalPrefs[category];
-
-    // Build the new override with both channels
-    // Schema requires BOTH channels to be defined (no partial overrides allowed)
-    const newOverride = {
-      email:
-        type === "email" ? value : (currentOverride?.email ?? globalPref.email),
-      inApp:
-        type === "inApp" ? value : (currentOverride?.inApp ?? globalPref.inApp),
-    };
-
-    // If both channels now match global, clear the override entirely (inherit)
-    if (
-      newOverride.email === globalPref.email &&
-      newOverride.inApp === globalPref.inApp
-    ) {
-      updateDomainMutation.mutate({
-        trackedDomainId,
-        overrides: { [category]: undefined },
-      });
-    } else {
-      updateDomainMutation.mutate({
-        trackedDomainId,
-        overrides: { [category]: newOverride },
-      });
-    }
-  };
-
-  const handleResetDomain = (trackedDomainId: string) => {
-    resetDomainMutation.mutate({ trackedDomainId });
+  const handleToggleMuted = (trackedDomainId: string, muted: boolean) => {
+    setDomainMutedMutation.mutate({ trackedDomainId, muted });
   };
 
   const verifiedDomains = domains
@@ -261,9 +169,7 @@ export function NotificationsPanel() {
     .sort((a, b) => a.domainName.localeCompare(b.domainName));
 
   const isPending =
-    updateGlobalMutation.isPending ||
-    updateDomainMutation.isPending ||
-    resetDomainMutation.isPending;
+    updateGlobalMutation.isPending || setDomainMutedMutation.isPending;
 
   return (
     <>
@@ -315,18 +221,16 @@ export function NotificationsPanel() {
       <SettingsCardSeparator />
 
       <SettingsCard
-        title="Domain Overrides"
-        description="Customize notification settings for individual verified domains."
+        title="Muted Domains"
+        description="Domains you add here won&rsquo;t trigger any notifications."
       >
-        <DomainOverrides
+        <DomainMuteList
           domains={verifiedDomains.map((d) => ({
             id: d.id,
             domainName: d.domainName,
-            overrides: d.notificationOverrides,
+            muted: d.muted,
           }))}
-          globalPrefs={globalPrefs}
-          onToggle={handleDomainToggle}
-          onReset={handleResetDomain}
+          onToggleMuted={handleToggleMuted}
           disabled={isPending}
         />
       </SettingsCard>

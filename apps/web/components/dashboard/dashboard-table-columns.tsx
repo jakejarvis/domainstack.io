@@ -3,6 +3,8 @@
 import {
   ArchiveIcon,
   ArrowSquareOutIcon,
+  BellIcon,
+  BellSlashIcon,
   BookmarkSimpleIcon,
   DotsThreeVerticalIcon,
   TrashIcon,
@@ -88,6 +90,7 @@ export type ColumnCallbacks = {
   onVerify: (domain: TrackedDomainWithDetails) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
+  onToggleMuted: (id: string, muted: boolean) => void;
   withUnverifiedLast: ReturnType<typeof createUnverifiedLastSorter>;
 };
 
@@ -100,6 +103,7 @@ export function createColumns(
     onVerify,
     onRemove,
     onArchive,
+    onToggleMuted,
     withUnverifiedLast,
   } = callbacks;
 
@@ -444,6 +448,26 @@ export function createColumns(
               }
             />
             <DropdownMenuSeparator />
+            {row.original.verified && (
+              <DropdownMenuItem
+                onClick={() =>
+                  onToggleMuted(row.original.id, !row.original.muted)
+                }
+                className="cursor-pointer"
+              >
+                {row.original.muted ? (
+                  <>
+                    <BellIcon />
+                    Unmute
+                  </>
+                ) : (
+                  <>
+                    <BellSlashIcon />
+                    Mute
+                  </>
+                )}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() =>
                 onArchive(row.original.id, row.original.domainName)

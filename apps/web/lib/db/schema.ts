@@ -37,7 +37,6 @@ import type {
   RobotsTxt,
   TwitterMeta,
 } from "@/lib/types/domain/seo";
-import type { NotificationOverrides } from "@/lib/types/notifications";
 
 // Enums - const arrays define values; Drizzle pgEnums use them directly.
 export const providerCategory = pgEnum(
@@ -207,11 +206,8 @@ export const userTrackedDomains = pgTable(
       withTimezone: true,
     }),
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
-    // Per-domain notification overrides (empty = inherit from user preferences)
-    notificationOverrides: jsonb("notification_overrides")
-      .$type<NotificationOverrides>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
+    // Muted domains receive no notifications (follows global preferences if false)
+    muted: boolean("muted").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

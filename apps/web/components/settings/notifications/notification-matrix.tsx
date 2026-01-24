@@ -1,5 +1,3 @@
-"use client";
-
 import { InfoIcon } from "@phosphor-icons/react/ssr";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,7 +33,7 @@ export function NotificationMatrix({
   disabled = false,
 }: NotificationMatrixProps) {
   return (
-    <div className={cn(disabled && "pointer-events-none opacity-60")}>
+    <div>
       {/* Header row */}
       <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1.5">
         <div className="flex-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -82,11 +80,8 @@ export function NotificationMatrix({
                 </span>
                 <ResponsiveTooltip>
                   <ResponsiveTooltipTrigger
-                    nativeButton={false}
                     render={
-                      <span className="shrink-0 text-muted-foreground/80 opacity-0 transition-opacity group-hover:opacity-100">
-                        <InfoIcon className="size-3.5" />
-                      </span>
+                      <InfoIcon className="size-3.5 shrink-0 text-foreground/75 opacity-0 focus-visible:opacity-100 group-hover:opacity-100" />
                     }
                   />
                   <ResponsiveTooltipContent className="max-w-xs">

@@ -73,6 +73,7 @@ export function DashboardClient() {
     removeMutation,
     archiveMutation,
     unarchiveMutation,
+    muteMutation,
   } = useTrackedDomains({ includeArchived: true });
 
   const domains = useMemo(
@@ -268,6 +269,13 @@ export function DashboardClient() {
     [unarchiveMutation],
   );
 
+  const handleToggleMuted = useCallback(
+    (id: string, muted: boolean) => {
+      muteMutation.mutate({ trackedDomainId: id, muted });
+    },
+    [muteMutation],
+  );
+
   // Show loading until we have both query data AND session data
   const isLoading =
     subscriptionLoading || domainsLoading || sessionLoading || !session;
@@ -363,6 +371,7 @@ export function DashboardClient() {
             onVerify={handleVerify}
             onRemove={handleRemove}
             onArchive={handleArchive}
+            onToggleMuted={handleToggleMuted}
             onBulkArchive={handleBulkArchive}
             onBulkDelete={handleBulkDelete}
             onTableReady={setTableInstance}

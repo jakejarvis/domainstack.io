@@ -1,6 +1,8 @@
 import {
   ArchiveIcon,
   ArrowSquareOutIcon,
+  BellIcon,
+  BellSlashIcon,
   BookmarkSimpleIcon,
   DotsThreeVerticalIcon,
   TrashIcon,
@@ -60,9 +62,11 @@ type DashboardGridCardProps = {
   hosting: ProviderInfo;
   email: ProviderInfo;
   ca: ProviderInfo;
+  muted: boolean;
   onVerify: () => void;
   onRemove: () => void;
   onArchive: () => void;
+  onToggleMuted: () => void;
   className?: string;
   // Selection props - when provided, enables checkbox functionality
   isSelected?: boolean;
@@ -83,9 +87,11 @@ export function DashboardGridCard({
   hosting,
   email,
   ca,
+  muted,
   onVerify,
   onRemove,
   onArchive,
+  onToggleMuted,
   className,
   isSelected = false,
   onToggleSelect,
@@ -204,6 +210,24 @@ export function DashboardGridCard({
                 }
               />
               <DropdownMenuSeparator />
+              {verified && (
+                <DropdownMenuItem
+                  onClick={onToggleMuted}
+                  className="cursor-pointer"
+                >
+                  {muted ? (
+                    <>
+                      <BellIcon />
+                      Unmute
+                    </>
+                  ) : (
+                    <>
+                      <BellSlashIcon />
+                      Mute
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onArchive} className="cursor-pointer">
                 <ArchiveIcon />
                 Archive
