@@ -72,7 +72,7 @@ export function CalendarFeedPopover() {
         <TooltipContent>Subscribe to updates</TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-popover/95 p-0 backdrop-blur-lg max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
+        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-background p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -81,7 +81,7 @@ export function CalendarFeedPopover() {
         }}
         collisionPadding={8}
       >
-        <PopoverHeader className="border-border/60 border-b px-4 pt-4 pb-3">
+        <PopoverHeader className="border-border/60 border-b bg-card px-4 pt-4 pb-3">
           <PopoverTitle>Calendar Feed</PopoverTitle>
           <PopoverDescription>
             Subscribe to domain expiration dates in your favorite calendar app.

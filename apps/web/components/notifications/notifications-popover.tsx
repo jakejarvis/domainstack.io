@@ -207,7 +207,7 @@ export function NotificationsPopover() {
           {/* Header */}
           <div className="shrink-0 border-border/50 border-b">
             {/* Title row */}
-            <div className="flex items-center justify-between px-4 py-3 pb-1">
+            <div className="flex items-center justify-between pt-3 pr-4 pb-1 pl-5">
               <h4 className="font-semibold text-[15px]">Notifications</h4>
 
               {/* Header actions */}
