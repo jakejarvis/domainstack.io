@@ -4,7 +4,6 @@ import {
   ChecksIcon,
   GearIcon,
   TrayIcon,
-  XIcon,
 } from "@phosphor-icons/react/ssr";
 import {
   useInfiniteQuery,
@@ -15,7 +14,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Popover,
   PopoverContent,
@@ -31,6 +29,7 @@ import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import type { NotificationData } from "@/lib/types/notifications";
+import { cn } from "@/lib/utils";
 
 export function NotificationsPopover() {
   const router = useRouter();
@@ -195,7 +194,7 @@ export function NotificationsPopover() {
         </TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden p-0 max-sm:w-[calc(100vw-1rem)] sm:w-96"
+        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-card p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -204,91 +203,99 @@ export function NotificationsPopover() {
         }}
         collisionPadding={8}
       >
-        <div className="flex max-h-[calc(min(100dvh-6rem,600px))] flex-col">
-          {/* Header with tabs */}
-          <div className="shrink-0 space-y-3 border-b p-4">
-            <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-2 py-1 font-medium text-[15px] leading-none">
-                <BellSimpleIcon className="size-4" />
-                Notifications
-              </h4>
-              <div className="flex items-center gap-1.5">
-                <ButtonGroup>
-                  {view === "inbox" && count > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => markAllRead.mutate()}
-                      disabled={markAllRead.isPending}
-                      aria-label="Clear All"
-                    >
-                      <ChecksIcon className="text-foreground/90" />
-                      Clear All
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    aria-label="Notification settings"
-                    nativeButton={false}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      router.push("/settings/notifications");
-                      setOpen(false);
-                    }}
-                    render={
-                      <Link href="/settings/notifications">
-                        <GearIcon className="text-foreground/90" />
-                        Settings
-                      </Link>
-                    }
-                  />
-                </ButtonGroup>
+        <div className="flex max-h-[calc(min(100dvh-6rem,560px))] flex-col">
+          {/* Header */}
+          <div className="shrink-0 border-border/50 border-b">
+            {/* Title row */}
+            <div className="flex items-center justify-between px-4 py-3 pb-1">
+              <h4 className="font-semibold text-[15px]">Notifications</h4>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="-mr-1.5 size-7"
-                  onClick={() => setOpen(false)}
-                  aria-label="Close"
-                >
-                  <XIcon className="size-3.5" />
-                  <span className="sr-only">Close</span>
-                </Button>
-              </div>
+              {/* Header actions */}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Notification settings"
+                      nativeButton={false}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        router.push("/settings/notifications");
+                        setOpen(false);
+                      }}
+                      render={
+                        <Link href="/settings/notifications">
+                          <GearIcon className="size-3.5 shrink-0 text-foreground/90" />
+                          <span className="sr-only">Settings</span>
+                        </Link>
+                      }
+                    />
+                  }
+                />
+                <TooltipContent>Settings</TooltipContent>
+              </Tooltip>
             </div>
 
-            <Tabs
-              value={view}
-              onValueChange={(v) => {
-                const nextView = v as typeof view;
+            {/* Tabs */}
+            <div className="pl-2.5">
+              <Tabs
+                value={view}
+                onValueChange={(v) => {
+                  const nextView = v as typeof view;
 
-                // When switching away from Inbox with unread notifications, mark them all as read.
-                if (view === "inbox" && nextView === "archive") {
-                  maybeAutoMarkAllRead();
-                }
+                  // When switching away from Inbox with unread notifications, mark them all as read.
+                  if (view === "inbox" && nextView === "archive") {
+                    maybeAutoMarkAllRead();
+                  }
 
-                startTransition(() => setView(nextView));
-              }}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="inbox" className="gap-2 text-[13px]">
-                  <TrayIcon />
-                  Inbox
-                  {count > 0 && (
-                    <span className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 font-medium text-[10px] text-primary-foreground">
-                      {count}
-                    </span>
+                  startTransition(() => setView(nextView));
+                }}
+              >
+                <TabsList variant="line">
+                  <TabsTrigger
+                    value="inbox"
+                    className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
+                  >
+                    <TrayIcon className="!text-inherit" aria-hidden />
+                    Inbox
+                    {count > 0 && (
+                      <span className="ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-foreground px-1.5 font-medium text-[10px] text-background tabular-nums">
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="archive"
+                    className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
+                  >
+                    <ArchiveIcon className="!text-inherit" aria-hidden />
+                    Archive
+                  </TabsTrigger>
+
+                  {/* Clear all action - aligned to the right */}
+                  {view === "inbox" && count > 0 && (
+                    <div className="ml-auto flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => markAllRead.mutate()}
+                        disabled={markAllRead.isPending}
+                        className={cn(
+                          "flex h-full items-center gap-1.5 px-2 font-medium text-[13px] text-muted-foreground transition-colors",
+                          "hover:text-foreground focus-visible:text-foreground",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+                          "disabled:pointer-events-none disabled:opacity-50",
+                        )}
+                        aria-label="Clear all notifications"
+                      >
+                        <ChecksIcon className="size-4" aria-hidden />
+                        <span className="max-sm:sr-only">Clear&nbsp;all</span>
+                      </button>
+                    </div>
                   )}
-                </TabsTrigger>
-                <TabsTrigger value="archive" className="gap-2 text-[13px]">
-                  <ArchiveIcon />
-                  Archive
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
           {/* Notification list */}

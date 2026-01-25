@@ -24,7 +24,7 @@ function SettingsCard({
       {...props}
     >
       <CardHeader className="gap-1 px-0 pt-0">
-        <CardTitle className="text-base">{title}</CardTitle>
+        <CardTitle className="text-[15px]">{title}</CardTitle>
         <CardDescription className="text-[13px]">{description}</CardDescription>
       </CardHeader>
       <CardContent className="px-0">{children}</CardContent>

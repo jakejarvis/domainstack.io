@@ -1,4 +1,3 @@
-import { GearIcon } from "@phosphor-icons/react/dist/ssr";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -27,10 +26,7 @@ export default function SettingsModalLayout() {
     <Modal>
       <ModalContent>
         <ModalHeader className="border-b-0 pb-0">
-          <ModalTitle className="flex items-center gap-2">
-            <GearIcon className="size-5" />
-            Settings
-          </ModalTitle>
+          <ModalTitle>Settings</ModalTitle>
           <ModalDescription>
             Manage your subscription, notifications, and account preferences.
           </ModalDescription>
@@ -40,7 +36,7 @@ export default function SettingsModalLayout() {
           />
         </ModalHeader>
         <ScrollArea className="min-h-0 flex-1">
-          <div className="min-w-0 p-5 [contain:inline-size]">
+          <div className="mt-1 min-w-0 p-5 [contain:inline-size]">
             <Suspense fallback={<SettingsSkeleton />}>
               <AuthorizedSettingsModalLayout />
             </Suspense>

@@ -218,7 +218,7 @@ export function NotificationsPanel() {
         />
       </SettingsCard>
 
-      <SettingsCardSeparator />
+      <SettingsCardSeparator className="mt-4" />
 
       <SettingsCard
         title="Muted Domains"

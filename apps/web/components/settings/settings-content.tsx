@@ -58,9 +58,9 @@ function SettingsTabsList({ className }: { className?: string }) {
           <TabsTrigger
             key={tab.value}
             value={tab.value}
-            className="flex-initial gap-2 text-[13px] hover:text-foreground hover:[&_svg]:text-foreground"
+            className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
           >
-            <Icon className="size-4" aria-hidden />
+            <Icon className="!text-inherit size-4" aria-hidden />
             {tab.label}
           </TabsTrigger>
         );

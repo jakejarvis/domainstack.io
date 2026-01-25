@@ -69,7 +69,7 @@ function ModalContent({
           data-slot="modal-content"
           className={cn(
             "relative flex max-h-[85vh] min-h-0 w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl",
-            "rounded-lg border border-border/60 bg-background/95 text-foreground shadow-lg outline-hidden backdrop-blur-xl dark:bg-background/80",
+            "rounded-lg border border-border/50 bg-background text-foreground shadow-lg outline-hidden",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
             className,
@@ -91,7 +91,10 @@ function ModalHeader({
   return (
     <div
       data-slot="modal-header"
-      className={cn("flex flex-col gap-2 border-muted border-b p-5", className)}
+      className={cn(
+        "flex flex-col gap-2 border-muted border-b bg-card p-5",
+        className,
+      )}
       {...props}
     />
   );

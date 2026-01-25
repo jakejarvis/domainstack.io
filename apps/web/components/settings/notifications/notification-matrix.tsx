@@ -35,17 +35,11 @@ export function NotificationMatrix({
   return (
     <div>
       {/* Header row */}
-      <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1.5">
-        <div className="flex-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-          Alert Type
-        </div>
+      <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+        <div className="flex-1">Alert Type</div>
         <div className="flex items-center gap-1">
-          <div className="w-14 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide">
-            Web
-          </div>
-          <div className="w-14 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide">
-            Email
-          </div>
+          <div className="w-14 text-center">Web</div>
+          <div className="w-14 text-center">Email</div>
         </div>
       </div>
       <div className="divide-y divide-border/30">
@@ -58,13 +52,13 @@ export function NotificationMatrix({
           return (
             <div
               key={category}
-              className="group flex items-center py-2.5 pr-2 pl-1"
+              className="group flex items-center py-2 pr-2 pl-1"
             >
               {/* Category label with icon */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <Icon
                   className={cn(
-                    "mr-0.5 size-4 shrink-0 transition-colors",
+                    "mr-0.5 size-3.5 shrink-0 transition-colors",
                     anyEnabled
                       ? "text-foreground/70"
                       : "text-muted-foreground/50",
@@ -72,7 +66,7 @@ export function NotificationMatrix({
                 />
                 <span
                   className={cn(
-                    "truncate font-medium text-sm transition-colors",
+                    "truncate font-medium text-[13px] transition-colors",
                     anyEnabled ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

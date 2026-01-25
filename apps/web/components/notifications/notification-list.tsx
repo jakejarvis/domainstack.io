@@ -38,7 +38,10 @@ export function NotificationList({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <ScrollArea scrollRef={scrollAreaRef} className="min-h-0 flex-1 bg-card">
+    <ScrollArea
+      scrollRef={scrollAreaRef}
+      className="min-h-0 flex-1 bg-background"
+    >
       {isLoading ? (
         <NotificationListSkeleton />
       ) : isError ? (

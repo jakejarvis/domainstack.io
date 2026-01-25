@@ -60,34 +60,33 @@ export function SubscriptionSkeleton({ className }: { className?: string }) {
  */
 function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-border/50 bg-muted/20",
-        className,
-      )}
-    >
+    <div className={className}>
       {/* Header row */}
-      <div className="flex items-center border-border/50 border-b px-4 py-2.5">
-        <Skeleton className="h-3 w-20" />
+      <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1.5">
+        <Skeleton className="h-3 w-16" />
         <div className="ml-auto flex items-center gap-1">
-          <Skeleton className="h-3 w-14" />
-          <Skeleton className="h-3 w-14" />
+          <div className="flex w-14 justify-center">
+            <Skeleton className="h-3 w-8" />
+          </div>
+          <div className="flex w-14 justify-center">
+            <Skeleton className="h-3 w-10" />
+          </div>
         </div>
       </div>
 
       {/* Category rows */}
       <div className="divide-y divide-border/30">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex items-center px-4 py-3">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Skeleton className="size-4 shrink-0" />
-              <Skeleton className="h-4 w-32" />
+          <div key={i} className="flex items-center py-2.5 pr-2 pl-1">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Skeleton className="mr-0.5 size-4 shrink-0" />
+              <Skeleton className="h-4 w-28" />
             </div>
             <div className="flex items-center gap-1">
-              <div className="flex w-14 items-center justify-center">
+              <div className="flex w-14 items-center justify-center py-1">
                 <Skeleton className="size-4 rounded" />
               </div>
-              <div className="flex w-14 items-center justify-center">
+              <div className="flex w-14 items-center justify-center py-1">
                 <Skeleton className="size-4 rounded" />
               </div>
             </div>
@@ -138,16 +137,15 @@ export function NotificationsSkeleton({ className }: { className?: string }) {
 
       <Separator className="my-6 bg-muted" />
 
-      {/* Domain Overrides section */}
+      {/* Muted Domains section */}
       <CardHeader className="gap-1 px-0 pt-0">
-        <Skeleton className="h-5 w-36" />
-        <Skeleton className="h-4 w-80" />
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-4 w-72" />
       </CardHeader>
       <CardContent className="px-0">
-        {/* Empty state placeholder */}
-        <div className="flex items-center gap-3 rounded-xl border border-border/50 border-dashed bg-muted/10 px-4 py-6">
-          <Skeleton className="size-5" />
-          <Skeleton className="h-4 w-72" />
+        {/* Chip picker with "Mute domain" button */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-8 w-28 rounded-full" />
         </div>
       </CardContent>
 
