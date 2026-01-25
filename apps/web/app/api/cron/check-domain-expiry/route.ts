@@ -2,19 +2,14 @@ import { NextResponse } from "next/server";
 import { start } from "workflow/api";
 import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
 import { createLogger } from "@/lib/logger/server";
-import { withConcurrencyHandling } from "@/lib/workflow/concurrency";
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
 const logger = createLogger({ source: "cron/check-domain-expiry" });
-
-// Process domains in batches
-const BATCH_SIZE = 50;
 
 /**
  * Cron job to check domain expiry and send notifications.
  */
 export async function GET(request: Request) {
-  // Verify the request is from Vercel Cron
   if (
     request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
   ) {
@@ -23,59 +18,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    logger.info("Starting check domain expiry cron job");
-
-    const verifiedDomainIds = await getVerifiedTrackedDomainIds();
-
-    if (verifiedDomainIds.length === 0) {
-      logger.info("No verified domains to check");
-      return NextResponse.json({ scheduled: 0, successful: 0, failed: 0 });
-    }
-
-    const results: { id: string; success: boolean }[] = [];
-
-    // Process in batches
-    for (let i = 0; i < verifiedDomainIds.length; i += BATCH_SIZE) {
-      const batch = verifiedDomainIds.slice(i, i + BATCH_SIZE);
-
-      const batchResults = await Promise.all(
-        batch.map(async (id) => {
-          try {
-            const run = await start(domainExpiryWorkflow, [
-              { trackedDomainId: id },
-            ]);
-            // Handle concurrency conflicts gracefully (returns undefined if another worker handled it)
-            await withConcurrencyHandling(run.returnValue, {
-              trackedDomainId: id,
-              workflow: "domain-expiry",
-            });
-            return { id, success: true };
-          } catch (err) {
-            logger.error(
-              { trackedDomainId: id, err },
-              "Failed to run domain expiry workflow",
-            );
-            return { id, success: false };
-          }
-        }),
-      );
-
-      results.push(...batchResults);
-    }
-
-    const successful = results.filter((r) => r.success).length;
-    const failed = results.filter((r) => !r.success).length;
+    const ids = await getVerifiedTrackedDomainIds();
+    const results = await Promise.allSettled(
+      ids.map((id) => start(domainExpiryWorkflow, [{ trackedDomainId: id }])),
+    );
+    const started = results.filter((r) => r.status === "fulfilled").length;
 
     logger.info(
-      { scheduled: verifiedDomainIds.length, successful, failed },
+      { started, total: ids.length },
       "Check domain expiry completed",
     );
-
-    return NextResponse.json({
-      scheduled: verifiedDomainIds.length,
-      successful,
-      failed,
-    });
+    return NextResponse.json({ started });
   } catch (err) {
     logger.error({ err }, "Check domain expiry failed");
     return NextResponse.json(

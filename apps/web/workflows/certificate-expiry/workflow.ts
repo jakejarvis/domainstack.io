@@ -1,6 +1,12 @@
-import { differenceInDays, format } from "date-fns";
 import { FatalError } from "workflow";
 import type { NotificationType } from "@/lib/constants/notifications";
+import {
+  calculateDaysRemainingStep,
+  checkAlreadySentStep,
+  checkExpiryPreferencesStep,
+  getThresholdNotificationType,
+  updateNotificationEmailIdStep,
+} from "@/workflows/shared/notifications";
 
 export interface CertificateExpiryWorkflowInput {
   trackedDomainId: string;
@@ -41,8 +47,7 @@ export async function certificateExpiryWorkflow(
     return { skipped: true, reason: "invalid_valid_to_date" };
   }
 
-  // Note: We get current time in a step to ensure deterministic replay
-  const daysRemaining = await calculateDaysRemaining(validTo);
+  const daysRemaining = await calculateDaysRemainingStep(validTo);
   const MAX_THRESHOLD_DAYS = 14;
 
   // Detect renewal: If certificate is renewed beyond our notification window
@@ -57,19 +62,30 @@ export async function certificateExpiryWorkflow(
   }
 
   // Step 3: Determine notification type
-  const notificationType = getCertificateExpiryNotificationType(daysRemaining);
+  const notificationType = getThresholdNotificationType(
+    daysRemaining,
+    CERTIFICATE_EXPIRY_THRESHOLDS,
+    "certificate_expiry",
+  );
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
 
   // Step 4: Check notification preferences
-  const prefs = await checkPreferences(cert.userId, cert.muted);
+  const prefs = await checkExpiryPreferencesStep(
+    cert.userId,
+    cert.muted,
+    "certificateExpiry",
+  );
   if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
     return { skipped: true, reason: "notifications_disabled" };
   }
 
   // Step 5: Check if already sent
-  const alreadySent = await checkAlreadySent(trackedDomainId, notificationType);
+  const alreadySent = await checkAlreadySentStep(
+    trackedDomainId,
+    notificationType,
+  );
   if (alreadySent) {
     return { skipped: true, reason: "already_sent" };
   }
@@ -100,7 +116,7 @@ export async function certificateExpiryWorkflow(
     });
 
     // Step 8: Update notification with email ID
-    await updateNotificationWithEmailId(notificationId, emailId);
+    await updateNotificationEmailIdStep(notificationId, emailId);
   }
 
   return { skipped: false, sent: true };
@@ -108,20 +124,6 @@ export async function certificateExpiryWorkflow(
 
 // Certificate expiry thresholds (days before expiration)
 const CERTIFICATE_EXPIRY_THRESHOLDS = [14, 7, 3, 1] as const;
-const SORTED_THRESHOLDS = [...CERTIFICATE_EXPIRY_THRESHOLDS].sort(
-  (a, b) => a - b,
-);
-
-function getCertificateExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
-  for (const threshold of SORTED_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return `certificate_expiry_${threshold}d` as NotificationType;
-    }
-  }
-  return null;
-}
 
 interface CertificateData {
   userId: string;
@@ -145,14 +147,6 @@ async function fetchCertificate(
   return await getEarliestCertificate(trackedDomainId);
 }
 
-async function calculateDaysRemaining(validTo: Date): Promise<number> {
-  "use step";
-
-  // Getting current time inside a step ensures deterministic replay
-  const now = new Date();
-  return differenceInDays(validTo, now);
-}
-
 async function clearRenewedNotifications(
   trackedDomainId: string,
 ): Promise<number> {
@@ -163,43 +157,6 @@ async function clearRenewedNotifications(
   );
 
   return await clearCertificateExpiryNotifications(trackedDomainId);
-}
-
-async function checkPreferences(
-  userId: string,
-  muted: boolean,
-): Promise<{ shouldSendEmail: boolean; shouldSendInApp: boolean }> {
-  "use step";
-
-  // Muted domains receive no notifications
-  if (muted) {
-    return { shouldSendEmail: false, shouldSendInApp: false };
-  }
-
-  const { getOrCreateUserNotificationPreferences } = await import(
-    "@/lib/db/repos/user-notification-preferences"
-  );
-
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
-
-  // Use global preferences
-  return {
-    shouldSendEmail: globalPrefs.certificateExpiry.email,
-    shouldSendInApp: globalPrefs.certificateExpiry.inApp,
-  };
-}
-
-async function checkAlreadySent(
-  trackedDomainId: string,
-  notificationType: NotificationType,
-): Promise<boolean> {
-  "use step";
-
-  const { hasRecentNotification } = await import(
-    "@/lib/db/repos/notifications"
-  );
-
-  return await hasRecentNotification(trackedDomainId, notificationType);
 }
 
 async function createNotificationRecord(params: {
@@ -215,6 +172,7 @@ async function createNotificationRecord(params: {
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
+  const { format } = await import("date-fns");
   const { createNotification } = await import("@/lib/db/repos/notifications");
 
   const {
@@ -267,6 +225,7 @@ async function sendCertificateExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
+  const { format } = await import("date-fns");
   const { default: CertificateExpiryEmail } = await import(
     "@/emails/certificate-expiry"
   );
@@ -295,17 +254,4 @@ async function sendCertificateExpiryEmail(params: {
   });
 
   return { emailId: result.emailId };
-}
-
-async function updateNotificationWithEmailId(
-  notificationId: string,
-  emailId: string,
-): Promise<void> {
-  "use step";
-
-  const { updateNotificationResendId } = await import(
-    "@/lib/db/repos/notifications"
-  );
-
-  await updateNotificationResendId(notificationId, emailId);
 }

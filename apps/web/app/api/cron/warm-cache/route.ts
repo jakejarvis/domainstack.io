@@ -10,7 +10,12 @@ import { getCachedHosting } from "@/lib/db/repos/hosting";
 import { getCachedRegistration } from "@/lib/db/repos/registrations";
 import { getCachedSeo } from "@/lib/db/repos/seo";
 import { createLogger } from "@/lib/logger/server";
-import { sectionRevalidateWorkflow } from "@/workflows/section-revalidate";
+import { certificatesWorkflow } from "@/workflows/certificates";
+import { dnsWorkflow } from "@/workflows/dns";
+import { headersWorkflow } from "@/workflows/headers";
+import { hostingWorkflow } from "@/workflows/hosting";
+import { registrationWorkflow } from "@/workflows/registration";
+import { seoWorkflow } from "@/workflows/seo";
 
 /** All section types */
 const ALL_SECTIONS = Object.keys(sections) as Section[];
@@ -35,6 +40,22 @@ const sectionCacheGetters: Record<
   certificates: getCachedCertificates,
   seo: getCachedSeo,
   registration: getCachedRegistration,
+};
+
+/**
+ * Lookup map from section to its workflow function.
+ * Uses the purpose-built workflows directly for single source of truth.
+ */
+const sectionWorkflows: Record<
+  Section,
+  (input: { domain: string }) => Promise<unknown>
+> = {
+  dns: dnsWorkflow,
+  headers: headersWorkflow,
+  hosting: hostingWorkflow,
+  certificates: certificatesWorkflow,
+  seo: seoWorkflow,
+  registration: registrationWorkflow,
 };
 
 /**
@@ -83,7 +104,6 @@ async function getStaleSections(domain: string): Promise<Section[]> {
  * stays stale until next user access.
  */
 export async function GET(request: Request) {
-  // Verify the request is from Vercel Cron
   if (
     request.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`
   ) {
@@ -92,8 +112,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    logger.info("Starting warm-cache cron job");
-
     // Get domains accessed in the last 24 hours
     const recentDomains = await getRecentlyAccessedDomains(LOOKBACK_HOURS);
 
@@ -104,11 +122,6 @@ export async function GET(request: Request) {
         sectionsStarted: 0,
       });
     }
-
-    logger.info(
-      { count: recentDomains.length },
-      "Found recently accessed domains",
-    );
 
     // Collect all stale sections across all domains
     const jobs: { domain: string; section: Section }[] = [];
@@ -144,7 +157,7 @@ export async function GET(request: Request) {
     await Promise.all(
       jobs.map(async ({ domain, section }) => {
         try {
-          await start(sectionRevalidateWorkflow, [{ domain, section }]);
+          await start(sectionWorkflows[section], [{ domain }]);
           sectionsStarted++;
         } catch (err) {
           // Log but don't fail the cron - other sections may succeed

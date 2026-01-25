@@ -1,6 +1,12 @@
-import { differenceInDays, format } from "date-fns";
 import { FatalError } from "workflow";
 import type { NotificationType } from "@/lib/constants/notifications";
+import {
+  calculateDaysRemainingStep,
+  checkAlreadySentStep,
+  checkExpiryPreferencesStep,
+  getThresholdNotificationType,
+  updateNotificationEmailIdStep,
+} from "@/workflows/shared/notifications";
 
 export interface DomainExpiryWorkflowInput {
   trackedDomainId: string;
@@ -35,8 +41,7 @@ export async function domainExpiryWorkflow(
   }
 
   // Step 2: Calculate days remaining and check for renewal
-  // Note: We get current time in a step to ensure deterministic replay
-  const daysRemaining = await calculateDaysRemaining(domain.expirationDate);
+  const daysRemaining = await calculateDaysRemainingStep(domain.expirationDate);
   const MAX_THRESHOLD_DAYS = 30;
 
   // Detect renewal: If expiration is now beyond our notification window,
@@ -52,19 +57,30 @@ export async function domainExpiryWorkflow(
   }
 
   // Step 3: Determine notification type
-  const notificationType = getDomainExpiryNotificationType(daysRemaining);
+  const notificationType = getThresholdNotificationType(
+    daysRemaining,
+    DOMAIN_EXPIRY_THRESHOLDS,
+    "domain_expiry",
+  );
   if (!notificationType) {
     return { skipped: true, reason: "no_threshold_met" };
   }
 
   // Step 4: Check notification preferences
-  const prefs = await checkPreferences(domain.userId, domain.muted);
+  const prefs = await checkExpiryPreferencesStep(
+    domain.userId,
+    domain.muted,
+    "domainExpiry",
+  );
   if (!prefs.shouldSendEmail && !prefs.shouldSendInApp) {
     return { skipped: true, reason: "notifications_disabled" };
   }
 
   // Step 5: Check if already sent
-  const alreadySent = await checkAlreadySent(trackedDomainId, notificationType);
+  const alreadySent = await checkAlreadySentStep(
+    trackedDomainId,
+    notificationType,
+  );
   if (alreadySent) {
     return { skipped: true, reason: "already_sent" };
   }
@@ -96,7 +112,7 @@ export async function domainExpiryWorkflow(
     });
 
     // Step 8: Update notification with email ID
-    await updateNotificationWithEmailId(notificationId, emailId);
+    await updateNotificationEmailIdStep(notificationId, emailId);
   }
 
   return { skipped: false, sent: true };
@@ -104,18 +120,6 @@ export async function domainExpiryWorkflow(
 
 // Domain expiry thresholds (days before expiration)
 const DOMAIN_EXPIRY_THRESHOLDS = [30, 14, 7, 1] as const;
-const SORTED_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort((a, b) => a - b);
-
-function getDomainExpiryNotificationType(
-  daysRemaining: number,
-): NotificationType | null {
-  for (const threshold of SORTED_THRESHOLDS) {
-    if (daysRemaining <= threshold) {
-      return `domain_expiry_${threshold}d` as NotificationType;
-    }
-  }
-  return null;
-}
 
 interface DomainData {
   userId: string;
@@ -139,21 +143,6 @@ async function fetchDomain(
   return await getTrackedDomainForNotification(trackedDomainId);
 }
 
-async function calculateDaysRemaining(
-  expirationDate: Date | string,
-): Promise<number> {
-  "use step";
-
-  // Getting current time inside a step ensures deterministic replay
-  const now = new Date();
-  const expDate =
-    typeof expirationDate === "string"
-      ? new Date(expirationDate)
-      : expirationDate;
-
-  return differenceInDays(expDate, now);
-}
-
 async function clearRenewedNotifications(
   trackedDomainId: string,
 ): Promise<number> {
@@ -164,43 +153,6 @@ async function clearRenewedNotifications(
   );
 
   return await clearDomainExpiryNotifications(trackedDomainId);
-}
-
-async function checkPreferences(
-  userId: string,
-  muted: boolean,
-): Promise<{ shouldSendEmail: boolean; shouldSendInApp: boolean }> {
-  "use step";
-
-  // Muted domains receive no notifications
-  if (muted) {
-    return { shouldSendEmail: false, shouldSendInApp: false };
-  }
-
-  const { getOrCreateUserNotificationPreferences } = await import(
-    "@/lib/db/repos/user-notification-preferences"
-  );
-
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
-
-  // Use global preferences
-  return {
-    shouldSendEmail: globalPrefs.domainExpiry.email,
-    shouldSendInApp: globalPrefs.domainExpiry.inApp,
-  };
-}
-
-async function checkAlreadySent(
-  trackedDomainId: string,
-  notificationType: NotificationType,
-): Promise<boolean> {
-  "use step";
-
-  const { hasRecentNotification } = await import(
-    "@/lib/db/repos/notifications"
-  );
-
-  return await hasRecentNotification(trackedDomainId, notificationType);
 }
 
 async function createNotificationRecord(params: {
@@ -216,6 +168,7 @@ async function createNotificationRecord(params: {
 }): Promise<{ notificationId: string; title: string; subject: string }> {
   "use step";
 
+  const { format } = await import("date-fns");
   const { createNotification } = await import("@/lib/db/repos/notifications");
 
   const {
@@ -268,6 +221,7 @@ async function sendDomainExpiryEmail(params: {
 }): Promise<{ emailId: string }> {
   "use step";
 
+  const { format } = await import("date-fns");
   const { default: DomainExpiryEmail } = await import("@/emails/domain-expiry");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
@@ -294,17 +248,4 @@ async function sendDomainExpiryEmail(params: {
   });
 
   return { emailId: result.emailId };
-}
-
-async function updateNotificationWithEmailId(
-  notificationId: string,
-  emailId: string,
-): Promise<void> {
-  "use step";
-
-  const { updateNotificationResendId } = await import(
-    "@/lib/db/repos/notifications"
-  );
-
-  await updateNotificationResendId(notificationId, emailId);
 }

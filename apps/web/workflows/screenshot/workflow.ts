@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { FatalError } from "workflow";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 
@@ -141,7 +140,7 @@ async function captureScreenshot(domain: string): Promise<CaptureResult> {
     );
   } finally {
     // Close page in background to avoid blocking the workflow
-    after(() => page?.close());
+    void page?.close();
   }
 }
 

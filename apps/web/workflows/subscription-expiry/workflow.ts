@@ -1,5 +1,3 @@
-import { differenceInDays, format } from "date-fns";
-
 export interface SubscriptionExpiryWorkflowInput {
   userId: string;
 }
@@ -137,6 +135,8 @@ async function fetchUserSubscription(
 async function calculateDaysRemaining(endsAt: Date): Promise<number> {
   "use step";
 
+  const { differenceInDays } = await import("date-fns");
+
   // Getting current time inside a step ensures deterministic replay
   const now = new Date();
   return differenceInDays(endsAt, now);
@@ -175,6 +175,7 @@ async function sendSubscriptionExpiryNotification(params: {
 }): Promise<boolean> {
   "use step";
 
+  const { format } = await import("date-fns");
   const { default: SubscriptionCancelingEmail } = await import(
     "@/emails/subscription-canceling"
   );

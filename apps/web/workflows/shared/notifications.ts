@@ -2,7 +2,7 @@
  * Shared notification workflow steps.
  *
  * These steps handle notification channel determination, provider name resolution,
- * and notification sending for monitoring workflows.
+ * and notification sending for monitoring and expiry workflows.
  */
 
 import type { NotificationType } from "@/lib/constants/notifications";
@@ -67,6 +67,111 @@ export async function resolveProviderNamesStep(
   const { getProviderNames } = await import("@/lib/db/repos/providers");
 
   return await getProviderNames(providerIds);
+}
+
+// ============================================================================
+// Expiry notification helpers
+// ============================================================================
+
+/**
+ * Get the notification type for a given days remaining value and thresholds.
+ *
+ * Finds the smallest threshold that the days remaining falls under.
+ */
+export function getThresholdNotificationType(
+  daysRemaining: number,
+  thresholds: readonly number[],
+  prefix: "domain_expiry" | "certificate_expiry",
+): NotificationType | null {
+  const sorted = [...thresholds].sort((a, b) => a - b);
+  for (const threshold of sorted) {
+    if (daysRemaining <= threshold) {
+      return `${prefix}_${threshold}d` as NotificationType;
+    }
+  }
+  return null;
+}
+
+/**
+ * Step: Calculate days remaining until expiration.
+ *
+ * Getting current time inside a step ensures deterministic replay.
+ */
+export async function calculateDaysRemainingStep(
+  expirationDate: Date | string,
+): Promise<number> {
+  "use step";
+
+  const { differenceInDays } = await import("date-fns");
+
+  const now = new Date();
+  const expDate =
+    typeof expirationDate === "string"
+      ? new Date(expirationDate)
+      : expirationDate;
+
+  return differenceInDays(expDate, now);
+}
+
+/**
+ * Step: Check user notification preferences for expiry notifications.
+ *
+ * Respects the muted flag on tracked domains.
+ */
+export async function checkExpiryPreferencesStep(
+  userId: string,
+  muted: boolean,
+  preferenceKey: "domainExpiry" | "certificateExpiry",
+): Promise<NotificationChannels> {
+  "use step";
+
+  // Muted domains receive no notifications
+  if (muted) {
+    return { shouldSendEmail: false, shouldSendInApp: false };
+  }
+
+  const { getOrCreateUserNotificationPreferences } = await import(
+    "@/lib/db/repos/user-notification-preferences"
+  );
+
+  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+
+  return {
+    shouldSendEmail: globalPrefs[preferenceKey].email,
+    shouldSendInApp: globalPrefs[preferenceKey].inApp,
+  };
+}
+
+/**
+ * Step: Check if a notification was already sent for this domain and type.
+ */
+export async function checkAlreadySentStep(
+  trackedDomainId: string,
+  notificationType: NotificationType,
+): Promise<boolean> {
+  "use step";
+
+  const { hasRecentNotification } = await import(
+    "@/lib/db/repos/notifications"
+  );
+
+  return await hasRecentNotification(trackedDomainId, notificationType);
+}
+
+/**
+ * Step: Link a Resend email ID to an existing notification record.
+ */
+export async function updateNotificationEmailIdStep(
+  notificationId: string,
+  emailId: string,
+): Promise<void> {
+  "use step";
+
+  const { updateNotificationResendId } = await import(
+    "@/lib/db/repos/notifications"
+  );
+
+  await updateNotificationResendId(notificationId, emailId);
 }
 
 // ============================================================================
