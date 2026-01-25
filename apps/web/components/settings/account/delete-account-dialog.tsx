@@ -133,8 +133,8 @@ export function DeleteAccountDialog({
         {isSuccess ? (
           <>
             <AlertDialogHeader>
-              <AlertDialogMedia className="bg-green-100 dark:bg-green-900/30">
-                <CheckIcon className="text-green-600 dark:text-green-400" />
+              <AlertDialogMedia variant="success">
+                <CheckIcon />
               </AlertDialogMedia>
               <AlertDialogTitle>Check your email</AlertDialogTitle>
               <AlertDialogDescription>
@@ -143,10 +143,7 @@ export function DeleteAccountDialog({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center">
-              <AlertDialogCancel
-                onClick={() => handleOpenChange(false)}
-                className="cursor-pointer"
-              >
+              <AlertDialogCancel onClick={() => handleOpenChange(false)}>
                 Close
               </AlertDialogCancel>
             </AlertDialogFooter>
@@ -191,17 +188,11 @@ export function DeleteAccountDialog({
             )}
 
             <AlertDialogFooter>
-              <AlertDialogCancel
-                disabled={isLoading}
-                className="cursor-pointer"
-              >
-                Cancel
-              </AlertDialogCancel>
+              <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={isLoading}
-                className="cursor-pointer"
               >
                 {isLoading ? (
                   <Spinner />

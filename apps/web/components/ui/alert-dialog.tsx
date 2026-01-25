@@ -73,7 +73,7 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:place-items-start sm:text-left sm:has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        "grid grid-rows-[auto_1fr] place-items-center space-y-2 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 has-data-[slot=alert-dialog-media]:space-y-0 sm:place-items-start sm:text-left sm:has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
         className,
       )}
       {...props}
@@ -100,15 +100,15 @@ function AlertDialogFooter({
 
 function AlertDialogMedia({
   className,
-  size = "lg",
-  color = "destructive",
+  size = "default",
+  variant = "destructive",
   ...props
-}: Omit<IconProps, "shape">) {
+}: IconProps) {
   return (
     <Icon
       data-slot="alert-dialog-media"
       size={size}
-      color={color}
+      variant={variant}
       className={cn("mb-2 sm:row-span-2", className)}
       {...props}
     />
@@ -149,11 +149,15 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  variant = "default",
+  size = "sm",
   ...props
 }: React.ComponentProps<typeof Button>) {
   return (
     <Button
       data-slot="alert-dialog-action"
+      variant={variant}
+      size={size}
       className={cn(className)}
       {...props}
     />
@@ -163,7 +167,7 @@ function AlertDialogAction({
 function AlertDialogCancel({
   className,
   variant = "outline",
-  size = "default",
+  size = "sm",
   ...props
 }: AlertDialogPrimitive.Close.Props &
   Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {

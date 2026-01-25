@@ -125,7 +125,7 @@ function DialogFooter({
 
 function DialogMedia({
   className,
-  size = "lg",
+  size = "default",
   variant = "default",
   ...props
 }: IconProps) {

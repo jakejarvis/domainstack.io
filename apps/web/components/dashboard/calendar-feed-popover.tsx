@@ -2,7 +2,6 @@
 
 import {
   ArrowClockwiseIcon,
-  CalendarIcon,
   RssSimpleIcon,
   WarningIcon,
   XIcon,
@@ -24,7 +23,6 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -83,43 +81,32 @@ export function CalendarFeedPopover() {
         }}
         collisionPadding={8}
       >
-        <div className="flex flex-col">
-          <PopoverHeader className="px-4 pt-5 pb-3">
-            <PopoverTitle className="flex items-center gap-2">
-              <CalendarIcon className="size-4" />
-              Calendar Feed
-            </PopoverTitle>
-            <PopoverDescription className="mt-0.5">
-              Subscribe to domain expiration dates in your favorite calendar
-              app.
-            </PopoverDescription>
+        <PopoverHeader className="border-border/60 border-b px-4 pt-4 pb-3">
+          <PopoverTitle>Calendar Feed</PopoverTitle>
+          <PopoverDescription>
+            Subscribe to domain expiration dates in your favorite calendar app.
+          </PopoverDescription>
 
-            <Button
-              variant="ghost"
-              className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground"
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              <XIcon />
-              <span className="sr-only">Close</span>
-            </Button>
-          </PopoverHeader>
-
-          <Separator className="bg-muted" />
-
-          <ErrorBoundary
-            FallbackComponent={PopoverErrorFallback}
-            onReset={reset}
+          <Button
+            variant="ghost"
+            className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground"
+            onClick={() => setOpen(false)}
+            aria-label="Close"
           >
-            <Suspense
-              fallback={
-                <CalendarInstructionsSkeleton className="bg-background/50 p-4" />
-              }
-            >
-              <CalendarInstructions className="bg-background/50 p-4" />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </Button>
+        </PopoverHeader>
+
+        <ErrorBoundary FallbackComponent={PopoverErrorFallback} onReset={reset}>
+          <Suspense
+            fallback={
+              <CalendarInstructionsSkeleton className="bg-background/50 p-4" />
+            }
+          >
+            <CalendarInstructions className="bg-background/50 p-4" />
+          </Suspense>
+        </ErrorBoundary>
       </PopoverContent>
     </Popover>
   );

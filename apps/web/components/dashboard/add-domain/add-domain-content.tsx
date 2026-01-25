@@ -269,8 +269,8 @@ export function AddDomainContent({
 
   return (
     <div className={className}>
-      <div className="space-y-1.5 py-1">
-        <h2 className="font-semibold text-lg leading-none tracking-tight">
+      <div className="space-y-1">
+        <h2 className="font-semibold text-base">
           {isResuming ? "Complete Verification" : "Add Domain"}
         </h2>
         <p className="text-muted-foreground text-sm">

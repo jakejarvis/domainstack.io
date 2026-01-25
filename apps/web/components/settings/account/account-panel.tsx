@@ -213,15 +213,12 @@ export function AccountPanel() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() =>
                 unlinkingProvider && handleUnlink(unlinkingProvider)
               }
-              className="cursor-pointer"
             >
               Unlink
             </AlertDialogAction>

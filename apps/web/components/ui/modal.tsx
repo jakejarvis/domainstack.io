@@ -92,7 +92,7 @@ function ModalHeader({
     <div
       data-slot="modal-header"
       className={cn(
-        "flex flex-col gap-2 border-muted border-b bg-card p-5",
+        "flex flex-col gap-1 border-muted border-b bg-card p-5",
         className,
       )}
       {...props}
@@ -121,7 +121,7 @@ function ModalTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="modal-title"
-      className={cn("font-semibold text-lg leading-none", className)}
+      className={cn("font-semibold text-base", className)}
       {...props}
     />
   );
