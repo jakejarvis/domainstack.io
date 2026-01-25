@@ -106,18 +106,17 @@ export function DashboardGridCard({
   return (
     <Card
       className={cn(
-        "relative flex h-full flex-col overflow-hidden rounded-xl border border-black/15 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15",
+        "relative flex h-full flex-col overflow-hidden rounded-xl border border-black/15 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/15",
         className,
       )}
-      data-accent={accent}
     >
       {/* Accent glow */}
       <div
         aria-hidden
-        className={cn(
-          "pointer-events-none absolute -inset-x-8 -top-8 h-24 opacity-30 blur-2xl",
-          "accent-glow",
-        )}
+        className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
+        style={
+          { "--glow-color": `var(--accent-${accent})` } as React.CSSProperties
+        }
       />
 
       <CardHeader className="relative pt-6 pb-2">
@@ -139,7 +138,7 @@ export function DashboardGridCard({
                 onCheckedChange={onToggleSelect}
                 aria-label={`Select ${domainName}`}
                 className={cn(
-                  "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer",
+                  "absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2",
                   isSelected ? "flex" : "hidden group-hover:flex",
                 )}
               />
@@ -211,10 +210,7 @@ export function DashboardGridCard({
               />
               <DropdownMenuSeparator />
               {verified && (
-                <DropdownMenuItem
-                  onClick={onToggleMuted}
-                  className="cursor-pointer"
-                >
+                <DropdownMenuItem onClick={onToggleMuted}>
                   {muted ? (
                     <>
                       <BellIcon />
@@ -228,11 +224,11 @@ export function DashboardGridCard({
                   )}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={onArchive} className="cursor-pointer">
+              <DropdownMenuItem onClick={onArchive}>
                 <ArchiveIcon />
                 Archive
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onRemove} className="cursor-pointer">
+              <DropdownMenuItem onClick={onRemove}>
                 <TrashIcon className="text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
@@ -444,7 +440,7 @@ function InfoRow({
   );
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border/65 bg-background/40 px-3 py-2 backdrop-blur-lg dark:border-border/50">
+    <div className="flex items-center justify-between gap-3 rounded-xl border bg-background/40 px-3 py-2 backdrop-blur-lg">
       <span className="flex shrink-0 items-center text-[10px] text-foreground/75 uppercase leading-[1.2] tracking-[0.08em] dark:text-foreground/80">
         {label}
       </span>

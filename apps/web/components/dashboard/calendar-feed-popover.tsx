@@ -2,7 +2,7 @@
 
 import {
   ArrowClockwiseIcon,
-  RssSimpleIcon,
+  CalendarBlankIcon,
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
@@ -61,8 +61,8 @@ export function CalendarFeedPopover() {
           render={
             <PopoverTrigger
               render={
-                <Button variant="outline">
-                  <RssSimpleIcon />
+                <Button variant="outline" size="icon">
+                  <CalendarBlankIcon />
                   <span className="sr-only">Subscribe</span>
                 </Button>
               }
@@ -81,10 +81,10 @@ export function CalendarFeedPopover() {
         }}
         collisionPadding={8}
       >
-        <PopoverHeader className="border-border/60 border-b bg-card px-4 pt-4 pb-3">
+        <PopoverHeader className="border-border border-b bg-card/60 px-4 pt-3 pb-2.5">
           <PopoverTitle>Calendar Feed</PopoverTitle>
-          <PopoverDescription>
-            Subscribe to domain expiration dates in your favorite calendar app.
+          <PopoverDescription className="text-[13px] leading-normal">
+            Subscribe to domain expiration dates in your favorite calendar app
           </PopoverDescription>
 
           <Button
@@ -99,12 +99,8 @@ export function CalendarFeedPopover() {
         </PopoverHeader>
 
         <ErrorBoundary FallbackComponent={PopoverErrorFallback} onReset={reset}>
-          <Suspense
-            fallback={
-              <CalendarInstructionsSkeleton className="bg-background/50 p-4" />
-            }
-          >
-            <CalendarInstructions className="bg-background/50 p-4" />
+          <Suspense fallback={<CalendarInstructionsSkeleton className="p-4" />}>
+            <CalendarInstructions className="bg-popover/10 p-4" />
           </Suspense>
         </ErrorBoundary>
       </PopoverContent>

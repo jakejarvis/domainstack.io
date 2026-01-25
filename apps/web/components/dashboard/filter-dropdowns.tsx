@@ -124,7 +124,6 @@ export function FilterDropdowns({
         selected={health}
         onSelectionChange={onHealthChange}
         popoverWidth="w-40"
-        className="cursor-pointer"
       />
       {availableTlds.length > 0 && (
         <MultiSelect
@@ -135,7 +134,6 @@ export function FilterDropdowns({
           onSelectionChange={onTldsChange}
           searchable
           popoverWidth="w-40"
-          className="cursor-pointer"
         />
       )}
       {providerSections.length > 0 && (
@@ -146,7 +144,6 @@ export function FilterDropdowns({
           selected={providers}
           onSelectionChange={onProvidersChange}
           searchable
-          className="cursor-pointer"
           renderOption={(
             option: MultiSelectOption<string> & {
               /** Optional domain for provider logo rendering */

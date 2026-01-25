@@ -50,7 +50,6 @@ export function UpgradeRow() {
         {/* Right side - CTA */}
         <UpgradeButton
           variant="outline"
-          size="lg"
           className="w-full shrink-0 md:w-auto"
           icon={RocketLaunchIcon}
         >

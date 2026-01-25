@@ -58,33 +58,37 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
+  side = "bottom",
   sideOffset = 4,
   align = "start",
   alignOffset = 0,
+  alignItemWithTrigger = true,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
     SelectPrimitive.Positioner.Props,
-    "align" | "alignOffset" | "sideOffset"
+    "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
+        side={side}
+        sideOffset={sideOffset}
         align={align}
         alignOffset={alignOffset}
-        sideOffset={sideOffset}
-        // z-index must be on the Positioner (the positioned element), not just the Popup.
-        className="z-50 outline-none"
+        alignItemWithTrigger={alignItemWithTrigger}
+        className="isolate z-50"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
+          data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "relative min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden",
-            "max-h-[var(--available-height)] origin-[var(--transform-origin)]",
-            "min-w-[var(--anchor-width)]",
+            "relative isolate min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden ring-1 ring-foreground/10",
+            "max-h-[var(--available-height)] w-[var(--anchor-width)] origin-[var(--transform-origin)]",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
-            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2",
+            "data-[align-trigger=true]:animate-none",
             className,
           )}
           {...props}
@@ -122,7 +126,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden",
+        "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -163,7 +167,7 @@ function SelectScrollUpButton({
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1",
+        "flex cursor-pointer items-center justify-center py-1",
         className,
       )}
       {...props}
@@ -181,7 +185,7 @@ function SelectScrollDownButton({
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
       className={cn(
-        "flex cursor-default items-center justify-center py-1",
+        "flex cursor-pointer items-center justify-center py-1",
         className,
       )}
       {...props}

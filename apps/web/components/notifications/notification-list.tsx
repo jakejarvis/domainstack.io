@@ -40,7 +40,7 @@ export function NotificationList({
   return (
     <ScrollArea
       scrollRef={scrollAreaRef}
-      className="min-h-0 flex-1 bg-background"
+      className="min-h-0 flex-1 bg-popover/10"
     >
       {isLoading ? (
         <NotificationListSkeleton />

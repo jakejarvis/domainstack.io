@@ -194,7 +194,7 @@ export function NotificationsPopover() {
         </TooltipContent>
       </Tooltip>
       <PopoverContent
-        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-card p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
+        className="max-sm:!left-0 max-sm:!right-0 max-sm:!mx-auto max-sm:!translate-x-0 overflow-hidden bg-background p-0 max-sm:w-[calc(100vw-1rem)] sm:w-[400px]"
         align="end"
         side="bottom"
         collisionAvoidance={{
@@ -205,9 +205,9 @@ export function NotificationsPopover() {
       >
         <div className="flex max-h-[calc(min(100dvh-6rem,560px))] flex-col">
           {/* Header */}
-          <div className="shrink-0 border-border/50 border-b">
+          <div className="shrink-0 border-border border-b bg-card/60">
             {/* Title row */}
-            <div className="flex items-center justify-between pt-3 pr-4 pb-1 pl-5">
+            <div className="flex items-center justify-between pt-2 pr-4 pb-1 pl-4">
               <h4 className="font-semibold text-[15px]">Notifications</h4>
 
               {/* Header actions */}
@@ -238,7 +238,7 @@ export function NotificationsPopover() {
             </div>
 
             {/* Tabs */}
-            <div className="pl-2.5">
+            <div className="pl-1.5">
               <Tabs
                 value={view}
                 onValueChange={(v) => {

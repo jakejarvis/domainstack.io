@@ -10,7 +10,7 @@ export default function LandingLoading() {
           <span className="whitespace-nowrap text-foreground/90">
             Inspect any domain&rsquo;s
           </span>
-          <span className="ml-2.5 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-border/60 backdrop-blur supports-[backdrop-filter]:backdrop-blur-md sm:rounded-xl sm:px-3 sm:py-1">
+          <span className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 sm:rounded-md sm:px-3 sm:py-1">
             <span className="relative flex h-[1.15em] w-full items-center overflow-hidden whitespace-nowrap">
               <span className="inline-block">registration</span>
             </span>

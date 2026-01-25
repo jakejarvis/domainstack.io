@@ -184,7 +184,7 @@ export function ChatClient({
       <Conversation
         stickyInstance={stickyInstance}
         className={cn(
-          "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
+          "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
           conversationClassName,
         )}
       >
@@ -255,7 +255,7 @@ export function ChatClient({
 
       <div
         className={cn(
-          "!pt-3 shrink-0 space-y-3 border-border/60 border-t",
+          "!pt-3 shrink-0 space-y-3 border-border border-t bg-card/60",
           inputClassName,
         )}
       >
@@ -265,7 +265,6 @@ export function ChatClient({
               key={suggestion}
               suggestion={suggestion}
               onClick={handleSuggestionClick}
-              className="text-[13px]"
             />
           ))}
         </Suggestions>

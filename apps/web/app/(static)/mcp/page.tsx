@@ -414,20 +414,20 @@ export default function McpPage() {
       <section id="setup">
         <h2>Setup</h2>
 
-        <Accordion className="not-prose w-full rounded-lg border border-border/50 bg-muted/20">
+        <Accordion className="not-prose w-full rounded-lg border bg-muted/20">
           {setupItems.map((item) => (
             <AccordionItem
               key={item.id}
               value={item.id}
-              className="border-border/30 border-b px-4 last:border-none"
+              className="border-border border-b px-4 last:border-none"
             >
-              <AccordionTrigger className="cursor-pointer text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+              <AccordionTrigger className="text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
                 <span className="flex items-center gap-2.5">
                   {item.icon}
                   {item.label}
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 text-foreground/90 leading-relaxed">
+              <AccordionContent className="pt-1 text-foreground/90">
                 {item.content}
                 <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
                   <BookOpenTextIcon className="mr-[1px] size-3" />
@@ -458,7 +458,7 @@ export default function McpPage() {
           {tools.map((tool) => (
             <div
               key={tool.name}
-              className="not-prose space-y-3 rounded-lg border border-border/50 bg-muted/20 p-4"
+              className="not-prose space-y-3 rounded-lg border bg-muted/20 p-4"
             >
               <h3 className="font-mono text-[15px]">{tool.name}</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">

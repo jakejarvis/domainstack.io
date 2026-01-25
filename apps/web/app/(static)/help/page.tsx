@@ -22,14 +22,17 @@ const faqSections = [
       {
         question: "What is Domainstack?",
         answer: (
-          <p>
-            Domainstack is a domain intelligence platform that lets you look up
-            detailed information about any domain and track domains you own.
-            Enter any domain name to instantly see registration details, DNS
-            records, SSL certificates, hosting information, and more. Sign up
-            for free to begin receiving notifications about critical changes and
-            upcoming expirations for your domains.
-          </p>
+          <>
+            <p>
+              Domainstack is a domain intelligence platform that lets you look
+              up detailed information about any domain — registration details,
+              DNS records, SSL certificates, hosting information, and more.
+            </p>
+            <p>
+              Sign up for free to track domains you own and receive
+              notifications about critical changes and upcoming expirations.
+            </p>
+          </>
         ),
       },
       {
@@ -89,13 +92,16 @@ const faqSections = [
       {
         question: "Where does the domain data come from?",
         answer: (
-          <p>
-            All domain data is gathered from publicly available sources. We
-            query RDAP and WHOIS servers for registration info, perform DNS
-            lookups against public resolvers, initiate TLS handshakes to inspect
-            certificates, and make HTTP requests to analyze headers and capture
-            screenshots. We don&apos;t access any private data.
-          </p>
+          <>
+            <p>All domain data comes from publicly available sources:</p>
+            <ul>
+              <li>RDAP and WHOIS servers for registration info</li>
+              <li>Public DNS resolvers for DNS records</li>
+              <li>TLS handshakes for certificate inspection</li>
+              <li>HTTP requests for headers and screenshots</li>
+            </ul>
+            <p>We don&apos;t access any private data.</p>
+          </>
         ),
       },
       {
@@ -129,13 +135,17 @@ const faqSections = [
       {
         question: "How do I track a domain?",
         answer: (
-          <p>
-            From your dashboard, click "Add Domain" and enter the domain name
-            you want to track. You&apos;ll need to verify ownership before
-            tracking becomes active. Once verified, we&apos;ll monitor the
-            domain and send you notifications about critical changes (like DNS
-            updates) and before it or its certificate expires.
-          </p>
+          <>
+            <p>
+              From your dashboard, click "Add Domain" and enter the domain name
+              you want to track. You&apos;ll need to verify ownership before
+              tracking becomes active.
+            </p>
+            <p>
+              Once verified, we&apos;ll monitor the domain and notify you about
+              critical changes and upcoming expirations.
+            </p>
+          </>
         ),
       },
       {
@@ -186,13 +196,17 @@ const faqSections = [
       {
         question: "What happens if my verification fails?",
         answer: (
-          <p>
-            If you&apos;ve already verified a domain but we can no longer detect
-            your verification record, you&apos;ll receive an email and have a
-            7&#8209;day grace period to fix it. If verification isn&apos;t
-            restored within that window, tracking will be revoked and
-            you&apos;ll need to re-verify.
-          </p>
+          <>
+            <p>
+              If you&apos;ve already verified a domain but we can no longer
+              detect your verification record, you&apos;ll receive an email and
+              have a 7&#8209;day grace period to fix it.
+            </p>
+            <p>
+              If verification isn&apos;t restored within that window, tracking
+              will be revoked and you&apos;ll need to re-verify.
+            </p>
+          </>
         ),
       },
       {
@@ -298,25 +312,34 @@ const faqSections = [
       {
         question: "What happens if I downgrade from Pro?",
         answer: (
-          <p>
-            If you cancel your Pro subscription, you&apos;ll keep Pro access
-            until the end of your billing period. After that, if you have more
-            than {PLAN_QUOTAS.free} active domains, the oldest ones will be
-            automatically archived to fit within the free tier limit. You can
-            manually choose which domains to archive before the downgrade takes
-            effect.
-          </p>
+          <>
+            <p>
+              If you cancel your Pro subscription, you&apos;ll keep Pro access
+              until the end of your billing period.
+            </p>
+            <p>
+              After that, if you have more than {PLAN_QUOTAS.free} active
+              domains, the oldest ones will be automatically archived to fit
+              within the free tier limit. You can manually choose which domains
+              to archive before the downgrade takes effect.
+            </p>
+          </>
         ),
       },
       {
         question: "Can I cancel my subscription anytime?",
         answer: (
-          <p>
-            Yes, you can cancel anytime from your dashboard settings.
-            You&apos;ll continue to have Pro access until the end of your
-            current billing period — we don&apos;t prorate or issue partial
-            refunds, but you won&apos;t be charged again.
-          </p>
+          <>
+            <p>
+              Yes, you can cancel anytime from your dashboard settings.
+              You&apos;ll continue to have Pro access until the end of your
+              current billing period.
+            </p>
+            <p>
+              We don&apos;t prorate or issue partial refunds, but you won&apos;t
+              be charged again.
+            </p>
+          </>
         ),
       },
     ],
@@ -327,13 +350,22 @@ const faqSections = [
       {
         question: "What data does Domainstack collect?",
         answer: (
-          <p>
-            We collect your account information (name and email via your chosen
-            login provider), the domains you choose to track, and basic usage
-            analytics. Domain data shown in reports is all publicly available
-            information — we don&apos;t access anything private. See our{" "}
-            <Link href="/privacy">Privacy Policy</Link> for full details.
-          </p>
+          <>
+            <p>We collect:</p>
+            <ul>
+              <li>
+                Your account information (name and email via your login
+                provider)
+              </li>
+              <li>The domains you choose to track</li>
+              <li>Basic usage analytics</li>
+            </ul>
+            <p>
+              Domain data shown in reports is all publicly available — we
+              don&apos;t access anything private. See our{" "}
+              <Link href="/privacy">Privacy Policy</Link> for full details.
+            </p>
+          </>
         ),
       },
       {
@@ -401,17 +433,17 @@ export default function HelpPage() {
       {faqSections.map((section) => (
         <section key={section.title}>
           <h2>{section.title}</h2>
-          <Accordion className="w-full rounded-lg border border-border/50 bg-muted/20">
+          <Accordion className="w-full rounded-lg border bg-muted/20">
             {section.items.map((item) => (
               <AccordionItem
                 key={item.question}
                 value={item.question}
-                className="border-border/30 border-b px-4 last:border-none [&>h3]:m-0"
+                className="border-border border-b px-4 last:border-none [&>h3]:m-0"
               >
-                <AccordionTrigger className="not-prose cursor-pointer text-left text-foreground tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+                <AccordionTrigger className="not-prose text-left text-foreground tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
                   {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="pt-1 leading-relaxed *:first:mt-1 *:last:mb-1">
+                <AccordionContent className="pt-1 text-foreground/90 *:first:mt-1 *:last:mb-1">
                   {item.answer}
                 </AccordionContent>
               </AccordionItem>

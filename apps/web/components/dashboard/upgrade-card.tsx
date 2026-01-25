@@ -28,7 +28,7 @@ export function UpgradeCard() {
       <CardContent className="relative flex h-full flex-1 flex-col items-center gap-6 p-6 text-center">
         <div className="flex h-full flex-1 flex-col items-center justify-center">
           {/* Icon */}
-          <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent-gold/5 dark:bg-white/5">
+          <div className="mb-4 flex size-14 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
             <ArrowCircleUpIcon className="size-7 text-accent-gold" />
           </div>
 

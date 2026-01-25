@@ -65,15 +65,12 @@ export function BookmarkletContent() {
 
       <Separator className="my-5 bg-border/80 dark:bg-border/50" />
 
-      <Accordion
-        multiple
-        className="w-full rounded-lg border border-border/50 bg-muted/20"
-      >
+      <Accordion multiple className="w-full rounded-lg border bg-muted/20">
         <AccordionItem
           value="apple-shortcut"
-          className="border-border/30 border-b px-4"
+          className="border-border border-b px-4"
         >
-          <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+          <AccordionTrigger className="text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
               <SiOpenlayers className="size-4" />
               <span className="font-semibold leading-none">Apple Shortcut</span>
@@ -114,7 +111,7 @@ export function BookmarkletContent() {
                     }
                   />
 
-                  <DialogContent className="max-h-[90vh] overflow-y-auto border-border/80 dark:border-border/50">
+                  <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader className="sr-only">
                       <DialogTitle>Shortcut Demo</DialogTitle>
                       <DialogDescription>
@@ -143,11 +140,8 @@ export function BookmarkletContent() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem
-          value="raycast"
-          className="border-border/30 border-b px-4"
-        >
-          <AccordionTrigger className="cursor-pointer text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+        <AccordionItem value="raycast" className="border-border border-b px-4">
+          <AccordionTrigger className="text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
               <SiRaycast className="size-4" />
               <span className="font-semibold leading-none">Raycast</span>

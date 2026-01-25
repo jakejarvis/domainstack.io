@@ -12,7 +12,6 @@ import {
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 
 interface ReportSectionProps {
   title: string;
@@ -53,17 +52,14 @@ export function ReportSection({
       // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
       className="scroll-mt-[calc(var(--section-nav-height,48px)+var(--scroll-padding,16px))] border-none md:scroll-mt-[calc(var(--header-height,72px)+var(--section-nav-height,48px)+var(--scroll-padding,16px))]"
     >
-      <Card
-        className="relative gap-0 overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
-        data-accent={accent}
-      >
+      <Card className="relative gap-0 overflow-hidden rounded-xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/10">
         {/* Accent glow */}
         <div
           aria-hidden
-          className={cn(
-            "pointer-events-none absolute -inset-x-8 -top-8 h-24 opacity-30 blur-2xl",
-            "accent-glow",
-          )}
+          className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
+          style={
+            { "--glow-color": `var(--accent-${accent})` } as React.CSSProperties
+          }
         />
         <div className="relative">
           <div className="p-5" id={headerId}>

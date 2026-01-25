@@ -79,7 +79,7 @@ export function CookiePrompt({
 
   return (
     <div
-      className={`fixed bottom-3 left-3 z-50 max-w-[260px] duration-200 ${
+      className={`fixed bottom-3 left-3 z-100 max-w-[260px] duration-200 ${
         isExiting
           ? "slide-out-to-bottom-8 animate-out"
           : "slide-in-from-bottom-8 animate-in"
@@ -88,9 +88,9 @@ export function CookiePrompt({
       <div
         role="dialog"
         aria-label="Cookie consent"
-        className="rounded-lg border border-border/50 bg-card/95 p-3 shadow-md backdrop-blur-sm"
+        className="rounded-lg border bg-card p-3 shadow-md"
       >
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-pretty text-muted-foreground text-xs leading-relaxed">
           We use cookies to understand how you use our service.{" "}
           <Link
             href="/privacy#cookies"
@@ -100,7 +100,7 @@ export function CookiePrompt({
             Learn more.
           </Link>
         </p>
-        <div className="mt-2 flex items-center gap-1.5">
+        <div className="mt-2.5 flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="sm"

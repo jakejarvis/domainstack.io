@@ -69,7 +69,7 @@ function ModalContent({
           data-slot="modal-content"
           className={cn(
             "relative flex max-h-[85vh] min-h-0 w-full max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl",
-            "rounded-lg border border-border/50 bg-background text-foreground shadow-lg outline-hidden",
+            "rounded-lg border bg-background text-foreground shadow-lg outline-hidden",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
             className,
@@ -92,7 +92,7 @@ function ModalHeader({
     <div
       data-slot="modal-header"
       className={cn(
-        "flex flex-col gap-1 border-muted border-b bg-card p-5",
+        "flex flex-col gap-1 border-muted border-b bg-card/60 px-4.5 py-4",
         className,
       )}
       {...props}
@@ -109,7 +109,7 @@ function ModalFooter({
       data-slot="modal-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        "-mx-5 -mb-5 rounded-b-lg border-border/60 border-t bg-muted/30 p-3",
+        "-mx-5 -mb-5 rounded-b-lg border-border border-t bg-muted/30 p-3",
         className,
       )}
       {...props}
@@ -121,7 +121,7 @@ function ModalTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="modal-title"
-      className={cn("font-semibold text-base", className)}
+      className={cn("font-semibold text-[15px]", className)}
       {...props}
     />
   );

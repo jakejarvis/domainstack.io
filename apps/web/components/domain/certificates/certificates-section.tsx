@@ -40,7 +40,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
     : [];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-3 backdrop-blur-lg dark:border-border/50">
+    <div className="relative overflow-hidden rounded-xl border bg-background/60 p-3 backdrop-blur-lg">
       <KeyValueGrid colsDesktop={2}>
         <KeyValue
           label="Issuer"

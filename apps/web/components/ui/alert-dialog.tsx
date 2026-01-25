@@ -50,7 +50,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         className={cn(
           "group/alert-dialog-content",
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border/60 bg-background p-5 text-foreground shadow-lg outline-hidden sm:max-w-lg",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border bg-background p-5 text-foreground shadow-lg outline-hidden sm:max-w-lg",
           "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
           "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
           // Nested dialog styling: Dim the parent popup
@@ -73,7 +73,7 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center space-y-2 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 has-data-[slot=alert-dialog-media]:space-y-0 sm:place-items-start sm:text-left sm:has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        "grid grid-rows-[auto_1fr] place-items-center space-y-2 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-3 has-data-[slot=alert-dialog-media]:space-y-0 sm:place-items-start sm:text-left sm:has-data-[slot=alert-dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
         className,
       )}
       {...props}
@@ -90,7 +90,7 @@ function AlertDialogFooter({
       data-slot="alert-dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        "-mx-5 -mb-5 rounded-b-lg border-border/60 border-t bg-muted/30 p-3",
+        "-mx-5 -mb-5 rounded-b-lg border-border border-t bg-muted/30 p-3",
         className,
       )}
       {...props}

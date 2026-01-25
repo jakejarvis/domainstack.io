@@ -1,9 +1,9 @@
 import { ColumnsIcon, EyeIcon } from "@phosphor-icons/react/ssr";
 import type { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -97,18 +97,14 @@ export function DashboardTableColumnMenu<TData>({
               const isVisible = isColumnVisible(column.id);
 
               return (
-                <DropdownMenuItem
+                <DropdownMenuCheckboxItem
                   key={column.id}
+                  checked={isVisible}
                   closeOnClick={false}
                   onClick={() => toggleColumn(column.id)}
-                  className="cursor-pointer"
                 >
-                  <Checkbox
-                    checked={isVisible}
-                    className="pointer-events-none"
-                  />
                   <span className="capitalize">{header}</span>
-                </DropdownMenuItem>
+                </DropdownMenuCheckboxItem>
               );
             })}
             {hiddenCount > 0 && (
@@ -117,7 +113,7 @@ export function DashboardTableColumnMenu<TData>({
                 <DropdownMenuItem
                   closeOnClick={false}
                   onClick={showAllColumns}
-                  className="cursor-pointer text-muted-foreground"
+                  className="text-muted-foreground"
                 >
                   <EyeIcon />
                   Show all columns

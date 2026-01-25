@@ -179,11 +179,11 @@ function SocialPreview({
               <div className="truncate text-[#536471] text-[11px] leading-4 dark:text-[#8b98a5]">
                 {hostname}
               </div>
-              <div className="mt-0.5 line-clamp-1 font-semibold text-[15px] leading-5">
+              <div className="mt-0.5 line-clamp-1 font-semibold text-[15px]">
                 {title || hostname}
               </div>
               {description && (
-                <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] leading-5 dark:text-[#8b98a5]">
+                <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] dark:text-[#8b98a5]">
                   {description}
                 </div>
               )}
@@ -205,14 +205,14 @@ function SocialPreview({
             </div>
           </div>
           <div className="p-3">
-            <div className="truncate text-[#536471] text-[11px] leading-4 dark:text-[#8b98a5]">
+            <div className="truncate text-[#536471] text-[11px] dark:text-[#8b98a5]">
               {hostname}
             </div>
-            <div className="mt-0.5 line-clamp-2 font-semibold text-[15px] leading-5">
+            <div className="mt-0.5 line-clamp-2 font-semibold text-[15px]">
               {title || hostname}
             </div>
             {description && (
-              <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] leading-5 dark:text-[#8b98a5]">
+              <div className="mt-0.5 line-clamp-2 text-[#536471] text-[13px] dark:text-[#8b98a5]">
                 {description}
               </div>
             )}
@@ -239,11 +239,11 @@ function SocialPreview({
           <div className="truncate font-medium text-[#606770] text-[11px] uppercase tracking-wide dark:text-[#b0b3b8]">
             {hostname}
           </div>
-          <div className="mt-1 line-clamp-2 font-semibold text-[#050505] text-[17px] leading-5 dark:text-[#e4e6eb]">
+          <div className="mt-1 line-clamp-2 font-semibold text-[#050505] text-[17px] dark:text-[#e4e6eb]">
             {title || hostname}
           </div>
           {description && (
-            <div className="mt-1 line-clamp-2 text-[#606770] text-[13px] leading-5 dark:text-[#b0b3b8]">
+            <div className="mt-1 line-clamp-2 text-[#606770] text-[13px] dark:text-[#b0b3b8]">
               {description}
             </div>
           )}
@@ -265,11 +265,11 @@ function SocialPreview({
             />
           </div>
         </div>
-        <div className="px-4 py-3">
-          <div className="line-clamp-2 font-semibold text-[#0a66c2] text-[13px] leading-6 dark:text-[#70b5f9]">
+        <div className="space-y-1 px-4 py-3">
+          <div className="line-clamp-2 font-semibold text-[#0a66c2] text-[13px] dark:text-[#70b5f9]">
             {title || hostname}
           </div>
-          <div className="truncate text-[#6e7781] text-[13px] leading-5 dark:text-[#9aa6b2]">
+          <div className="truncate text-[#6e7781] text-[13px] dark:text-[#9aa6b2]">
             {hostname}
           </div>
         </div>
@@ -284,11 +284,11 @@ function SocialPreview({
         <div className="truncate text-[#4a4e52] text-[12px] leading-4 dark:text-[#b7bfc6]">
           {hostname}
         </div>
-        <div className="mt-1 font-semibold text-[#1d9bd1] text-[15px] leading-5 dark:text-[#36c5f0]">
+        <div className="mt-1 font-semibold text-[#1d9bd1] text-[15px] dark:text-[#36c5f0]">
           {title || hostname}
         </div>
         {description && (
-          <div className="mt-1 text-[#4a4e52] text-[13px] leading-5 dark:text-[#b7bfc6]">
+          <div className="mt-1 text-[#4a4e52] text-[13px] dark:text-[#b7bfc6]">
             {description}
           </div>
         )}
@@ -312,11 +312,11 @@ function SocialPreview({
         <div className="truncate text-[#b5bac1] text-[12px] leading-4">
           {hostname}
         </div>
-        <div className="mt-1 line-clamp-2 font-semibold text-[#58a6ff] text-[16px] leading-5">
+        <div className="mt-1 line-clamp-2 font-semibold text-[#58a6ff] text-[16px]">
           {title || hostname}
         </div>
         {description && (
-          <div className="mt-1 line-clamp-3 text-[#dbdee1] text-[13px] leading-5">
+          <div className="mt-1 line-clamp-3 text-[#dbdee1] text-[13px]">
             {description}
           </div>
         )}

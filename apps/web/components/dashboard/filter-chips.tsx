@@ -60,7 +60,7 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
               }}
               className="inline-flex"
             >
-              <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:border-border/60 dark:bg-muted/30">
+              <Badge className="select-none gap-1.5 border-border bg-muted/10 py-1 pr-1.5 text-foreground dark:bg-muted/30">
                 {chip.icon}
                 <span className="flex items-center gap-1 text-xs leading-none">
                   {chip.prefix && (

@@ -24,6 +24,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --color-danger-border: var(--danger-border);
@@ -36,9 +39,8 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-border: var(--success-border);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-selection: var(--selection);
+  --color-selection-foreground: var(--selection-foreground);
   --color-accent-blue: var(--accent-blue);
   --color-accent-indigo: var(--accent-indigo);
   --color-accent-green: var(--accent-green);
@@ -53,27 +55,33 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(99.5% 0 0);
-  --foreground: oklch(14.5% 0 0);
-  --card: oklch(98.9% 0 0);
-  --card-foreground: oklch(14.5% 0 0);
-  --popover: oklch(98.4% 0 0);
-  --popover-foreground: oklch(14.5% 0 0);
-  --primary: oklch(14.5% 0 0);
-  --primary-foreground: oklch(98.5% 0 0);
-  --secondary: oklch(92.2% 0 0);
-  --secondary-foreground: oklch(20.5% 0 0);
-  --muted: oklch(94.2% 0 0);
-  --muted-foreground: oklch(43.9% 0 0);
-  --accent: oklch(96% 0 0);
-  --accent-foreground: oklch(14.5% 0 0);
-  --destructive: oklch(50.5% 0.213 27.518);
-  --destructive-foreground: oklch(98.5% 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
   --danger: oklch(96.6% 0.016 16.278);
   --danger-foreground: oklch(57.9% 0.237 29.233);
   --danger-border: oklch(93.3% 0.033 16.63);
@@ -86,11 +94,9 @@
   --success: oklch(95.53% 0.04 157.918);
   --success-foreground: oklch(55% 0.165 146.61);
   --success-border: oklch(81.86% 0.107 157.92);
-  --border: oklch(87% 0 0);
-  --input: oklch(92.2% 0 0);
-  --ring: oklch(70.8% 0 0);
+  --selection: oklch(0.145 0 0);
+  --selection-foreground: oklch(1 0 0);
 
-  /* DNS badge accent tokens */
   --accent-blue: oklch(62% 0.2 255);
   --accent-indigo: oklch(60% 0.19 275);
   --accent-green: oklch(70% 0.16 150);
@@ -100,52 +106,30 @@
   --accent-pink: oklch(65% 0.2 350);
   --accent-slate: oklch(56.24% 0 271.15);
   --accent-red: oklch(64% 0.2 27);
-
-  /* Gold accent - warm orange-gold for premium CTAs */
   --accent-gold: oklch(65% 0.18 55);
   --accent-gold-muted: oklch(70% 0.13 55);
-
-  /* Section accent glows */
-  --glow-blue: radial-gradient(closest-side, var(--accent-blue), transparent);
-  --glow-indigo: radial-gradient(
-    closest-side,
-    var(--accent-indigo),
-    transparent
-  );
-  --glow-cyan: radial-gradient(closest-side, var(--accent-cyan), transparent);
-  --glow-purple: radial-gradient(
-    closest-side,
-    var(--accent-purple),
-    transparent
-  );
-  --glow-green: radial-gradient(closest-side, var(--accent-green), transparent);
-  --glow-orange: radial-gradient(
-    closest-side,
-    var(--accent-orange),
-    transparent
-  );
-  --glow-red: radial-gradient(closest-side, var(--accent-red), transparent);
-  --glow-pink: radial-gradient(closest-side, var(--accent-pink), transparent);
-  --glow-slate: radial-gradient(closest-side, var(--accent-slate), transparent);
 }
 
 .dark {
-  --background: oklch(14.5% 0 0);
-  --foreground: oklch(98.5% 0 0);
-  --card: oklch(16.5% 0 0);
-  --card-foreground: oklch(98.5% 0 0);
-  --popover: oklch(19.5% 0 0);
-  --popover-foreground: oklch(98.5% 0 0);
-  --primary: oklch(98.5% 0 0);
-  --primary-foreground: oklch(14.5% 0 0);
-  --secondary: oklch(26.9% 0 0);
-  --secondary-foreground: oklch(97% 0 0);
-  --muted: oklch(26.9% 0 0);
-  --muted-foreground: oklch(70.8% 0 0);
-  --accent: oklch(37.1% 0 0);
-  --accent-foreground: oklch(98.5% 0 0);
-  --destructive: oklch(63.7% 0.237 25.331);
-  --destructive-foreground: oklch(94.3% 0 11.6);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.87 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
   --danger: oklch(19.9% 0.063 23.01);
   --danger-foreground: oklch(68.71% 0.2 24.11);
   --danger-border: oklch(26.9% 0.102 25.45);
@@ -158,11 +142,9 @@
   --success: oklch(20.9% 0.049 158.25);
   --success-foreground: oklch(86.2% 0.17 157.76);
   --success-border: oklch(31.6% 0.082 152.3);
-  --border: oklch(37.1% 0 0);
-  --input: oklch(26.45% 0 271.152);
-  --ring: oklch(55.6% 0 0);
+  --selection: oklch(0.922 0 0);
+  --selection-foreground: oklch(0.205 0 0);
 
-  /* DNS badge accent tokens (dark) */
   --accent-blue: oklch(72% 0.16 255);
   --accent-indigo: oklch(70% 0.16 275);
   --accent-green: oklch(82% 0.14 150);
@@ -172,8 +154,6 @@
   --accent-pink: oklch(80% 0.16 350);
   --accent-slate: oklch(81% 0 54.26);
   --accent-red: oklch(78% 0.16 27);
-
-  /* Gold accent (dark) - brighter gold for dark backgrounds */
   --accent-gold: oklch(80% 0.12 70);
   --accent-gold-muted: oklch(70% 0.08 65);
 }
@@ -199,47 +179,18 @@
   * {
     @apply border-border outline-ring/50;
   }
-
-  body {
-    @apply bg-background text-foreground;
-  }
-
   ::selection {
-    @apply bg-foreground text-background;
+    @apply bg-selection text-selection-foreground;
   }
-}
-
-@layer utilities {
-  /* Variable-driven accent glow */
-  .accent-glow {
-    background: var(--section-accent-glow, var(--glow-slate));
+  html {
+    @apply overscroll-y-none;
   }
-  [data-accent="blue"] .accent-glow {
-    --section-accent-glow: var(--glow-blue);
+  body {
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
   }
-  [data-accent="indigo"] .accent-glow {
-    --section-accent-glow: var(--glow-indigo);
-  }
-  [data-accent="cyan"] .accent-glow {
-    --section-accent-glow: var(--glow-cyan);
-  }
-  [data-accent="purple"] .accent-glow {
-    --section-accent-glow: var(--glow-purple);
-  }
-  [data-accent="green"] .accent-glow {
-    --section-accent-glow: var(--glow-green);
-  }
-  [data-accent="orange"] .accent-glow {
-    --section-accent-glow: var(--glow-orange);
-  }
-  [data-accent="red"] .accent-glow {
-    --section-accent-glow: var(--glow-red);
-  }
-  [data-accent="pink"] .accent-glow {
-    --section-accent-glow: var(--glow-pink);
-  }
-  [data-accent="slate"] .accent-glow {
-    --section-accent-glow: var(--glow-slate);
+  [data-slot="layout"] {
+    @apply overscroll-none;
   }
 }
 
@@ -251,6 +202,16 @@
     .bar {
       @apply fixed top-0 left-0 z-[99999] h-[3px] w-full origin-left bg-gradient-to-r from-accent-blue/60 via-accent-indigo/60 to-accent-purple/60;
     }
+  }
+}
+
+@utility accent-glow {
+  @apply bg-[radial-gradient(closest-side,var(--glow-color,var(--accent-slate)),transparent)];
+}
+
+@utility extend-touch-target {
+  @media (pointer: coarse) {
+    @apply relative touch-manipulation after:absolute after:-inset-2;
   }
 }
 

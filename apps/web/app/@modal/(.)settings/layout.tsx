@@ -6,7 +6,6 @@ import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton"
 import {
   Modal,
   ModalContent,
-  ModalDescription,
   ModalHeader,
   ModalTitle,
 } from "@/components/ui/modal";
@@ -27,15 +26,12 @@ export default function SettingsModalLayout() {
       <ModalContent>
         <ModalHeader className="border-b-0 pb-0">
           <ModalTitle>Settings</ModalTitle>
-          <ModalDescription>
-            Manage your subscription, notifications, and account preferences.
-          </ModalDescription>
           <div
             id="settings-modal-tabs"
-            className="-mx-5 mt-3 [&_[data-slot=tabs-list]]:px-3.5"
+            className="-mx-4.5 mt-2 [&_[data-slot=tabs-list]]:px-2"
           />
         </ModalHeader>
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="min-h-0 flex-1 bg-popover/10">
           <div className="mt-1 min-w-0 p-5 [contain:inline-size]">
             <Suspense fallback={<SettingsSkeleton />}>
               <AuthorizedSettingsModalLayout />

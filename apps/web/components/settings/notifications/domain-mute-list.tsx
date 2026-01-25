@@ -42,7 +42,7 @@ export function DomainMuteList({
   // Empty state: no verified domains at all
   if (domains.length === 0) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-border/50 border-dashed bg-muted/10 px-4 py-6">
+      <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/10 px-4 py-6">
         <GlobeIcon className="size-5 text-muted-foreground/50" />
         <p className="text-muted-foreground text-sm">
           Verify domains to customize their notification settings.
@@ -94,7 +94,6 @@ export function DomainMuteList({
                 onToggleMuted(domain.id, true);
                 setIsOpen(false);
               }}
-              className="cursor-pointer"
             >
               <Favicon domain={domain.domainName} />
               {domain.domainName}
@@ -114,7 +113,7 @@ interface MutedDomainChipProps {
 
 function MutedDomainChip({ domain, onUnmute, disabled }: MutedDomainChipProps) {
   return (
-    <div className="group flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 pr-1.5 pl-3.5 transition-colors hover:border-border hover:bg-muted/60">
+    <div className="group flex h-8 items-center gap-1.5 rounded-full border bg-muted/40 pr-1.5 pl-3.5 transition-colors hover:bg-muted/60">
       <Favicon
         domain={domain.domainName}
         className="mr-0.5 size-3.5 shrink-0"

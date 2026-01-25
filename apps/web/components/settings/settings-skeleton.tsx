@@ -62,7 +62,7 @@ function NotificationMatrixSkeleton({ className }: { className?: string }) {
   return (
     <div className={className}>
       {/* Header row */}
-      <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1.5">
+      <div className="flex items-center border-border border-b py-2 pr-2 pl-1.5">
         <Skeleton className="h-3 w-16" />
         <div className="ml-auto flex items-center gap-1">
           <div className="flex w-14 justify-center">

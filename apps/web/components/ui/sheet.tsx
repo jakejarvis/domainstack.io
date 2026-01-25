@@ -50,7 +50,7 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "fixed z-50 flex flex-col gap-4 bg-background shadow-lg outline-hidden",
+          "fixed z-50 flex flex-col gap-4 bg-background bg-clip-padding shadow-lg outline-hidden",
           "data-open:fade-in-0 data-open:animate-in data-open:duration-300",
           "data-closed:fade-out-0 data-closed:animate-out data-closed:duration-300",
           side === "right" &&

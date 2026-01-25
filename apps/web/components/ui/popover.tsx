@@ -12,10 +12,10 @@ function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
 function PopoverContent({
   className,
   align = "center",
+  alignOffset = 0,
+  side = "bottom",
   sideOffset = 4,
-  side,
   anchor,
-  alignOffset,
   collisionPadding,
   collisionAvoidance,
   sticky,
@@ -46,17 +46,16 @@ function PopoverContent({
         collisionAvoidance={collisionAvoidance}
         sticky={sticky}
         positionMethod={positionMethod}
-        // z-index must be on the Positioner (the positioned element), not just the Popup.
-        className="z-50"
+        className="isolate z-50"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "w-72 rounded-md border border-border/60 bg-popover p-4 text-popover-foreground shadow-md outline-hidden",
-            "origin-[var(--transform-origin)]",
-            "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
-            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
-            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            "flex w-72 flex-col rounded-md bg-popover p-4 text-popover-foreground text-sm shadow-md outline-hidden ring-1 ring-foreground/10",
+            "origin-[var(--transform-origin)] duration-100",
+            "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
+            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
+            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2",
             className,
           )}
           {...props}
@@ -80,7 +79,7 @@ function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
-      className={cn("font-semibold text-[15px]", className)}
+      className={cn("font-medium", className)}
       {...props}
     />
   );
@@ -93,7 +92,7 @@ function PopoverDescription({
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
-      className={cn("text-[13px] text-muted-foreground", className)}
+      className={cn("text-muted-foreground", className)}
       {...props}
     />
   );

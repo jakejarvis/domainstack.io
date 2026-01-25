@@ -12,8 +12,8 @@ export default function LoginPage() {
   return (
     <Card
       className={cn(
-        "w-full max-w-md overflow-hidden rounded-3xl px-6 py-8",
-        "border-black/15 bg-background/75 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 dark:border-white/8 dark:bg-background/65 dark:ring-white/5 dark:supports-[backdrop-filter]:bg-background/55",
+        "w-full max-w-md overflow-hidden rounded-xl px-6 py-8",
+        "border-black/15 bg-background/70 shadow-2xl ring-1 ring-black/5 backdrop-blur-2xl dark:border-white/8 dark:bg-background/60 dark:ring-white/5",
       )}
     >
       <LoginContent />

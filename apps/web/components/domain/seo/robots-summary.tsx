@@ -234,46 +234,43 @@ export function RobotsSummary({
                   startTransition(() => setOnly(next ?? "all"));
                 }}
                 spacing={1}
-                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground backdrop-blur-sm sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
+                className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
               >
-                <ToggleGroupItem
-                  value="all"
-                  variant="outline"
-                  className="h-full"
-                >
+                <ToggleGroupItem value="all" className="h-full">
                   <CircleHalfIcon
-                    className="size-3.5 text-accent-blue"
+                    className="mr-0.5 size-3.5 text-accent-blue"
                     aria-hidden
                   />
-                  All
+                  <span className="text-[13px]">All</span>
                   <PillCount
                     count={(counts.allows + counts.disallows) as number}
                     color="slate"
+                    className="ml-1"
                   />
                 </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="allow"
-                  variant="outline"
-                  className="h-full"
-                >
+                <ToggleGroupItem value="allow" className="h-full">
                   <CheckCircleIcon
-                    className="size-3.5 text-accent-green"
+                    className="mr-0.5 size-3.5 text-accent-green"
                     aria-hidden
                   />
-                  <span>Allow</span>
-                  <PillCount count={counts.allows} color="slate" />
+                  <span className="text-[13px]">Allow</span>
+                  <PillCount
+                    count={counts.allows}
+                    color="slate"
+                    className="ml-1"
+                  />
                 </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="disallow"
-                  variant="outline"
-                  className="h-full"
-                >
+                <ToggleGroupItem value="disallow" className="h-full">
                   <ProhibitIcon
-                    className="size-3.5 text-destructive"
+                    className="mr-0.5 size-3.5 text-destructive"
                     aria-hidden
                   />
-                  <span>Disallow</span>
-                  <PillCount count={counts.disallows} color="slate" />
+                  <span className="text-[13px]">Disallow</span>
+                  <PillCount
+                    count={counts.disallows}
+                    color="slate"
+                    className="ml-1"
+                  />
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -437,8 +434,8 @@ function GroupsAccordion({
             }}
             style={{ overflow: shouldReduceMotion ? undefined : "hidden" }}
           >
-            <AccordionItem value={`g-${idx}`} className="border-border/65">
-              <AccordionTrigger className="group/accordion cursor-pointer px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
+            <AccordionItem value={`g-${idx}`}>
+              <AccordionTrigger className="group/accordion px-2 py-2 hover:bg-accent/35 hover:no-underline data-[panel-open]:pr-2 [&>svg]:hidden">
                 <RobotsGroupHeader
                   userAgents={g.userAgents}
                   allowN={allowN}
@@ -588,7 +585,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 border-input border-t px-2 py-2.5 font-mono text-xs",
+        "group flex items-center gap-2 border-muted border-t px-2 py-2.5 font-mono text-xs",
         isFirst && "border-t-0",
       )}
     >

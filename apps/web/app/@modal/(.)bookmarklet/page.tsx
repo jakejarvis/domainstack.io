@@ -17,7 +17,7 @@ export default function InterceptedBookmarkletPage() {
             Use these shortcuts to investigate domains from anywhere.
           </ModalDescription>
         </ModalHeader>
-        <div className="min-w-0 p-4 [contain:inline-size]">
+        <div className="min-w-0 bg-popover/10 p-4 [contain:inline-size]">
           <BookmarkletContent />
         </div>
       </ModalContent>

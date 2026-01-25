@@ -136,7 +136,7 @@ export function DashboardHeader({
         </div>
 
         {/* View toggle and Calendar */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* View toggle - only show when there are domains */}
           {subscription?.activeCount && subscription.activeCount > 0 ? (
             <ToggleGroup
@@ -148,7 +148,7 @@ export function DashboardHeader({
                   | undefined;
                 if (next) onViewModeChange(next);
               }}
-              className="relative h-9 gap-0 overflow-hidden rounded-md border border-border bg-transparent p-0 shadow-xs dark:border-input"
+              className="relative h-9 gap-0 overflow-hidden rounded-md border bg-transparent p-0 shadow-xs"
             >
               <Tooltip>
                 <TooltipTrigger

@@ -56,6 +56,7 @@ export function LinkedAccountRow({
         {isLinked ? (
           <ResponsiveTooltip>
             <ResponsiveTooltipTrigger
+              nativeButton={false}
               render={
                 <div>
                   <Button

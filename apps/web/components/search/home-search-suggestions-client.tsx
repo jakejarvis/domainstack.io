@@ -88,7 +88,7 @@ export function HomeSearchSuggestionsClient({
               variant="secondary"
               size="sm"
               className={cn(
-                "shrink-0 gap-2 bg-muted/15 px-2.5 leading-none ring-1 ring-border/60 hover:bg-muted/50 dark:bg-muted/70 dark:hover:bg-muted/90",
+                "shrink-0 gap-2 border-none bg-muted/40 px-2.5 leading-none ring-1 ring-ring/20 hover:bg-muted/60",
                 isHistoryLoaded ? "visible" : "invisible",
               )}
               onClick={(e) => {

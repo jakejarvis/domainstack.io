@@ -12,7 +12,7 @@ function Card({
     render,
     props: mergeProps<"div">(props, {
       className: cn(
-        "flex flex-col gap-2 rounded-xl border border-border/60 bg-card py-6 text-card-foreground shadow-sm",
+        "flex flex-col gap-2 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
         className,
       ),
     }),

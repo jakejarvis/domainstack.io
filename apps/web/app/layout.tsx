@@ -57,7 +57,7 @@ export default function RootLayout({
           title="Domainstack"
         />
       </head>
-      <body className="relative min-h-svh overscroll-none font-sans tabular-nums antialiased">
+      <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased">
         <Providers>
           {/* Skip to main content link for keyboard navigation */}
           <a
@@ -68,7 +68,7 @@ export default function RootLayout({
           </a>
 
           {/* App Shell */}
-          <div className="isolate flex min-h-svh flex-col">
+          <div data-slot="layout" className="isolate flex min-h-svh flex-col">
             <AppHeader />
             <main id="main-content" className="flex min-h-0 flex-1 flex-col">
               {children}

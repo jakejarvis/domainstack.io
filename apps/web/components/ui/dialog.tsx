@@ -68,7 +68,7 @@ function DialogContent({
           className={cn(
             "group/dialog-content",
             "relative flex max-h-full min-h-0 w-[min(40rem,calc(100vw-2rem))] max-w-full flex-col overflow-hidden sm:max-w-lg",
-            "gap-4 rounded-lg border border-border/60 bg-background p-5 text-foreground shadow-lg outline-hidden",
+            "gap-4 rounded-lg border bg-background p-5 text-foreground shadow-lg outline-hidden",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in data-open:duration-200",
             "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:duration-200",
             // Nested dialog styling: Dim the parent popup
@@ -98,7 +98,7 @@ function DialogHeader({
     <div
       data-slot="dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center text-center has-data-[slot=dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=dialog-media]:gap-x-4 sm:place-items-start sm:text-left sm:has-data-[slot=dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=dialog-media]:grid-rows-[auto_1fr]",
+        "grid grid-rows-[auto_1fr] place-items-center text-center has-data-[slot=dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=dialog-media]:gap-x-3 sm:place-items-start sm:text-left sm:has-data-[slot=dialog-media]:grid-cols-[auto_1fr] sm:has-data-[slot=dialog-media]:grid-rows-[auto_1fr]",
         className,
       )}
       {...props}
@@ -115,7 +115,7 @@ function DialogFooter({
       data-slot="dialog-footer"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        "-mx-5 -mb-5 rounded-b-lg border-border/60 border-t bg-muted/30 p-3",
+        "-mx-5 -mb-5 rounded-b-lg border-border border-t bg-muted/30 p-3",
         className,
       )}
       {...props}

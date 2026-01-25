@@ -7,7 +7,7 @@ import { sections } from "@/lib/constants/sections";
 export function CertificatesSectionSkeleton() {
   return (
     <ReportSectionSkeleton {...sections.certificates}>
-      <div className="relative overflow-hidden rounded-2xl border border-border/65 bg-background/40 p-3 backdrop-blur-lg dark:border-border/50">
+      <div className="relative overflow-hidden rounded-xl border bg-background/60 p-3 backdrop-blur-lg">
         <KeyValueGrid colsDesktop={2}>
           <KeyValueSkeleton label="Issuer" widthClass="w-[100px]" withLeading />
           <KeyValueSkeleton label="Subject" widthClass="w-[100px]" />

@@ -26,7 +26,7 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
     className={cn(
-      "not-prose mb-4 w-full rounded-md border border-border/60",
+      "not-prose mb-4 w-full rounded-md border border-border",
       className,
     )}
     {...props}
@@ -80,10 +80,7 @@ export const ToolHeader = ({
   ...props
 }: ToolHeaderProps) => (
   <CollapsibleTrigger
-    className={cn(
-      "group flex w-full cursor-pointer items-center gap-3 p-3",
-      className,
-    )}
+    className={cn("group flex w-full items-center gap-3 p-3", className)}
     {...props}
   >
     <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />

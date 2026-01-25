@@ -4,29 +4,25 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type HomeHeroProps = {
-  words?: string[];
-  intervalMs?: number;
-  className?: string;
-};
+const ROTATING_WORDS = [
+  "registration",
+  "DNS records",
+  "hosting",
+  "email",
+  "SEO",
+  "certificates",
+  "headers",
+  "servers",
+  "IP addresses",
+  "geolocation",
+  "sitemaps",
+  "meta tags",
+];
 
-export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
+const INTERVAL_MS = 2400;
+
+export function HomeHero({ className }: { className?: string }) {
   const shouldReduceMotion = useReducedMotion();
-
-  const rotatingWords = [
-    "registration",
-    "DNS records",
-    "hosting",
-    "email",
-    "SEO",
-    "certificates",
-    "headers",
-    "servers",
-    "IP addresses",
-    "geolocation",
-    "sitemaps",
-    "meta tags",
-  ];
 
   const [index, setIndex] = useState(0);
   const measureRef = useRef<HTMLSpanElement | null>(null);
@@ -34,10 +30,10 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setIndex((prev) => (prev + 1) % rotatingWords.length);
-    }, intervalMs);
+      setIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+    }, INTERVAL_MS);
     return () => clearInterval(id);
-  }, [intervalMs]);
+  }, []);
 
   useLayoutEffect(() => {
     if (!measureRef.current) return;
@@ -64,7 +60,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
         Inspect any domain&rsquo;s
       </span>
       <motion.span
-        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-border/60 backdrop-blur will-change-[width,transform] supports-[backdrop-filter]:backdrop-blur-md sm:rounded-xl sm:px-3 sm:py-1"
+        className="ml-2.5 inline-flex items-center rounded-lg bg-muted/40 px-2 py-0.5 text-foreground shadow-sm ring-1 ring-ring/20 will-change-[width,transform] sm:rounded-md sm:px-3 sm:py-1"
         aria-live="polite"
         aria-atomic="true"
         initial={false}
@@ -79,7 +75,7 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
           <span className="absolute left-1/2 -translate-x-1/2">
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
-                key={rotatingWords[index]}
+                key={ROTATING_WORDS[index]}
                 initial={
                   shouldReduceMotion
                     ? { opacity: 0 }
@@ -102,22 +98,22 @@ export function HomeHero({ intervalMs = 2400, className }: HomeHeroProps) {
                 }}
                 className="inline-block will-change-[transform,opacity]"
               >
-                {rotatingWords[index]}
+                {ROTATING_WORDS[index]}
               </motion.span>
             </AnimatePresence>
           </span>
           {/* in-flow baseline shim so the pill aligns with surrounding text baseline */}
-          <span className="invisible select-none">{rotatingWords[index]}</span>
+          <span className="invisible select-none">{ROTATING_WORDS[index]}</span>
         </span>
       </motion.span>
       {/* measurement element for smooth width animation (inherits h1 font sizing) */}
       <span
         ref={measureRef}
-        className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-center rounded-lg bg-muted/70 px-2 py-0.5 align-baseline text-foreground shadow-sm ring-1 ring-border/60 sm:rounded-xl sm:px-3 sm:py-1"
+        className="pointer-events-none invisible absolute top-0 left-0 inline-flex items-center px-2 py-0.5 align-baseline sm:px-3 sm:py-1"
         aria-hidden
       >
         <span className="inline-flex items-center whitespace-nowrap">
-          {rotatingWords[index]}
+          {ROTATING_WORDS[index]}
         </span>
       </span>
       <span className="hidden whitespace-nowrap text-foreground/90 sm:inline">

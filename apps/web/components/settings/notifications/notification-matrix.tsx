@@ -35,7 +35,7 @@ export function NotificationMatrix({
   return (
     <div>
       {/* Header row */}
-      <div className="flex items-center border-border/50 border-b py-2 pr-2 pl-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+      <div className="flex items-center border-border border-b py-2 pr-2 pl-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         <div className="flex-1">Alert Type</div>
         <div className="flex items-center gap-1">
           <div className="w-14 text-center">Web</div>

@@ -1,5 +1,4 @@
 import {
-  CheckIcon,
   SortAscendingIcon,
   SortDescendingIcon,
 } from "@phosphor-icons/react/ssr";
@@ -7,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SORT_OPTIONS, type SortOption } from "@/lib/dashboard-utils";
-import { cn } from "@/lib/utils";
 
 type GridSortDropdownProps = {
   sortOption: SortOption;
@@ -47,20 +46,16 @@ export function GridSortDropdown({
         }
       />
       <DropdownMenuContent align="end">
-        {SORT_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.value}
-            onClick={() => onSortChange(option.value)}
-            className="cursor-pointer gap-2"
-          >
-            <CheckIcon
-              className={cn(
-                sortOption === option.value ? "opacity-100" : "opacity-0",
-              )}
-            />
-            {option.label}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuRadioGroup
+          value={sortOption}
+          onValueChange={(value) => onSortChange(value as SortOption)}
+        >
+          {SORT_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

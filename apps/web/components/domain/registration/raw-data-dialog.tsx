@@ -14,11 +14,15 @@ import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@/components/ui/responsive-tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -244,46 +248,54 @@ export function RawDataDialog({
           </Tooltip>
         }
       />
-      <DialogContent className="!bg-card gap-0 p-0 sm:max-w-2xl">
-        <DialogHeader className="place-items-start space-y-1 border-border/60 border-b p-4">
-          <DialogTitle className="flex items-center gap-1 text-base">
-            <Favicon domain={domain} className="mr-1 size-5" />
-            <span>
-              <span className="truncate lowercase">{domain}</span>
-              <span className="ml-1.5 font-normal text-muted-foreground/90 text-sm">
-                ({format})
-              </span>
+      <DialogContent className="gap-0 p-0 sm:max-w-2xl">
+        <DialogHeader className="place-items-start space-y-1 border-border border-b bg-card/60 p-4">
+          <DialogTitle className="flex items-center gap-2">
+            <Favicon domain={domain} />
+            <span className="truncate text-base lowercase tracking-[-0.01em]">
+              {domain}
             </span>
+            <ResponsiveTooltip>
+              <ResponsiveTooltipTrigger
+                render={
+                  <span className="ml-1 flex cursor-default items-center gap-1 font-normal text-[13px] text-foreground/75">
+                    <SealCheckIcon className="size-3.5 text-accent-green" />
+                    <span>{format}</span>
+                  </span>
+                }
+              />
+              <ResponsiveTooltipContent>
+                <span className="flex items-center gap-1 truncate">
+                  Verified by{" "}
+                  <span className="font-medium">
+                    {serverUrl ? (
+                      <a
+                        href={serverUrl}
+                        target="_blank"
+                        rel="noopener"
+                        className="flex items-center gap-1 underline underline-offset-2"
+                      >
+                        {serverName}
+                        <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
+                      </a>
+                    ) : (
+                      serverName
+                    )}
+                  </span>
+                </span>
+              </ResponsiveTooltipContent>
+            </ResponsiveTooltip>
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-1.5 text-[13px] text-foreground/90">
-            <SealCheckIcon className="size-3.5 text-accent-green" />
-            <span className="flex items-center gap-1 truncate">
-              Verified by{" "}
-              <span className="font-medium">
-                {serverUrl ? (
-                  <a
-                    href={serverUrl}
-                    target="_blank"
-                    rel="noopener"
-                    className="flex items-center gap-1 underline underline-offset-2 hover:text-muted-foreground"
-                  >
-                    {serverName}
-                    <ArrowSquareOutIcon className="size-3 text-muted-foreground" />
-                  </a>
-                ) : (
-                  serverName
-                )}
-              </span>
-            </span>
-          </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="min-h-0 flex-1" scrollFade={false}>
+        <ScrollArea className="min-h-0 flex-1 bg-popover/10" scrollFade={false}>
           <div className="p-3">
             <pre className="font-mono text-foreground/90 text-xs leading-5">
               <code
                 className={cn(
                   "grid",
-                  wrapLines ? "grid-cols-[auto_1fr]" : "grid-cols-[auto_auto]",
+                  wrapLines
+                    ? "grid-cols-[auto_1fr]"
+                    : "w-max min-w-full grid-cols-[auto_auto]",
                 )}
               >
                 {lines.map((line, i) => (
@@ -311,7 +323,7 @@ export function RawDataDialog({
             </pre>
           </div>
         </ScrollArea>
-        <div className="flex w-full items-center justify-between gap-2 border-border/60 border-t p-3">
+        <div className="flex w-full items-center justify-between gap-2 border-border border-t bg-card/60 p-3">
           <Button
             variant="outline"
             size="sm"
@@ -343,18 +355,4 @@ export function RawDataDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function _extractSourceDomain(
-  input: string | undefined | null,
-): string | undefined {
-  if (!input) return;
-  const value = String(input).trim();
-  if (!value) return;
-  try {
-    const url = new URL(value.includes("://") ? value : `https://${value}`);
-    return url.hostname || undefined;
-  } catch {
-    return;
-  }
 }

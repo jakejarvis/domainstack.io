@@ -1,9 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import {
-  CaretRightIcon,
-  CheckIcon,
-  CircleIcon,
-} from "@phosphor-icons/react/ssr";
+import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react/ssr";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({ ...props }: Menu.Root.Props) {
@@ -20,10 +16,10 @@ function DropdownMenuTrigger({ ...props }: Menu.Trigger.Props) {
 
 function DropdownMenuContent({
   className,
-  sideOffset = 4,
-  align = "center",
+  align = "start",
   alignOffset = 0,
   side = "bottom",
+  sideOffset = 4,
   ...props
 }: Menu.Popup.Props &
   Pick<
@@ -37,18 +33,16 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        // Note: z-index must be on the *Positioner* (the positioned element), not just the Popup.
-        // Otherwise the menu can be painted under Base UI Dialog layers even if the Popup has a higher z-index.
-        className="z-[60] outline-none"
+        className="isolate z-50 outline-none"
       >
         <Menu.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "min-w-[8rem] overflow-hidden rounded-md border border-border/60 bg-popover p-1 text-popover-foreground shadow-md outline-hidden",
-            "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
+            "min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden ring-1 ring-foreground/10",
+            "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto overflow-x-hidden duration-100",
             "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
-            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
-            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-closed:overflow-hidden",
+            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2",
             className,
           )}
           {...props}
@@ -80,11 +74,11 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group/dropdown-menu-item relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
         "data-[inset]:pl-8",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-        "data-[variant=destructive]:*:[svg]:!text-destructive data-[variant=destructive]:data-[highlighted]:bg-destructive/10 data-[variant=destructive]:data-[highlighted]:text-destructive data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
+        "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:*:[svg]:text-destructive",
+        "not-data-[variant=destructive]:focus:**:text-accent-foreground",
         className,
       )}
       onClick={(event) => {
@@ -105,14 +99,18 @@ function DropdownMenuCheckboxItem({
     <Menu.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden",
+        "focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <span
+        className="pointer-events-none absolute right-2 flex size-3.5 items-center justify-center"
+        data-slot="dropdown-menu-checkbox-item-indicator"
+      >
         <Menu.CheckboxItemIndicator>
           <CheckIcon className="size-4" aria-hidden="true" />
         </Menu.CheckboxItemIndicator>
@@ -135,20 +133,20 @@ function DropdownMenuRadioItem({
     <Menu.RadioItem
       data-slot="dropdown-menu-radio-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden",
+        "focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "[&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <span
+        className="pointer-events-none absolute right-2 flex size-3.5 items-center justify-center"
+        data-slot="dropdown-menu-radio-item-indicator"
+      >
         <Menu.RadioItemIndicator>
-          <CircleIcon
-            className="size-2 fill-current"
-            weight="fill"
-            aria-hidden="true"
-          />
+          <CheckIcon className="size-4" aria-hidden="true" />
         </Menu.RadioItemIndicator>
       </span>
       {children}
@@ -160,15 +158,15 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> & {
+}: Menu.GroupLabel.Props & {
   inset?: boolean;
 }) {
   return (
-    <div
+    <Menu.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 font-medium text-sm data-[inset]:pl-8",
+        "px-2 py-1.5 font-medium text-muted-foreground text-xs data-[inset]:pl-8",
         className,
       )}
       {...props}
@@ -180,7 +178,7 @@ function DropdownMenuSeparator({ className, ...props }: Menu.Separator.Props) {
   return (
     <Menu.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("-mx-1 my-1 h-px bg-border/60", className)}
+      className={cn("-mx-1 my-1 h-px bg-border", className)}
       {...props}
     />
   );
@@ -189,12 +187,12 @@ function DropdownMenuSeparator({ className, ...props }: Menu.Separator.Props) {
 function DropdownMenuShortcut({
   className,
   ...props
-}: React.ComponentPropsWithoutRef<"span">) {
+}: React.ComponentProps<"span">) {
   return (
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "ml-auto text-muted-foreground text-xs tracking-widest",
+        "ml-auto text-muted-foreground text-xs tracking-widest group-focus/dropdown-menu-item:text-accent-foreground",
         className,
       )}
       {...props}
@@ -219,50 +217,38 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
-        "data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground",
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-[inset]:pl-8 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-open:bg-accent data-open:text-accent-foreground",
+        "data-popup-open:bg-accent data-popup-open:text-accent-foreground",
+        "not-data-[variant=destructive]:focus:**:text-accent-foreground",
         className,
       )}
       {...props}
     >
       {children}
-      <CaretRightIcon className="ml-auto size-4" aria-hidden="true" />
+      <CaretRightIcon className="ml-auto" aria-hidden="true" />
     </Menu.SubmenuTrigger>
   );
 }
 
 function DropdownMenuSubContent({
   className,
-  sideOffset = 4,
-  alignOffset = -4,
+  align = "start",
+  alignOffset = -3,
+  side = "right",
+  sideOffset = 0,
   ...props
-}: Menu.Popup.Props &
-  Pick<Menu.Positioner.Props, "alignOffset" | "sideOffset">) {
+}: React.ComponentProps<typeof DropdownMenuContent>) {
   return (
-    <Menu.Portal>
-      <Menu.Positioner
-        sideOffset={sideOffset}
-        alignOffset={alignOffset}
-        // Note: z-index must be on the *Positioner* (the positioned element), not just the Popup.
-        // Otherwise the menu can be painted under Base UI Dialog layers even if the Popup has a higher z-index.
-        className="z-50 outline-none"
-      >
-        <Menu.Popup
-          data-slot="dropdown-menu-sub-content"
-          className={cn(
-            "min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg outline-hidden",
-            "max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
-            "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
-            "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",
-            "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-            className,
-          )}
-          {...props}
-        />
-      </Menu.Positioner>
-    </Menu.Portal>
+    <DropdownMenuContent
+      data-slot="dropdown-menu-sub-content"
+      className={cn("w-auto min-w-24 rounded-md shadow-lg", className)}
+      align={align}
+      alignOffset={alignOffset}
+      side={side}
+      sideOffset={sideOffset}
+      {...props}
+    />
   );
 }
 

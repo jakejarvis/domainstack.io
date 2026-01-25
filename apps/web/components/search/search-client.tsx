@@ -137,12 +137,7 @@ export function SearchClient({
             Domain
           </FieldLabel>
           <div className="relative w-full flex-1">
-            <InputGroup
-              className={cn(
-                "border-none ring-1 ring-border/60",
-                variant === "lg" ? "h-12" : "h-10",
-              )}
-            >
+            <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
                 id="domain"
                 ref={inputRef}
@@ -180,7 +175,7 @@ export function SearchClient({
                   {loading ? (
                     <Spinner />
                   ) : (
-                    <Kbd className="mx-1 hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
+                    <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
                       {isFocused ? "Esc" : isMac ? "⌘\u00A0K" : "Ctrl\u00A0K"}
                     </Kbd>
                   )}

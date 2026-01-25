@@ -54,6 +54,7 @@ export function DangerZoneCollapsible({
               </div>
               <Button
                 variant="destructive"
+                size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
                 <TrashIcon />

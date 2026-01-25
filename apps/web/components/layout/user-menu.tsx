@@ -14,7 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -81,24 +80,22 @@ export function UserMenu() {
         }
       />
       <DropdownMenuContent align="end" className="min-w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex items-center gap-2">
-            <Avatar className="size-8">
-              <AvatarImage src={avatarUrl} alt={user.name} size={32} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col space-y-1">
-              <p className="font-medium text-sm leading-none">
-                {user.name || "User"}
-              </p>
-              <p className="text-muted-foreground text-xs leading-none">
-                {user.email}
-              </p>
-            </div>
+        <div className="flex select-none items-center gap-[9px] p-1.5">
+          <Avatar className="size-8">
+            <AvatarImage src={avatarUrl} alt={user.name} size={32} />
+            <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col space-y-[5px]">
+            <p className="font-medium text-sm leading-none">
+              {user.name || "User"}
+            </p>
+            <p className="text-muted-foreground text-xs leading-none">
+              {user.email}
+            </p>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           nativeButton={false}
@@ -120,12 +117,12 @@ export function UserMenu() {
         />
         <DropdownMenuSeparator />
         {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
-        <DropdownMenuItem className="cursor-pointer" onClick={toggleTheme}>
+        <DropdownMenuItem onClick={toggleTheme}>
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
+        <DropdownMenuItem onClick={handleSignOut}>
           <SignOutIcon className="text-danger-foreground" />
           Sign out
         </DropdownMenuItem>

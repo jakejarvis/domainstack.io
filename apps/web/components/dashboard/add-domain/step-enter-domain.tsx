@@ -59,15 +59,13 @@ export function StepEnterDomain({
         placeholder="example.com"
         value={domain}
         onChange={(e) => setDomain(e.target.value)}
-        disabled={isLoading}
-        readOnly={readOnly}
+        disabled={isLoading || readOnly}
         inputMode="url"
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="none"
         spellCheck={false}
         aria-invalid={!!displayError}
-        className={readOnly ? "cursor-default opacity-70" : undefined}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();

@@ -4,7 +4,6 @@ import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useLayoutVariables } from "@/hooks/use-layout-variables";
 import { TRPCProvider } from "@/trpc/client";
 
@@ -22,23 +21,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            <ProgressProvider
-              options={{ showSpinner: false }}
-              shallowRouting
-              disableStyle
+          <ProgressProvider
+            options={{ showSpinner: false }}
+            shallowRouting
+            disableStyle
+          >
+            <MotionConfig
+              reducedMotion="user"
+              transition={{
+                duration: 0.18,
+                ease: [0.22, 1, 0.36, 1] as const,
+              }}
             >
-              <MotionConfig
-                reducedMotion="user"
-                transition={{
-                  duration: 0.18,
-                  ease: [0.22, 1, 0.36, 1] as const,
-                }}
-              >
-                {children}
-              </MotionConfig>
-            </ProgressProvider>
-          </TooltipProvider>
+              {children}
+            </MotionConfig>
+          </ProgressProvider>
         </ThemeProvider>
       </PostHogIdentityProvider>
     </TRPCProvider>

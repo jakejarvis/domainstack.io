@@ -155,7 +155,7 @@ export function ChatTriggerClient({
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
                   <LegoSmileyIcon className="size-4" />
-                  <span className="text-base leading-none tracking-tight">
+                  <span className="text-[15px] leading-none tracking-tight">
                     {CHATBOT_NAME}
                   </span>
                   <BetaBadge />
@@ -192,17 +192,17 @@ export function ChatTriggerClient({
             align="end"
             sideOffset={12}
             collisionPadding={16}
-            className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background/95 p-0 backdrop-blur-sm"
+            className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background p-0"
           >
-            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-border/60 border-b px-4 py-3">
+            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3 py-3">
               <PopoverTitle className="flex items-center gap-2">
                 <LegoSmileyIcon className="size-4" />
-                <span className="text-base leading-none tracking-tight">
+                <span className="text-[15px] leading-none tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />
               </PopoverTitle>
-              <div className="-mr-2 flex items-center gap-1">
+              <div className="-mr-1 flex items-center gap-1">
                 {headerActions}
               </div>
             </PopoverHeader>

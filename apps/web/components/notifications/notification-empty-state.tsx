@@ -1,4 +1,8 @@
-import { ArrowRightIcon, ConfettiIcon } from "@phosphor-icons/react/ssr";
+import {
+  ArchiveIcon,
+  ArrowRightIcon,
+  ConfettiIcon,
+} from "@phosphor-icons/react/ssr";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -18,7 +22,7 @@ export function NotificationEmptyState({
   return (
     <div className="flex flex-col items-center justify-center p-10 text-center">
       <Icon className="mb-4">
-        <ConfettiIcon />
+        {variant === "inbox" ? <ConfettiIcon /> : <ArchiveIcon />}
       </Icon>
       <p className="text-foreground/80 text-sm">All caught up!</p>
       <p className="mt-1 text-[13px] text-muted-foreground/80">

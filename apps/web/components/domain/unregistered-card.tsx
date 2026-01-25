@@ -26,13 +26,13 @@ export function DomainUnregisteredCard({
   const canShowRegistrarLinks = !isNonPublicTld && tld;
 
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl border border-black/10 bg-background/60 p-8 text-center shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
-      data-accent="indigo"
-    >
+    <div className="relative overflow-hidden rounded-xl border border-black/10 bg-background/60 p-8 text-center shadow-2xl shadow-black/10 dark:border-white/10">
       <div
         aria-hidden
         className="pointer-events-none absolute -inset-x-16 -top-16 h-40 accent-glow opacity-40 blur-3xl"
+        style={
+          { "--glow-color": "var(--accent-indigo)" } as React.CSSProperties
+        }
       />
 
       <div className="space-y-4.5">

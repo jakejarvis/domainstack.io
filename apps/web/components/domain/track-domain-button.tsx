@@ -6,7 +6,6 @@ import {
 import Link from "next/link";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -73,8 +72,11 @@ export function TrackDomainButton({
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" disabled aria-label="Track domain">
-        <Spinner />
+      <Button variant="outline" size="sm" disabled aria-label="Track domain">
+        <TargetIcon
+          className="animate-pulse text-muted-foreground"
+          aria-hidden="true"
+        />
         <span className="hidden sm:inline">Track</span>
       </Button>
     );
@@ -88,6 +90,7 @@ export function TrackDomainButton({
           render={
             <Button
               variant="outline"
+              size="sm"
               nativeButton={false}
               aria-label="View in dashboard"
               render={
@@ -135,6 +138,7 @@ export function TrackDomainButton({
           session?.user ? (
             <Button
               variant="outline"
+              size="sm"
               onClick={handleButtonClick}
               aria-label={ariaLabel}
             >
@@ -143,6 +147,7 @@ export function TrackDomainButton({
           ) : (
             <Button
               variant="outline"
+              size="sm"
               nativeButton={false}
               aria-label={ariaLabel}
               render={

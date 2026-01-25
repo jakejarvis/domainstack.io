@@ -74,7 +74,7 @@ export function DashboardContent({
   // Empty state: No domains match filters
   if (domains.length === 0 && hasActiveFilters) {
     return (
-      <Empty className="rounded-xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+      <Empty className="rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <FunnelXIcon className="size-6" />
@@ -97,7 +97,7 @@ export function DashboardContent({
   // Empty state: First-time user (no domains at all)
   if (totalDomains === 0) {
     return (
-      <Empty className="relative overflow-hidden rounded-xl border border-black/15 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/15">
+      <Empty className="relative overflow-hidden rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
         {/* Decorative gradient orbs */}
         <div
           aria-hidden

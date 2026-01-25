@@ -32,7 +32,7 @@ export const CodeBlock = ({
   const CodeBlockComponent = useCallback(
     (props: { className?: string }) => (
       <ScrollArea
-        className="w-full rounded-sm border border-border/60 bg-background"
+        className="w-full rounded-sm border bg-background"
         scrollFade={false}
       >
         <pre

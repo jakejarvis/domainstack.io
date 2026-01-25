@@ -202,7 +202,7 @@ export function MultiSelect<T extends string>({
             className={cn(
               // Mirror `PopoverContent` base styling (but keep padding controlled by inner content).
               // Width auto-sizes to content; pass popoverWidth to constrain if needed.
-              "rounded-md border border-border/60 bg-popover p-0 text-popover-foreground shadow-md outline-hidden",
+              "rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-hidden ring-1 ring-foreground/10",
               "origin-[var(--transform-origin)]",
               "data-open:fade-in-0 data-open:zoom-in-95 data-open:animate-in",
               "data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out",

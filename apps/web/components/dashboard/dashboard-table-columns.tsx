@@ -131,7 +131,7 @@ export function createColumns(
               onCheckedChange={() => onToggleSelect?.(row.original.id)}
               aria-label={`Select ${row.original.domainName}`}
               className={cn(
-                "absolute inset-0 cursor-pointer",
+                "absolute inset-0",
                 isSelected ? "flex" : "hidden group-hover:flex",
               )}
             />
@@ -453,7 +453,6 @@ export function createColumns(
                 onClick={() =>
                   onToggleMuted(row.original.id, !row.original.muted)
                 }
-                className="cursor-pointer"
               >
                 {row.original.muted ? (
                   <>
@@ -472,14 +471,12 @@ export function createColumns(
               onClick={() =>
                 onArchive(row.original.id, row.original.domainName)
               }
-              className="cursor-pointer"
             >
               <ArchiveIcon />
               Archive
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onRemove(row.original.id, row.original.domainName)}
-              className="cursor-pointer"
             >
               <TrashIcon className="text-danger-foreground" />
               Remove

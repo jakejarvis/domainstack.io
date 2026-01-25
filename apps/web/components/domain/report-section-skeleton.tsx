@@ -6,7 +6,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 
 interface ReportSectionSkeletonProps {
   title: string;
@@ -42,17 +41,14 @@ export function ReportSectionSkeleton({
       aria-labelledby={headerId}
       className="border-none"
     >
-      <Card
-        className="relative gap-0 overflow-hidden rounded-3xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 dark:border-white/10"
-        data-accent={accent}
-      >
+      <Card className="relative gap-0 overflow-hidden rounded-xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/10">
         {/* Accent glow */}
         <div
           aria-hidden
-          className={cn(
-            "pointer-events-none absolute -inset-x-8 -top-8 h-24 opacity-30 blur-2xl",
-            "accent-glow",
-          )}
+          className="pointer-events-none absolute -inset-x-8 -top-8 h-24 accent-glow opacity-30 blur-2xl"
+          style={
+            { "--glow-color": `var(--accent-${accent})` } as React.CSSProperties
+          }
         />
         <div className="relative">
           <div className="p-5" id={headerId}>
