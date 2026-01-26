@@ -7,12 +7,12 @@ import {
   ModalTitle,
 } from "@/components/ui/modal";
 
-export default function InterceptedBookmarkletPage() {
+export default function InterceptedBookmarkletsPage() {
   return (
     <Modal>
       <ModalContent className="!max-w-lg">
         <ModalHeader>
-          <ModalTitle>Bookmarklet</ModalTitle>
+          <ModalTitle>Bookmarklets</ModalTitle>
           <ModalDescription>
             Use these shortcuts to investigate domains from anywhere.
           </ModalDescription>

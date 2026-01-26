@@ -1,6 +1,6 @@
 import { SiModelcontextprotocol } from "@icons-pack/react-simple-icons";
 import {
-  IconBookmark,
+  IconBookmarks,
   IconCookie,
   IconGavel,
   IconHeart,
@@ -23,9 +23,9 @@ export function AppFooter() {
           MCP
           <BetaBadge className="ml-[1px] px-1.5 py-0 text-[11px] tracking-normal" />
         </Link>
-        <Link href="/bookmarklet">
-          <IconBookmark className="text-muted-foreground" />
-          Bookmarklet
+        <Link href="/bookmarklets">
+          <IconBookmarks className="text-muted-foreground" />
+          Bookmarklets
         </Link>
         {/* Wrap last two links together to prevent orphan */}
         <span className="inline-flex items-center space-x-[1.25em]">
