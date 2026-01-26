@@ -63,7 +63,6 @@ export function ChatClient({
   domain,
   error,
   onClearError,
-  iconSize = "sm",
   conversationClassName,
   inputClassName,
   suggestions = [],
@@ -149,16 +148,8 @@ export function ChatClient({
         >
           {messages.length === 0 ? (
             <ConversationEmptyState
-              icon={
-                <IconMessages
-                  className={iconSize === "lg" ? "size-8" : "size-6"}
-                />
-              }
-              title={
-                iconSize === "lg"
-                  ? "Ask me anything about domains!"
-                  : "Ask me anything!"
-              }
+              icon={<IconMessages className="size-7" />}
+              title="Ask me anything about domains!"
               description={
                 domain
                   ? `I can look up DNS, WHOIS, SSL, and more for ${domain}`

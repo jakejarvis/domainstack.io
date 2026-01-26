@@ -1,5 +1,5 @@
 /** Map tool names to human-readable status messages */
-export const TOOL_STATUS_MESSAGES = {
+const TOOL_STATUS_MESSAGES = {
   get_registration: "Looking up WHOIS data",
   get_dns_records: "Fetching DNS records",
   get_hosting: "Detecting hosting provider",

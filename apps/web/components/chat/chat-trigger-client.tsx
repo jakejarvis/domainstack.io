@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLego, IconMessageChatbotFilled } from "@tabler/icons-react";
+import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
@@ -26,7 +26,6 @@ import {
 import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { useDomainChat } from "@/hooks/use-domain-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
 import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
@@ -48,7 +47,6 @@ export function ChatTriggerClient({
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
   const { hideAiFeatures, setHideAiFeatures } = useAiPreferences();
-  const { height: visualViewportHeight, isKeyboardOpen } = useVisualViewport();
   const {
     messages,
     sendMessage,
@@ -133,7 +131,7 @@ export function ChatTriggerClient({
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
     >
-      <IconMessageChatbotFilled className="size-5 text-background/95" />
+      <IconMessageCircleFilled className="size-5 text-background/95" />
     </MotionButton>
   );
 
@@ -153,18 +151,11 @@ export function ChatTriggerClient({
         <>
           <AnimatePresence>{showChatUI && fabButton}</AnimatePresence>
           <Drawer open={open} onOpenChange={setOpen} handleOnly>
-            <DrawerContent
-              className="flex h-[min(530px,85dvh)] flex-col overscroll-contain"
-              style={
-                isKeyboardOpen
-                  ? { height: visualViewportHeight, maxHeight: "none" }
-                  : undefined
-              }
-            >
-              <DrawerHeader className="flex h-12 flex-row items-center justify-between">
+            <DrawerContent>
+              <DrawerHeader className="flex flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
                   <IconLego className="size-4" />
-                  <span className="text-[15px] leading-none tracking-tight">
+                  <span className="font-semibold text-[15px] leading-none tracking-tight">
                     {CHATBOT_NAME}
                   </span>
                   <BetaBadge />
@@ -173,9 +164,8 @@ export function ChatTriggerClient({
               </DrawerHeader>
               <ChatClient
                 {...chatClientProps}
-                iconSize="lg"
                 conversationClassName="px-4"
-                inputClassName="p-4 pb-safe"
+                inputClassName="p-4"
               />
             </DrawerContent>
           </Drawer>
@@ -206,7 +196,7 @@ export function ChatTriggerClient({
             <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-3">
               <PopoverTitle className="flex items-center gap-2">
                 <IconLego className="size-4" />
-                <span className="text-[15px] leading-none tracking-tight">
+                <span className="font-semibold text-[15px] leading-none tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />
