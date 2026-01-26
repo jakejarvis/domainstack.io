@@ -33,9 +33,9 @@ export function GridSortDropdown({
             {currentSort?.direction && (
               <span className="text-muted-foreground">
                 {currentSort.direction === "asc" ? (
-                  <IconSortDescending className="size-4 shrink-0 translate-y-[-1px]" />
+                  <IconSortAscending className="size-4" />
                 ) : (
-                  <IconSortAscending className="size-4 shrink-0 translate-y-[-1px]" />
+                  <IconSortDescending className="size-4" />
                 )}
               </span>
             )}

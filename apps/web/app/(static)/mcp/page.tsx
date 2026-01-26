@@ -5,7 +5,7 @@ import {
   SiWindsurf,
 } from "@icons-pack/react-simple-icons";
 import {
-  IconBook,
+  IconBook2,
   IconBrandOpenai,
   IconExternalLink,
 } from "@tabler/icons-react";
@@ -420,7 +420,7 @@ export default function McpPage() {
               <AccordionContent className="pt-1 text-foreground/90">
                 {item.content}
                 <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
-                  <IconBook className="mr-[1px] size-3" />
+                  <IconBook2 className="mr-[1px] size-3" />
                   Need help?
                   <a
                     href={item.docsUrl}

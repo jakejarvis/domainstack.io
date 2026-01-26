@@ -4,7 +4,7 @@ import {
   IconArrowsMinimize,
   IconExternalLink,
   IconRosetteDiscountCheck,
-  IconSourceCode,
+  IconZoomCode,
 } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
@@ -237,7 +237,7 @@ export function RawDataDialog({
                   aria-label={`View raw ${format} data`}
                   onClick={() => setOpen(true)}
                 >
-                  <IconSourceCode className="size-4 text-foreground/95" />
+                  <IconZoomCode className="size-4 text-foreground/95" />
                   <span className="sr-only">View raw {format} data</span>
                 </Button>
               }

@@ -2,7 +2,7 @@ import {
   IconAlertCircle,
   IconCheck,
   IconGauge,
-  IconMeteor,
+  IconHandLoveYou,
   IconRocket,
 } from "@tabler/icons-react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
@@ -222,7 +222,7 @@ export function AddDomainContent({
                 />
 
                 <div className="mb-2 flex items-center gap-2 font-medium">
-                  <IconMeteor className="size-4" />
+                  <IconHandLoveYou className="size-4" />
                   {PRO_TIER_INFO.name} Plan
                 </div>
                 <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
