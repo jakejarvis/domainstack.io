@@ -3,8 +3,8 @@
 import {
   IconCheck,
   IconCircleX,
-  IconClipboard,
-  IconClipboardText,
+  IconClipboardCheck,
+  IconCopy,
 } from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -56,7 +56,7 @@ export function CopyButton({
       await clipboardCopy(textToCopy);
 
       toast.success("Copied!", {
-        icon: <IconClipboardText className="size-4" />,
+        icon: <IconClipboardCheck className="size-4" />,
         position: "bottom-center",
       });
 
@@ -116,7 +116,7 @@ export function CopyButton({
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
           >
-            <IconClipboard />
+            <IconCopy />
           </motion.span>
         )}
       </AnimatePresence>
