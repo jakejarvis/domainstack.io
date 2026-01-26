@@ -69,9 +69,5 @@ export default async function DomainPage({
   // Track server-side page view
   analytics.track("report_viewed", { domain: registrable });
 
-  return (
-    <div className="container mx-auto max-w-4xl px-4 py-6">
-      <DomainReportClient domain={registrable} />
-    </div>
-  );
+  return <DomainReportClient domain={registrable} />;
 }
