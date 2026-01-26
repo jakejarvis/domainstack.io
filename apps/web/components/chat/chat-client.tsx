@@ -97,9 +97,6 @@ export function ChatClient({
 
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
-    try {
-      navigator.vibrate([50]);
-    } catch {}
     handleScrollToBottom();
     setInputLength(0);
   };

@@ -29,6 +29,7 @@ export function VibrationProvider() {
     }
 
     // State
+    let label: HTMLLabelElement;
     let checkbox: HTMLInputElement;
     let timeout: ReturnType<typeof setTimeout>;
     let lastTouch: number | null = null;
@@ -84,23 +85,27 @@ export function VibrationProvider() {
         const [vibrateDuration, ...rest] = adjusted;
 
         if (vibrateDuration == null) {
-          // Pattern exhausted - for "granted" mode, poll briefly in case more
-          // vibrations arrive while user interaction is still recent
-          if (support !== "full" && lastTouch) {
-            const wait = Math.max(0, 1000 - (Date.now() - lastTouch));
-            if (wait > 0) {
-              await sleep(1);
-              continue;
-            }
+          // Pattern exhausted - keep polling for more vibrations
+          // "full" mode (Safari 18-18.4): poll forever while in user interaction
+          // "granted" mode (Safari 18.4+): poll for up to 1 second
+          const wait =
+            support === "full"
+              ? Infinity
+              : lastTouch
+                ? Math.max(0, 1000 - (Date.now() - lastTouch))
+                : 0;
+          if (!wait) {
+            return;
           }
-          return;
+          await sleep(1);
+          continue;
         }
 
         const shouldVibrate = vibrateDuration > 0;
         const delay = (shouldVibrate ? 26.26 : (rest[0] ?? 0)) + drift;
 
         if (shouldVibrate) {
-          checkbox.click();
+          label.click();
         }
         drift = await sleep(delay);
       }
@@ -108,7 +113,7 @@ export function VibrationProvider() {
 
     // Handle user interactions
     function onInteraction(e: Event) {
-      if (e.target !== checkbox && e.target !== checkbox.parentElement) {
+      if (e.target !== label && e.target !== checkbox) {
         void process();
       }
     }
@@ -124,7 +129,7 @@ export function VibrationProvider() {
     };
 
     // Create hidden checkbox
-    const label = document.createElement("label");
+    label = document.createElement("label");
     label.ariaHidden = "true";
     label.style.display = "none";
 

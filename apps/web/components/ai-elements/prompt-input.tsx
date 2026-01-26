@@ -1,21 +1,13 @@
 "use client";
 
 import { IconSend } from "@tabler/icons-react";
-import type { ChatStatus, FileUIPart } from "ai";
-import { nanoid } from "nanoid";
+import type { ChatStatus } from "ai";
 import {
-  type ClipboardEventHandler,
   type ComponentProps,
-  createContext,
   type FormEvent,
   type FormEventHandler,
   type HTMLAttributes,
   type KeyboardEventHandler,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -28,35 +20,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
-// Internal Attachments Context (used by PromptInputTextarea for paste/backspace)
-// ============================================================================
-
-type AttachmentsContext = {
-  files: (FileUIPart & { id: string })[];
-  add: (files: File[] | FileList) => void;
-  remove: (id: string) => void;
-  clear: () => void;
-};
-
-const LocalAttachmentsContext = createContext<AttachmentsContext | null>(null);
-
-const usePromptInputAttachments = () => {
-  const context = useContext(LocalAttachmentsContext);
-  if (!context) {
-    throw new Error(
-      "usePromptInputAttachments must be used within a PromptInput",
-    );
-  }
-  return context;
-};
-
-// ============================================================================
 // PromptInput
 // ============================================================================
 
 export type PromptInputMessage = {
   text: string;
-  files: FileUIPart[];
 };
 
 export type PromptInputProps = Omit<
@@ -75,78 +43,12 @@ export const PromptInput = ({
   children,
   ...props
 }: PromptInputProps) => {
-  const formRef = useRef<HTMLFormElement | null>(null);
-
-  // Local attachments state (supports paste in textarea)
-  const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
-
-  const add = useCallback((fileList: File[] | FileList) => {
-    const incoming = Array.from(fileList);
-    if (incoming.length === 0) return;
-
-    setItems((prev) =>
-      prev.concat(
-        incoming.map((file) => ({
-          id: nanoid(),
-          type: "file" as const,
-          url: URL.createObjectURL(file),
-          mediaType: file.type,
-          filename: file.name,
-        })),
-      ),
-    );
-  }, []);
-
-  const remove = useCallback(
-    (id: string) =>
-      setItems((prev) => {
-        const found = prev.find((file) => file.id === id);
-        if (found?.url) {
-          URL.revokeObjectURL(found.url);
-        }
-        return prev.filter((file) => file.id !== id);
-      }),
-    [],
-  );
-
-  const clear = useCallback(
-    () =>
-      setItems((prev) => {
-        for (const file of prev) {
-          if (file.url) {
-            URL.revokeObjectURL(file.url);
-          }
-        }
-        return [];
-      }),
-    [],
-  );
-
-  // Keep a ref for cleanup on unmount
-  const filesRef = useRef(items);
-  filesRef.current = items;
-
-  useEffect(
-    () => () => {
-      for (const f of filesRef.current) {
-        if (f.url) URL.revokeObjectURL(f.url);
-      }
-    },
-    [],
-  );
-
-  const ctx = useMemo<AttachmentsContext>(
-    () => ({
-      files: items,
-      add,
-      remove,
-      clear,
-    }),
-    [items, add, remove, clear],
-  );
-
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
+
+    try {
+      navigator.vibrate([50]);
+    } catch {}
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -154,59 +56,21 @@ export const PromptInput = ({
 
     form.reset();
 
-    // Convert blob URLs to data URLs asynchronously
-    Promise.all(
-      items.map(async ({ id, ...item }) => {
-        if (item.url?.startsWith("blob:")) {
-          try {
-            const response = await fetch(item.url);
-            const blob = await response.blob();
-            const dataUrl = await new Promise<string | null>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = () => resolve(null);
-              reader.readAsDataURL(blob);
-            });
-            return { ...item, url: dataUrl ?? item.url };
-          } catch {
-            return item;
-          }
-        }
-        return item;
-      }),
-    )
-      .then((convertedFiles: FileUIPart[]) => {
-        try {
-          const result = onSubmit({ text, files: convertedFiles }, event);
-          if (result instanceof Promise) {
-            result
-              .then(() => clear())
-              .catch((error) =>
-                console.warn("Message submission failed:", error),
-              );
-          } else {
-            clear();
-          }
-        } catch (error) {
-          console.warn("Message submission failed:", error);
-        }
-      })
-      .catch((error) => {
-        console.warn("Failed to convert attachments:", error);
-      });
+    try {
+      onSubmit({ text }, event);
+    } catch (error) {
+      console.warn("Message submission failed:", error);
+    }
   };
 
   return (
-    <LocalAttachmentsContext.Provider value={ctx}>
-      <form
-        className={cn("w-full", className)}
-        onSubmit={handleSubmit}
-        ref={formRef}
-        {...props}
-      >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
-      </form>
-    </LocalAttachmentsContext.Provider>
+    <form
+      className={cn("w-full", className)}
+      onSubmit={handleSubmit}
+      {...props}
+    >
+      <InputGroup className="overflow-hidden">{children}</InputGroup>
+    </form>
   );
 };
 
@@ -224,7 +88,6 @@ export const PromptInputTextarea = ({
   placeholder = "What would you like to know\u2026",
   ...props
 }: PromptInputTextareaProps) => {
-  const attachments = usePromptInputAttachments();
   const [isComposing, setIsComposing] = useState(false);
 
   const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
@@ -247,42 +110,7 @@ export const PromptInputTextarea = ({
         return;
       }
 
-      try {
-        navigator.vibrate([50]);
-      } catch {}
-
       form?.requestSubmit();
-    }
-
-    // Remove last attachment when Backspace is pressed and textarea is empty
-    if (
-      e.key === "Backspace" &&
-      e.currentTarget.value === "" &&
-      attachments.files.length > 0
-    ) {
-      e.preventDefault();
-      const lastAttachment = attachments.files.at(-1);
-      if (lastAttachment) {
-        attachments.remove(lastAttachment.id);
-      }
-    }
-  };
-
-  const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = (event) => {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-
-    const files: File[] = [];
-    for (const item of items) {
-      if (item.kind === "file") {
-        const file = item.getAsFile();
-        if (file) files.push(file);
-      }
-    }
-
-    if (files.length > 0) {
-      event.preventDefault();
-      attachments.add(files);
     }
   };
 
@@ -293,7 +121,6 @@ export const PromptInputTextarea = ({
       onCompositionEnd={() => setIsComposing(false)}
       onCompositionStart={() => setIsComposing(true)}
       onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
       placeholder={placeholder}
       onChange={onChange}
       {...props}
