@@ -1,8 +1,8 @@
 import {
   IconActivity,
+  IconAlertOctagon,
   IconAlertTriangle,
   IconQuestionMark,
-  IconAlertTriangle as IconSiren,
   type TablerIcon,
 } from "@tabler/icons-react";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
@@ -96,7 +96,7 @@ function getStatusConfig(status: HealthStatus): {
       return {
         label: "Needs Attention",
         colorClass: "border-danger-border bg-danger/20 text-danger-foreground",
-        icon: IconSiren,
+        icon: IconAlertOctagon,
       };
     default:
       return {
