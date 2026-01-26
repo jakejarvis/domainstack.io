@@ -2,7 +2,7 @@
 
 import {
   IconAlertTriangle,
-  IconCalendar,
+  IconCalendarClock,
   IconRefresh,
   IconX,
 } from "@tabler/icons-react";
@@ -62,7 +62,7 @@ export function CalendarFeedPopover() {
             <PopoverTrigger
               render={
                 <Button variant="outline" size="icon">
-                  <IconCalendar />
+                  <IconCalendarClock />
                   <span className="sr-only">Subscribe</span>
                 </Button>
               }

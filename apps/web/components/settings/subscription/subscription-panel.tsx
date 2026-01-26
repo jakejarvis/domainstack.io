@@ -1,8 +1,8 @@
 import {
   IconCreditCard,
   IconGift,
+  IconHandLoveYou,
   IconRocket,
-  IconSparkles,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
@@ -55,7 +55,7 @@ export function SubscriptionPanel() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               {isPro ? (
-                <IconSparkles className="size-4 text-foreground/80" />
+                <IconHandLoveYou className="size-4 text-foreground/80" />
               ) : (
                 <IconGift className="size-4 text-foreground/80" />
               )}
@@ -122,7 +122,7 @@ export function SubscriptionPanel() {
 
             <div className="relative">
               <div className="mb-2 flex items-center gap-2 font-medium">
-                <IconSparkles className="size-4 text-foreground/80" />
+                <IconHandLoveYou className="size-4 text-foreground/80" />
                 {PRO_TIER_INFO.name} Plan
               </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">

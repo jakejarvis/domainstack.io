@@ -1,8 +1,8 @@
 import {
   IconCalendarDot,
+  IconCloudComputing,
   IconFingerprint,
   IconIdBadge2,
-  IconPlug,
   IconShieldExclamation,
   type TablerIcon,
 } from "@tabler/icons-react";
@@ -19,7 +19,7 @@ export const NOTIFICATION_CATEGORY_INFO: Record<
   providerChanges: {
     label: "Provider Changes",
     description: "Alerts when DNS, hosting, or email providers change",
-    icon: IconPlug,
+    icon: IconCloudComputing,
   },
   domainExpiry: {
     label: "Domain Expiration",

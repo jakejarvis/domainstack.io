@@ -1,4 +1,8 @@
-import { IconActivity, IconPlug, IconWorld } from "@tabler/icons-react";
+import {
+  IconActivity,
+  IconCloudComputing,
+  IconWorld,
+} from "@tabler/icons-react";
 import { useMemo } from "react";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import {
@@ -139,7 +143,7 @@ export function FilterDropdowns({
       {providerSections.length > 0 && (
         <MultiSelect
           label="Providers"
-          icon={IconPlug}
+          icon={IconCloudComputing}
           sections={providerSections}
           selected={providers}
           onSelectionChange={onProvidersChange}

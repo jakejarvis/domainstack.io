@@ -1,6 +1,6 @@
 import {
   IconActivity,
-  IconPlugConnected,
+  IconCloudComputing,
   IconProgressAlert,
   IconSearch,
   IconWorld,
@@ -121,7 +121,7 @@ export function DashboardFilters({
               className="size-3 shrink-0"
             />
           ) : (
-            <IconPlugConnected className="size-3 text-muted-foreground" />
+            <IconCloudComputing className="size-3 text-muted-foreground" />
           ),
         });
       }

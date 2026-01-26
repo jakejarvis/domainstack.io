@@ -121,7 +121,7 @@ function ModalTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="modal-title"
-      className={cn("font-semibold text-[15px]", className)}
+      className={cn("font-semibold text-base", className)}
       {...props}
     />
   );

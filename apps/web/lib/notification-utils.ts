@@ -2,9 +2,9 @@ import {
   IconAlertTriangle,
   IconBell,
   IconCalendarDot,
+  IconCloudComputing,
   IconFingerprint,
   IconIdBadge2,
-  IconPlug,
   IconShieldExclamation,
 } from "@tabler/icons-react";
 import type { NotificationType } from "@/lib/constants/notifications";
@@ -97,7 +97,7 @@ export function getNotificationIcon(type: string) {
     return IconFingerprint;
   }
   if (type === "provider_change") {
-    return IconPlug;
+    return IconCloudComputing;
   }
   if (type === "registration_change") {
     return IconIdBadge2;

@@ -1,9 +1,9 @@
 import {
   IconExternalLink,
   IconGridDots,
-  IconLayout,
   IconPlus,
-  IconSparkles,
+  IconRocket,
+  IconTable,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -53,7 +53,7 @@ export function DashboardHeader({
                 nativeButton={false}
                 render={
                   <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-                    <IconSparkles className="size-3" aria-hidden="true" />
+                    <IconRocket className="size-3" aria-hidden="true" />
                     Pro
                   </span>
                 }
@@ -64,7 +64,7 @@ export function DashboardHeader({
             </ResponsiveTooltip>
           ) : (
             <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-              <IconSparkles className="size-3" aria-hidden="true" />
+              <IconRocket className="size-3" aria-hidden="true" />
               Pro
             </span>
           )
@@ -178,7 +178,7 @@ export function DashboardHeader({
                       aria-label="Table view"
                       className="!px-3"
                     >
-                      <IconLayout className="size-4" />
+                      <IconTable className="size-4" />
                       <span className="sr-only">Table</span>
                     </ToggleGroupItem>
                   }
