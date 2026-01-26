@@ -3,32 +3,38 @@
   "vcs": {
     "enabled": true,
     "clientKind": "git",
-    "useIgnoreFile": true
+    "useIgnoreFile": false
   },
   "files": {
     "ignoreUnknown": true,
     "includes": [
-      "apps/**",
-      "packages/**",
-      "*.ts",
-      "*.js",
-      "*.json",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.mts",
+      "**/*.mjs",
+      "**/*.json",
       "!**/node_modules",
       "!**/.next",
+      "!**/.turbo",
+      "!**/.swc",
+      "!**/.vercel",
       "!**/dist",
       "!**/build",
       "!**/coverage",
       "!**/drizzle",
       "!**/public",
-      "!.github",
-      "!.vscode",
-      "!.turbo"
+      "!**/.well-known/workflow"
     ]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 80,
+    "attributePosition": "auto"
   },
   "linter": {
     "enabled": true,
