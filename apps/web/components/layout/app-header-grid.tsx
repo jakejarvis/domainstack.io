@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
   const { isSearchFocused } = useHeaderSearchFocus();
   const isMobile = useIsMobile();
-  // offsetThreshold defaults to HEADER_HEIGHT from layout constants
   const { direction, isPastThreshold } = useScrollDirection({
     threshold: 15,
   });
@@ -21,7 +20,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
     <>
       <motion.header
         className={cn(
-          "top-0 right-0 left-0 z-99 grid h-[var(--header-height,72px)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-black/15 border-b bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
+          "top-0 right-0 left-0 z-100 grid h-[var(--header-height)] grid-cols-[1fr_minmax(0,var(--container-2xl))_1fr] items-center gap-4 border-black/15 border-b bg-background/80 py-3 pr-4 pl-6 backdrop-blur dark:border-white/10",
           "md:sticky md:right-auto md:left-auto",
           // Mobile transform logic:
           // - Before threshold: behave like a normal element (scrolls away with the page)
@@ -50,9 +49,7 @@ export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
       </motion.header>
 
       {/* Spacer to prevent content jump when header is fixed/absolute on mobile */}
-      {isMobile && (
-        <div className="h-[var(--header-height,72px)]" aria-hidden />
-      )}
+      {isMobile && <div className="h-[var(--header-height)]" aria-hidden />}
     </>
   );
 }

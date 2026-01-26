@@ -47,13 +47,13 @@ function SectionNavSkeleton() {
         // Mobile: claims top edge
         "top-0",
         // Desktop: below sticky global header
-        "md:top-[var(--header-height,72px)]",
+        "md:top-[var(--header-height)]",
       )}
     >
       <div
         className={cn(
           "relative flex items-center",
-          "h-[var(--section-nav-height,48px)]",
+          "h-[var(--section-nav-height)]",
           // Full-width background using pseudo-element
           "before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2",
           "before:bg-background/80 before:backdrop-blur-md dark:before:bg-background/90",

@@ -4,13 +4,9 @@ import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
-import { useLayoutVariables } from "@/hooks/use-layout-variables";
 import { TRPCProvider } from "@/trpc/client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Inject layout CSS variables (--header-height, etc.) from JS constants
-  useLayoutVariables();
-
   return (
     <TRPCProvider>
       <PostHogIdentityProvider>

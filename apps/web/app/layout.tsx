@@ -57,7 +57,7 @@ export default function RootLayout({
           title="Domainstack"
         />
       </head>
-      <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased">
+      <body className="relative min-h-svh overscroll-none bg-background font-sans text-foreground tabular-nums antialiased [--header-height:72px]">
         <Providers>
           {/* Skip to main content link for keyboard navigation */}
           <a

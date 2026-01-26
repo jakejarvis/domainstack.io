@@ -9,34 +9,14 @@ import {
 } from "@/lib/constants/layout";
 
 /**
- * Reads a CSS variable as a pixel number from the document root.
- * Falls back to the provided default if the variable is not set or invalid.
+ * Calculates the scroll margin based on the screen size.
  */
-function getCSSVarPx(name: string, fallback: number): number {
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-  const parsed = Number.parseFloat(value);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
-
-/**
- * Gets the current scroll margin from CSS variables.
- * This ensures consistency with what CSS is actually using for scroll-margin-top.
- */
-function getScrollMarginFromCSS(isMobile: boolean): number {
-  const sectionNavHeight = getCSSVarPx(
-    "--section-nav-height",
-    SECTION_NAV_HEIGHT,
-  );
-  const scrollPadding = getCSSVarPx("--scroll-padding", SCROLL_PADDING);
+function resolveScrollMargin(isMobile: boolean): number {
   // Match `components/domain/report-section.tsx` scroll-mt behavior:
   // - mobile: section nav + padding
   // - md+: global header + section nav + padding
-  const headerHeight = !isMobile
-    ? getCSSVarPx("--header-height", HEADER_HEIGHT)
-    : 0;
-  return headerHeight + sectionNavHeight + scrollPadding;
+  const headerHeight = !isMobile ? HEADER_HEIGHT : 0;
+  return headerHeight + SECTION_NAV_HEIGHT + SCROLL_PADDING;
 }
 
 interface UseSectionObserverOptions {
@@ -78,7 +58,7 @@ export function useReportSectionObserver({
     if (sectionIds.length === 0) return;
 
     let rafId: number | null = null;
-    let scrollMarginPx = getScrollMarginFromCSS(isMobile);
+    let scrollMarginPx = resolveScrollMargin(isMobile);
 
     const updateActiveSection = () => {
       // During programmatic scrolling, keep the clicked section active until
@@ -132,7 +112,7 @@ export function useReportSectionObserver({
     };
 
     const handleResize = () => {
-      scrollMarginPx = getScrollMarginFromCSS(isMobile);
+      scrollMarginPx = resolveScrollMargin(isMobile);
       scheduleUpdate();
     };
 
