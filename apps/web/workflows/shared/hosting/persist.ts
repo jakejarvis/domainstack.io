@@ -8,8 +8,9 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
+import type { GeoIpData } from "@/lib/types/domain/hosting";
 import type { PersistResult } from "@/lib/workflow/types";
-import type { GeoIpData, ProviderDetectionData } from "./types";
+import type { ProviderDetectionData } from "./types";
 
 /**
  * Step: Persist hosting data to database.
@@ -25,7 +26,7 @@ import type { GeoIpData, ProviderDetectionData } from "./types";
 export async function persistHostingStep(
   domain: string,
   providers: ProviderDetectionData,
-  geo: GeoIpData["geo"] | null,
+  geo: GeoIpData["geo"],
 ): Promise<PersistResult> {
   "use step";
 

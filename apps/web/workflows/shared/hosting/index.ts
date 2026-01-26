@@ -6,7 +6,4 @@
 
 export { detectAndResolveProvidersStep, lookupGeoIpStep } from "./detect";
 export { persistHostingStep } from "./persist";
-export type {
-  GeoIpData,
-  ProviderDetectionData,
-} from "./types";
+export type { ProviderDetectionData } from "./types";

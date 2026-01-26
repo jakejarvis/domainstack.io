@@ -25,3 +25,12 @@ export interface HostingResponse {
   dnsProvider: ProviderRef;
   geo: HostingGeo | null;
 }
+
+/**
+ * Internal data structure for GeoIP lookup result.
+ */
+export interface GeoIpData {
+  geo: HostingGeo | null;
+  owner: string | null;
+  domain: string | null;
+}

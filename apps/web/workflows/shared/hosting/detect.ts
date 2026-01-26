@@ -7,7 +7,8 @@
 
 import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { Header } from "@/lib/types/domain/headers";
-import type { GeoIpData, ProviderDetectionData } from "./types";
+import type { GeoIpData } from "@/lib/types/domain/hosting";
+import type { ProviderDetectionData } from "./types";
 
 /**
  * Step: Lookup GeoIP data for an IP address.

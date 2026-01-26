@@ -544,10 +544,12 @@ function attachCertificates(
 }
 
 interface QueryTrackedDomainsOptions {
-  /** Whether to include DNS records (requires additional query). Default true. */
-  includeDnsRecords?: boolean;
   /** Whether to include archived domains. Default false. */
   includeArchived?: boolean;
+  /** Whether to include DNS records (requires additional query). Default true. */
+  includeDnsRecords?: boolean;
+  /** Whether to include registrar details (whois, rdap, contacts). Default true. */
+  includeRegistrarDetails?: boolean;
 }
 
 /**
@@ -565,7 +567,7 @@ async function queryTrackedDomainsWithDetails(
     | typeof userTrackedDomains.archivedAt,
   options: QueryTrackedDomainsOptions = {},
 ): Promise<TrackedDomainWithDetails[]> {
-  const { includeDnsRecords = true } = options;
+  const { includeDnsRecords = true, includeRegistrarDetails = true } = options;
 
   // Create aliases for the providers table (joined multiple times)
   const registrarProvider = alias(providers, "registrar_provider");
@@ -660,6 +662,19 @@ async function queryTrackedDomainsWithDetails(
     });
   }
 
+  // Strip registrar details if not requested (reduces RSC serialization size)
+  // Tooltip lazy-loads this data on demand via getDomainDetails
+  if (!includeRegistrarDetails) {
+    domainsResult = domainsResult.map((domain) => ({
+      ...domain,
+      registrar: {
+        id: domain.registrar.id,
+        name: domain.registrar.name,
+        domain: domain.registrar.domain,
+      },
+    }));
+  }
+
   return domainsResult;
 }
 
@@ -668,12 +683,15 @@ export interface GetTrackedDomainsOptions {
   includeArchived?: boolean;
   /** If true, includes DNS records (requires additional query). Default true. */
   includeDnsRecords?: boolean;
+  /** If true, includes registrar details (whois, rdap, contacts). Default true. */
+  includeRegistrarDetails?: boolean;
 }
 
 /**
  * Get all tracked domains for a user with domain details.
  * @param options.includeArchived - If true, returns all domains including archived. Default false.
  * @param options.includeDnsRecords - If true, includes DNS records. Default true.
+ * @param options.includeRegistrarDetails - If true, includes registrar details. Default true.
  */
 export async function getTrackedDomainsForUser(
   userId: string,
@@ -682,7 +700,11 @@ export async function getTrackedDomainsForUser(
   // Handle legacy boolean parameter for backward compatibility
   const opts =
     typeof options === "boolean" ? { includeArchived: options } : options;
-  const { includeArchived = false, includeDnsRecords = true } = opts;
+  const {
+    includeArchived = false,
+    includeDnsRecords = true,
+    includeRegistrarDetails = true,
+  } = opts;
 
   const whereCondition = includeArchived
     ? eq(userTrackedDomains.userId, userId)
@@ -695,7 +717,7 @@ export async function getTrackedDomainsForUser(
   return queryTrackedDomainsWithDetails(
     whereCondition as SQL,
     userTrackedDomains.createdAt,
-    { includeDnsRecords },
+    { includeDnsRecords, includeRegistrarDetails },
   );
 }
 

@@ -73,6 +73,7 @@ export const trackingRouter = createTRPCRouter({
       const items = await getTrackedDomainsForUser(ctx.user.id, {
         includeArchived,
         includeDnsRecords: false,
+        includeRegistrarDetails: false,
       });
 
       return items;
