@@ -1,11 +1,11 @@
 /** Map tool names to human-readable status messages */
 export const TOOL_STATUS_MESSAGES = {
-  getRegistration: "Looking up WHOIS data",
-  getDnsRecords: "Fetching DNS records",
-  getHosting: "Detecting hosting provider",
-  getCertificates: "Checking SSL certificate",
-  getHeaders: "Analyzing HTTP headers",
-  getSeo: "Fetching SEO metadata",
+  get_registration: "Looking up WHOIS data",
+  get_dns_records: "Fetching DNS records",
+  get_hosting: "Detecting hosting provider",
+  get_certificates: "Checking SSL certificate",
+  get_headers: "Analyzing HTTP headers",
+  get_seo: "Fetching SEO metadata",
 } as const;
 
 /** Known tool names from the chat workflow */

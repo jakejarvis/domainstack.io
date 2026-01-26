@@ -73,7 +73,7 @@ export type NotificationSeverity = "critical" | "warning" | "info";
 export function getSeverityIconColor(
   severity: NotificationSeverity,
   isRead: boolean,
-): "muted" | "destructive" | "warning" | "primary" {
+): "muted" | "destructive" | "warning" | "default" {
   if (isRead) return "muted";
   switch (severity) {
     case "critical":
@@ -81,7 +81,7 @@ export function getSeverityIconColor(
     case "warning":
       return "warning";
     default:
-      return "primary";
+      return "default";
   }
 }
 

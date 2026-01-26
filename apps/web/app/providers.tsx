@@ -4,6 +4,7 @@ import { AppProgressProvider as ProgressProvider } from "@bprogress/next";
 import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "next-themes";
 import { PostHogIdentityProvider } from "@/components/analytics/posthog-identity";
+import { VibrationProvider } from "@/components/providers/vibration-provider";
 import { TRPCProvider } from "@/trpc/client";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               }}
             >
               {children}
+              <VibrationProvider />
             </MotionConfig>
           </ProgressProvider>
         </ThemeProvider>

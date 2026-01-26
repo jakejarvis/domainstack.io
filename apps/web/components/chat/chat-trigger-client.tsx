@@ -118,7 +118,16 @@ export function ChatTriggerClient({
       size="icon-lg"
       aria-label={`Chat with ${CHATBOT_NAME}`}
       className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg transition-none"
-      onClick={isMobile ? () => setOpen(true) : undefined}
+      onClick={
+        isMobile
+          ? () => {
+              try {
+                navigator.vibrate([50]);
+              } catch {}
+              setOpen(true);
+            }
+          : undefined
+      }
       initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}

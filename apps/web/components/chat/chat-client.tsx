@@ -2,7 +2,7 @@
 
 import { ChatsIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 import {
   Conversation,
@@ -36,58 +36,6 @@ import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { cn } from "@/lib/utils";
 import { getToolStatusMessage } from "./utils";
-
-/** Tool card that auto-expands when the tool completes */
-function AutoExpandTool({
-  toolPart,
-  isStreamComplete,
-  onExpand,
-}: {
-  toolPart: ToolUIPart;
-  /** Whether the stream has finished (status is "ready") */
-  isStreamComplete: boolean;
-  /** Called when the tool auto-expands (e.g., to scroll into view) */
-  onExpand?: () => void;
-}) {
-  // If stream is done but tool never got output, treat as error
-  const isStuckPending =
-    isStreamComplete && toolPart.state === "input-available";
-
-  const effectiveState: ToolUIPart["state"] = isStuckPending
-    ? "output-error"
-    : toolPart.state;
-
-  const effectiveErrorText = isStuckPending
-    ? "Tool execution failed. The model may not support tool calling."
-    : toolPart.errorText;
-
-  const isComplete =
-    effectiveState === "output-available" || effectiveState === "output-error";
-
-  const [open, setOpen] = useState(isComplete);
-
-  // Auto-expand when tool completes (or errors)
-  useEffect(() => {
-    if (isComplete) {
-      setOpen(true);
-      onExpand?.();
-    }
-  }, [isComplete, onExpand]);
-
-  return (
-    <Tool open={open} onOpenChange={setOpen}>
-      <ToolHeader
-        title={getToolStatusMessage(toolPart.type)}
-        type={toolPart.type}
-        state={effectiveState}
-      />
-      <ToolContent>
-        <ToolInput input={toolPart.input} />
-        <ToolOutput output={toolPart.output} errorText={effectiveErrorText} />
-      </ToolContent>
-    </Tool>
-  );
-}
 
 export interface ChatClientProps {
   messages: UIMessage[];
@@ -150,6 +98,9 @@ export function ChatClient({
 
   const handleSubmit = (message: { text: string }) => {
     sendMessage(message);
+    try {
+      navigator.vibrate([50]);
+    } catch {}
     handleScrollToBottom();
     setInputLength(0);
   };
@@ -228,13 +179,24 @@ export function ChatClient({
                         );
                       }
                       if (part.type.startsWith("tool-") && showToolCalls) {
+                        const toolPart = part as ToolUIPart;
                         return (
-                          <AutoExpandTool
-                            key={`${message.id}-${index}`}
-                            toolPart={part as ToolUIPart}
-                            isStreamComplete={status === "ready"}
-                            onExpand={handleScrollToBottom}
-                          />
+                          <Tool key={`${message.id}-${index}`}>
+                            <ToolHeader
+                              title={getToolStatusMessage(toolPart.type)}
+                              type={toolPart.type}
+                              state={toolPart.state}
+                            />
+                            <ToolContent>
+                              <ToolInput input={toolPart.input} />
+                              {toolPart.state === "output-available" && (
+                                <ToolOutput
+                                  output={toolPart.output}
+                                  errorText={toolPart.errorText}
+                                />
+                              )}
+                            </ToolContent>
+                          </Tool>
                         );
                       }
                       return null;

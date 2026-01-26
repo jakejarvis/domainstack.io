@@ -26,26 +26,6 @@ const domainSchema = z.object({
 });
 
 /**
- * Helper to format tRPC result for tool response.
- */
-function formatToolResult(result: {
-  success: boolean;
-  data?: unknown;
-  error?: string;
-}): string {
-  if (!result.success) {
-    return JSON.stringify({ error: result.error ?? "Unknown error" });
-  }
-
-  const data = { ...(result.data as Record<string, unknown>) };
-  delete data.rateLimit;
-  delete data.cached;
-  delete data.stale;
-
-  return JSON.stringify(data, null, 2);
-}
-
-/**
  * Check if an error is an expected network/domain error vs an unexpected bug.
  * Expected errors: network issues, DNS failures, timeouts, rate limits, etc.
  * Unexpected errors: import failures, type errors, programming bugs
@@ -75,14 +55,8 @@ function isExpectedError(message: string): boolean {
 
 /**
  * Format an error for tool response and log it.
- * Returns a JSON string with sanitized error message for the AI to interpret.
- * Internal details (hostnames, database errors, etc.) are logged but not exposed.
  */
-async function handleToolError(
-  err: unknown,
-  domain: string,
-  toolName: string,
-): Promise<string> {
+async function handleToolError(err: unknown, domain: string, toolName: string) {
   // Import logger inside to keep Node.js modules out of workflow sandbox
   const { createLogger } = await import("@/lib/logger/server");
   const logger = createLogger({ source: "chat/tools" });
@@ -128,7 +102,7 @@ async function handleToolError(
     userMessage = `Could not connect to ${domain}. The server may be down.`;
   }
 
-  return JSON.stringify({ error: userMessage });
+  return { error: userMessage };
 }
 
 /**
@@ -142,90 +116,75 @@ export interface ToolContext {
 // Step functions for each domain lookup
 // tRPC caller is created INSIDE each step to avoid workflow sandbox issues
 
-async function getRegistrationStep(
-  domain: string,
-  ctx: ToolContext,
-): Promise<string> {
+async function getRegistrationStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getRegistration({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getRegistration");
+    return handleToolError(err, domain, "get_registration");
   }
 }
 
-async function getDnsRecordsStep(
-  domain: string,
-  ctx: ToolContext,
-): Promise<string> {
+async function getDnsRecordsStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getDnsRecords({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getDnsRecords");
+    return handleToolError(err, domain, "get_dns_records");
   }
 }
 
-async function getHostingStep(
-  domain: string,
-  ctx: ToolContext,
-): Promise<string> {
+async function getHostingStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getHosting({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getHosting");
+    return handleToolError(err, domain, "get_hosting");
   }
 }
 
-async function getCertificatesStep(
-  domain: string,
-  ctx: ToolContext,
-): Promise<string> {
+async function getCertificatesStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getCertificates({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getCertificates");
+    return handleToolError(err, domain, "get_certificates");
   }
 }
 
-async function getHeadersStep(
-  domain: string,
-  ctx: ToolContext,
-): Promise<string> {
+async function getHeadersStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getHeaders({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getHeaders");
+    return handleToolError(err, domain, "get_headers");
   }
 }
 
-async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
+async function getSeoStep(domain: string, ctx: ToolContext) {
   "use step";
   try {
     const { createCaller } = await import("@/server/routers/_app");
     const trpc = createCaller({ req: undefined, ip: ctx.ip, session: null });
     const result = await trpc.domain.getSeo({ domain });
-    return formatToolResult(result);
+    return result.data;
   } catch (err) {
-    return handleToolError(err, domain, "getSeo");
+    return handleToolError(err, domain, "get_seo");
   }
 }
 
@@ -242,42 +201,42 @@ async function getSeoStep(domain: string, ctx: ToolContext): Promise<string> {
  */
 export function createDomainToolset(ctx: ToolContext) {
   return {
-    getRegistration: tool({
+    get_registration: tool({
       description:
         "Get WHOIS/RDAP registration data for a domain including registrar, creation date, expiration date, nameservers, and registrant information. Use this tool when users ask about domain ownership, registration, expiry, or who owns a domain.",
       inputSchema: domainSchema,
       strict: true,
       execute: async ({ domain }) => getRegistrationStep(domain, ctx),
     }),
-    getDnsRecords: tool({
+    get_dns_records: tool({
       description:
         "Get DNS records for a domain including A, AAAA, CNAME, MX, TXT, NS, and SOA records. Use this tool when users ask about DNS configuration, IP addresses, mail servers, or nameservers.",
       inputSchema: domainSchema,
       strict: true,
       execute: async ({ domain }) => getDnsRecordsStep(domain, ctx),
     }),
-    getHosting: tool({
+    get_hosting: tool({
       description:
         "Detect hosting, DNS, CDN, and email providers for a domain by analyzing DNS records and HTTP headers. Use this tool when users ask where a site is hosted, what CDN they use, or who provides their email.",
       inputSchema: domainSchema,
       strict: true,
       execute: async ({ domain }) => getHostingStep(domain, ctx),
     }),
-    getCertificates: tool({
+    get_certificates: tool({
       description:
         "Get SSL/TLS certificate information for a domain including issuer, validity dates, and certificate chain. Use this tool when users ask about HTTPS, SSL certificates, security, or certificate expiry.",
       inputSchema: domainSchema,
       strict: true,
       execute: async ({ domain }) => getCertificatesStep(domain, ctx),
     }),
-    getHeaders: tool({
+    get_headers: tool({
       description:
         "Get HTTP response headers for a domain including security headers, caching headers, and server information. Use this tool when users ask about security headers, server software, caching, or HTTP configuration.",
       inputSchema: domainSchema,
       strict: true,
       execute: async ({ domain }) => getHeadersStep(domain, ctx),
     }),
-    getSeo: tool({
+    get_seo: tool({
       description:
         "Get SEO metadata for a domain including title, description, Open Graph tags, Twitter cards, and robots.txt rules. Use this tool when users ask about SEO, meta tags, social sharing, or how a site appears in search.",
       inputSchema: domainSchema,

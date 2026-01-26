@@ -20,6 +20,7 @@ export const Conversation = ({
   return (
     <ScrollArea
       className={cn("min-h-0 flex-1", className)}
+      scrollFade={false}
       scrollRef={scrollRef}
       contentRef={contentRef}
       role="log"

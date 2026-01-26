@@ -21,7 +21,7 @@ export function NotificationCard({
 }: NotificationCardProps) {
   const IconComponent = getNotificationIcon(notification.type);
   const severity = getNotificationSeverity(notification.type);
-  const _iconColor = getSeverityIconColor(severity, !!notification.readAt);
+  const iconColor = getSeverityIconColor(severity, !!notification.readAt);
   const isUnread = !notification.readAt;
 
   // Build href with domainId filter when notification is domain-specific
@@ -41,7 +41,7 @@ export function NotificationCard({
     >
       <div className="flex gap-3">
         {/* Icon */}
-        <Icon size="sm" className="rounded-full">
+        <Icon size="sm" variant={iconColor} className="rounded-full">
           <IconComponent />
         </Icon>
 

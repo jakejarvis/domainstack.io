@@ -34,6 +34,9 @@ export const Suggestion = ({
   ...props
 }: SuggestionProps) => {
   const handleClick = () => {
+    try {
+      navigator.vibrate([50]);
+    } catch {}
     onClick?.(suggestion);
   };
 

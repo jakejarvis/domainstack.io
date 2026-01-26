@@ -247,6 +247,10 @@ export const PromptInputTextarea = ({
         return;
       }
 
+      try {
+        navigator.vibrate([50]);
+      } catch {}
+
       form?.requestSubmit();
     }
 

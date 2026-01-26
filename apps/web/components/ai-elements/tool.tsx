@@ -26,7 +26,7 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
     className={cn(
-      "not-prose mb-4 w-full rounded-md border border-border",
+      "not-prose w-full rounded-md border border-border",
       className,
     )}
     {...props}
@@ -104,7 +104,7 @@ export type ToolInputProps = ComponentProps<"div"> & {
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
   <div
-    className={cn("min-w-0 space-y-2 overflow-hidden p-4", className)}
+    className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)}
     {...props}
   >
     <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -120,28 +120,58 @@ export type ToolOutputProps = ComponentProps<"div"> & {
 };
 
 /**
+ * Unwrap nested output structures from AI SDK.
+ * Handles: { type: "tool-result", output: { type: "text", value: "..." } }
+ * Returns the innermost value string, or null if not found.
+ */
+function extractTextValue(value: unknown): string | null {
+  if (typeof value !== "object" || value === null || isValidElement(value)) {
+    return null;
+  }
+
+  // Handle tool-result wrapper: { type: "tool-result", output: ... }
+  if ("type" in value && value.type === "tool-result" && "output" in value) {
+    return extractTextValue(value.output);
+  }
+
+  // Handle text wrapper: { type: "text", value: "..." }
+  if (
+    "type" in value &&
+    value.type === "text" &&
+    "value" in value &&
+    typeof value.value === "string"
+  ) {
+    return value.value;
+  }
+
+  return null;
+}
+
+/**
+ * Format a JSON string or object for display, with pretty printing.
+ */
+function formatJsonValue(value: string): string {
+  try {
+    const parsed = JSON.parse(value);
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    // Not valid JSON, return as-is
+    return value;
+  }
+}
+
+/**
  * Extract and format the tool output for display.
  * Handles nested structures like { type: "text", value: "..." } from AI SDK.
+ * The text wrapper can appear as either:
+ * - An object: { type: "text", value: "..." }
+ * - A string: '{"type":"text","value":"..."}'
  */
 function formatToolOutput(output: ToolUIPart["output"]): string {
   // Handle text content objects from AI SDK
-  if (
-    typeof output === "object" &&
-    output !== null &&
-    !isValidElement(output) &&
-    "type" in output &&
-    output.type === "text" &&
-    "value" in output &&
-    typeof output.value === "string"
-  ) {
-    // Try to parse the value as JSON for pretty printing
-    try {
-      const parsed = JSON.parse(output.value);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      // Not valid JSON, return as-is
-      return output.value;
-    }
+  const textValue = extractTextValue(output);
+  if (textValue !== null) {
+    return formatJsonValue(textValue);
   }
 
   // Handle regular objects
@@ -154,9 +184,15 @@ function formatToolOutput(output: ToolUIPart["output"]): string {
   }
 
   // Handle strings - try to parse as JSON for pretty printing
+  // Also check if parsed result is a text content wrapper
   if (typeof output === "string") {
     try {
       const parsed = JSON.parse(output);
+      // Check if the parsed result is a text content wrapper
+      const innerTextValue = extractTextValue(parsed);
+      if (innerTextValue !== null) {
+        return formatJsonValue(innerTextValue);
+      }
       return JSON.stringify(parsed, null, 2);
     } catch {
       return output;
@@ -182,7 +218,7 @@ export const ToolOutput = ({
 
   return (
     <div
-      className={cn("min-w-0 space-y-2 overflow-hidden p-4", className)}
+      className={cn("min-w-0 space-y-2 overflow-hidden p-3", className)}
       {...props}
     >
       <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -195,7 +231,9 @@ export const ToolOutput = ({
         )}
       >
         {errorText && <div>{errorText}</div>}
-        {formattedOutput && <CodeBlock>{formattedOutput}</CodeBlock>}
+        {formattedOutput && (
+          <CodeBlock className="max-h-[200px]">{formattedOutput}</CodeBlock>
+        )}
       </div>
     </div>
   );
