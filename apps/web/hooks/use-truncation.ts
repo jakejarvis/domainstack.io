@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 export function useTruncation() {
   const valueRef = useRef<HTMLSpanElement | null>(null);
@@ -7,7 +13,9 @@ export function useTruncation() {
   const recalcTruncation = useCallback(() => {
     const element = valueRef.current;
     if (!element) return;
-    setIsTruncated(element.scrollWidth > element.clientWidth);
+    startTransition(() => {
+      setIsTruncated(element.scrollWidth > element.clientWidth);
+    });
   }, []);
 
   useEffect(() => {

@@ -328,7 +328,7 @@ export function RawDataDialog({
             variant="outline"
             size="sm"
             className="!px-3 gap-2 text-[13px]"
-            onClick={() => setWrapLines(!wrapLines)}
+            onClick={() => setWrapLines((prev) => !prev)}
           >
             <Checkbox checked={wrapLines} className="size-3.5" />
             Wrap lines

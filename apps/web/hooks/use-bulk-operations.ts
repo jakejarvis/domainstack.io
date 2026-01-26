@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 
@@ -7,9 +7,6 @@ type UseBulkOperationsOptions = {
 };
 
 export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
-  const [isBulkArchiving, setIsBulkArchiving] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-
   // Store callback in ref to avoid re-creating functions when onComplete changes
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -20,7 +17,6 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
 
   const executeBulkArchive = useCallback(
     async (domainIds: string[]) => {
-      setIsBulkArchiving(true);
       try {
         const result = await bulkArchiveMutation.mutateAsync({
           trackedDomainIds: domainIds,
@@ -37,8 +33,6 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         }
       } catch {
         // Error handled in mutation onError
-      } finally {
-        setIsBulkArchiving(false);
       }
     },
     [bulkArchiveMutation],
@@ -46,7 +40,6 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
 
   const executeBulkDelete = useCallback(
     async (domainIds: string[]) => {
-      setIsBulkDeleting(true);
       try {
         const result = await bulkDeleteMutation.mutateAsync({
           trackedDomainIds: domainIds,
@@ -63,16 +56,15 @@ export function useBulkOperations({ onComplete }: UseBulkOperationsOptions) {
         }
       } catch {
         // Error handled in mutation onError
-      } finally {
-        setIsBulkDeleting(false);
       }
     },
     [bulkDeleteMutation],
   );
 
   return {
-    isBulkArchiving,
-    isBulkDeleting,
+    // Use mutation's built-in isPending instead of manual loading state
+    isBulkArchiving: bulkArchiveMutation.isPending,
+    isBulkDeleting: bulkDeleteMutation.isPending,
     executeBulkArchive,
     executeBulkDelete,
   };

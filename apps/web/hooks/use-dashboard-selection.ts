@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Hook for managing multi-select state with O(1) operations.
@@ -115,10 +115,9 @@ export function useDashboardSelection<T extends string = string>(
   const hasSelection = selectedCount > 0;
 
   // Check if all visible items are selected (for checkbox indeterminate state)
-  const visibleSelectedCount = useMemo(
-    () => effectiveVisibleIds.filter((id) => selectedIds.has(id)).length,
-    [effectiveVisibleIds, selectedIds],
-  );
+  const visibleSelectedCount = effectiveVisibleIds.filter((id) =>
+    selectedIds.has(id),
+  ).length;
   const isAllSelected =
     effectiveVisibleIds.length > 0 &&
     visibleSelectedCount === effectiveVisibleIds.length;
@@ -127,7 +126,7 @@ export function useDashboardSelection<T extends string = string>(
     visibleSelectedCount < effectiveVisibleIds.length;
 
   // Get selected IDs as array (for iteration)
-  const selectedArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
+  const selectedArray = Array.from(selectedIds);
 
   return {
     // State

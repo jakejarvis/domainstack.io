@@ -2,7 +2,7 @@
 
 import type { PaginationState } from "@tanstack/react-table";
 import { parseAsInteger, useQueryState } from "nuqs";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import type { DashboardPageSizeOptions } from "@/lib/dashboard-utils";
 
@@ -32,13 +32,7 @@ export function useDashboardPagination(): {
   // Convert 1-indexed URL param to 0-indexed internal state
   const pageIndex = Math.max(0, pageParam - 1);
 
-  const pagination: PaginationState = useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize],
-  );
+  const pagination: PaginationState = { pageIndex, pageSize };
 
   const setPageIndex = useCallback(
     (newIndex: number) => {
