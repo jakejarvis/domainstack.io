@@ -460,21 +460,26 @@ export default function McpPage() {
                 </span>
                 <ul className="mt-2 space-y-1 pl-2 [&_li]:list-none">
                   {tool.parameters.map((param) => (
-                    <li key={param.name} className="font-mono text-[13px]">
-                      <span className="text-foreground">{param.name}</span>
-                      <span className="text-muted-foreground">
-                        : {param.type}
+                    <li key={param.name} className="space-x-2">
+                      <span className="font-mono text-[13px] text-foreground">
+                        {param.name}
                       </span>
+                      <Badge
+                        variant="outline"
+                        className="text-xs lowercase leading-4"
+                      >
+                        {param.type}
+                      </Badge>
                       {param.required && (
                         <Badge
-                          variant="secondary"
-                          className="ml-2 text-xs lowercase leading-4"
+                          variant="destructive"
+                          className="text-xs lowercase leading-4"
                         >
                           Required
                         </Badge>
                       )}
                       {"description" in param && (
-                        <span className="ml-2 font-sans text-muted-foreground text-xs">
+                        <span className="font-sans text-muted-foreground text-xs">
                           {param.description}
                         </span>
                       )}

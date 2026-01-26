@@ -1,20 +1,12 @@
-import {
-  IconCreditCard,
-  IconGift,
-  IconHandLoveYou,
-  IconRocket,
-} from "@tabler/icons-react";
+import { IconCreditCard } from "@tabler/icons-react";
 import { format } from "date-fns";
-import { QuotaBar } from "@/components/dashboard/quota-bar";
+import { PlanStatusCard } from "@/components/plan-status-card";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { UpgradeButton } from "@/components/upgrade-button";
+import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
-import { cn } from "@/lib/utils";
 
 export function SubscriptionPanel() {
   // Subscription query and hooks
@@ -51,43 +43,14 @@ export function SubscriptionPanel() {
     >
       <div className="space-y-4">
         {/* Current plan info */}
-        <div className="flex items-center justify-between rounded-md border border-black/10 bg-muted/30 p-4 dark:border-white/10">
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              {isPro ? (
-                <IconHandLoveYou className="size-4 text-foreground/80" />
-              ) : (
-                <IconGift className="size-4 text-foreground/80" />
-              )}
-              <span className="font-medium">{isPro ? "Pro" : "Free"} Plan</span>
-              {isPro && (
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 font-medium text-xs",
-                    subscription?.endsAt
-                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                      : "bg-accent-gold/10 text-accent-gold",
-                  )}
-                >
-                  {subscription?.endsAt
-                    ? `Ends ${format(subscription?.endsAt, "MMM d")}`
-                    : "Active"}
-                </span>
-              )}
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {subscription?.activeCount} of {subscription?.planQuota} domains
-              used
-            </p>
-          </div>
-          {subscription && (
-            <QuotaBar
-              used={subscription.activeCount}
-              planQuota={subscription.planQuota}
-              className="w-24"
-            />
-          )}
-        </div>
+        {subscription && (
+          <PlanStatusCard
+            activeCount={subscription.activeCount}
+            planQuota={subscription.planQuota}
+            isPro={isPro}
+            endsAt={subscription.endsAt}
+          />
+        )}
 
         {/* Actions */}
         {isPro ? (
@@ -104,49 +67,12 @@ export function SubscriptionPanel() {
             {subscription?.endsAt && (
               <p className="text-center text-muted-foreground text-xs">
                 Your Pro access continues until{" "}
-                {format(subscription?.endsAt, "MMMM d, yyyy")}
+                {format(subscription.endsAt, "MMMM d, yyyy")}
               </p>
             )}
           </div>
         ) : (
-          <div className="relative overflow-hidden rounded-md border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-            {/* Decorative elements - subtle warm glows */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/15 blur-3xl"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
-            />
-
-            <div className="relative">
-              <div className="mb-2 flex items-center gap-2 font-medium">
-                <IconHandLoveYou className="size-4 text-foreground/80" />
-                {PRO_TIER_INFO.name} Plan
-              </div>
-              <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
-                <li>Track up to {PLAN_QUOTAS.pro} domains</li>
-                <li>Priority email notifications</li>
-                <li>Support development</li>
-              </ul>
-              <div className="mb-4 flex items-baseline gap-2 text-sm">
-                <span className="font-semibold text-accent-gold">
-                  {PRO_TIER_INFO.monthly.label}
-                </span>
-                <span className="text-muted-foreground">or</span>
-                <span className="font-semibold text-accent-gold">
-                  {PRO_TIER_INFO.yearly.label}
-                </span>
-                <span className="text-muted-foreground/70 text-xs">
-                  ({PRO_TIER_INFO.yearly.savings})
-                </span>
-              </div>
-              <UpgradeButton className="w-full" icon={IconRocket}>
-                Upgrade to Pro
-              </UpgradeButton>
-            </div>
-          </div>
+          <UpgradeCard />
         )}
       </div>
     </SettingsCard>

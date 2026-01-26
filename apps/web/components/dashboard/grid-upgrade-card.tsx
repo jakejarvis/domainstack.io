@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
-export function UpgradeCard() {
+export function GridUpgradeCard() {
   const { isPro, isSubscriptionLoading } = useSubscription();
 
   // Don't show if already a Pro user or still loading
@@ -41,7 +41,7 @@ export function UpgradeCard() {
           </p>
 
           {/* Pricing */}
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5 text-sm">
             <span className="font-medium text-accent-gold">
               {PRO_TIER_INFO.monthly.label}
             </span>

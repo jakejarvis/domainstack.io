@@ -1,16 +1,10 @@
-import {
-  IconAlertCircle,
-  IconCheck,
-  IconGauge,
-  IconHandLoveYou,
-  IconRocket,
-} from "@tabler/icons-react";
+import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
 import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
 import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { QuotaBar } from "@/components/dashboard/quota-bar";
+import { PlanStatusCard } from "@/components/plan-status-card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,11 +23,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { UpgradeButton } from "@/components/upgrade-button";
+import { UpgradeCard } from "@/components/upgrade-card";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
-import { PRO_TIER_INFO } from "@/lib/polar/products";
 import type { ResumeDomainData } from "@/lib/types/verification";
 
 export type AddDomainContentProps = {
@@ -161,14 +153,14 @@ export function AddDomainContent({
   if (!subscription?.canAddMore && !resumeDomain && step !== 3) {
     const quotaContent = (
       <>
-        <div className="mb-4 flex flex-col items-center text-center">
-          <Icon size="lg" variant="warning" className="mb-3">
+        <div className="mb-4 flex flex-col items-center gap-2 text-center">
+          <Icon size="lg" variant="destructive" className="mb-2">
             <IconGauge />
           </Icon>
           <h2 className="font-semibold text-lg tracking-tight">
             Domain Limit Reached
           </h2>
-          <p className="mt-1 text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm">
             You&apos;ve reached your limit of {subscription?.planQuota} tracked
             domain
             {subscription?.planQuota !== 1 && "s"}.
@@ -176,27 +168,17 @@ export function AddDomainContent({
         </div>
 
         <div className="space-y-4">
-          {/* Usage indicator */}
-          <div className="flex items-center justify-between rounded-xl border border-black/10 bg-muted/30 p-4 dark:border-white/10">
-            <div>
-              <div className="font-medium">{isPro ? "Pro" : "Free"} Plan</div>
-              <p className="text-muted-foreground text-sm">
-                {subscription?.activeCount} of {subscription?.planQuota} domains
-                used
-              </p>
-            </div>
-            {subscription && (
-              <QuotaBar
-                used={subscription.activeCount}
-                planQuota={subscription.planQuota}
-                className="w-24"
-              />
-            )}
-          </div>
+          {subscription && (
+            <PlanStatusCard
+              activeCount={subscription.activeCount}
+              planQuota={subscription.planQuota}
+              isPro={isPro}
+              endsAt={subscription.endsAt}
+            />
+          )}
 
           {isPro ? (
             <>
-              {/* Pro user at limit */}
               <p className="text-center text-muted-foreground text-sm">
                 You can archive unused domains to make room for new ones, or
                 remove domains you no longer need to track.
@@ -208,57 +190,14 @@ export function AddDomainContent({
               )}
             </>
           ) : (
-            <>
-              {/* Pro upgrade option */}
-              <div className="relative overflow-hidden rounded-xl border border-black/10 bg-gradient-to-br from-black/[0.02] to-black/[0.04] p-4 dark:border-white/10 dark:from-white/[0.02] dark:to-white/[0.04]">
-                {/* Decorative elements - subtle warm glows */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-accent-gold/15 blur-3xl"
-                />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -bottom-8 -left-8 size-24 rounded-full bg-accent-gold-muted/20 blur-3xl"
-                />
-
-                <div className="mb-2 flex items-center gap-2 font-medium">
-                  <IconHandLoveYou className="size-4" />
-                  {PRO_TIER_INFO.name} Plan
-                </div>
-                <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
-                  <li>Track up to {PLAN_QUOTAS.pro} domains</li>
-                  <li>Priority email notifications</li>
-                  <li>Support development</li>
-                </ul>
-                <div className="relative flex items-baseline gap-2 text-sm">
-                  <span className="font-semibold text-accent-gold">
-                    {PRO_TIER_INFO.monthly.label}
-                  </span>
-                  <span className="text-muted-foreground">or</span>
-                  <span className="font-semibold text-accent-gold">
-                    {PRO_TIER_INFO.yearly.label}
-                  </span>
-                  <span className="text-muted-foreground/70 text-xs">
-                    ({PRO_TIER_INFO.yearly.savings})
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <UpgradeButton className="w-full" icon={IconRocket}>
-                  Upgrade to Pro
-                </UpgradeButton>
-                {onClose && (
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    className="w-full"
-                  >
-                    Close
-                  </Button>
-                )}
-              </div>
-            </>
+            <div className="flex flex-col gap-2">
+              <UpgradeCard />
+              {onClose && (
+                <Button variant="outline" onClick={onClose} className="w-full">
+                  Close
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </>

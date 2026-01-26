@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
-import { UpgradeCard } from "@/components/dashboard/upgrade-card";
+import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
@@ -172,7 +172,7 @@ export function DashboardGrid({
           className="h-full"
           {...getItemMotionProps(domains.length)}
         >
-          <UpgradeCard />
+          <GridUpgradeCard />
         </motion.div>
       </AnimatePresence>
     </div>
