@@ -1,4 +1,4 @@
-import { ArrowCircleUpIcon, RocketLaunchIcon } from "@phosphor-icons/react/ssr";
+import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -29,7 +29,7 @@ export function UpgradeCard() {
         <div className="flex h-full flex-1 flex-col items-center justify-center">
           {/* Icon */}
           <div className="mb-4 flex size-14 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
-            <ArrowCircleUpIcon className="size-7 text-accent-gold" />
+            <IconCircleArrowUp className="size-7 text-accent-gold" />
           </div>
 
           {/* Heading */}
@@ -53,11 +53,7 @@ export function UpgradeCard() {
         </div>
 
         {/* CTA Button - pushed to bottom */}
-        <UpgradeButton
-          variant="outline"
-          className="w-full"
-          icon={RocketLaunchIcon}
-        >
+        <UpgradeButton variant="outline" className="w-full" icon={IconRocket}>
           Get Pro
         </UpgradeButton>
       </CardContent>

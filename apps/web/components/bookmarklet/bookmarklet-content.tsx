@@ -2,11 +2,11 @@
 
 import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
-  ArrowElbowLeftUpIcon,
-  FilmStripIcon,
-  MouseLeftClickIcon,
-  StackPlusIcon,
-} from "@phosphor-icons/react/ssr";
+  IconCornerLeftUp,
+  IconMouse,
+  IconMovie,
+  IconSquareRoundedPlus2,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -38,12 +38,12 @@ export function BookmarkletContent() {
   return (
     <>
       <div className="mb-4 space-y-4">
-        <p className="text-muted-foreground text-sm">
+        <p>
           Drag the button below to your bookmarks bar. Then, press it on any
           site and the report for that domain will open in a new tab, like
           magic!
         </p>
-        <div className="flex justify-center">
+        <div className="not-prose flex justify-center">
           <Button
             size="lg"
             nativeButton={false}
@@ -52,12 +52,12 @@ export function BookmarkletContent() {
             onClick={(e) => {
               e.preventDefault();
               toast.info("Drag the button to your bookmarks bar to use it.", {
-                icon: <ArrowElbowLeftUpIcon className="size-4" />,
+                icon: <IconCornerLeftUp className="size-4" />,
                 position: "top-center",
               });
             }}
           >
-            <MouseLeftClickIcon />
+            <IconMouse />
             Inspect Domain
           </Button>
         </div>
@@ -65,20 +65,23 @@ export function BookmarkletContent() {
 
       <Separator className="my-5 bg-border/80 dark:bg-border/50" />
 
-      <Accordion multiple className="w-full rounded-lg border bg-muted/20">
+      <Accordion
+        multiple
+        className="not-prose w-full rounded-lg border bg-muted/20"
+      >
         <AccordionItem
           value="apple-shortcut"
-          className="border-border border-b px-4"
+          className="border-border border-b px-4 last:border-none"
         >
-          <AccordionTrigger className="text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+          <AccordionTrigger className="text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
-              <SiOpenlayers className="size-4" />
+              <SiOpenlayers className="size-4 text-muted-foreground" />
               <span className="font-semibold leading-none">Apple Shortcut</span>
             </span>
           </AccordionTrigger>
           <AccordionContent className="pt-1 text-foreground/90">
             <div className="space-y-3.5">
-              <p className="text-muted-foreground text-sm">
+              <p>
                 On Apple devices, add a Shortcut via the button below. An{" "}
                 <span className="font-semibold text-foreground/80">
                   Inspect Domain
@@ -95,7 +98,7 @@ export function BookmarkletContent() {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       data-disable-progress
                     >
-                      <StackPlusIcon />
+                      <IconSquareRoundedPlus2 />
                       Add Shortcut
                     </a>
                   }
@@ -105,7 +108,7 @@ export function BookmarkletContent() {
                   <DialogTrigger
                     render={
                       <Button variant="outline" aria-label="Watch demo">
-                        <FilmStripIcon />
+                        <IconMovie />
                         Watch Demo
                       </Button>
                     }
@@ -140,16 +143,19 @@ export function BookmarkletContent() {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="raycast" className="border-border border-b px-4">
-          <AccordionTrigger className="text-left decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
+        <AccordionItem
+          value="raycast"
+          className="border-border border-b px-4 last:border-none"
+        >
+          <AccordionTrigger className="text-left tracking-[0.01em] decoration-muted-foreground/50 hover:text-foreground/90 hover:underline hover:underline-offset-4">
             <span className="flex items-center gap-2.5">
-              <SiRaycast className="size-4" />
+              <SiRaycast className="size-4 text-muted-foreground" />
               <span className="font-semibold leading-none">Raycast</span>
             </span>
           </AccordionTrigger>
           <AccordionContent className="pt-1 text-foreground/90">
             <div className="space-y-3.5">
-              <p className="text-muted-foreground text-sm">
+              <p>
                 If you&rsquo;re a{" "}
                 <a
                   href="https://www.raycast.com/"

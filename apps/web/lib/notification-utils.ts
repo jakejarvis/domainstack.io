@@ -1,12 +1,12 @@
 import {
-  BellSimpleIcon,
-  CalendarDotsIcon,
-  FingerprintIcon,
-  IdentificationBadgeIcon,
-  PlugsIcon,
-  ShieldWarningIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertTriangle,
+  IconBell,
+  IconCalendarDot,
+  IconCloudComputing,
+  IconFingerprint,
+  IconIdBadge2,
+  IconShieldExclamation,
+} from "@tabler/icons-react";
 import type { NotificationType } from "@/lib/constants/notifications";
 import {
   CERTIFICATE_EXPIRY_THRESHOLDS,
@@ -88,25 +88,25 @@ export function getSeverityIconColor(
 /** Map notification types to icons */
 export function getNotificationIcon(type: string) {
   if (type.startsWith("domain_expiry")) {
-    return CalendarDotsIcon;
+    return IconCalendarDot;
   }
   if (type.startsWith("certificate_expiry")) {
-    return ShieldWarningIcon;
+    return IconShieldExclamation;
   }
   if (type === "certificate_change") {
-    return FingerprintIcon;
+    return IconFingerprint;
   }
   if (type === "provider_change") {
-    return PlugsIcon;
+    return IconCloudComputing;
   }
   if (type === "registration_change") {
-    return IdentificationBadgeIcon;
+    return IconIdBadge2;
   }
   if (type === "verification_failing" || type === "verification_revoked") {
-    return WarningIcon;
+    return IconAlertTriangle;
   }
 
-  return BellSimpleIcon;
+  return IconBell;
 }
 
 /** Map notification types to severity for color coding */
@@ -120,7 +120,7 @@ export function getNotificationSeverity(type: string): NotificationSeverity {
     return "critical";
   }
 
-  // WarningIcon: Expires in 7 days or less, verification failing
+  // Warning: Expires in 7 days or less, verification failing
   if (
     type === "domain_expiry_7d" ||
     type === "certificate_expiry_3d" ||
@@ -130,7 +130,7 @@ export function getNotificationSeverity(type: string): NotificationSeverity {
     return "warning";
   }
 
-  // InfoIcon: Everything else (changes, 14-30 day warnings)
+  // Info: Everything else (changes, 14-30 day warnings)
   return "info";
 }
 

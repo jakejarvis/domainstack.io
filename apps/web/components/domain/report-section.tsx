@@ -1,4 +1,4 @@
-import { InfoIcon } from "@phosphor-icons/react/ssr";
+import { IconInfoCircle } from "@tabler/icons-react";
 import {
   Card,
   CardContent,
@@ -81,7 +81,7 @@ export function ReportSection({
                             role="img"
                             aria-label={`More info about ${title}`}
                           >
-                            <InfoIcon
+                            <IconInfoCircle
                               className="size-3.5 opacity-60"
                               aria-hidden
                             />

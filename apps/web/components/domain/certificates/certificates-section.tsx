@@ -1,9 +1,9 @@
 import {
-  ArrowUpIcon,
-  CaretDownIcon,
-  CaretUpIcon,
-  SealQuestionIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArrowUp,
+  IconCertificateOff,
+  IconChevronDown,
+  IconChevronUp,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Fragment, useState } from "react";
 import { CertificateAlert } from "@/components/domain/certificate-alert";
@@ -149,7 +149,7 @@ export function CertificatesSection({
                 onClick={() => setShowAll(true)}
                 className="text-[13px]"
               >
-                <CaretDownIcon className="size-4" aria-hidden />
+                <IconChevronDown className="size-4" aria-hidden />
                 <span>Show Chain</span>
               </Button>
             </div>
@@ -178,7 +178,7 @@ export function CertificatesSection({
                   }}
                 >
                   <div className="my-3 flex justify-center">
-                    <ArrowUpIcon
+                    <IconArrowUp
                       className="size-4 text-muted-foreground/60"
                       aria-hidden
                     />
@@ -191,7 +191,7 @@ export function CertificatesSection({
 
                       {index < remainingCerts.length - 1 && (
                         <div className="my-3 flex justify-center">
-                          <ArrowUpIcon
+                          <IconArrowUp
                             className="size-4 text-muted-foreground/60"
                             aria-hidden
                           />
@@ -207,7 +207,7 @@ export function CertificatesSection({
                       className="text-[13px]"
                       aria-expanded
                     >
-                      <CaretUpIcon className="size-4" aria-hidden />
+                      <IconChevronUp className="size-4" aria-hidden />
                       <span>Hide Chain</span>
                     </Button>
                   </div>
@@ -220,7 +220,7 @@ export function CertificatesSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <SealQuestionIcon />
+              <IconCertificateOff />
             </EmptyMedia>
             <EmptyTitle>No certificates found</EmptyTitle>
             <EmptyDescription>

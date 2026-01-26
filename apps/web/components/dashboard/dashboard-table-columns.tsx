@@ -1,14 +1,14 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 
 import {
-  ArchiveIcon,
-  ArrowSquareOutIcon,
-  BellIcon,
-  BellSlashIcon,
-  BookmarkSimpleIcon,
-  DotsThreeVerticalIcon,
-  TrashIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArchive,
+  IconBell,
+  IconBellOff,
+  IconBookmark,
+  IconDotsVertical,
+  IconExternalLink,
+  IconTrash,
+} from "@tabler/icons-react";
 import type { ColumnDef, RowData } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -416,7 +416,7 @@ export function createColumns(
           <DropdownMenuTrigger
             render={
               <Button variant="outline" size="icon-sm">
-                <DotsThreeVerticalIcon weight="bold" />
+                <IconDotsVertical />
                 <span className="sr-only">Actions</span>
               </Button>
             }
@@ -430,7 +430,7 @@ export function createColumns(
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <ArrowSquareOutIcon />
+                  <IconExternalLink />
                   Open
                 </a>
               }
@@ -442,7 +442,7 @@ export function createColumns(
                   href={`/${encodeURIComponent(row.original.domainName)}`}
                   prefetch={false}
                 >
-                  <BookmarkSimpleIcon />
+                  <IconBookmark />
                   View Report
                 </Link>
               }
@@ -456,12 +456,12 @@ export function createColumns(
               >
                 {row.original.muted ? (
                   <>
-                    <BellIcon />
+                    <IconBell />
                     Unmute
                   </>
                 ) : (
                   <>
-                    <BellSlashIcon />
+                    <IconBellOff />
                     Mute
                   </>
                 )}
@@ -472,13 +472,13 @@ export function createColumns(
                 onArchive(row.original.id, row.original.domainName)
               }
             >
-              <ArchiveIcon />
+              <IconArchive />
               Archive
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onRemove(row.original.id, row.original.domainName)}
             >
-              <TrashIcon className="text-danger-foreground" />
+              <IconTrash className="text-danger-foreground" />
               Remove
             </DropdownMenuItem>
           </DropdownMenuContent>

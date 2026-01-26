@@ -1,5 +1,5 @@
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
-import { CaretDownIcon } from "@phosphor-icons/react/ssr";
+import { IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function Accordion({ ...props }: AccordionPrimitive.Root.Props) {
@@ -38,7 +38,7 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <CaretDownIcon
+        <IconChevronDown
           className="pointer-events-none absolute top-1/2 right-0 size-4 shrink-0 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-180"
           aria-hidden="true"
         />

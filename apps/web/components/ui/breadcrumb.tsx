@@ -1,6 +1,6 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { CaretRightIcon, DotsThreeIcon } from "@phosphor-icons/react/ssr";
+import { IconChevronRight, IconDots } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb({
@@ -106,7 +106,7 @@ function BreadcrumbSeparator({
       role: "presentation",
       "aria-hidden": "true",
       className: cn("[&>svg]:size-3.5", className),
-      children: children ?? <CaretRightIcon />,
+      children: children ?? <IconChevronRight />,
     }),
     state: {
       slot: "breadcrumb-separator",
@@ -127,7 +127,7 @@ function BreadcrumbEllipsis({
         "flex size-5 items-center justify-center [&>svg]:size-4",
         className,
       ),
-      children: <DotsThreeIcon aria-hidden />,
+      children: <IconDots aria-hidden />,
     }),
     state: {
       slot: "breadcrumb-ellipsis",

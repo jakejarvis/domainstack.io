@@ -1,10 +1,10 @@
 import {
-  ArchiveIcon,
-  BellSimpleIcon,
-  ChecksIcon,
-  GearIcon,
-  TrayIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArchive,
+  IconBell,
+  IconBellCog,
+  IconChecks,
+  IconInbox,
+} from "@tabler/icons-react";
 import {
   useInfiniteQuery,
   useQuery,
@@ -177,7 +177,7 @@ export function NotificationsPopover() {
                   className="relative"
                   aria-label={`Notifications${count > 0 ? ` (${count})` : ""}`}
                 >
-                  <BellSimpleIcon />
+                  <IconBell />
                   {count > 0 && (
                     <span
                       className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive ring-2 ring-background"
@@ -226,7 +226,7 @@ export function NotificationsPopover() {
                       }}
                       render={
                         <Link href="/settings/notifications">
-                          <GearIcon className="size-3.5 shrink-0 text-foreground/90" />
+                          <IconBellCog className="size-3.5 shrink-0 text-foreground/90" />
                           <span className="sr-only">Settings</span>
                         </Link>
                       }
@@ -257,7 +257,7 @@ export function NotificationsPopover() {
                     value="inbox"
                     className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
                   >
-                    <TrayIcon className="!text-inherit" aria-hidden />
+                    <IconInbox className="!text-inherit" aria-hidden />
                     Inbox
                     {count > 0 && (
                       <span className="ml-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-foreground px-1.5 font-medium text-[10px] text-background tabular-nums">
@@ -269,7 +269,7 @@ export function NotificationsPopover() {
                     value="archive"
                     className="flex-initial gap-2 text-[13px] transition-colors hover:text-foreground"
                   >
-                    <ArchiveIcon className="!text-inherit" aria-hidden />
+                    <IconArchive className="!text-inherit" aria-hidden />
                     Archive
                   </TabsTrigger>
 
@@ -288,7 +288,7 @@ export function NotificationsPopover() {
                         )}
                         aria-label="Clear all notifications"
                       >
-                        <ChecksIcon className="size-4" aria-hidden />
+                        <IconChecks className="size-4" aria-hidden />
                         <span className="max-sm:sr-only">Clear&nbsp;all</span>
                       </button>
                     </div>

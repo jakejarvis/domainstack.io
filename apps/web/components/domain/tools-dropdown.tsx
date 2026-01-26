@@ -1,4 +1,4 @@
-import { DotsThreeVerticalIcon, PlusIcon } from "@phosphor-icons/react/ssr";
+import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import {
@@ -155,11 +155,11 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
               render={
                 <Button
                   variant="outline"
-                  size="icon-sm"
+                  size="icon"
                   aria-label="Open menu"
                   disabled={!enabled}
                 >
-                  <DotsThreeVerticalIcon weight="bold" />
+                  <IconDotsVertical />
                   <span className="sr-only">Open tools menu</span>
                 </Button>
               }
@@ -215,7 +215,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
                   target="_blank"
                   rel="noopener"
                 >
-                  <PlusIcon />
+                  <IconPlus />
                   Suggest a tool
                 </a>
               }

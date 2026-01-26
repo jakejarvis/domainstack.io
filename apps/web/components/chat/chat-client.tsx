@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatsIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
+import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useCallback, useMemo, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
@@ -150,7 +150,7 @@ export function ChatClient({
           {messages.length === 0 ? (
             <ConversationEmptyState
               icon={
-                <ChatsIcon
+                <IconMessages
                   className={iconSize === "lg" ? "size-8" : "size-6"}
                 />
               }
@@ -236,7 +236,7 @@ export function ChatClient({
             role="alert"
             className="flex items-center gap-2 rounded-md border border-destructive/15 bg-destructive/10 px-2 py-1.5 text-[13px] text-destructive leading-tight"
           >
-            <WarningCircleIcon className="size-4 shrink-0" />
+            <IconAlertCircle className="size-4 shrink-0" />
             <span className="flex-1">{error}</span>
             {onClearError && (
               <Button
@@ -246,7 +246,7 @@ export function ChatClient({
                 aria-label="Dismiss error"
                 className="hover:!bg-destructive/20 hover:!text-destructive shrink-0 text-destructive"
               >
-                <XIcon className="size-3" />
+                <IconX className="size-3" />
               </Button>
             )}
           </div>

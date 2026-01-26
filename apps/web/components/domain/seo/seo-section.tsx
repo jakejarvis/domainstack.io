@@ -1,4 +1,4 @@
-import { QuestionIcon, WarningIcon } from "@phosphor-icons/react/ssr";
+import { IconAlertTriangle, IconHelp } from "@tabler/icons-react";
 import { ReportSection } from "@/components/domain/report-section";
 import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
 import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
@@ -65,7 +65,7 @@ export function SeoSection({
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <WarningIcon />
+                <IconAlertTriangle />
               </EmptyMedia>
               <EmptyTitle>Couldn&apos;t fetch page meta</EmptyTitle>
               <EmptyDescription>
@@ -94,7 +94,7 @@ export function SeoSection({
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <QuestionIcon />
+                <IconHelp />
               </EmptyMedia>
               <EmptyTitle>No SEO meta detected</EmptyTitle>
               <EmptyDescription>
@@ -115,7 +115,7 @@ export function SeoSection({
             <Empty className="border border-dashed">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <QuestionIcon />
+                  <IconHelp />
                 </EmptyMedia>
                 <EmptyTitle>No robots.txt found</EmptyTitle>
                 <EmptyDescription>

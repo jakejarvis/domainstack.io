@@ -1,12 +1,12 @@
 import {
-  AtIcon,
-  CheckIcon,
-  CopyIcon,
-  DownloadIcon,
-  FileTextIcon,
-  PaperPlaneTiltIcon,
-  ShareNetworkIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAt,
+  IconCheck,
+  IconCopy,
+  IconDownload,
+  IconFileText,
+  IconSend,
+  IconShare,
+} from "@tabler/icons-react";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
@@ -310,7 +310,7 @@ export function ShareInstructionsDialog({
       <DialogTrigger
         render={
           <Button variant="outline">
-            <ShareNetworkIcon />
+            <IconShare />
             Share
           </Button>
         }
@@ -329,7 +329,7 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <CopyIcon />
+                <IconCopy />
               </Icon>
             </ItemMedia>
             <ItemContent>
@@ -351,7 +351,7 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <FileTextIcon />
+                <IconFileText />
               </Icon>
             </ItemMedia>
             <ItemContent>
@@ -366,7 +366,7 @@ export function ShareInstructionsDialog({
                 onClick={handleDownload}
                 aria-label="Download instructions"
               >
-                <DownloadIcon aria-hidden="true" />
+                <IconDownload aria-hidden="true" />
                 Download
               </Button>
             </ItemActions>
@@ -376,7 +376,7 @@ export function ShareInstructionsDialog({
           <Item size="xs" variant="outline">
             <ItemMedia variant="icon">
               <Icon variant="muted" size="sm">
-                <AtIcon />
+                <IconAt />
               </Icon>
             </ItemMedia>
             <ItemContent>
@@ -425,9 +425,9 @@ export function ShareInstructionsDialog({
                         {isEmailSending ? (
                           <Spinner />
                         ) : isEmailSent ? (
-                          <CheckIcon aria-hidden="true" />
+                          <IconCheck aria-hidden="true" />
                         ) : (
-                          <PaperPlaneTiltIcon aria-hidden="true" />
+                          <IconSend aria-hidden="true" />
                         )}
                         Send
                       </InputGroupButton>

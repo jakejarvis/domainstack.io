@@ -1,4 +1,4 @@
-import { ShieldWarningIcon } from "@phosphor-icons/react/ssr";
+import { IconShieldExclamation } from "@tabler/icons-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export function CertificateAlert({
 }) {
   return (
     <Alert variant="destructive" className={cn(className)} {...props}>
-      <ShieldWarningIcon aria-hidden className="size-4" />
+      <IconShieldExclamation aria-hidden className="size-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {error ||

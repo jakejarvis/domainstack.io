@@ -1,4 +1,4 @@
-import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
+import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -213,7 +213,7 @@ export default function TermsPage() {
           Payments are processed by{" "}
           <a href="https://polar.sh" target="_blank" rel="noopener noreferrer">
             Polar
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>{" "}
           (our merchant of record) and{" "}
           <a
@@ -222,7 +222,7 @@ export default function TermsPage() {
             rel="noopener noreferrer"
           >
             Stripe
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>{" "}
           (payment infrastructure). By subscribing, you also agree to:
         </p>
@@ -234,7 +234,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Terms of Service
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>
           </li>
           <li>
@@ -244,7 +244,7 @@ export default function TermsPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Consumer Terms
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>
           </li>
         </ul>

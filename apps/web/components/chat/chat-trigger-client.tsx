@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatDotsIcon, LegoSmileyIcon } from "@phosphor-icons/react";
+import { IconLego, IconMessageChatbotFilled } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
@@ -133,7 +133,7 @@ export function ChatTriggerClient({
       exit={{ opacity: 0, y: 16 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
     >
-      <ChatDotsIcon className="size-5 text-background/95" weight="fill" />
+      <IconMessageChatbotFilled className="size-5 text-background/95" />
     </MotionButton>
   );
 
@@ -163,7 +163,7 @@ export function ChatTriggerClient({
             >
               <DrawerHeader className="flex h-12 flex-row items-center justify-between">
                 <DrawerTitle className="flex items-center gap-2">
-                  <LegoSmileyIcon className="size-4" />
+                  <IconLego className="size-4" />
                   <span className="text-[15px] leading-none tracking-tight">
                     {CHATBOT_NAME}
                   </span>
@@ -203,15 +203,15 @@ export function ChatTriggerClient({
             collisionPadding={16}
             className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background p-0"
           >
-            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3 py-3">
+            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-3">
               <PopoverTitle className="flex items-center gap-2">
-                <LegoSmileyIcon className="size-4" />
+                <IconLego className="size-4" />
                 <span className="text-[15px] leading-none tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />
               </PopoverTitle>
-              <div className="-mr-1 flex items-center gap-1">
+              <div className="-mr-1.5 flex items-center gap-1.5">
                 {headerActions}
               </div>
             </PopoverHeader>

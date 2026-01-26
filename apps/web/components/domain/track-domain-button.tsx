@@ -1,8 +1,8 @@
 import {
-  SealCheckIcon,
-  TargetIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertCircle,
+  IconBellPlus,
+  IconRosetteDiscountCheck,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -72,8 +72,8 @@ export function TrackDomainButton({
   // This ensures consistent rendering between server and client
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
-      <Button variant="outline" size="sm" disabled aria-label="Track domain">
-        <TargetIcon
+      <Button variant="outline" disabled aria-label="Track domain">
+        <IconBellPlus
           className="animate-pulse text-muted-foreground"
           aria-hidden="true"
         />
@@ -90,12 +90,11 @@ export function TrackDomainButton({
           render={
             <Button
               variant="outline"
-              size="sm"
               nativeButton={false}
               aria-label="View in dashboard"
               render={
                 <Link href="/dashboard">
-                  <SealCheckIcon
+                  <IconRosetteDiscountCheck
                     className="text-success-foreground"
                     aria-hidden="true"
                   />
@@ -115,12 +114,12 @@ export function TrackDomainButton({
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <WarningCircleIcon className="text-accent-orange" aria-hidden="true" />
+      <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (
     <>
-      <TargetIcon className="text-accent-purple" aria-hidden="true" />
+      <IconBellPlus className="text-accent-purple" aria-hidden="true" />
       <span className="hidden sm:inline">Track</span>
     </>
   );
@@ -138,7 +137,6 @@ export function TrackDomainButton({
           session?.user ? (
             <Button
               variant="outline"
-              size="sm"
               onClick={handleButtonClick}
               aria-label={ariaLabel}
             >
@@ -147,7 +145,6 @@ export function TrackDomainButton({
           ) : (
             <Button
               variant="outline"
-              size="sm"
               nativeButton={false}
               aria-label={ariaLabel}
               render={

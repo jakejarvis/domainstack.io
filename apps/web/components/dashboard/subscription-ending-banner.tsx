@@ -1,4 +1,4 @@
-import { CalendarDotsIcon } from "@phosphor-icons/react/ssr";
+import { IconCalendarDot } from "@tabler/icons-react";
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
@@ -44,7 +44,7 @@ export function SubscriptionEndingBanner() {
   return (
     <DashboardBannerDismissable
       variant={isUrgent ? "warning" : "info"}
-      icon={CalendarDotsIcon}
+      icon={IconCalendarDot}
       title={
         isUrgent
           ? `Pro subscription ending ${relativeTime}`

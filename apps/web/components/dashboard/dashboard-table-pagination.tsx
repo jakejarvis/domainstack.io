@@ -1,4 +1,4 @@
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react/ssr";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   Pagination,
@@ -85,7 +85,7 @@ export function DashboardTablePagination({
               disabled={!canPreviousPage}
               aria-label="Go to previous page"
             >
-              <CaretLeftIcon />
+              <IconChevronLeft />
             </Button>
           </PaginationItem>
           <PaginationItem>
@@ -96,7 +96,7 @@ export function DashboardTablePagination({
               disabled={!canNextPage}
               aria-label="Go to next page"
             >
-              <CaretRightIcon />
+              <IconChevronRight />
             </Button>
           </PaginationItem>
         </PaginationContent>

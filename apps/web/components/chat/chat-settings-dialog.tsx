@@ -1,6 +1,6 @@
 "use client";
 
-import { BiohazardIcon, InfoIcon, WrenchIcon } from "@phosphor-icons/react";
+import { IconBiohazard, IconInfoCircle, IconTool } from "@tabler/icons-react";
 import { BetaBadge } from "@/components/beta-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +52,7 @@ export function ChatSettingsDialog({
             <Label htmlFor="show-tool-calls" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
                 <Icon variant="muted" size="sm">
-                  <WrenchIcon />
+                  <IconTool />
                 </Icon>
               </ItemMedia>
               <ItemContent>
@@ -74,7 +74,7 @@ export function ChatSettingsDialog({
             <Label htmlFor="hide-ai" className="flex-1 cursor-pointer">
               <ItemMedia variant="icon">
                 <Icon variant="muted" size="sm">
-                  <BiohazardIcon />
+                  <IconBiohazard />
                 </Icon>
               </ItemMedia>
               <ItemContent>
@@ -104,7 +104,7 @@ export function ChatSettingsDialog({
         </ItemGroup>
         <DialogFooter className="gap-2.5 sm:items-center sm:justify-between sm:gap-5">
           <div className="mx-auto flex items-start gap-1.5 pl-2 sm:mx-0 sm:gap-2 sm:pl-1">
-            <InfoIcon className="size-3.5 translate-y-[3px] text-muted-foreground" />
+            <IconInfoCircle className="size-3.5 translate-y-[3px] text-muted-foreground" />
             <p className="text-[13px] text-muted-foreground leading-normal">
               These preferences only apply to the current browser.
             </p>

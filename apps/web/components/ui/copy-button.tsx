@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  CheckIcon,
-  ClipboardIcon,
-  ClipboardTextIcon,
-  XCircleIcon,
-} from "@phosphor-icons/react/ssr";
+  IconCheck,
+  IconCircleX,
+  IconClipboardCheck,
+  IconCopy,
+} from "@tabler/icons-react";
 import clipboardCopy from "clipboard-copy";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -56,7 +56,7 @@ export function CopyButton({
       await clipboardCopy(textToCopy);
 
       toast.success("Copied!", {
-        icon: <ClipboardTextIcon className="size-4" />,
+        icon: <IconClipboardCheck className="size-4" />,
         position: "bottom-center",
       });
 
@@ -69,7 +69,7 @@ export function CopyButton({
       // Revert optimistic update on failure
       setCopied(false);
       toast.error("Failed to copy", {
-        icon: <XCircleIcon className="size-4" />,
+        icon: <IconCircleX className="size-4" />,
         position: "bottom-center",
       });
     }
@@ -99,7 +99,7 @@ export function CopyButton({
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
           >
-            <CheckIcon className="text-accent-green" />
+            <IconCheck className="text-accent-green" />
           </motion.span>
         ) : (
           <motion.span
@@ -116,7 +116,7 @@ export function CopyButton({
             transition={{ duration: shouldReduceMotion ? 0.1 : 0.15 }}
             className="flex items-center justify-center"
           >
-            <ClipboardIcon />
+            <IconCopy />
           </motion.span>
         )}
       </AnimatePresence>

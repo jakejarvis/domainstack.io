@@ -1,4 +1,4 @@
-import { GaugeIcon, ShoppingCartIcon } from "@phosphor-icons/react/ssr";
+import { IconGauge, IconShoppingCart } from "@tabler/icons-react";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -19,7 +19,7 @@ export function UpgradeBanner() {
   return (
     <DashboardBannerDismissable
       variant={atLimit ? "danger" : "warning"}
-      icon={GaugeIcon}
+      icon={IconGauge}
       title={atLimit ? "Domain Limit Reached" : "Approaching Limit"}
       description={
         <>
@@ -31,7 +31,7 @@ export function UpgradeBanner() {
       }
       dismissible
       action={
-        <UpgradeButton className="w-full md:w-auto" icon={ShoppingCartIcon}>
+        <UpgradeButton className="w-full md:w-auto" icon={IconShoppingCart}>
           Upgrade
         </UpgradeButton>
       }

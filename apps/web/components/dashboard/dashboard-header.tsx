@@ -1,10 +1,10 @@
 import {
-  ArrowSquareOutIcon,
-  DotsNineIcon,
-  LayoutIcon,
-  PlusIcon,
-  ShootingStarIcon,
-} from "@phosphor-icons/react/ssr";
+  IconExternalLink,
+  IconGridDots,
+  IconPlus,
+  IconRocket,
+  IconTable,
+} from "@tabler/icons-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { CalendarFeedPopover } from "@/components/dashboard/calendar-feed-popover";
@@ -53,7 +53,7 @@ export function DashboardHeader({
                 nativeButton={false}
                 render={
                   <span className="inline-flex cursor-help select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-                    <ShootingStarIcon className="size-3" aria-hidden="true" />
+                    <IconRocket className="size-3" aria-hidden="true" />
                     Pro
                   </span>
                 }
@@ -64,7 +64,7 @@ export function DashboardHeader({
             </ResponsiveTooltip>
           ) : (
             <span className="pointer-events-none inline-flex select-none items-center gap-1 rounded-md border border-accent-gold/15 bg-gradient-to-r from-accent-gold/10 to-accent-gold/20 px-2 py-0.5 font-semibold text-[10px] text-accent-gold uppercase dark:border-accent-gold/20 dark:from-accent-gold/10 dark:to-accent-gold/15">
-              <ShootingStarIcon className="size-3" aria-hidden="true" />
+              <IconRocket className="size-3" aria-hidden="true" />
               Pro
             </span>
           )
@@ -82,7 +82,7 @@ export function DashboardHeader({
             nativeButton={false}
             render={
               <Link href="/dashboard/add-domain" scroll={false}>
-                <PlusIcon />
+                <IconPlus />
                 Add Domain
               </Link>
             }
@@ -93,7 +93,7 @@ export function DashboardHeader({
               render={
                 <div>
                   <Button disabled>
-                    <PlusIcon />
+                    <IconPlus />
                     Add Domain
                   </Button>
                 </div>
@@ -107,7 +107,7 @@ export function DashboardHeader({
                   className="!px-2.5 !py-1.5 !h-auto gap-1 font-normal text-background text-xs"
                 >
                   Upgrade to add more domains
-                  <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
+                  <IconExternalLink className="size-3 -translate-y-[1px]" />
                 </Button>
               ) : (
                 "Domain limit reached"
@@ -160,7 +160,7 @@ export function DashboardHeader({
                       aria-label="Grid view"
                       className="!px-3"
                     >
-                      <DotsNineIcon className="size-4" weight="bold" />
+                      <IconGridDots className="size-4" />
                       <span className="sr-only">Grid</span>
                     </ToggleGroupItem>
                   }
@@ -178,7 +178,7 @@ export function DashboardHeader({
                       aria-label="Table view"
                       className="!px-3"
                     >
-                      <LayoutIcon className="size-4" />
+                      <IconTable className="size-4" />
                       <span className="sr-only">Table</span>
                     </ToggleGroupItem>
                   }

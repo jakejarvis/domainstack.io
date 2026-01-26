@@ -1,4 +1,4 @@
-import { ArchiveIcon, TrashIcon, XIcon } from "@phosphor-icons/react/ssr";
+import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,7 +85,7 @@ export function BulkActionsToolbar({
             disabled={isLoading}
             className="text-[13px]"
           >
-            <ArchiveIcon />
+            <IconArchive />
             Archive
           </Button>
           <Button
@@ -95,7 +95,7 @@ export function BulkActionsToolbar({
             disabled={isLoading}
             className="text-[13px]"
           >
-            <TrashIcon />
+            <IconTrash />
             Delete
           </Button>
         </ButtonGroup>
@@ -107,7 +107,7 @@ export function BulkActionsToolbar({
           disabled={isLoading}
           aria-label="Cancel selection"
         >
-          <XIcon />
+          <IconX />
         </Button>
       </div>
     </div>

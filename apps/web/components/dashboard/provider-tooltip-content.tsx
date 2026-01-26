@@ -1,9 +1,9 @@
 import {
-  DetectiveIcon,
-  LockIcon,
-  LockOpenIcon,
-  SealCheckIcon,
-} from "@phosphor-icons/react/ssr";
+  IconLock,
+  IconLockOpen,
+  IconRosetteDiscountCheck,
+  IconSpy,
+} from "@tabler/icons-react";
 import { format } from "date-fns";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
@@ -132,7 +132,7 @@ export function ProviderTooltipContent({
               <div className="flex items-center gap-1.5">
                 {registrantInfo.privacyEnabled || !registrant ? (
                   <>
-                    <DetectiveIcon className="size-3.5 text-muted" />
+                    <IconSpy className="size-3.5 text-muted" />
                     <span className="text-background/90">Privacy enabled</span>
                   </>
                 ) : (
@@ -148,14 +148,14 @@ export function ProviderTooltipContent({
               <div className="flex items-center gap-1.5">
                 {transferLock ? (
                   <>
-                    <LockIcon className="size-3.5 text-muted" />
+                    <IconLock className="size-3.5 text-muted" />
                     <span className="text-background/90">
                       Transfer lock is on
                     </span>
                   </>
                 ) : (
                   <>
-                    <LockOpenIcon className="size-3.5 text-amber-300 dark:text-amber-500" />
+                    <IconLockOpen className="size-3.5 text-amber-300 dark:text-amber-500" />
                     <span className="text-background/90">
                       Transfer lock is off
                     </span>
@@ -166,7 +166,7 @@ export function ProviderTooltipContent({
 
             {/* Verification source */}
             <div className="flex items-center gap-1.5">
-              <SealCheckIcon className="size-3.5 text-green-300 dark:text-green-600" />
+              <IconRosetteDiscountCheck className="size-3.5 text-green-300 dark:text-green-600" />
               <span>
                 Verified by{" "}
                 <span className="font-medium">

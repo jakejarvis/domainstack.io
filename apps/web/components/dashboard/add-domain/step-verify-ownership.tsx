@@ -1,4 +1,4 @@
-import { DownloadIcon, InfoIcon } from "@phosphor-icons/react/ssr";
+import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ function VerificationInstructionsLayout({
   return (
     <div className="mt-1 min-w-0 space-y-3">
       <div className="flex gap-3 rounded-lg border border-info-border bg-info p-3">
-        <InfoIcon className="mt-0.5 size-4 shrink-0 text-info-foreground" />
+        <IconInfoCircle className="mt-0.5 size-4 shrink-0 text-info-foreground" />
         <div className="space-y-0.5">
           <p className="font-medium text-info-foreground text-sm">{title}</p>
           <p className="text-info-foreground/80 text-sm">{description}</p>
@@ -204,7 +204,7 @@ export function StepVerifyOwnership({
                       }
                     }}
                   >
-                    <DownloadIcon />
+                    <IconDownload />
                     Download File
                   </Button>
                 }

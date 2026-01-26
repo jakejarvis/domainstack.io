@@ -1,4 +1,4 @@
-import { InfoIcon } from "@phosphor-icons/react/ssr";
+import { IconInfoCircle } from "@tabler/icons-react";
 import {
   Card,
   CardContent,
@@ -62,7 +62,10 @@ export function ReportSectionSkeleton({
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-base">{title}</span>
                   <span role="img">
-                    <InfoIcon className="size-3.5 opacity-60" aria-hidden />
+                    <IconInfoCircle
+                      className="size-3.5 opacity-60"
+                      aria-hidden
+                    />
                   </span>
                 </CardTitle>
                 {(description || help) && (

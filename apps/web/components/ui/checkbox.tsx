@@ -1,4 +1,5 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import { IconCheck } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
@@ -18,21 +19,9 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
     >
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
-        className="absolute inset-0 flex items-center justify-center text-current transition-none"
+        className="absolute inset-0 flex items-center justify-center transition-none"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-[87.5%] text-background"
-          aria-hidden
-        >
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
+        <IconCheck className="size-[87.5%] text-background" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

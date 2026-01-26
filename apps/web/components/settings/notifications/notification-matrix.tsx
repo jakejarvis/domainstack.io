@@ -1,4 +1,4 @@
-import { InfoIcon } from "@phosphor-icons/react/ssr";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ResponsiveTooltip,
@@ -75,7 +75,7 @@ export function NotificationMatrix({
                 <ResponsiveTooltip>
                   <ResponsiveTooltipTrigger
                     render={
-                      <InfoIcon className="size-3.5 shrink-0 text-foreground/75 opacity-0 focus-visible:opacity-100 group-hover:opacity-100" />
+                      <IconInfoCircle className="size-3.5 shrink-0 text-foreground/75 opacity-0 focus-visible:opacity-100 group-hover:opacity-100" />
                     }
                   />
                   <ResponsiveTooltipContent className="max-w-xs">

@@ -1,5 +1,5 @@
 import { SiDiscord, SiFacebook, SiX } from "@icons-pack/react-simple-icons";
-import { ImageBrokenIcon } from "@phosphor-icons/react/ssr";
+import { IconPhotoOff } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -137,7 +137,7 @@ function PreviewImage({
     <div
       className={`flex h-full w-full items-center justify-center ${placeholderClassName}`}
     >
-      <ImageBrokenIcon className="h-5 w-5" aria-hidden />
+      <IconPhotoOff className="h-5 w-5" aria-hidden />
       <span className="sr-only">No image</span>
     </div>
   );

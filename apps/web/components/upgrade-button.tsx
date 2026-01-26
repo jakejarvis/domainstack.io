@@ -1,4 +1,3 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -12,7 +11,7 @@ export function UpgradeButton({
   ...props
 }: Omit<React.ComponentProps<typeof Button>, "onClick" | "disabled"> & {
   /** Icon component to display (replaced by spinner when loading) */
-  icon?: React.ComponentType<IconProps>;
+  icon?: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
 }) {
   const { handleCheckout, isCheckoutLoading } = useSubscription();

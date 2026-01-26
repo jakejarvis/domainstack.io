@@ -1,4 +1,4 @@
-import { ClockCountdownIcon } from "@phosphor-icons/react/ssr";
+import { IconHourglassEmpty } from "@tabler/icons-react";
 import { ms } from "ms";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,7 +17,7 @@ export function TtlBadge({ ttl }: { ttl: number }) {
             variant="outline"
             className="cursor-default py-1 text-[11px] text-muted-foreground leading-none"
           >
-            <ClockCountdownIcon />
+            <IconHourglassEmpty />
             <span suppressHydrationWarning>{ms(ttl * 1000)}</span>
           </Badge>
         }

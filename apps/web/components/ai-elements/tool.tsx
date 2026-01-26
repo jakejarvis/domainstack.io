@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  CaretDownIcon,
-  CheckCircleIcon,
-  CircleIcon,
-  ClockIcon,
-  WrenchIcon,
-  XCircleIcon,
-} from "@phosphor-icons/react";
+  IconCheck,
+  IconChevronDown,
+  IconCircle,
+  IconClock,
+  IconTool,
+  IconX,
+} from "@tabler/icons-react";
 import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
@@ -52,13 +52,13 @@ const getStatusBadge = (status: ToolUIPart["state"]) => {
   };
 
   const icons: Record<string, ReactNode> = {
-    "input-streaming": <CircleIcon className="size-4" />,
+    "input-streaming": <IconCircle className="size-4" />,
     "input-available": <Spinner className="size-4" />,
-    "approval-requested": <ClockIcon className="size-4 text-yellow-600" />,
-    "approval-responded": <CheckCircleIcon className="size-4 text-blue-600" />,
-    "output-available": <CheckCircleIcon className="size-4 text-green-600" />,
-    "output-error": <XCircleIcon className="size-4 text-red-600" />,
-    "output-denied": <XCircleIcon className="size-4 text-orange-600" />,
+    "approval-requested": <IconClock className="size-4 text-yellow-600" />,
+    "approval-responded": <IconCheck className="size-4 text-blue-600" />,
+    "output-available": <IconCheck className="size-4 text-green-600" />,
+    "output-error": <IconX className="size-4 text-red-600" />,
+    "output-denied": <IconX className="size-4 text-orange-600" />,
   };
 
   return (
@@ -83,12 +83,12 @@ export const ToolHeader = ({
     className={cn("group flex w-full items-center gap-3 p-3", className)}
     {...props}
   >
-    <WrenchIcon className="size-4 shrink-0 text-muted-foreground" />
+    <IconTool className="size-4 shrink-0 text-muted-foreground" />
     <span className="min-w-0 flex-1 truncate text-left font-medium text-sm">
       {title ?? type.split("-").slice(1).join("-")}
     </span>
     {getStatusBadge(state)}
-    <CaretDownIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[open]:rotate-180" />
+    <IconChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[open]:rotate-180" />
   </CollapsibleTrigger>
 );
 

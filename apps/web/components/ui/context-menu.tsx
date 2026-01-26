@@ -1,5 +1,5 @@
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
-import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react/ssr";
+import { IconCheck, IconChevronRight } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
@@ -68,7 +68,7 @@ function ContextMenuSubTrigger({
       {...props}
     >
       {children}
-      <CaretRightIcon className="ml-auto" aria-hidden="true" />
+      <IconChevronRight className="ml-auto" aria-hidden="true" />
     </ContextMenuPrimitive.SubmenuTrigger>
   );
 }
@@ -168,7 +168,7 @@ function ContextMenuCheckboxItem({
     >
       <span className="pointer-events-none absolute right-2">
         <ContextMenuPrimitive.CheckboxItemIndicator>
-          <CheckIcon aria-hidden="true" />
+          <IconCheck aria-hidden="true" />
         </ContextMenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}
@@ -193,7 +193,7 @@ function ContextMenuRadioItem({
     >
       <span className="pointer-events-none absolute right-2">
         <ContextMenuPrimitive.RadioItemIndicator>
-          <CheckIcon aria-hidden="true" />
+          <IconCheck aria-hidden="true" />
         </ContextMenuPrimitive.RadioItemIndicator>
       </span>
       {children}

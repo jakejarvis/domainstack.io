@@ -1,4 +1,4 @@
-import { ArrowSquareOutIcon } from "@phosphor-icons/react/ssr";
+import { IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Polar
-                <ArrowSquareOutIcon />
+                <IconExternalLink />
               </a>
             </strong>{" "}
             — Our merchant of record for subscription management. Polar collects
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Polar&apos;s Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>
             .
           </li>
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
                 rel="noopener noreferrer"
               >
                 Stripe
-                <ArrowSquareOutIcon />
+                <IconExternalLink />
               </a>
             </strong>{" "}
             — Payment processing infrastructure. Stripe handles your payment
@@ -142,7 +142,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Stripe&apos;s Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>
             .
           </li>
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>{" "}
           to send transactional emails, including:
         </p>
@@ -184,7 +184,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Resend&apos;s Privacy Policy
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>
           .
         </p>
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             Vercel AI Gateway
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>
           , which routes Domainstack&apos;s requests to large language model
           (LLM) providers. When you send a message:
@@ -250,7 +250,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               OpenAI Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>{" "}
             (for OpenAI models)
           </li>
@@ -261,7 +261,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Google Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>{" "}
             (for Gemini models)
           </li>
@@ -272,7 +272,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Anthropic Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>{" "}
             (for Claude models)
           </li>
@@ -283,7 +283,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
             >
               Vercel Privacy Policy
-              <ArrowSquareOutIcon />
+              <IconExternalLink />
             </a>
           </li>
         </ul>
@@ -304,7 +304,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>{" "}
           for product analytics and error tracking to understand how our service
           is used and to improve the user experience. PostHog collects:
@@ -324,7 +324,7 @@ export default function PrivacyPage() {
             rel="noopener noreferrer"
           >
             PostHog&apos;s Privacy Policy
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>
           .
         </p>

@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "@phosphor-icons/react/ssr";
+import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AddDomainPageClient } from "@/components/dashboard/add-domain/add-domain-page-client";
@@ -24,7 +24,7 @@ export default async function AddDomainPage({
         href="/dashboard"
         className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground"
       >
-        <ArrowLeftIcon className="size-4" />
+        <IconArrowLeft className="size-4" />
         Back to dashboard
       </Link>
       <Suspense fallback={<AddDomainSkeleton />}>

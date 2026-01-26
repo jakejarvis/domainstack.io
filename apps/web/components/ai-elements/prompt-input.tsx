@@ -1,6 +1,6 @@
 "use client";
 
-import { PaperPlaneRightIcon } from "@phosphor-icons/react";
+import { IconSend } from "@tabler/icons-react";
 import type { ChatStatus, FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import {
@@ -352,7 +352,7 @@ export const PromptInputSubmit = ({
   ...props
 }: PromptInputSubmitProps) => {
   // Determine icon and aria-label based on status
-  let Icon = <PaperPlaneRightIcon className="size-4" />;
+  let Icon = <IconSend className="size-4" />;
   let ariaLabel = "Send message";
 
   if (status === "submitted" || status === "streaming") {

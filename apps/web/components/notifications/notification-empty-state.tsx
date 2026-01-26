@@ -1,8 +1,4 @@
-import {
-  ArchiveIcon,
-  ArrowRightIcon,
-  ConfettiIcon,
-} from "@phosphor-icons/react/ssr";
+import { IconArchive, IconArrowRight, IconConfetti } from "@tabler/icons-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -22,7 +18,7 @@ export function NotificationEmptyState({
   return (
     <div className="flex flex-col items-center justify-center p-10 text-center">
       <Icon className="mb-4">
-        {variant === "inbox" ? <ConfettiIcon /> : <ArchiveIcon />}
+        {variant === "inbox" ? <IconConfetti /> : <IconArchive />}
       </Icon>
       <p className="text-foreground/80 text-sm">All caught up!</p>
       <p className="mt-1 text-[13px] text-muted-foreground/80">
@@ -42,7 +38,7 @@ export function NotificationEmptyState({
         render={
           <Link href="/dashboard">
             Go to dashboard
-            <ArrowRightIcon className="size-3" />
+            <IconArrowRight className="size-3" />
           </Link>
         }
       />

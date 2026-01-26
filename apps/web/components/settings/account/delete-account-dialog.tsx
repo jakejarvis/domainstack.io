@@ -1,8 +1,8 @@
 import {
-  CheckIcon,
-  HeartBreakIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertTriangle,
+  IconCheck,
+  IconHeartBroken,
+} from "@tabler/icons-react";
 import { useCallback, useReducer } from "react";
 import {
   AlertDialog,
@@ -134,7 +134,7 @@ export function DeleteAccountDialog({
           <>
             <AlertDialogHeader>
               <AlertDialogMedia variant="success">
-                <CheckIcon />
+                <IconCheck />
               </AlertDialogMedia>
               <AlertDialogTitle>Check your email</AlertDialogTitle>
               <AlertDialogDescription>
@@ -152,7 +152,7 @@ export function DeleteAccountDialog({
           <>
             <AlertDialogHeader>
               <AlertDialogMedia>
-                <WarningIcon />
+                <IconAlertTriangle />
               </AlertDialogMedia>
               <AlertDialogTitle>Delete your account?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -197,7 +197,7 @@ export function DeleteAccountDialog({
                 {isLoading ? (
                   <Spinner />
                 ) : (
-                  <HeartBreakIcon aria-hidden="true" />
+                  <IconHeartBroken aria-hidden="true" />
                 )}
                 I'm sure.
               </AlertDialogAction>

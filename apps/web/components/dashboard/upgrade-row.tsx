@@ -1,4 +1,4 @@
-import { ArrowCircleUpIcon, RocketLaunchIcon } from "@phosphor-icons/react/ssr";
+import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
@@ -28,7 +28,7 @@ export function UpgradeRow() {
         {/* Left side - Icon and text */}
         <div className="flex items-center gap-4">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent-gold/5 dark:bg-white/5">
-            <ArrowCircleUpIcon className="size-5 text-accent-gold" />
+            <IconCircleArrowUp className="size-5 text-accent-gold" />
           </div>
           <div>
             <h3 className="font-semibold leading-snug">Upgrade to Pro</h3>
@@ -51,7 +51,7 @@ export function UpgradeRow() {
         <UpgradeButton
           variant="outline"
           className="w-full shrink-0 md:w-auto"
-          icon={RocketLaunchIcon}
+          icon={IconRocket}
         >
           Get Pro
         </UpgradeButton>

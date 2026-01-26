@@ -1,7 +1,4 @@
-import {
-  ArrowClockwiseIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/ssr";
+import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,7 +17,7 @@ export function StepInstructionsError({
   return (
     <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
       <Icon size="lg" variant="destructive" className="mx-auto">
-        <WarningCircleIcon />
+        <IconAlertCircle />
       </Icon>
       <div className="text-center" aria-live="polite">
         <h3 className="font-semibold">Unable to load verification details</h3>
@@ -41,7 +38,7 @@ export function StepInstructionsError({
           </>
         ) : (
           <>
-            <ArrowClockwiseIcon aria-hidden="true" />
+            <IconRefresh aria-hidden="true" />
             <span className="hidden sm:inline">Retry</span>
           </>
         )}

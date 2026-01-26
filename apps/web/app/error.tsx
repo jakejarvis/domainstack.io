@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import { IconRefresh } from "@tabler/icons-react";
 import { useEffect } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export default function RootError(props: {
         ) : null}
         <div className="mt-6 flex flex-col items-center justify-center gap-3">
           <Button size="sm" onClick={() => reset()}>
-            <ArrowClockwiseIcon />
+            <IconRefresh />
             Retry
           </Button>
           <CreateIssueButton error={error} variant="outline" size="sm" />

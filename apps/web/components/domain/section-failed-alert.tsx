@@ -1,6 +1,6 @@
 "use client";
 
-import { WarningIcon } from "@phosphor-icons/react/ssr";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import { ReportSection } from "@/components/domain/report-section";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { SectionDef } from "@/lib/constants/sections";
@@ -21,7 +21,7 @@ export function SectionFailedAlert({
   return (
     <ReportSection {...section}>
       <Alert variant="destructive">
-        <WarningIcon className="size-4" />
+        <IconAlertTriangle className="size-4" />
         <AlertTitle>Failed to load data</AlertTitle>
         <AlertDescription>
           <p>

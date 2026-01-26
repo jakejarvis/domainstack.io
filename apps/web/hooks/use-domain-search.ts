@@ -1,6 +1,6 @@
 "use client";
 
-import { XCircleIcon } from "@phosphor-icons/react/ssr";
+import { IconCircleX } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -94,9 +94,8 @@ export function useDomainSearch(options: UseDomainSearchOptions = {}) {
       });
       if (showInvalidToast) {
         toast.error("Please enter a valid domain.", {
-          icon: createElement(XCircleIcon, {
+          icon: createElement(IconCircleX, {
             className: "h-4 w-4",
-            weight: "bold",
           }),
           position: "bottom-center",
         });

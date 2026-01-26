@@ -1,9 +1,9 @@
 import {
-  DetectiveIcon,
-  GraduationCapIcon,
-  SealCheckIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertCircle,
+  IconRosetteDiscountCheck,
+  IconSchool,
+  IconSpy,
+} from "@tabler/icons-react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { RawDataDialog } from "@/components/domain/registration/raw-data-dialog";
@@ -63,7 +63,7 @@ export function RegistrationSection({
     >
       {isWhoisUnavailable ? (
         <div className="flex items-start gap-3 rounded-lg border border-warning-border bg-warning-border/10 p-4 text-sm backdrop-blur-lg dark:bg-warning-border/10">
-          <WarningCircleIcon
+          <IconAlertCircle
             className="mt-0.5 size-4 shrink-0 text-yellow-800 dark:text-yellow-200"
             aria-hidden="true"
           />
@@ -98,7 +98,7 @@ export function RegistrationSection({
                 <ResponsiveTooltipTrigger
                   nativeButton={false}
                   render={
-                    <SealCheckIcon
+                    <IconRosetteDiscountCheck
                       className="!size-3.5 text-muted-foreground/80"
                       aria-hidden="true"
                     />
@@ -130,7 +130,7 @@ export function RegistrationSection({
                       title={`Learn about ${data.source === "rdap" ? "RDAP" : "WHOIS"}`}
                       className="text-muted/80"
                     >
-                      <GraduationCapIcon className="size-3" />
+                      <IconSchool className="size-3" />
                     </a>
                   </div>
                 </ResponsiveTooltipContent>
@@ -147,10 +147,7 @@ export function RegistrationSection({
             }
             leading={
               data.privacyEnabled || !registrant ? (
-                <DetectiveIcon
-                  className="text-muted-foreground"
-                  aria-hidden="true"
-                />
+                <IconSpy className="text-muted-foreground" aria-hidden="true" />
               ) : undefined
             }
           />

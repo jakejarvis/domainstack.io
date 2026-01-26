@@ -1,10 +1,10 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import {
-  ActivityIcon,
-  QuestionIcon,
-  SirenIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconActivity,
+  IconAlertOctagon,
+  IconAlertTriangle,
+  IconQuestionMark,
+  type TablerIcon,
+} from "@tabler/icons-react";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
@@ -75,7 +75,7 @@ function getHealthStatus(
 function getStatusConfig(status: HealthStatus): {
   label: string;
   colorClass: string;
-  icon: React.FC<IconProps>;
+  icon: TablerIcon;
 } {
   switch (status) {
     case "healthy":
@@ -83,26 +83,26 @@ function getStatusConfig(status: HealthStatus): {
         label: "Healthy",
         colorClass:
           "border-success-border bg-success/20 text-success-foreground",
-        icon: ActivityIcon,
+        icon: IconActivity,
       };
     case "warning":
       return {
         label: "Needs Attention",
         colorClass:
           "border-warning-border bg-warning/20 text-warning-foreground",
-        icon: WarningIcon,
+        icon: IconAlertTriangle,
       };
     case "critical":
       return {
         label: "Needs Attention",
         colorClass: "border-danger-border bg-danger/20 text-danger-foreground",
-        icon: SirenIcon,
+        icon: IconAlertOctagon,
       };
     default:
       return {
         label: "Unknown",
         colorClass: "border-muted-border bg-muted/20 text-muted-foreground",
-        icon: QuestionIcon,
+        icon: IconQuestionMark,
       };
   }
 }

@@ -11,7 +11,7 @@ export default function SettingsTabsLayout() {
         </p>
       </div>
 
-      <Card className="overflow-hidden p-3 [&_[data-slot=tabs-content]]:mt-2 [&_[data-slot=tabs-content]]:p-2">
+      <Card className="overflow-hidden border border-black/10 bg-background/80 p-3 shadow-xl backdrop-blur-xl dark:border-white/10 [&_[data-slot=tabs-content]]:mt-2 [&_[data-slot=tabs-content]]:p-2">
         <SettingsTabsRouter navigationMode="page" />
       </Card>
     </div>

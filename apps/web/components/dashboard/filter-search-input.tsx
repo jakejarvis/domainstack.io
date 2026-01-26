@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react/ssr";
+import { IconSearch, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   InputGroup,
@@ -19,7 +19,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
     <div className="flex-1 lg:max-w-xs">
       <InputGroup>
         <InputGroupAddon>
-          <MagnifyingGlassIcon />
+          <IconSearch />
         </InputGroupAddon>
         <InputGroupInput
           name="domain-search"
@@ -49,7 +49,7 @@ export function FilterSearchInput({ value, onChange }: FilterSearchInputProps) {
                   onClick={() => onChange("")}
                   aria-label="Clear search"
                 >
-                  <XIcon />
+                  <IconX />
                 </InputGroupButton>
               </motion.div>
             </InputGroupAddon>

@@ -1,10 +1,10 @@
 import {
-  CheckIcon,
-  GaugeIcon,
-  RocketLaunchIcon,
-  ShootingStarIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertCircle,
+  IconCheck,
+  IconGauge,
+  IconMeteor,
+  IconRocket,
+} from "@tabler/icons-react";
 import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
 import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
 import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
@@ -126,7 +126,7 @@ export function AddDomainContent({
       <>
         <div className="mb-4 flex flex-col items-center text-center">
           <Icon size="lg" variant="destructive" className="mb-2">
-            <WarningCircleIcon />
+            <IconAlertCircle />
           </Icon>
           <h2 className="font-semibold text-lg leading-none tracking-tight">
             Unable to Load Subscription
@@ -163,7 +163,7 @@ export function AddDomainContent({
       <>
         <div className="mb-4 flex flex-col items-center text-center">
           <Icon size="lg" variant="warning" className="mb-3">
-            <GaugeIcon />
+            <IconGauge />
           </Icon>
           <h2 className="font-semibold text-lg tracking-tight">
             Domain Limit Reached
@@ -222,7 +222,7 @@ export function AddDomainContent({
                 />
 
                 <div className="mb-2 flex items-center gap-2 font-medium">
-                  <ShootingStarIcon className="size-4" />
+                  <IconMeteor className="size-4" />
                   {PRO_TIER_INFO.name} Plan
                 </div>
                 <ul className="relative mb-3 space-y-1 text-muted-foreground text-sm">
@@ -245,7 +245,7 @@ export function AddDomainContent({
               </div>
 
               <div className="flex flex-col gap-2">
-                <UpgradeButton className="w-full" icon={RocketLaunchIcon}>
+                <UpgradeButton className="w-full" icon={IconRocket}>
                   Upgrade to Pro
                 </UpgradeButton>
                 {onClose && (
@@ -285,7 +285,7 @@ export function AddDomainContent({
       <Stepper
         value={step}
         indicators={{
-          completed: <CheckIcon className="size-4" />,
+          completed: <IconCheck className="size-4" />,
           loading: <Spinner className="size-4" />,
         }}
       >
@@ -402,7 +402,7 @@ export function AddDomainContent({
                         isMissingVerificationData
                       }
                     >
-                      {isVerifying ? <Spinner /> : <CheckIcon />}
+                      {isVerifying ? <Spinner /> : <IconCheck />}
                       {isVerifying ? "Checking…" : "Check Now"}
                     </Button>
                   </div>
@@ -410,7 +410,7 @@ export function AddDomainContent({
               ) : (
                 <div className="flex h-[200px] flex-col items-center justify-center space-y-4">
                   <Icon size="lg" variant="destructive" className="mx-auto">
-                    <WarningCircleIcon />
+                    <IconAlertCircle />
                   </Icon>
                   <div className="text-center" aria-live="polite">
                     <h3 className="font-semibold">Something went wrong</h3>

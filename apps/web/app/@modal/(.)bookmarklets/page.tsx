@@ -6,20 +6,23 @@ import {
   ModalHeader,
   ModalTitle,
 } from "@/components/ui/modal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function InterceptedBookmarkletPage() {
+export default function InterceptedBookmarkletsPage() {
   return (
     <Modal>
       <ModalContent className="!max-w-lg">
         <ModalHeader>
-          <ModalTitle>Bookmarklet</ModalTitle>
+          <ModalTitle>Bookmarklets</ModalTitle>
           <ModalDescription>
             Use these shortcuts to investigate domains from anywhere.
           </ModalDescription>
         </ModalHeader>
-        <div className="min-w-0 bg-popover/10 p-4 [contain:inline-size]">
-          <BookmarkletContent />
-        </div>
+        <ScrollArea className="min-h-0 flex-1 bg-popover/10">
+          <div className="min-w-0 p-4 text-sm leading-relaxed [contain:inline-size]">
+            <BookmarkletContent />
+          </div>
+        </ScrollArea>
       </ModalContent>
     </Modal>
   );

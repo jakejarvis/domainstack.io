@@ -1,4 +1,4 @@
-import { GlobeIcon } from "@phosphor-icons/react/ssr";
+import { IconWorld } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { DnsGroup } from "@/components/domain/dns/dns-group";
 import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
@@ -80,7 +80,7 @@ export function DnsSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <GlobeIcon />
+              <IconWorld />
             </EmptyMedia>
             <EmptyTitle>No DNS records found</EmptyTitle>
             <EmptyDescription>
