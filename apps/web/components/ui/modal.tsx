@@ -92,7 +92,7 @@ function ModalHeader({
     <div
       data-slot="modal-header"
       className={cn(
-        "flex flex-col gap-1 border-muted border-b bg-card/60 px-4.5 py-4",
+        "flex flex-col gap-1 border-muted border-b bg-card/60 p-4",
         className,
       )}
       {...props}

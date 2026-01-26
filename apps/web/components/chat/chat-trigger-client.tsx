@@ -203,7 +203,7 @@ export function ChatTriggerClient({
             collisionPadding={16}
             className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background p-0"
           >
-            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-4 py-3.5">
+            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-3">
               <PopoverTitle className="flex items-center gap-2">
                 <IconLego className="size-4" />
                 <span className="text-[15px] leading-none tracking-tight">
@@ -211,7 +211,7 @@ export function ChatTriggerClient({
                 </span>
                 <BetaBadge />
               </PopoverTitle>
-              <div className="-mr-2 flex items-center gap-1">
+              <div className="-mr-1.5 flex items-center gap-1.5">
                 {headerActions}
               </div>
             </PopoverHeader>

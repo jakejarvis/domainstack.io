@@ -19,7 +19,7 @@ export default function InterceptedBookmarkletsPage() {
           </ModalDescription>
         </ModalHeader>
         <ScrollArea className="min-h-0 flex-1 bg-popover/10">
-          <div className="min-w-0 p-4 [contain:inline-size]">
+          <div className="min-w-0 p-4 text-sm leading-relaxed [contain:inline-size]">
             <BookmarkletContent />
           </div>
         </ScrollArea>
