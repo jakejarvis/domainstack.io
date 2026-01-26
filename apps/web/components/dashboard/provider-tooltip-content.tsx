@@ -2,7 +2,7 @@ import {
   IconLock,
   IconLockOpen,
   IconRosetteDiscountCheck,
-  IconUserQuestion,
+  IconSpy,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
@@ -132,7 +132,7 @@ export function ProviderTooltipContent({
               <div className="flex items-center gap-1.5">
                 {registrantInfo.privacyEnabled || !registrant ? (
                   <>
-                    <IconUserQuestion className="size-3.5 text-muted" />
+                    <IconSpy className="size-3.5 text-muted" />
                     <span className="text-background/90">Privacy enabled</span>
                   </>
                 ) : (

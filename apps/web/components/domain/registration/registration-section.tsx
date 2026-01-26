@@ -2,7 +2,7 @@ import {
   IconAlertCircle,
   IconRosetteDiscountCheck,
   IconSchool,
-  IconUserQuestion,
+  IconSpy,
 } from "@tabler/icons-react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
@@ -147,10 +147,7 @@ export function RegistrationSection({
             }
             leading={
               data.privacyEnabled || !registrant ? (
-                <IconUserQuestion
-                  className="text-muted-foreground"
-                  aria-hidden="true"
-                />
+                <IconSpy className="text-muted-foreground" aria-hidden="true" />
               ) : undefined
             }
           />

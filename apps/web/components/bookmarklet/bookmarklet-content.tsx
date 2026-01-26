@@ -2,10 +2,10 @@
 
 import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
-  IconArrowBackUp,
+  IconCornerLeftUp,
+  IconMouse,
   IconMovie,
-  IconPointer,
-  IconSquarePlus,
+  IconSquareRoundedPlus2,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
@@ -52,12 +52,12 @@ export function BookmarkletContent() {
             onClick={(e) => {
               e.preventDefault();
               toast.info("Drag the button to your bookmarks bar to use it.", {
-                icon: <IconArrowBackUp className="size-4" />,
+                icon: <IconCornerLeftUp className="size-4" />,
                 position: "top-center",
               });
             }}
           >
-            <IconPointer />
+            <IconMouse />
             Inspect Domain
           </Button>
         </div>
@@ -95,7 +95,7 @@ export function BookmarkletContent() {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       data-disable-progress
                     >
-                      <IconSquarePlus />
+                      <IconSquareRoundedPlus2 />
                       Add Shortcut
                     </a>
                   }
