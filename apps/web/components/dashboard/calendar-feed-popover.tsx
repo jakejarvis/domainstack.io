@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  ArrowClockwiseIcon,
-  CalendarBlankIcon,
-  WarningIcon,
-  XIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertTriangle,
+  IconCalendar,
+  IconRefresh,
+  IconX,
+} from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { Suspense, useState } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
@@ -37,11 +37,11 @@ function PopoverErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
   return (
     <div className="flex flex-col items-center gap-2 p-4 text-center">
-      <WarningIcon className="size-5 text-destructive" />
+      <IconAlertTriangle className="size-5 text-destructive" />
       <p className="text-muted-foreground text-sm">Failed to load</p>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button size="sm" onClick={resetErrorBoundary}>
-          <ArrowClockwiseIcon />
+          <IconRefresh />
           Retry
         </Button>
         <CreateIssueButton error={errorObj} variant="outline" size="sm" />
@@ -62,7 +62,7 @@ export function CalendarFeedPopover() {
             <PopoverTrigger
               render={
                 <Button variant="outline" size="icon">
-                  <CalendarBlankIcon />
+                  <IconCalendar />
                   <span className="sr-only">Subscribe</span>
                 </Button>
               }
@@ -93,7 +93,7 @@ export function CalendarFeedPopover() {
             onClick={() => setOpen(false)}
             aria-label="Close"
           >
-            <XIcon />
+            <IconX />
             <span className="sr-only">Close</span>
           </Button>
         </PopoverHeader>

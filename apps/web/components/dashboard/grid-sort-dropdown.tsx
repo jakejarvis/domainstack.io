@@ -1,7 +1,4 @@
-import {
-  SortAscendingIcon,
-  SortDescendingIcon,
-} from "@phosphor-icons/react/ssr";
+import { IconSortAscending, IconSortDescending } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,9 +33,9 @@ export function GridSortDropdown({
             {currentSort?.direction && (
               <span className="text-muted-foreground">
                 {currentSort.direction === "asc" ? (
-                  <SortAscendingIcon className="size-4 shrink-0 translate-y-[-1px]" />
+                  <IconSortAscending className="size-4 shrink-0 translate-y-[-1px]" />
                 ) : (
-                  <SortDescendingIcon className="size-4 shrink-0 translate-y-[-1px]" />
+                  <IconSortDescending className="size-4 shrink-0 translate-y-[-1px]" />
                 )}
               </span>
             )}

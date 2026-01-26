@@ -1,6 +1,6 @@
 "use client";
 
-import { DownloadSimpleIcon } from "@phosphor-icons/react/ssr";
+import { IconDownload } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -30,7 +30,7 @@ export function ExportButton({
             disabled={!enabled || !allDataLoaded}
             aria-label="Export report"
           >
-            <DownloadSimpleIcon
+            <IconDownload
               className="sm:text-muted-foreground"
               aria-hidden="true"
             />

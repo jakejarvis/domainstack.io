@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownIcon } from "@phosphor-icons/react";
+import { IconArrowDown } from "@tabler/icons-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import type { StickToBottomInstance } from "use-stick-to-bottom";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,6 @@ export const ConversationScrollButton = ({
     variant="outline"
     {...props}
   >
-    <ArrowDownIcon className="size-4" />
+    <IconArrowDown className="size-4" />
   </Button>
 );

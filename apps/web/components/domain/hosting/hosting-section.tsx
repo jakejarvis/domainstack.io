@@ -1,4 +1,4 @@
-import { QuestionIcon } from "@phosphor-icons/react/ssr";
+import { IconHelp } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
 import { KeyValue } from "@/components/domain/key-value";
@@ -122,7 +122,7 @@ export function HostingSection({
         <Empty className="border border-dashed">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <QuestionIcon />
+              <IconHelp />
             </EmptyMedia>
             <EmptyTitle>No hosting details available</EmptyTitle>
             <EmptyDescription>

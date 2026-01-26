@@ -1,4 +1,4 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
+import type { TablerIcon } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import {
   ResponsiveTooltip,
@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type BadgeWithTooltipProps = {
-  icon: React.FC<IconProps>;
+  icon: TablerIcon;
   label: string;
   className?: string;
   tooltipContent?: React.ReactNode;

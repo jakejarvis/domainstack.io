@@ -1,8 +1,8 @@
 import {
-  ArrowDownIcon,
-  ArrowsDownUpIcon,
-  ArrowUpIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArrowDown,
+  IconArrowsSort,
+  IconArrowUp,
+} from "@tabler/icons-react";
 
 type SortIndicatorProps = {
   isSorted: false | "asc" | "desc";
@@ -10,10 +10,10 @@ type SortIndicatorProps = {
 
 export function SortIndicator({ isSorted }: SortIndicatorProps) {
   if (isSorted === "asc") {
-    return <ArrowUpIcon className="size-3 shrink-0 text-primary" />;
+    return <IconArrowUp className="size-3 shrink-0 text-primary" />;
   }
   if (isSorted === "desc") {
-    return <ArrowDownIcon className="size-3 shrink-0 text-primary" />;
+    return <IconArrowDown className="size-3 shrink-0 text-primary" />;
   }
-  return <ArrowsDownUpIcon className="size-3 shrink-0 opacity-50" />;
+  return <IconArrowsSort className="size-3 shrink-0 opacity-50" />;
 }

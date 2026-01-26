@@ -1,7 +1,4 @@
-import {
-  FlagPennantIcon,
-  MagnifyingGlassIcon,
-} from "@phosphor-icons/react/ssr";
+import { IconFlag, IconSearch } from "@tabler/icons-react";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -22,7 +19,7 @@ export function RedirectedAlert({
     if (dest === src) return null;
     return (
       <Alert {...props}>
-        <FlagPennantIcon aria-hidden />
+        <IconFlag aria-hidden />
         <AlertDescription>
           <p className="text-[13px]">
             We followed a redirect to{" "}
@@ -33,7 +30,7 @@ export function RedirectedAlert({
               title={`View report for ${dest}`}
             >
               <span className="font-medium">{dest}</span>
-              <MagnifyingGlassIcon className="!size-3.5" aria-hidden />
+              <IconSearch className="!size-3.5" aria-hidden />
             </Link>
             {"."}
           </p>

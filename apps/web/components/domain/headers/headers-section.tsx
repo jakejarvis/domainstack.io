@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  ArrowSquareOutIcon,
-  InfoIcon,
-  ListBulletsIcon,
-  MagnifyingGlassIcon,
-} from "@phosphor-icons/react/ssr";
+  IconExternalLink,
+  IconInfoCircle,
+  IconList,
+  IconSearch,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { KeyValue } from "@/components/domain/key-value";
@@ -71,7 +71,7 @@ export function HeadersSection({
         <div className="space-y-4">
           {status !== 200 && (
             <Alert>
-              <InfoIcon aria-hidden />
+              <IconInfoCircle aria-hidden />
               <AlertDescription>
                 <p className="text-[13px]">
                   Server returned{" "}
@@ -85,7 +85,7 @@ export function HeadersSection({
                       {status}
                       {statusMessage ? ` ${statusMessage}` : ""}
                     </span>
-                    <ArrowSquareOutIcon className="!size-3.5" aria-hidden />
+                    <IconExternalLink className="!size-3.5" aria-hidden />
                   </a>
                   {"."}
                 </p>
@@ -115,7 +115,7 @@ export function HeadersSection({
                         className="inline-flex items-center text-foreground/80 hover:text-muted-foreground"
                         title={`View report for ${locationDomain}`}
                       >
-                        <MagnifyingGlassIcon className="h-4 w-4" />
+                        <IconSearch className="h-4 w-4" />
                       </Link>
                     ) : undefined
                   }
@@ -128,14 +128,14 @@ export function HeadersSection({
         <div className="space-y-4">
           {status === 0 && statusMessage ? (
             <Alert variant="destructive">
-              <InfoIcon className="h-4 w-4" />
+              <IconInfoCircle className="h-4 w-4" />
               <AlertDescription>{statusMessage}</AlertDescription>
             </Alert>
           ) : null}
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <ListBulletsIcon />
+                <IconList />
               </EmptyMedia>
               <EmptyTitle>No HTTP headers detected</EmptyTitle>
               <EmptyDescription>

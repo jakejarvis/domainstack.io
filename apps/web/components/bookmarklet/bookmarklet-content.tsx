@@ -2,11 +2,11 @@
 
 import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
-  ArrowElbowLeftUpIcon,
-  FilmStripIcon,
-  MouseLeftClickIcon,
-  StackPlusIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArrowBackUp,
+  IconMovie,
+  IconPointer,
+  IconSquarePlus,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -52,12 +52,12 @@ export function BookmarkletContent() {
             onClick={(e) => {
               e.preventDefault();
               toast.info("Drag the button to your bookmarks bar to use it.", {
-                icon: <ArrowElbowLeftUpIcon className="size-4" />,
+                icon: <IconArrowBackUp className="size-4" />,
                 position: "top-center",
               });
             }}
           >
-            <MouseLeftClickIcon />
+            <IconPointer />
             Inspect Domain
           </Button>
         </div>
@@ -95,7 +95,7 @@ export function BookmarkletContent() {
                       href={`workflow://shortcuts/${APPLE_SHORTCUT_ID}`}
                       data-disable-progress
                     >
-                      <StackPlusIcon />
+                      <IconSquarePlus />
                       Add Shortcut
                     </a>
                   }
@@ -105,7 +105,7 @@ export function BookmarkletContent() {
                   <DialogTrigger
                     render={
                       <Button variant="outline" aria-label="Watch demo">
-                        <FilmStripIcon />
+                        <IconMovie />
                         Watch Demo
                       </Button>
                     }

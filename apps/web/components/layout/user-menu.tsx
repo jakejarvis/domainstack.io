@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  GearIcon,
-  MoonIcon,
-  SignOutIcon,
-  StackIcon,
-  SunIcon,
-} from "@phosphor-icons/react/ssr";
+  IconLayoutDashboard,
+  IconLogout,
+  IconMoon,
+  IconSettings,
+  IconSun,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -101,7 +101,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/dashboard">
-              <StackIcon />
+              <IconLayoutDashboard />
               Dashboard
             </Link>
           }
@@ -110,7 +110,7 @@ export function UserMenu() {
           nativeButton={false}
           render={
             <Link href="/settings" scroll={false}>
-              <GearIcon />
+              <IconSettings />
               Settings
             </Link>
           }
@@ -118,12 +118,12 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {/* Theme toggle and bookmarklet - now visible on all screen sizes */}
         <DropdownMenuItem onClick={toggleTheme}>
-          {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          {theme === "dark" ? <IconSun /> : <IconMoon />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
-          <SignOutIcon className="text-danger-foreground" />
+          <IconLogout className="text-danger-foreground" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react/ssr";
+import { IconArrowRight, IconSearch } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -167,7 +167,7 @@ export function SearchClient({
               />
 
               <InputGroupAddon>
-                <MagnifyingGlassIcon />
+                <IconSearch />
               </InputGroupAddon>
 
               {variant === "sm" && (loading || mounted) && (
@@ -194,7 +194,7 @@ export function SearchClient({
                     <div className="flex items-center gap-2">
                       <span className="text-[13px]">Inspect</span>
                       <Kbd className="hidden text-[13px] sm:inline-flex">⏎</Kbd>
-                      <ArrowRightIcon className="inline-flex sm:hidden" />
+                      <IconArrowRight className="inline-flex sm:hidden" />
                     </div>
                   </InputGroupButton>
                 </InputGroupAddon>

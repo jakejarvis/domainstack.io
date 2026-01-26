@@ -1,14 +1,18 @@
-import { SiApple, SiGoogle, SiProton } from "@icons-pack/react-simple-icons";
-import { OpenAiLogoIcon } from "@phosphor-icons/react";
 import {
-  AppStoreLogoIcon,
-  ArrowClockwiseIcon,
-  CalendarCheckIcon,
-  CalendarSlashIcon,
-  CaretDownIcon,
-  InfoIcon,
-  PasswordIcon,
-} from "@phosphor-icons/react/ssr";
+  SiApple,
+  SiAppstore,
+  SiGoogle,
+  SiProton,
+} from "@icons-pack/react-simple-icons";
+import {
+  IconBrandOpenai,
+  IconCalendarCheck,
+  IconCalendarOff,
+  IconChevronDown,
+  IconInfoCircle,
+  IconKey,
+  IconRefresh,
+} from "@tabler/icons-react";
 import {
   useMutation,
   useQueryClient,
@@ -229,7 +233,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
           <div className="space-y-4">
             {/* Security warning */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-400">
-              <PasswordIcon className="size-4 shrink-0 translate-y-[4px]" />
+              <IconKey className="size-4 shrink-0 translate-y-[4px]" />
               <div className="space-y-1 text-[13px]">
                 <p className="my-0.5 font-semibold">
                   Treat this URL like a password!
@@ -250,7 +254,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
 
             {/* Stats */}
             <div className="flex items-center gap-[5px] text-muted-foreground text-xs leading-none">
-              <InfoIcon className="size-3 shrink-0" />
+              <IconInfoCircle className="size-3 shrink-0" />
               {feed.lastAccessedAt ? (
                 <span>
                   Last accessed{" "}
@@ -272,11 +276,11 @@ export function CalendarInstructions({ className }: { className?: string }) {
                     render={
                       <ButtonGroup className="@md/actions:col-span-1 col-span-2 flex w-full">
                         <Button variant="outline" className="flex-1">
-                          <AppStoreLogoIcon className="text-muted-foreground" />
+                          <SiAppstore className="text-muted-foreground" />
                           Open In…
                         </Button>
                         <Button variant="outline" className="!px-2.5">
-                          <CaretDownIcon />
+                          <IconChevronDown />
                         </Button>
                       </ButtonGroup>
                     }
@@ -331,7 +335,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                           className="justify-center text-[13px] text-foreground/90"
                           aria-label="Ask ChatGPT"
                         >
-                          <OpenAiLogoIcon />
+                          <IconBrandOpenai />
                           Other…
                           <span className="sr-only">(Ask ChatGPT)</span>
                         </a>
@@ -348,7 +352,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   {rotateMutation.isPending ? (
                     <Spinner />
                   ) : (
-                    <ArrowClockwiseIcon className="text-muted-foreground" />
+                    <IconRefresh className="text-muted-foreground" />
                   )}
                   Regenerate URL
                 </Button>
@@ -358,11 +362,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={isPending}
                 >
-                  {deleteMutation.isPending ? (
-                    <Spinner />
-                  ) : (
-                    <CalendarSlashIcon />
-                  )}
+                  {deleteMutation.isPending ? <Spinner /> : <IconCalendarOff />}
                   Disable
                 </Button>
               </div>
@@ -381,7 +381,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
               </>
             ) : (
               <>
-                <CalendarCheckIcon />
+                <IconCalendarCheck />
                 Enable
               </>
             )}
@@ -408,7 +408,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
               onClick={() => rotateMutation.mutate()}
               disabled={rotateMutation.isPending}
             >
-              {rotateMutation.isPending ? <Spinner /> : <ArrowClockwiseIcon />}
+              {rotateMutation.isPending ? <Spinner /> : <IconRefresh />}
               Regenerate
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -435,7 +435,7 @@ export function CalendarInstructions({ className }: { className?: string }) {
               disabled={deleteMutation.isPending}
               variant="destructive"
             >
-              {deleteMutation.isPending ? <Spinner /> : <CalendarSlashIcon />}
+              {deleteMutation.isPending ? <Spinner /> : <IconCalendarOff />}
               Disable
             </AlertDialogAction>
           </AlertDialogFooter>

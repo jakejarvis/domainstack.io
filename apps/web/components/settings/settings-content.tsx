@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  BellSimpleIcon,
-  UserIcon,
-  WalletIcon,
-} from "@phosphor-icons/react/ssr";
+import { IconBell, IconUser, IconWallet } from "@tabler/icons-react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import {
   useCallback,
@@ -26,17 +22,17 @@ const SETTINGS_TABS = [
   {
     value: "subscription",
     label: "Subscription",
-    icon: WalletIcon,
+    icon: IconWallet,
   },
   {
     value: "notifications",
     label: "Notifications",
-    icon: BellSimpleIcon,
+    icon: IconBell,
   },
   {
     value: "account",
     label: "Account",
-    icon: UserIcon,
+    icon: IconUser,
   },
 ] as const;
 

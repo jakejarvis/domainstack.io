@@ -1,4 +1,4 @@
-import { CaretDownIcon, FunnelIcon } from "@phosphor-icons/react/ssr";
+import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -39,7 +39,7 @@ export function MobileFiltersCollapsible({
           render={
             <Button variant="outline" className="flex-1 justify-between">
               <span className="flex items-center gap-2">
-                <FunnelIcon className="text-muted-foreground" />
+                <IconFilter className="text-muted-foreground" />
                 <span className="text-sm">Filters</span>
                 <AnimatePresence initial={false}>
                   {hasActiveFilters && (
@@ -61,7 +61,7 @@ export function MobileFiltersCollapsible({
                   )}
                 </AnimatePresence>
               </span>
-              <CaretDownIcon
+              <IconChevronDown
                 className={cn(
                   "transition-transform",
                   mobileOpen && "rotate-180",

@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react/ssr";
+import { IconCheck, IconChevronRight } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function DropdownMenu({ ...props }: Menu.Root.Props) {
@@ -112,7 +112,7 @@ function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <Menu.CheckboxItemIndicator>
-          <CheckIcon className="size-4" aria-hidden="true" />
+          <IconCheck className="size-4" aria-hidden="true" />
         </Menu.CheckboxItemIndicator>
       </span>
       {children}
@@ -146,7 +146,7 @@ function DropdownMenuRadioItem({
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <Menu.RadioItemIndicator>
-          <CheckIcon className="size-4" aria-hidden="true" />
+          <IconCheck className="size-4" aria-hidden="true" />
         </Menu.RadioItemIndicator>
       </span>
       {children}
@@ -226,7 +226,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <CaretRightIcon className="ml-auto" aria-hidden="true" />
+      <IconChevronRight className="ml-auto" aria-hidden="true" />
     </Menu.SubmenuTrigger>
   );
 }

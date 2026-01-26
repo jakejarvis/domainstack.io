@@ -1,8 +1,8 @@
 import {
-  CaretDownIcon,
-  TrashIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertTriangle,
+  IconChevronDown,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useState } from "react";
 import { DeleteAccountDialog } from "@/components/settings/account/delete-account-dialog";
 import { Button } from "@/components/ui/button";
@@ -34,12 +34,12 @@ export function DangerZoneCollapsible({
               className="group flex w-full cursor-pointer items-center justify-between rounded-md bg-destructive/5 px-4 py-3 text-left transition-all hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 data-[panel-open]:rounded-b-none"
             >
               <div className="flex items-center gap-3">
-                <WarningIcon className="size-5 text-destructive" />
+                <IconAlertTriangle className="size-5 text-destructive" />
                 <span className="font-medium text-destructive text-sm leading-none">
                   Danger Zone!
                 </span>
               </div>
-              <CaretDownIcon className="size-4 text-destructive/60 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
+              <IconChevronDown className="size-4 text-destructive/60 transition-transform duration-200 group-data-[panel-open]:rotate-180" />
             </button>
           }
         />
@@ -57,7 +57,7 @@ export function DangerZoneCollapsible({
                 size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
-                <TrashIcon />
+                <IconTrash />
                 Delete
               </Button>
             </div>

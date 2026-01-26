@@ -1,4 +1,4 @@
-import { SpeedometerIcon } from "@phosphor-icons/react/dist/ssr";
+import { IconGauge } from "@tabler/icons-react";
 import { createElement } from "react";
 import { toast } from "sonner";
 
@@ -125,7 +125,7 @@ export function showRateLimitError(error: unknown): boolean {
       retryAfter > 0
         ? `Please wait ${retryAfter} second${retryAfter !== 1 ? "s" : ""} before trying again.`
         : "Please wait a moment before trying again.",
-    icon: createElement(SpeedometerIcon, { className: "size-4" }),
+    icon: createElement(IconGauge, { className: "size-4" }),
   });
 
   return true;

@@ -1,11 +1,11 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
 import {
-  CalendarDotsIcon,
-  FingerprintIcon,
-  IdentificationBadgeIcon,
-  PlugsIcon,
-  ShieldWarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconCalendarDot,
+  IconFingerprint,
+  IconIdBadge2,
+  IconPlug,
+  IconShieldExclamation,
+  type TablerIcon,
+} from "@tabler/icons-react";
 import type { NotificationCategory } from "./notifications";
 
 /**
@@ -14,32 +14,32 @@ import type { NotificationCategory } from "./notifications";
  */
 export const NOTIFICATION_CATEGORY_INFO: Record<
   NotificationCategory,
-  { label: string; description: string; icon: React.FC<IconProps> }
+  { label: string; description: string; icon: TablerIcon }
 > = {
   providerChanges: {
     label: "Provider Changes",
     description: "Alerts when DNS, hosting, or email providers change",
-    icon: PlugsIcon,
+    icon: IconPlug,
   },
   domainExpiry: {
     label: "Domain Expiration",
     description: "Alerts at 30, 14, 7, and 1 day before expiration",
-    icon: CalendarDotsIcon,
+    icon: IconCalendarDot,
   },
   registrationChanges: {
     label: "Registration Changes",
     description:
       "Alerts when registrar, nameservers, transfer lock, or statuses change",
-    icon: IdentificationBadgeIcon,
+    icon: IconIdBadge2,
   },
   certificateExpiry: {
     label: "Certificate Expiration",
     description: "Alerts at 14, 7, 3, and 1 day before expiration",
-    icon: ShieldWarningIcon,
+    icon: IconShieldExclamation,
   },
   certificateChanges: {
     label: "Certificate Changes",
     description: "Alerts when SSL certificate issuer or subject changes",
-    icon: FingerprintIcon,
+    icon: IconFingerprint,
   },
 };

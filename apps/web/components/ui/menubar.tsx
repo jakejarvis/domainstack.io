@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Menubar as MenubarPrimitive } from "@base-ui/react/menubar";
-import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react/ssr";
+import { IconCheck, IconChevronRight } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
@@ -126,7 +126,7 @@ function MenubarCheckboxItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center [&_svg:not([class*='size-'])]:size-4">
         <Menu.CheckboxItemIndicator>
-          <CheckIcon aria-hidden="true" />
+          <IconCheck aria-hidden="true" />
         </Menu.CheckboxItemIndicator>
       </span>
       {children}
@@ -151,7 +151,7 @@ function MenubarRadioItem({
     >
       <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center [&_svg:not([class*='size-'])]:size-4">
         <Menu.RadioItemIndicator>
-          <CheckIcon aria-hidden="true" />
+          <IconCheck aria-hidden="true" />
         </Menu.RadioItemIndicator>
       </span>
       {children}
@@ -230,7 +230,7 @@ function MenubarSubTrigger({
       {...props}
     >
       {children}
-      <CaretRightIcon className="ml-auto" aria-hidden="true" />
+      <IconChevronRight className="ml-auto" aria-hidden="true" />
     </Menu.SubmenuTrigger>
   );
 }

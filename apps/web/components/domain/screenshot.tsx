@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldWarningIcon, XCircleIcon } from "@phosphor-icons/react/ssr";
+import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -70,12 +70,12 @@ export function Screenshot({
               </>
             ) : blocked ? (
               <>
-                <ShieldWarningIcon />
+                <IconShieldExclamation />
                 Screenshot unavailable for this domain.
               </>
             ) : (
               <>
-                <XCircleIcon />
+                <IconCircleX />
                 Unable to take a screenshot.
               </>
             )}

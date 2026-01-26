@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react/ssr";
+import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { CreateIssueButton } from "@/components/create-issue-button";
@@ -25,7 +25,7 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <CardHeader className="px-0 pt-0 pb-2">
       <CardTitle className="mb-1 flex items-center gap-2 text-destructive leading-none">
-        <WarningIcon className="size-4.5" />
+        <IconAlertTriangle className="size-4.5" />
         Failed to load
       </CardTitle>
       <CardDescription>
@@ -33,7 +33,7 @@ function SettingsErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
       </CardDescription>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={resetErrorBoundary}>
-          <ArrowClockwiseIcon />
+          <IconRefresh />
           Retry
         </Button>
         <CreateIssueButton error={errorObj} variant="outline" size="sm" />

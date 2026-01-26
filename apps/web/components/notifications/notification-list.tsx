@@ -1,6 +1,6 @@
 "use client";
 
-import { XCircleIcon } from "@phosphor-icons/react/ssr";
+import { IconXboxX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
@@ -49,7 +49,7 @@ export function NotificationList({
           role="alert"
           className="flex flex-col items-center justify-center gap-1.5 py-12 text-sm"
         >
-          <XCircleIcon className="size-4" />
+          <IconXboxX className="size-4" />
           Failed to load notifications
         </div>
       ) : notifications.length === 0 ? (

@@ -4,10 +4,7 @@ import {
   SiModelcontextprotocol,
   SiWindsurf,
 } from "@icons-pack/react-simple-icons";
-import {
-  ArrowSquareOutIcon,
-  BookOpenTextIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { IconBook, IconExternalLink } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { BetaBadge } from "@/components/beta-badge";
@@ -403,7 +400,7 @@ export default function McpPage() {
             rel="noopener noreferrer"
           >
             Model Context Protocol (MCP)
-            <ArrowSquareOutIcon />
+            <IconExternalLink />
           </a>{" "}
           server that allows AI assistants to look up domain information
           directly. This enables natural language queries about domains without
@@ -430,7 +427,7 @@ export default function McpPage() {
               <AccordionContent className="pt-1 text-foreground/90">
                 {item.content}
                 <p className="mt-2 flex items-center gap-1 text-muted-foreground text-xs leading-relaxed">
-                  <BookOpenTextIcon className="mr-[1px] size-3" />
+                  <IconBook className="mr-[1px] size-3" />
                   Need help?
                   <a
                     href={item.docsUrl}
@@ -439,7 +436,7 @@ export default function McpPage() {
                     className="inline-flex items-center gap-1 underline underline-offset-2"
                   >
                     {item.docsLabel}
-                    <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
+                    <IconExternalLink className="size-3 -translate-y-[1px]" />
                   </a>
                 </p>
               </AccordionContent>

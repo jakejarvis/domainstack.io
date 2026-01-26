@@ -1,8 +1,8 @@
 import {
-  HourglassMediumIcon,
-  SealCheckIcon,
-  WarningIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertTriangle,
+  IconHourglass,
+  IconRosetteDiscountCheck,
+} from "@tabler/icons-react";
 import { differenceInDays } from "date-fns";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
@@ -51,7 +51,7 @@ export function DomainStatusBadge({
 
     return (
       <BadgeWithTooltip
-        icon={WarningIcon}
+        icon={IconAlertTriangle}
         label="Failing"
         className={cn(
           "border-danger-border bg-danger/20 text-danger-foreground",
@@ -67,7 +67,7 @@ export function DomainStatusBadge({
   if (verified) {
     return (
       <BadgeWithTooltip
-        icon={SealCheckIcon}
+        icon={IconRosetteDiscountCheck}
         label="Verified"
         className={cn(
           "border-success-border bg-success/20 text-success-foreground",
@@ -85,7 +85,7 @@ export function DomainStatusBadge({
   // Pending state
   return (
     <BadgeWithTooltip
-      icon={HourglassMediumIcon}
+      icon={IconHourglass}
       label="Pending"
       className={cn(
         "border-warning-border bg-warning/20 text-warning-foreground",

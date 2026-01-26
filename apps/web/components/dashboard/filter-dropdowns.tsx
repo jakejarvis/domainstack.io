@@ -1,4 +1,4 @@
-import { ActivityIcon, GlobeIcon, PlugsIcon } from "@phosphor-icons/react/ssr";
+import { IconActivity, IconPlug, IconWorld } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import {
@@ -119,7 +119,7 @@ export function FilterDropdowns({
     <div className="flex flex-wrap gap-2">
       <MultiSelect
         label="Health"
-        icon={ActivityIcon}
+        icon={IconActivity}
         options={HEALTH_OPTIONS}
         selected={health}
         onSelectionChange={onHealthChange}
@@ -128,7 +128,7 @@ export function FilterDropdowns({
       {availableTlds.length > 0 && (
         <MultiSelect
           label="TLD"
-          icon={GlobeIcon}
+          icon={IconWorld}
           options={tldOptions}
           selected={tlds}
           onSelectionChange={onTldsChange}
@@ -139,7 +139,7 @@ export function FilterDropdowns({
       {providerSections.length > 0 && (
         <MultiSelect
           label="Providers"
-          icon={PlugsIcon}
+          icon={IconPlug}
           sections={providerSections}
           selected={providers}
           onSelectionChange={onProvidersChange}

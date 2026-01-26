@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { XIcon } from "@phosphor-icons/react/ssr";
+import { IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/hooks/use-router";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ function ModalClose({ ...props }: DialogPrimitive.Close.Props) {
       data-slot="modal-close"
       render={
         <Button variant="ghost" size="icon-xs" className="rounded">
-          <XIcon className="size-4" />
+          <IconX className="size-4" />
           <span className="sr-only">Close</span>
         </Button>
       }

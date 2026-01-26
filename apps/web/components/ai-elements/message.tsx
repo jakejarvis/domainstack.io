@@ -1,15 +1,9 @@
 "use client";
 
-import { createCodePlugin } from "@streamdown/code";
 import type { UIMessage } from "ai";
 import { type ComponentProps, memo } from "react";
 import { Streamdown } from "streamdown";
 import { cn } from "@/lib/utils";
-
-/** Code highlighting plugin with light/dark theme support */
-const codePlugin = createCodePlugin({
-  themes: ["one-light", "one-dark-pro"],
-});
 
 export type MessageProps = ComponentProps<"div"> & {
   from: UIMessage["role"];
@@ -57,7 +51,6 @@ export const MessageResponse = memo(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className,
       )}
-      plugins={{ code: codePlugin }}
       {...props}
     />
   ),

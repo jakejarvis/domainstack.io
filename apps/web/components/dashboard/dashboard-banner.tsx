@@ -1,5 +1,4 @@
-import type { IconProps } from "@phosphor-icons/react/dist/lib/types";
-import { XIcon } from "@phosphor-icons/react/ssr";
+import { IconX, type TablerIcon } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 type DashboardBannerProps = {
-  icon?: React.FC<IconProps>;
+  icon?: TablerIcon;
   title: string;
   description?: React.ReactNode;
   variant: "info" | "warning" | "success" | "danger";
@@ -115,7 +114,7 @@ export function DashboardBanner({
           className="absolute top-2 right-2 z-10 size-6 text-muted-foreground hover:text-foreground group-hover/dashboard-banner:visible sm:invisible"
           aria-label="Dismiss"
         >
-          <XIcon />
+          <IconX />
           <span className="sr-only">Dismiss</span>
         </Button>
       )}

@@ -1,4 +1,4 @@
-import { ColumnsIcon, EyeIcon } from "@phosphor-icons/react/ssr";
+import { IconColumns, IconEye } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +69,7 @@ export function DashboardTableColumnMenu<TData>({
                       : "Toggle columns"
                   }
                 >
-                  <ColumnsIcon className="text-foreground/90" />
+                  <IconColumns className="text-foreground/90" />
                   <span className="sr-only">Toggle columns</span>
                 </Button>
               }
@@ -115,7 +115,7 @@ export function DashboardTableColumnMenu<TData>({
                   onClick={showAllColumns}
                   className="text-muted-foreground"
                 >
-                  <EyeIcon />
+                  <IconEye />
                   Show all columns
                 </DropdownMenuItem>
               </>

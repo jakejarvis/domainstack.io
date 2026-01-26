@@ -1,4 +1,4 @@
-import { XIcon } from "@phosphor-icons/react/ssr";
+import { IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Badge } from "@/components/ui/badge";
 
@@ -76,7 +76,7 @@ export function FilterChips({ chips, onRemove }: FilterChipsProps) {
                   className="cursor-pointer rounded-full p-[3px] hover:bg-muted/90"
                   aria-label={`Remove ${chip.type} filter`}
                 >
-                  <XIcon className="size-3" />
+                  <IconX className="size-3" />
                 </button>
               </Badge>
             </motion.div>

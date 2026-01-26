@@ -1,4 +1,4 @@
-import { BookmarksSimpleIcon } from "@phosphor-icons/react/ssr";
+import { IconBookmarks } from "@tabler/icons-react";
 import type { Metadata } from "next";
 import { BookmarkletContent } from "@/components/bookmarklet/bookmarklet-content";
 import { StaticBackground } from "@/components/layout/static-background";
@@ -18,7 +18,7 @@ export default function BookmarkletPage() {
       <div className="container mx-auto flex max-w-lg flex-col py-20">
         <div className="mb-8 space-y-1">
           <h1 className="flex items-center gap-2 font-bold text-xl">
-            <BookmarksSimpleIcon className="size-6" />
+            <IconBookmarks className="size-6" />
             Bookmarklet
           </h1>
           <p className="text-muted-foreground">

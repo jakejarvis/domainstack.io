@@ -1,11 +1,11 @@
 import {
-  ActivityIcon,
-  GlobeIcon,
-  HourglassMediumIcon,
-  MagnifyingGlassIcon,
-  PlugsIcon,
-  XIcon,
-} from "@phosphor-icons/react/ssr";
+  IconActivity,
+  IconHourglass,
+  IconPlugConnected,
+  IconSearch,
+  IconWorld,
+  IconX,
+} from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo } from "react";
@@ -121,7 +121,7 @@ export function DashboardFilters({
               className="size-3 shrink-0"
             />
           ) : (
-            <PlugsIcon className="size-3 text-muted-foreground" />
+            <IconPlugConnected className="size-3 text-muted-foreground" />
           ),
         });
       }
@@ -140,7 +140,7 @@ export function DashboardFilters({
               value: domainId,
               label: filteredDomainName,
               prefix: "Domain",
-              icon: <GlobeIcon className="size-3 text-muted-foreground" />,
+              icon: <IconWorld className="size-3 text-muted-foreground" />,
             },
           ]
         : []),
@@ -151,9 +151,7 @@ export function DashboardFilters({
               type: "search" as const,
               value: search,
               label: `"${search}"`,
-              icon: (
-                <MagnifyingGlassIcon className="size-3 text-muted-foreground" />
-              ),
+              icon: <IconSearch className="size-3 text-muted-foreground" />,
             },
           ]
         : []),
@@ -162,20 +160,20 @@ export function DashboardFilters({
         type: "status" as const,
         value: s,
         label: s === "verified" ? "Verified" : "Pending Verification",
-        icon: <HourglassMediumIcon className="size-3 text-muted-foreground" />,
+        icon: <IconHourglass className="size-3 text-muted-foreground" />,
       })),
       ...health.map((h) => ({
         type: "health" as const,
         value: h,
         label: HEALTH_OPTIONS.find((o) => o.value === h)?.label ?? h,
-        icon: <ActivityIcon className="size-3 text-muted-foreground" />,
+        icon: <IconActivity className="size-3 text-muted-foreground" />,
       })),
       ...tlds.map((t) => ({
         type: "tld" as const,
         value: t,
         label: `.${t}`, // Display with leading dot
         prefix: "TLD",
-        icon: <GlobeIcon className="size-3 text-muted-foreground" />,
+        icon: <IconWorld className="size-3 text-muted-foreground" />,
       })),
       ...providers.map((p) => ({
         type: "provider" as const,
@@ -263,7 +261,7 @@ export function DashboardFilters({
                 onClick={onClearFilters}
                 className="text-muted-foreground"
               >
-                <XIcon />
+                <IconX />
                 Clear all
               </Button>
             </motion.div>

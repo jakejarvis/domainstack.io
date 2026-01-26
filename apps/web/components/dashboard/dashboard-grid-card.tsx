@@ -1,14 +1,14 @@
 import {
-  ArchiveIcon,
-  ArrowSquareOutIcon,
-  BellIcon,
-  BellSlashIcon,
-  BookmarkSimpleIcon,
-  DotsThreeVerticalIcon,
-  TrashIcon,
-  WarningCircleIcon,
-  WrenchIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertCircle,
+  IconArchive,
+  IconBell,
+  IconBellOff,
+  IconBookmark,
+  IconDotsVertical,
+  IconExternalLink,
+  IconTool,
+  IconTrash,
+} from "@tabler/icons-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import {
@@ -177,7 +177,7 @@ export function DashboardGridCard({
             <DropdownMenuTrigger
               render={
                 <Button variant="ghost" size="icon-sm">
-                  <DotsThreeVerticalIcon weight="bold" />
+                  <IconDotsVertical />
                   <span className="sr-only">Actions</span>
                 </Button>
               }
@@ -191,7 +191,7 @@ export function DashboardGridCard({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ArrowSquareOutIcon />
+                    <IconExternalLink />
                     Open
                   </a>
                 }
@@ -203,7 +203,7 @@ export function DashboardGridCard({
                     href={`/${encodeURIComponent(domainName)}`}
                     prefetch={false}
                   >
-                    <BookmarkSimpleIcon />
+                    <IconBookmark />
                     View Report
                   </Link>
                 }
@@ -213,23 +213,23 @@ export function DashboardGridCard({
                 <DropdownMenuItem onClick={onToggleMuted}>
                   {muted ? (
                     <>
-                      <BellIcon />
+                      <IconBell />
                       Unmute
                     </>
                   ) : (
                     <>
-                      <BellSlashIcon />
+                      <IconBellOff />
                       Mute
                     </>
                   )}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={onArchive}>
-                <ArchiveIcon />
+                <IconArchive />
                 Archive
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onRemove}>
-                <TrashIcon className="text-danger-foreground" />
+                <IconTrash className="text-danger-foreground" />
                 Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -375,7 +375,7 @@ export function DashboardGridCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="mt-3 w-full">
-              <WrenchIcon />
+              <IconTool />
               Fix Verification
             </Button>
           </>
@@ -387,7 +387,7 @@ export function DashboardGridCard({
             {/* Spacer to ensure minimum gap above button */}
             <div className="min-h-4 flex-1" />
             <Button onClick={onVerify} className="w-full">
-              <WarningCircleIcon />
+              <IconAlertCircle />
               Complete Verification
             </Button>
           </div>

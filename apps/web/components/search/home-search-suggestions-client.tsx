@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "@phosphor-icons/react/ssr";
+import { IconX } from "@tabler/icons-react";
 import Link from "next/link";
 import { useMemo, useRef } from "react";
 import { Favicon } from "@/components/icons/favicon";
@@ -116,7 +116,7 @@ export function HomeSearchSuggestionsClient({
                   className="shrink-0"
                   aria-label="Clear history"
                 >
-                  <XIcon />
+                  <IconX />
                   <span className="sr-only">Clear history</span>
                 </Button>
               }

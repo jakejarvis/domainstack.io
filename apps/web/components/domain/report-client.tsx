@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react/ssr";
+import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import {
   useQuery,
   useQueryClient,
@@ -183,7 +183,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
       <Empty className="border border-dashed">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <WarningIcon />
+            <IconAlertTriangle />
           </EmptyMedia>
           <EmptyTitle>Failed to load domain report</EmptyTitle>
           <EmptyDescription>
@@ -202,7 +202,7 @@ export function DomainReportClient({ domain }: { domain: string }) {
                 })
               }
             >
-              <ArrowClockwiseIcon />
+              <IconRefresh />
               Retry
             </Button>
             <CreateIssueButton

@@ -1,13 +1,13 @@
 "use client";
 
 import {
-  ArrowsOutIcon,
-  CircleNotchIcon,
-  MapTrifoldIcon,
-  MinusIcon,
-  PlusIcon,
-  XIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArrowsMaximize,
+  IconLoader2,
+  IconMap,
+  IconMinus,
+  IconPlus,
+  IconX,
+} from "@tabler/icons-react";
 import MapLibreGL, { type MarkerOptions, type PopupOptions } from "maplibre-gl";
 import {
   createContext,
@@ -416,7 +416,7 @@ function MapMarkerPopup({
           className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Close popup"
         >
-          <XIcon className="h-4 w-4" />
+          <IconX className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </button>
       )}
@@ -685,10 +685,10 @@ function MapControls({
       {showZoom && (
         <ControlGroup>
           <ControlButton onClick={handleZoomIn} label="Zoom in">
-            <PlusIcon className="size-4" />
+            <IconPlus className="size-4" />
           </ControlButton>
           <ControlButton onClick={handleZoomOut} label="Zoom out">
-            <MinusIcon className="size-4" />
+            <IconMinus className="size-4" />
           </ControlButton>
         </ControlGroup>
       )}
@@ -705,9 +705,9 @@ function MapControls({
             disabled={waitingForLocation}
           >
             {waitingForLocation ? (
-              <CircleNotchIcon className="size-4 animate-spin" />
+              <IconLoader2 className="size-4 animate-spin" />
             ) : (
-              <MapTrifoldIcon className="size-4" />
+              <IconMap className="size-4" />
             )}
           </ControlButton>
         </ControlGroup>
@@ -715,7 +715,7 @@ function MapControls({
       {showFullscreen && (
         <ControlGroup>
           <ControlButton onClick={handleFullscreen} label="Toggle fullscreen">
-            <ArrowsOutIcon className="size-4" />
+            <IconArrowsMaximize className="size-4" />
           </ControlButton>
         </ControlGroup>
       )}
@@ -858,7 +858,7 @@ function MapPopup({
           className="absolute top-1 right-1 z-10 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Close popup"
         >
-          <XIcon className="h-4 w-4" />
+          <IconX className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </button>
       )}

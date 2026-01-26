@@ -1,9 +1,9 @@
 import {
-  FunnelXIcon,
-  GlobeIcon,
-  HourglassMediumIcon,
-  PlusIcon,
-} from "@phosphor-icons/react/ssr";
+  IconFilterX,
+  IconHourglass,
+  IconPlus,
+  IconWorld,
+} from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
@@ -77,7 +77,7 @@ export function DashboardContent({
       <Empty className="rounded-xl border border-black/15 bg-background/60 shadow-2xl shadow-black/10 dark:border-white/15">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <FunnelXIcon className="size-6" />
+            <IconFilterX className="size-6" />
           </EmptyMedia>
           <EmptyTitle>No domains match your filters</EmptyTitle>
           <EmptyDescription>
@@ -110,7 +110,7 @@ export function DashboardContent({
 
         <EmptyHeader className="relative">
           <EmptyMedia variant="icon">
-            <GlobeIcon className="size-6" />
+            <IconWorld className="size-6" />
           </EmptyMedia>
           <EmptyTitle>Start tracking your domains</EmptyTitle>
           <EmptyDescription className="max-w-md">
@@ -121,7 +121,7 @@ export function DashboardContent({
         <EmptyContent className="relative">
           {onAddDomain ? (
             <Button size="lg" onClick={onAddDomain}>
-              <PlusIcon />
+              <IconPlus />
               Add Your First Domain
             </Button>
           ) : (
@@ -129,14 +129,14 @@ export function DashboardContent({
               size="lg"
               render={
                 <Link href="/dashboard/add-domain" scroll={false}>
-                  <PlusIcon />
+                  <IconPlus />
                   Add Your First Domain
                 </Link>
               }
             />
           )}
           <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
-            <HourglassMediumIcon className="size-4" />
+            <IconHourglass className="size-4" />
             <span>Verification takes less than 2&nbsp;minutes</span>
           </div>
         </EmptyContent>

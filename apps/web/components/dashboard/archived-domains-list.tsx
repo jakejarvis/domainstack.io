@@ -1,9 +1,9 @@
 import {
-  ArchiveIcon,
-  ArrowCircleUpIcon,
-  ArrowCounterClockwiseIcon,
-  TrashIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArchive,
+  IconCircleArrowUp,
+  IconRefresh,
+  IconTrash,
+} from "@tabler/icons-react";
 import { formatDistanceToNow } from "date-fns";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
@@ -42,7 +42,7 @@ export function ArchivedDomainsList({
       <Empty className="rounded-xl border bg-background/60">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <ArchiveIcon className="size-6" />
+            <IconArchive className="size-6" />
           </EmptyMedia>
           <EmptyTitle>No archived domains</EmptyTitle>
           <EmptyDescription>
@@ -60,7 +60,7 @@ export function ArchivedDomainsList({
       {!subscription?.canAddMore && !isPro && (
         <DashboardBannerDismissable
           variant="warning"
-          icon={ArrowCircleUpIcon}
+          icon={IconCircleArrowUp}
           title="Upgrade to Reactivate"
           description="You've reached your domain tracking limit. Upgrade to Pro or remove active domains to reactivate archived ones."
         />
@@ -98,7 +98,7 @@ export function ArchivedDomainsList({
                         onClick={() => onUnarchive(domain.id)}
                         disabled={!subscription?.canAddMore}
                       >
-                        <ArrowCounterClockwiseIcon />
+                        <IconRefresh />
                         <span className="sr-only sm:not-sr-only sm:ml-2">
                           Reactivate
                         </span>
@@ -116,7 +116,7 @@ export function ArchivedDomainsList({
                   size="sm"
                   onClick={() => onRemove(domain.id, domain.domainName)}
                 >
-                  <TrashIcon className="text-danger-foreground" />
+                  <IconTrash className="text-danger-foreground" />
                   <span className="sr-only">Delete</span>
                 </Button>
               </div>

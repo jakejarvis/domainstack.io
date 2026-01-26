@@ -1,9 +1,9 @@
 import {
-  CreditCardIcon,
-  GiftIcon,
-  RocketLaunchIcon,
-  ShootingStarIcon,
-} from "@phosphor-icons/react/ssr";
+  IconCreditCard,
+  IconGift,
+  IconRocket,
+  IconSparkles,
+} from "@tabler/icons-react";
 import { format } from "date-fns";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
 import { SettingsCard } from "@/components/settings/settings-card";
@@ -55,9 +55,9 @@ export function SubscriptionPanel() {
           <div>
             <div className="mb-2 flex items-center gap-2">
               {isPro ? (
-                <ShootingStarIcon className="size-4 text-foreground/80" />
+                <IconSparkles className="size-4 text-foreground/80" />
               ) : (
-                <GiftIcon className="size-4 text-foreground/80" />
+                <IconGift className="size-4 text-foreground/80" />
               )}
               <span className="font-medium">{isPro ? "Pro" : "Free"} Plan</span>
               {isPro && (
@@ -98,7 +98,7 @@ export function SubscriptionPanel() {
               disabled={isCustomerPortalLoading}
               className="w-full"
             >
-              {isCustomerPortalLoading ? <Spinner /> : <CreditCardIcon />}
+              {isCustomerPortalLoading ? <Spinner /> : <IconCreditCard />}
               Manage Subscription
             </Button>
             {subscription?.endsAt && (
@@ -122,7 +122,7 @@ export function SubscriptionPanel() {
 
             <div className="relative">
               <div className="mb-2 flex items-center gap-2 font-medium">
-                <ShootingStarIcon className="size-4 text-foreground/80" />
+                <IconSparkles className="size-4 text-foreground/80" />
                 {PRO_TIER_INFO.name} Plan
               </div>
               <ul className="mb-3 space-y-1 text-muted-foreground text-sm">
@@ -142,7 +142,7 @@ export function SubscriptionPanel() {
                   ({PRO_TIER_INFO.yearly.savings})
                 </span>
               </div>
-              <UpgradeButton className="w-full" icon={RocketLaunchIcon}>
+              <UpgradeButton className="w-full" icon={IconRocket}>
                 Upgrade to Pro
               </UpgradeButton>
             </div>

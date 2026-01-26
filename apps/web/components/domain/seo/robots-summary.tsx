@@ -1,17 +1,17 @@
 import {
-  ArrowSquareOutIcon,
-  AsteriskIcon,
-  CaretRightIcon,
-  CheckCircleIcon,
-  CircleHalfIcon,
-  DotsThreeVerticalIcon,
-  FunnelIcon,
-  HourglassSimpleMediumIcon,
-  ProhibitIcon,
-  QuestionIcon,
-  WaveformIcon,
-  XIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAsterisk,
+  IconBan,
+  IconChevronRight,
+  IconCircleCheck,
+  IconCircleHalf,
+  IconDotsVertical,
+  IconExternalLink,
+  IconFilter,
+  IconHelp,
+  IconHourglassLow,
+  IconWaveSquare,
+  IconX,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { PillCount } from "@/components/domain/pill-count";
@@ -181,7 +181,7 @@ export function RobotsSummary({
           className="inline-flex items-center gap-1 hover:underline hover:underline-offset-3"
         >
           <span>robots.txt</span>
-          <ArrowSquareOutIcon
+          <IconExternalLink
             className="relative bottom-px inline-flex size-3"
             aria-hidden
           />
@@ -211,7 +211,7 @@ export function RobotsSummary({
                   spellCheck={false}
                 />
                 <InputGroupAddon>
-                  <FunnelIcon />
+                  <IconFilter />
                 </InputGroupAddon>
                 {query ? (
                   <InputGroupAddon align="inline-end">
@@ -220,7 +220,7 @@ export function RobotsSummary({
                       variant="ghost"
                       onClick={() => setQuery("")}
                     >
-                      <XIcon />
+                      <IconX />
                     </InputGroupButton>
                   </InputGroupAddon>
                 ) : null}
@@ -237,40 +237,28 @@ export function RobotsSummary({
                 className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
               >
                 <ToggleGroupItem value="all" className="h-full">
-                  <CircleHalfIcon
-                    className="mr-0.5 size-3.5 text-accent-blue"
+                  <IconCircleHalf
+                    className="size-3.5 text-accent-blue"
                     aria-hidden
                   />
                   <span className="text-[13px]">All</span>
                   <PillCount
                     count={(counts.allows + counts.disallows) as number}
                     color="slate"
-                    className="ml-1"
                   />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="allow" className="h-full">
-                  <CheckCircleIcon
-                    className="mr-0.5 size-3.5 text-accent-green"
+                  <IconCircleCheck
+                    className="size-3.5 text-accent-green"
                     aria-hidden
                   />
                   <span className="text-[13px]">Allow</span>
-                  <PillCount
-                    count={counts.allows}
-                    color="slate"
-                    className="ml-1"
-                  />
+                  <PillCount count={counts.allows} color="slate" />
                 </ToggleGroupItem>
                 <ToggleGroupItem value="disallow" className="h-full">
-                  <ProhibitIcon
-                    className="mr-0.5 size-3.5 text-destructive"
-                    aria-hidden
-                  />
+                  <IconBan className="size-3.5 text-destructive" aria-hidden />
                   <span className="text-[13px]">Disallow</span>
-                  <PillCount
-                    count={counts.disallows}
-                    color="slate"
-                    className="ml-1"
-                  />
+                  <PillCount count={counts.disallows} color="slate" />
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -312,7 +300,7 @@ export function RobotsSummary({
           <Empty className="border border-dashed">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <QuestionIcon />
+                <IconHelp />
               </EmptyMedia>
               <EmptyTitle>No crawl rules detected</EmptyTitle>
               <EmptyDescription>
@@ -347,7 +335,7 @@ function RobotsGroupHeader({
   return (
     <div className="flex w-full items-center justify-between">
       <div className="flex flex-wrap items-center gap-1.5">
-        <CaretRightIcon className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
+        <IconChevronRight className="size-3 text-muted-foreground transition-transform group-data-[panel-open]/accordion:rotate-90" />
         {userAgents.map((ua) => (
           <span
             key={ua}
@@ -360,7 +348,7 @@ function RobotsGroupHeader({
           >
             {ua === "*" ? (
               <>
-                <AsteriskIcon className="size-3" />
+                <IconAsterisk className="size-3" />
                 All bots
               </>
             ) : (
@@ -559,7 +547,7 @@ function GroupContent({
             className="text-[12px]"
             onClick={() => setVisible(total)}
           >
-            <DotsThreeVerticalIcon className="!size-3.5" aria-hidden />
+            <IconDotsVertical className="!size-3.5" aria-hidden />
             <span>Show {more} more</span>
           </Button>
         </div>
@@ -597,22 +585,22 @@ function RuleRow({
 
 const ruleTypeConfig = {
   allow: {
-    Icon: CheckCircleIcon,
+    Icon: IconCircleCheck,
     label: "Allow",
     colorClass: "text-accent-green",
   },
   disallow: {
-    Icon: ProhibitIcon,
+    Icon: IconBan,
     label: "Disallow",
     colorClass: "text-destructive",
   },
   crawlDelay: {
-    Icon: HourglassSimpleMediumIcon,
+    Icon: IconHourglassLow,
     label: "Crawl delay",
     colorClass: "text-accent-orange",
   },
   contentSignal: {
-    Icon: WaveformIcon,
+    Icon: IconWaveSquare,
     label: "Content signal",
     colorClass: "text-accent-purple",
   },
@@ -651,7 +639,7 @@ function SitemapLink({ url }: { url: string }) {
         rel="noopener"
       >
         {url}
-        <ArrowSquareOutIcon className="size-3" />
+        <IconExternalLink className="size-3" />
       </a>
     </div>
   );
@@ -693,7 +681,7 @@ function SitemapsList({ items }: { items: string[] }) {
               className="text-[12px]"
               onClick={() => setVisible(total)}
             >
-              <DotsThreeVerticalIcon className="!size-3.5" aria-hidden />
+              <IconDotsVertical className="!size-3.5" aria-hidden />
               <span>Show {more} more</span>
             </Button>
           </div>

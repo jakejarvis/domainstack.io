@@ -1,6 +1,6 @@
 "use client";
 
-import { GlobeIcon, PlusIcon, XIcon } from "@phosphor-icons/react/ssr";
+import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ export function DomainMuteList({
   if (domains.length === 0) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-dashed bg-muted/10 px-4 py-6">
-        <GlobeIcon className="size-5 text-muted-foreground/50" />
+        <IconWorld className="size-5 text-muted-foreground/50" />
         <p className="text-muted-foreground text-sm">
           Verify domains to customize their notification settings.
         </p>
@@ -73,7 +73,7 @@ export function DomainMuteList({
               size="sm"
               className="h-8 gap-1.5 rounded-full border-dashed px-3.5"
             >
-              <PlusIcon className="size-3.5" />
+              <IconPlus className="size-3.5" />
               <span
                 className={cn(
                   mutedDomains.length > 0
@@ -129,7 +129,7 @@ function MutedDomainChip({ domain, onUnmute, disabled }: MutedDomainChipProps) {
         className="rounded-full"
         aria-label={`Unmute ${domain.domainName}`}
       >
-        <XIcon className="size-3" />
+        <IconX className="size-3" />
       </Button>
     </div>
   );

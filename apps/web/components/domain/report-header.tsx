@@ -1,4 +1,4 @@
-import { CameraIcon } from "@phosphor-icons/react/ssr";
+import { IconCamera } from "@tabler/icons-react";
 import { ExportButton } from "@/components/domain/export-button";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
@@ -54,7 +54,7 @@ export function DomainReportHeader({
             >
               {domain}
             </h2>
-            <CameraIcon
+            <IconCamera
               className="mr-3 ml-0.5 size-3.5 shrink-0 text-foreground/65"
               aria-hidden
             />

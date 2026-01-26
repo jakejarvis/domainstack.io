@@ -1,4 +1,4 @@
-import { CheckCircleIcon } from "@phosphor-icons/react/ssr";
+import { IconCircleCheck } from "@tabler/icons-react";
 import { Icon } from "@/components/ui/icon";
 
 type StepConfirmationProps = {
@@ -9,7 +9,7 @@ export function StepConfirmation({ domain }: StepConfirmationProps) {
   return (
     <div className="space-y-4 text-center" aria-live="polite">
       <Icon size="lg" variant="success" className="mx-auto">
-        <CheckCircleIcon />
+        <IconCircleCheck />
       </Icon>
       <div>
         <h3 className="font-semibold">Domain verified!</h3>

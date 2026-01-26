@@ -1,5 +1,5 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { XIcon } from "@phosphor-icons/react/ssr";
+import { IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconProps } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
       data-slot="dialog-close"
       render={
         <Button variant="ghost" size="icon-xs" className="rounded">
-          <XIcon className="size-4" />
+          <IconX className="size-4" />
           <span className="sr-only">Close</span>
         </Button>
       }

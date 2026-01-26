@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  ArrowSquareOutIcon,
-  ArrowsInSimpleIcon,
-  BinaryIcon,
-  SealCheckIcon,
-} from "@phosphor-icons/react/ssr";
+  IconArrowsMinimize,
+  IconBinary,
+  IconExternalLink,
+  IconRosetteDiscountCheck,
+} from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
@@ -237,7 +237,7 @@ export function RawDataDialog({
                   aria-label={`View raw ${format} data`}
                   onClick={() => setOpen(true)}
                 >
-                  <BinaryIcon className="size-4 text-foreground/95" />
+                  <IconBinary className="size-4 text-foreground/95" />
                   <span className="sr-only">View raw {format} data</span>
                 </Button>
               }
@@ -259,7 +259,7 @@ export function RawDataDialog({
               <ResponsiveTooltipTrigger
                 render={
                   <span className="ml-1 flex cursor-default items-center gap-1 font-normal text-[13px] text-foreground/75">
-                    <SealCheckIcon className="size-3.5 text-accent-green" />
+                    <IconRosetteDiscountCheck className="size-3.5 text-accent-green" />
                     <span>{format}</span>
                   </span>
                 }
@@ -276,7 +276,7 @@ export function RawDataDialog({
                         className="flex items-center gap-1 underline underline-offset-2"
                       >
                         {serverName}
-                        <ArrowSquareOutIcon className="size-3 -translate-y-[1px]" />
+                        <IconExternalLink className="size-3 -translate-y-[1px]" />
                       </a>
                     ) : (
                       serverName
@@ -347,7 +347,7 @@ export function RawDataDialog({
               onClick={() => setOpen(false)}
               className="!px-3 gap-2 text-[13px]"
             >
-              <ArrowsInSimpleIcon />
+              <IconArrowsMinimize />
               Close
             </Button>
           </div>

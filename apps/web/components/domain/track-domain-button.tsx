@@ -1,8 +1,8 @@
 import {
-  SealCheckIcon,
-  TargetIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react/ssr";
+  IconAlertCircle,
+  IconRosetteDiscountCheck,
+  IconTarget,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ export function TrackDomainButton({
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" size="sm" disabled aria-label="Track domain">
-        <TargetIcon
+        <IconTarget
           className="animate-pulse text-muted-foreground"
           aria-hidden="true"
         />
@@ -95,7 +95,7 @@ export function TrackDomainButton({
               aria-label="View in dashboard"
               render={
                 <Link href="/dashboard">
-                  <SealCheckIcon
+                  <IconRosetteDiscountCheck
                     className="text-success-foreground"
                     aria-hidden="true"
                   />
@@ -115,12 +115,12 @@ export function TrackDomainButton({
   // Determine button content based on tracking status
   const buttonContent = isPendingVerification ? (
     <>
-      <WarningCircleIcon className="text-accent-orange" aria-hidden="true" />
+      <IconAlertCircle className="text-accent-orange" aria-hidden="true" />
       <span className="hidden sm:inline">Verify</span>
     </>
   ) : (
     <>
-      <TargetIcon className="text-accent-purple" aria-hidden="true" />
+      <IconTarget className="text-accent-purple" aria-hidden="true" />
       <span className="hidden sm:inline">Track</span>
     </>
   );

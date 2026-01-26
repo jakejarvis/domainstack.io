@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  CheckIcon,
-  CopyIcon,
-  GearIcon,
-  TrashIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+  IconCheck,
+  IconCopy,
+  IconSettings,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import type { UIMessage } from "ai";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -49,7 +49,7 @@ function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
     }
   };
 
-  const Icon = copied ? CheckIcon : CopyIcon;
+  const Icon = copied ? IconCheck : IconCopy;
   const label = copied ? "Copied!" : "Copy conversation";
 
   return (
@@ -84,7 +84,7 @@ function ClearChatButton({ onClick }: { onClick: () => void }) {
           />
         }
       >
-        <TrashIcon className="size-4" />
+        <IconTrash className="size-4" />
       </TooltipTrigger>
       <TooltipContent>Clear chat</TooltipContent>
     </Tooltip>
@@ -104,7 +104,7 @@ function ChatSettingsButton({ onClick }: { onClick: () => void }) {
           />
         }
       >
-        <GearIcon className="size-4" />
+        <IconSettings className="size-4" />
       </TooltipTrigger>
       <TooltipContent>Settings</TooltipContent>
     </Tooltip>
@@ -124,7 +124,7 @@ function CloseChatButton({ onClick }: { onClick: () => void }) {
           />
         }
       >
-        <XIcon className="size-4" />
+        <IconX className="size-4" />
       </TooltipTrigger>
       <TooltipContent>Close</TooltipContent>
     </Tooltip>
