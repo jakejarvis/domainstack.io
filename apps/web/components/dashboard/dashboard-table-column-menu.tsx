@@ -1,4 +1,4 @@
-import { IconColumns, IconEye } from "@tabler/icons-react";
+import { IconEye, IconTableOptions } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +69,7 @@ export function DashboardTableColumnMenu<TData>({
                       : "Toggle columns"
                   }
                 >
-                  <IconColumns className="text-foreground/90" />
+                  <IconTableOptions className="text-foreground/90" />
                   <span className="sr-only">Toggle columns</span>
                 </Button>
               }

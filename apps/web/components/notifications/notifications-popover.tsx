@@ -1,9 +1,9 @@
 import {
   IconArchive,
   IconBell,
+  IconBellCog,
   IconChecks,
   IconInbox,
-  IconSettings,
 } from "@tabler/icons-react";
 import {
   useInfiniteQuery,
@@ -226,7 +226,7 @@ export function NotificationsPopover() {
                       }}
                       render={
                         <Link href="/settings/notifications">
-                          <IconSettings className="size-3.5 shrink-0 text-foreground/90" />
+                          <IconBellCog className="size-3.5 shrink-0 text-foreground/90" />
                           <span className="sr-only">Settings</span>
                         </Link>
                       }

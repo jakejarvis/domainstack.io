@@ -25,7 +25,6 @@ export function ExportButton({
         render={
           <Button
             variant="outline"
-            size="sm"
             onClick={handleExport}
             disabled={!enabled || !allDataLoaded}
             aria-label="Export report"

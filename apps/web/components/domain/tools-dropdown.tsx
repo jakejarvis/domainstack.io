@@ -155,7 +155,7 @@ export function ToolsDropdown({ domain, enabled = true }: ToolsDropdownProps) {
               render={
                 <Button
                   variant="outline"
-                  size="icon-sm"
+                  size="icon"
                   aria-label="Open menu"
                   disabled={!enabled}
                 >

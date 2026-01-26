@@ -3,12 +3,12 @@ import {
   IconBan,
   IconChevronRight,
   IconCircleCheck,
-  IconCircleHalf,
+  IconCircleHalf2,
+  IconClockPause,
   IconDotsVertical,
   IconExternalLink,
   IconFilter,
   IconHelp,
-  IconHourglassLow,
   IconWaveSquare,
   IconX,
 } from "@tabler/icons-react";
@@ -237,7 +237,7 @@ export function RobotsSummary({
                 className="relative h-9 w-full items-stretch overflow-hidden rounded-lg border border-black/8 bg-muted/50 p-1 text-muted-foreground sm:w-auto dark:border-white/10 [&>*]:flex-1 sm:[&>*]:flex-none"
               >
                 <ToggleGroupItem value="all" className="h-full">
-                  <IconCircleHalf
+                  <IconCircleHalf2
                     className="size-3.5 text-accent-blue"
                     aria-hidden
                   />
@@ -595,7 +595,7 @@ const ruleTypeConfig = {
     colorClass: "text-destructive",
   },
   crawlDelay: {
-    Icon: IconHourglassLow,
+    Icon: IconClockPause,
     label: "Crawl delay",
     colorClass: "text-accent-orange",
   },

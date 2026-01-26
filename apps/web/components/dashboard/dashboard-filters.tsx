@@ -1,7 +1,7 @@
 import {
   IconActivity,
-  IconHourglass,
   IconPlugConnected,
+  IconProgressAlert,
   IconSearch,
   IconWorld,
   IconX,
@@ -160,7 +160,7 @@ export function DashboardFilters({
         type: "status" as const,
         value: s,
         label: s === "verified" ? "Verified" : "Pending Verification",
-        icon: <IconHourglass className="size-3 text-muted-foreground" />,
+        icon: <IconProgressAlert className="size-3 text-muted-foreground" />,
       })),
       ...health.map((h) => ({
         type: "health" as const,

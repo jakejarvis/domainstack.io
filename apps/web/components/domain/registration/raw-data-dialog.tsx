@@ -2,9 +2,9 @@
 
 import {
   IconArrowsMinimize,
-  IconBinary,
   IconExternalLink,
   IconRosetteDiscountCheck,
+  IconSourceCode,
 } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
@@ -237,7 +237,7 @@ export function RawDataDialog({
                   aria-label={`View raw ${format} data`}
                   onClick={() => setOpen(true)}
                 >
-                  <IconBinary className="size-4 text-foreground/95" />
+                  <IconSourceCode className="size-4 text-foreground/95" />
                   <span className="sr-only">View raw {format} data</span>
                 </Button>
               }

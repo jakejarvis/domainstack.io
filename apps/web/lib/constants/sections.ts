@@ -1,6 +1,6 @@
 import {
   IconCertificate,
-  IconDeviceDesktop,
+  IconCloudComputing,
   IconIdBadge2,
   IconList,
   IconRoute,
@@ -48,7 +48,7 @@ export const sections: Record<Section, SectionDef> = {
   hosting: {
     title: "Hosting & Email",
     accent: "blue" as SectionAccent,
-    icon: IconDeviceDesktop,
+    icon: IconCloudComputing,
     description: "Providers and IP geolocation",
     help: "Hosting provider serves a site; email provider handles a domain's email.",
     slug: "hosting",

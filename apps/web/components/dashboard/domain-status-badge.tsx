@@ -1,6 +1,6 @@
 import {
   IconAlertTriangle,
-  IconHourglass,
+  IconProgressAlert,
   IconRosetteDiscountCheck,
 } from "@tabler/icons-react";
 import { differenceInDays } from "date-fns";
@@ -85,7 +85,7 @@ export function DomainStatusBadge({
   // Pending state
   return (
     <BadgeWithTooltip
-      icon={IconHourglass}
+      icon={IconProgressAlert}
       label="Pending"
       className={cn(
         "border-warning-border bg-warning/20 text-warning-foreground",
