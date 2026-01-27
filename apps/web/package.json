@@ -65,7 +65,7 @@
     "ipaddr.js": "^2.3.0",
     "jotai": "^2.16.2",
     "lru-cache": "^11.2.5",
-    "maplibre-gl": "^5.16.0",
+    "maplibre-gl": "^5.17.0",
     "mcp-handler": "^1.0.7",
     "motion": "^12.29.2",
     "ms": "3.0.0-canary.202508261828",
