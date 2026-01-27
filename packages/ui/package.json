@@ -1,0 +1,39 @@
+{
+  "name": "@domainstack/ui",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./utils": "./src/utils.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./*": "./src/components/*.tsx"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.1.0",
+    "@tabler/icons-react": "^3.36.1",
+    "clipboard-copy": "^4.0.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "cva": "1.0.0-beta.4",
+    "media-chrome": "^4.17.2",
+    "motion": "^12.29.2",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
+    "vaul": "^1.1.2"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@types/react": "19.2.9",
+    "@types/react-dom": "19.2.3"
+  }
+}

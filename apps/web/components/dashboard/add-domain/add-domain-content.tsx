@@ -1,13 +1,6 @@
-import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
-import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
-import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
-import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
-import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
-import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
-import { PlanStatusCard } from "@/components/plan-status-card";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@domainstack/ui/button";
+import { Icon } from "@domainstack/ui/icon";
+import { Spinner } from "@domainstack/ui/spinner";
 import {
   Stepper,
   StepperContent,
@@ -17,12 +10,19 @@ import {
   StepperPanel,
   StepperSeparator,
   StepperTrigger,
-} from "@/components/ui/stepper";
+} from "@domainstack/ui/stepper";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@domainstack/ui/tooltip";
+import { IconAlertCircle, IconCheck, IconGauge } from "@tabler/icons-react";
+import { ShareInstructionsDialog } from "@/components/dashboard/add-domain/share-instructions-dialog";
+import { StepConfirmation } from "@/components/dashboard/add-domain/step-confirmation";
+import { StepEnterDomain } from "@/components/dashboard/add-domain/step-enter-domain";
+import { StepInstructionsError } from "@/components/dashboard/add-domain/step-instructions-error";
+import { StepVerifyOwnership } from "@/components/dashboard/add-domain/step-verify-ownership";
+import { PlanStatusCard } from "@/components/plan-status-card";
 import { UpgradeCard } from "@/components/upgrade-card";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";

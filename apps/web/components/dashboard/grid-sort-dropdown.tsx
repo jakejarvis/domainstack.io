@@ -1,12 +1,12 @@
-import { IconSortAscending, IconSortDescending } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@domainstack/ui/dropdown-menu";
+import { IconSortAscending, IconSortDescending } from "@tabler/icons-react";
 import { SORT_OPTIONS, type SortOption } from "@/lib/dashboard-utils";
 
 type GridSortDropdownProps = {

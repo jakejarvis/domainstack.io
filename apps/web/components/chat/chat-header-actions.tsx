@@ -1,5 +1,11 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@domainstack/ui/tooltip";
 import {
   IconCheck,
   IconCopy,
@@ -11,12 +17,6 @@ import {
 import type { UIMessage } from "ai";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { formatMessagesAsMarkdown } from "./utils";
 
 function CopyConversationButton({ messages }: { messages: UIMessage[] }) {

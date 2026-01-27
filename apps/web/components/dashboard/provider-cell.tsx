@@ -1,10 +1,10 @@
-import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
-import { ProviderLogo } from "@/components/icons/provider-logo";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import { ProviderTooltipContent } from "@/components/dashboard/provider-tooltip-content";
+import { ProviderLogo } from "@/components/icons/provider-logo";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
 import type { ProviderCategory } from "@/lib/constants/providers";

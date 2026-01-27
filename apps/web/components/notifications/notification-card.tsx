@@ -1,6 +1,6 @@
+import { Icon } from "@domainstack/ui/icon";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { Icon } from "@/components/ui/icon";
 import {
   getNotificationIcon,
   getNotificationSeverity,

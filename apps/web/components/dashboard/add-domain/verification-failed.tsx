@@ -1,6 +1,6 @@
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
+import { Button } from "@domainstack/ui/button";
 import { IconAlertTriangle, IconClock, IconRefresh } from "@tabler/icons-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import type { VerificationMethod } from "@/lib/constants/verification";
 
 type VerificationFailedProps = {

@@ -1,11 +1,11 @@
-import { IconInfoCircle } from "@tabler/icons-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
-} from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
+} from "@domainstack/ui/card";
+import { Spinner } from "@domainstack/ui/spinner";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 interface ReportSectionSkeletonProps {
   title: string;

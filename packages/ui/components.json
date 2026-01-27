@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../apps/web/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "tabler",
+  "aliases": {
+    "components": "@domainstack/ui",
+    "ui": "@domainstack/ui",
+    "utils": "@domainstack/ui/utils",
+    "hooks": "@domainstack/ui/hooks",
+    "lib": "@domainstack/ui"
+  },
+  "registries": {}
+}

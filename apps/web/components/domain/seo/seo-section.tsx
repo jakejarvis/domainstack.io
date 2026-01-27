@@ -1,16 +1,16 @@
-import { IconAlertTriangle, IconHelp } from "@tabler/icons-react";
-import { ReportSection } from "@/components/domain/report-section";
-import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
-import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
-import { RobotsSummary } from "@/components/domain/seo/robots-summary";
-import { SocialPreviews } from "@/components/domain/seo/social-previews";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
+} from "@domainstack/ui/empty";
+import { IconAlertTriangle, IconHelp } from "@tabler/icons-react";
+import { ReportSection } from "@/components/domain/report-section";
+import { MetaTagsGrid } from "@/components/domain/seo/meta-tags-grid";
+import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
+import { RobotsSummary } from "@/components/domain/seo/robots-summary";
+import { SocialPreviews } from "@/components/domain/seo/social-previews";
 import { sections } from "@/lib/constants/sections";
 import type { SeoResponse } from "@/lib/types/domain/seo";
 

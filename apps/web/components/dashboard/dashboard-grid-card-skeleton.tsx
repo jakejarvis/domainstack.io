@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 type DashboardGridCardSkeletonProps = {
   /** Number of info rows to show. Default is 3. */

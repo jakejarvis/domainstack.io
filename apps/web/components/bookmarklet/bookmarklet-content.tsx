@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@domainstack/ui/accordion";
+import { Button } from "@domainstack/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@domainstack/ui/dialog";
+import { Separator } from "@domainstack/ui/separator";
+import { VideoPlayer, VideoPlayerContent } from "@domainstack/ui/video-player";
 import { SiOpenlayers, SiRaycast } from "@icons-pack/react-simple-icons";
 import {
   IconCornerLeftUp,
@@ -8,23 +25,6 @@ import {
   IconSquareRoundedPlus2,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { VideoPlayer, VideoPlayerContent } from "@/components/ui/video-player";
 import { APPLE_SHORTCUT_ID, BASE_URL } from "@/lib/constants/app";
 
 export function BookmarkletContent() {

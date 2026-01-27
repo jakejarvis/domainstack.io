@@ -1,10 +1,10 @@
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
 import { DnsSectionSkeleton } from "@/components/domain/dns/dns-section-skeleton";
 import { HeadersSectionSkeleton } from "@/components/domain/headers/headers-section-skeleton";
 import { HostingSectionSkeleton } from "@/components/domain/hosting/hosting-section-skeleton";
 import { RegistrationSectionSkeleton } from "@/components/domain/registration/registration-section-skeleton";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**

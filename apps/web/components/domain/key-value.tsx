@@ -1,9 +1,9 @@
-import { CopyButton } from "@/components/ui/copy-button";
+import { CopyButton } from "@domainstack/ui/copy-button";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
 import { useTruncation } from "@/hooks/use-truncation";
 import { cn } from "@/lib/utils";
 

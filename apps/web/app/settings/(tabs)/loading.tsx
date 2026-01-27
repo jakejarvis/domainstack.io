@@ -1,9 +1,9 @@
+import { Card } from "@domainstack/ui/card";
+import { Skeleton } from "@domainstack/ui/skeleton";
 import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsLoading() {
   return (

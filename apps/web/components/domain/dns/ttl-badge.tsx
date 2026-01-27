@@ -1,11 +1,11 @@
-import { IconHourglassEmpty } from "@tabler/icons-react";
-import { ms } from "ms";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@domainstack/ui/badge";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import { IconHourglassEmpty } from "@tabler/icons-react";
+import { ms } from "ms";
 
 export function TtlBadge({ ttl }: { ttl: number }) {
   return (

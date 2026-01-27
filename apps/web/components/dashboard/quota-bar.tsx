@@ -1,4 +1,4 @@
-import { Meter } from "@/components/ui/meter";
+import { Meter } from "@domainstack/ui/meter";
 import { cn } from "@/lib/utils";
 
 interface QuotaBarProps

@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 /**
  * Skeleton for a single notification card matching NotificationCard layout.

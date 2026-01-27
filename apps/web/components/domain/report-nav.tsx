@@ -1,9 +1,9 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { useEffect, useRef } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import type { SectionDef } from "@/lib/constants/sections";
 import { cn } from "@/lib/utils";

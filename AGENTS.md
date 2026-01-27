@@ -1,17 +1,5 @@
 # Repository Guidelines
 
-## Issue Tracking
-
-This project uses **bd (beads)** for issue tracking.
-Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
-
-**Quick reference:**
-- `bd ready` - Find unblocked work
-- `bd create "Title" --type task --priority 2` - Create issue
-- `bd close <id>` - Complete work
-
-For full workflow details: `bd prime`
-
 ## Pre-Commit Checklist
 
 **CRITICAL:** Before declaring victory on any task and before committing to git, the following three commands must pass with NO WARNINGS:
@@ -60,7 +48,8 @@ Do not proceed with commits until all three checks are clean.
 - **Constants:** Organize in `lib/constants/` submodules
 
 ### Imports
-- Use `@/...` path aliases for all imports
+- Use `@/...` path aliases for app-specific imports
+- Import shared UI components from `@domainstack/ui/*` (e.g., `@domainstack/ui/button`)
 - Biome auto-organizes imports on save
 - Client components must start with `"use client"`
 
@@ -72,7 +61,7 @@ Do not proceed with commits until all three checks are clean.
 
 ### Tailwind Classes
 - Biome enforces sorted Tailwind classes via `useSortedClasses` rule
-- Use `cn()`, `clsx()`, or `cva()` for conditional classes
+- Use `cn()` from `@domainstack/ui/utils` for conditional classes
 
 ## Web Interface Guidelines
 
@@ -335,19 +324,23 @@ domainstack.io/
 ├── apps/
 │   └── web/                    # Next.js application (@domainstack/web)
 │       ├── app/                # Next.js App Router
-│       ├── components/         # Reusable UI primitives
-│       ├── hooks/              # Shared React hooks
+│       ├── components/         # App-specific components
+│       │   └── ui/             # App-specific UI wrappers (Next.js-aware)
+│       ├── hooks/              # App-specific React hooks
 │       ├── lib/                # Domain utilities and shared modules
 │       │   ├── db/             # Drizzle schema and repository layer
 │       │   └── workflow/       # Workflow utilities (deduplication, SWR, errors)
 │       ├── server/routers/     # tRPC router definitions
 │       ├── workflows/          # Vercel Workflow definitions
 │       ├── emails/             # React Email templates
-│       ├── trpc/               # tRPC client setup
-│       ├── package.json        # App dependencies
-│       ├── tsconfig.json       # Extends root tsconfig
-│       └── vercel.json         # Vercel deployment config
-├── packages/                   # Shared packages (future extraction)
+│       └── trpc/               # tRPC client setup
+├── packages/
+│   ├── ui/                     # Shared UI component library (@domainstack/ui)
+│   │   └── src/
+│   │       ├── components/     # Framework-agnostic UI primitives
+│   │       ├── hooks/          # Shared React hooks
+│   │       └── lib/            # Utilities (cn, etc.)
+│   └── typescript-config/      # Shared TypeScript configs (@domainstack/typescript-config)
 ├── turbo.json                  # Turborepo task configuration
 ├── pnpm-workspace.yaml         # pnpm workspace definition
 ├── package.json                # Root workspace config
@@ -356,6 +349,19 @@ domainstack.io/
 ```
 
 All commands run from the **monorepo root** via Turborepo.
+
+### Package Imports
+
+**UI Components** (`@domainstack/ui`):
+```typescript
+import { Button } from "@domainstack/ui/button";
+import { Card, CardHeader, CardContent } from "@domainstack/ui/card";
+import { cn } from "@domainstack/ui/utils";
+import { useMediaQuery } from "@domainstack/ui/hooks";
+```
+
+**App-specific wrappers** (in `apps/web/components/ui/`):
+- `sonner.tsx` — Configures toast notifications with theme support
 
 ## Key Patterns
 

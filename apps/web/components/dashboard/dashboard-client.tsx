@@ -1,6 +1,17 @@
 "use client";
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@domainstack/ui/alert-dialog";
+import { Button } from "@domainstack/ui/button";
+import {
   IconArchive,
   IconArrowLeft,
   IconHeartHandshake,
@@ -37,17 +48,6 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { DashboardProvider } from "@/context/dashboard-context";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useRouter } from "@/hooks/use-router";

@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import useLocalStorageState from "use-local-storage-state";
-import { Button } from "@/components/ui/button";
 
 const CONSENT_KEY = "cookie-consent";
 

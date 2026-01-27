@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@domainstack/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function BetaBadge({

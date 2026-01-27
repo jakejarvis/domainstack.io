@@ -1,8 +1,6 @@
 "use client";
 
-import { IconBiohazard, IconInfoCircle, IconTool } from "@tabler/icons-react";
-import { BetaBadge } from "@/components/beta-badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Icon } from "@/components/ui/icon";
+} from "@domainstack/ui/dialog";
+import { Icon } from "@domainstack/ui/icon";
 import {
   Item,
   ItemActions,
@@ -20,9 +18,11 @@ import {
   ItemGroup,
   ItemMedia,
   ItemTitle,
-} from "@/components/ui/item";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+} from "@domainstack/ui/item";
+import { Label } from "@domainstack/ui/label";
+import { Switch } from "@domainstack/ui/switch";
+import { IconBiohazard, IconInfoCircle, IconTool } from "@tabler/icons-react";
+import { BetaBadge } from "@/components/beta-badge";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 export interface ChatSettingsDialogProps {

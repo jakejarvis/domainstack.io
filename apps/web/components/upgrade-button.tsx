@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export function UpgradeButton({

@@ -1,3 +1,9 @@
+import { Button } from "@domainstack/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@domainstack/ui/collapsible";
 import {
   IconAlertTriangle,
   IconChevronDown,
@@ -5,12 +11,6 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { DeleteAccountDialog } from "@/components/settings/account/delete-account-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 interface DangerZoneCollapsibleProps {

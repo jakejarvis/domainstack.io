@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@domainstack/ui/spinner";
 import {
   IconArrowsMaximize,
   IconLoader2,
@@ -21,7 +22,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";

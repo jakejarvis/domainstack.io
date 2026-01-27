@@ -1,5 +1,14 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@domainstack/ui/empty";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import {
   useQuery,
@@ -26,15 +35,6 @@ import { SectionFailedAlert } from "@/components/domain/section-failed-alert";
 import { SeoSection } from "@/components/domain/seo/seo-section";
 import { SeoSectionSkeleton } from "@/components/domain/seo/seo-section-skeleton";
 import { DomainUnregisteredCard } from "@/components/domain/unregistered-card";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { chatContextAtom } from "@/lib/atoms/chat-atoms";
 import {

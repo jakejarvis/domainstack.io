@@ -1,5 +1,5 @@
+import { Button } from "@domainstack/ui/button";
 import { SiGithub } from "@icons-pack/react-simple-icons";
-import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG, USER_AGENT } from "@/lib/constants/app";
 
 async function fetchRepoStars(): Promise<number | null> {

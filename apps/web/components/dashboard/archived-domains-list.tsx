@@ -1,3 +1,17 @@
+import { Button } from "@domainstack/ui/button";
+import { Card, CardContent } from "@domainstack/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@domainstack/ui/empty";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@domainstack/ui/tooltip";
 import {
   IconArchive,
   IconCircleArrowUp,
@@ -7,20 +21,6 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { Favicon } from "@/components/icons/favicon";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";

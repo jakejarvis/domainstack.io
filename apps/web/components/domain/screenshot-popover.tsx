@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Screenshot } from "@/components/domain/screenshot";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@domainstack/ui/popover";
+import { useEffect, useState } from "react";
+import { Screenshot } from "@/components/domain/screenshot";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 
 export function ScreenshotPopover({

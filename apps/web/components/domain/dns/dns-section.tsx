@@ -1,15 +1,15 @@
-import { IconWorld } from "@tabler/icons-react";
-import { useMemo } from "react";
-import { DnsGroup } from "@/components/domain/dns/dns-group";
-import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
-import { ReportSection } from "@/components/domain/report-section";
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
+} from "@domainstack/ui/empty";
+import { IconWorld } from "@tabler/icons-react";
+import { useMemo } from "react";
+import { DnsGroup } from "@/components/domain/dns/dns-group";
+import { DnsRecordList } from "@/components/domain/dns/dns-record-list";
+import { ReportSection } from "@/components/domain/report-section";
 import { sections } from "@/lib/constants/sections";
 import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 

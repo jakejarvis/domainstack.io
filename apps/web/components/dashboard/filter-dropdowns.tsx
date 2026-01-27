@@ -1,14 +1,14 @@
 import {
+  MultiSelect,
+  type MultiSelectOption,
+} from "@domainstack/ui/multi-select";
+import {
   IconActivity,
   IconCloudComputing,
   IconWorld,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import {
-  MultiSelect,
-  type MultiSelectOption,
-} from "@/components/ui/multi-select";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
 import type {
   AvailableProvidersByCategory,

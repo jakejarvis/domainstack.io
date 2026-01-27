@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
 import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useAtomValue } from "jotai";
@@ -32,7 +33,6 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { Button } from "@/components/ui/button";
 import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";

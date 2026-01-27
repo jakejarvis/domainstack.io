@@ -1,10 +1,10 @@
+import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconCreditCard } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { PlanStatusCard } from "@/components/plan-status-card";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SubscriptionSkeleton } from "@/components/settings/settings-skeleton";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { UpgradeCard } from "@/components/upgrade-card";
 import { useSubscription } from "@/hooks/use-subscription";
 

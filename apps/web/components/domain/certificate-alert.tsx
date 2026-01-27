@@ -1,5 +1,5 @@
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { IconShieldExclamation } from "@tabler/icons-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 export function CertificateAlert({

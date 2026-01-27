@@ -1,10 +1,4 @@
 import {
-  IconAlertTriangle,
-  IconCheck,
-  IconHeartBroken,
-} from "@tabler/icons-react";
-import { useCallback, useReducer } from "react";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -14,8 +8,14 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Spinner } from "@/components/ui/spinner";
+} from "@domainstack/ui/alert-dialog";
+import { Spinner } from "@domainstack/ui/spinner";
+import {
+  IconAlertTriangle,
+  IconCheck,
+  IconHeartBroken,
+} from "@tabler/icons-react";
+import { useCallback, useReducer } from "react";
 import { useAnalytics } from "@/lib/analytics/client";
 import { deleteUser } from "@/lib/auth-client";
 

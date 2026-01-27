@@ -1,9 +1,9 @@
 "use client";
 
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Component, Suspense, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { simpleHash } from "@/lib/simple-hash";
 import { cn } from "@/lib/utils";
 import type { FaviconWorkflowResult } from "@/workflows/favicon";

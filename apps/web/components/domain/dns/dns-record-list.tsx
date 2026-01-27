@@ -1,12 +1,12 @@
-import { useMemo } from "react";
-import { TtlBadge } from "@/components/domain/dns/ttl-badge";
-import { KeyValue } from "@/components/domain/key-value";
-import { Favicon } from "@/components/icons/favicon";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import { useMemo } from "react";
+import { TtlBadge } from "@/components/domain/dns/ttl-badge";
+import { KeyValue } from "@/components/domain/key-value";
+import { Favicon } from "@/components/icons/favicon";
 import type { DnsRecord } from "@/lib/types/domain/dns";
 
 export function DnsRecordList({

@@ -1,8 +1,8 @@
 "use client";
 
+import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { ReportSection } from "@/components/domain/report-section";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { SectionDef } from "@/lib/constants/sections";
 
 interface SectionFailedAlertProps {

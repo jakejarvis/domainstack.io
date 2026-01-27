@@ -1,6 +1,8 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
+
 // See: https://github.com/TanStack/table/issues/5567
 
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import type { SortingState } from "@tanstack/react-table";
 import {
   flexRender,
@@ -21,7 +23,6 @@ import { SortIndicator } from "@/components/dashboard/sort-indicator";
 import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row";
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useDashboardActions,
   useDashboardPagination,

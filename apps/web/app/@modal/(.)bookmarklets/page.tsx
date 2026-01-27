@@ -1,3 +1,4 @@
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { BookmarkletContent } from "@/components/bookmarklet/bookmarklet-content";
 import {
   Modal,
@@ -5,8 +6,7 @@ import {
   ModalDescription,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui/modal";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@/components/modal";
 
 export default function InterceptedBookmarkletsPage() {
   return (

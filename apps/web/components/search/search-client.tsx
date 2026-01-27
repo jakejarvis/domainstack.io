@@ -1,21 +1,21 @@
 "use client";
 
-import { Form } from "@base-ui/react/form";
+import { Field, FieldLabel } from "@domainstack/ui/field";
+import { Form } from "@domainstack/ui/form";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@domainstack/ui/input-group";
+import { Kbd } from "@domainstack/ui/kbd";
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
-import { Field, FieldLabel } from "@/components/ui/field";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { Kbd } from "@/components/ui/kbd";
-import { Spinner } from "@/components/ui/spinner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";

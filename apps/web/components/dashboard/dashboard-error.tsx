@@ -1,6 +1,6 @@
+import { Button } from "@domainstack/ui/button";
+import { Icon } from "@domainstack/ui/icon";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 
 type DashboardErrorProps = {
   onRetry: () => void;

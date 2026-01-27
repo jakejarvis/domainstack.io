@@ -1,6 +1,6 @@
-import { CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CardContent, CardHeader } from "@domainstack/ui/card";
+import { Separator } from "@domainstack/ui/separator";
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /**

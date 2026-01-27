@@ -1,6 +1,6 @@
+import { Badge } from "@domainstack/ui/badge";
 import { IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Badge } from "@/components/ui/badge";
 
 export type FilterChip = {
   type: "search" | "status" | "health" | "tld" | "provider" | "domainId";

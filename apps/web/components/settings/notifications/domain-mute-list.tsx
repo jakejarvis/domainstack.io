@@ -1,15 +1,15 @@
 "use client";
 
-import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
-import { useState } from "react";
-import { Favicon } from "@/components/icons/favicon";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@domainstack/ui/dropdown-menu";
+import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
+import { useState } from "react";
+import { Favicon } from "@/components/icons/favicon";
 import { cn } from "@/lib/utils";
 
 interface MutableDomain {

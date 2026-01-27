@@ -1,19 +1,19 @@
-import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
-import { Favicon } from "@/components/icons/favicon";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@domainstack/ui/dropdown-menu";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@domainstack/ui/tooltip";
+import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
+import { Favicon } from "@/components/icons/favicon";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ToolsDropdownProps = {

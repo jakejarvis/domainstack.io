@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
 import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ErrorWithOptionalDigest = Error & { digest?: string };

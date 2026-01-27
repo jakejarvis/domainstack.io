@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { LoginContent } from "@/components/auth/login-content";
 import { LoginSkeleton } from "@/components/auth/login-skeleton";
-import { Modal, ModalContent } from "@/components/ui/modal";
+import { Modal, ModalContent } from "@/components/modal";
 import { useRouter } from "@/hooks/use-router";
 import { useSession } from "@/lib/auth-client";
 

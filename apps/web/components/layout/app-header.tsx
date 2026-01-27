@@ -1,3 +1,4 @@
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -9,7 +10,6 @@ import { GithubStars } from "@/components/layout/github-stars";
 import { Logo } from "@/components/logo";
 import { HeaderSearchClient } from "@/components/search/header-search-client";
 import { HeaderSearchSkeleton } from "@/components/search/header-search-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function AppHeader() {
   return (

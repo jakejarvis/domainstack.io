@@ -1,4 +1,4 @@
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@domainstack/ui/spinner";
 
 export function HostingMapSkeleton() {
   return (

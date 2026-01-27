@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "@domainstack/ui/input-group";
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconSend } from "@tabler/icons-react";
 import type { ChatStatus } from "ai";
 import {
@@ -10,13 +17,6 @@ import {
   type KeyboardEventHandler,
   useState,
 } from "react";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 // ============================================================================

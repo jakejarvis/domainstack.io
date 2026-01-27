@@ -1,5 +1,5 @@
+import { Card } from "@domainstack/ui/card";
 import { SettingsTabsRouter } from "@/components/settings/settings-content";
-import { Card } from "@/components/ui/card";
 
 export default function SettingsTabsLayout() {
   return (

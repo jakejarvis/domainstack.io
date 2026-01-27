@@ -1,5 +1,14 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@domainstack/ui/avatar";
+import { Button } from "@domainstack/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@domainstack/ui/dropdown-menu";
 import {
   IconLayoutDashboard,
   IconLogout,
@@ -7,16 +16,8 @@ import {
   IconSettings,
   IconSun,
 } from "@tabler/icons-react";
+import { getImageProps } from "next/image";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useRouter } from "@/hooks/use-router";
 import { useTheme } from "@/hooks/use-theme";
 import { useAnalytics } from "@/lib/analytics/client";
@@ -34,6 +35,14 @@ export function UserMenu() {
 
   const { user } = session;
   const avatarUrl = `/api/avatar/${user.id}`;
+  const { props: imageProps } = getImageProps({
+    src: avatarUrl as string,
+    alt: user.name ?? "User avatar",
+    width: 32,
+    height: 32,
+    loading: "eager",
+    draggable: false,
+  });
   const initials =
     (user.name || "")
       .split(" ")
@@ -71,7 +80,7 @@ export function UserMenu() {
             aria-label="User menu"
           >
             <Avatar className="size-8">
-              <AvatarImage src={avatarUrl} alt={user.name} size={32} />
+              <AvatarImage {...imageProps} />
               <AvatarFallback className="bg-muted text-muted-foreground text-xs">
                 {initials}
               </AvatarFallback>
@@ -82,7 +91,7 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="min-w-56">
         <div className="flex select-none items-center gap-[9px] p-1.5">
           <Avatar className="size-8">
-            <AvatarImage src={avatarUrl} alt={user.name} size={32} />
+            <AvatarImage {...imageProps} />
             <AvatarFallback className="bg-muted text-muted-foreground text-xs">
               {initials}
             </AvatarFallback>

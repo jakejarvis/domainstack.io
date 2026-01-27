@@ -1,5 +1,13 @@
 "use client";
 
+import { Badge } from "@domainstack/ui/badge";
+import { CodeBlock } from "@domainstack/ui/code-block";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@domainstack/ui/collapsible";
+import { Spinner } from "@domainstack/ui/spinner";
 import {
   IconCheck,
   IconChevronDown,
@@ -11,14 +19,6 @@ import {
 import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
-import { Badge } from "@/components/ui/badge";
-import { CodeBlock } from "@/components/ui/code-block";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;

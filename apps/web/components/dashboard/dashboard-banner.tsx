@@ -1,12 +1,12 @@
-import { IconX, type TablerIcon } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
+} from "@domainstack/ui/card";
+import { Spinner } from "@domainstack/ui/spinner";
+import { IconX, type TablerIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 type DashboardBannerProps = {

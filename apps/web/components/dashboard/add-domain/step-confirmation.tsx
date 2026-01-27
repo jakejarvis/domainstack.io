@@ -1,5 +1,5 @@
+import { Icon } from "@domainstack/ui/icon";
 import { IconCircleCheck } from "@tabler/icons-react";
-import { Icon } from "@/components/ui/icon";
 
 type StepConfirmationProps = {
   domain: string;

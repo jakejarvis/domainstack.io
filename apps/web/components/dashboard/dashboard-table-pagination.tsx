@@ -1,17 +1,17 @@
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
-} from "@/components/ui/pagination";
+} from "@domainstack/ui/pagination";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@domainstack/ui/select";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import {
   DASHBOARD_PAGE_SIZE_OPTIONS,
   type DashboardPageSizeOptions,

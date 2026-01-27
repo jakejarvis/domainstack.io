@@ -1,13 +1,13 @@
 "use client";
 
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconXboxX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
 import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Spinner } from "@/components/ui/spinner";
 import type { NotificationData } from "@/lib/types/notifications";
 
 interface NotificationListProps {

@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { IconArrowDown } from "@tabler/icons-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import type { StickToBottomInstance } from "use-stick-to-bottom";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export type ConversationProps = ComponentProps<typeof ScrollArea> & {

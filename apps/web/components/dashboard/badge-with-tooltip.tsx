@@ -1,10 +1,10 @@
-import type { TablerIcon } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@domainstack/ui/badge";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import type { TablerIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 type BadgeWithTooltipProps = {

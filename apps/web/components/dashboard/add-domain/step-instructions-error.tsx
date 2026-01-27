@@ -1,7 +1,7 @@
+import { Button } from "@domainstack/ui/button";
+import { Icon } from "@domainstack/ui/icon";
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconAlertCircle, IconRefresh } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { Spinner } from "@/components/ui/spinner";
 
 type StepInstructionsErrorProps = {
   error?: string;

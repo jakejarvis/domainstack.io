@@ -1,8 +1,8 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import { Spinner } from "@domainstack/ui/spinner";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
 import type { OAuthProvider } from "@/lib/oauth";

@@ -1,5 +1,5 @@
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@domainstack/ui/card";
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export function LoginSkeleton() {

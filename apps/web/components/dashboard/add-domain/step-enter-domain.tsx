@@ -1,11 +1,11 @@
-import { useMemo } from "react";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@domainstack/ui/field";
+import { Input } from "@domainstack/ui/input";
+import { useMemo } from "react";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 
 type StepEnterDomainProps = {

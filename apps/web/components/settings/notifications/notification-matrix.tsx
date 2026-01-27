@@ -1,10 +1,10 @@
-import { IconInfoCircle } from "@tabler/icons-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@domainstack/ui/checkbox";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import { IconInfoCircle } from "@tabler/icons-react";
 import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
 import {
   NOTIFICATION_CATEGORIES,

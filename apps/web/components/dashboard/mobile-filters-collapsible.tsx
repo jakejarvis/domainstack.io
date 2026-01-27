@@ -1,15 +1,15 @@
+import { Badge } from "@domainstack/ui/badge";
+import { Button } from "@domainstack/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@domainstack/ui/collapsible";
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { cn } from "@/lib/utils";
 

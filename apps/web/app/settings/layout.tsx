@@ -1,3 +1,5 @@
+import { Card } from "@domainstack/ui/card";
+import { Skeleton } from "@domainstack/ui/skeleton";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -7,8 +9,6 @@ import {
   SettingsSkeletonPanels,
   SettingsSkeletonTabsList,
 } from "@/components/settings/settings-skeleton";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {

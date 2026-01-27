@@ -1,3 +1,8 @@
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@domainstack/ui/responsive-tooltip";
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { toast } from "sonner";
@@ -13,11 +18,6 @@ import {
 } from "@/components/settings/settings-card";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
 import { useSession } from "@/lib/auth-client";
 import type { NotificationCategory } from "@/lib/constants/notifications";
 import { useTRPC } from "@/lib/trpc/client";

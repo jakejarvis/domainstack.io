@@ -1,16 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "../../tsconfig.json",
+  "extends": "@domainstack/typescript-config/nextjs.json",
   "compilerOptions": {
     "types": [
       "@testing-library/jest-dom",
       "vitest/globals",
       "vitest-browser-react"
-    ],
-    "plugins": [
-      {
-        "name": "next"
-      }
     ],
     "paths": {
       "@/*": ["./*"]

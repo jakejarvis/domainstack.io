@@ -1,5 +1,26 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import { Checkbox } from "@domainstack/ui/checkbox";
+import { CopyButton } from "@domainstack/ui/copy-button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@domainstack/ui/dialog";
+import {
+  ResponsiveTooltip,
+  ResponsiveTooltipContent,
+  ResponsiveTooltipTrigger,
+} from "@domainstack/ui/responsive-tooltip";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@domainstack/ui/tooltip";
 import {
   IconArrowsMinimize,
   IconExternalLink,
@@ -8,27 +29,6 @@ import {
 } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CopyButton } from "@/components/ui/copy-button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  ResponsiveTooltip,
-  ResponsiveTooltipContent,
-  ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // Token types for JSON syntax highlighting

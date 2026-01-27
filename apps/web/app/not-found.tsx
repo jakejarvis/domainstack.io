@@ -1,6 +1,3 @@
-import { IconFileX } from "@tabler/icons-react";
-import type { Metadata } from "next";
-import { SearchClient } from "@/components/search/search-client";
 import {
   Empty,
   EmptyContent,
@@ -8,7 +5,10 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
+} from "@domainstack/ui/empty";
+import { IconFileX } from "@tabler/icons-react";
+import type { Metadata } from "next";
+import { SearchClient } from "@/components/search/search-client";
 
 export const metadata: Metadata = {
   title: "Not Found",

@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@domainstack/ui/accordion";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 

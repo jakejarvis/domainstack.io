@@ -1,7 +1,7 @@
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { KeyValueSkeleton } from "@/components/domain/key-value-skeleton";
 import { ReportSectionSkeleton } from "@/components/domain/report-section-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 import { sections } from "@/lib/constants/sections";
 
 export function CertificatesSectionSkeleton() {

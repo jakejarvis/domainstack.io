@@ -1,15 +1,15 @@
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { SettingsTabsRouter } from "@/components/settings/settings-content";
-import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalTitle,
-} from "@/components/ui/modal";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@/components/modal";
+import { SettingsTabsRouter } from "@/components/settings/settings-content";
+import { SettingsSkeletonPanels } from "@/components/settings/settings-skeleton";
 import { auth } from "@/lib/auth";
 
 function SettingsSkeleton() {

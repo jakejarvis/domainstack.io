@@ -1,5 +1,6 @@
 "use client";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { IconBell, IconUser, IconWallet } from "@tabler/icons-react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import {
@@ -15,7 +16,6 @@ import { AccountPanel } from "@/components/settings/account/account-panel";
 import { NotificationsPanel } from "@/components/settings/notifications/notifications-panel";
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { SubscriptionPanel } from "@/components/settings/subscription/subscription-panel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "@/hooks/use-router";
 
 const SETTINGS_TABS = [

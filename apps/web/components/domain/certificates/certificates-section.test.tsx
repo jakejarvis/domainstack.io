@@ -13,7 +13,7 @@ vi.mock("@/components/icons/provider-logo", () => ({
   ),
 }));
 
-vi.mock("@/components/ui/tooltip", () => ({
+vi.mock("@domainstack/ui/tooltip", () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="tooltip">{children}</div>
   ),
@@ -33,7 +33,7 @@ vi.mock("@/components/ui/tooltip", () => ({
   ),
 }));
 
-vi.mock("@/components/ui/responsive-tooltip", () => ({
+vi.mock("@domainstack/ui/responsive-tooltip", () => ({
   ResponsiveTooltip: ({ children }: { children: React.ReactNode }) => (
     <div data-slot="responsive-tooltip">{children}</div>
   ),

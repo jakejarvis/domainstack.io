@@ -1,5 +1,5 @@
+import { Card, CardContent } from "@domainstack/ui/card";
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
 import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";

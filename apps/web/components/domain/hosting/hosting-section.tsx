@@ -1,3 +1,10 @@
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@domainstack/ui/empty";
 import { IconHelp } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
@@ -5,13 +12,6 @@ import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { sections } from "@/lib/constants/sections";
 import { countryCodeToEmoji } from "@/lib/country-emoji";
 import type { HostingGeo, HostingResponse } from "@/lib/types/domain/hosting";

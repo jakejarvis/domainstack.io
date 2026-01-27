@@ -1,3 +1,4 @@
+import { Button } from "@domainstack/ui/button";
 import {
   IconActivity,
   IconCloudComputing,
@@ -18,7 +19,6 @@ import { FilterSearchInput } from "@/components/dashboard/filter-search-input";
 import { GridSortDropdown } from "@/components/dashboard/grid-sort-dropdown";
 import { MobileFiltersCollapsible } from "@/components/dashboard/mobile-filters-collapsible";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import { Button } from "@/components/ui/button";
 import { useDashboardFilters } from "@/context/dashboard-context";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";

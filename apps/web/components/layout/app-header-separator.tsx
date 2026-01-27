@@ -1,4 +1,4 @@
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@domainstack/ui/separator";
 import { cn } from "@/lib/utils";
 
 export function AppHeaderSeparator({ className }: { className?: string }) {

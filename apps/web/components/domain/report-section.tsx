@@ -1,17 +1,17 @@
-import { IconInfoCircle } from "@tabler/icons-react";
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
-} from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
+} from "@domainstack/ui/card";
+import { Icon } from "@domainstack/ui/icon";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
-import { Spinner } from "@/components/ui/spinner";
+} from "@domainstack/ui/responsive-tooltip";
+import { Spinner } from "@domainstack/ui/spinner";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 interface ReportSectionProps {
   title: string;

@@ -1,7 +1,7 @@
+import { Badge } from "@domainstack/ui/badge";
 import { IconGift, IconRocket } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { QuotaBar } from "@/components/dashboard/quota-bar";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface PlanStatusCardProps {

@@ -1,11 +1,11 @@
 "use client";
 
+import { Icon } from "@domainstack/ui/icon";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { OAuthButton } from "@/components/auth/oauth-button";
 import { Logo } from "@/components/logo";
-import { Icon } from "@/components/ui/icon";
 import { useAuthCallback } from "@/hooks/use-auth-callback";
 import { getEnabledProviders } from "@/lib/oauth";
 import { cn } from "@/lib/utils";

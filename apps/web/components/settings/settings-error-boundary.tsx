@@ -1,11 +1,11 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import { CardDescription, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { Button } from "@/components/ui/button";
-import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { analytics } from "@/lib/analytics/client";
 
 interface Props {

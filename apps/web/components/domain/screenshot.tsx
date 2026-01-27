@@ -1,11 +1,11 @@
 "use client";
 
+import { Spinner } from "@domainstack/ui/spinner";
 import { IconCircleX, IconShieldExclamation } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 import { analytics } from "@/lib/analytics/client";
 import { parseRetryAfterHeader } from "@/lib/ratelimit/client";
 import { cn } from "@/lib/utils";

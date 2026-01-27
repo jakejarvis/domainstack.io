@@ -1,13 +1,13 @@
-import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Button } from "@domainstack/ui/button";
+import { ButtonGroup } from "@domainstack/ui/button-group";
+import { Checkbox } from "@domainstack/ui/checkbox";
+import { Label } from "@domainstack/ui/label";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
+} from "@domainstack/ui/responsive-tooltip";
+import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
 import {
   useDashboardBulkActions,
   useDashboardSelection,

@@ -1,5 +1,19 @@
 "use client";
 
+import { Button } from "@domainstack/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@domainstack/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@domainstack/ui/tooltip";
 import {
   IconAlertTriangle,
   IconCalendarClock,
@@ -14,20 +28,6 @@ import {
   CalendarInstructionsSkeleton,
 } from "@/components/calendar-instructions";
 import { CreateIssueButton } from "@/components/create-issue-button";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 /**
  * Compact error fallback for popover content.

@@ -1,4 +1,12 @@
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@domainstack/ui/accordion";
+import { Badge } from "@domainstack/ui/badge";
+import { CodeBlock } from "@domainstack/ui/code-block";
+import {
   SiClaude,
   SiGooglegemini,
   SiModelcontextprotocol,
@@ -12,14 +20,6 @@ import {
 import type { Metadata } from "next";
 import Image from "next/image";
 import { BetaBadge } from "@/components/beta-badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { CodeBlock } from "@/components/ui/code-block";
 import { BASE_URL } from "@/lib/constants/app";
 
 export const metadata: Metadata = {

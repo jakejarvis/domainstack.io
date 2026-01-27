@@ -1,6 +1,4 @@
-import { IconEye, IconTableOptions } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -8,13 +6,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@domainstack/ui/dropdown-menu";
+import { ScrollArea } from "@domainstack/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@domainstack/ui/tooltip";
+import { IconEye, IconTableOptions } from "@tabler/icons-react";
+import type { Table } from "@tanstack/react-table";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardTableColumnMenuProps<TData> = {

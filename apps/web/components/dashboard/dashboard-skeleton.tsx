@@ -1,5 +1,5 @@
+import { Skeleton } from "@domainstack/ui/skeleton";
 import { DashboardGridCardSkeleton } from "@/components/dashboard/dashboard-grid-card-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function DashboardSkeleton() {
   return (

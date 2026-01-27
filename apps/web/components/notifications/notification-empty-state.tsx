@@ -1,7 +1,7 @@
+import { Button } from "@domainstack/ui/button";
+import { Icon } from "@domainstack/ui/icon";
 import { IconArchive, IconArrowRight, IconConfetti } from "@tabler/icons-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { useRouter } from "@/hooks/use-router";
 
 interface NotificationEmptyStateProps {

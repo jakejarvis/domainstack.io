@@ -1,17 +1,17 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@domainstack/ui/button";
 import {
   Item,
   ItemActions,
   ItemContent,
   ItemMedia,
   ItemTitle,
-} from "@/components/ui/item";
+} from "@domainstack/ui/item";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
-} from "@/components/ui/responsive-tooltip";
-import { Spinner } from "@/components/ui/spinner";
+} from "@domainstack/ui/responsive-tooltip";
+import { Spinner } from "@domainstack/ui/spinner";
 import type { OAuthProvider } from "@/lib/oauth";
 
 interface LinkedAccountRowProps {

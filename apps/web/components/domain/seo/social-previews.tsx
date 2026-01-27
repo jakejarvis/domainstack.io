@@ -1,8 +1,8 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { SiDiscord, SiFacebook, SiX } from "@icons-pack/react-simple-icons";
 import { IconPhotoOff } from "@tabler/icons-react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type SocialPreviewProvider =
   | "twitter"

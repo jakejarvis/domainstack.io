@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@domainstack/ui/skeleton";
 
 export function AddDomainSkeleton() {
   return (

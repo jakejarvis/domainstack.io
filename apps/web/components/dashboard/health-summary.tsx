@@ -1,10 +1,10 @@
-import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@domainstack/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@domainstack/ui/tooltip";
+import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
 import { useDashboardFilters } from "@/context/dashboard-context";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import { cn } from "@/lib/utils";

@@ -1,3 +1,9 @@
+import { Button } from "@domainstack/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@domainstack/ui/tooltip";
 import {
   IconAlertCircle,
   IconBellPlus,
@@ -6,12 +12,6 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useRouter } from "@/hooks/use-router";
 import { useSession } from "@/lib/auth-client";
 import { useTRPC } from "@/lib/trpc/client";
