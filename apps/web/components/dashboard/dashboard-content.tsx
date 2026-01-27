@@ -21,11 +21,10 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { SelectionState } from "@/hooks/use-dashboard-selection";
-import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type DashboardContentProps = {
-  viewMode: DashboardViewModeOptions;
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
   hasActiveFilters: boolean;
@@ -45,7 +44,6 @@ type DashboardContentProps = {
 };
 
 export function DashboardContent({
-  viewMode,
   domains,
   totalDomains,
   hasActiveFilters,
@@ -62,6 +60,7 @@ export function DashboardContent({
   isBulkArchiving = false,
   isBulkDeleting = false,
 }: DashboardContentProps) {
+  const viewMode = usePreferencesStore((s) => s.viewMode);
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.

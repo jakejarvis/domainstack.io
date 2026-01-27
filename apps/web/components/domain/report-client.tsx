@@ -6,6 +6,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { useSetAtom } from "jotai";
 import { Suspense, useEffect, useRef } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
@@ -35,6 +36,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
+import { chatContextAtom } from "@/lib/atoms/chat-atoms";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
@@ -178,6 +180,13 @@ export function DomainReportClient({ domain }: { domain: string }) {
       addDomainToHistory(domain);
     }
   }, [isRegistered, domain, addDomainToHistory]);
+
+  // Set chat context for domain-specific suggestions
+  const setChatContext = useSetAtom(chatContextAtom);
+  useEffect(() => {
+    setChatContext({ type: "report", domain });
+    return () => setChatContext({ type: "home" });
+  }, [domain, setChatContext]);
 
   // Show error state if registration query failed
   if (isRegistrationError) {

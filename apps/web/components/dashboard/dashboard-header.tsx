@@ -24,18 +24,15 @@ import {
 } from "@/components/ui/tooltip";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardHeaderProps = {
   userName: string;
-  viewMode: DashboardViewModeOptions;
-  onViewModeChange: (mode: DashboardViewModeOptions) => void;
 };
 
-export function DashboardHeader({
-  userName,
-  viewMode,
-  onViewModeChange,
-}: DashboardHeaderProps) {
+export function DashboardHeader({ userName }: DashboardHeaderProps) {
+  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const setViewMode = usePreferencesStore((s) => s.setViewMode);
   const { subscription, handleCheckout } = useSubscription();
 
   return (
@@ -146,7 +143,7 @@ export function DashboardHeader({
                 const next = groupValue[0] as
                   | DashboardViewModeOptions
                   | undefined;
-                if (next) onViewModeChange(next);
+                if (next) setViewMode(next);
               }}
               className="relative h-9 gap-0 overflow-hidden rounded-md border bg-transparent p-0 shadow-xs"
             >

@@ -10,13 +10,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import type { DashboardViewModeOptions } from "@/lib/dashboard-utils";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { cn } from "@/lib/utils";
 
 type MobileFiltersCollapsibleProps = {
   hasActiveFilters: boolean;
   activeFilterCount: number;
-  viewMode: DashboardViewModeOptions;
   // biome-ignore lint/suspicious/noExplicitAny: Table generic type varies
   table?: Table<any> | null;
   children: React.ReactNode;
@@ -25,10 +24,10 @@ type MobileFiltersCollapsibleProps = {
 export function MobileFiltersCollapsible({
   hasActiveFilters,
   activeFilterCount,
-  viewMode,
   table,
   children,
 }: MobileFiltersCollapsibleProps) {
+  const viewMode = usePreferencesStore((s) => s.viewMode);
   const shouldReduceMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
 

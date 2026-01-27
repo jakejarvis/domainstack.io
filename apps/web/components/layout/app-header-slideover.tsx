@@ -1,15 +1,16 @@
 "use client";
 
+import { useAtomValue } from "jotai";
 import { motion, useReducedMotion } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
+import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 
 export function AppHeaderSlideOver({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const isSearchFocused = useHeaderSearchStore((s) => s.isSearchFocused);
+  const isSearchFocused = useAtomValue(isSearchFocusedAtom);
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
 

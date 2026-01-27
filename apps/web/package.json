@@ -67,6 +67,7 @@
     "icojs": "^0.20.1",
     "image-size": "^2.0.2",
     "ipaddr.js": "^2.3.0",
+    "jotai": "^2.16.2",
     "lru-cache": "^11.2.5",
     "maplibre-gl": "^5.16.0",
     "mcp-handler": "^1.0.7",

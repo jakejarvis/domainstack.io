@@ -9,24 +9,19 @@ const nav = vi.hoisted(() => ({
 
 const useIsMobile = vi.hoisted(() => vi.fn(() => false));
 
-// Mock the home search store
+// Mock pending domain atom state
 const mockPendingDomain = vi.hoisted(() => ({
   value: null as string | null,
 }));
 const mockSetPendingDomain = vi.fn();
 
-vi.mock("@/lib/stores/home-search-store", () => ({
-  useHomeSearchStore: (
-    selector: (state: {
-      pendingDomain: string | null;
-      setPendingDomain: (domain: string | null) => void;
-    }) => unknown,
-  ) =>
-    selector({
-      pendingDomain: mockPendingDomain.value,
-      setPendingDomain: mockSetPendingDomain,
-    }),
-}));
+vi.mock("jotai", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("jotai")>();
+  return {
+    ...actual,
+    useAtom: () => [mockPendingDomain.value, mockSetPendingDomain],
+  };
+});
 
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: nav.push }),

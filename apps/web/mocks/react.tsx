@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type RenderOptions, render } from "@testing-library/react";
+import { Provider as JotaiProvider } from "jotai";
+import { useHydrateAtoms } from "jotai/utils";
 
 /**
  * Creates a QueryClient configured for testing.
@@ -27,14 +29,40 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: Jotai atoms can be any type
+type AtomTuple = readonly [any, any];
+
 /**
- * Test wrapper that provides QueryClientProvider with a fresh client for each test.
- * Ensures test isolation by creating a new QueryClient instance per render.
+ * Helper component to hydrate Jotai atoms with initial values for testing.
  */
-function createWrapper(queryClient: QueryClient) {
+function HydrateAtoms({
+  initialValues,
+  children,
+}: {
+  initialValues: AtomTuple[];
+  children: React.ReactNode;
+}) {
+  useHydrateAtoms(initialValues);
+  return children;
+}
+
+/**
+ * Test wrapper that provides QueryClientProvider and JotaiProvider with fresh
+ * instances for each test. Ensures test isolation.
+ */
+function createWrapper(
+  queryClient: QueryClient,
+  initialAtomValues: AtomTuple[] = [],
+) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <JotaiProvider>
+          <HydrateAtoms initialValues={initialAtomValues}>
+            {children}
+          </HydrateAtoms>
+        </JotaiProvider>
+      </QueryClientProvider>
     );
   };
 }
@@ -45,6 +73,11 @@ interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
    * using createTestQueryClient().
    */
   queryClient?: QueryClient;
+  /**
+   * Optional initial values for Jotai atoms. Each tuple is [atom, initialValue].
+   * @example [[myAtom, 'initial value'], [anotherAtom, 42]]
+   */
+  initialAtomValues?: AtomTuple[];
 }
 
 /**
@@ -70,12 +103,15 @@ interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
  * @see https://tanstack.com/query/latest/docs/framework/react/guides/testing
  */
 function customRender(ui: React.ReactElement, options?: CustomRenderOptions) {
-  const { queryClient = createTestQueryClient(), ...renderOptions } =
-    options ?? {};
+  const {
+    queryClient = createTestQueryClient(),
+    initialAtomValues = [],
+    ...renderOptions
+  } = options ?? {};
 
   return {
     ...render(ui, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(queryClient, initialAtomValues),
       ...renderOptions,
     }),
     queryClient,

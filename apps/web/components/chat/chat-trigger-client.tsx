@@ -5,6 +5,7 @@ import {
   IconLego,
   IconMessageCircleFilled,
 } from "@tabler/icons-react";
+import { useSetAtom } from "jotai";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
@@ -28,8 +29,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useStacky } from "@/hooks/use-stacky";
+import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
-import { useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
@@ -45,12 +46,8 @@ interface ChatTriggerClientProps {
 export function ChatTriggerClient({
   suggestions = [],
 }: ChatTriggerClientProps) {
-  // Use chat store for open/settings state
-  const open = useChatStore((s) => s.isOpen);
-  const setOpen = useChatStore((s) => s.setOpen);
-  const settingsOpen = useChatStore((s) => s.isSettingsOpen);
-  const setSettingsOpen = useChatStore((s) => s.setSettingsOpen);
-
+  const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
@@ -65,6 +62,12 @@ export function ChatTriggerClient({
     clearError,
     clearMessages,
   } = useStacky();
+
+  // Hydrate server suggestions into atom
+  const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
+  useEffect(() => {
+    setServerSuggestions(suggestions);
+  }, [suggestions, setServerSuggestions]);
 
   // Wait for client-side hydration to read localStorage
   useEffect(() => {
@@ -95,7 +98,6 @@ export function ChatTriggerClient({
     domain,
     error,
     onClearError: clearError,
-    suggestions,
   };
 
   // Don't render until mounted (localStorage has been read)

@@ -2,7 +2,8 @@
 
 import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useCallback, useMemo, useState } from "react";
+import { useAtomValue } from "jotai";
+import { useCallback, useState } from "react";
 import { useStickToBottom } from "use-stick-to-bottom";
 import {
   Conversation,
@@ -32,6 +33,7 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { Button } from "@/components/ui/button";
+import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { cn } from "@/lib/utils";
@@ -51,8 +53,6 @@ export interface ChatClientProps {
   conversationClassName?: string;
   /** Additional class for the input container */
   inputClassName?: string;
-  /** Pre-generated suggestions from server */
-  suggestions?: string[];
 }
 
 export function ChatClient({
@@ -65,7 +65,6 @@ export function ChatClient({
   onClearError,
   conversationClassName,
   inputClassName,
-  suggestions = [],
 }: ChatClientProps) {
   const [inputLength, setInputLength] = useState(0);
   const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
@@ -77,19 +76,8 @@ export function ChatClient({
     ? `Ask about ${domain}\u2026`
     : "Ask about a domain\u2026";
 
-  // When viewing a domain report, generate domain-specific suggestions client-side.
-  // Otherwise, use the pre-generated suggestions from the server.
-  const displaySuggestions = useMemo(() => {
-    if (domain) {
-      return [
-        `When does ${domain} expire?`,
-        `Is ${domain} missing any important security headers?`,
-        `Which email provider does ${domain} use?`,
-        `Is ${domain}'s SSL certificate valid?`,
-      ];
-    }
-    return suggestions;
-  }, [domain, suggestions]);
+  // Get suggestions from atom (context-aware or server-generated fallback)
+  const suggestions = useAtomValue(chatSuggestionsAtom);
 
   const handleScrollToBottom = useCallback(() => {
     void stickyInstance.scrollToBottom();
@@ -146,12 +134,8 @@ export function ChatClient({
           {messages.length === 0 ? (
             <ConversationEmptyState
               icon={<IconMessages className="size-7" />}
-              title="Ask me anything about domains!"
-              description={
-                domain
-                  ? `I can look up DNS, WHOIS, SSL, and more for ${domain}`
-                  : "I can look up DNS records, WHOIS data, SSL certificates, and more"
-              }
+              title={`Ask me anything about ${domain ?? "domains"}!`}
+              description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
             />
           ) : (
             <>
@@ -210,7 +194,7 @@ export function ChatClient({
         )}
       >
         <Suggestions className="justify-center">
-          {displaySuggestions.map((suggestion) => (
+          {suggestions.map((suggestion) => (
             <Suggestion
               key={suggestion}
               suggestion={suggestion}

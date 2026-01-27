@@ -1,6 +1,7 @@
 "use client";
 
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -18,8 +19,8 @@ import { useIsMac } from "@/hooks/use-is-mac";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
+import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
-import { useHomeSearchStore } from "@/lib/stores/home-search-store";
 import { cn } from "@/lib/utils";
 
 export type SearchClientVariant = "sm" | "lg";
@@ -40,9 +41,8 @@ export function SearchClient({
   const isMac = useIsMac();
   const isMobile = useIsMobile();
 
-  // Home search store for suggestion click coordination
-  const pendingDomain = useHomeSearchStore((s) => s.pendingDomain);
-  const setPendingDomain = useHomeSearchStore((s) => s.setPendingDomain);
+  // Home search atom for suggestion click coordination
+  const [pendingDomain, setPendingDomain] = useAtom(pendingDomainAtom);
 
   // Derive initial value from route (header) or prop (homepage)
   const prefillFromRoute = variant === "sm";

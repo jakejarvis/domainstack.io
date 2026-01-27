@@ -1,11 +1,12 @@
 "use client";
 
+import { useSetAtom } from "jotai";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { SearchClient } from "@/components/search/search-client";
-import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
+import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 
 export function HeaderSearchClient() {
-  const setIsSearchFocused = useHeaderSearchStore((s) => s.setIsSearchFocused);
+  const setIsSearchFocused = useSetAtom(isSearchFocusedAtom);
   const segment = useSelectedLayoutSegment();
   const isHome = segment === null || segment === "(landing)";
 

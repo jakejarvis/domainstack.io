@@ -1,6 +1,7 @@
 "use client";
 
 import { IconX } from "@tabler/icons-react";
+import { useSetAtom } from "jotai";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
@@ -12,8 +13,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAnalytics } from "@/lib/analytics/client";
+import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
-import { useHomeSearchStore } from "@/lib/stores/home-search-store";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +31,7 @@ export function HomeSearchSuggestionsClient({
   max = MAX_HISTORY_ITEMS,
 }: HomeSearchSuggestionsClientProps) {
   const analytics = useAnalytics();
-  const setPendingDomain = useHomeSearchStore((s) => s.setPendingDomain);
+  const setPendingDomain = useSetAtom(pendingDomainAtom);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Track hydration state for consistent rendering

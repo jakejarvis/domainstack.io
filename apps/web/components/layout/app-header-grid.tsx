@@ -1,13 +1,14 @@
 "use client";
 
+import { useAtomValue } from "jotai";
 import { motion } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
+import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
 import { cn } from "@/lib/utils";
 
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
-  const isSearchFocused = useHeaderSearchStore((s) => s.isSearchFocused);
+  const isSearchFocused = useAtomValue(isSearchFocusedAtom);
   const isMobile = useIsMobile();
   const { direction, isPastThreshold } = useScrollDirection({
     threshold: 15,

@@ -23,11 +23,11 @@ import { Button } from "@/components/ui/button";
 import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
 import type {
-  DashboardViewModeOptions,
   HealthFilter,
   SortOption,
   StatusFilter,
 } from "@/lib/dashboard-utils";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardFiltersProps = {
   search: string;
@@ -49,7 +49,6 @@ type DashboardFiltersProps = {
   filteredDomainName?: string | null;
   onClearDomainId?: () => void;
   // Sort (only shown in grid view)
-  viewMode: DashboardViewModeOptions;
   sortOption?: SortOption;
   onSortChange?: (sort: SortOption) => void;
   // Table instance (for column visibility in table view)
@@ -75,11 +74,11 @@ export function DashboardFilters({
   domainId,
   filteredDomainName,
   onClearDomainId,
-  viewMode,
   sortOption,
   onSortChange,
   table,
 }: DashboardFiltersProps) {
+  const viewMode = usePreferencesStore((s) => s.viewMode);
   const shouldReduceMotion = useReducedMotion();
 
   // Flat map of all providers for chip rendering
@@ -296,7 +295,6 @@ export function DashboardFilters({
         <MobileFiltersCollapsible
           hasActiveFilters={hasActiveFilters}
           activeFilterCount={activeFilterChips.length}
-          viewMode={viewMode}
           table={table}
         >
           {filterContent}

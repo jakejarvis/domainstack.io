@@ -31,21 +31,16 @@ vi.mock("@/lib/stores/search-history-store", () => ({
     }),
 }));
 
-// Mock the home search store
+// Mock pending domain atom (Jotai)
 const mockSetPendingDomain = vi.fn();
 
-vi.mock("@/lib/stores/home-search-store", () => ({
-  useHomeSearchStore: (
-    selector: (state: {
-      pendingDomain: string | null;
-      setPendingDomain: (domain: string | null) => void;
-    }) => unknown,
-  ) =>
-    selector({
-      pendingDomain: null,
-      setPendingDomain: mockSetPendingDomain,
-    }),
-}));
+vi.mock("jotai", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("jotai")>();
+  return {
+    ...actual,
+    useSetAtom: () => mockSetPendingDomain,
+  };
+});
 
 const DEFAULT_TEST_SUGGESTIONS = [
   "github.invalid",

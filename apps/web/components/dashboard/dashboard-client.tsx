@@ -101,7 +101,6 @@ export function DashboardClient() {
       .withOptions({ shallow: true, clearOnDefault: true }),
   );
   const viewMode = usePreferencesStore((s) => s.viewMode);
-  const setViewMode = usePreferencesStore((s) => s.setViewMode);
   const [sortOption, setSortOption] = useDashboardGridSort();
   const { pagination, setPageIndex } = useDashboardPagination();
   const snapshot = useDashboardStore((s) => s.snapshot);
@@ -450,11 +449,7 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader
-        userName={session?.user?.name ?? ""}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+      <DashboardHeader userName={session?.user?.name ?? ""} />
 
       {/* Pro upgrade success banner */}
       {showUpgradedBanner && (
@@ -507,7 +502,6 @@ export function DashboardClient() {
               domainId={domainId}
               filteredDomainName={filteredDomainName}
               onClearDomainId={clearDomainId}
-              viewMode={viewMode}
               sortOption={sortOption}
               onSortChange={setSortOption}
               table={viewMode === "table" ? tableInstance : null}
@@ -515,7 +509,6 @@ export function DashboardClient() {
           )}
 
           <DashboardContent
-            viewMode={viewMode}
             domains={filteredDomains}
             totalDomains={totalDomainsCount}
             hasActiveFilters={hasActiveFilters}
