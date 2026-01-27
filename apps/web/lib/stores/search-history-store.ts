@@ -59,6 +59,7 @@ export const useSearchHistoryStore = create<SearchHistoryStore>()(
     }),
     {
       name: "search-history",
+      version: 1,
       partialize: (state) => ({ history: state.history }),
     },
   ),

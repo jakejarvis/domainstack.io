@@ -57,6 +57,7 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: "chat",
+      version: 1,
       // Only persist session data, not UI state
       partialize: (state) => ({
         runId: state.runId,

@@ -94,6 +94,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
     }),
     {
       name: "preferences",
+      version: 1,
       partialize: (state) => ({
         viewMode: state.viewMode,
         pageSize: state.pageSize,
