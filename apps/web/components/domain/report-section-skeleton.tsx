@@ -4,6 +4,7 @@ import {
   CardDescription,
   CardTitle,
 } from "@domainstack/ui/card";
+import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
 import { IconInfoCircle } from "@tabler/icons-react";
 
@@ -27,7 +28,7 @@ export function ReportSectionSkeleton({
   accent = "slate",
   children,
 }: ReportSectionSkeletonProps) {
-  const Icon = icon;
+  const IconComponent = icon;
   // Loading adornment reflects props only; avoid client-only hydration gates
   const computedSlug = (slug ?? title)
     .toLowerCase()
@@ -39,7 +40,8 @@ export function ReportSectionSkeleton({
     <section
       id={computedSlug}
       aria-labelledby={headerId}
-      className="border-none"
+      // scroll-mt accounts for sticky headers: mobile (sub-nav only) / desktop (global + sub-nav)
+      className="scroll-mt-[calc(var(--section-nav-height)+var(--scroll-padding))] border-none md:scroll-mt-[calc(var(--header-height)+var(--section-nav-height)+var(--scroll-padding))]"
     >
       <Card className="relative gap-0 overflow-hidden rounded-xl border border-black/10 bg-background/60 py-0 shadow-2xl shadow-black/10 dark:border-white/10">
         {/* Accent glow */}
@@ -52,11 +54,11 @@ export function ReportSectionSkeleton({
         />
         <div className="relative">
           <div className="p-5" id={headerId}>
-            <div className="flex w-full items-center gap-3 text-left">
-              {Icon && (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-foreground/90">
-                  <Icon className="size-4" />
-                </div>
+            <div className="flex w-full items-center gap-2 text-left">
+              {IconComponent && (
+                <Icon size="sm" className="rounded-full">
+                  <IconComponent />
+                </Icon>
               )}
               <div className="min-w-0 flex-1">
                 <CardTitle className="flex items-center gap-2">

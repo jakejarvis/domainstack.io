@@ -13,8 +13,8 @@ export function RegistrationSectionSkeleton() {
           widthClass="w-[120px]"
         />
         <KeyValueSkeleton label="Registrant" widthClass="w-[100px]" />
-        <KeyValueSkeleton label="Created" widthClass="w-[120px]" />
-        <KeyValueSkeleton label="Expires" widthClass="w-[120px]" />
+        <KeyValueSkeleton label="Created" withSuffix widthClass="w-[90px]" />
+        <KeyValueSkeleton label="Expires" withSuffix widthClass="w-[90px]" />
       </KeyValueGrid>
     </ReportSectionSkeleton>
   );
