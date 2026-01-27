@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
@@ -74,7 +75,7 @@ function validateOption<T>(
  * const setViewMode = usePreferencesStore((s) => s.setViewMode);
  * ```
  */
-export const usePreferencesStore = create<PreferencesStore>()(
+const preferencesStore = create<PreferencesStore>()(
   persist(
     (set, get) => ({
       ...DEFAULT_PREFERENCES,
@@ -127,3 +128,24 @@ export const usePreferencesStore = create<PreferencesStore>()(
     },
   ),
 );
+
+export const usePreferencesStore = preferencesStore;
+
+/**
+ * Returns true once the preferences store has hydrated from localStorage.
+ * Use this to prevent hydration mismatches when rendering based on persisted state.
+ */
+export const usePreferencesHydrated = () => {
+  const [hydrated, setHydrated] = useState(
+    preferencesStore.persist.hasHydrated(),
+  );
+
+  useEffect(() => {
+    const unsubscribe = preferencesStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    return unsubscribe;
+  }, []);
+
+  return hydrated;
+};

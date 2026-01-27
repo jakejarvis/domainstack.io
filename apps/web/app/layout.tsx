@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Providers } from "@/app/providers";
-import { ChatTrigger } from "@/components/chat/chat-trigger";
+import { ChatServer } from "@/components/chat/chat-server";
 import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofenced";
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
@@ -80,7 +80,7 @@ export default function RootLayout({
               <CookiePromptGeofenced />
             </Suspense>
             <Suspense fallback={null}>
-              <ChatTrigger />
+              <ChatServer />
             </Suspense>
           </div>
           <Toaster />

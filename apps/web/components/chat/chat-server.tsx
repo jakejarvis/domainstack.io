@@ -1,5 +1,5 @@
 import { getDefaultSuggestions } from "@/lib/edge-config";
-import { ChatTriggerClient } from "./chat-trigger-client";
+import { ChatClient } from "./chat-client";
 
 /** Question templates - each takes a domain and returns a suggestion */
 const QUESTION_TEMPLATES = [
@@ -34,7 +34,7 @@ function shuffle<T>(array: T[]): T[] {
  * Server component wrapper that generates randomized suggestions
  * using domains from Edge Config.
  */
-export async function ChatTrigger() {
+export async function ChatServer() {
   const configDomains = await getDefaultSuggestions();
   const domains = configDomains.length > 0 ? configDomains : FALLBACK_DOMAINS;
 
@@ -48,5 +48,5 @@ export async function ChatTrigger() {
       template(shuffledDomains[i % shuffledDomains.length]),
     );
 
-  return <ChatTriggerClient suggestions={suggestions} />;
+  return <ChatClient suggestions={suggestions} />;
 }

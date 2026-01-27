@@ -1,247 +1,263 @@
 "use client";
 
-import { Button } from "@domainstack/ui/button";
-import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
-import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
-import { useAtomValue } from "jotai";
-import { useCallback, useState } from "react";
-import { useStickToBottom } from "use-stick-to-bottom";
+import { useChat } from "@ai-sdk/react";
 import {
-  Conversation,
-  ConversationContent,
-  ConversationEmptyState,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@domainstack/ui/drawer";
 import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@domainstack/ui/sheet";
+import { IconLayoutSidebarRightCollapse, IconLego } from "@tabler/icons-react";
+import { WorkflowChatTransport } from "@workflow/ai";
+import { useSetAtom } from "jotai";
+import { AnimatePresence } from "motion/react";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BetaBadge } from "@/components/beta-badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { analytics } from "@/lib/analytics/client";
+import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
+import { CHATBOT_NAME } from "@/lib/constants/ai";
+import { useChatStore } from "@/lib/stores/chat-store";
 import {
-  PromptInput,
-  PromptInputCharacterCount,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
-import { ShimmeringText } from "@/components/ai-elements/shimmering-text";
-import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "@/components/ai-elements/tool";
-import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
-import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
-import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { cn } from "@/lib/utils";
-import { getToolStatusMessage } from "./utils";
+  usePreferencesHydrated,
+  usePreferencesStore,
+} from "@/lib/stores/preferences-store";
+import { ChatFab } from "./chat-fab";
+import { ChatHeaderActions } from "./chat-header-actions";
+import { ChatPanel } from "./chat-panel";
+import { ChatSettingsDialog } from "./chat-settings-dialog";
+import { getUserFriendlyError } from "./utils";
 
-export interface ChatClientProps {
-  messages: UIMessage[];
-  sendMessage: (params: { text: string }) => void;
-  clearMessages: () => void;
-  status: ChatStatus;
-  domain?: string;
-  error?: string | null;
-  onClearError?: () => void;
-  /** Size variant for icon in empty state */
-  iconSize?: "sm" | "lg";
-  /** Additional class for the conversation container */
-  conversationClassName?: string;
-  /** Additional class for the input container */
-  inputClassName?: string;
+interface ChatClientProps {
+  suggestions?: string[];
 }
 
-export function ChatClient({
-  messages,
-  sendMessage,
-  clearMessages,
-  status,
-  domain,
-  error,
-  onClearError,
-  conversationClassName,
-  inputClassName,
-}: ChatClientProps) {
-  const [inputLength, setInputLength] = useState(0);
-  const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
+export function ChatClient({ suggestions = [] }: ChatClientProps) {
+  const [open, setOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const params = useParams<{ domain?: string }>();
+  const isMobile = useIsMobile();
+  const hydrated = usePreferencesHydrated();
+  const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
+  const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
 
-  // Prepare to share scroll state between the different components
-  const stickyInstance = useStickToBottom();
+  const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
+  const domainRef = useRef(domain);
+  domainRef.current = domain;
 
-  const placeholder = domain
-    ? `Ask about ${domain}\u2026`
-    : "Ask about a domain\u2026";
+  const runId = useChatStore((s) => s.runId);
+  const storedMessages = useChatStore((s) => s.messages);
+  const setRunId = useChatStore((s) => s.setRunId);
+  const setMessages = useChatStore((s) => s.setMessages);
+  const clearSession = useChatStore((s) => s.clearSession);
 
-  // Get suggestions from atom (context-aware or server-generated fallback)
-  const suggestions = useAtomValue(chatSuggestionsAtom);
+  const transport = useMemo(
+    () =>
+      new WorkflowChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => ({
+          body: { messages, domain: domainRef.current },
+        }),
+        onChatSendMessage: (response, options) => {
+          setMessages(options.messages);
+          const workflowRunId = response.headers.get("x-workflow-run-id");
+          if (workflowRunId) {
+            setRunId(workflowRunId);
+          }
+        },
+        onChatEnd: () => {
+          setRunId(null);
+        },
+      }),
+    [setMessages, setRunId],
+  );
 
-  const handleScrollToBottom = useCallback(() => {
-    void stickyInstance.scrollToBottom();
-  }, [stickyInstance.scrollToBottom]);
+  const chat = useChat({
+    transport,
+    resume: !!runId,
+    onError: (error) => {
+      analytics.trackException(error, { context: "chat-send", domain });
+      setSubmitError(getUserFriendlyError(error));
+    },
+  });
 
-  const handleSubmit = (message: { text: string }) => {
-    sendMessage(message);
-    handleScrollToBottom();
-    setInputLength(0);
+  const setChatMessagesRef = useRef(chat.setMessages);
+  setChatMessagesRef.current = chat.setMessages;
+
+  // Restore messages from store once on mount
+  const hasRestored = useRef(false);
+  useEffect(() => {
+    if (hasRestored.current) return;
+    hasRestored.current = true;
+    if (storedMessages.length > 0) {
+      setChatMessagesRef.current(storedMessages);
+    }
+  }, [storedMessages]);
+
+  // Persist messages to store
+  const isInitialized = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
+  useEffect(() => {
+    if (!isInitialized.current) {
+      if (chat.messages.length > 0) {
+        isInitialized.current = true;
+      }
+      return;
+    }
+    if (chat.messages.length > 0) {
+      setMessages(chat.messages);
+    }
+  }, [chat.messages.length, chat.status, setMessages]);
+
+  const clearError = useCallback(() => {
+    setSubmitError(null);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setChatMessagesRef.current([]);
+    setSubmitError(null);
+    clearSession();
+  }, [clearSession]);
+
+  const sendMessage = useCallback(
+    (msgParams: { text: string }) => {
+      const text = msgParams.text.trim();
+      if (!text) {
+        setSubmitError("Please enter a message.");
+        return;
+      }
+      clearError();
+      chat.sendMessage({ text });
+    },
+    [chat, clearError],
+  );
+
+  const error =
+    submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null);
+  const { messages, status } = chat;
+
+  // Hydrate server suggestions into atom
+  const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
+  useEffect(() => {
+    setServerSuggestions(suggestions);
+  }, [suggestions, setServerSuggestions]);
+
+  // Check for ?show_ai=1 URL param to re-enable AI features
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("show_ai") === "1" && hideAiFeatures) {
+      setHideAiFeatures(false);
+      urlParams.delete("show_ai");
+      const newUrl =
+        urlParams.toString() === ""
+          ? window.location.pathname
+          : `${window.location.pathname}?${urlParams.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [hideAiFeatures, setHideAiFeatures]);
+
+  const chatClientProps = {
+    messages,
+    sendMessage,
+    clearMessages,
+    status,
+    domain,
+    error,
+    onClearError: clearError,
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    clearMessages();
-    onClearError?.();
-    sendMessage({ text: suggestion });
+  if (!hydrated) {
+    return null;
+  }
+
+  if (hideAiFeatures && !settingsOpen) {
+    return null;
+  }
+
+  const handleChatClick = () => {
+    try {
+      navigator.vibrate([50]);
+    } catch {}
+    setOpen(!open);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputLength(e.target.value.length);
-    onClearError?.();
+  const handleSettingsClick = () => {
+    setOpen(false);
+    setSettingsOpen(true);
   };
-
-  // Show loading indicator when waiting for response or when streaming but no text yet
-  // (e.g., after tool calls complete but before the final text response starts)
-  const lastMessage = messages[messages.length - 1];
-  const hasVisibleText =
-    lastMessage?.role === "assistant" &&
-    lastMessage.parts.some(
-      (part) => part.type === "text" && part.text.trim().length > 0,
-    );
-  const showLoading =
-    status === "submitted" ||
-    (status === "streaming" &&
-      lastMessage?.role === "assistant" &&
-      !hasVisibleText);
 
   return (
     <>
-      <Conversation
-        stickyInstance={stickyInstance}
-        className={cn(
-          "min-h-0 flex-1 bg-popover/10 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
-          conversationClassName,
-        )}
-      >
-        <ConversationContent
-          className={cn(
-            messages.length === 0
-              ? "items-center justify-center"
-              : "gap-4 px-3 py-4",
-          )}
-          aria-live="polite"
-        >
-          {messages.length === 0 ? (
-            <ConversationEmptyState
-              icon={<IconMessages className="size-7" />}
-              title={`Ask me anything about ${domain ?? "domains"}!`}
-              description="I can look up DNS records, WHOIS data, SSL certificates, and more — just say the word."
-            />
-          ) : (
-            <>
-              {messages.map((message) => (
-                <Message key={message.id} from={message.role}>
-                  <MessageContent>
-                    {message.parts.map((part, index) => {
-                      if (part.type === "text") {
-                        return (
-                          <MessageResponse key={`${message.id}-${index}`}>
-                            {part.text}
-                          </MessageResponse>
-                        );
-                      }
-                      if (part.type.startsWith("tool-") && showToolCalls) {
-                        const toolPart = part as ToolUIPart;
-                        return (
-                          <Tool key={`${message.id}-${index}`}>
-                            <ToolHeader
-                              title={getToolStatusMessage(toolPart.type)}
-                              type={toolPart.type}
-                              state={toolPart.state}
-                            />
-                            <ToolContent>
-                              <ToolInput input={toolPart.input} />
-                              {toolPart.state === "output-available" && (
-                                <ToolOutput
-                                  output={toolPart.output}
-                                  errorText={toolPart.errorText}
-                                />
-                              )}
-                            </ToolContent>
-                          </Tool>
-                        );
-                      }
-                      return null;
-                    })}
-                  </MessageContent>
-                </Message>
-              ))}
-              {showLoading && (
-                <ShimmeringText text="Thinking…" className="text-sm" />
-              )}
-            </>
-          )}
-        </ConversationContent>
-        {!stickyInstance.isNearBottom && (
-          <ConversationScrollButton onClick={handleScrollToBottom} />
-        )}
-      </Conversation>
+      <AnimatePresence>
+        {!hideAiFeatures && <ChatFab onClick={handleChatClick} />}
+      </AnimatePresence>
 
-      <div
-        className={cn(
-          "!pt-3 shrink-0 space-y-3 border-border border-t bg-card/60",
-          inputClassName,
-        )}
-      >
-        <Suggestions className="justify-center">
-          {suggestions.map((suggestion) => (
-            <Suggestion
-              key={suggestion}
-              suggestion={suggestion}
-              onClick={handleSuggestionClick}
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={setOpen} handleOnly>
+          <DrawerContent>
+            <DrawerHeader className="flex flex-row items-center justify-between">
+              <DrawerTitle className="flex items-center gap-2">
+                <IconLego className="size-4" />
+                <span className="font-semibold text-[15px] leading-none tracking-tight">
+                  {CHATBOT_NAME}
+                </span>
+                <BetaBadge />
+              </DrawerTitle>
+              <div className="flex items-center gap-2">
+                <ChatHeaderActions
+                  messages={messages}
+                  onClear={clearMessages}
+                  onSettingsClick={handleSettingsClick}
+                  onCloseClick={() => setOpen(false)}
+                />
+              </div>
+            </DrawerHeader>
+            <ChatPanel
+              {...chatClientProps}
+              conversationClassName="px-4"
+              inputClassName="p-4"
             />
-          ))}
-        </Suggestions>
-
-        {error && (
-          <div
-            role="alert"
-            className="flex items-center gap-2 rounded-md border border-destructive/15 bg-destructive/10 px-2 py-1.5 text-[13px] text-destructive leading-tight"
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="right"
+            className="flex w-[420px] flex-col gap-0 p-0"
+            showCloseButton={false}
           >
-            <IconAlertCircle className="size-4 shrink-0" />
-            <span className="flex-1">{error}</span>
-            {onClearError && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={onClearError}
-                aria-label="Dismiss error"
-                className="hover:!bg-destructive/20 hover:!text-destructive shrink-0 text-destructive"
-              >
-                <IconX className="size-3" />
-              </Button>
-            )}
-          </div>
-        )}
+            <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
+              <SheetTitle className="flex items-center gap-2">
+                <IconLego className="size-4" />
+                <span className="font-semibold text-[15px] leading-none tracking-tight">
+                  {CHATBOT_NAME}
+                </span>
+                <BetaBadge />
+              </SheetTitle>
+              <div className="-mr-1.5 flex items-center gap-1.5">
+                <ChatHeaderActions
+                  messages={messages}
+                  onClear={clearMessages}
+                  onSettingsClick={handleSettingsClick}
+                  onCloseClick={() => setOpen(false)}
+                  closeIcon={IconLayoutSidebarRightCollapse}
+                />
+              </div>
+            </SheetHeader>
+            <ChatPanel {...chatClientProps} inputClassName="p-3" />
+          </SheetContent>
+        </Sheet>
+      )}
 
-        <PromptInput onSubmit={handleSubmit}>
-          <PromptInputTextarea
-            placeholder={placeholder}
-            onChange={handleInputChange}
-            maxLength={MAX_MESSAGE_LENGTH}
-          />
-          <PromptInputFooter>
-            <PromptInputCharacterCount
-              current={inputLength}
-              max={MAX_MESSAGE_LENGTH}
-            />
-            <PromptInputSubmit
-              disabled={inputLength === 0}
-              status={error ? "error" : status}
-            />
-          </PromptInputFooter>
-        </PromptInput>
-      </div>
+      <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }
