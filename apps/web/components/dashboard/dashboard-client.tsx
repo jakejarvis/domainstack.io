@@ -229,6 +229,7 @@ export function DashboardClient() {
   });
 
   // Restore snapshot when returning to /dashboard from an intercepted route
+  // Note: useLayoutEffect runs before useEffect, so we can restore before the capture check
   useLayoutEffect(() => {
     const wasOnDashboard = prevPathnameRef.current === "/dashboard";
     const isOnDashboard = pathname === "/dashboard";
@@ -236,8 +237,6 @@ export function DashboardClient() {
     if (!wasOnDashboard && isOnDashboard) {
       onRestoreSnapshot();
     }
-
-    prevPathnameRef.current = pathname;
   }, [pathname]);
 
   // Capture snapshot when navigating away from /dashboard
@@ -250,6 +249,9 @@ export function DashboardClient() {
     if (wasOnDashboard && !isOnDashboard) {
       onCaptureSnapshot();
     }
+
+    // Update ref after both effects have read the previous value
+    prevPathnameRef.current = pathname;
   }, [pathname]);
 
   // Clear snapshot on unmount (full navigation away, not intercepted route)
