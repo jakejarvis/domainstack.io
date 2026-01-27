@@ -53,7 +53,7 @@
     "@vercel/analytics": "^1.6.1",
     "@vercel/blob": "^2.0.1",
     "@vercel/edge-config": "^1.4.3",
-    "@vercel/functions": "^3.3.6",
+    "@vercel/functions": "^3.4.0",
     "@vercel/otel": "^2.1.0",
     "@workflow/ai": "4.0.1-beta.51",
     "ai": "^6.0.53",
