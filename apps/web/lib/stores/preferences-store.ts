@@ -134,17 +134,20 @@ export const usePreferencesStore = preferencesStore;
 /**
  * Returns true once the preferences store has hydrated from localStorage.
  * Use this to prevent hydration mismatches when rendering based on persisted state.
+ *
+ * @see https://zustand.docs.pmnd.rs/integrations/persisting-store-data#how-can-i-check-if-my-store-has-been-hydrated
  */
 export const usePreferencesHydrated = () => {
-  const [hydrated, setHydrated] = useState(
-    preferencesStore.persist.hasHydrated(),
-  );
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = preferencesStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-    return unsubscribe;
+    const unsubscribe = preferencesStore.persist.onFinishHydration(() =>
+      setHydrated(true),
+    );
+
+    setHydrated(preferencesStore.persist.hasHydrated());
+
+    return () => unsubscribe();
   }, []);
 
   return hydrated;
