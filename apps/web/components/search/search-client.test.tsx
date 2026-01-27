@@ -3,6 +3,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@/mocks/react";
 import { SearchClient } from "./search-client";
 
+// Mock base-ui Form to avoid React instance mismatch in browser tests
+vi.mock("@/components/ui/form", () => ({
+  Form: ({
+    children,
+    onFormSubmit,
+    ...props
+  }: React.ComponentProps<"form"> & { onFormSubmit?: () => void }) => (
+    <form
+      {...props}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onFormSubmit?.();
+      }}
+    >
+      {children}
+    </form>
+  ),
+}));
+
 const nav = vi.hoisted(() => ({
   push: vi.fn(),
 }));

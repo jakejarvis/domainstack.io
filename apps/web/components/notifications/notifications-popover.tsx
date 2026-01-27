@@ -7,11 +7,13 @@ import {
 } from "@tabler/icons-react";
 import {
   useInfiniteQuery,
+  useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +27,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useNotificationMutations } from "@/hooks/use-notification-mutations";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
 import type { NotificationData } from "@/lib/types/notifications";
@@ -35,14 +36,151 @@ export function NotificationsPopover() {
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { markRead, markAllRead } = useNotificationMutations();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"inbox" | "archive">("inbox");
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   const autoMarkedThisOpenRef = useRef(false);
-  const unreadCountQueryKey = trpc.notifications.unreadCount.queryKey();
+
+  // Query keys for cache manipulation
+  const pageSize = 20;
+  const inboxListQueryKey = trpc.notifications.list.infiniteQueryOptions({
+    limit: pageSize,
+    filter: "unread",
+  }).queryKey;
+  const archiveListQueryKey = trpc.notifications.list.infiniteQueryOptions({
+    limit: pageSize,
+    filter: "read",
+  }).queryKey;
+  const countQueryKey = trpc.notifications.unreadCount.queryKey();
+
+  // Mark single notification as read
+  const markRead = useMutation({
+    mutationFn: trpc.notifications.markRead.mutationOptions().mutationFn,
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
+      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
+      await queryClient.cancelQueries({ queryKey: countQueryKey });
+
+      const previousCount = queryClient.getQueryData(countQueryKey);
+      const previousInbox = queryClient.getQueryData(inboxListQueryKey);
+      const previousArchive = queryClient.getQueryData(archiveListQueryKey);
+
+      const wasInInbox = previousInbox?.pages?.some((page) =>
+        page.items.some((n) => n.id === id),
+      );
+
+      if (wasInInbox) {
+        queryClient.setQueryData(countQueryKey, (old: number | undefined) =>
+          typeof old === "number" ? Math.max(0, old - 1) : old,
+        );
+      }
+
+      queryClient.setQueryData(inboxListQueryKey, (old) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((n) => n.id !== id),
+          })),
+        };
+      });
+
+      queryClient.setQueryData(archiveListQueryKey, (old) => {
+        if (!old?.pages) return old;
+        const now = new Date();
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((n) =>
+              n.id === id ? { ...n, readAt: n.readAt ?? now } : n,
+            ),
+          })),
+        };
+      });
+
+      return { previousCount, previousInbox, previousArchive };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousCount !== undefined) {
+        queryClient.setQueryData(countQueryKey, context.previousCount);
+      }
+      if (context?.previousInbox) {
+        queryClient.setQueryData(inboxListQueryKey, context.previousInbox);
+      }
+      if (context?.previousArchive) {
+        queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
+      }
+      toast.error("Failed to mark notification as read");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: archiveListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: countQueryKey });
+    },
+  });
+
+  // Mark all notifications as read
+  const markAllRead = useMutation({
+    mutationFn: trpc.notifications.markAllRead.mutationOptions().mutationFn,
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: inboxListQueryKey });
+      await queryClient.cancelQueries({ queryKey: archiveListQueryKey });
+      await queryClient.cancelQueries({ queryKey: countQueryKey });
+
+      const previousCount = queryClient.getQueryData(countQueryKey);
+      const previousInbox = queryClient.getQueryData(inboxListQueryKey);
+      const previousArchive = queryClient.getQueryData(archiveListQueryKey);
+
+      queryClient.setQueryData(countQueryKey, 0);
+
+      queryClient.setQueryData(inboxListQueryKey, (old) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            nextCursor: undefined,
+            items: [],
+          })),
+        };
+      });
+
+      const now = new Date();
+      queryClient.setQueryData(archiveListQueryKey, (old) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((n) => ({ ...n, readAt: n.readAt ?? now })),
+          })),
+        };
+      });
+
+      return { previousCount, previousInbox, previousArchive };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousCount !== undefined) {
+        queryClient.setQueryData(countQueryKey, context.previousCount);
+      }
+      if (context?.previousInbox) {
+        queryClient.setQueryData(inboxListQueryKey, context.previousInbox);
+      }
+      if (context?.previousArchive) {
+        queryClient.setQueryData(archiveListQueryKey, context.previousArchive);
+      }
+      toast.error("Failed to mark notifications as read");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: inboxListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: archiveListQueryKey });
+      void queryClient.invalidateQueries({ queryKey: countQueryKey });
+    },
+  });
 
   // Get unread count for inbox
   const { data: count = 0 } = useQuery({
@@ -91,7 +229,7 @@ export function NotificationsPopover() {
   }, [open]);
 
   const getLatestUnreadCount = () =>
-    queryClient.getQueryData<number>(unreadCountQueryKey) ?? count;
+    queryClient.getQueryData<number>(countQueryKey) ?? count;
 
   const maybeAutoMarkAllRead = () => {
     if (autoMarkedThisOpenRef.current) return;

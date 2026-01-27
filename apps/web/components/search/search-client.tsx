@@ -1,9 +1,10 @@
 "use client";
 
+import { Form } from "@base-ui/react/form";
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
-import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -15,13 +16,12 @@ import {
 } from "@/components/ui/input-group";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { useIsMac } from "@/hooks/use-is-mac";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
-import { cn } from "@/lib/utils";
+import { cn, isMac } from "@/lib/utils";
 
 export type SearchClientVariant = "sm" | "lg";
 
@@ -38,7 +38,6 @@ export function SearchClient({
 }: SearchClientProps) {
   const router = useRouter();
   const params = useParams<{ domain?: string }>();
-  const isMac = useIsMac();
   const isMobile = useIsMobile();
 
   // Home search atom for suggestion click coordination
@@ -73,20 +72,13 @@ export function SearchClient({
   useEffect(() => setMounted(true), []);
 
   // Keyboard shortcut (⌘/Ctrl+K)
-  useHotkeys(
-    "mod+k",
-    (e) => {
-      e.preventDefault();
-      inputRef.current?.focus();
-    },
-    {
-      enableOnFormTags: false,
-    },
-    [variant],
-  );
+  useHotkeys("mod+k", (e) => {
+    e.preventDefault();
+    inputRef.current?.focus();
+  });
 
   // Navigation helper
-  function navigateToDomain(domain: string) {
+  const navigateToDomain = (domain: string) => {
     const target = normalizeDomainInput(domain);
     analytics.track("search_submitted", { domain: target });
 
@@ -102,24 +94,7 @@ export function SearchClient({
     if (current && current === target) {
       setTimeout(() => setLoading(false), 300);
     }
-  }
-
-  // Form submission
-  function submit() {
-    const normalized = normalizeDomainInput(value);
-    const isValid = isValidDomain(normalized);
-
-    if (!isValid) {
-      analytics.track("search_invalid_input", { input: value });
-      toast.error("Please enter a valid domain.", {
-        icon: createElement(IconCircleX, { className: "h-4 w-4" }),
-        position: "bottom-center",
-      });
-      inputRef.current?.focus();
-      return;
-    }
-    navigateToDomain(normalized);
-  }
+  };
 
   // Store function ref to avoid unnecessary effect re-runs
   const navigateRef = useRef(navigateToDomain);
@@ -138,29 +113,32 @@ export function SearchClient({
   const pointerDownRef = useRef(false);
   const justFocusedRef = useRef(false);
 
-  function handlePointerDown() {
+  const handlePointerDown = useCallback(() => {
     if (variant !== "sm") return;
     pointerDownRef.current = true;
-  }
+  }, [variant]);
 
-  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
-    setIsFocused(true);
-    onFocusChangeAction?.(true);
-    if (!pointerDownRef.current) {
-      e.currentTarget.select();
-      justFocusedRef.current = false;
-    } else {
-      justFocusedRef.current = true;
-      pointerDownRef.current = false;
-    }
-  }
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      onFocusChangeAction?.(true);
+      if (!pointerDownRef.current) {
+        e.currentTarget.select();
+        justFocusedRef.current = false;
+      } else {
+        justFocusedRef.current = true;
+        pointerDownRef.current = false;
+      }
+    },
+    [onFocusChangeAction],
+  );
 
-  function handleBlur() {
+  const handleBlur = useCallback(() => {
     setIsFocused(false);
     onFocusChangeAction?.(false);
-  }
+  }, [onFocusChangeAction]);
 
-  function handleClick(e: React.MouseEvent<HTMLInputElement>) {
+  const handleClick = useCallback((e: React.MouseEvent<HTMLInputElement>) => {
     if (e.detail === 3) {
       e.currentTarget.select();
       justFocusedRef.current = false;
@@ -170,37 +148,51 @@ export function SearchClient({
       e.currentTarget.select();
     }
     justFocusedRef.current = false;
-  }
+  }, []);
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      e.currentTarget.blur();
-      setIsFocused(false);
-      onFocusChangeAction?.(false);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        e.currentTarget.blur();
+        setIsFocused(false);
+        onFocusChangeAction?.(false);
+      }
+    },
+    [onFocusChangeAction],
+  );
+
+  const handleSubmit = useCallback(() => {
+    setIsFocused(false);
+    inputRef.current?.blur();
+
+    const normalized = normalizeDomainInput(value);
+
+    if (!isValidDomain(normalized)) {
+      analytics.track("search_invalid_input", { input: value });
+      toast.error("Please enter a valid domain.", {
+        icon: <IconCircleX className="size-4" />,
+        position: "bottom-center",
+      });
+      inputRef.current?.focus();
+      return;
     }
-  }
+
+    navigateRef.current(normalized);
+  }, [value]);
 
   return (
     <div className="flex w-full flex-col gap-5">
-      <form
-        aria-label="Domain search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setIsFocused(false);
-          inputRef.current?.blur();
-          submit();
-        }}
-      >
+      <Form aria-label="Domain search" onFormSubmit={handleSubmit}>
         <Field>
-          <FieldLabel htmlFor="domain" className="sr-only">
+          <FieldLabel htmlFor="domain-search" className="sr-only">
             Domain
           </FieldLabel>
           <div className="relative w-full flex-1">
             <InputGroup className={cn(variant === "lg" ? "h-12" : "h-10")}>
               <InputGroupInput
-                id="domain"
+                id="domain-search"
                 ref={inputRef}
                 autoFocus={variant === "lg"}
                 inputMode="url"
@@ -237,7 +229,7 @@ export function SearchClient({
                     <Spinner />
                   ) : (
                     <Kbd className="hidden border bg-muted/80 px-1.5 py-0.5 sm:inline-flex">
-                      {isFocused ? "Esc" : isMac ? "⌘\u00A0K" : "Ctrl\u00A0K"}
+                      {isFocused ? "Esc" : `${isMac() ? "⌘" : "Ctrl"}\u00A0K`}
                     </Kbd>
                   )}
                 </InputGroupAddon>
@@ -263,7 +255,7 @@ export function SearchClient({
             </InputGroup>
           </div>
         </Field>
-      </form>
+      </Form>
     </div>
   );
 }

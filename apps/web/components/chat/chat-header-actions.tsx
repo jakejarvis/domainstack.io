@@ -17,20 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-/** Format messages as markdown for clipboard copy */
-function formatMessagesAsMarkdown(messages: UIMessage[]): string {
-  return messages
-    .map((message) => {
-      const role = message.role === "user" ? "User" : "Assistant";
-      const textParts = message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("\n\n");
-      return `**${role}:** ${textParts}`;
-    })
-    .join("\n\n---\n\n");
-}
+import { formatMessagesAsMarkdown } from "./utils";
 
 function CopyConversationButton({ messages }: { messages: UIMessage[] }) {
   const [copied, setCopied] = useState(false);

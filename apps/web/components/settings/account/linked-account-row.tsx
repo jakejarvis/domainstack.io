@@ -1,4 +1,3 @@
-import type { UseMutationResult } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -20,7 +19,7 @@ interface LinkedAccountRowProps {
   isLinked: boolean;
   canUnlink: boolean;
   isLinking: boolean;
-  unlinkMutation: UseMutationResult<unknown, Error, string, unknown>;
+  isUnlinking: boolean;
   onLink: () => void;
   onUnlink: () => void;
 }
@@ -30,13 +29,11 @@ export function LinkedAccountRow({
   isLinked,
   canUnlink,
   isLinking,
-  unlinkMutation,
+  isUnlinking,
   onLink,
   onUnlink,
 }: LinkedAccountRowProps) {
   const Icon = provider.icon;
-  const isUnlinking =
-    unlinkMutation.isPending && unlinkMutation.variables === provider.id;
   const isLoading = isLinking || isUnlinking;
 
   if (!provider.enabled) {

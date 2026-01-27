@@ -9,7 +9,7 @@ import type { ResumeDomainData } from "@/lib/types/verification";
 import {
   createInitialState,
   verificationReducer,
-} from "@/lib/verification-state-machine";
+} from "@/lib/verification-state";
 
 // ============================================================================
 // Types

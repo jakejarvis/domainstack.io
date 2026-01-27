@@ -8,38 +8,35 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import {
+  useDashboardBulkActions,
+  useDashboardSelection,
+} from "@/context/dashboard-context";
 import { cn } from "@/lib/utils";
 
 type BulkActionsToolbarProps = {
-  selectedCount: number;
+  /** Total number of domains (for "Select all X" tooltip) */
   totalCount: number;
-  isAllSelected: boolean;
-  isPartiallySelected: boolean;
-  onToggleAll: () => void;
-  onArchive: () => void;
-  onDelete: () => void;
-  onCancel: () => void;
-  isArchiving?: boolean;
-  isDeleting?: boolean;
   className?: string;
 };
 
 export function BulkActionsToolbar({
-  selectedCount,
   totalCount,
-  isAllSelected,
-  isPartiallySelected,
-  onToggleAll,
-  onArchive,
-  onDelete,
-  onCancel,
-  isArchiving = false,
-  isDeleting = false,
   className,
 }: BulkActionsToolbarProps) {
+  const {
+    selectedCount,
+    isAllSelected,
+    isPartiallySelected,
+    toggleAll,
+    clearSelection,
+  } = useDashboardSelection();
+  const { onBulkArchive, onBulkDelete, isBulkArchiving, isBulkDeleting } =
+    useDashboardBulkActions();
+
   if (selectedCount === 0) return null;
 
-  const isLoading = isArchiving || isDeleting;
+  const isLoading = isBulkArchiving || isBulkDeleting;
 
   return (
     <div
@@ -58,7 +55,7 @@ export function BulkActionsToolbar({
               <Checkbox
                 checked={isAllSelected}
                 indeterminate={isPartiallySelected}
-                onCheckedChange={onToggleAll}
+                onCheckedChange={toggleAll}
                 disabled={isLoading}
               />
               <span
@@ -81,7 +78,7 @@ export function BulkActionsToolbar({
           <Button
             variant="outline"
             size="sm"
-            onClick={onArchive}
+            onClick={onBulkArchive}
             disabled={isLoading}
             className="text-[13px]"
           >
@@ -91,7 +88,7 @@ export function BulkActionsToolbar({
           <Button
             variant="destructive"
             size="sm"
-            onClick={onDelete}
+            onClick={onBulkDelete}
             disabled={isLoading}
             className="text-[13px]"
           >
@@ -103,7 +100,7 @@ export function BulkActionsToolbar({
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={onCancel}
+          onClick={clearSelection}
           disabled={isLoading}
           aria-label="Cancel selection"
         >

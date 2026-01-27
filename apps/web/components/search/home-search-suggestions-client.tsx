@@ -3,7 +3,7 @@
 import { IconX } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,16 +52,19 @@ export function HomeSearchSuggestionsClient({
     return merged.slice(0, max);
   }, [history, defaultSuggestions, max]);
 
-  function handleClick(domain: string) {
-    analytics.track("search_suggestion_clicked", {
-      domain,
-      source: "suggestion",
-    });
-    // Set pending domain for SearchClient to pick up and navigate
-    setPendingDomain(domain);
-  }
+  const handleClick = useCallback(
+    (domain: string) => {
+      analytics.track("search_suggestion_clicked", {
+        domain,
+        source: "suggestion",
+      });
+      // Set pending domain for SearchClient to pick up and navigate
+      setPendingDomain(domain);
+    },
+    [analytics, setPendingDomain],
+  );
 
-  function handleClearHistory() {
+  const handleClearHistory = useCallback(() => {
     clearHistory();
     analytics.track("search_history_cleared");
 
@@ -75,7 +78,7 @@ export function HomeSearchSuggestionsClient({
         behavior: "smooth",
       });
     }
-  }
+  }, [analytics, clearHistory]);
 
   return (
     <ScrollArea

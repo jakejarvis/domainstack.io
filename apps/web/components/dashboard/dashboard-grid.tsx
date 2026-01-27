@@ -1,118 +1,14 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { memo, useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
-import { cn } from "@/lib/utils";
 
 type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];
-  selectedIds?: Set<string>;
-  onToggleSelect?: (id: string) => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive?: (id: string, domainName: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
 };
 
-// Stable empty Set to avoid creating new instance on every render
-const EMPTY_SET = new Set<string>();
-
-/**
- * Memoized grid item to prevent re-renders when parent updates but item data hasn't changed.
- * Handles callback binding internally to avoid inline functions in the parent map.
- */
-const GridItem = memo(function GridItem({
-  domain,
-  isSelected,
-  onToggleSelect,
-  onVerify,
-  onRemove,
-  onArchive,
-  onToggleMuted,
-}: {
-  domain: TrackedDomainWithDetails;
-  isSelected: boolean;
-  onToggleSelect?: (id: string) => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive?: (id: string, domainName: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
-}) {
-  const handleToggleSelect = useCallback(() => {
-    onToggleSelect?.(domain.id);
-  }, [onToggleSelect, domain.id]);
-
-  const handleVerify = useCallback(() => {
-    onVerify(domain);
-  }, [onVerify, domain]);
-
-  const handleRemove = useCallback(() => {
-    onRemove(domain.id, domain.domainName);
-  }, [onRemove, domain.id, domain.domainName]);
-
-  const handleArchive = useCallback(() => {
-    onArchive?.(domain.id, domain.domainName);
-  }, [onArchive, domain.id, domain.domainName]);
-
-  const handleToggleMuted = useCallback(() => {
-    onToggleMuted(domain.id, !domain.muted);
-  }, [onToggleMuted, domain.id, domain.muted]);
-
-  return (
-    <motion.div
-      className="group relative h-full"
-      animate={{ scale: isSelected ? 1.01 : 1 }}
-      transition={{ duration: 0.1 }}
-    >
-      {/* Selection ring overlay */}
-      <div
-        className={cn(
-          "pointer-events-none absolute inset-0 rounded-xl transition-all duration-150",
-          isSelected
-            ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
-            : "ring-0",
-        )}
-        aria-hidden
-      />
-
-      {/* The actual card with integrated checkbox */}
-      <DashboardGridCard
-        trackedDomainId={domain.id}
-        domainId={domain.domainId}
-        domainName={domain.domainName}
-        verified={domain.verified}
-        verificationStatus={domain.verificationStatus}
-        verificationMethod={domain.verificationMethod}
-        verificationFailedAt={domain.verificationFailedAt}
-        expirationDate={domain.expirationDate}
-        registrar={domain.registrar}
-        dns={domain.dns}
-        hosting={domain.hosting}
-        email={domain.email}
-        ca={domain.ca}
-        muted={domain.muted}
-        isSelected={isSelected}
-        onVerify={handleVerify}
-        onRemove={handleRemove}
-        onArchive={handleArchive}
-        onToggleMuted={handleToggleMuted}
-        onToggleSelect={handleToggleSelect}
-        className={cn("h-full", isSelected && "bg-primary/10")}
-      />
-    </motion.div>
-  );
-});
-
-export function DashboardGrid({
-  domains,
-  selectedIds = EMPTY_SET,
-  onToggleSelect,
-  onVerify,
-  onRemove,
-  onArchive,
-  onToggleMuted,
-}: DashboardGridProps) {
+export function DashboardGrid({ domains }: DashboardGridProps) {
   const shouldReduceMotion = useReducedMotion();
 
   // Stagger on first mount only (keeps later add/remove snappy and avoids re-staggering on sort/filter).
@@ -154,14 +50,21 @@ export function DashboardGrid({
             className="h-full"
             {...getItemMotionProps(index)}
           >
-            <GridItem
-              domain={domain}
-              isSelected={selectedIds.has(domain.id)}
-              onToggleSelect={onToggleSelect}
-              onVerify={onVerify}
-              onRemove={onRemove}
-              onArchive={onArchive}
-              onToggleMuted={onToggleMuted}
+            <DashboardGridCard
+              trackedDomainId={domain.id}
+              domainId={domain.domainId}
+              domainName={domain.domainName}
+              verified={domain.verified}
+              verificationStatus={domain.verificationStatus}
+              verificationMethod={domain.verificationMethod}
+              verificationFailedAt={domain.verificationFailedAt}
+              expirationDate={domain.expirationDate}
+              registrar={domain.registrar}
+              dns={domain.dns}
+              hosting={domain.hosting}
+              email={domain.email}
+              ca={domain.ca}
+              muted={domain.muted}
             />
           </motion.div>
         ))}

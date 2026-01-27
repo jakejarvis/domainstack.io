@@ -1,13 +1,16 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
 import {
   IconLayoutSidebarRightCollapse,
   IconLego,
   IconMessageCircleFilled,
 } from "@tabler/icons-react";
+import { WorkflowChatTransport } from "@workflow/ai";
 import { useSetAtom } from "jotai";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,18 +31,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useStacky } from "@/hooks/use-stacky";
+import { analytics } from "@/lib/analytics/client";
 import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
+import { useChatStore } from "@/lib/stores/chat-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
+import { getUserFriendlyError } from "./utils";
 
 const MotionButton = motion.create(Button);
 
 interface ChatTriggerClientProps {
-  /** Pre-generated suggestions from server */
   suggestions?: string[];
 }
 
@@ -49,19 +53,107 @@ export function ChatTriggerClient({
   const [open, setOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const params = useParams<{ domain?: string }>();
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
   const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
   const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
-  const {
-    messages,
-    sendMessage,
-    status,
-    domain,
-    error,
-    clearError,
-    clearMessages,
-  } = useStacky();
+
+  const domain = params.domain ? decodeURIComponent(params.domain) : undefined;
+  const domainRef = useRef(domain);
+  domainRef.current = domain;
+
+  const runId = useChatStore((s) => s.runId);
+  const storedMessages = useChatStore((s) => s.messages);
+  const setRunId = useChatStore((s) => s.setRunId);
+  const setMessages = useChatStore((s) => s.setMessages);
+  const clearSession = useChatStore((s) => s.clearSession);
+
+  const transport = useMemo(
+    () =>
+      new WorkflowChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest: ({ messages }) => ({
+          body: { messages, domain: domainRef.current },
+        }),
+        onChatSendMessage: (response, options) => {
+          setMessages(options.messages);
+          const workflowRunId = response.headers.get("x-workflow-run-id");
+          if (workflowRunId) {
+            setRunId(workflowRunId);
+          }
+        },
+        onChatEnd: () => {
+          setRunId(null);
+        },
+      }),
+    [setMessages, setRunId],
+  );
+
+  const chat = useChat({
+    transport,
+    resume: !!runId,
+    onError: (error) => {
+      analytics.trackException(error, { context: "chat-send", domain });
+      setSubmitError(getUserFriendlyError(error));
+    },
+  });
+
+  const setChatMessagesRef = useRef(chat.setMessages);
+  setChatMessagesRef.current = chat.setMessages;
+
+  // Restore messages from store once on mount
+  const hasRestored = useRef(false);
+  useEffect(() => {
+    if (hasRestored.current) return;
+    hasRestored.current = true;
+    if (storedMessages.length > 0) {
+      setChatMessagesRef.current(storedMessages);
+    }
+  }, [storedMessages]);
+
+  // Persist messages to store
+  const isInitialized = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: using .length + status to balance write frequency with capturing final streamed content
+  useEffect(() => {
+    if (!isInitialized.current) {
+      if (chat.messages.length > 0) {
+        isInitialized.current = true;
+      }
+      return;
+    }
+    if (chat.messages.length > 0) {
+      setMessages(chat.messages);
+    }
+  }, [chat.messages.length, chat.status, setMessages]);
+
+  const clearError = useCallback(() => {
+    setSubmitError(null);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setChatMessagesRef.current([]);
+    setSubmitError(null);
+    clearSession();
+  }, [clearSession]);
+
+  const sendMessage = useCallback(
+    (msgParams: { text: string }) => {
+      const text = msgParams.text.trim();
+      if (!text) {
+        setSubmitError("Please enter a message.");
+        return;
+      }
+      clearError();
+      chat.sendMessage({ text });
+    },
+    [chat, clearError],
+  );
+
+  const error =
+    submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null);
+  const { messages, status } = chat;
 
   // Hydrate server suggestions into atom
   const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
@@ -76,20 +168,18 @@ export function ChatTriggerClient({
 
   // Check for ?show_ai=1 URL param to re-enable AI features
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("show_ai") === "1" && hideAiFeatures) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("show_ai") === "1" && hideAiFeatures) {
       setHideAiFeatures(false);
-      // Clean up URL
-      params.delete("show_ai");
+      urlParams.delete("show_ai");
       const newUrl =
-        params.toString() === ""
+        urlParams.toString() === ""
           ? window.location.pathname
-          : `${window.location.pathname}?${params.toString()}`;
+          : `${window.location.pathname}?${urlParams.toString()}`;
       window.history.replaceState({}, "", newUrl);
     }
   }, [hideAiFeatures, setHideAiFeatures]);
 
-  // Props passed to ChatClient (no useMemo needed since ChatClient is not memoized)
   const chatClientProps = {
     messages,
     sendMessage,
@@ -100,13 +190,10 @@ export function ChatTriggerClient({
     onClearError: clearError,
   };
 
-  // Don't render until mounted (localStorage has been read)
-  // Keep settings dialog available if it was open when AI features got hidden
   if (!mounted) {
     return null;
   }
 
-  // If AI features are hidden, only render the settings dialog (if open)
   if (hideAiFeatures && !settingsOpen) {
     return null;
   }
@@ -119,7 +206,6 @@ export function ChatTriggerClient({
   };
 
   const handleSettingsClick = () => {
-    // Close the chat first to avoid z-index conflicts with the dialog
     setOpen(false);
     setSettingsOpen(true);
   };

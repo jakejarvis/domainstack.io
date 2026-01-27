@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Icon } from "@/components/ui/icon";
 import {
   Item,
   ItemActions,
@@ -23,7 +24,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { Icon } from "../ui/icon";
 
 export interface ChatSettingsDialogProps {
   open: boolean;

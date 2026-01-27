@@ -3,6 +3,7 @@
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { useDashboardActions } from "@/context/dashboard-context";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
@@ -11,8 +12,6 @@ type UnverifiedTableRowProps = {
   cells: Cell<TrackedDomainWithDetails, unknown>[];
   original: TrackedDomainWithDetails;
   isSelected: boolean;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
 };
 
 export function UnverifiedTableRow({
@@ -20,9 +19,8 @@ export function UnverifiedTableRow({
   cells,
   original,
   isSelected,
-  onVerify,
-  onRemove,
 }: UnverifiedTableRowProps) {
+  const { onVerify, onRemove } = useDashboardActions();
   const shouldReduceMotion = useReducedMotion();
 
   // Find cells by column ID for maintainability
@@ -103,7 +101,7 @@ export function UnverifiedTableRow({
           </span>
           <Button
             size="xs"
-            onClick={() => onVerify(original)}
+            onClick={() => onVerify(original.id, original.verificationMethod)}
             className="text-[13px]"
           >
             Continue

@@ -1,6 +1,7 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 // See: https://github.com/TanStack/table/issues/5567
 
+import type { SortingState } from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
@@ -9,6 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { AnimatePresence } from "motion/react";
+import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   createColumns,
@@ -20,42 +22,57 @@ import { UnverifiedTableRow } from "@/components/dashboard/unverified-table-row"
 import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
-import { useDashboardTableSort } from "@/hooks/use-dashboard-sort";
+import {
+  useDashboardActions,
+  useDashboardPagination,
+  useDashboardSelection,
+} from "@/context/dashboard-context";
+import {
+  DEFAULT_SORT,
+  parseSortParam,
+  serializeSortState,
+} from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
 type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];
-  selectedIds?: Set<string>;
-  onToggleSelect?: (id: string) => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive: (id: string, domainName: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
   onTableReady?: (
     table: ReturnType<typeof useReactTable<TrackedDomainWithDetails>>,
   ) => void;
 };
 
-const EMPTY_SET = new Set<string>();
-
-export function DashboardTable({
-  domains,
-  selectedIds = EMPTY_SET,
-  onToggleSelect,
-  onVerify,
-  onRemove,
-  onArchive,
-  onToggleMuted,
-  onTableReady,
-}: DashboardTableProps) {
-  const { pagination, pageSize, setPageSize, setPageIndex, resetPage } =
+export function DashboardTable({ domains, onTableReady }: DashboardTableProps) {
+  // Get selection and actions from context
+  const { selectedIds, toggle } = useDashboardSelection();
+  const { onVerify, onRemove, onArchive, onToggleMuted } =
+    useDashboardActions();
+  const { pageIndex, pageSize, setPageSize, setPageIndex, resetPage } =
     useDashboardPagination();
-  const [sorting, setSorting] = useDashboardTableSort({
-    onSortChange: resetPage,
-  });
+  const pagination = { pageIndex, pageSize };
+
+  // Table sort state with URL persistence
+  const onSortChangeRef = useRef(resetPage);
+  onSortChangeRef.current = resetPage;
+  const [sortParam, setSortParam] = useQueryState(
+    "sort",
+    parseAsString.withDefault(DEFAULT_SORT).withOptions({
+      shallow: true,
+      clearOnDefault: true,
+    }),
+  );
+  const sorting = useMemo(() => parseSortParam(sortParam), [sortParam]);
+  const setSorting = useCallback(
+    (updater: SortingState | ((old: SortingState) => SortingState)) => {
+      const newSorting =
+        typeof updater === "function" ? updater(sorting) : updater;
+      setSortParam(serializeSortState(newSorting));
+      onSortChangeRef.current?.();
+    },
+    [sorting, setSortParam],
+  );
+
   const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
   const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
@@ -80,7 +97,7 @@ export function DashboardTable({
     () =>
       createColumns({
         selectedIdsRef,
-        onToggleSelect,
+        onToggleSelect: toggle,
         onVerify,
         onRemove,
         onArchive,
@@ -89,14 +106,7 @@ export function DashboardTable({
       }),
     // Note: selectedIds is accessed via ref (selectedIdsRef) to avoid recreating
     // columns on every selection change. The table re-renders cells independently.
-    [
-      onToggleSelect,
-      onRemove,
-      onArchive,
-      onToggleMuted,
-      onVerify,
-      withUnverifiedLast,
-    ],
+    [toggle, onRemove, onArchive, onToggleMuted, onVerify, withUnverifiedLast],
   );
 
   const table = useReactTable({
@@ -229,8 +239,6 @@ export function DashboardTable({
                         cells={cells}
                         original={row.original}
                         isSelected={isSelected}
-                        onVerify={onVerify}
-                        onRemove={onRemove}
                       />
                     );
                   }

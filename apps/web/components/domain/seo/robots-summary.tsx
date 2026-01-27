@@ -13,7 +13,14 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { PillCount } from "@/components/domain/pill-count";
 import {
   Accordion,
@@ -41,9 +48,24 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useProgressiveReveal } from "@/hooks/use-progressive-reveal";
 import type { SeoResponse } from "@/lib/types/domain/seo";
 import { cn } from "@/lib/utils";
+
+function useProgressiveReveal<T>(items: T[], initialVisible: number) {
+  const [visible, setVisible] = useState(initialVisible);
+  const total = items.length;
+  const more = total - visible;
+  const prevVisibleRef = useRef(visible);
+  const prev = Math.min(prevVisibleRef.current, visible);
+  const existing = items.slice(0, prev);
+  const added = items.slice(prev, Math.min(visible, total));
+
+  useEffect(() => {
+    prevVisibleRef.current = Math.min(visible, items.length);
+  }, [visible, items]);
+
+  return { existing, added, more, total, visible, setVisible } as const;
+}
 
 export function RobotsSummary({
   domain,

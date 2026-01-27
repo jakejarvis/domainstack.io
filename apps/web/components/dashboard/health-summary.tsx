@@ -5,22 +5,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDashboardFilters } from "@/context/dashboard-context";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import { cn } from "@/lib/utils";
 
-type HealthSummaryProps = {
-  expiringSoon: number;
-  pendingVerification: number;
-  onExpiringClick: () => void;
-  onPendingClick: () => void;
-};
-
-export function HealthSummary({
-  expiringSoon,
-  pendingVerification,
-  onExpiringClick,
-  onPendingClick,
-}: HealthSummaryProps) {
+export function HealthSummary() {
+  const { stats, applyHealthFilter } = useDashboardFilters();
+  const { expiringSoon, pendingVerification } = stats;
   // Don't render if no alerts
   if (expiringSoon === 0 && pendingVerification === 0) {
     return null;
@@ -34,7 +25,7 @@ export function HealthSummary({
             render={
               <button
                 type="button"
-                onClick={onExpiringClick}
+                onClick={() => applyHealthFilter("expiring")}
                 aria-label="Filter by expiring domains"
               >
                 <Badge
@@ -66,7 +57,7 @@ export function HealthSummary({
             render={
               <button
                 type="button"
-                onClick={onPendingClick}
+                onClick={() => applyHealthFilter("pending")}
                 aria-label="Filter by pending verification"
               >
                 <Badge

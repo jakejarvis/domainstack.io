@@ -17,6 +17,25 @@ vi.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => "domain",
 }));
 
+// Mock base-ui Form to avoid React instance mismatch in browser tests
+vi.mock("@/components/ui/form", () => ({
+  Form: ({
+    children,
+    onFormSubmit,
+    ...props
+  }: React.ComponentProps<"form"> & { onFormSubmit?: () => void }) => (
+    <form
+      {...props}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onFormSubmit?.();
+      }}
+    >
+      {children}
+    </form>
+  ),
+}));
+
 describe("HeaderSearch", () => {
   beforeEach(() => {
     nav.push.mockClear();

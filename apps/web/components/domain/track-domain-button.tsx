@@ -3,6 +3,7 @@ import {
   IconBellPlus,
   IconRosetteDiscountCheck,
 } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRouter } from "@/hooks/use-router";
-import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
+import { useTRPC } from "@/lib/trpc/client";
 
 type TrackDomainButtonProps = {
   domain: string;
@@ -27,11 +28,14 @@ export function TrackDomainButton({
 }: TrackDomainButtonProps) {
   const { data: session, isPending: isSessionPending } = useSession();
   const router = useRouter();
+  const trpc = useTRPC();
 
-  // Only query tracked domains when user is authenticated
+  // Only query tracked domains when user is authenticated (read-only, no mutations needed)
   const isAuthenticated = !!session?.user;
-  const { domains: trackedDomains, isLoading: isLoadingDomains } =
-    useTrackedDomains({ enabled: isAuthenticated });
+  const { data: trackedDomains, isLoading: isLoadingDomains } = useQuery({
+    ...trpc.tracking.listDomains.queryOptions({ includeArchived: false }),
+    enabled: isAuthenticated,
+  });
 
   // Find if this domain is already tracked
   const trackedDomain = trackedDomains?.find(

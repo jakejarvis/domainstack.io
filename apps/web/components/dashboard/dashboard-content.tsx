@@ -7,7 +7,7 @@ import {
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type MutableRefObject, useEffect, useState } from "react";
 import { BulkActionsToolbar } from "@/components/dashboard/bulk-actions-toolbar";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { DashboardTable } from "@/components/dashboard/dashboard-table";
@@ -20,47 +20,40 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { SelectionState } from "@/hooks/use-dashboard-selection";
+import {
+  useDashboardFilters,
+  useDashboardSelection,
+} from "@/context/dashboard-context";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];
   totalDomains: number; // Total before filtering
-  hasActiveFilters: boolean;
-  selection: SelectionState;
   onAddDomain?: () => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
-  onRemove: (id: string, domainName: string) => void;
-  onArchive: (id: string, domainName: string) => void;
-  onToggleMuted: (id: string, muted: boolean) => void;
-  onClearFilters: () => void;
-  onBulkArchive: () => void;
-  onBulkDelete: () => void;
   // Table instance callback (table view only)
   onTableReady?: (table: Table<TrackedDomainWithDetails>) => void;
-  isBulkArchiving?: boolean;
-  isBulkDeleting?: boolean;
+  // Ref to expose clearSelection to parent (for post-mutation cleanup)
+  clearSelectionRef?: MutableRefObject<(() => void) | null>;
 };
 
 export function DashboardContent({
   domains,
   totalDomains,
-  hasActiveFilters,
-  selection,
   onAddDomain,
-  onVerify,
-  onRemove,
-  onArchive,
-  onToggleMuted,
-  onClearFilters,
-  onBulkArchive,
-  onBulkDelete,
   onTableReady,
-  isBulkArchiving = false,
-  isBulkDeleting = false,
+  clearSelectionRef,
 }: DashboardContentProps) {
+  const { hasActiveFilters, clearFilters } = useDashboardFilters();
   const viewMode = usePreferencesStore((s) => s.viewMode);
+  const { clearSelection } = useDashboardSelection();
+
+  // Expose clearSelection to parent for post-mutation cleanup
+  useEffect(() => {
+    if (clearSelectionRef) {
+      clearSelectionRef.current = clearSelection;
+    }
+  }, [clearSelectionRef, clearSelection]);
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Avoid animating the initial view swap during hydration when localStorage preferences reconcile.
@@ -85,7 +78,7 @@ export function DashboardContent({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button variant="outline" onClick={onClearFilters}>
+          <Button variant="outline" onClick={clearFilters}>
             Clear Filters
           </Button>
         </EmptyContent>
@@ -167,43 +160,15 @@ export function DashboardContent({
           }
         >
           {viewMode === "table" ? (
-            <DashboardTable
-              domains={domains}
-              selectedIds={selection.selectedIds}
-              onToggleSelect={selection.toggle}
-              onVerify={onVerify}
-              onRemove={onRemove}
-              onArchive={onArchive}
-              onToggleMuted={onToggleMuted}
-              onTableReady={onTableReady}
-            />
+            <DashboardTable domains={domains} onTableReady={onTableReady} />
           ) : (
-            <DashboardGrid
-              domains={domains}
-              selectedIds={selection.selectedIds}
-              onToggleSelect={selection.toggle}
-              onVerify={onVerify}
-              onRemove={onRemove}
-              onArchive={onArchive}
-              onToggleMuted={onToggleMuted}
-            />
+            <DashboardGrid domains={domains} />
           )}
         </motion.div>
       </AnimatePresence>
 
       {/* Bulk actions toolbar - appears when items are selected */}
-      <BulkActionsToolbar
-        selectedCount={selection.selectedCount}
-        totalCount={domains.length}
-        isAllSelected={selection.isAllSelected}
-        isPartiallySelected={selection.isPartiallySelected}
-        onToggleAll={selection.toggleAll}
-        onArchive={onBulkArchive}
-        onDelete={onBulkDelete}
-        onCancel={selection.clearSelection}
-        isArchiving={isBulkArchiving}
-        isDeleting={isBulkDeleting}
-      />
+      <BulkActionsToolbar totalCount={domains.length} />
     </>
   );
 }

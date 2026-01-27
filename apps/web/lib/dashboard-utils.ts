@@ -2,11 +2,36 @@ import type { SortingState } from "@tanstack/react-table";
 import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
+// ---------------------------------------------------------------------------
+// Provider Types
+// ---------------------------------------------------------------------------
+
+export interface AvailableProvider {
+  id: string;
+  name: string;
+  domain: string | null;
+}
+
+export type AvailableProvidersByCategory = Record<
+  "registrar" | "dns" | "hosting" | "email" | "ca",
+  AvailableProvider[]
+>;
+
 /** Filter types for domain verification status */
 export type StatusFilter = "verified" | "pending";
 
 /** Filter types for domain health status */
 export type HealthFilter = "healthy" | "expiring" | "expired";
+
+/** Valid filter values for runtime validation of URL params */
+const VALID_STATUS_FILTERS: readonly StatusFilter[] = ["verified", "pending"];
+
+/** Valid health filter values for runtime validation of URL params */
+const VALID_HEALTH_FILTERS: readonly HealthFilter[] = [
+  "healthy",
+  "expiring",
+  "expired",
+];
 
 /**
  * Determine health status based on expiration date
@@ -35,7 +60,6 @@ export const DASHBOARD_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export type DashboardPageSizeOptions =
   (typeof DASHBOARD_PAGE_SIZE_OPTIONS)[number];
 
-export const DASHBOARD_PREFERENCES_STORAGE_KEY = "dashboard-preferences";
 export const DASHBOARD_PREFERENCES_DEFAULT: {
   viewMode: DashboardViewModeOptions;
   pageSize: DashboardPageSizeOptions;
@@ -183,4 +207,292 @@ export function serializeSortState(sorting: SortingState): string {
 
   const [first] = sorting;
   return `${first.id}.${first.desc ? "desc" : "asc"}`;
+}
+
+// ---------------------------------------------------------------------------
+// Domain Data Extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract unique TLDs from domains for filter dropdown
+ */
+export function extractAvailableTlds(
+  domains: TrackedDomainWithDetails[],
+): string[] {
+  const tldSet = new Set<string>();
+  for (const domain of domains) {
+    if (domain.tld) tldSet.add(domain.tld);
+  }
+  return Array.from(tldSet).sort();
+}
+
+/**
+ * Extract unique providers from domains, grouped by category
+ */
+export function extractAvailableProviders(
+  domains: TrackedDomainWithDetails[],
+): AvailableProvidersByCategory {
+  const providersByCategory: AvailableProvidersByCategory = {
+    registrar: [],
+    dns: [],
+    hosting: [],
+    email: [],
+    ca: [],
+  };
+
+  const registrarMap = new Map<string, AvailableProvider>();
+  const dnsMap = new Map<string, AvailableProvider>();
+  const hostingMap = new Map<string, AvailableProvider>();
+  const emailMap = new Map<string, AvailableProvider>();
+  const caMap = new Map<string, AvailableProvider>();
+
+  for (const domain of domains) {
+    if (!domain.verified || domain.archivedAt !== null) continue;
+
+    if (domain.registrar.id && domain.registrar.name) {
+      if (!registrarMap.has(domain.registrar.id)) {
+        registrarMap.set(domain.registrar.id, {
+          id: domain.registrar.id,
+          name: domain.registrar.name,
+          domain: domain.registrar.domain,
+        });
+      }
+    }
+    if (domain.dns.id && domain.dns.name) {
+      if (!dnsMap.has(domain.dns.id)) {
+        dnsMap.set(domain.dns.id, {
+          id: domain.dns.id,
+          name: domain.dns.name,
+          domain: domain.dns.domain,
+        });
+      }
+    }
+    if (domain.hosting.id && domain.hosting.name) {
+      if (!hostingMap.has(domain.hosting.id)) {
+        hostingMap.set(domain.hosting.id, {
+          id: domain.hosting.id,
+          name: domain.hosting.name,
+          domain: domain.hosting.domain,
+        });
+      }
+    }
+    if (domain.email.id && domain.email.name) {
+      if (!emailMap.has(domain.email.id)) {
+        emailMap.set(domain.email.id, {
+          id: domain.email.id,
+          name: domain.email.name,
+          domain: domain.email.domain,
+        });
+      }
+    }
+    if (domain.ca.id && domain.ca.name) {
+      if (!caMap.has(domain.ca.id)) {
+        caMap.set(domain.ca.id, {
+          id: domain.ca.id,
+          name: domain.ca.name,
+          domain: domain.ca.domain,
+        });
+      }
+    }
+  }
+
+  providersByCategory.registrar = Array.from(registrarMap.values()).sort(
+    (a, b) => a.name.localeCompare(b.name),
+  );
+  providersByCategory.dns = Array.from(dnsMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  providersByCategory.hosting = Array.from(hostingMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  providersByCategory.email = Array.from(emailMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  providersByCategory.ca = Array.from(caMap.values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  return providersByCategory;
+}
+
+/**
+ * Create a flat set of all valid provider IDs for validation
+ */
+export function getValidProviderIds(
+  availableProviders: AvailableProvidersByCategory,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const category of Object.values(availableProviders)) {
+    for (const provider of category) {
+      ids.add(provider.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Compute health stats for domains (expiring soon + pending verification counts)
+ */
+export function computeHealthStats(
+  domains: TrackedDomainWithDetails[],
+  now: Date,
+) {
+  let expiringSoon = 0;
+  let pendingVerification = 0;
+
+  for (const domain of domains) {
+    if (!domain.verified) {
+      pendingVerification++;
+      continue;
+    }
+    const healthStatus = getHealthStatus(
+      domain.expirationDate,
+      domain.verified,
+      now,
+    );
+    if (healthStatus === "expiring" || healthStatus === "expired") {
+      expiringSoon++;
+    }
+  }
+
+  return { expiringSoon, pendingVerification };
+}
+
+// ---------------------------------------------------------------------------
+// Filter Validation & Filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate and filter status values from URL params
+ */
+export function validateStatusFilters(values: string[]): StatusFilter[] {
+  return values.filter((s): s is StatusFilter =>
+    VALID_STATUS_FILTERS.includes(s as StatusFilter),
+  );
+}
+
+/**
+ * Validate and filter health values from URL params
+ */
+export function validateHealthFilters(values: string[]): HealthFilter[] {
+  return values.filter((h): h is HealthFilter =>
+    VALID_HEALTH_FILTERS.includes(h as HealthFilter),
+  );
+}
+
+/**
+ * Filter criteria for domain filtering
+ */
+export interface DomainFilterCriteria {
+  search: string;
+  domainId: string | null;
+  status: StatusFilter[];
+  health: HealthFilter[];
+  tlds: string[];
+  providers: string[];
+}
+
+/**
+ * Filter domains based on search, status, health, TLDs, and providers
+ */
+export function filterDomains(
+  domains: TrackedDomainWithDetails[],
+  criteria: DomainFilterCriteria,
+  validProviderIds: Set<string>,
+  now: Date,
+): TrackedDomainWithDetails[] {
+  return domains.filter((domain) => {
+    // Filter by specific domain ID
+    if (criteria.domainId && domain.id !== criteria.domainId) return false;
+
+    // Filter by search term
+    if (criteria.search) {
+      const searchLower = criteria.search.toLowerCase();
+      if (!domain.domainName.toLowerCase().includes(searchLower)) return false;
+    }
+
+    // Filter by verification status
+    if (criteria.status.length > 0) {
+      const domainStatus = domain.verified ? "verified" : "pending";
+      if (!criteria.status.includes(domainStatus)) return false;
+    }
+
+    // Filter by health status
+    if (criteria.health.length > 0) {
+      const healthStatus = getHealthStatus(
+        domain.expirationDate,
+        domain.verified,
+        now,
+      );
+      if (!healthStatus || !criteria.health.includes(healthStatus))
+        return false;
+    }
+
+    // Filter by TLD
+    if (criteria.tlds.length > 0 && !criteria.tlds.includes(domain.tld)) {
+      return false;
+    }
+
+    // Filter by provider
+    if (criteria.providers.length > 0) {
+      if (!domain.verified) return false;
+      const validSelectedProviders = criteria.providers.filter((id) =>
+        validProviderIds.has(id),
+      );
+      if (validSelectedProviders.length === 0) return true;
+      const providerSet = new Set(validSelectedProviders);
+      const hasMatch =
+        (domain.registrar.id && providerSet.has(domain.registrar.id)) ||
+        (domain.dns.id && providerSet.has(domain.dns.id)) ||
+        (domain.hosting.id && providerSet.has(domain.hosting.id)) ||
+        (domain.email.id && providerSet.has(domain.email.id)) ||
+        (domain.ca.id && providerSet.has(domain.ca.id));
+      if (!hasMatch) return false;
+    }
+
+    return true;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Confirmation Dialog
+// ---------------------------------------------------------------------------
+
+export type ConfirmAction =
+  | { type: "remove"; domainId: string; domainName: string }
+  | { type: "archive"; domainId: string; domainName: string }
+  | { type: "bulk-archive"; domainIds: string[]; count: number }
+  | { type: "bulk-delete"; domainIds: string[]; count: number };
+
+export function getConfirmDialogContent(action: ConfirmAction) {
+  switch (action.type) {
+    case "remove":
+      return {
+        title: "Remove domain?",
+        description: `Are you sure you want to stop tracking ${action.domainName}?`,
+        confirmLabel: "Remove",
+        variant: "destructive" as const,
+      };
+    case "archive":
+      return {
+        title: "Archive domain?",
+        description: `Are you sure you want to archive ${action.domainName}? You can reactivate it later from the Archived section.`,
+        confirmLabel: "Archive",
+        variant: "default" as const,
+      };
+    case "bulk-archive":
+      return {
+        title: `Archive ${action.count} domains?`,
+        description: `Are you sure you want to archive ${action.count} domain${action.count === 1 ? "" : "s"}? You can reactivate them later from the Archived section.`,
+        confirmLabel: "Archive All",
+        variant: "default" as const,
+      };
+    case "bulk-delete":
+      return {
+        title: `Delete ${action.count} domains?`,
+        description: `Are you sure you want to stop tracking ${action.count} domain${action.count === 1 ? "" : "s"}?`,
+        confirmLabel: "Delete All",
+        variant: "destructive" as const,
+      };
+  }
 }

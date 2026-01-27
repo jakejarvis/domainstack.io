@@ -31,6 +31,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@/components/ui/responsive-tooltip";
+import type { VerificationMethod } from "@/lib/constants/verification";
 import { formatDateTimeUtc } from "@/lib/format";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
@@ -87,7 +88,7 @@ export function createUnverifiedLastSorter(
 export type ColumnCallbacks = {
   selectedIdsRef: React.RefObject<Set<string>>;
   onToggleSelect?: (id: string) => void;
-  onVerify: (domain: TrackedDomainWithDetails) => void;
+  onVerify: (id: string, verificationMethod: VerificationMethod | null) => void;
   onRemove: (id: string, domainName: string) => void;
   onArchive: (id: string, domainName: string) => void;
   onToggleMuted: (id: string, muted: boolean) => void;
@@ -182,7 +183,10 @@ export function createColumns(
             verificationMethod={row.original.verificationMethod}
             verificationFailedAt={row.original.verificationFailedAt}
             onClick={
-              isFailing || isPending ? () => onVerify(row.original) : undefined
+              isFailing || isPending
+                ? () =>
+                    onVerify(row.original.id, row.original.verificationMethod)
+                : undefined
             }
           />
         );

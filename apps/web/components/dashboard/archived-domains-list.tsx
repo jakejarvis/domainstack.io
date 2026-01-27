@@ -21,20 +21,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDashboardActions } from "@/context/dashboard-context";
 import { useSubscription } from "@/hooks/use-subscription";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];
-  onUnarchive: (id: string) => void;
-  onRemove: (id: string, domainName: string) => void;
 };
 
-export function ArchivedDomainsList({
-  domains,
-  onUnarchive,
-  onRemove,
-}: ArchivedDomainsListProps) {
+export function ArchivedDomainsList({ domains }: ArchivedDomainsListProps) {
+  const { onUnarchive, onRemove } = useDashboardActions();
   const { subscription, isPro } = useSubscription();
 
   if (domains.length === 0) {

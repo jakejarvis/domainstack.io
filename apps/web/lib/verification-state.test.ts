@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createInitialState,
-  verificationReducer,
-} from "./verification-state-machine";
+import { createInitialState, verificationReducer } from "./verification-state";
 
 describe("createInitialState", () => {
   it("returns step 1 with empty domain by default", () => {

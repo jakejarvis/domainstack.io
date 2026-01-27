@@ -9,9 +9,11 @@ import {
   MultiSelect,
   type MultiSelectOption,
 } from "@/components/ui/multi-select";
-import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
-import type { HealthFilter } from "@/lib/dashboard-utils";
+import type {
+  AvailableProvidersByCategory,
+  HealthFilter,
+} from "@/lib/dashboard-utils";
 
 type FilterDropdownsProps = {
   health: HealthFilter[];

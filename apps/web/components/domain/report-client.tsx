@@ -7,7 +7,7 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useSetAtom } from "jotai";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -35,11 +35,21 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { chatContextAtom } from "@/lib/atoms/chat-atoms";
+import {
+  HEADER_HEIGHT,
+  SCROLL_PADDING,
+  SECTION_NAV_HEIGHT,
+} from "@/lib/constants/layout";
 import { sections } from "@/lib/constants/sections";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
+
+function resolveScrollMargin(isMobile: boolean) {
+  const headerHeight = !isMobile ? HEADER_HEIGHT : 0;
+  return headerHeight + SECTION_NAV_HEIGHT + SCROLL_PADDING;
+}
 
 function AllSkeletonsExceptRegistration() {
   return (
@@ -53,11 +63,6 @@ function AllSkeletonsExceptRegistration() {
   );
 }
 
-/**
- * Query options to disable automatic refetching and retries.
- * Report data is fetched once on page load and doesn't need continuous revalidation.
- * Retries are disabled so errors surface immediately to the error boundary.
- */
 const staticQueryOptions = {
   staleTime: Number.POSITIVE_INFINITY,
   retry: false,
@@ -65,11 +70,6 @@ const staticQueryOptions = {
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 } as const;
-
-/**
- * Individual section components that fetch their own data.
- * Each is wrapped in its own Suspense + ErrorBoundary for independent loading/error states.
- */
 
 function SuspendedHostingSection({ domain }: { domain: string }) {
   const trpc = useTRPC();
@@ -138,18 +138,9 @@ function SuspendedSeoSection({ domain }: { domain: string }) {
   return <SeoSection domain={domain} data={data.data} />;
 }
 
-/**
- * Main client component for domain reports.
- * Header and nav render immediately with the domain name.
- * Content area loads progressively with individual section suspense boundaries.
- *
- * Once we confirm a domain is unregistered, header/nav are hidden and only
- * the unregistered card is shown.
- */
 export function DomainReportClient({ domain }: { domain: string }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-
   const registrationQueryOptions = trpc.domain.getRegistration.queryOptions({
     domain,
   });
@@ -164,14 +155,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
   });
   const domainId = registration?.data?.domainId;
   const isRegistered = registration?.data?.isRegistered === true;
-
-  // Section navigation - tracks active section and header visibility for context injection
-  const headerRef = useRef<HTMLDivElement>(null);
-  const { activeSection, isHeaderVisible, scrollToSection } =
-    useReportSectionObserver({
-      sectionIds: Object.keys(sections),
-      headerRef,
-    });
 
   // Add to search history for registered domains
   const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
@@ -188,7 +171,120 @@ export function DomainReportClient({ domain }: { domain: string }) {
     return () => setChatContext({ type: "home" });
   }, [domain, setChatContext]);
 
-  // Show error state if registration query failed
+  const headerRef = useRef<HTMLDivElement>(null);
+  const sectionIds = Object.keys(sections);
+  const [activeSection, setActiveSection] = useState(sectionIds[0] ?? "");
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const isMobile = useIsMobile();
+
+  const programmaticTargetIdRef = useRef<string | null>(null);
+  const programmaticLockUntilRef = useRef<number>(0);
+
+  // Section tracking
+  useEffect(() => {
+    if (sectionIds.length === 0) return;
+
+    let rafId: number | null = null;
+    let scrollMarginPx = resolveScrollMargin(isMobile);
+
+    const updateActiveSection = () => {
+      const targetId = programmaticTargetIdRef.current;
+      if (targetId) {
+        const now =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        const targetEl = document.getElementById(targetId);
+
+        if (!targetEl || now > programmaticLockUntilRef.current) {
+          programmaticTargetIdRef.current = null;
+        } else {
+          const { top } = targetEl.getBoundingClientRect();
+          const isLanded = Math.abs(top - scrollMarginPx) <= 2;
+          if (!isLanded) {
+            setActiveSection((prev) => (prev === targetId ? prev : targetId));
+            return;
+          }
+          programmaticTargetIdRef.current = null;
+        }
+      }
+
+      const sectionEls = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el instanceof HTMLElement);
+
+      let nextActive = sectionEls[0]?.id ?? sectionIds[0] ?? "";
+      for (const el of sectionEls) {
+        const { top } = el.getBoundingClientRect();
+        if (top - scrollMarginPx <= 1) {
+          nextActive = el.id;
+        } else {
+          break;
+        }
+      }
+
+      setActiveSection((prev) => (prev === nextActive ? prev : nextActive));
+    };
+
+    const scheduleUpdate = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateActiveSection();
+      });
+    };
+
+    const handleResize = () => {
+      scrollMarginPx = resolveScrollMargin(isMobile);
+      scheduleUpdate();
+    };
+
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    scheduleUpdate();
+
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", handleResize);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [sectionIds, isMobile]);
+
+  // Header observer
+  useEffect(() => {
+    const headerElement = headerRef.current;
+    if (!headerElement) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setIsHeaderVisible(entries[0].isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: "-10px 0px 0px 0px",
+      },
+    );
+
+    observer.observe(headerElement);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToSection = useCallback((id: string) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    setActiveSection(id);
+    programmaticTargetIdRef.current = id;
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    programmaticLockUntilRef.current = now + 1500;
+
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
   if (isRegistrationError) {
     const isDev = process.env.NODE_ENV === "development";
     return (
@@ -232,14 +328,12 @@ export function DomainReportClient({ domain }: { domain: string }) {
     );
   }
 
-  // For confirmed unregistered domains, show only the unregistered card
   if (!isRegistrationLoading && !isRegistered) {
     return <DomainUnregisteredCard domain={domain} />;
   }
 
   return (
     <div>
-      {/* Page header - renders immediately with domain name */}
       <DomainReportHeader
         domain={domain}
         domainId={domainId}
@@ -247,7 +341,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
         ref={headerRef}
       />
 
-      {/* Sticky section nav - renders immediately */}
       <SectionNav
         domain={domain}
         sections={Object.values(sections)}
@@ -256,7 +349,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
         onSectionClick={scrollToSection}
       />
 
-      {/* Content area - each section independently fetches data within its own error boundary */}
       <div className="space-y-4">
         {isRegistrationLoading ? (
           <RegistrationSectionSkeleton />
@@ -264,7 +356,6 @@ export function DomainReportClient({ domain }: { domain: string }) {
           <RegistrationSection domain={domain} data={registration?.data} />
         )}
 
-        {/* Show skeletons until we confirm domain is registered */}
         {!isRegistered ? (
           <AllSkeletonsExceptRegistration />
         ) : (

@@ -175,6 +175,9 @@ export function AccountPanel() {
               .map((provider) => {
                 const isLinked = linkedProviderIds.has(provider.id);
                 const isLinking = linkingProvider === provider.id;
+                const isUnlinking =
+                  unlinkMutation.isPending &&
+                  unlinkMutation.variables === provider.id;
 
                 return (
                   <LinkedAccountRow
@@ -183,7 +186,7 @@ export function AccountPanel() {
                     isLinked={isLinked}
                     canUnlink={canUnlink}
                     isLinking={isLinking}
-                    unlinkMutation={unlinkMutation}
+                    isUnlinking={isUnlinking}
                     onLink={() => handleLink(provider)}
                     onUnlink={() => setUnlinkingProvider(provider.id)}
                   />

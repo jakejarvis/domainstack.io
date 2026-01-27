@@ -6,7 +6,6 @@ import {
   IconWorld,
   IconX,
 } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
@@ -20,64 +19,33 @@ import { GridSortDropdown } from "@/components/dashboard/grid-sort-dropdown";
 import { MobileFiltersCollapsible } from "@/components/dashboard/mobile-filters-collapsible";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { Button } from "@/components/ui/button";
-import type { AvailableProvidersByCategory } from "@/hooks/use-dashboard-filters";
+import { useDashboardFilters } from "@/context/dashboard-context";
 import { HEALTH_OPTIONS } from "@/lib/constants/domain-filters";
-import type {
-  HealthFilter,
-  SortOption,
-  StatusFilter,
-} from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
-type DashboardFiltersProps = {
-  search: string;
-  status: StatusFilter[];
-  health: HealthFilter[];
-  tlds: string[];
-  providers: string[];
-  availableTlds: string[];
-  availableProviders: AvailableProvidersByCategory;
-  hasActiveFilters: boolean;
-  onSearchChange: (value: string) => void;
-  onStatusChange: (values: StatusFilter[]) => void;
-  onHealthChange: (values: HealthFilter[]) => void;
-  onTldsChange: (values: string[]) => void;
-  onProvidersChange: (values: string[]) => void;
-  onClearFilters: () => void;
-  // Hidden domain ID filter (for notification deep links)
-  domainId?: string | null;
-  filteredDomainName?: string | null;
-  onClearDomainId?: () => void;
-  // Sort (only shown in grid view)
-  sortOption?: SortOption;
-  onSortChange?: (sort: SortOption) => void;
-  // Table instance (for column visibility in table view)
-  // biome-ignore lint/suspicious/noExplicitAny: Table generic type varies
-  table?: Table<any> | null;
-};
-
-export function DashboardFilters({
-  search,
-  status,
-  health,
-  tlds,
-  providers,
-  availableTlds,
-  availableProviders,
-  hasActiveFilters,
-  onSearchChange,
-  onStatusChange,
-  onHealthChange,
-  onTldsChange,
-  onProvidersChange,
-  onClearFilters,
-  domainId,
-  filteredDomainName,
-  onClearDomainId,
-  sortOption,
-  onSortChange,
-  table,
-}: DashboardFiltersProps) {
+export function DashboardFilters() {
+  const {
+    search,
+    status,
+    health,
+    tlds,
+    providers,
+    availableTlds,
+    availableProviders,
+    hasActiveFilters,
+    setSearch,
+    setStatus,
+    setHealth,
+    setTlds,
+    setProviders,
+    clearFilters,
+    domainId,
+    filteredDomainName,
+    clearDomainId,
+    sortOption,
+    setSortOption,
+    table,
+  } = useDashboardFilters();
   const viewMode = usePreferencesStore((s) => s.viewMode);
   const shouldReduceMotion = useReducedMotion();
 
@@ -197,17 +165,17 @@ export function DashboardFilters({
   const removeFilter = useCallback(
     (chip: FilterChip) => {
       if (chip.type === "domainId") {
-        onClearDomainId?.();
+        clearDomainId();
       } else if (chip.type === "search") {
-        onSearchChange("");
+        setSearch("");
       } else if (chip.type === "status") {
-        onStatusChange(status.filter((s) => s !== chip.value));
+        setStatus(status.filter((s) => s !== chip.value));
       } else if (chip.type === "health") {
-        onHealthChange(health.filter((h) => h !== chip.value));
+        setHealth(health.filter((h) => h !== chip.value));
       } else if (chip.type === "tld") {
-        onTldsChange(tlds.filter((t) => t !== chip.value));
+        setTlds(tlds.filter((t) => t !== chip.value));
       } else {
-        onProvidersChange(providers.filter((p) => p !== chip.value));
+        setProviders(providers.filter((p) => p !== chip.value));
       }
     },
     [
@@ -215,12 +183,12 @@ export function DashboardFilters({
       health,
       tlds,
       providers,
-      onClearDomainId,
-      onSearchChange,
-      onStatusChange,
-      onHealthChange,
-      onTldsChange,
-      onProvidersChange,
+      clearDomainId,
+      setSearch,
+      setStatus,
+      setHealth,
+      setTlds,
+      setProviders,
     ],
   );
 
@@ -228,16 +196,16 @@ export function DashboardFilters({
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       {/* Left side: Search and filter dropdowns */}
       <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
-        <FilterSearchInput value={search} onChange={onSearchChange} />
+        <FilterSearchInput value={search} onChange={setSearch} />
         <FilterDropdowns
           health={health}
           tlds={tlds}
           providers={providers}
           availableTlds={availableTlds}
           availableProviders={availableProviders}
-          onHealthChange={onHealthChange}
-          onTldsChange={onTldsChange}
-          onProvidersChange={onProvidersChange}
+          onHealthChange={setHealth}
+          onTldsChange={setTlds}
+          onProvidersChange={setProviders}
         />
       </div>
 
@@ -257,7 +225,7 @@ export function DashboardFilters({
             >
               <Button
                 variant="ghost"
-                onClick={onClearFilters}
+                onClick={clearFilters}
                 className="text-muted-foreground"
               >
                 <IconX />
@@ -268,10 +236,10 @@ export function DashboardFilters({
         </AnimatePresence>
 
         {/* Sort dropdown - only for grid view */}
-        {viewMode === "grid" && sortOption && onSortChange && (
+        {viewMode === "grid" && (
           <GridSortDropdown
             sortOption={sortOption}
-            onSortChange={onSortChange}
+            onSortChange={setSortOption}
           />
         )}
 
