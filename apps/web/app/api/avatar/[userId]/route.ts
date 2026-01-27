@@ -16,10 +16,6 @@ const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 // Request timeout
 const REQUEST_TIMEOUT_MS = 5000;
 
-const USER_AGENT =
-  process.env.EXTERNAL_USER_AGENT ||
-  "domainstack.io/0.1 (+https://domainstack.io)";
-
 export async function GET(
   _request: NextRequest,
   context: RouteContext<"/api/avatar/[userId]">,
@@ -47,7 +43,7 @@ export async function GET(
   try {
     const asset = await safeFetch({
       url: avatarUrl,
-      userAgent: USER_AGENT,
+      userAgent: process.env.EXTERNAL_USER_AGENT,
       headers: { Accept: "image/*" },
       maxBytes: MAX_AVATAR_BYTES,
       timeoutMs: REQUEST_TIMEOUT_MS,

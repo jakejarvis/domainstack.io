@@ -2,8 +2,20 @@ import * as ipaddr from "ipaddr.js";
 import { isExpectedDnsError, resolveHostIps } from "./dns";
 import { SafeFetchError } from "./errors";
 import { isPrivateIp } from "./ip";
-import type { SafeFetchOptions, SafeFetchResult } from "./types";
+import type {
+  SafeFetchLogger,
+  SafeFetchOptions,
+  SafeFetchResult,
+} from "./types";
 import { withTimeout } from "./utils";
+
+/** Default console logger */
+const consoleLogger: SafeFetchLogger = {
+  debug: (obj, msg) => console.debug(msg, obj),
+  info: (obj, msg) => console.info(msg, obj),
+  warn: (obj, msg) => console.warn(msg, obj),
+  error: (obj, msg) => console.error(msg, obj),
+};
 
 // Hostnames that should never be fetched
 const BLOCKED_HOSTNAMES = new Set(["localhost"]);
@@ -39,6 +51,7 @@ export async function safeFetch(
     allowedHosts,
     returnOnDisallowedRedirect = false,
     fetch: customFetch = globalThis.fetch,
+    logger = consoleLogger,
   } = opts;
 
   const initialUrl = toUrl(opts.url, opts.currentUrl);
@@ -55,6 +68,7 @@ export async function safeFetch(
       allowHttp,
       allowedHosts: normalizedAllowedHosts,
       userAgent,
+      logger,
     });
 
     const response = await withTimeout(
@@ -62,7 +76,7 @@ export async function safeFetch(
         customFetch(currentUrl.toString(), {
           method,
           headers: {
-            "User-Agent": userAgent,
+            ...(userAgent ? { "User-Agent": userAgent } : {}),
             ...opts.headers,
           },
           redirect: "manual",
@@ -90,6 +104,15 @@ export async function safeFetch(
 
       const nextUrl = new URL(location, currentUrl);
 
+      logger.debug(
+        {
+          from: currentUrl.toString(),
+          to: nextUrl.toString(),
+          status: response.status,
+        },
+        "following redirect",
+      );
+
       // Check if redirect target is allowed
       if (normalizedAllowedHosts.length > 0) {
         const nextHost = nextUrl.hostname.trim().toLowerCase();
@@ -113,6 +136,10 @@ export async function safeFetch(
       fallbackToGetOnHeadFailure &&
       !retryingWithGet
     ) {
+      logger.debug(
+        { url: currentUrl.toString() },
+        "HEAD returned 405, retrying with GET",
+      );
       method = "GET";
       retryingWithGet = true;
       currentUrl = initialUrl;
@@ -137,8 +164,14 @@ function toUrl(input: string | URL, base?: string | URL): URL {
 
 async function ensureUrlAllowed(
   url: URL,
-  opts: { allowHttp: boolean; allowedHosts: string[]; userAgent: string },
+  opts: {
+    allowHttp: boolean;
+    allowedHosts: string[];
+    userAgent: string | null | undefined;
+    logger: SafeFetchLogger;
+  },
 ): Promise<void> {
+  const { logger } = opts;
   const protocol = url.protocol.toLowerCase();
 
   // Protocol check
@@ -185,8 +218,10 @@ async function ensureUrlAllowed(
       userAgent: opts.userAgent,
       all: true,
     });
+
     records = Array.isArray(result) ? result : [result];
   } catch (err) {
+    logger.warn({ hostname, err }, "DNS lookup failed");
     const message = isExpectedDnsError(err)
       ? "DNS lookup returned no records"
       : err instanceof Error

@@ -17,10 +17,6 @@ const SOCIAL_HEIGHT = 630;
  * @param domain - The domain to fetch
  * @returns HtmlFetchData with meta and preview data
  */
-const USER_AGENT =
-  process.env.EXTERNAL_USER_AGENT ||
-  "domainstack.io/0.1 (+https://domainstack.io)";
-
 export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
   "use step";
 
@@ -36,7 +32,7 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
   try {
     const htmlResult = await safeFetch({
       url: finalUrl,
-      userAgent: USER_AGENT,
+      userAgent: process.env.EXTERNAL_USER_AGENT,
       allowHttp: true,
       timeoutMs: 10_000,
       maxBytes: 512 * 1024,
@@ -147,7 +143,7 @@ export async function fetchRobotsStep(
   try {
     const robotsResult = await safeFetch({
       url: robotsUrl,
-      userAgent: USER_AGENT,
+      userAgent: process.env.EXTERNAL_USER_AGENT,
       allowHttp: true,
       timeoutMs: 8000,
       maxBytes: 256 * 1024,
@@ -200,7 +196,7 @@ export async function processOgImageStep(
   try {
     const asset = await safeFetch({
       url: imageUrl,
-      userAgent: USER_AGENT,
+      userAgent: process.env.EXTERNAL_USER_AGENT,
       currentUrl,
       headers: {
         Accept:

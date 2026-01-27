@@ -380,9 +380,6 @@ importers:
       ipaddr.js:
         specifier: ^2.3.0
         version: 2.3.0
-      lru-cache:
-        specifier: ^11.2.5
-        version: 11.2.5
     devDependencies:
       '@domainstack/typescript-config':
         specifier: workspace:*

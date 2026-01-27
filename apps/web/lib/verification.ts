@@ -14,10 +14,6 @@ import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "verification" });
 
-const USER_AGENT =
-  process.env.EXTERNAL_USER_AGENT ||
-  "domainstack.io/0.1 (+https://domainstack.io)";
-
 export interface VerificationResult {
   verified: boolean;
   method: VerificationMethod | null;
@@ -103,7 +99,7 @@ export async function verifyByHtmlFile(
     try {
       const result = await safeFetch({
         url: urlStr,
-        userAgent: USER_AGENT,
+        userAgent: process.env.EXTERNAL_USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
@@ -132,7 +128,7 @@ export async function verifyByHtmlFile(
     try {
       const result = await safeFetch({
         url: urlStr,
-        userAgent: USER_AGENT,
+        userAgent: process.env.EXTERNAL_USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
@@ -178,7 +174,7 @@ export async function verifyByMetaTag(
     try {
       const result = await safeFetch({
         url: urlStr,
-        userAgent: USER_AGENT,
+        userAgent: process.env.EXTERNAL_USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 10_000,

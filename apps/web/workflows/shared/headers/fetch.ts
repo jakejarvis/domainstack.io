@@ -11,10 +11,6 @@ import type { FetchHeadersResult } from "./types";
 
 const REQUEST_TIMEOUT_MS = 5000;
 
-const USER_AGENT =
-  process.env.EXTERNAL_USER_AGENT ||
-  "domainstack.io/0.1 (+https://domainstack.io)";
-
 interface HeadersFetchInternalSuccess {
   success: true;
   headers: Header[];
@@ -63,7 +59,7 @@ export async function fetchHeadersStep(
     try {
       const final = await safeFetch({
         url: `https://${domain}/`,
-        userAgent: USER_AGENT,
+        userAgent: process.env.EXTERNAL_USER_AGENT,
         allowHttp: true,
         timeoutMs: REQUEST_TIMEOUT_MS,
         maxRedirects: 5,

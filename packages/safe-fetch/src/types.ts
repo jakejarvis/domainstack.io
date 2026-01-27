@@ -1,12 +1,23 @@
 /**
+ * Minimal logger interface for safe-fetch.
+ * Compatible with pino, console, and custom loggers.
+ */
+export interface SafeFetchLogger {
+  debug: (obj: Record<string, unknown>, msg: string) => void;
+  info: (obj: Record<string, unknown>, msg: string) => void;
+  warn: (obj: Record<string, unknown>, msg: string) => void;
+  error: (obj: Record<string, unknown>, msg: string) => void;
+}
+
+/**
  * Options for safeFetch.
  */
 export interface SafeFetchOptions {
   /** URL to fetch (absolute, or relative if currentUrl is provided) */
   url: string | URL;
 
-  /** User-Agent header (required - no default) */
-  userAgent: string;
+  /** User-Agent header (optional) */
+  userAgent: string | null | undefined;
 
   /** Base URL for resolving relative URLs */
   currentUrl?: string | URL;
@@ -46,6 +57,11 @@ export interface SafeFetchOptions {
    * Useful for Next.js caching: `fetch: (url, init) => fetch(url, { ...init, next: { revalidate: 3600 } })`
    */
   fetch?: typeof globalThis.fetch;
+
+  /**
+   * Optional logger for debugging and monitoring.
+   */
+  logger?: SafeFetchLogger;
 }
 
 /**

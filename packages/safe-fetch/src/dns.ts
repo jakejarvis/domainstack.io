@@ -48,7 +48,7 @@ async function queryProvider(
   provider: DohProvider,
   domain: string,
   type: "A" | "AAAA",
-  userAgent: string,
+  userAgent: string | null | undefined,
   timeoutMs: number,
 ): Promise<DnsAnswer[]> {
   const url = new URL(provider.url);
@@ -60,7 +60,7 @@ async function queryProvider(
       fetch(url, {
         headers: {
           Accept: "application/dns-json",
-          "User-Agent": userAgent,
+          ...(userAgent ? { "User-Agent": userAgent } : {}),
         },
         signal,
       }),
@@ -85,8 +85,8 @@ async function queryProvider(
  * Options for resolveHostIps.
  */
 export interface ResolveHostIpsOptions {
-  /** User-Agent header (required) */
-  userAgent: string;
+  /** User-Agent header (optional) */
+  userAgent: string | null | undefined;
   /** Return all addresses instead of just the first */
   all?: boolean;
   /** Timeout per request in ms (default: 2000) */

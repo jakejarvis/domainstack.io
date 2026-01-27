@@ -16,8 +16,7 @@
   "dependencies": {
     "@domainstack/constants": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "ipaddr.js": "^2.3.0",
-    "lru-cache": "^11.2.5"
+    "ipaddr.js": "^2.3.0"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",

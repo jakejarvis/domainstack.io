@@ -23,13 +23,11 @@ export async function fetchDnsRecordsStep(
 
   // Dynamic imports for Node.js modules
   const { isCloudflareIp } = await import("@/lib/cloudflare");
-  const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
-  const {
-    DNS_TYPE_NUMBERS,
-    deduplicateDnsRecords,
-    providerOrderForLookup,
-    queryDohProvider,
-  } = await import("@/lib/dns-utils");
+  const { DNS_TYPE_NUMBERS, DNS_RECORD_TYPES } = await import(
+    "@domainstack/constants"
+  );
+  const { deduplicateDnsRecords, providerOrderForLookup, queryDohProvider } =
+    await import("@/lib/dns-utils");
   const { ttlForDnsRecord } = await import("@/lib/ttl");
 
   const providers = providerOrderForLookup(domain);

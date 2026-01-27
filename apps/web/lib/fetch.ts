@@ -1,4 +1,4 @@
-import { sleep, withRetry, withTimeout } from "@domainstack/safe-fetch";
+import { withRetry, withTimeout } from "@domainstack/safe-fetch";
 
 const DEFAULT_USER_AGENT =
   process.env.EXTERNAL_USER_AGENT ||
@@ -62,6 +62,3 @@ export async function fetchWithTimeoutAndRetry(
     },
   );
 }
-
-// Re-export utilities for convenience
-export { sleep, withRetry, withTimeout };

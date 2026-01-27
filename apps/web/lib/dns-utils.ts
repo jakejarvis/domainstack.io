@@ -1,5 +1,4 @@
 import {
-  DNS_TYPE_NUMBERS,
   type DnsRecordType,
   DOH_PROVIDERS,
   type DohProvider,
@@ -7,9 +6,6 @@ import {
 import type { DnsRecord } from "@domainstack/types";
 import { simpleHash } from "@domainstack/utils";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-
-// Re-export from constants for backwards compatibility
-export { DOH_PROVIDERS, DNS_TYPE_NUMBERS, type DohProvider };
 
 // ============================================================================
 // DNS Record Utilities
