@@ -2,7 +2,6 @@ import "server-only";
 
 import * as ipaddr from "ipaddr.js";
 import { LRUCache } from "lru-cache";
-import { USER_AGENT } from "@/lib/constants/app";
 
 /**
  * Cloudflare IP Ranges URL.
@@ -37,7 +36,9 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   try {
     const res = await fetch(CLOUDFLARE_IPS_URL, {
       headers: {
-        "User-Agent": USER_AGENT,
+        "User-Agent":
+          process.env.EXTERNAL_USER_AGENT ||
+          "domainstack.io/0.1 (+https://domainstack.io)",
       },
       next: {
         revalidate: 604_800, // 1 week

@@ -20,7 +20,6 @@ import {
 import type { Metadata } from "next";
 import Image from "next/image";
 import { BetaBadge } from "@/components/beta-badge";
-import { BASE_URL } from "@/lib/constants/app";
 
 export const metadata: Metadata = {
   title: "MCP (Beta)",
@@ -28,7 +27,7 @@ export const metadata: Metadata = {
     "Connect AI assistants like Claude to Domainstack for domain intelligence lookups.",
 };
 
-const MCP_URL = `${BASE_URL}/api/transport/mcp`;
+const MCP_URL = `${process.env.NEXT_PUBLIC_BASE_URL}/api/transport/mcp`;
 
 // Cursor deeplink: cursor://anysphere.cursor-deeplink/mcp/install?name=...&config=...
 // https://cursor.com/docs/context/mcp/install-links

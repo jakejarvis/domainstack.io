@@ -1,3 +1,4 @@
+import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +15,6 @@ import {
 } from "@domainstack/ui/tooltip";
 import { IconDotsVertical, IconPlus } from "@tabler/icons-react";
 import { Favicon } from "@/components/icons/favicon";
-import { REPOSITORY_SLUG } from "@/lib/constants/app";
 
 type ToolsDropdownProps = {
   domain: string;

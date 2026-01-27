@@ -50,7 +50,7 @@ describe("DnsRecordList", () => {
         ttl: 100,
         priority: 30,
       },
-    ] as unknown as import("@/lib/types/domain/dns").DnsRecord[];
+    ] as unknown as import("@domainstack/types").DnsRecord[];
 
     render(<DnsRecordList records={records} type="MX" />);
 
@@ -74,7 +74,7 @@ describe("DnsRecordList", () => {
   it("shows Cloudflare favicon suffix when isCloudflare", () => {
     const records = [
       { type: "A", name: "", value: "1.2.3.4", ttl: 60, isCloudflare: true },
-    ] as unknown as import("@/lib/types/domain/dns").DnsRecord[];
+    ] as unknown as import("@domainstack/types").DnsRecord[];
 
     render(<DnsRecordList records={records} type="A" />);
     expect(screen.getByText(/icon:cloudflare.com/i)).toBeInTheDocument();

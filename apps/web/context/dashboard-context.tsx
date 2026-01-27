@@ -1,5 +1,7 @@
 "use client";
 
+import type { VerificationMethod } from "@domainstack/constants";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import type { Table } from "@tanstack/react-table";
 import {
   createContext,
@@ -10,7 +12,6 @@ import {
   useRef,
   useState,
 } from "react";
-import type { VerificationMethod } from "@/lib/constants/verification";
 import type {
   AvailableProvidersByCategory,
   DashboardPageSizeOptions,
@@ -18,7 +19,6 @@ import type {
   SortOption,
   StatusFilter,
 } from "@/lib/dashboard-utils";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 // ---------------------------------------------------------------------------
 // Types

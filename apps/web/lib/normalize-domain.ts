@@ -1,6 +1,6 @@
+import { BLACKLISTED_SUFFIXES } from "@domainstack/constants";
 import { LRUCache } from "lru-cache";
 import { toRegistrableDomain as toRegistrableDomainRdapper } from "rdapper";
-import { BLACKLISTED_SUFFIXES } from "@/lib/constants/domain-validation";
 import { normalizeDomainInput } from "@/lib/domain-utils";
 
 /**

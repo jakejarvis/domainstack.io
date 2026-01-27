@@ -45,7 +45,6 @@ Do not proceed with commits until all three checks are clean.
 - **Files/folders:** kebab-case (`user-settings.ts`)
 - **React components:** PascalCase exports (`UserSettings`)
 - **Helpers/hooks:** camelCase named exports (`useUserSettings`)
-- **Constants:** Organize in `lib/constants/` submodules
 
 ### Imports
 - Use `@/...` path aliases for app-specific imports
@@ -54,10 +53,10 @@ Do not proceed with commits until all three checks are clean.
 - Client components must start with `"use client"`
 
 ### Types
-- Plain TypeScript in `lib/types/` for internal data structures
-- Enum const arrays in `lib/types/primitives.ts` (Drizzle pgEnums derive from these)
+- Shared domain types in `@domainstack/types` package
+- Enum const arrays (primitives) in `@domainstack/constants` (Drizzle pgEnums derive from these)
 - Do NOT use Zod for simple enums or internal database types
-- Import types from `@/lib/types`
+- Import types from `@domainstack/types`
 
 ### Tailwind Classes
 - Biome enforces sorted Tailwind classes via `useSortedClasses` rule
@@ -335,6 +334,14 @@ domainstack.io/
 │       ├── emails/             # React Email templates
 │       └── trpc/               # tRPC client setup
 ├── packages/
+│   ├── constants/              # Shared constants (@domainstack/constants)
+│   │   └── src/
+│   │       ├── primitives/     # Enum arrays (DNS types, plans, providers, etc.)
+│   │       ├── cache/          # TTL constants
+│   │       └── validation/     # Domain validation constants
+│   ├── types/                  # Shared TypeScript types (@domainstack/types)
+│   │   └── src/
+│   │       └── domain/         # Domain-related types (DNS, certs, headers, etc.)
 │   ├── ui/                     # Shared UI component library (@domainstack/ui)
 │   │   └── src/
 │   │       ├── components/     # Framework-agnostic UI primitives
@@ -351,6 +358,17 @@ domainstack.io/
 All commands run from the **monorepo root** via Turborepo.
 
 ### Package Imports
+
+**Constants** (`@domainstack/constants`):
+```typescript
+// Pure constants - no runtime dependencies
+import { DNS_RECORD_TYPES, PLANS, REPOSITORY_SLUG } from "@domainstack/constants";
+```
+
+**Types** (`@domainstack/types`):
+```typescript
+import type { DnsRecord, RegistrationResponse, Certificate } from "@domainstack/types";
+```
 
 **UI Components** (`@domainstack/ui`):
 ```typescript

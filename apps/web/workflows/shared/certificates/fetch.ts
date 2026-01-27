@@ -5,8 +5,8 @@
  * This step is shared between the dedicated certificatesWorkflow and internal workflows.
  */
 
+import type { Certificate } from "@domainstack/types";
 import { RetryableError } from "workflow";
-import type { Certificate } from "@/lib/types/domain/certificates";
 import type {
   CertificatesProcessedData,
   FetchCertificatesResult,

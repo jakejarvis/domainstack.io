@@ -1,7 +1,7 @@
-import type { DnsRecordType } from "@/lib/constants/dns";
+import type { DnsRecordType } from "@domainstack/constants";
+import type { DnsRecord } from "@domainstack/types";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { simpleHash } from "@/lib/simple-hash";
-import type { DnsRecord } from "@/lib/types/domain/dns";
 
 // ============================================================================
 // DNS Record Utilities

@@ -1,3 +1,4 @@
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import {
   Empty,
@@ -25,7 +26,6 @@ import {
   useDashboardSelection,
 } from "@/context/dashboard-context";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type DashboardContentProps = {
   domains: TrackedDomainWithDetails[];

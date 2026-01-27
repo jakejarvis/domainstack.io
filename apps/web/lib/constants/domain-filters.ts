@@ -2,7 +2,7 @@ import type { HealthFilter } from "@/lib/dashboard-utils";
 
 /**
  * Domain filter constants for dashboard.
- * Types are in @/lib/types/domain-filters.ts.
+ * Types are in @domainstack/types
  */
 
 /** Filter options for domain health status */

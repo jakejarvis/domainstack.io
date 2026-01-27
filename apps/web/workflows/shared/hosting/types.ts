@@ -5,7 +5,7 @@
  * Response types (HostingResponse) remain in lib/types/domain/hosting.ts.
  */
 
-import type { ProviderRef } from "@/lib/types/domain/provider-ref";
+import type { ProviderRef } from "@domainstack/types";
 
 /**
  * Internal data structure for provider detection result.

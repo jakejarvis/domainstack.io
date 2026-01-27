@@ -1,3 +1,4 @@
+import type { VerificationMethod } from "@domainstack/constants";
 import { EmailBox, EmailBoxText } from "@/components/email/email-box";
 import { EmailButton } from "@/components/email/email-button";
 import { EmailLayout } from "@/components/email/email-layout";
@@ -8,8 +9,6 @@ import {
   EmailLink,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
-import type { VerificationMethod } from "@/lib/constants/verification";
 
 type VerificationFailingEmailProps = {
   userName: string;
@@ -59,7 +58,9 @@ function VerificationFailingEmail({
         dashboard.
       </EmailText>
 
-      <EmailButton href={`${BASE_URL}/dashboard`}>View Dashboard</EmailButton>
+      <EmailButton href={`${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`}>
+        View Dashboard
+      </EmailButton>
 
       <EmailHr />
 
@@ -67,7 +68,10 @@ function VerificationFailingEmail({
         You received this email because you&apos;re tracking {domainName} on{" "}
         <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
         can manage your notification settings in your{" "}
-        <EmailLink href={`${BASE_URL}/settings`}>dashboard</EmailLink>.
+        <EmailLink href={`${process.env.NEXT_PUBLIC_BASE_URL}/settings`}>
+          dashboard
+        </EmailLink>
+        .
       </EmailFooter>
     </EmailLayout>
   );

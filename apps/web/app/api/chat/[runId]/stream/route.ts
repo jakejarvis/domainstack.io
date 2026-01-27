@@ -8,14 +8,14 @@
  * network issues or Vercel Function timeouts.
  */
 
+import {
+  RATE_LIMIT_ANONYMOUS,
+  RATE_LIMIT_AUTHENTICATED,
+} from "@domainstack/constants";
 import { createUIMessageStreamResponse } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { getRun } from "workflow/api";
 import { auth } from "@/lib/auth";
-import {
-  RATE_LIMIT_ANONYMOUS,
-  RATE_LIMIT_AUTHENTICATED,
-} from "@/lib/constants/ai";
 import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 

@@ -8,7 +8,6 @@ import {
   EmailLink,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
 
 type VerificationRevokedEmailProps = {
   userName: string;
@@ -46,7 +45,9 @@ function VerificationRevokedEmail({
         complete the verification process again.
       </EmailText>
 
-      <EmailButton href={`${BASE_URL}/dashboard`}>Re-add Domain</EmailButton>
+      <EmailButton href={`${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`}>
+        Re-add Domain
+      </EmailButton>
 
       <EmailHr />
 
@@ -54,7 +55,10 @@ function VerificationRevokedEmail({
         You received this email because you were tracking {domainName} on{" "}
         <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
         can manage your notification settings in your{" "}
-        <EmailLink href={`${BASE_URL}/settings`}>dashboard</EmailLink>.
+        <EmailLink href={`${process.env.NEXT_PUBLIC_BASE_URL}/settings`}>
+          dashboard
+        </EmailLink>
+        .
       </EmailFooter>
     </EmailLayout>
   );

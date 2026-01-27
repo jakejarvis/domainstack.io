@@ -1,9 +1,8 @@
 import "server-only";
 
 import crypto from "node:crypto";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { generateIcsCalendar, type IcsCalendar, type IcsEvent } from "ts-ics";
-import { BASE_URL } from "@/lib/constants/app";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 /**
  * Result of generating a calendar feed.
@@ -47,7 +46,7 @@ export function generateCalendarFeed(
       duration: { days: 1 },
       summary: `🌐 ${domain.domainName} expires`,
       description: buildEventDescription(domain),
-      url: `${BASE_URL}/dashboard?domainId=${domain.id}`,
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?domainId=${domain.id}`,
       categories: ["Domain Expiration"],
     }));
 
@@ -93,7 +92,9 @@ function buildEventDescription(domain: TrackedDomainWithDetails): string {
   }
 
   lines.push("");
-  lines.push(`View more details: ${BASE_URL}/dashboard?domainId=${domain.id}`);
+  lines.push(
+    `View more details: ${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?domainId=${domain.id}`,
+  );
 
   return lines.join("\n");
 }

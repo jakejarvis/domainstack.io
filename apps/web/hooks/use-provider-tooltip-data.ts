@@ -1,10 +1,12 @@
+import type { ProviderCategory } from "@domainstack/constants";
+import type {
+  DnsRecord,
+  ProviderInfo,
+  RegistrationContact,
+} from "@domainstack/types";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import type { ProviderCategory } from "@/lib/constants/providers";
 import { useTRPC } from "@/lib/trpc/client";
-import type { DnsRecord } from "@/lib/types/domain/dns";
-import type { RegistrationContact } from "@/lib/types/domain/registration";
-import type { ProviderInfo } from "@/lib/types/provider";
 
 interface UseProviderTooltipDataParams {
   provider: ProviderInfo;

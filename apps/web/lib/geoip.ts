@@ -1,8 +1,8 @@
+import type { GeoIpData } from "@domainstack/types";
 import { cache } from "react";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { getRedis } from "@/lib/redis";
-import type { GeoIpData } from "@/lib/types/domain/hosting";
 
 const logger = createLogger({ source: "geoip" });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import {
   Tooltip,
@@ -14,7 +15,6 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "motion/react";
-import { CHATBOT_NAME } from "@/lib/constants/ai";
 
 const MotionButton = motion.create(Button);
 

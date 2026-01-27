@@ -1,3 +1,4 @@
+import type { ProviderRef } from "@domainstack/types";
 import { cacheLife } from "next/cache";
 import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
@@ -6,7 +7,6 @@ import { normalizeDomainInput } from "@/lib/domain-utils";
 import { createLogger } from "@/lib/logger/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { hexToRGBA, loadGoogleFont } from "@/lib/og-utils";
-import type { ProviderRef } from "@/lib/types/domain/provider-ref";
 import { createCaller } from "@/server/routers/_app";
 
 const SIZE = { width: 1200, height: 630 };

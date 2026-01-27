@@ -1,6 +1,5 @@
 import * as ipaddr from "ipaddr.js";
 import { withTimeout } from "@/lib/async";
-import { USER_AGENT } from "@/lib/constants/app";
 import { isExpectedDnsError } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { dohLookup } from "@/lib/resolver";
@@ -139,7 +138,9 @@ export async function safeFetch(
         fetch(currentUrl.toString(), {
           method,
           headers: {
-            "User-Agent": USER_AGENT,
+            "User-Agent":
+              process.env.EXTERNAL_USER_AGENT ||
+              "domainstack.io/0.1 (+https://domainstack.io)",
             ...normalizeHeaders(opts.headers),
           },
           redirect: "manual",

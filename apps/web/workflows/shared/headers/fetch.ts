@@ -5,8 +5,8 @@
  * This step is shared between the dedicated headersWorkflow and internal workflows.
  */
 
+import type { Header } from "@domainstack/types";
 import { RetryableError } from "workflow";
-import type { Header } from "@/lib/types/domain/headers";
 import type { FetchHeadersResult } from "./types";
 
 const REQUEST_TIMEOUT_MS = 5000;

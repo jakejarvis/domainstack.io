@@ -32,7 +32,7 @@ describe("DnsSection", () => {
       { type: "MX", name: "mx", value: "mx.test.invalid", priority: 10 },
       { type: "TXT", name: "txt", value: "v=spf1" },
       { type: "NS", name: "ns", value: "ns1.test.invalid" },
-    ] as unknown as import("@/lib/types/domain/dns").DnsRecord[];
+    ] as unknown as import("@domainstack/types").DnsRecord[];
 
     render(<DnsSection data={{ records, resolver: null }} />);
 

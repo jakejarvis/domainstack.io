@@ -1,3 +1,7 @@
+/**
+ * Cache TTL constants for database and CDN caching.
+ */
+
 // Time constants (in seconds)
 const ONE_MINUTE = 60;
 const ONE_HOUR = ONE_MINUTE * 60;

@@ -8,7 +8,7 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
-import type { DnsRecordType } from "@/lib/constants/dns";
+import type { DnsRecordType } from "@domainstack/constants";
 import type { PersistResult } from "@/lib/workflow/types";
 import type { DnsFetchData } from "./types";
 
@@ -29,7 +29,7 @@ export async function persistDnsRecordsStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { DNS_RECORD_TYPES } = await import("@/lib/constants/dns");
+  const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
   const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
   const { replaceDns } = await import("@/lib/db/repos/dns");
 

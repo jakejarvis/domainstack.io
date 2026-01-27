@@ -1,8 +1,8 @@
 "use no memo"; // Disable React Compiler memoization - TanStack Table has issues with it
 
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
 type VerifiedTableRowProps = {

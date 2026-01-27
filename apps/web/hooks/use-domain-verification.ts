@@ -1,11 +1,11 @@
+import type { VerificationMethod } from "@domainstack/constants";
+import type { ResumeDomainData } from "@domainstack/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { analytics } from "@/lib/analytics/client";
-import type { VerificationMethod } from "@/lib/constants/verification";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 import { useTRPC } from "@/lib/trpc/client";
-import type { ResumeDomainData } from "@/lib/types/verification";
 import {
   createInitialState,
   verificationReducer,

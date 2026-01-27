@@ -1,5 +1,5 @@
+import type { VerificationMethod } from "@domainstack/constants";
 import { FatalError } from "workflow";
-import type { VerificationMethod } from "@/lib/constants/verification";
 import { verifyDomainOwnershipByMethod } from "@/workflows/shared/verify-domain";
 
 export interface ReverifyOwnershipWorkflowInput {
@@ -141,7 +141,7 @@ async function determineFailureAction(
 
   const { differenceInDays: diffInDays } = await import("date-fns");
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
-    "@/lib/constants/verification"
+    "@domainstack/constants"
   );
   const { markVerificationFailing, revokeVerification } = await import(
     "@/lib/db/repos/tracked-domains"
@@ -219,7 +219,7 @@ async function sendVerificationFailingEmail(
     "@/emails/verification-failing"
   );
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
-    "@/lib/constants/verification"
+    "@domainstack/constants"
   );
   const {
     createNotification,

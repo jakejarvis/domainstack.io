@@ -1,5 +1,6 @@
 import "server-only";
 
+import { PLAN_QUOTAS, type PLANS } from "@domainstack/constants";
 import {
   and,
   asc,
@@ -10,7 +11,6 @@ import {
   isNotNull,
   isNull,
 } from "drizzle-orm";
-import { PLAN_QUOTAS, type PLANS } from "@/lib/constants/plan-quotas";
 import { db } from "@/lib/db/client";
 import { userSubscriptions, users, userTrackedDomains } from "@/lib/db/schema";
 import { createLogger } from "@/lib/logger/server";

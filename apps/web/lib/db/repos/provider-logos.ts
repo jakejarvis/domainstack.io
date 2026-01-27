@@ -1,10 +1,10 @@
 import "server-only";
 
+import type { ProviderLogoResponse } from "@domainstack/types";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { providerLogos } from "@/lib/db/schema";
-import type { ProviderLogoResponse } from "@/lib/types/domain/icon";
 import type { CacheResult } from "./types";
 
 type ProviderLogoInsert = InferInsertModel<typeof providerLogos>;

@@ -2,7 +2,7 @@
  * DNS types - Plain TypeScript interfaces.
  */
 
-import type { DnsRecordType } from "@/lib/constants/dns";
+import type { DnsRecordType } from "@domainstack/constants";
 
 /**
  * A single DNS record.

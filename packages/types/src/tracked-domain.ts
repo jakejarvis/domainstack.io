@@ -7,7 +7,7 @@
 import type {
   VerificationMethod,
   VerificationStatus,
-} from "@/lib/constants/verification";
+} from "@domainstack/constants";
 import type { ProviderInfo } from "./provider";
 
 /**

@@ -13,7 +13,7 @@ import type {
   OpenGraphMeta,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/types/domain/seo";
+} from "@domainstack/types";
 import type { PersistResult } from "@/lib/workflow/types";
 
 /**

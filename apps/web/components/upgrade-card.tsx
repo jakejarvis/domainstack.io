@@ -1,6 +1,6 @@
+import { PLAN_QUOTAS } from "@domainstack/constants";
 import { IconRocket, IconShoppingCart } from "@tabler/icons-react";
 import { UpgradeButton } from "@/components/upgrade-button";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 import { cn } from "@/lib/utils";
 

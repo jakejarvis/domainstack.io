@@ -5,8 +5,8 @@
  * and notification sending for monitoring and expiry workflows.
  */
 
-import type { NotificationType } from "@/lib/constants/notifications";
-import type { UserNotificationPreferences } from "@/lib/types/notifications";
+import type { NotificationType } from "@domainstack/constants";
+import type { UserNotificationPreferences } from "@domainstack/types";
 
 export interface NotificationChannels {
   shouldSendEmail: boolean;

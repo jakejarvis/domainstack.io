@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import type { InferInsertModel } from "drizzle-orm";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/client";
@@ -10,10 +11,6 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import type {
-  Certificate,
-  CertificatesResponse,
-} from "@/lib/types/domain/certificates";
 import type { CacheResult } from "./types";
 
 type CertificateInsert = InferInsertModel<typeof certificates>;

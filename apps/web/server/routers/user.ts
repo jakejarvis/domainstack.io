@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { analytics } from "@/lib/analytics/server";
-import { BASE_URL } from "@/lib/constants/app";
 import {
   deleteCalendarFeed,
   disableCalendarFeed,
@@ -41,7 +40,7 @@ const UserNotificationPreferencesSchema = z
  * Build the full calendar feed URL from a token.
  */
 function buildCalendarFeedUrl(token: string): string {
-  return `${BASE_URL}/dashboard/feed.ics?token=${encodeURIComponent(token)}`;
+  return `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/feed.ics?token=${encodeURIComponent(token)}`;
 }
 
 export const userRouter = createTRPCRouter({

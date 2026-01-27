@@ -133,7 +133,6 @@ export async function fetchRobotsStep(
   "use step";
 
   // Dynamic imports for Node.js modules
-  const { USER_AGENT } = await import("@/lib/constants/app");
   const { safeFetch } = await import("@/lib/safe-fetch");
   const { parseRobotsTxt } = await import("@/lib/seo");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
@@ -147,7 +146,12 @@ export async function fetchRobotsStep(
       timeoutMs: 8000,
       maxBytes: 256 * 1024,
       maxRedirects: 5,
-      headers: { Accept: "text/plain", "User-Agent": USER_AGENT },
+      headers: {
+        Accept: "text/plain",
+        "User-Agent":
+          process.env.EXTERNAL_USER_AGENT ||
+          "domainstack.io/0.1 (+https://domainstack.io)",
+      },
     });
 
     if (robotsResult.status >= 200 && robotsResult.status < 300) {

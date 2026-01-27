@@ -1,10 +1,12 @@
 /**
  * Notification system constants and derived types.
- * Note: UI metadata (icons) is in ./notification-ui.ts to avoid loading React in Node.js contexts.
+ * Note: UI metadata (icons) is in apps/web/lib/constants/notification-ui.ts to avoid loading React in Node.js contexts.
  */
 
 // Valid notification channels
 export const NOTIFICATION_CHANNELS = ["in-app", "email"] as const;
+
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 // Notification categories for user preferences
 export const NOTIFICATION_CATEGORIES = [

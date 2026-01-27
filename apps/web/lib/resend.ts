@@ -1,11 +1,10 @@
 import "server-only";
 
-import { Resend } from "resend";
 import {
-  RESEND_FROM_EMAIL,
   RESEND_LOGO_CONTENT_ID,
-  RESEND_LOGO_REMOTE_URL,
-} from "@/lib/constants/email";
+  RESEND_LOGO_PATH,
+} from "@domainstack/constants";
+import { Resend } from "resend";
 import { logger } from "@/lib/logger/server";
 
 const apiKey = process.env.RESEND_API_KEY;
@@ -38,7 +37,7 @@ export async function sendEmail(
   }
 
   const logoAttachment = {
-    path: RESEND_LOGO_REMOTE_URL,
+    path: `${process.env.NEXT_PUBLIC_BASE_URL}${RESEND_LOGO_PATH}`,
     filename: "logo.png",
     contentId: RESEND_LOGO_CONTENT_ID,
   };
@@ -47,7 +46,7 @@ export async function sendEmail(
 
   return resend.emails.send(
     {
-      from: `Domainstack <${RESEND_FROM_EMAIL}>`,
+      from: `Domainstack <${process.env.RESEND_FROM_EMAIL || "alerts@domainstack.io"}>`,
       ...params,
       attachments: [...existingAttachments, logoAttachment],
     } as Parameters<typeof Resend.prototype.emails.send>[0],

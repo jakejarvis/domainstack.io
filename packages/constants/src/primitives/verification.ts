@@ -1,6 +1,5 @@
 /**
  * Domain verification system constants and derived types.
- * Centralized configuration for verification methods, grace periods, and format strings.
  */
 
 // ============================================================================

@@ -1,3 +1,4 @@
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent } from "@domainstack/ui/card";
 import {
@@ -23,7 +24,6 @@ import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-ban
 import { Favicon } from "@/components/icons/favicon";
 import { useDashboardActions } from "@/context/dashboard-context";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type ArchivedDomainsListProps = {
   domains: TrackedDomainWithDetails[];

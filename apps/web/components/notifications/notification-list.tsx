@@ -1,5 +1,6 @@
 "use client";
 
+import type { NotificationData } from "@domainstack/types";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import { Spinner } from "@domainstack/ui/spinner";
 import { IconXboxX } from "@tabler/icons-react";
@@ -8,7 +9,6 @@ import type { RefObject } from "react";
 import { NotificationCard } from "@/components/notifications/notification-card";
 import { NotificationEmptyState } from "@/components/notifications/notification-empty-state";
 import { NotificationListSkeleton } from "@/components/notifications/notification-list-skeleton";
-import type { NotificationData } from "@/lib/types/notifications";
 
 interface NotificationListProps {
   notifications: NotificationData[];

@@ -1,3 +1,4 @@
+import type { DnsRecord, Header } from "@domainstack/types";
 import {
   afterAll,
   afterEach,
@@ -8,8 +9,6 @@ import {
   it,
   vi,
 } from "vitest";
-import type { DnsRecord } from "@/lib/types/domain/dns";
-import type { Header } from "@/lib/types/domain/headers";
 import { server } from "@/mocks/server";
 
 // Mock Edge Config for provider catalogs

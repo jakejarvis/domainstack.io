@@ -1,3 +1,23 @@
+import {
+  DNS_RECORD_TYPES,
+  NOTIFICATION_CHANNELS,
+  PLANS,
+  PROVIDER_CATEGORIES,
+  PROVIDER_SOURCES,
+  REGISTRATION_SOURCES,
+  VERIFICATION_METHODS,
+  VERIFICATION_STATUSES,
+} from "@domainstack/constants";
+import type {
+  GeneralMeta,
+  Header,
+  OpenGraphMeta,
+  RegistrationContact,
+  RegistrationNameserver,
+  RegistrationStatus,
+  RobotsTxt,
+  TwitterMeta,
+} from "@domainstack/types";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
@@ -13,30 +33,6 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
-import { NOTIFICATION_CHANNELS } from "@/lib/constants/notifications";
-import { PLANS } from "@/lib/constants/plan-quotas";
-import {
-  PROVIDER_CATEGORIES,
-  PROVIDER_SOURCES,
-} from "@/lib/constants/providers";
-import { REGISTRATION_SOURCES } from "@/lib/constants/registration";
-import {
-  VERIFICATION_METHODS,
-  VERIFICATION_STATUSES,
-} from "@/lib/constants/verification";
-import type { Header } from "@/lib/types/domain/headers";
-import type {
-  RegistrationContact,
-  RegistrationNameserver,
-  RegistrationStatus,
-} from "@/lib/types/domain/registration";
-import type {
-  GeneralMeta,
-  OpenGraphMeta,
-  RobotsTxt,
-  TwitterMeta,
-} from "@/lib/types/domain/seo";
 
 // Enums - const arrays define values; Drizzle pgEnums use them directly.
 export const providerCategory = pgEnum(

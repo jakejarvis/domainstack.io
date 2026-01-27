@@ -1,5 +1,5 @@
-import type { VerificationMethod } from "@/lib/constants/verification";
-import { VERIFICATION_METHODS } from "@/lib/constants/verification";
+import type { VerificationMethod } from "@domainstack/constants";
+import { VERIFICATION_METHODS } from "@domainstack/constants";
 import {
   verifyDomainByDns,
   verifyDomainByHtmlFile,

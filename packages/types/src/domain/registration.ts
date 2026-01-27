@@ -2,10 +2,8 @@
  * Registration types - Plain TypeScript interfaces.
  */
 
-import type { REGISTRATION_SOURCES } from "@/lib/constants/registration";
+import type { RegistrationSource } from "@domainstack/constants";
 import type { ProviderRef } from "./provider-ref";
-
-type RegistrationSource = (typeof REGISTRATION_SOURCES)[number];
 
 /**
  * Type of registration contact.

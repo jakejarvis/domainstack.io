@@ -1,5 +1,6 @@
 "use client";
 
+import { APPLE_SHORTCUT_ID } from "@domainstack/constants";
 import {
   Accordion,
   AccordionContent,
@@ -25,13 +26,12 @@ import {
   IconSquareRoundedPlus2,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { APPLE_SHORTCUT_ID, BASE_URL } from "@/lib/constants/app";
 
 export function BookmarkletContent() {
   // a little hack to "unsafely" use raw javascript as a link
   const hrefScript = (element: HTMLAnchorElement | null) => {
     if (!element) return;
-    const openScript = `var t=window.open("${BASE_URL}/"+location.hostname,"_blank");t.focus()`;
+    const openScript = `var t=window.open("${process.env.NEXT_PUBLIC_BASE_URL}/"+location.hostname,"_blank");t.focus()`;
     element.href = `javascript:(function(){${openScript}})();`;
   };
 
@@ -182,7 +182,7 @@ export function BookmarkletContent() {
                       href={`raycast://extensions/raycast/raycast/create-quicklink?context=${encodeURIComponent(
                         JSON.stringify({
                           name: "Inspect Domain",
-                          link: `${BASE_URL}/?q={argument name="domain"}`,
+                          link: `${process.env.NEXT_PUBLIC_BASE_URL}/?q={argument name="domain"}`,
                           icon: "magnifying-glass-16",
                         }),
                       )}`}

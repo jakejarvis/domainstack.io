@@ -52,6 +52,8 @@ domainstack.io/
 ├── apps/
 │   └── web/                 # Next.js application
 ├── packages/
+│   ├── constants/           # Shared constants (enums, TTLs, validation)
+│   ├── types/               # Shared TypeScript types
 │   ├── typescript-config/   # Shared TypeScript configs
 │   └── ui/                  # Shared UI primitives
 ├── turbo.json               # Turborepo task configuration

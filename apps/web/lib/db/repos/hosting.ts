@@ -1,4 +1,6 @@
 import "server-only";
+
+import type { HostingResponse } from "@domainstack/types";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -8,7 +10,6 @@ import {
   hosting as hostingTable,
   providers as providersTable,
 } from "@/lib/db/schema";
-import type { HostingResponse } from "@/lib/types/domain/hosting";
 import type { CacheResult } from "./types";
 
 type HostingInsert = InferInsertModel<typeof hostingTable>;

@@ -1,6 +1,3 @@
-import { TRPCError } from "@trpc/server";
-import { start } from "workflow/api";
-import z from "zod";
 import {
   MAX_AGE_CERTIFICATES,
   MAX_AGE_DNS,
@@ -8,7 +5,10 @@ import {
   MAX_AGE_HOSTING,
   MAX_AGE_REGISTRATION,
   MAX_AGE_SEO,
-} from "@/lib/constants/ttl";
+} from "@domainstack/constants";
+import { TRPCError } from "@trpc/server";
+import { start } from "workflow/api";
+import z from "zod";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { withSwrCache } from "@/lib/workflow/swr";
 import {

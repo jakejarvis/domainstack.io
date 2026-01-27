@@ -1,3 +1,10 @@
+import type { NotificationType } from "@domainstack/constants";
+import {
+  CERTIFICATE_EXPIRY_THRESHOLDS,
+  CERTIFICATE_THRESHOLD_TO_TYPE,
+  DOMAIN_EXPIRY_THRESHOLDS,
+  DOMAIN_THRESHOLD_TO_TYPE,
+} from "@domainstack/constants";
 import {
   IconAlertTriangle,
   IconBell,
@@ -7,13 +14,6 @@ import {
   IconIdBadge2,
   IconShieldExclamation,
 } from "@tabler/icons-react";
-import type { NotificationType } from "@/lib/constants/notifications";
-import {
-  CERTIFICATE_EXPIRY_THRESHOLDS,
-  CERTIFICATE_THRESHOLD_TO_TYPE,
-  DOMAIN_EXPIRY_THRESHOLDS,
-  DOMAIN_THRESHOLD_TO_TYPE,
-} from "@/lib/constants/notifications";
 
 // Pre-sorted thresholds (ascending) for efficient lookup - sort once at module load
 const SORTED_DOMAIN_THRESHOLDS = [...DOMAIN_EXPIRY_THRESHOLDS].sort(

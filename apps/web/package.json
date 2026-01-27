@@ -24,6 +24,8 @@
     "@ai-sdk/gateway": "^3.0.24",
     "@ai-sdk/react": "^3.0.55",
     "@bprogress/next": "^3.2.12",
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/types": "workspace:*",
     "@domainstack/ui": "workspace:*",
     "@ghostery/adblocker-puppeteer": "^2.13.4",
     "@icons-pack/react-simple-icons": "^13.8.0",

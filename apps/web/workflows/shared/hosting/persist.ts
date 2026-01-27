@@ -8,7 +8,7 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
-import type { GeoIpData } from "@/lib/types/domain/hosting";
+import type { GeoIpData } from "@domainstack/types";
 import type { PersistResult } from "@/lib/workflow/types";
 import type { ProviderDetectionData } from "./types";
 

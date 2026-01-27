@@ -1,9 +1,9 @@
+import { PLAN_QUOTAS } from "@domainstack/constants";
 import { IconCalendarDot } from "@tabler/icons-react";
 import { differenceInDays, format, formatDistanceToNow } from "date-fns";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
 export function SubscriptionEndingBanner() {
   const {

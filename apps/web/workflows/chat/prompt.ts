@@ -8,7 +8,7 @@ export async function buildSystemPromptStep(domain?: string): Promise<string> {
   const { isValidDomain } = await import("@/lib/domain-utils");
   const validatedDomain = domain && isValidDomain(domain) ? domain : undefined;
 
-  const { CHATBOT_NAME } = await import("@/lib/constants/ai");
+  const { CHATBOT_NAME } = await import("@domainstack/constants");
 
   return `You are ${CHATBOT_NAME}, Domainstack's domain intelligence assistant. You're knowledgeable, a bit nerdy about DNS and internet infrastructure, and genuinely enjoy helping people understand domains. You have a dry wit.
 

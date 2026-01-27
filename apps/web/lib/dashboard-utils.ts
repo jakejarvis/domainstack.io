@@ -1,6 +1,6 @@
+import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import type { SortingState } from "@tanstack/react-table";
-import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 // ---------------------------------------------------------------------------
 // Provider Types

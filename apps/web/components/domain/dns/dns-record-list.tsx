@@ -1,3 +1,4 @@
+import type { DnsRecord } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -7,7 +8,6 @@ import { useMemo } from "react";
 import { TtlBadge } from "@/components/domain/dns/ttl-badge";
 import { KeyValue } from "@/components/domain/key-value";
 import { Favicon } from "@/components/icons/favicon";
-import type { DnsRecord } from "@/lib/types/domain/dns";
 
 export function DnsRecordList({
   records,

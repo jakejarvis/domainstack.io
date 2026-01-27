@@ -31,11 +31,14 @@ export async function lookupWhoisStep(
 
   // Dynamic imports for Node.js modules
   const { lookup } = await import("rdapper");
-  const { USER_AGENT } = await import("@/lib/constants/app");
 
   // Fetch RDAP bootstrap data with Next.js Data Cache (1 week TTL)
   const bootstrapRes = await fetch(RDAP_BOOTSTRAP_URL, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: {
+      "User-Agent":
+        process.env.EXTERNAL_USER_AGENT ||
+        "domainstack.io/0.1 (+https://domainstack.io)",
+    },
     next: { revalidate: 604_800 }, // 1 week
   });
 

@@ -9,7 +9,6 @@ import { CookiePromptGeofenced } from "@/components/consent/cookie-prompt-geofen
 import { AppFooter } from "@/components/layout/app-footer";
 import { AppHeader } from "@/components/layout/app-header";
 import { Toaster } from "@/components/ui/sonner";
-import { BASE_URL } from "@/lib/constants/app";
 
 import "./globals.css";
 
@@ -20,7 +19,9 @@ export const metadata: Metadata = {
   },
   description:
     "Instant lookups for WHOIS, DNS, hosting, certificates, SEO and more, plus free domain tracking and change alerts.",
-  metadataBase: new URL(BASE_URL),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+  ),
   alternates: {
     canonical: "/",
   },

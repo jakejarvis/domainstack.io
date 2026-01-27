@@ -1,3 +1,5 @@
+import type { VerificationMethod } from "@domainstack/constants";
+import type { VerificationState } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { CopyableField } from "@domainstack/ui/copyable-field";
 import {
@@ -10,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@domainstack/ui/tabs";
 import { IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { VerificationFailed } from "@/components/dashboard/add-domain/verification-failed";
-import type { VerificationMethod } from "@/lib/constants/verification";
-import type { VerificationState } from "@/lib/types/verification";
 import { buildVerificationInstructions } from "@/lib/verification-instructions";
 
 type StepVerifyOwnershipProps = {

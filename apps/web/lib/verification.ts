@@ -1,5 +1,4 @@
-import * as cheerio from "cheerio";
-import type { VerificationMethod } from "@/lib/constants/verification";
+import type { VerificationMethod } from "@domainstack/constants";
 import {
   DNS_VERIFICATION_HOST_LEGACY,
   DNS_VERIFICATION_PREFIX,
@@ -7,7 +6,8 @@ import {
   HTML_FILE_DIR,
   HTML_FILE_PATH_LEGACY,
   META_TAG_NAME,
-} from "@/lib/constants/verification";
+} from "@domainstack/constants";
+import * as cheerio from "cheerio";
 import { providerOrderForLookup, queryDohProvider } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 import { safeFetch } from "@/lib/safe-fetch";

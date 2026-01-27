@@ -8,7 +8,7 @@
  * should be done at the workflow level using scheduleRevalidationBatchStep.
  */
 
-import type { RegistrationResponse } from "@/lib/types/domain/registration";
+import type { RegistrationResponse } from "@domainstack/types";
 import type { RegistrationPersistResult } from "@/lib/workflow/types";
 
 /**

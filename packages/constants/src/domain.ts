@@ -1,3 +1,7 @@
+/**
+ * Domain validation rules.
+ */
+
 // File-like suffixes and extensions that should not be treated as TLDs/domains
 // This is an allowlist of obvious web asset extensions and build artifacts
 // that commonly appear in 404s (e.g., sourcemaps) and should be ignored.

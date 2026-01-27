@@ -1,3 +1,4 @@
+import type { Certificate, CertificatesResponse } from "@domainstack/types";
 import { Badge } from "@domainstack/ui/badge";
 import { Button } from "@domainstack/ui/button";
 import {
@@ -29,10 +30,6 @@ import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type {
-  Certificate,
-  CertificatesResponse,
-} from "@/lib/types/domain/certificates";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const sans = Array.isArray(cert.altNames)

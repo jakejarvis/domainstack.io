@@ -1,5 +1,4 @@
 import { type TimeoutAndRetryOptions, withTimeoutAndRetry } from "@/lib/async";
-import { USER_AGENT } from "@/lib/constants/app";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "fetch" });
@@ -62,7 +61,11 @@ export async function fetchWithTimeoutAndRetry(
   return withTimeoutAndRetry(async (signal) => {
     // Robust header merging that handles Headers instances, objects, and undefined
     const headers = new Headers(init.headers ?? undefined);
-    headers.set("User-Agent", USER_AGENT);
+    headers.set(
+      "User-Agent",
+      process.env.EXTERNAL_USER_AGENT ||
+        "domainstack.io/0.1 (+https://domainstack.io)",
+    );
 
     return fetch(input, {
       ...init,

@@ -1,3 +1,5 @@
+import type { ProviderCategory } from "@domainstack/constants";
+import type { DnsRecord, RegistrationContact } from "@domainstack/types";
 import { Spinner } from "@domainstack/ui/spinner";
 import {
   IconLock,
@@ -8,9 +10,6 @@ import {
 import { format } from "date-fns";
 import { formatRegistrant } from "@/components/domain/registration/registration-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
-import type { ProviderCategory } from "@/lib/constants/providers";
-import type { DnsRecord } from "@/lib/types/domain/dns";
-import type { RegistrationContact } from "@/lib/types/domain/registration";
 
 type ProviderTooltipContentProps = {
   providerId?: string | null;

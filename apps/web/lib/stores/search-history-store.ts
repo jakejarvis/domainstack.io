@@ -1,8 +1,8 @@
 "use client";
 
+import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
 
 // ---------------------------------------------------------------------------
 // Types

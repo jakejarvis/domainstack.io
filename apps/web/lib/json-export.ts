@@ -1,4 +1,4 @@
-import type { DomainResponse } from "@/lib/types/domain/domain-response";
+import type { DomainResponse } from "@domainstack/types";
 
 export function exportDomainData(
   domain: string,

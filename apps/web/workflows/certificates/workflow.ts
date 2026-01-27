@@ -1,4 +1,4 @@
-import type { CertificatesResponse } from "@/lib/types/domain/certificates";
+import type { CertificatesResponse } from "@domainstack/types";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   type CertificatesError,

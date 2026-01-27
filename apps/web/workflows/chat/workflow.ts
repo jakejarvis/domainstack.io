@@ -10,6 +10,7 @@
  * Node.js modules are imported inside "use step" functions.
  */
 
+import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@domainstack/constants";
 import { DurableAgent } from "@workflow/ai/agent";
 import {
   convertToModelMessages,
@@ -17,7 +18,6 @@ import {
   type UIMessageChunk,
 } from "ai";
 import { getWritable } from "workflow";
-import { MAX_OUTPUT_TOKENS, MAX_TOOL_STEPS } from "@/lib/constants/ai";
 import { getModelStep } from "./gateway";
 import {
   getStuckToolParts,

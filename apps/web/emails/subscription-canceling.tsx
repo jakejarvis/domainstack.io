@@ -8,7 +8,6 @@ import {
   EmailLink,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
 
 type SubscriptionCancelingEmailProps = {
   userName: string;
@@ -53,7 +52,7 @@ function SubscriptionCancelingEmail({
         your Pro benefits without interruption.
       </EmailText>
 
-      <EmailButton href={`${BASE_URL}/settings`}>
+      <EmailButton href={`${process.env.NEXT_PUBLIC_BASE_URL}/settings`}>
         Manage Subscription
       </EmailButton>
 

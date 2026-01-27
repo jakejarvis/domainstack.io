@@ -5,7 +5,7 @@
  * This step is shared between the dedicated seoWorkflow and internal workflows.
  */
 
-import type { SeoResponse } from "@/lib/types/domain/seo";
+import type { SeoResponse } from "@domainstack/types";
 import type { HtmlFetchData, RobotsFetchData } from "./types";
 
 /**

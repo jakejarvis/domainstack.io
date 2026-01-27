@@ -2,7 +2,7 @@
  * Verification types - Plain TypeScript interfaces.
  */
 
-import type { VerificationMethod } from "@/lib/constants/verification";
+import type { VerificationMethod } from "@domainstack/constants";
 
 /**
  * Base verification instructions.

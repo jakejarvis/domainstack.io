@@ -1,4 +1,4 @@
-import type { HeadersResponse } from "@/lib/types/domain/headers";
+import type { HeadersResponse } from "@domainstack/types";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchHeadersStep,

@@ -36,7 +36,7 @@ describe("RegistrationSection", () => {
             source: "rdap",
             registrarProvider: { name: "Namecheap", domain: "namecheap.com" },
             creationDate: "2020-01-01T00:00:00Z",
-          } as unknown as import("@/lib/types/domain/registration").RegistrationResponse
+          } as unknown as import("@domainstack/types").RegistrationResponse
         }
       />,
     );
@@ -57,7 +57,7 @@ describe("RegistrationSection", () => {
             unavailableReason: "unsupported_tld",
             source: null,
             registrarProvider: { name: null, domain: null },
-          } as unknown as import("@/lib/types/domain/registration").RegistrationResponse
+          } as unknown as import("@domainstack/types").RegistrationResponse
         }
       />,
     );

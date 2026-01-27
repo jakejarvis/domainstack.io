@@ -5,7 +5,7 @@
  * Response types (HeadersResponse) remain in lib/types/domain/headers.ts.
  */
 
-import type { Header } from "@/lib/types/domain/headers";
+import type { Header } from "@domainstack/types";
 
 /**
  * Typed error for headers operations.

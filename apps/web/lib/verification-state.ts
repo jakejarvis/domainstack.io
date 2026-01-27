@@ -1,5 +1,5 @@
-import type { VerificationMethod } from "@/lib/constants/verification";
-import type { ResumeDomainData } from "@/lib/types/verification";
+import type { VerificationMethod } from "@domainstack/constants";
+import type { ResumeDomainData } from "@domainstack/types";
 
 // ============================================================================
 // State Types

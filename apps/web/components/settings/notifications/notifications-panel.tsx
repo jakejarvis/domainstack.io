@@ -1,3 +1,5 @@
+import type { NotificationCategory } from "@domainstack/constants";
+import type { UserNotificationPreferences } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -19,9 +21,7 @@ import {
 import { SettingsErrorBoundary } from "@/components/settings/settings-error-boundary";
 import { NotificationsSkeleton } from "@/components/settings/settings-skeleton";
 import { useSession } from "@/lib/auth-client";
-import type { NotificationCategory } from "@/lib/constants/notifications";
 import { useTRPC } from "@/lib/trpc/client";
-import type { UserNotificationPreferences } from "@/lib/types/notifications";
 
 export function NotificationsPanel() {
   const { data: session } = useSession();

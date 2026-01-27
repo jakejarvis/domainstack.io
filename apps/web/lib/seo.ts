@@ -1,4 +1,3 @@
-import * as cheerio from "cheerio";
 import type {
   GeneralMeta,
   OpenGraphMeta,
@@ -8,7 +7,8 @@ import type {
   SeoMeta,
   SeoPreview,
   TwitterMeta,
-} from "@/lib/types/domain/seo";
+} from "@domainstack/types";
+import * as cheerio from "cheerio";
 
 export function sanitizeText(input: unknown): string {
   let out = String(input ?? "");

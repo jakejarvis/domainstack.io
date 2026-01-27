@@ -1,3 +1,4 @@
+import type { SeoResponse } from "@domainstack/types";
 import {
   Accordion,
   AccordionContent,
@@ -48,7 +49,6 @@ import {
   useTransition,
 } from "react";
 import { PillCount } from "@/components/domain/pill-count";
-import type { SeoResponse } from "@/lib/types/domain/seo";
 import { cn } from "@/lib/utils";
 
 function useProgressiveReveal<T>(items: T[], initialVisible: number) {

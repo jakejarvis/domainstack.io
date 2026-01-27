@@ -11,7 +11,6 @@ import {
   EmailSubheading,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
 
 type VerificationInstructionsEmailProps = {
   domain: string;
@@ -122,8 +121,10 @@ function VerificationInstructionsEmail({
 
       <EmailText>
         Once completed, {senderName} can return to{" "}
-        <EmailLink href={`${BASE_URL}/dashboard`}>Domainstack</EmailLink> to
-        verify ownership.
+        <EmailLink href={`${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`}>
+          Domainstack
+        </EmailLink>{" "}
+        to verify ownership.
       </EmailText>
 
       <EmailHr />

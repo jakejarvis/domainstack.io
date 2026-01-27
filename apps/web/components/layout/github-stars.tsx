@@ -1,13 +1,15 @@
+import { REPOSITORY_SLUG } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
 import { SiGithub } from "@icons-pack/react-simple-icons";
-import { REPOSITORY_SLUG, USER_AGENT } from "@/lib/constants/app";
 
 async function fetchRepoStars(): Promise<number | null> {
   try {
     const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": USER_AGENT,
+        "User-Agent":
+          process.env.EXTERNAL_USER_AGENT ||
+          "domainstack.io/0.1 (+https://domainstack.io)",
         // token is optional but allows for more frequent/reliable API calls
         ...(process.env.GITHUB_TOKEN
           ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }

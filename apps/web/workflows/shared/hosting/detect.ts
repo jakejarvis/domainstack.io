@@ -5,9 +5,7 @@
  * These steps are shared between the dedicated hostingWorkflow and internal workflows.
  */
 
-import type { DnsRecord } from "@/lib/types/domain/dns";
-import type { Header } from "@/lib/types/domain/headers";
-import type { GeoIpData } from "@/lib/types/domain/hosting";
+import type { DnsRecord, GeoIpData, Header } from "@domainstack/types";
 import type { ProviderDetectionData } from "./types";
 
 /**

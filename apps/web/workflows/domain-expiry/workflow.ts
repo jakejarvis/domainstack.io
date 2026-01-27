@@ -1,5 +1,5 @@
+import type { NotificationType } from "@domainstack/constants";
 import { FatalError } from "workflow";
-import type { NotificationType } from "@/lib/constants/notifications";
 import {
   calculateDaysRemainingStep,
   checkAlreadySentStep,

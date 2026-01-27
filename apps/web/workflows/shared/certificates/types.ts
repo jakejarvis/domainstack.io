@@ -5,7 +5,7 @@
  * Response types (CertificatesResponse) remain in lib/types/domain/certificates.ts.
  */
 
-import type { Certificate } from "@/lib/types/domain/certificates";
+import type { Certificate } from "@domainstack/types";
 
 /**
  * Typed error for certificates operations.

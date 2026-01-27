@@ -1,3 +1,4 @@
+import type { NotificationCategory } from "@domainstack/constants";
 import {
   IconCalendarDot,
   IconCloudComputing,
@@ -6,7 +7,6 @@ import {
   IconShieldExclamation,
   type TablerIcon,
 } from "@tabler/icons-react";
-import type { NotificationCategory } from "./notifications";
 
 /**
  * Notification category UI metadata (icons, labels, descriptions).

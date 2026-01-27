@@ -1,5 +1,3 @@
-import { BASE_URL } from "@/lib/constants/app";
-
 export interface IconFetchSuccess {
   success: true;
   imageBase64: string;
@@ -67,7 +65,7 @@ export async function fetchIconFromSources(
       url: `https://img.logo.dev/${domain}?token=${logoDevKey}&size=${size}&format=png&fallback=404`,
       name: "logo_dev",
       headers: {
-        Referer: BASE_URL,
+        Referer: process.env.NEXT_PUBLIC_BASE_URL ?? "",
       },
     });
   }

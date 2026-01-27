@@ -1,3 +1,4 @@
+import type { RegistrationResponse } from "@domainstack/types";
 import {
   ResponsiveTooltip,
   ResponsiveTooltipContent,
@@ -18,7 +19,6 @@ import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
 import { formatDate, formatDateTimeUtc } from "@/lib/format";
-import type { RegistrationResponse } from "@/lib/types/domain/registration";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 

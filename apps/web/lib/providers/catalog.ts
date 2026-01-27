@@ -1,4 +1,4 @@
-import type { ProviderCategory } from "@/lib/constants/providers";
+import type { ProviderCategory } from "@domainstack/constants";
 import { getProviderCatalog } from "@/lib/edge-config";
 import { getProvidersFromCatalog, type Provider } from "./parser";
 

@@ -1,8 +1,8 @@
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { DashboardGridCard } from "@/components/dashboard/dashboard-grid-card";
 import { GridUpgradeCard } from "@/components/dashboard/grid-upgrade-card";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 type DashboardGridProps = {
   domains: TrackedDomainWithDetails[];

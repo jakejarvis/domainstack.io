@@ -10,7 +10,7 @@ import type {
   OpenGraphMeta,
   RobotsTxt,
   TwitterMeta,
-} from "@/lib/types/domain/seo";
+} from "@domainstack/types";
 
 /**
  * Internal data structure for HTML fetch step result.

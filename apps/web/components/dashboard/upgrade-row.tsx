@@ -1,7 +1,7 @@
+import { PLAN_QUOTAS } from "@domainstack/constants";
 import { IconCircleArrowUp, IconRocket } from "@tabler/icons-react";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { useSubscription } from "@/hooks/use-subscription";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 import { PRO_TIER_INFO } from "@/lib/polar/products";
 
 export function UpgradeRow() {

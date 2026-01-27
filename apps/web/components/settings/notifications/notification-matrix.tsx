@@ -1,3 +1,8 @@
+import {
+  NOTIFICATION_CATEGORIES,
+  type NotificationCategory,
+} from "@domainstack/constants";
+import type { UserNotificationPreferences } from "@domainstack/types";
 import { Checkbox } from "@domainstack/ui/checkbox";
 import {
   ResponsiveTooltip,
@@ -6,11 +11,6 @@ import {
 } from "@domainstack/ui/responsive-tooltip";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
-import {
-  NOTIFICATION_CATEGORIES,
-  type NotificationCategory,
-} from "@/lib/constants/notifications";
-import type { UserNotificationPreferences } from "@/lib/types/notifications";
 import { cn } from "@/lib/utils";
 
 interface NotificationMatrixProps {

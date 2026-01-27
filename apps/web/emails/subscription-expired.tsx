@@ -1,3 +1,4 @@
+import { PLAN_QUOTAS } from "@domainstack/constants";
 import { EmailBox, EmailBoxText } from "@/components/email/email-box";
 import { EmailButton } from "@/components/email/email-button";
 import { EmailLayout } from "@/components/email/email-layout";
@@ -9,8 +10,6 @@ import {
   EmailSection,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
-import { PLAN_QUOTAS } from "@/lib/constants/plan-quotas";
 
 type SubscriptionExpiredEmailProps = {
   userName: string;
@@ -58,12 +57,18 @@ function SubscriptionExpiredEmail({
         back to tracking up to {PLAN_QUOTAS.pro} domains.
       </EmailText>
 
-      <EmailButton variant="success" href={`${BASE_URL}/settings`}>
+      <EmailButton
+        variant="success"
+        href={`${process.env.NEXT_PUBLIC_BASE_URL}/settings`}
+      >
         Resubscribe to Pro
       </EmailButton>
 
       <EmailSection variant="secondaryButton">
-        <EmailButton variant="secondary" href={`${BASE_URL}/dashboard`}>
+        <EmailButton
+          variant="secondary"
+          href={`${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`}
+        >
           View Dashboard
         </EmailButton>
       </EmailSection>

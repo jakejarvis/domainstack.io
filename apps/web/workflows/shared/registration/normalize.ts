@@ -5,11 +5,11 @@
  * This step is shared between the dedicated registrationWorkflow and internal workflows.
  */
 
-import type { Provider } from "@/lib/providers/parser";
 import type {
   RegistrationContact,
   RegistrationResponse,
-} from "@/lib/types/domain/registration";
+} from "@domainstack/types";
+import type { Provider } from "@/lib/providers/parser";
 
 // Type for parsed RDAP record
 interface ParsedRdapRecord {

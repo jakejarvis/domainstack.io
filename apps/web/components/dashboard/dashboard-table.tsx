@@ -2,6 +2,7 @@
 
 // See: https://github.com/TanStack/table/issues/5567
 
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
 import type { SortingState } from "@tanstack/react-table";
 import {
@@ -34,7 +35,6 @@ import {
   serializeSortState,
 } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
 type DashboardTableProps = {

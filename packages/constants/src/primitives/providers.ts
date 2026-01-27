@@ -13,3 +13,5 @@ export const PROVIDER_CATEGORIES = [
 export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
 
 export const PROVIDER_SOURCES = ["catalog", "discovered"] as const;
+
+export type ProviderSource = (typeof PROVIDER_SOURCES)[number];

@@ -1,5 +1,7 @@
 "use client";
 
+import type { VerificationMethod } from "@domainstack/constants";
+import type { TrackedDomainWithDetails } from "@domainstack/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,7 +55,6 @@ import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useRouter } from "@/hooks/use-router";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useSession } from "@/lib/auth-client";
-import type { VerificationMethod } from "@/lib/constants/verification";
 import {
   type ConfirmAction,
   computeHealthStats,
@@ -75,7 +76,6 @@ import {
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { useTRPC } from "@/lib/trpc/client";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 export function DashboardClient() {
   const { data: session, isPending: sessionLoading } = useSession();

@@ -1,7 +1,7 @@
+import type { VerificationMethod } from "@domainstack/constants";
 import { Alert, AlertDescription, AlertTitle } from "@domainstack/ui/alert";
 import { Button } from "@domainstack/ui/button";
 import { IconAlertTriangle, IconClock, IconRefresh } from "@tabler/icons-react";
-import type { VerificationMethod } from "@/lib/constants/verification";
 
 type VerificationFailedProps = {
   method: VerificationMethod;

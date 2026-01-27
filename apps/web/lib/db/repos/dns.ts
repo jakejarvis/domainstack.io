@@ -1,7 +1,9 @@
 import "server-only";
+
+import { DNS_RECORD_TYPES } from "@domainstack/constants";
+import type { DnsRecord, DnsRecordsResponse } from "@domainstack/types";
 import type { InferInsertModel } from "drizzle-orm";
 import { eq, inArray, sql } from "drizzle-orm";
-import { DNS_RECORD_TYPES } from "@/lib/constants/dns";
 import { db } from "@/lib/db/client";
 import { dnsRecords, type dnsRecordType, domains } from "@/lib/db/schema";
 import {
@@ -9,7 +11,6 @@ import {
   makeDnsRecordKey,
   sortDnsRecordsByType,
 } from "@/lib/dns-utils";
-import type { DnsRecord, DnsRecordsResponse } from "@/lib/types/domain/dns";
 import type { CacheResult } from "./types";
 
 type DnsRecordInsert = InferInsertModel<typeof dnsRecords>;

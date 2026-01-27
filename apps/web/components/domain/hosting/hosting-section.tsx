@@ -1,3 +1,4 @@
+import type { HostingGeo, HostingResponse } from "@domainstack/types";
 import {
   Empty,
   EmptyDescription,
@@ -14,7 +15,6 @@ import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
 import { countryCodeToEmoji } from "@/lib/country-emoji";
-import type { HostingGeo, HostingResponse } from "@/lib/types/domain/hosting";
 
 const HostingMapClient = dynamic(
   () =>

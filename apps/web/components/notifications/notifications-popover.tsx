@@ -1,3 +1,4 @@
+import type { NotificationData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import {
   Popover,
@@ -29,7 +30,6 @@ import { toast } from "sonner";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
-import type { NotificationData } from "@/lib/types/notifications";
 import { cn } from "@/lib/utils";
 
 export function NotificationsPopover() {

@@ -1,3 +1,9 @@
+import type {
+  ProviderCategory,
+  VerificationMethod,
+  VerificationStatus,
+} from "@domainstack/constants";
+import type { ProviderInfo } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@domainstack/ui/card";
 import { Checkbox } from "@domainstack/ui/checkbox";
@@ -45,13 +51,7 @@ import {
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import type { ProviderCategory } from "@/lib/constants/providers";
-import type {
-  VerificationMethod,
-  VerificationStatus,
-} from "@/lib/constants/verification";
 import { formatDateTimeUtc } from "@/lib/format";
-import type { ProviderInfo } from "@/lib/types/provider";
 import { cn } from "@/lib/utils";
 
 type DashboardGridCardProps = {

@@ -7,13 +7,13 @@ import {
   META_TAG_NAME,
   VERIFICATION_METHODS,
   type VerificationMethod,
-} from "@/lib/constants/verification";
+} from "@domainstack/constants";
 import type {
   DnsInstructions,
   HtmlFileInstructions,
   MetaTagInstructions,
   VerificationInstructions,
-} from "@/lib/types/verification";
+} from "@domainstack/types";
 
 /**
  * Build verification instructions for a single method.

@@ -1,4 +1,4 @@
-import type { DnsRecordsResponse } from "@/lib/types/domain/dns";
+import type { DnsRecordsResponse } from "@domainstack/types";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchDnsRecordsStep,

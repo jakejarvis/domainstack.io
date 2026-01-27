@@ -1,6 +1,8 @@
-import type { CertificatesResponse } from "@/lib/types/domain/certificates";
-import type { HostingResponse } from "@/lib/types/domain/hosting";
-import type { RegistrationResponse } from "@/lib/types/domain/registration";
+import type {
+  CertificatesResponse,
+  HostingResponse,
+  RegistrationResponse,
+} from "@domainstack/types";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,

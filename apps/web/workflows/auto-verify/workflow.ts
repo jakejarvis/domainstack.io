@@ -1,5 +1,5 @@
+import type { VerificationMethod } from "@domainstack/constants";
 import { FatalError, sleep } from "workflow";
-import type { VerificationMethod } from "@/lib/constants/verification";
 import {
   verifyDomainByDns,
   verifyDomainByHtmlFile,

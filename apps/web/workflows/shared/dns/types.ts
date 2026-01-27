@@ -5,7 +5,7 @@
  * Response types (DnsRecordsResponse) remain in lib/types/domain/dns.ts.
  */
 
-import type { DnsRecord } from "@/lib/types/domain/dns";
+import type { DnsRecord } from "@domainstack/types";
 
 /**
  * Internal data structure for step-to-step transfer.

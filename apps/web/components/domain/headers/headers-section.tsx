@@ -1,5 +1,7 @@
 "use client";
 
+import { IMPORTANT_HEADERS } from "@domainstack/constants";
+import type { HeadersResponse } from "@domainstack/types";
 import { Alert, AlertDescription } from "@domainstack/ui/alert";
 import {
   Empty,
@@ -19,10 +21,8 @@ import { useMemo } from "react";
 import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
-import { IMPORTANT_HEADERS } from "@/lib/constants/headers";
 import { sections } from "@/lib/constants/sections";
 import { normalizeDomainInput } from "@/lib/domain-utils";
-import type { HeadersResponse } from "@/lib/types/domain/headers";
 
 /**
  * Extract domain from a Location header value.

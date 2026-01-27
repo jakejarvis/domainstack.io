@@ -1,3 +1,4 @@
+import type { ResumeDomainData } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
 import { Icon } from "@domainstack/ui/icon";
 import { Spinner } from "@domainstack/ui/spinner";
@@ -26,7 +27,6 @@ import { PlanStatusCard } from "@/components/plan-status-card";
 import { UpgradeCard } from "@/components/upgrade-card";
 import { useDomainVerification } from "@/hooks/use-domain-verification";
 import { useSubscription } from "@/hooks/use-subscription";
-import type { ResumeDomainData } from "@/lib/types/verification";
 
 export type AddDomainContentProps = {
   /** Additional classes for the wrapper */

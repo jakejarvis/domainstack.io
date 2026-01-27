@@ -1,5 +1,5 @@
+import type { ProviderLogoResponse } from "@domainstack/types";
 import { FatalError } from "workflow";
-import type { ProviderLogoResponse } from "@/lib/types/domain/icon";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,

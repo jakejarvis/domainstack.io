@@ -5,9 +5,9 @@
  * This step is shared between the dedicated dnsWorkflow and internal workflows.
  */
 
+import type { DnsRecordType } from "@domainstack/constants";
+import type { DnsRecord } from "@domainstack/types";
 import { RetryableError } from "workflow";
-import type { DnsRecordType } from "@/lib/constants/dns";
-import type { DnsRecord } from "@/lib/types/domain/dns";
 import type { FetchDnsResult } from "./types";
 
 /**
@@ -23,7 +23,7 @@ export async function fetchDnsRecordsStep(
 
   // Dynamic imports for Node.js modules
   const { isCloudflareIp } = await import("@/lib/cloudflare");
-  const { DNS_RECORD_TYPES } = await import("@/lib/constants/dns");
+  const { DNS_RECORD_TYPES } = await import("@domainstack/constants");
   const {
     DNS_TYPE_NUMBERS,
     deduplicateDnsRecords,

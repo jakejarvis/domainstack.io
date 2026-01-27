@@ -9,7 +9,6 @@ import {
   EmailSubheading,
   EmailText,
 } from "@/components/email/email-shared";
-import { BASE_URL } from "@/lib/constants/app";
 
 type RegistrationChangeEmailProps = {
   userName: string;
@@ -166,7 +165,7 @@ function RegistrationChangeEmail({
           </EmailBox>
         )}
 
-      <EmailButton href={`${BASE_URL}/${domainName}`}>
+      <EmailButton href={`${process.env.NEXT_PUBLIC_BASE_URL}/${domainName}`}>
         View Domain Details
       </EmailButton>
 
@@ -176,7 +175,10 @@ function RegistrationChangeEmail({
         You received this email because you&apos;re tracking {domainName} on{" "}
         <EmailLink href="https://domainstack.io">Domainstack</EmailLink>. You
         can manage your notification settings in your{" "}
-        <EmailLink href={`${BASE_URL}/settings`}>dashboard</EmailLink>.
+        <EmailLink href={`${process.env.NEXT_PUBLIC_BASE_URL}/settings`}>
+          dashboard
+        </EmailLink>
+        .
       </EmailFooter>
     </EmailLayout>
   );

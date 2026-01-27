@@ -1,4 +1,4 @@
-import type { RegistrationResponse } from "@/lib/types/domain/registration";
+import type { RegistrationResponse } from "@domainstack/types";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   lookupWhoisStep,

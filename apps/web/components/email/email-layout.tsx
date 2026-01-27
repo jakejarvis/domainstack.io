@@ -1,3 +1,4 @@
+import { RESEND_LOGO_CONTENT_ID } from "@domainstack/constants";
 import {
   Body,
   Container,
@@ -6,7 +7,6 @@ import {
   Img,
   Preview,
 } from "@react-email/components";
-import { RESEND_LOGO_CONTENT_ID } from "@/lib/constants/email";
 
 type EmailLayoutProps = {
   previewText: string;

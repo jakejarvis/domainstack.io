@@ -1,5 +1,5 @@
+import type { FaviconResponse } from "@domainstack/types";
 import { FatalError } from "workflow";
-import type { FaviconResponse } from "@/lib/types/domain/icon";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import {
   fetchIconFromSources,

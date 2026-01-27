@@ -1,3 +1,4 @@
+import type { SeoResponse } from "@domainstack/types";
 import {
   Empty,
   EmptyDescription,
@@ -12,7 +13,6 @@ import { RedirectedAlert } from "@/components/domain/seo/redirected-alert";
 import { RobotsSummary } from "@/components/domain/seo/robots-summary";
 import { SocialPreviews } from "@/components/domain/seo/social-previews";
 import { sections } from "@/lib/constants/sections";
-import type { SeoResponse } from "@/lib/types/domain/seo";
 
 export function SeoSection({
   domain,

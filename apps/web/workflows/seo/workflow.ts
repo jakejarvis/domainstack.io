@@ -1,4 +1,4 @@
-import type { SeoResponse } from "@/lib/types/domain/seo";
+import type { SeoResponse } from "@domainstack/types";
 import type { WorkflowResult } from "@/lib/workflow/types";
 import { checkBlocklist } from "@/workflows/shared/check-blocklist";
 import {

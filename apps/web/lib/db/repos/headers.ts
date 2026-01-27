@@ -1,9 +1,10 @@
 import "server-only";
+
+import type { Header, HeadersResponse } from "@domainstack/types";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { domains, httpHeaders } from "@/lib/db/schema";
 import { getHttpStatusMessage, normalizeHeaders } from "@/lib/headers-utils";
-import type { Header, HeadersResponse } from "@/lib/types/domain/headers";
 import type { CacheResult } from "./types";
 
 export interface ReplaceHeadersParams {

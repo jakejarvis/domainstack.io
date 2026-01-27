@@ -1,9 +1,9 @@
+import { VERIFICATION_METHODS } from "@domainstack/constants";
 import { TRPCError } from "@trpc/server";
 import { start } from "workflow/api";
 import z from "zod";
 import VerificationInstructionsEmail from "@/emails/verification-instructions";
 import { analytics } from "@/lib/analytics/server";
-import { VERIFICATION_METHODS } from "@/lib/constants/verification";
 import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
   archiveTrackedDomain,

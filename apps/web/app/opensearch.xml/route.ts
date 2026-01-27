@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { BASE_URL } from "@/lib/constants/app";
 
 export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -7,9 +6,9 @@ export async function GET() {
   <ShortName>Domainstack</ShortName>
   <Description>Open a Domainstack report for a given domain name</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="16" height="16" type="image/x-icon">${BASE_URL}/favicon.ico</Image>
-  <Url type="text/html" template="${BASE_URL}/?q={searchTerms}" />
-  <Url type="application/opensearchdescription+xml" rel="self" template="${BASE_URL}/opensearch.xml" />
+  <Image width="16" height="16" type="image/x-icon">${process.env.NEXT_PUBLIC_BASE_URL}/favicon.ico</Image>
+  <Url type="text/html" template="${process.env.NEXT_PUBLIC_BASE_URL}/?q={searchTerms}" />
+  <Url type="application/opensearchdescription+xml" rel="self" template="${process.env.NEXT_PUBLIC_BASE_URL}/opensearch.xml" />
 </OpenSearchDescription>`;
 
   return new NextResponse(xml, {

@@ -1,3 +1,4 @@
+import { EXPIRING_SOON_DAYS } from "@domainstack/constants";
 import { Badge } from "@domainstack/ui/badge";
 import {
   Tooltip,
@@ -6,7 +7,6 @@ import {
 } from "@domainstack/ui/tooltip";
 import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
 import { useDashboardFilters } from "@/context/dashboard-context";
-import { EXPIRING_SOON_DAYS } from "@/lib/constants/notifications";
 import { cn } from "@/lib/utils";
 
 export function HealthSummary() {

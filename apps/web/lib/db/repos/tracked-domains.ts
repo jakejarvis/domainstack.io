@@ -1,5 +1,15 @@
 import "server-only";
 
+import type {
+  VerificationMethod,
+  VerificationStatus,
+} from "@domainstack/constants";
+import type {
+  DnsRecord,
+  ProviderInfo,
+  RegistrationContact,
+  TrackedDomainWithDetails,
+} from "@domainstack/types";
 import type { SQL } from "drizzle-orm";
 import {
   and,
@@ -13,10 +23,6 @@ import {
   sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import type {
-  VerificationMethod,
-  VerificationStatus,
-} from "@/lib/constants/verification";
 import { db } from "@/lib/db/client";
 import {
   certificates,
@@ -29,10 +35,6 @@ import {
   userTrackedDomains,
 } from "@/lib/db/schema";
 import { deduplicateDnsRecordsByValue } from "@/lib/dns-utils";
-import type { DnsRecord } from "@/lib/types/domain/dns";
-import type { RegistrationContact } from "@/lib/types/domain/registration";
-import type { ProviderInfo } from "@/lib/types/provider";
-import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 
 export interface CreateTrackedDomainParams {
   userId: string;

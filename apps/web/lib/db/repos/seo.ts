@@ -1,15 +1,16 @@
 import "server-only";
-import type { InferInsertModel } from "drizzle-orm";
-import { eq } from "drizzle-orm";
-import { db } from "@/lib/db/client";
-import { blockedDomains, domains, seo as seoTable } from "@/lib/db/schema";
+
 import type {
   GeneralMeta,
   OpenGraphMeta,
   RobotsTxt,
   SeoResponse,
   TwitterMeta,
-} from "@/lib/types/domain/seo";
+} from "@domainstack/types";
+import type { InferInsertModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db/client";
+import { blockedDomains, domains, seo as seoTable } from "@/lib/db/schema";
 import type { CacheResult } from "./types";
 
 type SeoInsert = InferInsertModel<typeof seoTable>;

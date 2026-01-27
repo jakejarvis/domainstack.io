@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { CHATBOT_NAME } from "@domainstack/constants";
 import {
   Drawer,
   DrawerContent,
@@ -23,7 +24,6 @@ import { BetaBadge } from "@/components/beta-badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { analytics } from "@/lib/analytics/client";
 import { serverSuggestionsAtom } from "@/lib/atoms/chat-atoms";
-import { CHATBOT_NAME } from "@/lib/constants/ai";
 import { useChatStore } from "@/lib/stores/chat-store";
 import {
   usePreferencesHydrated,

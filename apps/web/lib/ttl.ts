@@ -13,7 +13,7 @@ import {
   TTL_REGISTRATION_REGISTERED,
   TTL_SCREENSHOT,
   TTL_SEO,
-} from "@/lib/constants/ttl";
+} from "@domainstack/constants";
 
 // Helper functions
 function addSeconds(base: Date, seconds: number): Date {
