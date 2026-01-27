@@ -6,8 +6,8 @@ import {
   CardTitle,
 } from "@domainstack/ui/card";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import { IconX, type TablerIcon } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
 
 type DashboardBannerProps = {
   icon?: TablerIcon;

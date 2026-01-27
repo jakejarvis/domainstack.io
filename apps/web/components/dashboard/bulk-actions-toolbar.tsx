@@ -7,12 +7,12 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconArchive, IconTrash, IconX } from "@tabler/icons-react";
 import {
   useDashboardBulkActions,
   useDashboardSelection,
 } from "@/context/dashboard-context";
-import { cn } from "@/lib/utils";
 
 type BulkActionsToolbarProps = {
   /** Total number of domains (for "Select all X" tooltip) */

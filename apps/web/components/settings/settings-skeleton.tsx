@@ -1,7 +1,7 @@
 import { CardContent, CardHeader } from "@domainstack/ui/card";
 import { Separator } from "@domainstack/ui/separator";
 import { Skeleton } from "@domainstack/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 /**
  * Skeleton for the subscription section.

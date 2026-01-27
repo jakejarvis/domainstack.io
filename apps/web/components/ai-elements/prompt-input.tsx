@@ -7,6 +7,7 @@ import {
   InputGroupTextarea,
 } from "@domainstack/ui/input-group";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import { IconSend } from "@tabler/icons-react";
 import type { ChatStatus } from "ai";
 import {
@@ -17,7 +18,6 @@ import {
   type KeyboardEventHandler,
   useState,
 } from "react";
-import { cn } from "@/lib/utils";
 
 // ============================================================================
 // PromptInput

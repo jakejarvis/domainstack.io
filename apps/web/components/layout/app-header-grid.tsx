@@ -1,11 +1,11 @@
 "use client";
 
+import { cn } from "@domainstack/ui/utils";
 import { useAtomValue } from "jotai";
 import { motion } from "motion/react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import { isSearchFocusedAtom } from "@/lib/atoms/search-atoms";
-import { cn } from "@/lib/utils";
 
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
   const isSearchFocused = useAtomValue(isSearchFocusedAtom);

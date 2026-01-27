@@ -7,12 +7,16 @@ import {
   HTML_FILE_PATH_LEGACY,
   META_TAG_NAME,
 } from "@domainstack/constants";
+import { safeFetch } from "@domainstack/safe-fetch";
 import * as cheerio from "cheerio";
 import { providerOrderForLookup, queryDohProvider } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
-import { safeFetch } from "@/lib/safe-fetch";
 
 const logger = createLogger({ source: "verification" });
+
+const USER_AGENT =
+  process.env.EXTERNAL_USER_AGENT ||
+  "domainstack.io/0.1 (+https://domainstack.io)";
 
 export interface VerificationResult {
   verified: boolean;
@@ -99,6 +103,7 @@ export async function verifyByHtmlFile(
     try {
       const result = await safeFetch({
         url: urlStr,
+        userAgent: USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
@@ -127,6 +132,7 @@ export async function verifyByHtmlFile(
     try {
       const result = await safeFetch({
         url: urlStr,
+        userAgent: USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 5000,
@@ -172,6 +178,7 @@ export async function verifyByMetaTag(
     try {
       const result = await safeFetch({
         url: urlStr,
+        userAgent: USER_AGENT,
         allowHttp: true,
         allowedHosts: [domain, `www.${domain}`],
         timeoutMs: 10_000,

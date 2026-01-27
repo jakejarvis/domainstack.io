@@ -1,5 +1,6 @@
 import type { NotificationData } from "@domainstack/types";
 import { Icon } from "@domainstack/ui/icon";
+import { cn } from "@domainstack/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import {
@@ -8,7 +9,6 @@ import {
   getSeverityIconColor,
   getUnreadIndicatorColor,
 } from "@/lib/notification-utils";
-import { cn } from "@/lib/utils";
 
 interface NotificationCardProps {
   notification: NotificationData;

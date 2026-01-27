@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 export function KeyValueGrid({
   children,

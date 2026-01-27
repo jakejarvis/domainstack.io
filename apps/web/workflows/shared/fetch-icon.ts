@@ -47,13 +47,17 @@ export interface IconSource {
  * Shared step for fetching icons from multiple sources with fallbacks.
  * Used by favicon and provider-logo workflows.
  */
+const USER_AGENT =
+  process.env.EXTERNAL_USER_AGENT ||
+  "domainstack.io/0.1 (+https://domainstack.io)";
+
 export async function fetchIconFromSources(
   domain: string,
   options: FetchIconOptions,
 ): Promise<IconFetchResult> {
   "use step";
 
-  const { safeFetch } = await import("@/lib/safe-fetch");
+  const { safeFetch } = await import("@domainstack/safe-fetch");
 
   const { size = 32, useLogoDev = false } = options;
   const sources: IconSource[] = [];
@@ -102,6 +106,7 @@ export async function fetchIconFromSources(
 
       const asset = await safeFetch({
         url: source.url,
+        userAgent: USER_AGENT,
         headers,
         maxBytes: options.maxBytes,
         timeoutMs: options.timeoutMs,

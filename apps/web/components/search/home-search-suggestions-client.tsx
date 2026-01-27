@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconX } from "@tabler/icons-react";
 import { useSetAtom } from "jotai";
 import Link from "next/link";
@@ -16,7 +17,6 @@ import { Favicon } from "@/components/icons/favicon";
 import { useAnalytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
-import { cn } from "@/lib/utils";
 
 export type HomeSearchSuggestionsClientProps = {
   defaultSuggestions: string[];

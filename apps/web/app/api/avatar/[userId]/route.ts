@@ -3,10 +3,10 @@ import {
   TTL_AVATAR_CDN,
   TTL_AVATAR_STALE,
 } from "@domainstack/constants";
+import { SafeFetchError, safeFetch } from "@domainstack/safe-fetch";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserAvatarUrl } from "@/lib/db/repos/users";
 import { createLogger } from "@/lib/logger/server";
-import { SafeFetchError, safeFetch } from "@/lib/safe-fetch";
 
 const logger = createLogger({ source: "api/avatar" });
 
@@ -15,6 +15,10 @@ const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 
 // Request timeout
 const REQUEST_TIMEOUT_MS = 5000;
+
+const USER_AGENT =
+  process.env.EXTERNAL_USER_AGENT ||
+  "domainstack.io/0.1 (+https://domainstack.io)";
 
 export async function GET(
   _request: NextRequest,
@@ -43,6 +47,7 @@ export async function GET(
   try {
     const asset = await safeFetch({
       url: avatarUrl,
+      userAgent: USER_AGENT,
       headers: { Accept: "image/*" },
       maxBytes: MAX_AVATAR_BYTES,
       timeoutMs: REQUEST_TIMEOUT_MS,

@@ -1,5 +1,5 @@
+import { cn } from "@domainstack/ui/utils";
 import { StaticBackground } from "@/components/layout/static-background";
-import { cn } from "@/lib/utils";
 
 export default function StaticLayout({
   children,

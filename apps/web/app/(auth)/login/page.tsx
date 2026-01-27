@@ -1,7 +1,7 @@
 import { Card } from "@domainstack/ui/card";
+import { cn } from "@domainstack/ui/utils";
 import type { Metadata } from "next";
 import { LoginContent } from "@/components/auth/login-content";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Sign In",

@@ -2,6 +2,7 @@
 
 import { MAX_MESSAGE_LENGTH } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
+import { cn } from "@domainstack/ui/utils";
 import { IconAlertCircle, IconMessages, IconX } from "@tabler/icons-react";
 import type { ChatStatus, ToolUIPart, UIMessage } from "ai";
 import { useAtomValue } from "jotai";
@@ -36,7 +37,6 @@ import {
 } from "@/components/ai-elements/tool";
 import { chatSuggestionsAtom } from "@/lib/atoms/chat-atoms";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { cn } from "@/lib/utils";
 import { getToolStatusMessage } from "./utils";
 
 interface ChatPanelProps {

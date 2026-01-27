@@ -4,6 +4,7 @@
 
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 import type { SortingState } from "@tanstack/react-table";
 import {
   flexRender,
@@ -35,7 +36,6 @@ import {
   serializeSortState,
 } from "@/lib/dashboard-utils";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { cn } from "@/lib/utils";
 
 type DashboardTableProps = {
   domains: TrackedDomainWithDetails[];

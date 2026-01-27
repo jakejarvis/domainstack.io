@@ -1,3 +1,4 @@
+import { cn } from "@domainstack/ui/utils";
 import {
   IconActivity,
   IconAlertOctagon,
@@ -9,7 +10,6 @@ import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { cn } from "@/lib/utils";
 
 type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 

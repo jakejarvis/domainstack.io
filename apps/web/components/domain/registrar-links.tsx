@@ -5,12 +5,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { SiCloudflare } from "@icons-pack/react-simple-icons";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useAnalytics } from "@/lib/analytics/client";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
 /**
  * Registry of all supported pricing providers.

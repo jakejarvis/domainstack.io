@@ -1,11 +1,11 @@
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import { IconCamera } from "@tabler/icons-react";
 import { ExportButton } from "@/components/domain/export-button";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { ToolsDropdown } from "@/components/domain/tools-dropdown";
 import { TrackDomainButton } from "@/components/domain/track-domain-button";
 import { Favicon } from "@/components/icons/favicon";
-import { cn } from "@/lib/utils";
 
 interface DomainReportHeaderProps {
   domain: string;

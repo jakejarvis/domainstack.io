@@ -41,7 +41,7 @@ export async function fetchCertificateChainStep(
 
   // Dynamic imports for Node.js modules that aren't available in workflow context
   const tls = await import("node:tls");
-  const { isExpectedDnsError } = await import("@/lib/dns-utils");
+  const { isExpectedDnsError } = await import("@domainstack/safe-fetch");
   const { isExpectedTlsError, parseAltNames, toName } = await import(
     "@/lib/tls-utils"
   );

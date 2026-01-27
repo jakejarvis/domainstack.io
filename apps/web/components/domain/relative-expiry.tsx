@@ -1,9 +1,9 @@
 "use client";
 
+import { cn } from "@domainstack/ui/utils";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { useMemo } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { cn } from "@/lib/utils";
 
 export function RelativeExpiryString({
   to,

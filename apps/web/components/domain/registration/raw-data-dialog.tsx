@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconArrowsMinimize,
   IconExternalLink,
@@ -29,7 +30,6 @@ import {
 } from "@tabler/icons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { cn } from "@/lib/utils";
 
 // Token types for JSON syntax highlighting
 type TokenType =

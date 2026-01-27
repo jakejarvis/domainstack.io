@@ -3,6 +3,7 @@ import type {
   VerificationStatus,
 } from "@domainstack/constants";
 import { VERIFICATION_GRACE_PERIOD_DAYS } from "@domainstack/constants";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconAlertTriangle,
   IconProgressAlert,
@@ -11,7 +12,6 @@ import {
 import { differenceInDays } from "date-fns";
 import { BadgeWithTooltip } from "@/components/dashboard/badge-with-tooltip";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
-import { cn } from "@/lib/utils";
 
 type DomainStatusBadgeProps = {
   verified: boolean;

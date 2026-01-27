@@ -5,9 +5,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconAlertTriangle, IconClock } from "@tabler/icons-react";
 import { useDashboardFilters } from "@/context/dashboard-context";
-import { cn } from "@/lib/utils";
 
 export function HealthSummary() {
   const { stats, applyHealthFilter } = useDashboardFilters();

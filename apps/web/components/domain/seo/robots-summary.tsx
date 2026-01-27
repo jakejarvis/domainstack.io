@@ -25,6 +25,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconAsterisk,
   IconBan,
@@ -49,7 +50,6 @@ import {
   useTransition,
 } from "react";
 import { PillCount } from "@/components/domain/pill-count";
-import { cn } from "@/lib/utils";
 
 function useProgressiveReveal<T>(items: T[], initialVisible: number) {
   const [visible, setVisible] = useState(initialVisible);

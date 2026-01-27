@@ -7,10 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@domainstack/ui/dropdown-menu";
+import { cn } from "@domainstack/ui/utils";
 import { IconPlus, IconWorld, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { cn } from "@/lib/utils";
 
 interface MutableDomain {
   id: string;

@@ -5,13 +5,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@domainstack/ui/collapsible";
+import { cn } from "@domainstack/ui/utils";
 import { IconChevronDown, IconFilter } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { DashboardTableColumnMenu } from "@/components/dashboard/dashboard-table-column-menu";
 import { usePreferencesStore } from "@/lib/stores/preferences-store";
-import { cn } from "@/lib/utils";
 
 type MobileFiltersCollapsibleProps = {
   hasActiveFilters: boolean;

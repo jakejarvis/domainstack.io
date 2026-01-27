@@ -5,7 +5,7 @@ import {
   CardTitle,
 } from "@domainstack/ui/card";
 import { Separator } from "@domainstack/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 function SettingsCard({
   title,

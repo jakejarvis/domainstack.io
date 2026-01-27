@@ -9,9 +9,9 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { IconInfoCircle } from "@tabler/icons-react";
 import { NOTIFICATION_CATEGORY_INFO } from "@/lib/constants/notification-ui";
-import { cn } from "@/lib/utils";
 
 interface NotificationMatrixProps {
   preferences: UserNotificationPreferences;

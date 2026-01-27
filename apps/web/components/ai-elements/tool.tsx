@@ -8,6 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@domainstack/ui/collapsible";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconCheck,
   IconChevronDown,
@@ -19,7 +20,6 @@ import {
 import type { ToolUIPart } from "ai";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
-import { cn } from "@/lib/utils";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 

@@ -1,5 +1,5 @@
 import { Meter } from "@domainstack/ui/meter";
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 interface QuotaBarProps
   extends Omit<React.ComponentProps<typeof Meter>, "value"> {

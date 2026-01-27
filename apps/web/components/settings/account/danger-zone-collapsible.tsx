@@ -4,6 +4,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@domainstack/ui/collapsible";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconAlertTriangle,
   IconChevronDown,
@@ -11,7 +12,6 @@ import {
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { DeleteAccountDialog } from "@/components/settings/account/delete-account-dialog";
-import { cn } from "@/lib/utils";
 
 interface DangerZoneCollapsibleProps {
   className?: string;

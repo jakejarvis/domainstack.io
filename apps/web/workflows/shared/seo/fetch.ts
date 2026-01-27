@@ -17,12 +17,16 @@ const SOCIAL_HEIGHT = 630;
  * @param domain - The domain to fetch
  * @returns HtmlFetchData with meta and preview data
  */
+const USER_AGENT =
+  process.env.EXTERNAL_USER_AGENT ||
+  "domainstack.io/0.1 (+https://domainstack.io)";
+
 export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
   "use step";
 
   // Dynamic imports for Node.js modules
-  const { isExpectedDnsError } = await import("@/lib/dns-utils");
-  const { safeFetch } = await import("@/lib/safe-fetch");
+  const { isExpectedDnsError } = await import("@domainstack/safe-fetch");
+  const { safeFetch } = await import("@domainstack/safe-fetch");
   const { parseHtmlMeta, selectPreview } = await import("@/lib/seo");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
 
@@ -32,6 +36,7 @@ export async function fetchHtmlStep(domain: string): Promise<HtmlFetchData> {
   try {
     const htmlResult = await safeFetch({
       url: finalUrl,
+      userAgent: USER_AGENT,
       allowHttp: true,
       timeoutMs: 10_000,
       maxBytes: 512 * 1024,
@@ -133,7 +138,7 @@ export async function fetchRobotsStep(
   "use step";
 
   // Dynamic imports for Node.js modules
-  const { safeFetch } = await import("@/lib/safe-fetch");
+  const { safeFetch } = await import("@domainstack/safe-fetch");
   const { parseRobotsTxt } = await import("@/lib/seo");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
 
@@ -142,15 +147,13 @@ export async function fetchRobotsStep(
   try {
     const robotsResult = await safeFetch({
       url: robotsUrl,
+      userAgent: USER_AGENT,
       allowHttp: true,
       timeoutMs: 8000,
       maxBytes: 256 * 1024,
       maxRedirects: 5,
       headers: {
         Accept: "text/plain",
-        "User-Agent":
-          process.env.EXTERNAL_USER_AGENT ||
-          "domainstack.io/0.1 (+https://domainstack.io)",
       },
     });
 
@@ -191,12 +194,13 @@ export async function processOgImageStep(
 
   // Dynamic imports for Node.js modules
   const { optimizeImageCover } = await import("@/lib/image");
-  const { safeFetch } = await import("@/lib/safe-fetch");
+  const { safeFetch } = await import("@domainstack/safe-fetch");
   const { storeImage } = await import("@/lib/storage");
 
   try {
     const asset = await safeFetch({
       url: imageUrl,
+      userAgent: USER_AGENT,
       currentUrl,
       headers: {
         Accept:

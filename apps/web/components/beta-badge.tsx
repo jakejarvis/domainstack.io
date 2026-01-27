@@ -1,5 +1,5 @@
 import { Badge } from "@domainstack/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 export function BetaBadge({
   className,

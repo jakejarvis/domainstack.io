@@ -1,9 +1,9 @@
 "use client";
 
+import { cn } from "@domainstack/ui/utils";
 import type { UIMessage } from "ai";
 import { type ComponentProps, memo } from "react";
 import { Streamdown } from "streamdown";
-import { cn } from "@/lib/utils";
 
 export type MessageProps = ComponentProps<"div"> & {
   from: UIMessage["role"];

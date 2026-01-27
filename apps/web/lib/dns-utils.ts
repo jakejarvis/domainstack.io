@@ -1,7 +1,15 @@
-import type { DnsRecordType } from "@domainstack/constants";
+import {
+  DNS_TYPE_NUMBERS,
+  type DnsRecordType,
+  DOH_PROVIDERS,
+  type DohProvider,
+} from "@domainstack/constants";
 import type { DnsRecord } from "@domainstack/types";
+import { simpleHash } from "@domainstack/utils";
 import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
-import { simpleHash } from "@/lib/simple-hash";
+
+// Re-export from constants for backwards compatibility
+export { DOH_PROVIDERS, DNS_TYPE_NUMBERS, type DohProvider };
 
 // ============================================================================
 // DNS Record Utilities
@@ -122,35 +130,8 @@ export function sortDnsRecordsByType(
 }
 
 // ============================================================================
-// DNS-over-HTTPS (DoH) providers
+// DNS-over-HTTPS (DoH) types and utilities
 // ============================================================================
-
-export const DOH_PROVIDERS = [
-  {
-    key: "cloudflare",
-    url: "https://cloudflare-dns.com/dns-query",
-    headers: {},
-  },
-  {
-    key: "google",
-    url: "https://dns.google/resolve",
-    headers: {},
-  },
-] as const;
-
-export type DohProvider = (typeof DOH_PROVIDERS)[number];
-
-/**
- * DNS record type numbers (RFC 1035 and extensions).
- */
-export const DNS_TYPE_NUMBERS = {
-  A: 1,
-  NS: 2,
-  CNAME: 5,
-  MX: 15,
-  TXT: 16,
-  AAAA: 28,
-} as const;
 
 /**
  * DNS answer from DoH JSON response.
@@ -237,7 +218,6 @@ export async function queryDohProvider(
     {
       headers: {
         Accept: "application/dns-json",
-        ...provider.headers,
       },
     },
     { timeoutMs, retries, backoffMs },
@@ -277,33 +257,4 @@ export function filterAnswersByType(
   expectedType: number,
 ): DnsAnswer[] {
   return answers.filter((a) => a.type === expectedType);
-}
-
-/**
- * Check if an error is an expected DNS resolution failure.
- * These occur when a domain has no A/AAAA records (i.e., no web hosting)
- * or simply does not exist.
- */
-export function isExpectedDnsError(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-
-  // Check for ENOTFOUND (getaddrinfo failure)
-  const { cause } = err as Error & { cause?: Error };
-  if (cause && "code" in cause && cause.code === "ENOTFOUND") {
-    return true;
-  }
-
-  // Check for other DNS-related error codes
-  const errorWithCode = err as Error & { code?: string };
-  if (errorWithCode.code === "ENOTFOUND") {
-    return true;
-  }
-
-  // Check error message patterns
-  const message = err.message.toLowerCase();
-  return (
-    message.includes("enotfound") ||
-    message.includes("getaddrinfo") ||
-    message.includes("dns lookup failed")
-  );
 }

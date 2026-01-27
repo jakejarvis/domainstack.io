@@ -1,11 +1,11 @@
 "use client";
 
 import { Skeleton } from "@domainstack/ui/skeleton";
+import { cn } from "@domainstack/ui/utils";
+import { simpleHash } from "@domainstack/utils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Component, Suspense, useState } from "react";
-import { simpleHash } from "@/lib/simple-hash";
-import { cn } from "@/lib/utils";
 import type { FaviconWorkflowResult } from "@/workflows/favicon";
 import type { ProviderLogoWorkflowResult } from "@/workflows/provider-logo";
 

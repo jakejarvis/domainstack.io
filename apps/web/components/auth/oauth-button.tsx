@@ -2,11 +2,11 @@
 
 import { Button } from "@domainstack/ui/button";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import { toast } from "sonner";
 import { useAnalytics } from "@/lib/analytics/client";
 import { signIn } from "@/lib/auth-client";
 import type { OAuthProvider } from "@/lib/oauth";
-import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {
   /** Provider configuration */

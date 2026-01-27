@@ -16,6 +16,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconArchive,
   IconBell,
@@ -34,7 +35,6 @@ import { ProviderCell } from "@/components/dashboard/provider-cell";
 import { ScreenshotPopover } from "@/components/domain/screenshot-popover";
 import { Favicon } from "@/components/icons/favicon";
 import { formatDateTimeUtc } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 // Define custom column meta for styling
 declare module "@tanstack/react-table" {

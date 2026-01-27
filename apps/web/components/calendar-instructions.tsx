@@ -20,6 +20,7 @@ import {
 } from "@domainstack/ui/dropdown-menu";
 import { Skeleton } from "@domainstack/ui/skeleton";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import {
   SiApple,
   SiAppstore,
@@ -44,7 +45,6 @@ import { formatDistanceToNowStrict } from "date-fns";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
 /**
  * Skeleton for calendar instructions.

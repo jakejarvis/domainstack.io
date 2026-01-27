@@ -1,6 +1,6 @@
 import { MAX_HISTORY_ITEMS } from "@domainstack/constants";
 import { Skeleton } from "@domainstack/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn } from "@domainstack/ui/utils";
 
 export function HomeSearchSuggestionsSkeleton({
   className,

@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@domainstack/ui/utils";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 
 const ROTATING_WORDS = [
   "registration",

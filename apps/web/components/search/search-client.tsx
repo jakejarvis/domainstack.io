@@ -10,6 +10,7 @@ import {
 } from "@domainstack/ui/input-group";
 import { Kbd } from "@domainstack/ui/kbd";
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
@@ -21,7 +22,7 @@ import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
 import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
-import { cn, isMac } from "@/lib/utils";
+import { isMac } from "@/lib/utils";
 
 export type SearchClientVariant = "sm" | "lg";
 

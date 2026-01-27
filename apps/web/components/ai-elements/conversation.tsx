@@ -2,10 +2,10 @@
 
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 import { IconArrowDown } from "@tabler/icons-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import type { StickToBottomInstance } from "use-stick-to-bottom";
-import { cn } from "@/lib/utils";
 
 export type ConversationProps = ComponentProps<typeof ScrollArea> & {
   stickyInstance: StickToBottomInstance;

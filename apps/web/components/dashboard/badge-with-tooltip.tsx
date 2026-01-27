@@ -4,8 +4,8 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import type { TablerIcon } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
 
 type BadgeWithTooltipProps = {
   icon: TablerIcon;

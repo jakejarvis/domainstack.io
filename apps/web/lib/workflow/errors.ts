@@ -1,6 +1,6 @@
 import "server-only";
+import { isExpectedDnsError } from "@domainstack/safe-fetch";
 import { FatalError, RetryableError } from "workflow";
-import { isExpectedDnsError } from "@/lib/dns-utils";
 import { isExpectedTlsError } from "@/lib/tls-utils";
 
 /**

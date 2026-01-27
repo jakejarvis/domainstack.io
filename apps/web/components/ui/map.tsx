@@ -1,6 +1,7 @@
 "use client";
 
 import { Spinner } from "@domainstack/ui/spinner";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconArrowsMaximize,
   IconLoader2,
@@ -24,7 +25,6 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
 import { analytics } from "@/lib/analytics/client";
-import { cn } from "@/lib/utils";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 

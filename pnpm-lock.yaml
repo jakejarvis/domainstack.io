@@ -46,12 +46,18 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@domainstack/safe-fetch':
+        specifier: workspace:*
+        version: link:../../packages/safe-fetch
       '@domainstack/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@domainstack/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@ghostery/adblocker-puppeteer':
         specifier: ^2.13.4
         version: 2.13.4(puppeteer@24.35.0(bufferutil@4.1.0)(typescript@5.9.3))
@@ -363,6 +369,31 @@ importers:
         specifier: workspace:*
         version: link:../typescript-config
 
+  packages/safe-fetch:
+    dependencies:
+      '@domainstack/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
+      ipaddr.js:
+        specifier: ^2.3.0
+        version: 2.3.0
+      lru-cache:
+        specifier: ^11.2.5
+        version: 11.2.5
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.10)(typescript@5.9.3))(terser@5.46.0)(yaml@2.8.2)
+
   packages/types:
     dependencies:
       '@domainstack/constants':
@@ -426,6 +457,15 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.9)
+
+  packages/utils:
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.10)(typescript@5.9.3))(terser@5.46.0)(yaml@2.8.2)
 
 packages:
 

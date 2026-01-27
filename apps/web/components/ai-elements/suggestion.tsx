@@ -2,8 +2,8 @@
 
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils";
 
 export type SuggestionsProps = ComponentProps<typeof ScrollArea>;
 

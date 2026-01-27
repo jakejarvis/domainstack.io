@@ -4,8 +4,8 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { cn } from "@domainstack/ui/utils";
 import { useTruncation } from "@/hooks/use-truncation";
-import { cn } from "@/lib/utils";
 
 export function KeyValue({
   label,

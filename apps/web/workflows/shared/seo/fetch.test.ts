@@ -4,8 +4,9 @@ import { server } from "@/mocks/server";
 // Hoist mocks for external dependencies
 const safeFetchMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/safe-fetch", () => ({
+vi.mock("@domainstack/safe-fetch", () => ({
   safeFetch: safeFetchMock,
+  isExpectedDnsError: vi.fn().mockReturnValue(false),
 }));
 
 // Mock fetch utilities

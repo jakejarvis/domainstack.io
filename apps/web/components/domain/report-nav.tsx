@@ -2,11 +2,11 @@
 
 import { Button } from "@domainstack/ui/button";
 import { ScrollArea } from "@domainstack/ui/scroll-area";
+import { cn } from "@domainstack/ui/utils";
 import { useEffect, useRef } from "react";
 import { Favicon } from "@/components/icons/favicon";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import type { SectionDef } from "@/lib/constants/sections";
-import { cn } from "@/lib/utils";
 
 interface SectionNavProps {
   domain: string;

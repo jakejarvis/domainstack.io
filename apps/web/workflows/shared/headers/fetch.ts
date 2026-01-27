@@ -11,6 +11,10 @@ import type { FetchHeadersResult } from "./types";
 
 const REQUEST_TIMEOUT_MS = 5000;
 
+const USER_AGENT =
+  process.env.EXTERNAL_USER_AGENT ||
+  "domainstack.io/0.1 (+https://domainstack.io)";
+
 interface HeadersFetchInternalSuccess {
   success: true;
   headers: Header[];
@@ -46,9 +50,10 @@ export async function fetchHeadersStep(
 
   // Dynamic imports for Node.js modules
   const { getStatusCode } = await import("@readme/http-status-codes");
-  const { isExpectedDnsError } = await import("@/lib/dns-utils");
+  const { isExpectedDnsError, safeFetch } = await import(
+    "@domainstack/safe-fetch"
+  );
   const { normalizeHeaders } = await import("@/lib/headers-utils");
-  const { safeFetch } = await import("@/lib/safe-fetch");
   const { isExpectedTlsError } = await import("@/lib/tls-utils");
 
   const allowedHosts = [domain, `www.${domain}`];
@@ -58,6 +63,7 @@ export async function fetchHeadersStep(
     try {
       const final = await safeFetch({
         url: `https://${domain}/`,
+        userAgent: USER_AGENT,
         allowHttp: true,
         timeoutMs: REQUEST_TIMEOUT_MS,
         maxRedirects: 5,

@@ -2,10 +2,10 @@
 
 import type { TrackedDomainWithDetails } from "@domainstack/types";
 import { Button } from "@domainstack/ui/button";
+import { cn } from "@domainstack/ui/utils";
 import { type Cell, flexRender } from "@tanstack/react-table";
 import { motion, useReducedMotion } from "motion/react";
 import { useDashboardActions } from "@/context/dashboard-context";
-import { cn } from "@/lib/utils";
 
 type UnverifiedTableRowProps = {
   rowId: string;

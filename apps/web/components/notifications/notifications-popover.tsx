@@ -11,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@domainstack/ui/tooltip";
+import { cn } from "@domainstack/ui/utils";
 import {
   IconArchive,
   IconBell,
@@ -30,7 +31,6 @@ import { toast } from "sonner";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { useRouter } from "@/hooks/use-router";
 import { useTRPC } from "@/lib/trpc/client";
-import { cn } from "@/lib/utils";
 
 export function NotificationsPopover() {
   const router = useRouter();
