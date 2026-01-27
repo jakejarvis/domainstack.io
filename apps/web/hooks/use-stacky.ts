@@ -2,38 +2,10 @@
 
 import { useChat } from "@ai-sdk/react";
 import { WorkflowChatTransport } from "@workflow/ai";
-import type { UIMessage } from "ai";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { analytics } from "@/lib/analytics/client";
-
-const STORAGE_KEY_RUN_ID = "chat-run-id";
-const STORAGE_KEY_MESSAGES = "chat-messages";
-
-function getStoredRunId(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  return localStorage.getItem(STORAGE_KEY_RUN_ID) ?? undefined;
-}
-
-function getStoredMessages(): UIMessage[] | undefined {
-  if (typeof window === "undefined") return undefined;
-  const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
-  if (!stored) return undefined;
-  try {
-    return JSON.parse(stored) as UIMessage[];
-  } catch (err) {
-    const error = err instanceof Error ? err : new Error(String(err));
-    analytics.trackException(error, { context: "chat-storage-parse" });
-    localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    return undefined;
-  }
-}
-
-function clearStorage() {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY_RUN_ID);
-  localStorage.removeItem(STORAGE_KEY_MESSAGES);
-}
+import { useChatStore } from "@/lib/stores/chat-store";
 
 /**
  * Chat hook with global message history.
@@ -44,9 +16,9 @@ function clearStorage() {
  * Uses WorkflowChatTransport for:
  * - Automatic reconnection after network issues or timeouts
  * - Resumable streaming from the last chunk received
- * - Session persistence via localStorage
+ * - Session persistence via Zustand store
  */
-export function useDomainChat() {
+export function useStacky() {
   const params = useParams<{ domain?: string }>();
 
   // Decode domain from URL (it may be URL-encoded)
@@ -61,8 +33,12 @@ export function useDomainChat() {
   // Track submission errors separately for better UX
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Get stored run ID for stream resumption (computed once on mount)
-  const activeRunId = useMemo(() => getStoredRunId(), []);
+  // Get store state and actions
+  const runId = useChatStore((s) => s.runId);
+  const storedMessages = useChatStore((s) => s.messages);
+  const setRunId = useChatStore((s) => s.setRunId);
+  const setMessages = useChatStore((s) => s.setMessages);
+  const clearSession = useChatStore((s) => s.clearSession);
 
   // Configure workflow transport with domain in body and persistence callbacks.
   // Created once - uses domainRef to always get the current domain value.
@@ -75,42 +51,25 @@ export function useDomainChat() {
         }),
         onChatSendMessage: (response, options) => {
           // Store messages for restoration on page reload
-          try {
-            localStorage.setItem(
-              STORAGE_KEY_MESSAGES,
-              JSON.stringify(options.messages),
-            );
-          } catch (err) {
-            // localStorage may fail (quota exceeded, private browsing, etc.)
-            const error = err instanceof Error ? err : new Error(String(err));
-            analytics.trackException(error, { context: "chat-storage-write" });
-          }
+          setMessages(options.messages);
 
           // Store the workflow run ID for stream resumption
           const workflowRunId = response.headers.get("x-workflow-run-id");
           if (workflowRunId) {
-            try {
-              localStorage.setItem(STORAGE_KEY_RUN_ID, workflowRunId);
-            } catch {
-              // Non-critical - stream resumption will still work within session
-            }
+            setRunId(workflowRunId);
           }
         },
         onChatEnd: () => {
           // Clear the active run ID when chat completes (but keep messages)
-          try {
-            localStorage.removeItem(STORAGE_KEY_RUN_ID);
-          } catch {
-            // Non-critical - stale run ID will be ignored on next session
-          }
+          setRunId(null);
         },
       }),
-    [],
+    [setMessages, setRunId],
   );
 
   const chat = useChat({
     transport,
-    resume: !!activeRunId,
+    resume: !!runId,
     onError: (error) => {
       analytics.trackException(error, { context: "chat-send", domain });
       const message = getUserFriendlyError(error);
@@ -119,22 +78,21 @@ export function useDomainChat() {
   });
 
   // Keep setMessages ref up to date to avoid chat object in deps
-  const setMessagesRef = useRef(chat.setMessages);
-  setMessagesRef.current = chat.setMessages;
+  const setChatMessagesRef = useRef(chat.setMessages);
+  setChatMessagesRef.current = chat.setMessages;
 
-  // Restore messages from localStorage once on mount
+  // Restore messages from store once on mount
   const hasRestored = useRef(false);
   useEffect(() => {
     if (hasRestored.current) return;
     hasRestored.current = true;
 
-    const storedMessages = getStoredMessages();
-    if (storedMessages && storedMessages.length > 0) {
-      setMessagesRef.current(storedMessages);
+    if (storedMessages.length > 0) {
+      setChatMessagesRef.current(storedMessages);
     }
-  }, []);
+  }, [storedMessages]);
 
-  // Persist messages to localStorage when:
+  // Persist messages to store when:
   // - Message count changes (new message added)
   // - Status changes to 'ready' (streaming completed, final content available)
   // Skip the initial empty state and restoration
@@ -149,20 +107,11 @@ export function useDomainChat() {
       return;
     }
 
-    // Save messages to localStorage
+    // Save messages to store
     if (chat.messages.length > 0) {
-      try {
-        localStorage.setItem(
-          STORAGE_KEY_MESSAGES,
-          JSON.stringify(chat.messages),
-        );
-      } catch (err) {
-        // localStorage may fail (quota exceeded, private browsing, etc.)
-        const error = err instanceof Error ? err : new Error(String(err));
-        analytics.trackException(error, { context: "chat-storage-persist" });
-      }
+      setMessages(chat.messages);
     }
-  }, [chat.messages.length, chat.status]);
+  }, [chat.messages.length, chat.status, setMessages]);
 
   // Clear error when user starts typing or retries
   const clearError = useCallback(() => {
@@ -171,10 +120,10 @@ export function useDomainChat() {
 
   // Clear all messages and storage
   const clearMessages = useCallback(() => {
-    setMessagesRef.current([]);
+    setChatMessagesRef.current([]);
     setSubmitError(null);
-    clearStorage();
-  }, []);
+    clearSession();
+  }, [clearSession]);
 
   // Wrap sendMessage to validate and clear errors
   const sendMessage = useCallback(

@@ -1,9 +1,8 @@
 "use client";
 
 import type { SortingState } from "@tanstack/react-table";
-import { usePathname } from "next/navigation";
 import { parseAsString, useQueryState } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   DEFAULT_SORT,
   parseSortParam,
@@ -15,6 +14,7 @@ import {
 /**
  * Hook to manage grid sort preference with URL persistence using nuqs.
  * Validates that sort option exists in SORT_OPTIONS (grid-compatible sorts only).
+ * State preservation across intercepted routes is handled by Zustand store in dashboard-client.
  */
 export function useDashboardGridSort(): [
   SortOption,
@@ -28,22 +28,9 @@ export function useDashboardGridSort(): [
     }),
   );
 
-  // Preserve state when navigating to intercepting routes (e.g. /dashboard/add-domain)
-  const pathname = usePathname();
-  const isDashboardPage = pathname === "/dashboard";
-  const [cachedSort, setCachedSort] = useState(sortParam);
-
-  useEffect(() => {
-    if (isDashboardPage) {
-      setCachedSort(sortParam);
-    }
-  }, [sortParam, isDashboardPage]);
-
-  const activeSort = isDashboardPage ? sortParam : cachedSort;
-
   // Validate that the sort option is in SORT_OPTIONS (grid-compatible)
-  const validSort = SORT_OPTIONS.some((opt) => opt.value === activeSort)
-    ? (activeSort as SortOption)
+  const validSort = SORT_OPTIONS.some((opt) => opt.value === sortParam)
+    ? (sortParam as SortOption)
     : DEFAULT_SORT;
 
   return [validSort, setSortParam];
@@ -51,7 +38,8 @@ export function useDashboardGridSort(): [
 
 /**
  * Hook for table view - syncs TanStack Table state with URL
- * Supports all sortable columns in the table
+ * Supports all sortable columns in the table.
+ * State preservation across intercepted routes is handled by Zustand store in dashboard-client.
  *
  * @param onSortChange - Optional callback to run when sort changes (e.g., reset pagination)
  */
@@ -61,7 +49,9 @@ export function useDashboardTableSort(options?: {
   SortingState,
   (updater: SortingState | ((old: SortingState) => SortingState)) => void,
 ] {
-  const onSortChange = options?.onSortChange;
+  // Store callback in ref to avoid recreating sort setter when callback changes
+  const onSortChangeRef = useRef(options?.onSortChange);
+  onSortChangeRef.current = options?.onSortChange;
 
   const [sortParam, setSortParam] = useQueryState(
     "sort",
@@ -71,21 +61,8 @@ export function useDashboardTableSort(options?: {
     }),
   );
 
-  // Preserve state when navigating to intercepting routes
-  const pathname = usePathname();
-  const isDashboardPage = pathname === "/dashboard";
-  const [cachedSort, setCachedSort] = useState(sortParam);
-
-  useEffect(() => {
-    if (isDashboardPage) {
-      setCachedSort(sortParam);
-    }
-  }, [sortParam, isDashboardPage]);
-
-  const activeSort = isDashboardPage ? sortParam : cachedSort;
-
   // Memoize sorting state to avoid creating new array on every render
-  const sorting = useMemo(() => parseSortParam(activeSort), [activeSort]);
+  const sorting = useMemo(() => parseSortParam(sortParam), [sortParam]);
 
   const setSerializedSorting = useCallback(
     (updater: SortingState | ((old: SortingState) => SortingState)) => {
@@ -93,9 +70,9 @@ export function useDashboardTableSort(options?: {
         typeof updater === "function" ? updater(sorting) : updater;
       const serialized = serializeSortState(newSorting);
       setSortParam(serialized);
-      onSortChange?.();
+      onSortChangeRef.current?.();
     },
-    [sorting, setSortParam, onSortChange],
+    [sorting, setSortParam],
   );
 
   return [sorting, setSerializedSorting];

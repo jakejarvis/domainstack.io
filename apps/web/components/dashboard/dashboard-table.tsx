@@ -21,8 +21,8 @@ import { UpgradeRow } from "@/components/dashboard/upgrade-row";
 import { VerifiedTableRow } from "@/components/dashboard/verified-table-row";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
-import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import { useDashboardTableSort } from "@/hooks/use-dashboard-sort";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +56,8 @@ export function DashboardTable({
   const [sorting, setSorting] = useDashboardTableSort({
     onSortChange: resetPage,
   });
-  const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
+  const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
+  const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
   // Use refs to store current state so columns can be memoized
   // without being recreated on every selection/sort change

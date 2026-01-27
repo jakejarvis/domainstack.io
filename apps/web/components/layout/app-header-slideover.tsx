@@ -1,15 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useHeaderSearchFocus } from "@/components/search/header-search-context";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
 
 export function AppHeaderSlideOver({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isSearchFocused } = useHeaderSearchFocus();
+  const isSearchFocused = useHeaderSearchStore((s) => s.isSearchFocused);
   const isMobile = useIsMobile();
   const shouldReduceMotion = useReducedMotion();
 

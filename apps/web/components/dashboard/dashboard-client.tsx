@@ -6,17 +6,20 @@ import {
   IconHeartHandshake,
 } from "@tabler/icons-react";
 import type { Table } from "@tanstack/react-table";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
+import { toast } from "sonner";
 import { ArchivedDomainsList } from "@/components/dashboard/archived-domains-list";
-import { ConfirmActionDialog } from "@/components/dashboard/confirm-action-dialog";
 import { DashboardBannerDismissable } from "@/components/dashboard/dashboard-banner-dismissable";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { DashboardError } from "@/components/dashboard/dashboard-error";
@@ -26,14 +29,19 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HealthSummary } from "@/components/dashboard/health-summary";
 import { SubscriptionEndingBanner } from "@/components/dashboard/subscription-ending-banner";
 import { UpgradeBanner } from "@/components/dashboard/upgrade-banner";
-import { Button } from "@/components/ui/button";
-import { useBulkOperations } from "@/hooks/use-bulk-operations";
 import {
-  type ConfirmAction,
-  useConfirmAction,
-} from "@/hooks/use-confirm-action";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { useDashboardFilters } from "@/hooks/use-dashboard-filters";
-import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
+import { useDashboardPagination } from "@/hooks/use-dashboard-pagination";
 import { useDashboardSelection } from "@/hooks/use-dashboard-selection";
 import { useDashboardGridSort } from "@/hooks/use-dashboard-sort";
 import { useRouter } from "@/hooks/use-router";
@@ -41,7 +49,48 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useTrackedDomains } from "@/hooks/use-tracked-domains";
 import { useSession } from "@/lib/auth-client";
 import { sortDomains } from "@/lib/dashboard-utils";
+import { useDashboardStore } from "@/lib/stores/dashboard-store";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import type { TrackedDomainWithDetails } from "@/lib/types/tracked-domain";
+
+type ConfirmAction =
+  | { type: "remove"; domainId: string; domainName: string }
+  | { type: "archive"; domainId: string; domainName: string }
+  | { type: "bulk-archive"; domainIds: string[]; count: number }
+  | { type: "bulk-delete"; domainIds: string[]; count: number };
+
+function getConfirmDialogContent(action: ConfirmAction) {
+  switch (action.type) {
+    case "remove":
+      return {
+        title: "Remove domain?",
+        description: `Are you sure you want to stop tracking ${action.domainName}?`,
+        confirmLabel: "Remove",
+        variant: "destructive" as const,
+      };
+    case "archive":
+      return {
+        title: "Archive domain?",
+        description: `Are you sure you want to archive ${action.domainName}? You can reactivate it later from the Archived section.`,
+        confirmLabel: "Archive",
+        variant: "default" as const,
+      };
+    case "bulk-archive":
+      return {
+        title: `Archive ${action.count} domains?`,
+        description: `Are you sure you want to archive ${action.count} domain${action.count === 1 ? "" : "s"}? You can reactivate them later from the Archived section.`,
+        confirmLabel: "Archive All",
+        variant: "default" as const,
+      };
+    case "bulk-delete":
+      return {
+        title: `Delete ${action.count} domains?`,
+        description: `Are you sure you want to stop tracking ${action.count} domain${action.count === 1 ? "" : "s"}?`,
+        confirmLabel: "Delete All",
+        variant: "destructive" as const,
+      };
+  }
+}
 
 export function DashboardClient() {
   const [showUpgradedBanner, setShowUpgradedBanner] = useState(false);
@@ -51,8 +100,14 @@ export function DashboardClient() {
       .withDefault("active")
       .withOptions({ shallow: true, clearOnDefault: true }),
   );
-  const { viewMode, setViewMode } = useDashboardPreferences();
+  const viewMode = usePreferencesStore((s) => s.viewMode);
+  const setViewMode = usePreferencesStore((s) => s.setViewMode);
   const [sortOption, setSortOption] = useDashboardGridSort();
+  const { pagination, setPageIndex } = useDashboardPagination();
+  const snapshot = useDashboardStore((s) => s.snapshot);
+  const captureSnapshot = useDashboardStore((s) => s.captureSnapshot);
+  const clearSnapshot = useDashboardStore((s) => s.clearSnapshot);
+  const pathname = usePathname();
   const [tableInstance, setTableInstance] =
     useState<Table<TrackedDomainWithDetails> | null>(null);
   const { data: session, isPending: sessionLoading } = useSession();
@@ -74,6 +129,8 @@ export function DashboardClient() {
     archiveMutation,
     unarchiveMutation,
     muteMutation,
+    bulkArchiveMutation,
+    bulkDeleteMutation,
   } = useTrackedDomains({ includeArchived: true });
 
   const domains = useMemo(
@@ -137,6 +194,71 @@ export function DashboardClient() {
     [setProvidersImmediate],
   );
 
+  // Track previous pathname to detect navigation away from/to dashboard
+  const prevPathnameRef = useRef(pathname);
+
+  // Effect event to restore snapshot - reads latest snapshot without being a dependency
+  const onRestoreSnapshot = useEffectEvent(() => {
+    if (!snapshot) return;
+    setSearchImmediate(snapshot.search);
+    setStatusImmediate(snapshot.status);
+    setHealthImmediate(snapshot.health);
+    setTldsImmediate(snapshot.tlds);
+    setProvidersImmediate(snapshot.providers);
+    setSortOption(snapshot.sort);
+    setPageIndex(snapshot.page);
+    if (snapshot.view !== "active") {
+      setActiveTab(snapshot.view);
+    }
+    clearSnapshot();
+  });
+
+  // Effect event to capture snapshot - reads latest filter values without them being dependencies
+  const onCaptureSnapshot = useEffectEvent(() => {
+    captureSnapshot({
+      search,
+      status,
+      health,
+      tlds,
+      providers,
+      domainId,
+      sort: sortOption,
+      page: pagination.pageIndex,
+      view: activeTab ?? "active",
+    });
+  });
+
+  // Restore snapshot when returning to /dashboard from an intercepted route
+  // Note: useLayoutEffect runs before useEffect, so we can restore before the capture check
+  useLayoutEffect(() => {
+    const wasOnDashboard = prevPathnameRef.current === "/dashboard";
+    const isOnDashboard = pathname === "/dashboard";
+
+    if (!wasOnDashboard && isOnDashboard) {
+      onRestoreSnapshot();
+    }
+  }, [pathname]);
+
+  // Capture snapshot when navigating away from /dashboard
+  // For intercepted routes (modals), this component stays mounted and the snapshot is preserved
+  // For full navigations, the unmount cleanup below will clear it
+  useEffect(() => {
+    const wasOnDashboard = prevPathnameRef.current === "/dashboard";
+    const isOnDashboard = pathname === "/dashboard";
+
+    if (wasOnDashboard && !isOnDashboard) {
+      onCaptureSnapshot();
+    }
+
+    // Update ref after both effects have read the previous value
+    prevPathnameRef.current = pathname;
+  }, [pathname]);
+
+  // Clear snapshot on unmount (full navigation away, not intercepted route)
+  // This prevents stale snapshots from being restored if user navigates
+  // to a different page entirely and then comes back to dashboard
+  useEffect(() => clearSnapshot, [clearSnapshot]);
+
   // Apply sorting after filtering (only for grid view - table has its own column sorting)
   const filteredDomains = useMemo(
     () =>
@@ -154,34 +276,79 @@ export function DashboardClient() {
   const selection = useDashboardSelection(filteredDomainIds);
 
   // Bulk operations
-  const {
-    isBulkArchiving,
-    isBulkDeleting,
-    executeBulkArchive,
-    executeBulkDelete,
-  } = useBulkOperations({
-    onComplete: selection.clearSelection,
-  });
+  const isBulkArchiving = bulkArchiveMutation.isPending;
+  const isBulkDeleting = bulkDeleteMutation.isPending;
 
-  // Confirmation dialog
-  const handleConfirmAction = useCallback(
-    (action: ConfirmAction) => {
-      if (action.type === "remove") {
-        removeMutation.mutate({ trackedDomainId: action.domainId });
-      } else if (action.type === "archive") {
-        archiveMutation.mutate({ trackedDomainId: action.domainId });
-      } else if (action.type === "bulk-archive") {
-        void executeBulkArchive(action.domainIds);
-      } else if (action.type === "bulk-delete") {
-        void executeBulkDelete(action.domainIds);
+  const doBulkArchive = useCallback(
+    async (domainIds: string[]) => {
+      try {
+        const result = await bulkArchiveMutation.mutateAsync({
+          trackedDomainIds: domainIds,
+        });
+        selection.clearSelection();
+        if (result.failedCount === 0) {
+          toast.success(
+            `Archived ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
+          );
+        } else {
+          toast.warning(
+            `Archived ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
+          );
+        }
+      } catch {
+        // Error handled in mutation onError
       }
     },
-    [removeMutation, archiveMutation, executeBulkArchive, executeBulkDelete],
+    [bulkArchiveMutation, selection],
   );
 
-  const confirmAction = useConfirmAction({
-    onConfirm: handleConfirmAction,
-  });
+  const doBulkDelete = useCallback(
+    async (domainIds: string[]) => {
+      try {
+        const result = await bulkDeleteMutation.mutateAsync({
+          trackedDomainIds: domainIds,
+        });
+        selection.clearSelection();
+        if (result.failedCount === 0) {
+          toast.success(
+            `Deleted ${result.successCount} domain${result.successCount === 1 ? "" : "s"}`,
+          );
+        } else {
+          toast.warning(
+            `Deleted ${result.successCount} of ${domainIds.length} domains (${result.failedCount} failed)`,
+          );
+        }
+      } catch {
+        // Error handled in mutation onError
+      }
+    },
+    [bulkDeleteMutation, selection],
+  );
+
+  // Confirmation dialog - local state
+  const [pendingAction, setPendingAction] = useState<ConfirmAction | null>(
+    null,
+  );
+
+  const handleConfirm = useCallback(() => {
+    if (!pendingAction) return;
+    if (pendingAction.type === "remove") {
+      removeMutation.mutate({ trackedDomainId: pendingAction.domainId });
+    } else if (pendingAction.type === "archive") {
+      archiveMutation.mutate({ trackedDomainId: pendingAction.domainId });
+    } else if (pendingAction.type === "bulk-archive") {
+      void doBulkArchive(pendingAction.domainIds);
+    } else if (pendingAction.type === "bulk-delete") {
+      void doBulkDelete(pendingAction.domainIds);
+    }
+    setPendingAction(null);
+  }, [
+    pendingAction,
+    removeMutation,
+    archiveMutation,
+    doBulkArchive,
+    doBulkDelete,
+  ]);
 
   // Handle ?upgraded=true query param (after nuqs adapter)
   const searchParams = useSearchParams();
@@ -220,47 +387,33 @@ export function DashboardClient() {
     [router],
   );
 
-  const handleRemove = useCallback(
-    (id: string, domainName: string) => {
-      confirmAction.requestConfirmation({
-        type: "remove",
-        domainId: id,
-        domainName,
-      });
-    },
-    [confirmAction],
-  );
+  const handleRemove = useCallback((id: string, domainName: string) => {
+    setPendingAction({ type: "remove", domainId: id, domainName });
+  }, []);
 
-  const handleArchive = useCallback(
-    (id: string, domainName: string) => {
-      confirmAction.requestConfirmation({
-        type: "archive",
-        domainId: id,
-        domainName,
-      });
-    },
-    [confirmAction],
-  );
+  const handleArchive = useCallback((id: string, domainName: string) => {
+    setPendingAction({ type: "archive", domainId: id, domainName });
+  }, []);
 
   const handleBulkArchive = useCallback(() => {
     const domainIds = selection.selectedArray;
     if (domainIds.length === 0) return;
-    confirmAction.requestConfirmation({
+    setPendingAction({
       type: "bulk-archive",
       domainIds,
       count: domainIds.length,
     });
-  }, [selection.selectedArray, confirmAction]);
+  }, [selection.selectedArray]);
 
   const handleBulkDelete = useCallback(() => {
     const domainIds = selection.selectedArray;
     if (domainIds.length === 0) return;
-    confirmAction.requestConfirmation({
+    setPendingAction({
       type: "bulk-delete",
       domainIds,
       count: domainIds.length,
     });
-  }, [selection.selectedArray, confirmAction]);
+  }, [selection.selectedArray]);
 
   const handleUnarchive = useCallback(
     (id: string) => {
@@ -419,14 +572,34 @@ export function DashboardClient() {
       )}
 
       {/* Confirmation dialog for destructive actions */}
-      <ConfirmActionDialog
-        open={confirmAction.isOpen}
+      <AlertDialog
+        open={pendingAction !== null}
         onOpenChange={(open) => {
-          if (!open) confirmAction.cancel();
+          if (!open) setPendingAction(null);
         }}
-        content={confirmAction.dialogContent}
-        onConfirm={confirmAction.confirm}
-      />
+      >
+        {pendingAction && (
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {getConfirmDialogContent(pendingAction).title}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {getConfirmDialogContent(pendingAction).description}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirm}
+                variant={getConfirmDialogContent(pendingAction).variant}
+              >
+                {getConfirmDialogContent(pendingAction).confirmLabel}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
+      </AlertDialog>
     </div>
   );
 }

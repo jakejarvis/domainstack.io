@@ -2,9 +2,8 @@
 
 import { IconX } from "@tabler/icons-react";
 import Link from "next/link";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Favicon } from "@/components/icons/favicon";
-import { useHomeSearch } from "@/components/search/home-search-context";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,10 +11,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDomainHistory } from "@/hooks/use-domain-history";
-import { useRouter } from "@/hooks/use-router";
 import { useAnalytics } from "@/lib/analytics/client";
 import { MAX_HISTORY_ITEMS } from "@/lib/constants/app";
+import { useHomeSearchStore } from "@/lib/stores/home-search-store";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { cn } from "@/lib/utils";
 
 export type HomeSearchSuggestionsClientProps = {
@@ -30,12 +29,18 @@ export function HomeSearchSuggestionsClient({
   className,
   max = MAX_HISTORY_ITEMS,
 }: HomeSearchSuggestionsClientProps) {
-  const router = useRouter();
   const analytics = useAnalytics();
-  const { onSuggestionClick } = useHomeSearch();
+  const setPendingDomain = useHomeSearchStore((s) => s.setPendingDomain);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { history, isHistoryLoaded, clearHistory } = useDomainHistory();
+  // Track hydration state for consistent rendering
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
+  useEffect(() => {
+    setIsHistoryLoaded(true);
+  }, []);
+
+  const history = useSearchHistoryStore((s) => s.history);
+  const clearHistory = useSearchHistoryStore((s) => s.clearHistory);
 
   const displayedSuggestions = useMemo(() => {
     const historySet = new Set(history);
@@ -51,11 +56,8 @@ export function HomeSearchSuggestionsClient({
       domain,
       source: "suggestion",
     });
-    if (onSuggestionClick) {
-      onSuggestionClick(domain);
-      return;
-    }
-    router.push(`/${encodeURIComponent(domain)}`);
+    // Set pending domain for SearchClient to pick up and navigate
+    setPendingDomain(domain);
   }
 
   function handleClearHistory() {

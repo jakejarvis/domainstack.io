@@ -100,7 +100,8 @@
     "vaul": "^1.1.2",
     "workflow": "4.0.1-beta.50",
     "ws": "^8.19.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.15",

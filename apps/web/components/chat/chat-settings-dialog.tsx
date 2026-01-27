@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useAiPreferences } from "@/hooks/use-ai-preferences";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { Icon } from "../ui/icon";
 
 export interface ChatSettingsDialogProps {
@@ -34,8 +34,10 @@ export function ChatSettingsDialog({
   open,
   onOpenChange,
 }: ChatSettingsDialogProps) {
-  const { hideAiFeatures, setHideAiFeatures, showToolCalls, setShowToolCalls } =
-    useAiPreferences();
+  const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
+  const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
+  const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
+  const setShowToolCalls = usePreferencesStore((s) => s.setShowToolCalls);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>

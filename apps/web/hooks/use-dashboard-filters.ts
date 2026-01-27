@@ -1,8 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import type { ProviderCategory } from "@/lib/constants/providers";
 import {
@@ -33,19 +32,13 @@ export type AvailableProvidersByCategory = Record<
 
 /**
  * Hook for managing dashboard filter state with URL persistence using nuqs.
- *
- * @param onFilterChange - Optional callback to run when any filter changes (e.g., reset pagination)
  */
-export function useDashboardFilters(
-  domains: TrackedDomainWithDetails[],
-  options?: { onFilterChange?: () => void },
-) {
-  // Destructure to get stable reference for callbacks
-  const onFilterChange = options?.onFilterChange;
+export function useDashboardFilters(domains: TrackedDomainWithDetails[]) {
   // Use shared hydrated time to avoid extra re-renders
   const now = useHydratedNow();
 
   // URL state with nuqs
+  // State preservation across intercepted routes is handled by Zustand store in dashboard-client
   const [filters, setFilters] = useQueryStates(
     {
       search: parseAsString.withDefault(""),
@@ -62,35 +55,22 @@ export function useDashboardFilters(
     },
   );
 
-  // Preserve state when navigating to intercepting routes (e.g. /dashboard/add-domain)
-  const pathname = usePathname();
-  const isDashboardPage = pathname === "/dashboard";
-  const [cachedFilters, setCachedFilters] = useState(filters);
-
-  useEffect(() => {
-    if (isDashboardPage) {
-      setCachedFilters(filters);
-    }
-  }, [filters, isDashboardPage]);
-
-  const activeFilters = isDashboardPage ? filters : cachedFilters;
-
   // Validate status and health filter values from URL params
   // Filter out any invalid values that might come from manual URL manipulation
   const validatedStatus = useMemo(
     () =>
-      activeFilters.status.filter((s): s is StatusFilter =>
+      filters.status.filter((s): s is StatusFilter =>
         VALID_STATUS_FILTERS.includes(s as StatusFilter),
       ),
-    [activeFilters.status],
+    [filters.status],
   );
 
   const validatedHealth = useMemo(
     () =>
-      activeFilters.health.filter((h): h is HealthFilter =>
+      filters.health.filter((h): h is HealthFilter =>
         VALID_HEALTH_FILTERS.includes(h as HealthFilter),
       ),
-    [activeFilters.health],
+    [filters.health],
   );
 
   // Extract unique TLDs from domains for the dropdown
@@ -217,12 +197,12 @@ export function useDashboardFilters(
 
   // Check if any filters are active (use validated status/health)
   const hasActiveFilters =
-    activeFilters.search.length > 0 ||
+    filters.search.length > 0 ||
     validatedStatus.length > 0 ||
     validatedHealth.length > 0 ||
-    activeFilters.tlds.length > 0 ||
-    activeFilters.providers.length > 0 ||
-    !!activeFilters.domainId;
+    filters.tlds.length > 0 ||
+    filters.providers.length > 0 ||
+    !!filters.domainId;
 
   // Filter domains based on current filters
   const filteredDomains = useMemo(() => {
@@ -231,15 +211,15 @@ export function useDashboardFilters(
 
     return domains.filter((domain) => {
       // Domain ID filter (hidden, exact match for notification deep links)
-      if (activeFilters.domainId) {
-        if (domain.id !== activeFilters.domainId) {
+      if (filters.domainId) {
+        if (domain.id !== filters.domainId) {
           return false;
         }
       }
 
       // Search filter
-      if (activeFilters.search) {
-        const searchLower = activeFilters.search.toLowerCase();
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
         if (!domain.domainName.toLowerCase().includes(searchLower)) {
           return false;
         }
@@ -267,15 +247,15 @@ export function useDashboardFilters(
       }
 
       // TLD filter
-      if (activeFilters.tlds.length > 0) {
-        if (!activeFilters.tlds.includes(domain.tld)) {
+      if (filters.tlds.length > 0) {
+        if (!filters.tlds.includes(domain.tld)) {
           return false;
         }
       }
 
       // Provider filter - match if ANY provider matches
       // Only consider valid provider IDs (from verified, non-archived domains)
-      if (activeFilters.providers.length > 0) {
+      if (filters.providers.length > 0) {
         // Provider filter only applies to verified domains
         // (since availableProviders is built from verified domains only)
         if (!domain.verified) {
@@ -283,7 +263,7 @@ export function useDashboardFilters(
         }
 
         // Filter to only valid provider IDs
-        const validSelectedProviders = activeFilters.providers.filter((id) =>
+        const validSelectedProviders = filters.providers.filter((id) =>
           validProviderIds.has(id),
         );
 
@@ -319,7 +299,7 @@ export function useDashboardFilters(
     });
   }, [
     domains,
-    activeFilters,
+    filters,
     validatedStatus,
     validatedHealth,
     now,
@@ -360,33 +340,29 @@ export function useDashboardFilters(
   const setSearch = useCallback(
     (value: string) => {
       setFilters({ search: value || null, domainId: null });
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   const setStatus = useCallback(
     (values: StatusFilter[]) => {
       setFilters({ status: values.length > 0 ? values : null, domainId: null });
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   const setHealth = useCallback(
     (values: HealthFilter[]) => {
       setFilters({ health: values.length > 0 ? values : null, domainId: null });
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   const setTlds = useCallback(
     (values: string[]) => {
       setFilters({ tlds: values.length > 0 ? values : null, domainId: null });
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   const setProviders = useCallback(
@@ -395,9 +371,8 @@ export function useDashboardFilters(
         providers: values.length > 0 ? values : null,
         domainId: null,
       });
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   const clearFilters = useCallback(() => {
@@ -409,8 +384,7 @@ export function useDashboardFilters(
       providers: null,
       domainId: null,
     });
-    onFilterChange?.();
-  }, [setFilters, onFilterChange]);
+  }, [setFilters]);
 
   // Quick filter for health summary clicks
   const applyHealthFilter = useCallback(
@@ -420,30 +394,28 @@ export function useDashboardFilters(
       } else {
         setFilters({ status: null, health: [filter], domainId: null });
       }
-      onFilterChange?.();
     },
-    [setFilters, onFilterChange],
+    [setFilters],
   );
 
   // Clear just the domainId filter (for notification deep link chip removal)
   const clearDomainId = useCallback(() => {
     setFilters({ domainId: null });
-    onFilterChange?.();
-  }, [setFilters, onFilterChange]);
+  }, [setFilters]);
 
   // Get the domain name for the filtered domain ID (for chip display)
-  const filteredDomainName = activeFilters.domainId
-    ? (domains.find((d) => d.id === activeFilters.domainId)?.domainName ?? null)
+  const filteredDomainName = filters.domainId
+    ? (domains.find((d) => d.id === filters.domainId)?.domainName ?? null)
     : null;
 
   return {
     // Current filter values
-    search: activeFilters.search,
+    search: filters.search,
     status: validatedStatus,
     health: validatedHealth,
-    tlds: activeFilters.tlds,
-    providers: activeFilters.providers,
-    domainId: activeFilters.domainId,
+    tlds: filters.tlds,
+    providers: filters.providers,
+    domainId: filters.domainId,
     filteredDomainName,
 
     // Setters

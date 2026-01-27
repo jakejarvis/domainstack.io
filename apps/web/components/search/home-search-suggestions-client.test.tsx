@@ -1,13 +1,8 @@
 import userEvent from "@testing-library/user-event";
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@/mocks/react";
-import { HomeSearchProvider } from "./home-search-context";
+import { render, screen } from "@/mocks/react";
 import { HomeSearchSuggestionsClient } from "./home-search-suggestions-client";
-
-vi.mock("@/hooks/use-router", () => ({
-  useRouter: () => ({ push: vi.fn() }),
-}));
 
 vi.mock("@/components/icons/favicon", () => ({
   Favicon: ({ domain }: { domain: string }) =>
@@ -17,17 +12,40 @@ vi.mock("@/components/icons/favicon", () => ({
     }),
 }));
 
-// Helper to render with provider
-function renderWithProvider(
-  ui: React.ReactElement,
-  onSuggestionClick?: (domain: string) => void,
-) {
-  return render(
-    <HomeSearchProvider onSuggestionClick={onSuggestionClick ?? vi.fn()}>
-      {ui}
-    </HomeSearchProvider>,
-  );
-}
+// Mock the search history store to control history state in tests
+const mockClearHistory = vi.fn();
+const mockHistoryState = vi.hoisted(() => ({
+  history: [] as string[],
+}));
+
+vi.mock("@/lib/stores/search-history-store", () => ({
+  useSearchHistoryStore: (
+    selector: (state: {
+      history: string[];
+      clearHistory: () => void;
+    }) => unknown,
+  ) =>
+    selector({
+      history: mockHistoryState.history,
+      clearHistory: mockClearHistory,
+    }),
+}));
+
+// Mock the home search store
+const mockSetPendingDomain = vi.fn();
+
+vi.mock("@/lib/stores/home-search-store", () => ({
+  useHomeSearchStore: (
+    selector: (state: {
+      pendingDomain: string | null;
+      setPendingDomain: (domain: string | null) => void;
+    }) => unknown,
+  ) =>
+    selector({
+      pendingDomain: null,
+      setPendingDomain: mockSetPendingDomain,
+    }),
+}));
 
 const DEFAULT_TEST_SUGGESTIONS = [
   "github.invalid",
@@ -39,12 +57,14 @@ const DEFAULT_TEST_SUGGESTIONS = [
 
 describe("DomainSuggestionsClient", () => {
   beforeEach(() => {
-    // Reset history between tests
-    localStorage.removeItem("search-history");
+    // Reset mock history between tests
+    mockHistoryState.history = [];
+    mockClearHistory.mockClear();
+    mockSetPendingDomain.mockClear();
   });
 
   it("renders provided suggestions when there is no history", async () => {
-    renderWithProvider(
+    render(
       <HomeSearchSuggestionsClient
         defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
       />,
@@ -60,18 +80,15 @@ describe("DomainSuggestionsClient", () => {
   });
 
   it("renders no suggestions when defaultSuggestions is empty and no history", async () => {
-    renderWithProvider(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
     // Container should render but with no buttons
     const buttons = screen.queryAllByRole("button");
     expect(buttons.length).toBe(0);
   });
 
   it("merges history and suggestions without duplicates, capped by max", async () => {
-    localStorage.setItem(
-      "search-history",
-      JSON.stringify(["foo.invalid", "github.invalid", "bar.invalid"]),
-    );
-    renderWithProvider(
+    mockHistoryState.history = ["foo.invalid", "github.invalid", "bar.invalid"];
+    render(
       <HomeSearchSuggestionsClient
         defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
         max={4}
@@ -91,11 +108,8 @@ describe("DomainSuggestionsClient", () => {
   });
 
   it("shows only history when defaultSuggestions is empty", async () => {
-    localStorage.setItem(
-      "search-history",
-      JSON.stringify(["example.invalid", "test.invalid"]),
-    );
-    renderWithProvider(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    mockHistoryState.history = ["example.invalid", "test.invalid"];
+    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
     // History entries appear
     expect(
       await screen.findByRole("button", { name: /example\.invalid/i }),
@@ -111,8 +125,8 @@ describe("DomainSuggestionsClient", () => {
   });
 
   it("clears history when clear button is clicked", async () => {
-    localStorage.setItem("search-history", JSON.stringify(["example.invalid"]));
-    renderWithProvider(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
+    mockHistoryState.history = ["example.invalid"];
+    render(<HomeSearchSuggestionsClient defaultSuggestions={[]} />);
 
     // Ensure history is loaded and rendered
     expect(
@@ -122,30 +136,20 @@ describe("DomainSuggestionsClient", () => {
     const clearButton = screen.getByRole("button", { name: /clear history/i });
     await userEvent.click(clearButton);
 
-    await waitFor(() => {
-      const stored = localStorage.getItem("search-history");
-      expect(JSON.parse(stored ?? "[]")).toEqual([]);
-      expect(
-        screen.queryByRole("button", { name: /example\.invalid/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /clear history/i }),
-      ).not.toBeInTheDocument();
-    });
+    // Verify clearHistory was called
+    expect(mockClearHistory).toHaveBeenCalled();
   });
 
-  it("invokes onSelect when a suggestion is clicked", async () => {
-    const onSelect = vi.fn();
-    localStorage.setItem("search-history", JSON.stringify(["example.invalid"]));
-    renderWithProvider(
+  it("sets pending domain when a suggestion is clicked", async () => {
+    mockHistoryState.history = ["example.invalid"];
+    render(
       <HomeSearchSuggestionsClient
         defaultSuggestions={DEFAULT_TEST_SUGGESTIONS}
       />,
-      onSelect,
     );
     await userEvent.click(
       screen.getByRole("button", { name: /example.invalid/i }),
     );
-    expect(onSelect).toHaveBeenCalledWith("example.invalid");
+    expect(mockSetPendingDomain).toHaveBeenCalledWith("example.invalid");
   });
 });

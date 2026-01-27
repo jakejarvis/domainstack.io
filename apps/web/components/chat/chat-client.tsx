@@ -32,8 +32,8 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { Button } from "@/components/ui/button";
-import { useAiPreferences } from "@/hooks/use-ai-preferences";
 import { MAX_MESSAGE_LENGTH } from "@/lib/constants/ai";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { cn } from "@/lib/utils";
 import { getToolStatusMessage } from "./utils";
 
@@ -68,7 +68,7 @@ export function ChatClient({
   suggestions = [],
 }: ChatClientProps) {
   const [inputLength, setInputLength] = useState(0);
-  const { showToolCalls } = useAiPreferences();
+  const showToolCalls = usePreferencesStore((s) => s.showToolCalls);
 
   // Prepare to share scroll state between the different components
   const stickyInstance = useStickToBottom();

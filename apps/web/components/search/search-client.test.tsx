@@ -9,6 +9,25 @@ const nav = vi.hoisted(() => ({
 
 const useIsMobile = vi.hoisted(() => vi.fn(() => false));
 
+// Mock the home search store
+const mockPendingDomain = vi.hoisted(() => ({
+  value: null as string | null,
+}));
+const mockSetPendingDomain = vi.fn();
+
+vi.mock("@/lib/stores/home-search-store", () => ({
+  useHomeSearchStore: (
+    selector: (state: {
+      pendingDomain: string | null;
+      setPendingDomain: (domain: string | null) => void;
+    }) => unknown,
+  ) =>
+    selector({
+      pendingDomain: mockPendingDomain.value,
+      setPendingDomain: mockSetPendingDomain,
+    }),
+}));
+
 vi.mock("@/hooks/use-router", () => ({
   useRouter: () => ({ push: nav.push }),
 }));
@@ -26,6 +45,8 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 describe("DomainSearch (form variant)", () => {
   beforeEach(() => {
     nav.push.mockClear();
+    mockSetPendingDomain.mockClear();
+    mockPendingDomain.value = null;
     useIsMobile.mockReturnValue(false);
   });
 
@@ -53,20 +74,14 @@ describe("DomainSearch (form variant)", () => {
     expect(toast.error).toHaveBeenCalled();
   });
 
-  it("handles external navigation trigger", async () => {
-    const onComplete = vi.fn();
-    const { rerender } = render(
-      <SearchClient variant="lg" onNavigationCompleteAction={onComplete} />,
-    );
+  it("handles pending domain from store (suggestion click)", async () => {
+    // Start with no pending domain
+    mockPendingDomain.value = null;
+    const { rerender } = render(<SearchClient variant="lg" />);
 
-    // Simulate external navigation request (e.g., from suggestion click)
-    rerender(
-      <SearchClient
-        variant="lg"
-        value="test.invalid"
-        onNavigationCompleteAction={onComplete}
-      />,
-    );
+    // Simulate external navigation request (e.g., from suggestion click via store)
+    mockPendingDomain.value = "test.invalid";
+    rerender(<SearchClient variant="lg" />);
 
     // Wait for input to reflect the triggered domain (async due to useEffect)
     const input = (await screen.findByLabelText(
@@ -74,10 +89,10 @@ describe("DomainSearch (form variant)", () => {
     )) as HTMLInputElement;
     expect(input.value).toBe("test.invalid");
 
-    // Wait for navigation and completion callback to be triggered
+    // Wait for navigation and store clear to be triggered
     await waitFor(() => {
       expect(nav.push).toHaveBeenCalledWith("/test.invalid");
-      expect(onComplete).toHaveBeenCalled();
+      expect(mockSetPendingDomain).toHaveBeenCalledWith(null);
     });
   });
 });
