@@ -73,10 +73,7 @@ export function TrackDomainButton({
   if (isSessionPending || !enabled || (session?.user && isLoadingDomains)) {
     return (
       <Button variant="outline" disabled aria-label="Track domain">
-        <IconBellPlus
-          className="animate-pulse text-muted-foreground"
-          aria-hidden="true"
-        />
+        <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
         <span className="hidden sm:inline">Track</span>
       </Button>
     );
@@ -104,9 +101,7 @@ export function TrackDomainButton({
             />
           }
         />
-        <TooltipContent>
-          <p>You own and track this domain</p>
-        </TooltipContent>
+        <TooltipContent>You own and track this domain</TooltipContent>
       </Tooltip>
     );
   }
@@ -119,7 +114,7 @@ export function TrackDomainButton({
     </>
   ) : (
     <>
-      <IconBellPlus className="text-accent-purple" aria-hidden="true" />
+      <IconBellPlus className="sm:text-muted-foreground" aria-hidden="true" />
       <span className="hidden sm:inline">Track</span>
     </>
   );

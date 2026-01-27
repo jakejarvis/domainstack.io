@@ -1,6 +1,10 @@
 "use client";
 
-import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
+import {
+  IconLayoutSidebarRightCollapse,
+  IconLego,
+  IconMessageCircleFilled,
+} from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
@@ -12,12 +16,11 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
-  Popover,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Tooltip,
   TooltipContent,
@@ -106,114 +109,106 @@ export function ChatTriggerClient({
     return null;
   }
 
+  const handleChatClick = () => {
+    try {
+      navigator.vibrate([50]);
+    } catch {}
+    setOpen(!open);
+  };
+
   const handleSettingsClick = () => {
-    // Close the popover/drawer first to avoid z-index conflicts with the dialog
+    // Close the chat first to avoid z-index conflicts with the dialog
     setOpen(false);
     setSettingsOpen(true);
   };
 
-  // Show chat UI only when AI features are not hidden
-  const showChatUI = !hideAiFeatures;
-
-  // Shared FAB button with entrance animation
-  const fabButton = (
-    <MotionButton
-      variant="default"
-      size="icon-lg"
-      aria-label={`Chat with ${CHATBOT_NAME}`}
-      className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg transition-none"
-      onClick={
-        isMobile
-          ? () => {
-              try {
-                navigator.vibrate([50]);
-              } catch {}
-              setOpen(true);
-            }
-          : undefined
-      }
-      initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 16 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
-    >
-      <IconMessageCircleFilled className="size-5 text-background/95" />
-    </MotionButton>
-  );
-
-  // Shared header actions
-  const headerActions = (
-    <ChatHeaderActions
-      messages={messages}
-      onClear={clearMessages}
-      onSettingsClick={handleSettingsClick}
-      onCloseClick={() => setOpen(false)}
-    />
-  );
-
   return (
     <>
-      {isMobile && (
-        <>
-          <AnimatePresence>{showChatUI && fabButton}</AnimatePresence>
-          <Drawer open={open} onOpenChange={setOpen} handleOnly>
-            <DrawerContent>
-              <DrawerHeader className="flex flex-row items-center justify-between">
-                <DrawerTitle className="flex items-center gap-2">
-                  <IconLego className="size-4" />
-                  <span className="font-semibold text-[15px] leading-none tracking-tight">
-                    {CHATBOT_NAME}
-                  </span>
-                  <BetaBadge />
-                </DrawerTitle>
-                <div className="flex items-center gap-2">{headerActions}</div>
-              </DrawerHeader>
-              <ChatClient
-                {...chatClientProps}
-                conversationClassName="px-4"
-                inputClassName="p-4"
-              />
-            </DrawerContent>
-          </Drawer>
-        </>
-      )}
+      <AnimatePresence>
+        {!hideAiFeatures && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <MotionButton
+                  variant="default"
+                  size="icon-lg"
+                  aria-label={`Chat with ${CHATBOT_NAME}`}
+                  className="fixed right-6 bottom-6 z-40 rounded-full shadow-lg transition-none"
+                  onClick={handleChatClick}
+                  initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 16 }}
+                  transition={{
+                    duration: 0.25,
+                    ease: [0.22, 1, 0.36, 1] as const,
+                  }}
+                >
+                  <IconMessageCircleFilled className="size-5 text-background/95" />
+                </MotionButton>
+              }
+            />
+            <TooltipContent side="left" sideOffset={8}>
+              Chat with {CHATBOT_NAME}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </AnimatePresence>
 
-      {!isMobile && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <AnimatePresence>
-            {showChatUI && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={<PopoverTrigger render={fabButton} />}
-                />
-                <TooltipContent side="left" sideOffset={8}>
-                  Chat with {CHATBOT_NAME}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </AnimatePresence>
-          <PopoverContent
-            side="top"
-            align="end"
-            sideOffset={12}
-            collisionPadding={16}
-            className="flex h-[min(530px,85vh)] w-[410px] flex-col gap-0 overscroll-contain bg-background p-0"
-          >
-            <PopoverHeader className="flex h-12 shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-3">
-              <PopoverTitle className="flex items-center gap-2">
+      {isMobile ? (
+        <Drawer open={open} onOpenChange={setOpen} handleOnly>
+          <DrawerContent>
+            <DrawerHeader className="flex flex-row items-center justify-between">
+              <DrawerTitle className="flex items-center gap-2">
                 <IconLego className="size-4" />
                 <span className="font-semibold text-[15px] leading-none tracking-tight">
                   {CHATBOT_NAME}
                 </span>
                 <BetaBadge />
-              </PopoverTitle>
-              <div className="-mr-1.5 flex items-center gap-1.5">
-                {headerActions}
+              </DrawerTitle>
+              <div className="flex items-center gap-2">
+                <ChatHeaderActions
+                  messages={messages}
+                  onClear={clearMessages}
+                  onSettingsClick={handleSettingsClick}
+                  onCloseClick={() => setOpen(false)}
+                />
               </div>
-            </PopoverHeader>
+            </DrawerHeader>
+            <ChatClient
+              {...chatClientProps}
+              conversationClassName="px-4"
+              inputClassName="p-4"
+            />
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="right"
+            className="flex w-[420px] flex-col gap-0 p-0"
+            showCloseButton={false}
+          >
+            <SheetHeader className="flex shrink-0 flex-row items-center justify-between border-b bg-card/60 px-3.5 py-2">
+              <SheetTitle className="flex items-center gap-2">
+                <IconLego className="size-4" />
+                <span className="font-semibold text-[15px] leading-none tracking-tight">
+                  {CHATBOT_NAME}
+                </span>
+                <BetaBadge />
+              </SheetTitle>
+              <div className="-mr-1.5 flex items-center gap-1.5">
+                <ChatHeaderActions
+                  messages={messages}
+                  onClear={clearMessages}
+                  onSettingsClick={handleSettingsClick}
+                  onCloseClick={() => setOpen(false)}
+                  closeIcon={IconLayoutSidebarRightCollapse}
+                />
+              </div>
+            </SheetHeader>
             <ChatClient {...chatClientProps} inputClassName="p-3" />
-          </PopoverContent>
-        </Popover>
+          </SheetContent>
+        </Sheet>
       )}
 
       <ChatSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />

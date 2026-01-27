@@ -6,6 +6,7 @@ import {
   IconSettings,
   IconTrash,
   IconX,
+  type TablerIcon,
 } from "@tabler/icons-react";
 import type { UIMessage } from "ai";
 import { useState } from "react";
@@ -111,7 +112,13 @@ function ChatSettingsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function CloseChatButton({ onClick }: { onClick: () => void }) {
+function CloseChatButton({
+  onClick,
+  icon: CloseIcon = IconX,
+}: {
+  onClick: () => void;
+  icon?: TablerIcon;
+}) {
   return (
     <Tooltip>
       <TooltipTrigger
@@ -124,7 +131,7 @@ function CloseChatButton({ onClick }: { onClick: () => void }) {
           />
         }
       >
-        <IconX className="size-4" />
+        <CloseIcon className="size-4" />
       </TooltipTrigger>
       <TooltipContent>Close</TooltipContent>
     </Tooltip>
@@ -136,6 +143,7 @@ export interface ChatHeaderActionsProps {
   onClear: () => void;
   onSettingsClick: () => void;
   onCloseClick: () => void;
+  closeIcon?: TablerIcon;
 }
 
 export function ChatHeaderActions({
@@ -143,6 +151,7 @@ export function ChatHeaderActions({
   onClear,
   onSettingsClick,
   onCloseClick,
+  closeIcon,
 }: ChatHeaderActionsProps) {
   return (
     <>
@@ -153,7 +162,7 @@ export function ChatHeaderActions({
         </>
       )}
       <ChatSettingsButton onClick={onSettingsClick} />
-      <CloseChatButton onClick={onCloseClick} />
+      <CloseChatButton onClick={onCloseClick} icon={closeIcon} />
     </>
   );
 }
