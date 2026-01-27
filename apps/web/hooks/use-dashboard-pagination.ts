@@ -3,8 +3,8 @@
 import type { PaginationState } from "@tanstack/react-table";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useCallback } from "react";
-import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
 import type { DashboardPageSizeOptions } from "@/lib/dashboard-utils";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 /**
  * Hook for table pagination - syncs page index with URL, keeps page size in localStorage
@@ -25,9 +25,9 @@ export function useDashboardPagination(): {
     }),
   );
 
-  // Page size in localStorage
-  const { pageSize, setPageSize: setPageSizePreference } =
-    useDashboardPreferences();
+  // Page size from preferences store
+  const pageSize = usePreferencesStore((s) => s.pageSize);
+  const setPageSizePreference = usePreferencesStore((s) => s.setPageSize);
 
   // Convert 1-indexed URL param to 0-indexed internal state
   const pageIndex = Math.max(0, pageParam - 1);

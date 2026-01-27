@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDashboardPreferences } from "@/hooks/use-dashboard-preferences";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 
 type DashboardTableColumnMenuProps<TData> = {
   table: Table<TData>;
@@ -24,8 +24,9 @@ type DashboardTableColumnMenuProps<TData> = {
 export function DashboardTableColumnMenu<TData>({
   table,
 }: DashboardTableColumnMenuProps<TData>) {
-  // Read visibility state directly from localStorage hook (not stale table API)
-  const { columnVisibility, setColumnVisibility } = useDashboardPreferences();
+  // Read visibility state directly from store (not stale table API)
+  const columnVisibility = usePreferencesStore((s) => s.columnVisibility);
+  const setColumnVisibility = usePreferencesStore((s) => s.setColumnVisibility);
 
   const allColumns = table
     .getAllColumns()

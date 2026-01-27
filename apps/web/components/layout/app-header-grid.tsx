@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useHeaderSearchFocus } from "@/components/search/header-search-context";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
+import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
 import { cn } from "@/lib/utils";
 
 export function AppHeaderGrid({ children }: { children: React.ReactNode }) {
-  const { isSearchFocused } = useHeaderSearchFocus();
+  const isSearchFocused = useHeaderSearchStore((s) => s.isSearchFocused);
   const isMobile = useIsMobile();
   const { direction, isPastThreshold } = useScrollDirection({
     threshold: 15,

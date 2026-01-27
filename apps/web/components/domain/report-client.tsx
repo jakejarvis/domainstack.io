@@ -6,7 +6,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { CreateIssueButton } from "@/components/create-issue-button";
 import { CertificatesSection } from "@/components/domain/certificates/certificates-section";
 import { CertificatesSectionSkeleton } from "@/components/domain/certificates/certificates-section-skeleton";
@@ -34,9 +34,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { useDomainHistory } from "@/hooks/use-domain-history";
 import { useReportSectionObserver } from "@/hooks/use-report-section-observer";
 import { sections } from "@/lib/constants/sections";
+import { useSearchHistoryStore } from "@/lib/stores/search-history-store";
 import { useTRPC } from "@/lib/trpc/client";
 
 function AllSkeletonsExceptRegistration() {
@@ -172,9 +172,12 @@ export function DomainReportClient({ domain }: { domain: string }) {
     });
 
   // Add to search history for registered domains
-  useDomainHistory(domain, {
-    enabled: isRegistered,
-  });
+  const addDomainToHistory = useSearchHistoryStore((s) => s.addDomain);
+  useEffect(() => {
+    if (isRegistered) {
+      addDomainToHistory(domain);
+    }
+  }, [isRegistered, domain, addDomainToHistory]);
 
   // Show error state if registration query failed
   if (isRegistrationError) {

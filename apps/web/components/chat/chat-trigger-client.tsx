@@ -23,10 +23,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAiPreferences } from "@/hooks/use-ai-preferences";
-import { useDomainChat } from "@/hooks/use-domain-chat";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useStacky } from "@/hooks/use-stacky";
 import { CHATBOT_NAME } from "@/lib/constants/ai";
+import { useChatStore } from "@/lib/stores/chat-store";
+import { usePreferencesStore } from "@/lib/stores/preferences-store";
 import { ChatClient } from "./chat-client";
 import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
@@ -41,12 +42,17 @@ interface ChatTriggerClientProps {
 export function ChatTriggerClient({
   suggestions = [],
 }: ChatTriggerClientProps) {
-  const [open, setOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Use chat store for open/settings state
+  const open = useChatStore((s) => s.isOpen);
+  const setOpen = useChatStore((s) => s.setOpen);
+  const settingsOpen = useChatStore((s) => s.isSettingsOpen);
+  const setSettingsOpen = useChatStore((s) => s.setSettingsOpen);
+
   const [mounted, setMounted] = useState(false);
   const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
-  const { hideAiFeatures, setHideAiFeatures } = useAiPreferences();
+  const hideAiFeatures = usePreferencesStore((s) => s.hideAiFeatures);
+  const setHideAiFeatures = usePreferencesStore((s) => s.setHideAiFeatures);
   const {
     messages,
     sendMessage,
@@ -55,7 +61,7 @@ export function ChatTriggerClient({
     error,
     clearError,
     clearMessages,
-  } = useDomainChat();
+  } = useStacky();
 
   // Wait for client-side hydration to read localStorage
   useEffect(() => {

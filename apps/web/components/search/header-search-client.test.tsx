@@ -2,7 +2,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@/mocks/react";
 import { HeaderSearchClient } from "./header-search-client";
-import { HeaderSearchProvider } from "./header-search-context";
 
 const nav = vi.hoisted(() => ({
   push: vi.fn(),
@@ -25,11 +24,7 @@ describe("HeaderSearch", () => {
 
   it("prefills normalized domain from params and navigates on Enter", async () => {
     nav.params = { domain: "Sub.Test.INVALID" };
-    render(
-      <HeaderSearchProvider>
-        <HeaderSearchClient />
-      </HeaderSearchProvider>,
-    );
+    render(<HeaderSearchClient />);
     const input = screen.getByLabelText(/Search any domain/i);
     expect(input).toHaveValue("sub.test.invalid");
     await userEvent.type(input, "{Enter}");
@@ -38,11 +33,7 @@ describe("HeaderSearch", () => {
 
   it("does nothing on invalid domain", async () => {
     nav.params = { domain: "invalid domain" } as { domain: string };
-    render(
-      <HeaderSearchProvider>
-        <HeaderSearchClient />
-      </HeaderSearchProvider>,
-    );
+    render(<HeaderSearchClient />);
     const input = screen.getByLabelText(/Search any domain/i);
     await userEvent.type(input, "{Enter}");
     expect(nav.push).not.toHaveBeenCalled();
@@ -50,22 +41,14 @@ describe("HeaderSearch", () => {
 
   it("re-enables the input after navigating to a new route", async () => {
     nav.params = { domain: "foo.invalid" };
-    const { rerender } = render(
-      <HeaderSearchProvider>
-        <HeaderSearchClient />
-      </HeaderSearchProvider>,
-    );
+    const { rerender } = render(<HeaderSearchClient />);
     const input = screen.getByLabelText(/Search any domain/i);
     // Submit to trigger loading state (disables input)
     await userEvent.type(input, "{Enter}");
     expect(input).toBeDisabled();
     // Simulate navigation by changing route params and re-rendering
     nav.params = { domain: "bar.invalid" };
-    rerender(
-      <HeaderSearchProvider>
-        <HeaderSearchClient />
-      </HeaderSearchProvider>,
-    );
+    rerender(<HeaderSearchClient />);
     await waitFor(() =>
       expect(screen.getByLabelText(/Search any domain/i)).not.toBeDisabled(),
     );

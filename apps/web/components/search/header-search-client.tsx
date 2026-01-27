@@ -1,11 +1,11 @@
 "use client";
 
 import { useSelectedLayoutSegment } from "next/navigation";
-import { useHeaderSearchFocus } from "@/components/search/header-search-context";
 import { SearchClient } from "@/components/search/search-client";
+import { useHeaderSearchStore } from "@/lib/stores/header-search-store";
 
 export function HeaderSearchClient() {
-  const { setIsSearchFocused } = useHeaderSearchFocus();
+  const setIsSearchFocused = useHeaderSearchStore((s) => s.setIsSearchFocused);
   const segment = useSelectedLayoutSegment();
   const isHome = segment === null || segment === "(landing)";
 

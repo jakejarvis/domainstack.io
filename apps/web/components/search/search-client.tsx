@@ -1,7 +1,10 @@
 "use client";
 
-import { IconArrowRight, IconSearch } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { IconArrowRight, IconCircleX, IconSearch } from "@tabler/icons-react";
+import { useParams } from "next/navigation";
+import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
   InputGroup,
@@ -11,9 +14,12 @@ import {
 } from "@/components/ui/input-group";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
-import { useDomainSearch } from "@/hooks/use-domain-search";
 import { useIsMac } from "@/hooks/use-is-mac";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useRouter } from "@/hooks/use-router";
+import { analytics } from "@/lib/analytics/client";
+import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
+import { useHomeSearchStore } from "@/lib/stores/home-search-store";
 import { cn } from "@/lib/utils";
 
 export type SearchClientVariant = "sm" | "lg";
@@ -21,50 +27,112 @@ export type SearchClientVariant = "sm" | "lg";
 export type SearchClientProps = {
   variant?: SearchClientVariant;
   initialValue?: string;
-  value?: string | null;
-  onNavigationCompleteAction?: () => void;
   onFocusChangeAction?: (isFocused: boolean) => void;
 };
 
 export function SearchClient({
   variant = "lg",
   initialValue = "",
-  value: externalValue,
-  onNavigationCompleteAction,
   onFocusChangeAction,
 }: SearchClientProps) {
-  const { value, setValue, loading, inputRef, submit, navigateToDomain } =
-    useDomainSearch({
-      initialValue,
-      showInvalidToast: true,
-      enableShortcut: variant === "sm", // header supports ⌘/Ctrl + K
-      prefillFromRoute: variant === "sm", // header derives initial from route
-    });
-
+  const router = useRouter();
+  const params = useParams<{ domain?: string }>();
   const isMac = useIsMac();
   const isMobile = useIsMobile();
+
+  // Home search store for suggestion click coordination
+  const pendingDomain = useHomeSearchStore((s) => s.pendingDomain);
+  const setPendingDomain = useHomeSearchStore((s) => s.setPendingDomain);
+
+  // Derive initial value from route (header) or prop (homepage)
+  const prefillFromRoute = variant === "sm";
+  const derivedInitial = useMemo(() => {
+    if (prefillFromRoute) {
+      const raw = params?.domain ? decodeURIComponent(params.domain) : "";
+      const normalized = normalizeDomainInput(raw);
+      return isValidDomain(normalized) ? normalized : "";
+    }
+    const normalized = normalizeDomainInput(initialValue);
+    return isValidDomain(normalized) ? normalized : "";
+  }, [prefillFromRoute, params?.domain, initialValue]);
+
+  // Input state
+  const [value, setValue] = useState(derivedInitial);
+  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync value when route/initial changes
+  useEffect(() => {
+    setValue(derivedInitial);
+    setLoading(false);
+  }, [derivedInitial]);
+
+  // Mount effect for hydration
   useEffect(() => setMounted(true), []);
 
-  // Store function refs to avoid unnecessary effect re-runs
-  // Direct assignment is sufficient - no useEffect needed
+  // Keyboard shortcut (⌘/Ctrl+K)
+  useHotkeys(
+    "mod+k",
+    (e) => {
+      e.preventDefault();
+      inputRef.current?.focus();
+    },
+    {
+      enableOnFormTags: false,
+    },
+    [variant],
+  );
+
+  // Navigation helper
+  function navigateToDomain(domain: string) {
+    const target = normalizeDomainInput(domain);
+    analytics.track("search_submitted", { domain: target });
+
+    const current = params?.domain
+      ? normalizeDomainInput(decodeURIComponent(params.domain))
+      : null;
+
+    setLoading(true);
+    router.push(`/${encodeURIComponent(target)}`);
+
+    // If pushing to the same route, Next won't navigate. Clear loading shortly
+    // to avoid an infinite spinner when the path doesn't actually change.
+    if (current && current === target) {
+      setTimeout(() => setLoading(false), 300);
+    }
+  }
+
+  // Form submission
+  function submit() {
+    const normalized = normalizeDomainInput(value);
+    const isValid = isValidDomain(normalized);
+
+    if (!isValid) {
+      analytics.track("search_invalid_input", { input: value });
+      toast.error("Please enter a valid domain.", {
+        icon: createElement(IconCircleX, { className: "h-4 w-4" }),
+        position: "bottom-center",
+      });
+      inputRef.current?.focus();
+      return;
+    }
+    navigateToDomain(normalized);
+  }
+
+  // Store function ref to avoid unnecessary effect re-runs
   const navigateRef = useRef(navigateToDomain);
   navigateRef.current = navigateToDomain;
-  const onCompleteRef = useRef(onNavigationCompleteAction);
-  onCompleteRef.current = onNavigationCompleteAction;
 
-  // Handle external navigation requests (e.g., from suggestion clicks)
+  // Handle pending domain from suggestion clicks (variant="lg" only)
   useEffect(() => {
-    if (externalValue) {
-      // Mirror the selected domain in the input so the form appears submitted
-      setValue(externalValue);
-      // Trigger navigation using ref to avoid dependency issues
-      navigateRef.current(externalValue);
-      // Notify parent that navigation was handled
-      onCompleteRef.current?.();
+    if (variant === "lg" && pendingDomain) {
+      setValue(pendingDomain);
+      navigateRef.current(pendingDomain);
+      setPendingDomain(null);
     }
-  }, [externalValue, setValue]);
+  }, [variant, pendingDomain, setPendingDomain]);
 
   // Select all on first focus from keyboard or first click; allow precise cursor on next click.
   const pointerDownRef = useRef(false);
@@ -78,14 +146,10 @@ export function SearchClient({
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     setIsFocused(true);
     onFocusChangeAction?.(true);
-    // If focus came from keyboard (e.g., Cmd/Ctrl+K), select immediately
-    // and allow the next click to place the caret precisely.
     if (!pointerDownRef.current) {
       e.currentTarget.select();
       justFocusedRef.current = false;
     } else {
-      // For pointer-initiated focus, wait for the first click to select all
-      // so double-click can still select a word normally.
       justFocusedRef.current = true;
       pointerDownRef.current = false;
     }
@@ -97,14 +161,11 @@ export function SearchClient({
   }
 
   function handleClick(e: React.MouseEvent<HTMLInputElement>) {
-    // Triple-click: select entire value explicitly.
     if (e.detail === 3) {
       e.currentTarget.select();
       justFocusedRef.current = false;
       return;
     }
-    // If this is the very first click after pointer-focus, select all on single click.
-    // Double-click (detail 2) will use the browser's default word selection.
     if (justFocusedRef.current && e.detail === 1) {
       e.currentTarget.select();
     }
