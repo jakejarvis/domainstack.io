@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     logger.warn({ err }, "invalid JSON in chat request body");
     return NextResponse.json(
       { error: "Invalid JSON in request body" },
-      { status: 400, headers: rateLimit.headers },
+      { status: 400, headers: { ...rateLimit.headers } },
     );
   }
 
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     }));
     return NextResponse.json(
       { error: "Validation failed", details: errors },
-      { status: 400, headers: rateLimit.headers },
+      { status: 400, headers: { ...rateLimit.headers } },
     );
   }
 
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
     logger.error({ err, domain }, "failed to start chat workflow");
     return NextResponse.json(
       { error: "Failed to start chat. Please try again." },
-      { status: 500, headers: rateLimit.headers },
+      { status: 500, headers: { ...rateLimit.headers } },
     );
   }
 }

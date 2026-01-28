@@ -75,7 +75,7 @@ export async function GET(
         { error: "Workflow failed" },
         {
           status: 500,
-          headers: rateLimit.headers,
+          headers: { ...rateLimit.headers },
         },
       );
     }
@@ -87,7 +87,7 @@ export async function GET(
     // This properly serializes UIMessageChunk objects for HTTP streaming
     return createUIMessageStreamResponse({
       stream: readable,
-      headers: rateLimit.headers,
+      headers: { ...rateLimit.headers },
     });
   } catch (err) {
     // Provide more specific error messages based on error type
@@ -95,7 +95,15 @@ export async function GET(
     let errorMessage = "Chat session not found or expired";
     let statusCode = 404;
 
-    if (error.message.includes("timeout")) {
+    // Check for workflow run no longer available (400 means run completed/expired)
+    // This is expected when the client tries to reconnect after the workflow finished
+    if (
+      error.message.includes("400") ||
+      error.message.includes("Bad Request")
+    ) {
+      errorMessage = "Chat session completed or expired.";
+      statusCode = 410; // Gone - resource no longer available
+    } else if (error.message.includes("timeout")) {
       errorMessage = "Connection timed out. Please try again.";
       statusCode = 408;
     } else if (error.message.includes("network")) {
@@ -110,11 +118,17 @@ export async function GET(
       statusCode = 500;
     }
 
-    // Log at appropriate severity: error for 500s, warn for expected errors
+    // Log at appropriate severity: error for 500s, warn/debug for expected errors
     if (statusCode === 500) {
       logger.error(
         { err, runId, statusCode },
         "unexpected error reconnecting to chat stream",
+      );
+    } else if (statusCode === 410) {
+      // 410 Gone is expected when reconnecting to a completed workflow
+      logger.debug(
+        { runId, statusCode },
+        "chat stream reconnection to completed workflow",
       );
     } else {
       logger.warn(
@@ -127,7 +141,7 @@ export async function GET(
       { error: errorMessage },
       {
         status: statusCode,
-        headers: rateLimit.headers,
+        headers: { ...rateLimit.headers },
       },
     );
   }

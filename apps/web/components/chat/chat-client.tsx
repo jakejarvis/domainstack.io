@@ -54,6 +54,8 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   domainRef.current = domain;
 
   const runId = useChatStore((s) => s.runId);
+  const runIdRef = useRef(runId);
+  runIdRef.current = runId;
   const storedMessages = useChatStore((s) => s.messages);
   const setRunId = useChatStore((s) => s.setRunId);
   const setMessages = useChatStore((s) => s.setMessages);
@@ -66,6 +68,16 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
         prepareSendMessagesRequest: ({ messages }) => ({
           body: { messages, domain: domainRef.current },
         }),
+        prepareReconnectToStreamRequest: ({ api, ...rest }) => {
+          const currentRunId = runIdRef.current;
+          if (!currentRunId) {
+            throw new Error("No active workflow run ID found");
+          }
+          return {
+            ...rest,
+            api: `/api/chat/${encodeURIComponent(currentRunId)}/stream`,
+          };
+        },
         onChatSendMessage: (response, options) => {
           setMessages(options.messages);
           const workflowRunId = response.headers.get("x-workflow-run-id");
@@ -117,6 +129,27 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     }
   }, [chat.messages.length, chat.status, setMessages]);
 
+  // Clear runId when chat completes successfully.
+  // The WorkflowChatTransport's onChatEnd callback should clear runId when a finish chunk
+  // is received, but sometimes the finish chunk is not received (e.g., during tool execution
+  // when the workflow suspends). This effect handles that case by detecting when the chat
+  // transitions from streaming to ready with assistant messages, indicating completion.
+  const prevStatusRef = useRef(chat.status);
+  useEffect(() => {
+    const wasStreaming = prevStatusRef.current === "streaming";
+    const isNowReady = chat.status === "ready";
+    const hasAssistantMessage = chat.messages.some(
+      (m) => m.role === "assistant",
+    );
+
+    if (wasStreaming && isNowReady && hasAssistantMessage && runId) {
+      // Chat completed but onChatEnd wasn't called - clear runId to prevent stale reconnection attempts
+      setRunId(null);
+    }
+
+    prevStatusRef.current = chat.status;
+  }, [chat.status, chat.messages, runId, setRunId]);
+
   const clearError = useCallback(() => {
     setSubmitError(null);
   }, []);
@@ -140,9 +173,16 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     [chat, clearError],
   );
 
-  const error =
-    submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null);
   const { messages, status } = chat;
+
+  // Don't show errors while streaming - if messages are coming through, the chat is working.
+  // The WorkflowChatTransport may report errors from reconnection attempts that don't affect
+  // the actual message stream (e.g., trying to reconnect after the workflow already completed).
+  // These errors come through both onError (setting submitError) and chat.error.
+  const error =
+    status === "streaming"
+      ? null
+      : (submitError ?? (chat.error ? getUserFriendlyError(chat.error) : null));
 
   // Hydrate server suggestions into atom
   const setServerSuggestions = useSetAtom(serverSuggestionsAtom);
