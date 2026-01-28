@@ -104,7 +104,7 @@ importers:
         version: 0.42.4
       '@posthog/ai':
         specifier: ^7.6.0
-        version: 7.6.0(@ai-sdk/provider@3.0.5)(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(bufferutil@4.1.0)(posthog-node@5.24.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.19.0(bufferutil@4.1.0))(zod-to-json-schema@3.25.1(zod@4.3.6))
+        version: 7.6.0(@ai-sdk/provider@3.0.5)(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(bufferutil@4.1.0)(posthog-node@5.24.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.19.0(bufferutil@4.1.0))(zod-to-json-schema@3.25.1(zod@4.3.6))
       '@posthog/nextjs-config':
         specifier: ^1.8.5
         version: 1.8.5(next@16.1.6(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.1.0-rc.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(webpack@5.104.1(@swc/core@1.15.3))
@@ -232,8 +232,8 @@ importers:
         specifier: ^1.335.5
         version: 1.335.5
       posthog-node:
-        specifier: ^5.24.3
-        version: 5.24.3
+        specifier: ^5.24.4
+        version: 5.24.4
       puppeteer-core:
         specifier: 24.35.0
         version: 24.35.0(bufferutil@4.1.0)
@@ -2021,6 +2021,9 @@ packages:
 
   '@posthog/core@1.14.1':
     resolution: {integrity: sha512-DtmJ1y1IDauX8yAZtIotRAYDRkgCCMLk5S9vFFRX7vufhWblQuRUOgn9WYSJrocJlZKm1aEjDzGQ0uyL7HcdLw==}
+
+  '@posthog/core@1.15.0':
+    resolution: {integrity: sha512-n2/Yy0+qc8xhmlcOFiYqTcGHBZuuaQjVolfFXk7yTCynzdMe8Fx1zYvPPUrbdQK5tWwXyilkzybpqhK6I7aV4Q==}
 
   '@posthog/nextjs-config@1.8.5':
     resolution: {integrity: sha512-e6jx8sT3ZAHPCeRMul0APTGPZ/DJLDhmDadEFPAh9/83HicC5Ri8ouz73s0fo4S9e7sf18EAQGMWjE70Q93NGQ==}
@@ -6443,8 +6446,8 @@ packages:
   posthog-js@1.335.5:
     resolution: {integrity: sha512-1zCEdn7bc1mQ/jpd62YY8U1CyNiftIBE6uKqE2L+mjZ5aJyB2rtUAXefaTbaR/3A98tItjSej4aIa8FBN+O1fw==}
 
-  posthog-node@5.24.3:
-    resolution: {integrity: sha512-RpjccR8k/GHjtIzRbtlS/Ipw+GvJLJCicJW6L4IZm7gXXNjdyW26x0ba0kvUtWS6mcgx8EBbgXERd5eNsXSjlQ==}
+  posthog-node@5.24.4:
+    resolution: {integrity: sha512-U90zdez3jbqAZ4HNxCM/n6SK9h2W59DPS0l2rboWiaKiBi47rN+YJmFQqx1rQsQA47JhNsmAAh2iwqYQ+VTjow==}
     engines: {node: ^20.20.0 || >=22.22.0}
 
   potpack@2.1.0:
@@ -9267,7 +9270,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@posthog/ai@7.6.0(@ai-sdk/provider@3.0.5)(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(bufferutil@4.1.0)(posthog-node@5.24.3)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.19.0(bufferutil@4.1.0))(zod-to-json-schema@3.25.1(zod@4.3.6))':
+  '@posthog/ai@7.6.0(@ai-sdk/provider@3.0.5)(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(bufferutil@4.1.0)(posthog-node@5.24.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(ws@8.19.0(bufferutil@4.1.0))(zod-to-json-schema@3.25.1(zod@4.3.6))':
     dependencies:
       '@anthropic-ai/sdk': 0.71.2(zod@4.3.6)
       '@google/genai': 1.38.0(@modelcontextprotocol/sdk@1.25.2(@cfworker/json-schema@4.1.1)(hono@4.11.7)(zod@4.3.6))(bufferutil@4.1.0)
@@ -9275,7 +9278,7 @@ snapshots:
       '@posthog/core': 1.14.1
       langchain: 1.2.14(@langchain/core@1.1.17(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.16.0(ws@8.19.0(bufferutil@4.1.0))(zod@4.3.6)))(@opentelemetry/api@1.9.0)(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(openai@6.16.0(ws@8.19.0(bufferutil@4.1.0))(zod@4.3.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(zod-to-json-schema@3.25.1(zod@4.3.6))
       openai: 6.16.0(ws@8.19.0(bufferutil@4.1.0))(zod@4.3.6)
-      posthog-node: 5.24.3
+      posthog-node: 5.24.4
       uuid: 11.1.0
       zod: 4.3.6
     optionalDependencies:
@@ -9304,6 +9307,10 @@ snapshots:
       - debug
 
   '@posthog/core@1.14.1':
+    dependencies:
+      cross-spawn: 7.0.6
+
+  '@posthog/core@1.15.0':
     dependencies:
       cross-spawn: 7.0.6
 
@@ -14026,9 +14033,9 @@ snapshots:
       query-selector-shadow-dom: 1.0.1
       web-vitals: 5.1.0
 
-  posthog-node@5.24.3:
+  posthog-node@5.24.4:
     dependencies:
-      '@posthog/core': 1.14.1
+      '@posthog/core': 1.15.0
 
   potpack@2.1.0: {}
 
