@@ -64,19 +64,19 @@ afterEach(() => {
 
 describe("detectAndResolveProvidersStep", () => {
   beforeAll(async () => {
-    const { makePGliteDb } = await import("@/lib/db/pglite");
+    const { makePGliteDb } = await import("@domainstack/db/testing");
     const { db } = await makePGliteDb();
     vi.doMock("@/lib/db/client", () => ({ db }));
   });
 
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@/lib/db/pglite");
+    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@/lib/db/pglite");
+    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 

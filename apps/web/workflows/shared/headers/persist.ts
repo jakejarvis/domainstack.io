@@ -29,17 +29,16 @@ export async function persistHeadersStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { ttlForHeaders } = await import("@/lib/ttl");
-  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-  const { replaceHeaders } = await import("@/lib/db/repos/headers");
+  const { domainsRepo, headersRepo } = await import("@/lib/db/repos");
 
   const now = new Date();
   const expiresAt = ttlForHeaders(now);
 
   try {
     // Ensure domain record exists (creates if needed)
-    const domainRecord = await ensureDomainRecord(domain);
+    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
 
-    await replaceHeaders({
+    await headersRepo.replaceHeaders({
       domainId: domainRecord.id,
       headers: fetchData.headers,
       status: fetchData.status,

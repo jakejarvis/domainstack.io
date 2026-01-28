@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Run } from "workflow/api";
 import { analytics } from "@/lib/analytics/server";
-import type { CacheResult } from "@/lib/db/repos/types";
+import type { CacheResult } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import type { WorkflowResult } from "./types";
 

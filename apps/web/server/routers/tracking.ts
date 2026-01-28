@@ -4,22 +4,11 @@ import { start } from "workflow/api";
 import z from "zod";
 import VerificationInstructionsEmail from "@/emails/verification-instructions";
 import { analytics } from "@/lib/analytics/server";
-import { ensureDomainRecord } from "@/lib/db/repos/domains";
 import {
-  archiveTrackedDomain,
-  bulkArchiveTrackedDomains,
-  bulkRemoveTrackedDomains,
-  createTrackedDomainWithLimitCheck,
-  deleteTrackedDomain,
-  findTrackedDomain,
-  findTrackedDomainById,
-  findTrackedDomainWithDomainName,
-  getTrackedDomainDetails,
-  getTrackedDomainsForUser,
-  unarchiveTrackedDomainWithLimitCheck,
-  verifyTrackedDomain,
-} from "@/lib/db/repos/tracked-domains";
-import { getUserSubscription } from "@/lib/db/repos/user-subscription";
+  domainsRepo,
+  trackedDomainsRepo,
+  userSubscriptionRepo,
+} from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { autoVerifyWorkflow } from "@/workflows/auto-verify";
 import { initializeSnapshotWorkflow } from "@/workflows/initialize-snapshot";
@@ -70,11 +59,14 @@ export const trackingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const includeArchived = input?.includeArchived ?? false;
 
-      const items = await getTrackedDomainsForUser(ctx.user.id, {
-        includeArchived,
-        includeDnsRecords: false,
-        includeRegistrarDetails: false,
-      });
+      const items = await trackedDomainsRepo.getTrackedDomainsForUser(
+        ctx.user.id,
+        {
+          includeArchived,
+          includeDnsRecords: false,
+          includeRegistrarDetails: false,
+        },
+      );
 
       return items;
     }),
@@ -92,7 +84,7 @@ export const trackingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { trackedDomainId } = input;
 
-      const domain = await getTrackedDomainDetails(
+      const domain = await trackedDomainsRepo.getTrackedDomainDetails(
         ctx.user.id,
         trackedDomainId,
       );
@@ -120,10 +112,13 @@ export const trackingRouter = createTRPCRouter({
       const { domain } = input;
 
       // Ensure domain record exists in DB
-      const domainRecord = await ensureDomainRecord(domain);
+      const domainRecord = await domainsRepo.ensureDomainRecord(domain);
 
       // Check if already tracking this domain
-      const existing = await findTrackedDomain(ctx.user.id, domainRecord.id);
+      const existing = await trackedDomainsRepo.findTrackedDomain(
+        ctx.user.id,
+        domainRecord.id,
+      );
 
       if (existing) {
         // If already verified, don't allow re-adding
@@ -144,18 +139,20 @@ export const trackingRouter = createTRPCRouter({
       }
 
       // Get user's subscription to know their limit
-      const sub = await getUserSubscription(ctx.user.id);
+      const sub = await userSubscriptionRepo.getUserSubscription(ctx.user.id);
 
       // Generate verification token
       const verificationToken = generateVerificationToken();
 
       // Create tracked domain with atomic limit check (prevents race conditions)
-      const result = await createTrackedDomainWithLimitCheck({
-        userId: ctx.user.id,
-        domainId: domainRecord.id,
-        verificationToken,
-        maxDomains: sub.planQuota,
-      });
+      const result = await trackedDomainsRepo.createTrackedDomainWithLimitCheck(
+        {
+          userId: ctx.user.id,
+          domainId: domainRecord.id,
+          verificationToken,
+          maxDomains: sub.planQuota,
+        },
+      );
 
       // Handle different failure cases
       if (!result.success) {
@@ -168,7 +165,7 @@ export const trackingRouter = createTRPCRouter({
         }
 
         // "already_exists" - race condition where another request created it first
-        const raceExisting = await findTrackedDomain(
+        const raceExisting = await trackedDomainsRepo.findTrackedDomain(
           ctx.user.id,
           domainRecord.id,
         );
@@ -229,7 +226,10 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId, method } = input;
 
       // Get tracked domain with domain name in a single query
-      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainWithDomainName(
+          trackedDomainId,
+        );
 
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
@@ -257,7 +257,7 @@ export const trackingRouter = createTRPCRouter({
 
       if (result.success && result.data.verified && result.data.method) {
         // Update the tracked domain as verified
-        const updated = await verifyTrackedDomain(
+        const updated = await trackedDomainsRepo.verifyTrackedDomain(
           trackedDomainId,
           result.data.method,
         );
@@ -323,7 +323,10 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId } = input;
 
       // Get tracked domain with domain name in a single targeted query
-      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainWithDomainName(
+          trackedDomainId,
+        );
 
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
@@ -354,7 +357,8 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId } = input;
 
       // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainById(trackedDomainId);
 
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
@@ -365,7 +369,8 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      const deleted = await deleteTrackedDomain(trackedDomainId);
+      const deleted =
+        await trackedDomainsRepo.deleteTrackedDomain(trackedDomainId);
 
       if (!deleted) {
         throw new TRPCError({
@@ -393,7 +398,8 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId } = input;
 
       // Get tracked domain
-      const tracked = await findTrackedDomainById(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainById(trackedDomainId);
 
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
@@ -412,7 +418,8 @@ export const trackingRouter = createTRPCRouter({
         });
       }
 
-      const updated = await archiveTrackedDomain(trackedDomainId);
+      const updated =
+        await trackedDomainsRepo.archiveTrackedDomain(trackedDomainId);
 
       if (!updated) {
         throw new TRPCError({
@@ -440,14 +447,15 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId } = input;
 
       // Get user's subscription to know their limit
-      const sub = await getUserSubscription(ctx.user.id);
+      const sub = await userSubscriptionRepo.getUserSubscription(ctx.user.id);
 
       // Atomic unarchive with limit check (prevents race conditions)
-      const result = await unarchiveTrackedDomainWithLimitCheck(
-        trackedDomainId,
-        ctx.user.id,
-        sub.planQuota,
-      );
+      const result =
+        await trackedDomainsRepo.unarchiveTrackedDomainWithLimitCheck(
+          trackedDomainId,
+          ctx.user.id,
+          sub.planQuota,
+        );
 
       if (!result.success) {
         switch (result.reason) {
@@ -491,7 +499,7 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainIds } = input;
 
-      const result = await bulkArchiveTrackedDomains(
+      const result = await trackedDomainsRepo.bulkArchiveTrackedDomains(
         ctx.user.id,
         trackedDomainIds,
       );
@@ -523,7 +531,7 @@ export const trackingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { trackedDomainIds } = input;
 
-      const result = await bulkRemoveTrackedDomains(
+      const result = await trackedDomainsRepo.bulkRemoveTrackedDomains(
         ctx.user.id,
         trackedDomainIds,
       );
@@ -559,7 +567,10 @@ export const trackingRouter = createTRPCRouter({
       const { trackedDomainId, recipientEmail } = input;
 
       // Get the tracked domain with domain name
-      const tracked = await findTrackedDomainWithDomainName(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainWithDomainName(
+          trackedDomainId,
+        );
 
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation

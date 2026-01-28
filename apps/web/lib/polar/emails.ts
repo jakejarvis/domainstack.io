@@ -5,7 +5,7 @@ import ProUpgradeSuccessEmail from "@/emails/pro-upgrade-success";
 import ProWelcomeEmail from "@/emails/pro-welcome";
 import SubscriptionCancelingEmail from "@/emails/subscription-canceling";
 import SubscriptionExpiredEmail from "@/emails/subscription-expired";
-import { getUserById } from "@/lib/db/repos/users";
+import { usersRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { sendEmail } from "@/lib/resend";
 
@@ -55,7 +55,7 @@ function generateWelcomeIdempotencyKey(userId: string): string {
  * Uses idempotency key to prevent duplicate emails on webhook retries.
  */
 export async function sendProUpgradeEmail(userId: string): Promise<boolean> {
-  const user = await getUserById(userId);
+  const user = await usersRepo.getUserById(userId);
   if (!user) {
     logger.error({ userId }, "user not found for upgrade email");
     return false;
@@ -164,7 +164,7 @@ export async function sendSubscriptionCancelingEmail(
   userId: string,
   endsAt: Date,
 ): Promise<boolean> {
-  const user = await getUserById(userId);
+  const user = await usersRepo.getUserById(userId);
   if (!user) {
     logger.error({ userId }, "user not found for canceling email");
     return false;
@@ -224,7 +224,7 @@ export async function sendSubscriptionExpiredEmail(
   userId: string,
   archivedCount: number,
 ): Promise<boolean> {
-  const user = await getUserById(userId);
+  const user = await usersRepo.getUserById(userId);
   if (!user) {
     logger.error({ userId }, "user not found for expired email");
     return false;

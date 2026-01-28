@@ -1,6 +1,6 @@
 import "server-only";
 
-import { downgradeToFree } from "@/lib/db/repos/user-subscription";
+import { userSubscriptionRepo } from "@/lib/db/repos";
 
 /**
  * Handle user downgrade from Pro to Free tier.
@@ -10,5 +10,5 @@ import { downgradeToFree } from "@/lib/db/repos/user-subscription";
  * @returns The number of domains that were archived (0 if none)
  */
 export async function handleDowngrade(userId: string): Promise<number> {
-  return downgradeToFree(userId);
+  return userSubscriptionRepo.downgradeToFree(userId);
 }

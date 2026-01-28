@@ -1,11 +1,7 @@
 import type { NextRequest } from "next/server";
 import { after, NextResponse } from "next/server";
 import { generateCalendarFeed } from "@/lib/calendar";
-import {
-  recordCalendarFeedAccess,
-  validateCalendarFeedToken,
-} from "@/lib/db/repos/calendar-feeds";
-import { getTrackedDomainsForUser } from "@/lib/db/repos/tracked-domains";
+import { calendarFeedsRepo, trackedDomainsRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "api/calendar/user" });
@@ -34,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. Validate token
-  const validation = await validateCalendarFeedToken(token);
+  const validation = await calendarFeedsRepo.validateCalendarFeedToken(token);
 
   if (!validation.valid) {
     logger.warn({ reason: validation.reason }, "invalid calendar feed token");
@@ -52,13 +48,16 @@ export async function GET(request: NextRequest) {
   }
 
   // 3. Record access in background (fire-and-forget)
-  after(() => recordCalendarFeedAccess(token));
+  after(() => calendarFeedsRepo.recordCalendarFeedAccess(token));
 
   // 4. Fetch user's domains
-  const domains = await getTrackedDomainsForUser(validation.userId, {
-    includeArchived: false,
-    includeDnsRecords: false,
-  });
+  const domains = await trackedDomainsRepo.getTrackedDomainsForUser(
+    validation.userId,
+    {
+      includeArchived: false,
+      includeDnsRecords: false,
+    },
+  );
 
   // 5. Generate ICS content
   const { icsContent, etag } = generateCalendarFeed(domains);

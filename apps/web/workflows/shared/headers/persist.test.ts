@@ -12,19 +12,19 @@ import {
 describe("persistHeadersStep", () => {
   // Setup PGlite for database tests
   beforeAll(async () => {
-    const { makePGliteDb } = await import("@/lib/db/pglite");
+    const { makePGliteDb } = await import("@domainstack/db/testing");
     const { db } = await makePGliteDb();
     vi.doMock("@/lib/db/client", () => ({ db }));
   });
 
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@/lib/db/pglite");
+    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@/lib/db/pglite");
+    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 
@@ -45,12 +45,12 @@ describe("persistHeadersStep", () => {
     });
 
     // Verify persistence - domain should have been created
-    const { findDomainByName } = await import("@/lib/db/repos/domains");
-    const domain = await findDomainByName("persist.test");
+    const { domainsRepo } = await import("@/lib/db/repos");
+    const domain = await domainsRepo.findDomainByName("persist.test");
     expect(domain).toBeTruthy();
 
     const { db } = await import("@/lib/db/client");
-    const { httpHeaders } = await import("@/lib/db/schema");
+    const { httpHeaders } = await import("@domainstack/db/schema");
     const { eq } = await import("drizzle-orm");
 
     const stored = await db

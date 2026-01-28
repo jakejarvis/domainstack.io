@@ -14,7 +14,7 @@ export async function verifyDomainByDns(
 ): Promise<VerificationResult> {
   "use step";
 
-  const { verifyByDns } = await import("@/lib/verification");
+  const { verifyByDns } = await import("@domainstack/core/verification");
   return await verifyByDns(domain, token);
 }
 
@@ -27,8 +27,10 @@ export async function verifyDomainByHtmlFile(
 ): Promise<VerificationResult> {
   "use step";
 
-  const { verifyByHtmlFile } = await import("@/lib/verification");
-  return await verifyByHtmlFile(domain, token);
+  const { verifyByHtmlFile } = await import("@domainstack/core/verification");
+  return await verifyByHtmlFile(domain, token, {
+    userAgent: process.env.EXTERNAL_USER_AGENT,
+  });
 }
 
 /**
@@ -40,8 +42,10 @@ export async function verifyDomainByMetaTag(
 ): Promise<VerificationResult> {
   "use step";
 
-  const { verifyByMetaTag } = await import("@/lib/verification");
-  return await verifyByMetaTag(domain, token);
+  const { verifyByMetaTag } = await import("@domainstack/core/verification");
+  return await verifyByMetaTag(domain, token, {
+    userAgent: process.env.EXTERNAL_USER_AGENT,
+  });
 }
 
 /**
@@ -56,6 +60,10 @@ export async function verifyDomainOwnershipByMethod(
 ): Promise<VerificationResult> {
   "use step";
 
-  const { verifyDomainByMethod } = await import("@/lib/verification");
-  return await verifyDomainByMethod(domain, token, method);
+  const { verifyDomainByMethod } = await import(
+    "@domainstack/core/verification"
+  );
+  return await verifyDomainByMethod(domain, token, method, {
+    userAgent: process.env.EXTERNAL_USER_AGENT,
+  });
 }

@@ -16,19 +16,19 @@ vi.mock("@/lib/revalidation", () => ({
 
 describe("persistRegistrationStep", () => {
   beforeAll(async () => {
-    const { makePGliteDb } = await import("@/lib/db/pglite");
+    const { makePGliteDb } = await import("@domainstack/db/testing");
     const { db } = await makePGliteDb();
     vi.doMock("@/lib/db/client", () => ({ db }));
   });
 
   beforeEach(async () => {
-    const { resetPGliteDb } = await import("@/lib/db/pglite");
+    const { resetPGliteDb } = await import("@domainstack/db/testing");
     await resetPGliteDb();
     vi.clearAllMocks();
   });
 
   afterAll(async () => {
-    const { closePGliteDb } = await import("@/lib/db/pglite");
+    const { closePGliteDb } = await import("@domainstack/db/testing");
     await closePGliteDb();
   });
 
@@ -56,7 +56,7 @@ describe("persistRegistrationStep", () => {
     expect(domainId).toBeTruthy();
 
     const { db } = await import("@/lib/db/client");
-    const { domains, registrations } = await import("@/lib/db/schema");
+    const { domains, registrations } = await import("@domainstack/db/schema");
     const { eq } = await import("drizzle-orm");
 
     const domainRows = await db

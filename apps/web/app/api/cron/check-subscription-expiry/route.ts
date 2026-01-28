@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { getUserIdsWithEndingSubscriptions } from "@/lib/db/repos/user-subscription";
+import { userSubscriptionRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { subscriptionExpiryWorkflow } from "@/workflows/subscription-expiry";
 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await getUserIdsWithEndingSubscriptions();
+    const ids = await userSubscriptionRepo.getUserIdsWithEndingSubscriptions();
     const results = await Promise.allSettled(
       ids.map((id) => start(subscriptionExpiryWorkflow, [{ userId: id }])),
     );

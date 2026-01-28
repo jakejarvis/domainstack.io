@@ -11,7 +11,7 @@ import {
 
 // Mock the DB client before importing anything else
 vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@/lib/db/pglite");
+  const { makePGliteDb } = await import("@domainstack/db/testing");
   const { db } = await makePGliteDb();
   return { db };
 });
@@ -34,9 +34,14 @@ vi.mock("next/server", () => ({
   after: vi.fn((fn) => fn()),
 }));
 
+import {
+  dnsRecords,
+  domains,
+  providers,
+  registrations,
+} from "@domainstack/db/schema";
 import { start } from "workflow/api";
 import { db } from "@/lib/db/client";
-import { dnsRecords, domains, providers, registrations } from "@/lib/db/schema";
 import { createCaller } from "@/server/routers/_app";
 import type { Context } from "@/trpc/init";
 
@@ -80,7 +85,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@/lib/db/pglite");
+  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 

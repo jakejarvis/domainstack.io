@@ -5,8 +5,8 @@
 export async function checkBlocklist(domain: string): Promise<boolean> {
   "use step";
 
-  const { isDomainBlocked } = await import("@/lib/db/repos/blocked-domains");
+  const { blockedDomainsRepo } = await import("@/lib/db/repos");
 
-  const blocked = await isDomainBlocked(domain);
+  const blocked = await blockedDomainsRepo.isDomainBlocked(domain);
   return blocked;
 }

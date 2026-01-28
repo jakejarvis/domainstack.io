@@ -36,21 +36,20 @@ export async function persistSeoStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { ttlForSeo } = await import("@/lib/ttl");
-  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-  const { upsertSeo } = await import("@/lib/db/repos/seo");
+  const { domainsRepo, seoRepo } = await import("@/lib/db/repos");
 
   const now = new Date();
   const expiresAt = ttlForSeo(now);
 
   try {
-    const domainRecord = await ensureDomainRecord(domain);
+    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
 
     // Empty objects satisfy the meta interfaces since all properties are optional
     const emptyOpenGraph: OpenGraphMeta = {};
     const emptyTwitter: TwitterMeta = {};
     const emptyGeneral: GeneralMeta = {};
 
-    await upsertSeo({
+    await seoRepo.upsertSeo({
       domainId: domainRecord.id,
       sourceFinalUrl: response.source.finalUrl ?? null,
       sourceStatus: response.source.status ?? null,

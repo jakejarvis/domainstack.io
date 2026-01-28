@@ -133,11 +133,10 @@ async function checkDomainStatus(
 ): Promise<DomainStatus> {
   "use step";
 
-  const { findTrackedDomainWithDomainName } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
-  const domain = await findTrackedDomainWithDomainName(trackedDomainId);
+  const domain =
+    await trackedDomainsRepo.findTrackedDomainWithDomainName(trackedDomainId);
 
   if (!domain) {
     return { status: "deleted" };
@@ -181,11 +180,12 @@ async function markVerified(
 ): Promise<{ trackedDomainId: string; domainId: string }> {
   "use step";
 
-  const { verifyTrackedDomain } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
-  const result = await verifyTrackedDomain(trackedDomainId, method);
+  const result = await trackedDomainsRepo.verifyTrackedDomain(
+    trackedDomainId,
+    method,
+  );
   if (!result) {
     // Domain doesn't exist or can't be updated - permanent failure, don't retry
     throw new FatalError(

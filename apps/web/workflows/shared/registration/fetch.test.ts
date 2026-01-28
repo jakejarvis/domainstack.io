@@ -1,22 +1,12 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Hoist mocks for rdapper
-const rdapperMock = vi.hoisted(() => ({
-  lookup: vi.fn(),
-  getDomainTld: vi.fn((domain: string) => domain.split(".").pop() ?? ""),
+// Hoist mock for @domainstack/core/whois
+const whoisMock = vi.hoisted(() => ({
+  lookupWhois: vi.fn(),
 }));
 
-vi.mock("rdapper", () => rdapperMock);
-
-// Mock RDAP bootstrap data
-vi.mock("@/lib/rdap-bootstrap", () => ({
-  getRdapBootstrapData: vi.fn().mockResolvedValue({
-    version: "1.0",
-    publication: "2024-01-01T00:00:00Z",
-    services: [],
-  }),
-}));
+vi.mock("@domainstack/core/whois", () => whoisMock);
 
 describe("lookupWhoisStep", () => {
   beforeEach(() => {
@@ -28,32 +18,32 @@ describe("lookupWhoisStep", () => {
   });
 
   it("returns success with record when RDAP lookup succeeds", async () => {
-    rdapperMock.lookup.mockResolvedValue({
-      ok: true,
-      error: null,
-      record: {
-        domain: "test.invalid",
-        tld: "com",
-        isRegistered: true,
-        source: "rdap",
-        registrar: { name: "GoDaddy" },
-      },
+    const mockRecord = {
+      domain: "test.com",
+      tld: "com",
+      isRegistered: true,
+      source: "rdap",
+      registrar: { name: "GoDaddy" },
+    };
+
+    whoisMock.lookupWhois.mockResolvedValue({
+      success: true,
+      recordJson: JSON.stringify(mockRecord),
     });
 
     const { lookupWhoisStep } = await import("./fetch");
-    const result = await lookupWhoisStep("test.invalid");
+    const result = await lookupWhoisStep("test.com");
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.recordJson).toContain("test.invalid");
+      expect(result.data.recordJson).toContain("test.com");
     }
   });
 
   it("returns unsupported_tld error for unsupported TLDs", async () => {
-    rdapperMock.lookup.mockResolvedValue({
-      ok: false,
-      error: "No WHOIS server discovered for TLD",
-      record: null,
+    whoisMock.lookupWhois.mockResolvedValue({
+      success: false,
+      error: "unsupported_tld",
     });
 
     const { lookupWhoisStep } = await import("./fetch");
@@ -66,29 +56,27 @@ describe("lookupWhoisStep", () => {
   });
 
   it("throws RetryableError on timeout", async () => {
-    rdapperMock.lookup.mockResolvedValue({
-      ok: false,
-      error: "WHOIS socket timeout",
-      record: null,
+    whoisMock.lookupWhois.mockResolvedValue({
+      success: false,
+      error: "timeout",
     });
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("slow.invalid")).rejects.toThrow(
+    await expect(lookupWhoisStep("slow.com")).rejects.toThrow(
       "RDAP lookup timed out",
     );
   });
 
   it("throws RetryableError on unknown failure", async () => {
-    rdapperMock.lookup.mockResolvedValue({
-      ok: false,
-      error: "Connection refused",
-      record: null,
+    whoisMock.lookupWhois.mockResolvedValue({
+      success: false,
+      error: "retry",
     });
 
     const { lookupWhoisStep } = await import("./fetch");
 
-    await expect(lookupWhoisStep("error.invalid")).rejects.toThrow(
+    await expect(lookupWhoisStep("error.com")).rejects.toThrow(
       "RDAP lookup failed",
     );
   });

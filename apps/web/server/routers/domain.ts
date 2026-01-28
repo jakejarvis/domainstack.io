@@ -44,15 +44,13 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedRegistration } = await import(
-        "@/lib/db/repos/registrations"
-      );
+      const { registrationsRepo } = await import("@/lib/db/repos");
       const { registrationWorkflow } = await import("@/workflows/registration");
 
       return withSwrCache({
         workflowName: "registration",
         domain: input.domain,
-        getCached: () => getCachedRegistration(input.domain),
+        getCached: () => registrationsRepo.getCachedRegistration(input.domain),
         startWorkflow: () =>
           start(registrationWorkflow, [{ domain: input.domain }]),
         maxAgeMs: MAX_AGE_REGISTRATION,
@@ -70,13 +68,13 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedDns } = await import("@/lib/db/repos/dns");
+      const { dnsRepo } = await import("@/lib/db/repos");
       const { dnsWorkflow } = await import("@/workflows/dns");
 
       return withSwrCache({
         workflowName: "dns",
         domain: input.domain,
-        getCached: () => getCachedDns(input.domain),
+        getCached: () => dnsRepo.getCachedDns(input.domain),
         startWorkflow: () => start(dnsWorkflow, [{ domain: input.domain }]),
         maxAgeMs: MAX_AGE_DNS,
       });
@@ -96,12 +94,12 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedHosting } = await import("@/lib/db/repos/hosting");
+      const { hostingRepo } = await import("@/lib/db/repos");
       const { hostingWorkflow } = await import("@/workflows/hosting");
 
       return withSwrCache({
         domain: input.domain,
-        getCached: () => getCachedHosting(input.domain),
+        getCached: () => hostingRepo.getCachedHosting(input.domain),
         startWorkflow: () => start(hostingWorkflow, [{ domain: input.domain }]),
         workflowName: "hosting",
         maxAgeMs: MAX_AGE_HOSTING,
@@ -119,15 +117,13 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedCertificates } = await import(
-        "@/lib/db/repos/certificates"
-      );
+      const { certificatesRepo } = await import("@/lib/db/repos");
       const { certificatesWorkflow } = await import("@/workflows/certificates");
 
       return withSwrCache({
         workflowName: "certificates",
         domain: input.domain,
-        getCached: () => getCachedCertificates(input.domain),
+        getCached: () => certificatesRepo.getCachedCertificates(input.domain),
         startWorkflow: () =>
           start(certificatesWorkflow, [{ domain: input.domain }]),
         maxAgeMs: MAX_AGE_CERTIFICATES,
@@ -145,13 +141,13 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 60, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedHeaders } = await import("@/lib/db/repos/headers");
+      const { headersRepo } = await import("@/lib/db/repos");
       const { headersWorkflow } = await import("@/workflows/headers");
 
       return withSwrCache({
         workflowName: "headers",
         domain: input.domain,
-        getCached: () => getCachedHeaders(input.domain),
+        getCached: () => headersRepo.getCachedHeaders(input.domain),
         startWorkflow: () => start(headersWorkflow, [{ domain: input.domain }]),
         maxAgeMs: MAX_AGE_HEADERS,
       });
@@ -168,13 +164,13 @@ export const domainRouter = createTRPCRouter({
     .meta({ rateLimit: { requests: 30, window: "1 m" } })
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getCachedSeo } = await import("@/lib/db/repos/seo");
+      const { seoRepo } = await import("@/lib/db/repos");
       const { seoWorkflow } = await import("@/workflows/seo");
 
       return withSwrCache({
         workflowName: "seo",
         domain: input.domain,
-        getCached: () => getCachedSeo(input.domain),
+        getCached: () => seoRepo.getCachedSeo(input.domain),
         startWorkflow: () => start(seoWorkflow, [{ domain: input.domain }]),
         maxAgeMs: MAX_AGE_SEO,
       });
@@ -188,13 +184,13 @@ export const domainRouter = createTRPCRouter({
   getFavicon: publicProcedure
     .input(DomainInputSchema)
     .query(async ({ input }) => {
-      const { getFavicon } = await import("@/lib/db/repos/favicons");
+      const { faviconsRepo } = await import("@/lib/db/repos");
       const { faviconWorkflow } = await import("@/workflows/favicon");
 
       return withSwrCache({
         workflowName: "favicon",
         domain: input.domain,
-        getCached: () => getFavicon(input.domain),
+        getCached: () => faviconsRepo.getFavicon(input.domain),
         startWorkflow: () => start(faviconWorkflow, [{ domain: input.domain }]),
       });
     }),

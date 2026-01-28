@@ -101,21 +101,19 @@ async function fetchDomain(
 ): Promise<DomainData | null> {
   "use step";
 
-  const { getTrackedDomainForReverification } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
-  return await getTrackedDomainForReverification(trackedDomainId);
+  return await trackedDomainsRepo.getTrackedDomainForReverification(
+    trackedDomainId,
+  );
 }
 
 async function markSuccess(trackedDomainId: string): Promise<void> {
   "use step";
 
-  const { markVerificationSuccessful } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
-  await markVerificationSuccessful(trackedDomainId);
+  await trackedDomainsRepo.markVerificationSuccessful(trackedDomainId);
 }
 
 interface DomainForFailureCheck {
@@ -143,15 +141,13 @@ async function determineFailureAction(
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
     "@domainstack/constants"
   );
-  const { markVerificationFailing, revokeVerification } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
   const now = new Date();
 
   if (domain.verificationStatus === "verified") {
     // First failure - mark as failing
-    await markVerificationFailing(domain.id);
+    await trackedDomainsRepo.markVerificationFailing(domain.id);
     return {
       action: "marked_failing",
       shouldSendEmail: true,
@@ -164,7 +160,7 @@ async function determineFailureAction(
     const failedAt = domain.verificationFailedAt;
     if (!failedAt) {
       // Shouldn't happen, but mark failing time now
-      await markVerificationFailing(domain.id);
+      await trackedDomainsRepo.markVerificationFailing(domain.id);
       return {
         action: "marked_failing",
         shouldSendEmail: false,
@@ -176,7 +172,7 @@ async function determineFailureAction(
 
     if (daysFailing >= VERIFICATION_GRACE_PERIOD_DAYS) {
       // Grace period exceeded - revoke verification
-      await revokeVerification(domain.id);
+      await trackedDomainsRepo.revokeVerification(domain.id);
       return {
         action: "revoked",
         shouldSendEmail: true,
@@ -221,14 +217,10 @@ async function sendVerificationFailingEmail(
   const { VERIFICATION_GRACE_PERIOD_DAYS } = await import(
     "@domainstack/constants"
   );
-  const {
-    createNotification,
-    hasRecentNotification,
-    updateNotificationResendId,
-  } = await import("@/lib/db/repos/notifications");
+  const { notificationsRepo } = await import("@/lib/db/repos");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const alreadySent = await hasRecentNotification(
+  const alreadySent = await notificationsRepo.hasRecentNotification(
     domain.id,
     "verification_failing",
   );
@@ -239,7 +231,7 @@ async function sendVerificationFailingEmail(
   const message = `Verification for ${domain.domainName} is failing. You have ${VERIFICATION_GRACE_PERIOD_DAYS} days to fix it before access is revoked.`;
 
   // Create in-app notification first
-  const notification = await createNotification({
+  const notification = await notificationsRepo.createNotification({
     userId: domain.userId,
     trackedDomainId: domain.id,
     type: "verification_failing",
@@ -267,7 +259,10 @@ async function sendVerificationFailingEmail(
   });
 
   // Update notification with email ID
-  await updateNotificationResendId(notification.id, result.emailId);
+  await notificationsRepo.updateNotificationResendId(
+    notification.id,
+    result.emailId,
+  );
 
   return true;
 }
@@ -283,14 +278,10 @@ async function sendVerificationRevokedEmail(
   const { default: VerificationRevokedEmail } = await import(
     "@/emails/verification-revoked"
   );
-  const {
-    createNotification,
-    hasRecentNotification,
-    updateNotificationResendId,
-  } = await import("@/lib/db/repos/notifications");
+  const { notificationsRepo } = await import("@/lib/db/repos");
   const { sendEmail } = await import("@/workflows/shared/send-email");
 
-  const alreadySent = await hasRecentNotification(
+  const alreadySent = await notificationsRepo.hasRecentNotification(
     domain.id,
     "verification_revoked",
   );
@@ -301,7 +292,7 @@ async function sendVerificationRevokedEmail(
   const message = `Verification for ${domain.domainName} has been revoked. The grace period has expired without successful re-verification.`;
 
   // Create in-app notification first
-  const notification = await createNotification({
+  const notification = await notificationsRepo.createNotification({
     userId: domain.userId,
     trackedDomainId: domain.id,
     type: "verification_revoked",
@@ -327,7 +318,10 @@ async function sendVerificationRevokedEmail(
   });
 
   // Update notification with email ID
-  await updateNotificationResendId(notification.id, result.emailId);
+  await notificationsRepo.updateNotificationResendId(
+    notification.id,
+    result.emailId,
+  );
 
   return true;
 }

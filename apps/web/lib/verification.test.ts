@@ -30,7 +30,7 @@ describe("verifyByDns", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyByDns } = await import("./verification");
+    const { verifyByDns } = await import("@domainstack/core/verification");
     const result = await verifyByDns("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -71,7 +71,7 @@ describe("verifyByDns", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyByDns } = await import("./verification");
+    const { verifyByDns } = await import("@domainstack/core/verification");
     const result = await verifyByDns("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -90,7 +90,7 @@ describe("verifyByDns", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyByDns } = await import("./verification");
+    const { verifyByDns } = await import("@domainstack/core/verification");
     const result = await verifyByDns("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -116,7 +116,7 @@ describe("verifyByDns", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyByDns } = await import("./verification");
+    const { verifyByDns } = await import("@domainstack/core/verification");
     const result = await verifyByDns("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -135,7 +135,7 @@ describe("verifyByDns", () => {
       ),
     );
 
-    const { verifyByDns } = await import("./verification");
+    const { verifyByDns } = await import("@domainstack/core/verification");
     const result = await verifyByDns("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -158,7 +158,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -176,7 +176,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -197,7 +197,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -223,7 +223,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -245,7 +245,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -264,7 +264,7 @@ describe("verifyByHtmlFile", () => {
       ),
     );
 
-    const { verifyByHtmlFile } = await import("./verification");
+    const { verifyByHtmlFile } = await import("@domainstack/core/verification");
     const result = await verifyByHtmlFile("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -289,7 +289,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -310,7 +310,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -335,7 +335,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -359,7 +359,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -383,7 +383,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -404,7 +404,7 @@ describe("verifyByMetaTag", () => {
       ),
     );
 
-    const { verifyByMetaTag } = await import("./verification");
+    const { verifyByMetaTag } = await import("@domainstack/core/verification");
     const result = await verifyByMetaTag("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -434,7 +434,7 @@ describe("verifyDomain (all methods)", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyDomain } = await import("./verification");
+    const { verifyDomain } = await import("@domainstack/core/verification");
     const result = await verifyDomain("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -482,7 +482,7 @@ describe("verifyDomain (all methods)", () => {
       ),
     );
 
-    const { verifyDomain } = await import("./verification");
+    const { verifyDomain } = await import("@domainstack/core/verification");
     const result = await verifyDomain("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -542,7 +542,7 @@ describe("verifyDomain (all methods)", () => {
       ),
     );
 
-    const { verifyDomain } = await import("./verification");
+    const { verifyDomain } = await import("@domainstack/core/verification");
     const result = await verifyDomain("verified-dns.test", token);
 
     expect(result.verified).toBe(true);
@@ -589,7 +589,7 @@ describe("verifyDomain (all methods)", () => {
       ),
     );
 
-    const { verifyDomain } = await import("./verification");
+    const { verifyDomain } = await import("@domainstack/core/verification");
     const result = await verifyDomain("verified-dns.test", token);
 
     expect(result.verified).toBe(false);
@@ -619,7 +619,9 @@ describe("verifyDomainByMethod", () => {
       http.get("https://dns.google/resolve", dohHandler),
     );
 
-    const { verifyDomainByMethod } = await import("./verification");
+    const { verifyDomainByMethod } = await import(
+      "@domainstack/core/verification"
+    );
     const result = await verifyDomainByMethod(
       "verified-dns.test",
       token,
@@ -641,7 +643,9 @@ describe("verifyDomainByMethod", () => {
       ),
     );
 
-    const { verifyDomainByMethod } = await import("./verification");
+    const { verifyDomainByMethod } = await import(
+      "@domainstack/core/verification"
+    );
     const result = await verifyDomainByMethod(
       "verified-dns.test",
       token,
@@ -666,7 +670,9 @@ describe("verifyDomainByMethod", () => {
       ),
     );
 
-    const { verifyDomainByMethod } = await import("./verification");
+    const { verifyDomainByMethod } = await import(
+      "@domainstack/core/verification"
+    );
     const result = await verifyDomainByMethod(
       "verified-dns.test",
       token,

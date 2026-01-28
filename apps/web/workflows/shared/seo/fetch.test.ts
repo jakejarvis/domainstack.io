@@ -14,9 +14,11 @@ vi.mock("@domainstack/core/tls", () => ({
   isExpectedTlsError: vi.fn().mockReturnValue(false),
 }));
 
-// Mock blocked domains
-vi.mock("@/lib/db/repos/blocked-domains", () => ({
-  isDomainBlocked: vi.fn().mockResolvedValue(false),
+// Mock blocked domains repo
+vi.mock("@/lib/db/repos", () => ({
+  blockedDomainsRepo: {
+    isDomainBlocked: vi.fn().mockResolvedValue(false),
+  },
 }));
 
 // Mock storage

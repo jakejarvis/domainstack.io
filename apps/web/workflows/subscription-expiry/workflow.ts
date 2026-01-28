@@ -125,11 +125,9 @@ async function fetchUserSubscription(
 ): Promise<UserSubscriptionData | null> {
   "use step";
 
-  const { getUserWithEndingSubscription } = await import(
-    "@/lib/db/repos/user-subscription"
-  );
+  const { userSubscriptionRepo } = await import("@/lib/db/repos");
 
-  return await getUserWithEndingSubscription(userId);
+  return await userSubscriptionRepo.getUserWithEndingSubscription(userId);
 }
 
 async function calculateDaysRemaining(endsAt: Date): Promise<number> {
@@ -148,11 +146,9 @@ async function updateExpiryTracking(
 ): Promise<void> {
   "use step";
 
-  const { setLastExpiryNotification } = await import(
-    "@/lib/db/repos/user-subscription"
-  );
+  const { userSubscriptionRepo } = await import("@/lib/db/repos");
 
-  await setLastExpiryNotification(userId, threshold);
+  await userSubscriptionRepo.setLastExpiryNotification(userId, threshold);
 }
 
 /**

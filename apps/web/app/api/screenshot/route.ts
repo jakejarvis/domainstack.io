@@ -2,8 +2,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getRun, start } from "workflow/api";
 import { analytics } from "@/lib/analytics/server";
-import { getDomainById } from "@/lib/db/repos/domains";
-import { getScreenshotByDomainId } from "@/lib/db/repos/screenshots";
+import {
+  blockedDomainsRepo,
+  domainsRepo,
+  screenshotsRepo,
+} from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { checkRateLimit } from "@/lib/ratelimit/api";
 import {
@@ -78,7 +81,7 @@ export async function POST(
     }
 
     // Look up domain by ID (security check - domain must exist)
-    const domain = await getDomainById(domainId);
+    const domain = await domainsRepo.getDomainById(domainId);
 
     if (!domain) {
       logger.warn({ domainId }, "screenshot requested for unknown domain");
@@ -86,7 +89,8 @@ export async function POST(
     }
 
     // Check cache first
-    const cachedScreenshot = await getScreenshotByDomainId(domainId);
+    const cachedScreenshot =
+      await screenshotsRepo.getScreenshotByDomainId(domainId);
 
     if (cachedScreenshot) {
       // Only treat as cache hit if we have a definitive result:
@@ -103,11 +107,8 @@ export async function POST(
             // We already have the domain name, no need to parse URL
             const domainName = domain.name;
 
-            // Import and check block status
-            const { isDomainBlocked } = await import(
-              "@/lib/db/repos/blocked-domains"
-            );
-            blocked = await isDomainBlocked(domainName);
+            // Check block status
+            blocked = await blockedDomainsRepo.isDomainBlocked(domainName);
           } catch (err) {
             // Log error but fall back to unblocked to avoid breaking screenshots
             // for transient database issues. Blocked domains are a soft protection.

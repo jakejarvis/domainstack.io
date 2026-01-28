@@ -81,7 +81,7 @@ async function processAndStore(
 
   const { convertBufferToImageCover } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
-  const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
+  const { providerLogosRepo } = await import("@/lib/db/repos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
 
   try {
@@ -113,7 +113,7 @@ async function processAndStore(
     const now = new Date();
     const expiresAt = ttlForProviderIcon(now);
 
-    await upsertProviderLogo({
+    await providerLogosRepo.upsertProviderLogo({
       providerId,
       url,
       pathname: pathname ?? null,
@@ -141,14 +141,14 @@ async function persistFailure(
 ): Promise<void> {
   "use step";
 
-  const { upsertProviderLogo } = await import("@/lib/db/repos/provider-logos");
+  const { providerLogosRepo } = await import("@/lib/db/repos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
 
   try {
     const now = new Date();
     const expiresAt = ttlForProviderIcon(now);
 
-    await upsertProviderLogo({
+    await providerLogosRepo.upsertProviderLogo({
       providerId,
       url: null,
       pathname: null,

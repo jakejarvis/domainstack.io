@@ -2,23 +2,12 @@ import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { analytics } from "@/lib/analytics/server";
 import {
-  deleteCalendarFeed,
-  disableCalendarFeed,
-  enableCalendarFeed,
-  getCalendarFeed,
-  rotateCalendarFeedToken,
-} from "@/lib/db/repos/calendar-feeds";
-import {
-  countTrackedDomainsByStatus,
-  findTrackedDomainById,
-  setDomainMuted,
-} from "@/lib/db/repos/tracked-domains";
-import {
-  getOrCreateUserNotificationPreferences,
-  updateUserNotificationPreferences,
-} from "@/lib/db/repos/user-notification-preferences";
-import { getUserSubscription } from "@/lib/db/repos/user-subscription";
-import { getLinkedAccounts } from "@/lib/db/repos/users";
+  calendarFeedsRepo,
+  trackedDomainsRepo,
+  userNotificationPreferencesRepo,
+  userSubscriptionRepo,
+  usersRepo,
+} from "@/lib/db/repos";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 const NotificationChannelsSchema = z.object({
@@ -49,7 +38,7 @@ export const userRouter = createTRPCRouter({
    * Returns only provider IDs for security (no tokens or sensitive data).
    */
   getLinkedAccounts: protectedProcedure.query(async ({ ctx }) =>
-    getLinkedAccounts(ctx.user.id),
+    usersRepo.getLinkedAccounts(ctx.user.id),
   ),
 
   /**
@@ -59,8 +48,8 @@ export const userRouter = createTRPCRouter({
   getSubscription: protectedProcedure.query(async ({ ctx }) => {
     // Run all independent queries in parallel for better performance
     const [subscription, counts] = await Promise.all([
-      getUserSubscription(ctx.user.id),
-      countTrackedDomainsByStatus(ctx.user.id),
+      userSubscriptionRepo.getUserSubscription(ctx.user.id),
+      trackedDomainsRepo.countTrackedDomainsByStatus(ctx.user.id),
     ]);
 
     return {
@@ -79,7 +68,10 @@ export const userRouter = createTRPCRouter({
    * Get global notification preferences for the current user.
    */
   getNotificationPreferences: protectedProcedure.query(async ({ ctx }) => {
-    const prefs = await getOrCreateUserNotificationPreferences(ctx.user.id);
+    const prefs =
+      await userNotificationPreferencesRepo.getOrCreateUserNotificationPreferences(
+        ctx.user.id,
+      );
     return prefs;
   }),
 
@@ -90,10 +82,11 @@ export const userRouter = createTRPCRouter({
   updateGlobalNotificationPreferences: protectedProcedure
     .input(UserNotificationPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
-      const updated = await updateUserNotificationPreferences(
-        ctx.user.id,
-        input,
-      );
+      const updated =
+        await userNotificationPreferencesRepo.updateUserNotificationPreferences(
+          ctx.user.id,
+          input,
+        );
 
       analytics.track(
         "notification_preferences_updated",
@@ -121,7 +114,8 @@ export const userRouter = createTRPCRouter({
       // Get tracked domain and verify ownership in one check
       // Return identical error for both "not found" and "wrong user"
       // to prevent enumeration attacks via error differentiation
-      const tracked = await findTrackedDomainById(trackedDomainId);
+      const tracked =
+        await trackedDomainsRepo.findTrackedDomainById(trackedDomainId);
       if (!tracked || tracked.userId !== ctx.user.id) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -129,7 +123,10 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      const updated = await setDomainMuted(trackedDomainId, muted);
+      const updated = await trackedDomainsRepo.setDomainMuted(
+        trackedDomainId,
+        muted,
+      );
 
       if (!updated) {
         throw new TRPCError({
@@ -159,7 +156,7 @@ export const userRouter = createTRPCRouter({
    * Returns the full feed URL if enabled (token is stored retrievably).
    */
   getCalendarFeed: protectedProcedure.query(async ({ ctx }) => {
-    const feed = await getCalendarFeed(ctx.user.id);
+    const feed = await calendarFeedsRepo.getCalendarFeed(ctx.user.id);
 
     if (!feed) {
       return { enabled: false } as const;
@@ -178,7 +175,7 @@ export const userRouter = createTRPCRouter({
    * or re-enables an existing disabled feed.
    */
   enableCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
-    const feed = await enableCalendarFeed(ctx.user.id);
+    const feed = await calendarFeedsRepo.enableCalendarFeed(ctx.user.id);
 
     analytics.track("calendar_feed_enabled", {}, ctx.user.id);
 
@@ -193,7 +190,7 @@ export const userRouter = createTRPCRouter({
    * The token is preserved so the feed can be re-enabled later with the same URL.
    */
   disableCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
-    const feed = await disableCalendarFeed(ctx.user.id);
+    const feed = await calendarFeedsRepo.disableCalendarFeed(ctx.user.id);
 
     if (!feed) {
       throw new TRPCError({
@@ -212,7 +209,7 @@ export const userRouter = createTRPCRouter({
    * The old URL will immediately stop working.
    */
   rotateCalendarFeedToken: protectedProcedure.mutation(async ({ ctx }) => {
-    const feed = await rotateCalendarFeedToken(ctx.user.id);
+    const feed = await calendarFeedsRepo.rotateCalendarFeedToken(ctx.user.id);
 
     if (!feed) {
       throw new TRPCError({
@@ -234,7 +231,7 @@ export const userRouter = createTRPCRouter({
    * Used when user wants to completely remove the feed rather than just disable it.
    */
   deleteCalendarFeed: protectedProcedure.mutation(async ({ ctx }) => {
-    const deleted = await deleteCalendarFeed(ctx.user.id);
+    const deleted = await calendarFeedsRepo.deleteCalendarFeed(ctx.user.id);
 
     if (!deleted) {
       throw new TRPCError({

@@ -13,9 +13,11 @@ vi.mock("@domainstack/core/providers", () => ({
 }));
 
 // Mock providers repo
-vi.mock("@/lib/db/repos/providers", () => ({
-  resolveOrCreateProviderId: vi.fn().mockResolvedValue(null),
-  upsertCatalogProvider: vi.fn().mockResolvedValue({ id: "test-id" }),
+vi.mock("@/lib/db/repos", () => ({
+  providersRepo: {
+    resolveOrCreateProviderId: vi.fn().mockResolvedValue(null),
+    upsertCatalogProvider: vi.fn().mockResolvedValue({ id: "test-id" }),
+  },
 }));
 
 describe("normalizeAndBuildResponseStep", () => {

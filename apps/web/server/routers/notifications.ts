@@ -1,11 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import {
-  getUnreadCount,
-  getUserNotifications,
-  markAllAsRead,
-  markAsRead,
-} from "@/lib/db/repos/notifications";
+import { notificationsRepo } from "@/lib/db/repos";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 
 /** Schema for notification filter parameter */
@@ -30,7 +25,7 @@ export const notificationsRouter = createTRPCRouter({
       const { limit, cursor, filter } = input;
 
       // Fetch one extra to determine if there's a next page
-      const items = await getUserNotifications(
+      const items = await notificationsRepo.getUserNotifications(
         ctx.user.id,
         limit + 1,
         cursor,
@@ -53,7 +48,7 @@ export const notificationsRouter = createTRPCRouter({
    * Get unread notification count for badge display.
    */
   unreadCount: protectedProcedure.query(async ({ ctx }) =>
-    getUnreadCount(ctx.user.id),
+    notificationsRepo.getUnreadCount(ctx.user.id),
   ),
 
   /**
@@ -66,7 +61,7 @@ export const notificationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const success = await markAsRead(input.id, ctx.user.id);
+      const success = await notificationsRepo.markAsRead(input.id, ctx.user.id);
 
       if (!success) {
         throw new TRPCError({
@@ -82,7 +77,7 @@ export const notificationsRouter = createTRPCRouter({
    * Mark all notifications as read for the current user.
    */
   markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
-    const count = await markAllAsRead(ctx.user.id);
+    const count = await notificationsRepo.markAllAsRead(ctx.user.id);
     return { count };
   }),
 });

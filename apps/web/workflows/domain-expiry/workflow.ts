@@ -136,11 +136,11 @@ async function fetchDomain(
 ): Promise<DomainData | null> {
   "use step";
 
-  const { getTrackedDomainForNotification } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
+  const { trackedDomainsRepo } = await import("@/lib/db/repos");
 
-  return await getTrackedDomainForNotification(trackedDomainId);
+  return await trackedDomainsRepo.getTrackedDomainForNotification(
+    trackedDomainId,
+  );
 }
 
 async function clearRenewedNotifications(
@@ -148,11 +148,11 @@ async function clearRenewedNotifications(
 ): Promise<number> {
   "use step";
 
-  const { clearDomainExpiryNotifications } = await import(
-    "@/lib/db/repos/notifications"
-  );
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
-  return await clearDomainExpiryNotifications(trackedDomainId);
+  return await notificationsRepo.clearDomainExpiryNotifications(
+    trackedDomainId,
+  );
 }
 
 async function createNotificationRecord(params: {
@@ -169,7 +169,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { createNotification } = await import("@/lib/db/repos/notifications");
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
   const {
     trackedDomainId,
@@ -191,7 +191,7 @@ async function createNotificationRecord(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  const notification = await createNotification({
+  const notification = await notificationsRepo.createNotification({
     userId,
     trackedDomainId,
     type: notificationType,

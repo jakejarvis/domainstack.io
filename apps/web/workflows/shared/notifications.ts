@@ -26,14 +26,12 @@ export async function determineNotificationChannelsStep(
 ): Promise<NotificationChannels> {
   "use step";
 
-  const { findTrackedDomainById } = await import(
-    "@/lib/db/repos/tracked-domains"
-  );
-  const { getOrCreateUserNotificationPreferences } = await import(
-    "@/lib/db/repos/user-notification-preferences"
+  const { trackedDomainsRepo, userNotificationPreferencesRepo } = await import(
+    "@/lib/db/repos"
   );
 
-  const trackedDomain = await findTrackedDomainById(trackedDomainId);
+  const trackedDomain =
+    await trackedDomainsRepo.findTrackedDomainById(trackedDomainId);
   if (!trackedDomain) {
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
@@ -44,7 +42,10 @@ export async function determineNotificationChannelsStep(
   }
 
   // Fall back to global preferences
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+  const globalPrefs =
+    await userNotificationPreferencesRepo.getOrCreateUserNotificationPreferences(
+      userId,
+    );
   const globalPref = globalPrefs[preferenceType];
   return {
     shouldSendEmail: globalPref.email,
@@ -64,9 +65,9 @@ export async function resolveProviderNamesStep(
 
   if (providerIds.length === 0) return new Map();
 
-  const { getProviderNames } = await import("@/lib/db/repos/providers");
+  const { providersRepo } = await import("@/lib/db/repos");
 
-  return await getProviderNames(providerIds);
+  return await providersRepo.getProviderNames(providerIds);
 }
 
 // ============================================================================
@@ -130,11 +131,12 @@ export async function checkExpiryPreferencesStep(
     return { shouldSendEmail: false, shouldSendInApp: false };
   }
 
-  const { getOrCreateUserNotificationPreferences } = await import(
-    "@/lib/db/repos/user-notification-preferences"
-  );
+  const { userNotificationPreferencesRepo } = await import("@/lib/db/repos");
 
-  const globalPrefs = await getOrCreateUserNotificationPreferences(userId);
+  const globalPrefs =
+    await userNotificationPreferencesRepo.getOrCreateUserNotificationPreferences(
+      userId,
+    );
 
   return {
     shouldSendEmail: globalPrefs[preferenceKey].email,
@@ -151,11 +153,12 @@ export async function checkAlreadySentStep(
 ): Promise<boolean> {
   "use step";
 
-  const { hasRecentNotification } = await import(
-    "@/lib/db/repos/notifications"
-  );
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
-  return await hasRecentNotification(trackedDomainId, notificationType);
+  return await notificationsRepo.hasRecentNotification(
+    trackedDomainId,
+    notificationType,
+  );
 }
 
 /**
@@ -167,11 +170,9 @@ export async function updateNotificationEmailIdStep(
 ): Promise<void> {
   "use step";
 
-  const { updateNotificationResendId } = await import(
-    "@/lib/db/repos/notifications"
-  );
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
-  await updateNotificationResendId(notificationId, emailId);
+  await notificationsRepo.updateNotificationResendId(notificationId, emailId);
 }
 
 // ============================================================================
@@ -212,9 +213,7 @@ async function sendNotificationInternal(
   shouldSendEmail: boolean,
   shouldSendInApp: boolean,
 ): Promise<boolean> {
-  const { createNotification, updateNotificationResendId } = await import(
-    "@/lib/db/repos/notifications"
-  );
+  const { notificationsRepo } = await import("@/lib/db/repos");
   const { sendEmail } = await import("@/lib/resend");
 
   const {
@@ -237,7 +236,7 @@ async function sendNotificationInternal(
   if (shouldSendInApp) channels.push("in-app");
 
   // Create notification record
-  const notification = await createNotification({
+  const notification = await notificationsRepo.createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
@@ -266,7 +265,10 @@ async function sendNotificationInternal(
 
     // Update notification with email ID
     if (data?.id) {
-      await updateNotificationResendId(notification.id, data.id);
+      await notificationsRepo.updateNotificationResendId(
+        notification.id,
+        data.id,
+      );
     }
   }
 

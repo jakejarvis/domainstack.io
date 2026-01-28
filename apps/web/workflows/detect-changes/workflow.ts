@@ -1,13 +1,13 @@
 import { statusesAreEqual } from "@domainstack/core/whois";
 import type {
+  CertificateSnapshotData,
+  RegistrationSnapshotData,
+} from "@domainstack/db/schema";
+import type {
   CertificatesResponse,
   HostingResponse,
   RegistrationResponse,
 } from "@domainstack/types";
-import type {
-  CertificateSnapshotData,
-  RegistrationSnapshotData,
-} from "@/lib/db/schema";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,
@@ -628,14 +628,14 @@ export async function detectChangesWorkflow(
 
 // Import SnapshotForMonitoring type for proper typing
 type SnapshotData = Awaited<
-  ReturnType<typeof import("@/lib/db/repos/snapshots").getSnapshot>
+  ReturnType<typeof import("@/lib/db/repos").snapshotsRepo.getSnapshot>
 >;
 
 async function fetchSnapshot(trackedDomainId: string): Promise<SnapshotData> {
   "use step";
 
-  const { getSnapshot } = await import("@/lib/db/repos/snapshots");
-  return await getSnapshot(trackedDomainId);
+  const { snapshotsRepo } = await import("@/lib/db/repos");
+  return await snapshotsRepo.getSnapshot(trackedDomainId);
 }
 
 async function detectRegistrationChange(
@@ -778,8 +778,8 @@ async function updateRegistrationSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@/lib/db/repos/snapshots");
-  await updateSnapshot(trackedDomainId, { registration });
+  const { snapshotsRepo } = await import("@/lib/db/repos");
+  await snapshotsRepo.updateSnapshot(trackedDomainId, { registration });
 }
 
 async function updateProviderSnapshot(
@@ -792,8 +792,8 @@ async function updateProviderSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@/lib/db/repos/snapshots");
-  await updateSnapshot(trackedDomainId, {
+  const { snapshotsRepo } = await import("@/lib/db/repos");
+  await snapshotsRepo.updateSnapshot(trackedDomainId, {
     dnsProviderId: providers.dns,
     hostingProviderId: providers.hosting,
     emailProviderId: providers.email,
@@ -806,6 +806,6 @@ async function updateCertificateSnapshot(
 ): Promise<void> {
   "use step";
 
-  const { updateSnapshot } = await import("@/lib/db/repos/snapshots");
-  await updateSnapshot(trackedDomainId, { certificate });
+  const { snapshotsRepo } = await import("@/lib/db/repos");
+  await snapshotsRepo.updateSnapshot(trackedDomainId, { certificate });
 }

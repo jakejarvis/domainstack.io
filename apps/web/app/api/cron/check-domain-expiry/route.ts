@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { start } from "workflow/api";
-import { getVerifiedTrackedDomainIds } from "@/lib/db/repos/tracked-domains";
+import { trackedDomainsRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { domainExpiryWorkflow } from "@/workflows/domain-expiry";
 
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const ids = await getVerifiedTrackedDomainIds();
+    const ids = await trackedDomainsRepo.getVerifiedTrackedDomainIds();
     const results = await Promise.allSettled(
       ids.map((id) => start(domainExpiryWorkflow, [{ trackedDomainId: id }])),
     );

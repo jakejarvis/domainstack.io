@@ -18,11 +18,21 @@ type SubscriptionUncanceledPayload = Parameters<
   NonNullable<WebhooksOptions["onSubscriptionUncanceled"]>
 >[0];
 
+// Hoist mock functions so they're available to vi.mock factory
+const { updateUserTier, setSubscriptionEndsAt, clearSubscriptionEndsAt } =
+  vi.hoisted(() => ({
+    updateUserTier: vi.fn(),
+    setSubscriptionEndsAt: vi.fn(),
+    clearSubscriptionEndsAt: vi.fn(),
+  }));
+
 // Mock the dependencies
-vi.mock("@/lib/db/repos/user-subscription", () => ({
-  updateUserTier: vi.fn(),
-  setSubscriptionEndsAt: vi.fn(),
-  clearSubscriptionEndsAt: vi.fn(),
+vi.mock("@/lib/db/repos", () => ({
+  userSubscriptionRepo: {
+    updateUserTier,
+    setSubscriptionEndsAt,
+    clearSubscriptionEndsAt,
+  },
 }));
 
 vi.mock("@/lib/polar/downgrade", () => ({
@@ -39,11 +49,6 @@ vi.mock("@/lib/polar/emails", () => ({
   sendSubscriptionExpiredEmail: vi.fn(),
 }));
 
-import {
-  clearSubscriptionEndsAt,
-  setSubscriptionEndsAt,
-  updateUserTier,
-} from "@/lib/db/repos/user-subscription";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import {
   sendProUpgradeEmail,

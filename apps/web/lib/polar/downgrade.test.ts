@@ -12,19 +12,19 @@ import {
 
 // Mock the DB client with PGlite before importing anything else
 vi.mock("@/lib/db/client", async () => {
-  const { makePGliteDb } = await import("@/lib/db/pglite");
+  const { makePGliteDb } = await import("@domainstack/db/testing");
   const { db } = await makePGliteDb();
   return { db };
 });
 
-import { asc } from "drizzle-orm";
-import { db } from "@/lib/db/client";
 import {
   domains,
   userSubscriptions,
   users,
   userTrackedDomains,
-} from "@/lib/db/schema";
+} from "@domainstack/db/schema";
+import { asc } from "drizzle-orm";
+import { db } from "@/lib/db/client";
 import { handleDowngrade } from "./downgrade";
 
 let testUserId = "";
@@ -64,7 +64,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const { closePGliteDb } = await import("@/lib/db/pglite");
+  const { closePGliteDb } = await import("@domainstack/db/testing");
   await closePGliteDb();
 });
 

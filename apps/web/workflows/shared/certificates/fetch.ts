@@ -69,7 +69,7 @@ export async function processChainStep(
   const { detectCertificateAuthority, getProvidersFromCatalog } = await import(
     "@domainstack/core/providers"
   );
-  const { upsertCatalogProvider } = await import("@/lib/db/repos/providers");
+  const { providersRepo } = await import("@/lib/db/repos");
 
   const chain = JSON.parse(chainJson) as RawCertificate[];
   const catalog = await getProviderCatalog();
@@ -99,7 +99,7 @@ export async function processChainStep(
   const providerIds = await Promise.all(
     certificatesWithMatches.map(async ({ catalogProvider }) => {
       if (catalogProvider) {
-        const ref = await upsertCatalogProvider(catalogProvider);
+        const ref = await providersRepo.upsertCatalogProvider(catalogProvider);
         return ref.id;
       }
       return null;

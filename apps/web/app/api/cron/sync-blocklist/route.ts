@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { syncBlockedDomains } from "@/lib/db/repos/blocked-domains";
+import { blockedDomainsRepo } from "@/lib/db/repos";
 import { getBlocklistSources } from "@/lib/edge-config";
 import { createLogger } from "@/lib/logger/server";
 
@@ -92,7 +92,7 @@ export async function GET(request: Request) {
 
     // Deduplicate and sync
     const uniqueDomains = [...new Set(allDomains)];
-    const result = await syncBlockedDomains(uniqueDomains);
+    const result = await blockedDomainsRepo.syncBlockedDomains(uniqueDomains);
 
     logger.info(
       { sources: sources.length, added: result.added, removed: result.removed },

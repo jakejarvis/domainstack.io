@@ -29,15 +29,14 @@ export async function persistRegistrationStep(
   "use step";
 
   // Dynamic imports for Node.js modules and database operations
-  const { getDomainTld } = await import("rdapper");
+  const { getDomainTld } = await import("@domainstack/core/domain");
   const { ttlForRegistration } = await import("@/lib/ttl");
-  const { upsertDomain } = await import("@/lib/db/repos/domains");
-  const { upsertRegistration } = await import("@/lib/db/repos/registrations");
+  const { domainsRepo, registrationsRepo } = await import("@/lib/db/repos");
 
   const now = new Date();
 
   try {
-    const domainRecord = await upsertDomain({
+    const domainRecord = await domainsRepo.upsertDomain({
       name: domain,
       tld: getDomainTld(domain) ?? "",
       unicodeName: response.unicodeName ?? domain,
@@ -48,7 +47,7 @@ export async function persistRegistrationStep(
       response.expirationDate ? new Date(response.expirationDate) : null,
     );
 
-    await upsertRegistration({
+    await registrationsRepo.upsertRegistration({
       domainId: domainRecord.id,
       isRegistered: response.isRegistered,
       privacyEnabled: response.privacyEnabled ?? false,

@@ -32,16 +32,15 @@ export async function persistHostingStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { ttlForHosting } = await import("@/lib/ttl");
-  const { ensureDomainRecord } = await import("@/lib/db/repos/domains");
-  const { upsertHosting } = await import("@/lib/db/repos/hosting");
+  const { domainsRepo, hostingRepo } = await import("@/lib/db/repos");
 
   const now = new Date();
   const expiresAt = ttlForHosting(now);
 
   try {
-    const domainRecord = await ensureDomainRecord(domain);
+    const domainRecord = await domainsRepo.ensureDomainRecord(domain);
 
-    await upsertHosting({
+    await hostingRepo.upsertHosting({
       domainId: domainRecord.id,
       hostingProviderId: providers.hostingProvider.id,
       emailProviderId: providers.emailProvider.id,

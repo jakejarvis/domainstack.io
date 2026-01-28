@@ -1,5 +1,6 @@
 import "server-only";
 
+import * as schema from "@domainstack/db/schema";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
@@ -8,8 +9,7 @@ import { nextCookies } from "better-auth/next-js";
 import { after } from "next/server";
 import DeleteAccountVerifyEmail from "@/emails/delete-account-verify";
 import { db } from "@/lib/db/client";
-import { createSubscription } from "@/lib/db/repos/user-subscription";
-import * as schema from "@/lib/db/schema";
+import { userSubscriptionRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import {
   handleSubscriptionActive,
@@ -145,7 +145,7 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           // Create free tier subscription for new users
-          await createSubscription(user.id);
+          await userSubscriptionRepo.createSubscription(user.id);
 
           // Create Resend contact for marketing communications
           after(() => addContact(user.email, user.name));

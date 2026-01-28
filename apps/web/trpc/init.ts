@@ -3,7 +3,7 @@ import { ipAddress } from "@vercel/functions";
 import { headers } from "next/headers";
 import { after } from "next/server";
 import superjson from "superjson";
-import { updateLastAccessed } from "@/lib/db/repos/domains";
+import { domainsRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import {
   getRateLimiter,
@@ -207,7 +207,7 @@ export const withDomainAccessUpdate = t.middleware(async ({ input, next }) => {
     "domain" in input &&
     typeof input.domain === "string"
   ) {
-    after(() => updateLastAccessed(input.domain as string));
+    after(() => domainsRepo.updateLastAccessed(input.domain as string));
   }
   return next();
 });
@@ -238,13 +238,13 @@ export const withAuth = t.middleware(async ({ ctx, next }) => {
  * Throws FORBIDDEN if user is on free tier.
  */
 export const withProTier = t.middleware(async (opts) => {
-  const { getUserSubscription } = await import(
-    "@/lib/db/repos/user-subscription"
-  );
+  const { userSubscriptionRepo } = await import("@/lib/db/repos");
 
   // Type assertion needed because middleware chaining doesn't preserve extended context types
   const ctx = opts.ctx as typeof opts.ctx & { user: { id: string } };
-  const subscription = await getUserSubscription(ctx.user.id);
+  const subscription = await userSubscriptionRepo.getUserSubscription(
+    ctx.user.id,
+  );
 
   if (subscription.plan !== "pro") {
     throw new TRPCError({

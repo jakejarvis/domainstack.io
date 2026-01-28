@@ -45,9 +45,7 @@ export async function detectAndResolveProvidersStep(
     detectHostingProvider,
     getProvidersFromCatalog,
   } = await import("@domainstack/core/providers");
-  const { resolveOrCreateProviderId, upsertCatalogProvider } = await import(
-    "@/lib/db/repos/providers"
-  );
+  const { providersRepo } = await import("@/lib/db/repos");
 
   // Extract MX and NS records
   const mx = dnsRecords.filter((d) => d.type === "MX");
@@ -121,9 +119,11 @@ export async function detectAndResolveProvidersStep(
     [
       // Hosting provider
       hostingCatalogProvider
-        ? upsertCatalogProvider(hostingCatalogProvider).then((r) => r.id)
+        ? providersRepo
+            .upsertCatalogProvider(hostingCatalogProvider)
+            .then((r) => r.id)
         : hostingName
-          ? resolveOrCreateProviderId({
+          ? providersRepo.resolveOrCreateProviderId({
               category: "hosting",
               domain: hostingIconDomain,
               name: hostingName,
@@ -131,9 +131,11 @@ export async function detectAndResolveProvidersStep(
           : Promise.resolve(null),
       // Email provider
       emailCatalogProvider
-        ? upsertCatalogProvider(emailCatalogProvider).then((r) => r.id)
+        ? providersRepo
+            .upsertCatalogProvider(emailCatalogProvider)
+            .then((r) => r.id)
         : emailName
-          ? resolveOrCreateProviderId({
+          ? providersRepo.resolveOrCreateProviderId({
               category: "email",
               domain: emailIconDomain,
               name: emailName,
@@ -141,9 +143,11 @@ export async function detectAndResolveProvidersStep(
           : Promise.resolve(null),
       // DNS provider
       dnsCatalogProvider
-        ? upsertCatalogProvider(dnsCatalogProvider).then((r) => r.id)
+        ? providersRepo
+            .upsertCatalogProvider(dnsCatalogProvider)
+            .then((r) => r.id)
         : dnsName
-          ? resolveOrCreateProviderId({
+          ? providersRepo.resolveOrCreateProviderId({
               category: "dns",
               domain: dnsIconDomain,
               name: dnsName,

@@ -1,7 +1,7 @@
+import * as schema from "@domainstack/db/schema";
 import { attachDatabasePool } from "@vercel/functions";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "@/lib/db/schema";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {

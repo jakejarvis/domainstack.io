@@ -1,6 +1,6 @@
 import { BLACKLISTED_SUFFIXES } from "@domainstack/constants";
+import { toRegistrableDomain as toRegistrableDomainCore } from "@domainstack/core/domain";
 import { LRUCache } from "lru-cache";
-import { toRegistrableDomain as toRegistrableDomainRdapper } from "rdapper";
 import { normalizeDomainInput } from "@/lib/domain-utils";
 
 /**
@@ -57,7 +57,7 @@ export function toRegistrableDomain(input: string): string | null {
   }
 
   // PSL lookup
-  const result = toRegistrableDomainRdapper(value);
+  const result = toRegistrableDomainCore(value);
 
   // Cache the result (use sentinel for null)
   cache.set(value, result ?? NO_RESULT);

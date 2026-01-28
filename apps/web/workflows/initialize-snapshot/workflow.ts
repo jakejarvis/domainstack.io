@@ -192,8 +192,8 @@ async function fetchDomainStep(
 ): Promise<{ name: string } | null> {
   "use step";
 
-  const { getDomainNameById } = await import("@/lib/db/repos/domains");
-  return getDomainNameById(domainId);
+  const { domainsRepo } = await import("@/lib/db/repos");
+  return domainsRepo.getDomainNameById(domainId);
 }
 
 async function createSnapshotStep(params: {
@@ -216,9 +216,9 @@ async function createSnapshotStep(params: {
 }): Promise<{ id: string }> {
   "use step";
 
-  const { createSnapshot } = await import("@/lib/db/repos/snapshots");
+  const { snapshotsRepo } = await import("@/lib/db/repos");
 
-  return await createSnapshot({
+  const snapshot = await snapshotsRepo.createSnapshot({
     trackedDomainId: params.trackedDomainId,
     registration: params.registration,
     certificate: params.certificate,
@@ -226,4 +226,12 @@ async function createSnapshotStep(params: {
     hostingProviderId: params.hostingProviderId,
     emailProviderId: params.emailProviderId,
   });
+
+  if (!snapshot) {
+    throw new Error(
+      `Failed to create snapshot for trackedDomainId: ${params.trackedDomainId}`,
+    );
+  }
+
+  return { id: snapshot.id };
 }

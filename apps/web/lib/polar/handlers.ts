@@ -3,11 +3,7 @@ import "server-only";
 import type { WebhooksOptions } from "@polar-sh/better-auth";
 import { after } from "next/server";
 import { analytics } from "@/lib/analytics/server";
-import {
-  clearSubscriptionEndsAt,
-  setSubscriptionEndsAt,
-  updateUserTier,
-} from "@/lib/db/repos/user-subscription";
+import { userSubscriptionRepo } from "@/lib/db/repos";
 import { createLogger } from "@/lib/logger/server";
 import { handleDowngrade } from "@/lib/polar/downgrade";
 import {
@@ -116,8 +112,8 @@ export async function handleSubscriptionActive(
 
   try {
     // Upgrade tier and clear any pending cancellation (e.g., user re-subscribed)
-    await updateUserTier(customer.externalId, tier);
-    await clearSubscriptionEndsAt(customer.externalId);
+    await userSubscriptionRepo.updateUserTier(customer.externalId, tier);
+    await userSubscriptionRepo.clearSubscriptionEndsAt(customer.externalId);
     logger.debug({ userId: customer.externalId, tier }, "upgraded user tier");
 
     analytics.track("subscription_activated", { tier }, customer.externalId);
@@ -170,7 +166,10 @@ export async function handleSubscriptionCanceled(
   if (currentPeriodEnd) {
     const endsAt = new Date(currentPeriodEnd);
     try {
-      await setSubscriptionEndsAt(customer.externalId, endsAt);
+      await userSubscriptionRepo.setSubscriptionEndsAt(
+        customer.externalId,
+        endsAt,
+      );
 
       analytics.track(
         "subscription_canceled",
@@ -227,7 +226,7 @@ export async function handleSubscriptionRevoked(
 
   try {
     const archivedCount = await handleDowngrade(customer.externalId);
-    await clearSubscriptionEndsAt(customer.externalId);
+    await userSubscriptionRepo.clearSubscriptionEndsAt(customer.externalId);
     logger.debug(
       { userId: customer.externalId, archivedCount },
       "downgraded user",
@@ -285,7 +284,7 @@ export async function handleSubscriptionUncanceled(
   }
 
   try {
-    await clearSubscriptionEndsAt(customer.externalId);
+    await userSubscriptionRepo.clearSubscriptionEndsAt(customer.externalId);
     logger.debug(
       { userId: customer.externalId },
       "cleared subscription end date",

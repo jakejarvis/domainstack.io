@@ -1,0 +1,41 @@
+{
+  "name": "@domainstack/db",
+  "version": "0.0.0-beta.1",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./repos": "./src/repos/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "test": "vitest run --passWithNoTests",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
+    "@domainstack/types": "workspace:*",
+    "drizzle-orm": "catalog:"
+  },
+  "peerDependencies": {
+    "pg": "^8"
+  },
+  "devDependencies": {
+    "@domainstack/typescript-config": "workspace:*",
+    "@electric-sql/pglite": "^0.3.15",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.8",
+    "vitest": "catalog:"
+  }
+}

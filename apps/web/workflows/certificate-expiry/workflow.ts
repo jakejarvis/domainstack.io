@@ -140,11 +140,9 @@ async function fetchCertificate(
 ): Promise<CertificateData | null> {
   "use step";
 
-  const { getEarliestCertificate } = await import(
-    "@/lib/db/repos/certificates"
-  );
+  const { certificatesRepo } = await import("@/lib/db/repos");
 
-  return await getEarliestCertificate(trackedDomainId);
+  return await certificatesRepo.getEarliestCertificate(trackedDomainId);
 }
 
 async function clearRenewedNotifications(
@@ -152,11 +150,11 @@ async function clearRenewedNotifications(
 ): Promise<number> {
   "use step";
 
-  const { clearCertificateExpiryNotifications } = await import(
-    "@/lib/db/repos/notifications"
-  );
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
-  return await clearCertificateExpiryNotifications(trackedDomainId);
+  return await notificationsRepo.clearCertificateExpiryNotifications(
+    trackedDomainId,
+  );
 }
 
 async function createNotificationRecord(params: {
@@ -173,7 +171,7 @@ async function createNotificationRecord(params: {
   "use step";
 
   const { format } = await import("date-fns");
-  const { createNotification } = await import("@/lib/db/repos/notifications");
+  const { notificationsRepo } = await import("@/lib/db/repos");
 
   const {
     trackedDomainId,
@@ -195,7 +193,7 @@ async function createNotificationRecord(params: {
   if (shouldSendEmail) channels.push("email");
   if (shouldSendInApp) channels.push("in-app");
 
-  const notification = await createNotification({
+  const notification = await notificationsRepo.createNotification({
     userId,
     trackedDomainId,
     type: notificationType,
