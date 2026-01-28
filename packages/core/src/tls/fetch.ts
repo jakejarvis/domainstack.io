@@ -93,17 +93,17 @@ export async function fetchCertificateChain(
 
     return { success: true, chain };
   } catch (err) {
+    // Check for timeout first (before TLS error check, since "TLS timeout" contains "tls")
+    if (err instanceof Error && err.message === "TLS timeout") {
+      return { success: false, error: "timeout" };
+    }
+
     if (isExpectedDnsError(err)) {
       return { success: false, error: "dns_error" };
     }
 
     if (isExpectedTlsError(err)) {
       return { success: false, error: "tls_error" };
-    }
-
-    // Check for timeout
-    if (err instanceof Error && err.message === "TLS timeout") {
-      return { success: false, error: "timeout" };
     }
 
     return { success: false, error: "fetch_error" };

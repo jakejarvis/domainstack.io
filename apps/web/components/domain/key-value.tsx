@@ -90,7 +90,7 @@ export function KeyValue({
           <CopyButton
             value={value}
             variant="ghost"
-            className="-mr-1 text-muted-foreground sm:-mr-1.5"
+            className="-mr-1 text-muted-foreground"
           />
         )}
       </div>
