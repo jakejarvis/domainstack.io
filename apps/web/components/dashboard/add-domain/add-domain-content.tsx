@@ -153,7 +153,7 @@ export function AddDomainContent({
   if (!subscription?.canAddMore && !resumeDomain && step !== 3) {
     const quotaContent = (
       <>
-        <div className="mb-4 flex flex-col items-center gap-2 text-center">
+        <div className="mb-4 flex flex-col items-center gap-1 text-center">
           <Icon size="lg" variant="destructive" className="mb-2">
             <IconGauge />
           </Icon>
@@ -178,7 +178,7 @@ export function AddDomainContent({
           )}
 
           {isPro ? (
-            <>
+            <div className="flex flex-col gap-2">
               <p className="text-center text-muted-foreground text-sm">
                 You can archive unused domains to make room for new ones, or
                 remove domains you no longer need to track.
@@ -188,16 +188,9 @@ export function AddDomainContent({
                   Close
                 </Button>
               )}
-            </>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <UpgradeCard />
-              {onClose && (
-                <Button variant="outline" onClick={onClose} className="w-full">
-                  Close
-                </Button>
-              )}
             </div>
+          ) : (
+            <UpgradeCard />
           )}
         </div>
       </>
