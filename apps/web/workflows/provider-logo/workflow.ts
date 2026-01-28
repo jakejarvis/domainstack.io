@@ -56,7 +56,6 @@ export async function providerLogoWorkflow(
     providerId,
     providerDomain,
     fetchResult.imageBase64,
-    fetchResult.contentType,
     fetchResult.sourceName,
   );
 
@@ -74,12 +73,11 @@ async function processAndStore(
   providerId: string,
   providerDomain: string,
   imageBase64: string,
-  contentType: string | null,
   sourceName: string,
 ): Promise<{ success: true; url: string }> {
   "use step";
 
-  const { convertBufferToImageCover } = await import("@/lib/image");
+  const { optimizeImage } = await import("@/lib/image");
   const { storeImage } = await import("@/lib/storage");
   const { providerLogosRepo } = await import("@/lib/db/repos");
   const { ttlForProviderIcon } = await import("@/lib/ttl");
@@ -87,14 +85,12 @@ async function processAndStore(
   try {
     // 1. Process image (handles ICO/SVG files with appropriate fallbacks)
     const inputBuffer = Buffer.from(imageBase64, "base64");
-    const processedBuffer = await convertBufferToImageCover(
-      inputBuffer,
-      DEFAULT_SIZE,
-      DEFAULT_SIZE,
-      contentType,
-    );
+    const optimized = await optimizeImage(inputBuffer, {
+      width: DEFAULT_SIZE,
+      height: DEFAULT_SIZE,
+    });
 
-    if (!processedBuffer || processedBuffer.length === 0) {
+    if (optimized.length === 0) {
       throw new FatalError(
         `Image processing returned empty result for provider ${providerId}`,
       );
@@ -104,7 +100,7 @@ async function processAndStore(
     const { url, pathname } = await storeImage({
       kind: "provider-logo",
       domain: providerDomain,
-      buffer: processedBuffer,
+      buffer: optimized,
       width: DEFAULT_SIZE,
       height: DEFAULT_SIZE,
     });

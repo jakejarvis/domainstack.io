@@ -31,7 +31,7 @@ vi.mock("@/lib/storage", () => ({
 
 // Mock image processing
 vi.mock("@/lib/image", () => ({
-  optimizeImageCover: vi.fn().mockResolvedValue(Buffer.from("optimized")),
+  optimizeImage: vi.fn().mockResolvedValue(Buffer.from("optimized")),
 }));
 
 afterEach(() => {

@@ -191,7 +191,7 @@ export async function processOgImageStep(
   "use step";
 
   // Dynamic imports for Node.js modules
-  const { optimizeImageCover } = await import("@/lib/image");
+  const { optimizeImage } = await import("@/lib/image");
   const { safeFetch } = await import("@domainstack/safe-fetch");
   const { storeImage } = await import("@/lib/storage");
 
@@ -213,13 +213,12 @@ export async function processOgImageStep(
       throw new Error(`Image fetch returned HTTP ${asset.status}`);
     }
 
-    const optimized = await optimizeImageCover(
-      asset.buffer,
-      SOCIAL_WIDTH,
-      SOCIAL_HEIGHT,
-    );
+    const optimized = await optimizeImage(asset.buffer, {
+      width: SOCIAL_WIDTH,
+      height: SOCIAL_HEIGHT,
+    });
 
-    if (!optimized || optimized.length === 0) {
+    if (optimized.length === 0) {
       throw new Error("Failed to optimize image");
     }
 
