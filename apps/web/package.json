@@ -74,7 +74,7 @@
     "nuqs": "^2.8.6",
     "pg": "^8.17.2",
     "pino": "^10.3.0",
-    "posthog-js": "^1.335.5",
+    "posthog-js": "^1.336.1",
     "posthog-node": "^5.24.3",
     "puppeteer-core": "24.35.0",
     "react": "19.2.4",
