@@ -22,12 +22,15 @@
     "@domainstack/constants": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/utils": "workspace:*",
-    "rdapper": "^0.13.0",
-    "zod": "^4.3.6"
+    "rdapper": "^0.13.0"
+  },
+  "peerDependencies": {
+    "zod": "^4"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
-    "@types/node": "^25.0.10",
-    "vitest": "^4.0.18"
+    "@types/node": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
   }
 }
