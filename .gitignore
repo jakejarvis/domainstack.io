@@ -48,3 +48,6 @@ next-env.d.ts
 
 # SWC
 .swc
+
+# next-agents-md
+.next-docs/
