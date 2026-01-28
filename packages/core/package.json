@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./domain": "./src/domain/index.ts",
+    "./domain/client": "./src/domain/client.ts",
     "./dns": "./src/dns/index.ts",
     "./providers": "./src/providers/index.ts",
     "./seo": "./src/seo/index.ts",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "msw": "^2.12.7",
     "vitest": "catalog:",
     "zod": "catalog:"
   }

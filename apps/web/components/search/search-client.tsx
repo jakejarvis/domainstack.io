@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  isValidDomain,
+  normalizeDomainInput,
+} from "@domainstack/core/domain/client";
 import { Field, FieldLabel } from "@domainstack/ui/field";
 import { Form } from "@domainstack/ui/form";
 import {
@@ -21,7 +25,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "@/hooks/use-router";
 import { analytics } from "@/lib/analytics/client";
 import { pendingDomainAtom } from "@/lib/atoms/search-atoms";
-import { isValidDomain, normalizeDomainInput } from "@/lib/domain-utils";
 import { isMac } from "@/lib/utils";
 
 export type SearchClientVariant = "sm" | "lg";

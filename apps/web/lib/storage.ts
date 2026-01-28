@@ -1,7 +1,7 @@
 import "server-only";
 
+import { createHmac } from "node:crypto";
 import { putBlob } from "@/lib/blob";
-import { deterministicHash } from "@/lib/hash";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "storage" });
@@ -9,6 +9,24 @@ const logger = createLogger({ source: "storage" });
 const UPLOAD_MAX_ATTEMPTS = 3;
 const UPLOAD_BACKOFF_BASE_MS = 100;
 const UPLOAD_BACKOFF_MAX_MS = 2000;
+
+/**
+ * Deterministic, obfuscated hash for IDs and filenames.
+ *
+ * Notes:
+ * - Uses HMAC-SHA256.
+ * - Output is hex, safe for URLs/filenames.
+ * - `length` is clamped to the valid SHA-256 hex range: 0..64.
+ */
+function deterministicHash(input: string, secret: string, length = 32): string {
+  const safeLength = Number.isFinite(length)
+    ? Math.max(0, Math.min(64, Math.trunc(length)))
+    : 32;
+  return createHmac("sha256", secret)
+    .update(input)
+    .digest("hex")
+    .slice(0, safeLength);
+}
 
 function makeBlobPathname(
   kind: string,

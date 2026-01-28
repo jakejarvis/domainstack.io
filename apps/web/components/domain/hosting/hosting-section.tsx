@@ -6,6 +6,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@domainstack/ui/empty";
+import { countryCodeToEmoji } from "@domainstack/utils";
 import { IconHelp } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { HostingMapSkeleton } from "@/components/domain/hosting/hosting-map-skeleton";
@@ -14,7 +15,6 @@ import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
-import { countryCodeToEmoji } from "@/lib/country-emoji";
 
 const HostingMapClient = dynamic(
   () =>

@@ -1,6 +1,7 @@
 "use client";
 
 import { IMPORTANT_HEADERS } from "@domainstack/constants";
+import { normalizeDomainInput } from "@domainstack/core/domain/client";
 import type { HeadersResponse } from "@domainstack/types";
 import { Alert, AlertDescription } from "@domainstack/ui/alert";
 import {
@@ -22,7 +23,6 @@ import { KeyValue } from "@/components/domain/key-value";
 import { KeyValueGrid } from "@/components/domain/key-value-grid";
 import { ReportSection } from "@/components/domain/report-section";
 import { sections } from "@/lib/constants/sections";
-import { normalizeDomainInput } from "@/lib/domain-utils";
 
 /**
  * Extract domain from a Location header value.

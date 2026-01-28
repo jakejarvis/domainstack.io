@@ -13,3 +13,6 @@ export {
   /** Convert a domain to its registrable form (eTLD+1) */
   toRegistrableDomain,
 } from "rdapper";
+
+// Re-export the client-safe utilities for convenience in server files
+export * from "./client";

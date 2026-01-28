@@ -13,6 +13,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 import {
   IconArrowUp,
   IconCertificateOff,
@@ -29,7 +30,6 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
-import { formatDate, formatDateTimeUtc } from "@/lib/format";
 
 function CertificateCard({ cert }: { cert: Certificate }) {
   const sans = Array.isArray(cert.altNames)

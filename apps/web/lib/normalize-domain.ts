@@ -1,7 +1,9 @@
 import { BLACKLISTED_SUFFIXES } from "@domainstack/constants";
-import { toRegistrableDomain as toRegistrableDomainCore } from "@domainstack/core/domain";
+import {
+  normalizeDomainInput,
+  toRegistrableDomain as toRegistrableDomainCore,
+} from "@domainstack/core/domain";
 import { LRUCache } from "lru-cache";
-import { normalizeDomainInput } from "@/lib/domain-utils";
 
 /**
  * LRU cache for PSL lookups (cross-request).

@@ -49,7 +49,6 @@ export async function fetchHeadersStep(
   const { isExpectedDnsError, safeFetch } = await import(
     "@domainstack/safe-fetch"
   );
-  const { normalizeHeaders } = await import("@/lib/headers-utils");
   const { isExpectedTlsError } = await import("@domainstack/core/tls");
 
   const allowedHosts = [domain, `www.${domain}`];
@@ -70,9 +69,8 @@ export async function fetchHeadersStep(
       });
 
       const headers: Header[] = Object.entries(final.headers).map(
-        ([name, value]) => ({ name, value }),
+        ([name, value]) => ({ name: name.trim().toLowerCase(), value }),
       );
-      const normalized = normalizeHeaders(headers);
 
       // Get status message
       let statusMessage: string | undefined;
@@ -85,7 +83,7 @@ export async function fetchHeadersStep(
 
       return {
         success: true,
-        headers: normalized,
+        headers,
         status: final.status,
         statusMessage,
       };

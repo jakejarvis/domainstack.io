@@ -1,6 +1,5 @@
-/* @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import { isValidDomain, normalizeDomainInput } from "./domain-utils";
+import { isValidDomain, normalizeDomainInput } from "./client";
 
 describe("normalizeDomainInput", () => {
   it("strips scheme, auth, port, path and lowercases", () => {

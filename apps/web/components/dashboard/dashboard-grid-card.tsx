@@ -20,6 +20,7 @@ import {
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
 import { cn } from "@domainstack/ui/utils";
+import { formatDateTimeUtc } from "@domainstack/utils";
 import {
   IconAlertCircle,
   IconArchive,
@@ -52,7 +53,6 @@ import {
 import { useHydratedNow } from "@/hooks/use-hydrated-now";
 import { useProviderTooltipData } from "@/hooks/use-provider-tooltip-data";
 import { useTruncation } from "@/hooks/use-truncation";
-import { formatDateTimeUtc } from "@/lib/format";
 
 type DashboardGridCardProps = {
   trackedDomainId: string;

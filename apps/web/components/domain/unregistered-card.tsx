@@ -1,13 +1,13 @@
 "use client";
 
 import { NONPUBLIC_TLDS } from "@domainstack/constants";
+import { extractTldClient } from "@domainstack/core/domain/client";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   RegistrarLinks,
   RegistrarLinksSkeleton,
 } from "@/components/domain/registrar-links";
-import { extractTldClient } from "@/lib/domain-utils";
 
 interface DomainUnregisteredCardProps {
   domain: string;

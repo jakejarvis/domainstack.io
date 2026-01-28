@@ -1,9 +1,9 @@
+import { normalizeDomainInput } from "@domainstack/core/domain";
 import type { ProviderRef } from "@domainstack/types";
 import { cacheLife } from "next/cache";
 import { ImageResponse } from "next/og";
 import { type NextRequest, NextResponse } from "next/server";
 import { Logo } from "@/components/logo";
-import { normalizeDomainInput } from "@/lib/domain-utils";
 import { createLogger } from "@/lib/logger/server";
 import { toRegistrableDomain } from "@/lib/normalize-domain";
 import { hexToRGBA, loadGoogleFont } from "@/lib/og-utils";

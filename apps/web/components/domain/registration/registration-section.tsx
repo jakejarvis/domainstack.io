@@ -4,6 +4,7 @@ import {
   ResponsiveTooltipContent,
   ResponsiveTooltipTrigger,
 } from "@domainstack/ui/responsive-tooltip";
+import { formatDate, formatDateTimeUtc } from "@domainstack/utils";
 import {
   IconAlertCircle,
   IconRosetteDiscountCheck,
@@ -18,7 +19,6 @@ import { RelativeExpiryString } from "@/components/domain/relative-expiry";
 import { ReportSection } from "@/components/domain/report-section";
 import { ProviderLogo } from "@/components/icons/provider-logo";
 import { sections } from "@/lib/constants/sections";
-import { formatDate, formatDateTimeUtc } from "@/lib/format";
 
 type RegistrantView = { organization: string; country: string; state?: string };
 
