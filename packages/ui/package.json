@@ -29,7 +29,7 @@
     "motion": "^12",
     "react": "^19",
     "react-dom": "^19",
-    "sonner": "^2"
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@domainstack/typescript-config": "workspace:*",
