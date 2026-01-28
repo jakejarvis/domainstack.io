@@ -1,4 +1,3 @@
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "pricing" });
@@ -36,8 +35,6 @@ export type RegistrarPricingResponse = Record<
  * Configuration options for pricing providers.
  */
 export interface PricingProviderConfig {
-  /** Request timeout in milliseconds (default: 60000) */
-  timeout?: number;
   /** Cache revalidation period in seconds (default: 604800 = 7 days) */
   revalidate?: number;
   /** Whether to enable this provider (default: true) */
@@ -72,7 +69,6 @@ function createPricingProvider(
   },
   config: PricingProviderConfig = {},
 ): PricingProvider {
-  const timeout = config.timeout ?? 60_000;
   const revalidate = config.revalidate ?? 604_800; // 7 days
   const enabled = config.enabled ?? true;
 
@@ -80,14 +76,10 @@ function createPricingProvider(
     url: string,
     options: RequestInit = {},
   ): Promise<Response> => {
-    const res = await fetchWithTimeoutAndRetry(
-      url,
-      {
-        ...options,
-        next: { revalidate, tags: ["pricing", `pricing:${name}`] },
-      },
-      { timeoutMs: timeout },
-    );
+    const res = await fetch(url, {
+      ...options,
+      next: { revalidate, tags: ["pricing", `pricing:${name}`] },
+    });
 
     if (!res.ok) {
       logger.error({ provider: name, status: res.status }, "upstream error");

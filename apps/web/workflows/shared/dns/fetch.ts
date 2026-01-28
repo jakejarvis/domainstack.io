@@ -5,7 +5,6 @@
  * This step is shared between the dedicated dnsWorkflow and internal workflows.
  */
 
-import type { DnsRecordType } from "@domainstack/constants";
 import type { DnsRecord } from "@domainstack/types";
 import { RetryableError } from "workflow";
 import type { FetchDnsResult } from "./types";
@@ -26,8 +25,12 @@ export async function fetchDnsRecordsStep(
   const { DNS_TYPE_NUMBERS, DNS_RECORD_TYPES } = await import(
     "@domainstack/constants"
   );
-  const { deduplicateDnsRecords, providerOrderForLookup, queryDohProvider } =
-    await import("@/lib/dns-utils");
+  const {
+    deduplicateDnsRecords,
+    providerOrderForLookup,
+    queryDohProvider,
+    sortDnsRecordsByType,
+  } = await import("@domainstack/core/dns");
   const { ttlForDnsRecord } = await import("@/lib/ttl");
 
   const providers = providerOrderForLookup(domain);
@@ -38,11 +41,7 @@ export async function fetchDnsRecordsStep(
     try {
       const results = await Promise.all(
         types.map(async (type) => {
-          const answers = await queryDohProvider(provider, domain, type, {
-            timeoutMs: 2000,
-            retries: 1,
-            backoffMs: 150,
-          });
+          const answers = await queryDohProvider(provider, domain, type);
 
           const records: DnsRecord[] = [];
           for (const a of answers) {
@@ -130,44 +129,3 @@ export async function fetchDnsRecordsStep(
 
 // Allow more retries for DNS since DoH providers can be flaky
 fetchDnsRecordsStep.maxRetries = 5;
-
-// ============================================================================
-// Helper functions (pure, no Node.js dependencies)
-// ============================================================================
-
-function sortDnsRecordsByType(
-  records: DnsRecord[],
-  order: readonly DnsRecordType[],
-): DnsRecord[] {
-  const byType: Record<DnsRecordType, DnsRecord[]> = {
-    A: [],
-    AAAA: [],
-    MX: [],
-    TXT: [],
-    NS: [],
-  };
-  for (const r of records) byType[r.type].push(r);
-
-  const sorted: DnsRecord[] = [];
-  for (const t of order) {
-    sorted.push(...sortDnsRecordsForType(byType[t], t));
-  }
-  return sorted;
-}
-
-function sortDnsRecordsForType(
-  arr: DnsRecord[],
-  type: DnsRecordType,
-): DnsRecord[] {
-  if (type === "MX") {
-    arr.sort((a, b) => {
-      const ap = a.priority ?? Number.MAX_SAFE_INTEGER;
-      const bp = b.priority ?? Number.MAX_SAFE_INTEGER;
-      if (ap !== bp) return ap - bp;
-      return a.value.localeCompare(b.value);
-    });
-    return arr;
-  }
-  arr.sort((a, b) => a.value.localeCompare(b.value));
-  return arr;
-}

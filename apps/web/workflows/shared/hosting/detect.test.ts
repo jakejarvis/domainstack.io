@@ -12,50 +12,39 @@ import {
 import { server } from "@/mocks/server";
 
 // Mock Edge Config for provider catalogs
-const mockProviderCatalog = vi.hoisted(() =>
-  vi.fn().mockImplementation((category: string) => {
-    if (category === "hosting") {
-      return Promise.resolve([
-        {
-          name: "Vercel",
-          domain: "vercel.com",
-          category: "hosting",
-          rule: { kind: "headerPresent", name: "x-vercel-id" },
-        },
-        {
-          name: "Cloudflare",
-          domain: "cloudflare.com",
-          category: "hosting",
-          rule: { kind: "headerPresent", name: "cf-ray" },
-        },
-      ]);
-    }
-    if (category === "email") {
-      return Promise.resolve([
-        {
-          name: "Google Workspace",
-          domain: "google.com",
-          category: "email",
-          rule: { kind: "mxSuffix", suffix: "google.com" },
-        },
-      ]);
-    }
-    if (category === "dns") {
-      return Promise.resolve([
-        {
-          name: "Cloudflare",
-          domain: "cloudflare.com",
-          category: "dns",
-          rule: { kind: "nsSuffix", suffix: "cloudflare.com" },
-        },
-      ]);
-    }
-    return Promise.resolve([]);
-  }),
-);
+const mockCatalog = {
+  hosting: [
+    {
+      name: "Vercel",
+      domain: "vercel.com",
+      rule: { kind: "headerPresent", name: "x-vercel-id" },
+    },
+    {
+      name: "Cloudflare",
+      domain: "cloudflare.com",
+      rule: { kind: "headerPresent", name: "cf-ray" },
+    },
+  ],
+  email: [
+    {
+      name: "Google Workspace",
+      domain: "google.com",
+      rule: { kind: "mxSuffix", suffix: "google.com" },
+    },
+  ],
+  dns: [
+    {
+      name: "Cloudflare",
+      domain: "cloudflare.com",
+      rule: { kind: "nsSuffix", suffix: "cloudflare.com" },
+    },
+  ],
+  ca: [],
+  registrar: [],
+};
 
-vi.mock("@/lib/providers/catalog", () => ({
-  getProviders: mockProviderCatalog,
+vi.mock("@/lib/edge-config", () => ({
+  getProviderCatalog: vi.fn().mockResolvedValue(mockCatalog),
 }));
 
 // Mock schedule revalidation

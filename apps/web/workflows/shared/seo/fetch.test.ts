@@ -10,7 +10,7 @@ vi.mock("@domainstack/safe-fetch", () => ({
 }));
 
 // Mock fetch utilities
-vi.mock("@/lib/tls-utils", () => ({
+vi.mock("@domainstack/core/tls", () => ({
   isExpectedTlsError: vi.fn().mockReturnValue(false),
 }));
 

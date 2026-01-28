@@ -11,22 +11,10 @@ import type { Certificate } from "@domainstack/types";
  * Typed error for certificates operations.
  * - dns_error: Domain does not resolve
  * - tls_error: SSL certificate is invalid
- * - connection_failed: Connection failed (not DNS or TLS)
  *
- * Note: fetch_error is thrown as RetryableError and never returned.
+ * Note: fetch_error and timeout are thrown as RetryableError and never returned.
  */
-export type CertificatesError = "dns_error" | "tls_error" | "connection_failed";
-
-/**
- * Raw certificate data from TLS handshake (before provider detection).
- */
-export interface RawCertificate {
-  issuer: string;
-  subject: string;
-  altNames: string[];
-  validFrom: string;
-  validTo: string;
-}
+export type CertificatesError = "dns_error" | "tls_error";
 
 /**
  * Internal data structure for step-to-step transfer after fetching.

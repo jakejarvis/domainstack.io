@@ -38,9 +38,13 @@ export async function detectAndResolveProvidersStep(
 
   // Dynamic imports for Node.js modules and database operations
   const { toRegistrableDomain } = await import("@/lib/normalize-domain");
-  const { getProviders } = await import("@/lib/providers/catalog");
-  const { detectDnsProvider, detectEmailProvider, detectHostingProvider } =
-    await import("@/lib/providers/detection");
+  const { getProviderCatalog } = await import("@/lib/edge-config");
+  const {
+    detectDnsProvider,
+    detectEmailProvider,
+    detectHostingProvider,
+    getProvidersFromCatalog,
+  } = await import("@domainstack/core/providers");
   const { resolveOrCreateProviderId, upsertCatalogProvider } = await import(
     "@/lib/db/repos/providers"
   );
@@ -49,12 +53,15 @@ export async function detectAndResolveProvidersStep(
   const mx = dnsRecords.filter((d) => d.type === "MX");
   const nsRecords = dnsRecords.filter((d) => d.type === "NS");
 
-  // Fetch provider catalogs from Edge Config
-  const [hostingProviders, emailProviders, dnsProviders] = await Promise.all([
-    getProviders("hosting"),
-    getProviders("email"),
-    getProviders("dns"),
-  ]);
+  // Fetch provider catalog from Edge Config
+  const catalog = await getProviderCatalog();
+  const hostingProviders = catalog
+    ? getProvidersFromCatalog(catalog, "hosting")
+    : [];
+  const emailProviders = catalog
+    ? getProvidersFromCatalog(catalog, "email")
+    : [];
+  const dnsProviders = catalog ? getProvidersFromCatalog(catalog, "dns") : [];
 
   // Hosting provider detection with fallback:
   // - If no A record/IP → null

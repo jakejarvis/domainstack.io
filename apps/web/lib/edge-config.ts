@@ -1,10 +1,10 @@
-import { get } from "@vercel/edge-config";
-import { cache } from "react";
-import { createLogger } from "@/lib/logger/server";
 import {
   type ProviderCatalog,
   safeParseProviderCatalog,
-} from "@/lib/providers/parser";
+} from "@domainstack/core/providers";
+import { get } from "@vercel/edge-config";
+import { cache } from "react";
+import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "edge-config" });
 

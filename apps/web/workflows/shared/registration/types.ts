@@ -8,11 +8,12 @@
 /**
  * Typed error for registration operations.
  * - unsupported_tld: Registry does not support RDAP/WHOIS
+ * - not_found: Domain not found in registry
  *
  * Note: Transient errors (timeout, network issues) are thrown as RetryableError
  * and never returned to callers.
  */
-export type RegistrationError = "unsupported_tld";
+export type RegistrationError = "unsupported_tld" | "not_found";
 
 /**
  * Internal type for RDAP lookup result (before step processing).

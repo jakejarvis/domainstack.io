@@ -4,6 +4,7 @@ import type {
   VerificationMethod,
   VerificationStatus,
 } from "@domainstack/constants";
+import { deduplicateDnsRecordsByValue } from "@domainstack/core/dns";
 import type {
   DnsRecord,
   ProviderInfo,
@@ -34,7 +35,6 @@ import {
   users,
   userTrackedDomains,
 } from "@/lib/db/schema";
-import { deduplicateDnsRecordsByValue } from "@/lib/dns-utils";
 
 export interface CreateTrackedDomainParams {
   userId: string;

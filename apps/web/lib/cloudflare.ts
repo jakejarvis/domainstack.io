@@ -36,9 +36,9 @@ async function getCloudflareIpRanges(): Promise<CloudflareIpRanges> {
   try {
     const res = await fetch(CLOUDFLARE_IPS_URL, {
       headers: {
-        "User-Agent":
-          process.env.EXTERNAL_USER_AGENT ||
-          "domainstack.io/0.1 (+https://domainstack.io)",
+        ...(process.env.EXTERNAL_USER_AGENT
+          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
+          : {}),
       },
       next: {
         revalidate: 604_800, // 1 week

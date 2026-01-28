@@ -2,8 +2,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Hoist mocks for dns-utils (DoH providers)
-// Import actual implementations for deduplication functions
+// Import actual implementations for deduplication and sorting functions
 const dnsUtilsMock = vi.hoisted(() => {
+  type DnsRecordType = "A" | "AAAA" | "MX" | "TXT" | "NS";
+  interface DnsRecord {
+    type: DnsRecordType;
+    name: string;
+    value: string;
+    ttl?: number;
+    priority?: number;
+    isCloudflare?: boolean;
+  }
+
   // Replicate the actual deduplication logic for tests
   function makeDnsRecordKey(
     type: string,
@@ -33,6 +43,45 @@ const dnsUtilsMock = vi.hoisted(() => {
     return deduplicated;
   }
 
+  // Replicate the actual sorting logic for tests
+  function sortDnsRecordsForType(
+    records: DnsRecord[],
+    type: DnsRecordType,
+  ): DnsRecord[] {
+    const sorted = [...records];
+    if (type === "MX") {
+      sorted.sort((a, b) => {
+        const ap = a.priority ?? Number.MAX_SAFE_INTEGER;
+        const bp = b.priority ?? Number.MAX_SAFE_INTEGER;
+        if (ap !== bp) return ap - bp;
+        return a.value.localeCompare(b.value);
+      });
+      return sorted;
+    }
+    sorted.sort((a, b) => a.value.localeCompare(b.value));
+    return sorted;
+  }
+
+  function sortDnsRecordsByType(
+    records: DnsRecord[],
+    order: readonly DnsRecordType[],
+  ): DnsRecord[] {
+    const byType: Record<DnsRecordType, DnsRecord[]> = {
+      A: [],
+      AAAA: [],
+      MX: [],
+      TXT: [],
+      NS: [],
+    };
+    for (const r of records) byType[r.type].push(r);
+
+    const sorted: DnsRecord[] = [];
+    for (const t of order) {
+      sorted.push(...sortDnsRecordsForType(byType[t], t));
+    }
+    return sorted;
+  }
+
   return {
     providerOrderForLookup: vi.fn(() => [
       { key: "cloudflare", name: "Cloudflare" },
@@ -49,10 +98,11 @@ const dnsUtilsMock = vi.hoisted(() => {
     DOH_PROVIDERS: {},
     makeDnsRecordKey,
     deduplicateDnsRecords,
+    sortDnsRecordsByType,
   };
 });
 
-vi.mock("@/lib/dns-utils", () => dnsUtilsMock);
+vi.mock("@domainstack/core/dns", () => dnsUtilsMock);
 
 // Mock cloudflare IP check
 vi.mock("@/lib/cloudflare", () => ({

@@ -1,7 +1,7 @@
 import "server-only";
+import { isExpectedTlsError } from "@domainstack/core/tls";
 import { isExpectedDnsError } from "@domainstack/safe-fetch";
 import { FatalError, RetryableError } from "workflow";
-import { isExpectedTlsError } from "@/lib/tls-utils";
 
 /**
  * Error codes from SafeFetchError that are permanent (should not retry)

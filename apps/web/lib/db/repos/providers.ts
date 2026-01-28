@@ -1,13 +1,15 @@
 import "server-only";
 
+import {
+  catalogRuleMatchesDiscovered,
+  type Provider,
+  slugify,
+} from "@domainstack/core";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { type providerCategory, providers } from "@/lib/db/schema";
 import { isUniqueViolation } from "@/lib/db/utils";
 import { createLogger } from "@/lib/logger/server";
-import { catalogRuleMatchesDiscovered } from "@/lib/providers/detection";
-import type { Provider } from "@/lib/providers/parser";
-import { slugify } from "@/lib/slugify";
 
 const logger = createLogger({ source: "db/repos/providers" });
 

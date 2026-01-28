@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncBlockedDomains } from "@/lib/db/repos/blocked-domains";
 import { getBlocklistSources } from "@/lib/edge-config";
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "cron/sync-blocklist" });
@@ -39,11 +38,7 @@ export async function GET(request: Request) {
     // Fetch and parse all blocklists in parallel
     const fetchResults = await Promise.allSettled(
       sources.map(async (sourceUrl) => {
-        const response = await fetchWithTimeoutAndRetry(
-          sourceUrl,
-          {},
-          { timeoutMs: 30_000, retries: 2 },
-        );
+        const response = await fetch(sourceUrl);
 
         if (!response.ok) {
           logger.warn(

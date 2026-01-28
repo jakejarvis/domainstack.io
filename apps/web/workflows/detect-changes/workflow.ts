@@ -1,3 +1,4 @@
+import { statusesAreEqual } from "@domainstack/core/whois";
 import type {
   CertificatesResponse,
   HostingResponse,
@@ -7,7 +8,6 @@ import type {
   CertificateSnapshotData,
   RegistrationSnapshotData,
 } from "@/lib/db/schema";
-import { statusesAreEqual } from "@/lib/registration-utils";
 import {
   fetchCertificateChainStep,
   persistCertificatesStep,

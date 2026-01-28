@@ -7,9 +7,12 @@ import {
   HTML_FILE_PATH_LEGACY,
   META_TAG_NAME,
 } from "@domainstack/constants";
+import {
+  providerOrderForLookup,
+  queryDohProvider,
+} from "@domainstack/core/dns";
 import { safeFetch } from "@domainstack/safe-fetch";
 import * as cheerio from "cheerio";
-import { providerOrderForLookup, queryDohProvider } from "@/lib/dns-utils";
 import { createLogger } from "@/lib/logger/server";
 
 const logger = createLogger({ source: "verification" });
@@ -45,9 +48,6 @@ export async function verifyByDns(
     for (const provider of providers) {
       try {
         const answers = await queryDohProvider(provider, hostname, "TXT", {
-          timeoutMs: 5000,
-          retries: 1,
-          backoffMs: 200,
           cacheBust: true, // Bypass caches to check freshly added records
         });
 

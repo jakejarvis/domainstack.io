@@ -1,14 +1,15 @@
 /* @vitest-environment node */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock provider catalog
-vi.mock("@/lib/providers/catalog", () => ({
-  getProviders: vi.fn().mockResolvedValue([]),
+// Mock Edge Config
+vi.mock("@/lib/edge-config", () => ({
+  getProviderCatalog: vi.fn().mockResolvedValue(null),
 }));
 
 // Mock provider detection
-vi.mock("@/lib/providers/detection", () => ({
+vi.mock("@domainstack/core/providers", () => ({
   detectRegistrar: vi.fn().mockReturnValue(null),
+  getProvidersFromCatalog: vi.fn().mockReturnValue([]),
 }));
 
 // Mock providers repo

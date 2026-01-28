@@ -22,7 +22,7 @@ export interface Provider extends ProviderEntry {
 }
 
 /**
- * Schema for the full provider catalog stored in Edge Config.
+ * Schema for the full provider catalog.
  *
  * Structure:
  * ```json
@@ -105,9 +105,9 @@ const ProviderCatalogSchema = z
 export type ProviderCatalog = z.infer<typeof ProviderCatalogSchema>;
 
 /**
- * Parse and validate a raw provider catalog from Edge Config.
+ * Parse and validate a raw provider catalog.
  *
- * @param raw - Raw JSON object from Edge Config
+ * @param raw - Raw JSON object
  * @returns Validated ProviderCatalog
  * @throws ZodError if validation fails
  */
@@ -116,18 +116,17 @@ export function parseProviderCatalog(raw: unknown): ProviderCatalog {
 }
 
 /**
- * Safely parse a provider catalog, returning null on failure.
+ * Safely parse a provider catalog, returning a result object.
  *
- * @param raw - Raw JSON object from Edge Config
- * @returns Validated ProviderCatalog or null if invalid
+ * @param raw - Raw JSON object
+ * @returns Validated ProviderCatalog or error
  */
 export function safeParseProviderCatalog(
   raw: unknown,
 ):
   | { success: true; data: ProviderCatalog }
   | { success: false; error: z.ZodError } {
-  const result = ProviderCatalogSchema.safeParse(raw);
-  return result;
+  return ProviderCatalogSchema.safeParse(raw);
 }
 
 /**

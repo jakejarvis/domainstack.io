@@ -46,6 +46,9 @@ importers:
       '@domainstack/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@domainstack/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@domainstack/safe-fetch':
         specifier: workspace:*
         version: link:../../packages/safe-fetch
@@ -368,6 +371,34 @@ importers:
       '@domainstack/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+
+  packages/core:
+    dependencies:
+      '@domainstack/constants':
+        specifier: workspace:*
+        version: link:../constants
+      '@domainstack/types':
+        specifier: workspace:*
+        version: link:../types
+      '@domainstack/utils':
+        specifier: workspace:*
+        version: link:../utils
+      rdapper:
+        specifier: ^0.13.0
+        version: 0.13.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@domainstack/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(lightningcss@1.30.2)(msw@2.12.7(@types/node@25.0.10)(typescript@5.9.3))(terser@5.46.0)(yaml@2.8.2)
 
   packages/safe-fetch:
     dependencies:

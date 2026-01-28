@@ -7,9 +7,9 @@ async function fetchRepoStars(): Promise<number | null> {
     const res = await fetch(`https://api.github.com/repos/${REPOSITORY_SLUG}`, {
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent":
-          process.env.EXTERNAL_USER_AGENT ||
-          "domainstack.io/0.1 (+https://domainstack.io)",
+        ...(process.env.EXTERNAL_USER_AGENT
+          ? { "User-Agent": process.env.EXTERNAL_USER_AGENT }
+          : {}),
         // token is optional but allows for more frequent/reliable API calls
         ...(process.env.GITHUB_TOKEN
           ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }

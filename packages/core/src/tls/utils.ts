@@ -75,3 +75,30 @@ export function isExpectedTlsError(err: unknown): boolean {
     message.includes("signed")
   );
 }
+
+/**
+ * Check if an error is a DNS-related error.
+ */
+export function isExpectedDnsError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const anyErr = err as unknown as {
+    cause?: { code?: string; message?: string };
+    code?: string;
+    message?: string;
+  };
+  const code = anyErr?.cause?.code || anyErr?.code;
+  const message = (
+    anyErr?.cause?.message ||
+    anyErr?.message ||
+    ""
+  ).toLowerCase();
+
+  return (
+    code === "ENOTFOUND" ||
+    code === "EAI_AGAIN" ||
+    code === "ENODATA" ||
+    code === "ENOENT" ||
+    message.includes("getaddrinfo") ||
+    message.includes("dns")
+  );
+}

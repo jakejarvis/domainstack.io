@@ -1,6 +1,5 @@
 import type { GeoIpData } from "@domainstack/types";
 import { cache } from "react";
-import { fetchWithTimeoutAndRetry } from "@/lib/fetch";
 import { createLogger } from "@/lib/logger/server";
 import { getRedis } from "@/lib/redis";
 
@@ -92,7 +91,7 @@ async function fetchFromApi(ip: string): Promise<IplocateApiResponse> {
   );
   url.searchParams.set("apikey", apiKey);
 
-  const res = await fetchWithTimeoutAndRetry(url.toString());
+  const res = await fetch(url.toString());
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");

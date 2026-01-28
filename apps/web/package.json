@@ -25,6 +25,7 @@
     "@ai-sdk/react": "^3.0.55",
     "@bprogress/next": "^3.2.12",
     "@domainstack/constants": "workspace:*",
+    "@domainstack/core": "workspace:*",
     "@domainstack/safe-fetch": "workspace:*",
     "@domainstack/types": "workspace:*",
     "@domainstack/ui": "workspace:*",

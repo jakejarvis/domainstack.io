@@ -11,5 +11,4 @@ export type {
   CertificatesFetchData,
   CertificatesProcessedData,
   FetchCertificatesResult,
-  RawCertificate,
 } from "./types";
