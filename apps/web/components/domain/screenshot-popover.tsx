@@ -1,10 +1,12 @@
+"use client";
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@domainstack/ui/popover";
 import { useEffect, useState } from "react";
-import { Screenshot } from "@/components/domain/screenshot";
+import { Screenshot, useScreenshot } from "@/components/domain/screenshot";
 import { usePointerCapability } from "@/hooks/use-pointer-capability";
 
 export function ScreenshotPopover({
@@ -27,6 +29,9 @@ export function ScreenshotPopover({
   const [hasOpened, setHasOpened] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const { isTouchDevice } = usePointerCapability();
+
+  // Hook lives here (not in PopoverContent) so it stays mounted and keeps polling
+  const screenshot = useScreenshot({ domain, domainId, enabled: hasOpened });
 
   // Reset tap count when popover closes
   useEffect(() => {
@@ -98,8 +103,8 @@ export function ScreenshotPopover({
             <div className="bg-white dark:bg-zinc-950">
               <Screenshot
                 domain={domain}
-                domainId={domainId}
-                enabled={hasOpened}
+                data={screenshot.data}
+                isLoading={screenshot.isLoading}
               />
             </div>
           </div>

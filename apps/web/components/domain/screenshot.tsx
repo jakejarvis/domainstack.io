@@ -23,7 +23,7 @@ type ScreenshotStatusResponse =
   | { status: "error"; error: string }
   | { status: "rate_limited"; retryAfter: number };
 
-interface ScreenshotData {
+export interface ScreenshotData {
   url: string | null;
   blocked: boolean;
 }
@@ -92,31 +92,31 @@ function parseStatusResponse(raw: unknown): ScreenshotStatusResponse {
   return { status: "error", error: "Unknown response format" };
 }
 
-export function Screenshot({
+export interface UseScreenshotResult {
+  data: ScreenshotData | null;
+  isLoading: boolean;
+  error: Error | null;
+  hasFailed: boolean;
+}
+
+/**
+ * Hook to fetch a screenshot for a domain.
+ * Call this in a component that stays mounted to keep polling active.
+ */
+export function useScreenshot({
   domain,
   domainId,
   enabled = true,
-  className,
-  width = 1200,
-  height = 630,
-  imageClassName,
-  aspectClassName = "aspect-[1200/630]",
 }: {
   domain: string;
   domainId?: string;
   enabled?: boolean;
-  className?: string;
-  width?: number;
-  height?: number;
-  imageClassName?: string;
-  aspectClassName?: string;
-}) {
+}): UseScreenshotResult {
   const queryClient = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
   const [screenshotData, setScreenshotData] = useState<ScreenshotData | null>(
     null,
   );
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
   const startedForDomainRef = useRef<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -276,11 +276,9 @@ export function Screenshot({
     rateLimitedUntil,
   ]);
 
-  // Derive display values
-  const finalData = screenshotData ?? cachedData;
-  const url = finalData?.url ?? null;
-  const blocked = finalData?.blocked ?? false;
-  const error = startMutation.error ?? statusQuery.error;
+  // Derive return values
+  const finalData = screenshotData ?? cachedData ?? null;
+  const error = startMutation.error ?? statusQuery.error ?? null;
   const hasFailed = statusQuery.data?.status === "failed";
   const isLoading =
     !finalData &&
@@ -288,6 +286,37 @@ export function Screenshot({
     !hasFailed &&
     enabled &&
     (domainId === undefined || startMutation.isPending || !!runId);
+
+  return { data: finalData, isLoading, error, hasFailed };
+}
+
+/**
+ * Display component for screenshot results.
+ * Use with useScreenshot hook for data fetching.
+ */
+export function Screenshot({
+  domain,
+  data,
+  isLoading,
+  className,
+  width = 1200,
+  height = 630,
+  imageClassName,
+  aspectClassName = "aspect-[1200/630]",
+}: {
+  domain: string;
+  data: ScreenshotData | null;
+  isLoading: boolean;
+  className?: string;
+  width?: number;
+  height?: number;
+  imageClassName?: string;
+  aspectClassName?: string;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+
+  const url = data?.url ?? null;
+  const blocked = data?.blocked ?? false;
 
   return (
     <div className={className}>
