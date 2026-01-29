@@ -21,6 +21,7 @@ import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BetaBadge } from "@/components/beta-badge";
+import type { UseBrowserAIResult } from "@/hooks/use-browser-ai";
 import { useBrowserAI } from "@/hooks/use-browser-ai";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import { useLocalChat } from "@/hooks/use-local-chat";
@@ -40,6 +41,10 @@ import { ChatHeaderActions } from "./chat-header-actions";
 import { ChatPanel } from "./chat-panel";
 import { ChatSettingsDialog } from "./chat-settings-dialog";
 import { getUserFriendlyError } from "./utils";
+
+// Stable empty model reference to avoid recreating useLocalChat's sendMessage on every render
+// when browser AI is not ready. This is used as a placeholder to satisfy the hook's type requirements.
+const EMPTY_MODEL = {} as NonNullable<UseBrowserAIResult["model"]>;
 
 interface ChatClientProps {
   suggestions?: string[];
@@ -62,13 +67,6 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
   // Browser AI detection and local chat setup
   const browserAI = useBrowserAI();
   const trpcClient = useTRPCClient();
-
-  // Determine effective mode based on preference and browser AI availability
-  const effectiveMode = useMemo((): "cloud" | "local" => {
-    if (aiMode === "local" && browserAI.status === "ready") return "local";
-    if (aiMode === "auto" && browserAI.status === "ready") return "local";
-    return "cloud";
-  }, [aiMode, browserAI.status]);
 
   // Client-side tools and prompt for local chat
   const clientTools = useMemo(
@@ -132,10 +130,21 @@ export function ChatClient({ suggestions = [] }: ChatClientProps) {
     },
   });
 
+  // Determine effective mode based on preference and browser AI availability.
+  // IMPORTANT: Once a cloud conversation is in progress, we lock to cloud mode
+  // to prevent message loss when browser AI becomes ready mid-conversation.
+  const effectiveMode = useMemo((): "cloud" | "local" => {
+    // If there's an active cloud conversation, stay in cloud mode to avoid losing messages
+    if (cloudChat.messages.length > 0) return "cloud";
+    if (aiMode === "local" && browserAI.status === "ready") return "local";
+    if (aiMode === "auto" && browserAI.status === "ready") return "local";
+    return "cloud";
+  }, [aiMode, browserAI.status, cloudChat.messages.length]);
+
   // Local chat (browser-based AI) - only active when effectiveMode is "local"
-  // We create a placeholder model when browser AI isn't ready to avoid conditional hook calls
+  // We use EMPTY_MODEL placeholder when browser AI isn't ready to avoid conditional hook calls
   const localChat = useLocalChat({
-    model: browserAI.model ?? ({} as NonNullable<typeof browserAI.model>),
+    model: browserAI.model ?? EMPTY_MODEL,
     tools: clientTools,
     systemPrompt,
     onError: (error) => {

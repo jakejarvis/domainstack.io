@@ -1,5 +1,5 @@
 import { CHATBOT_NAME } from "@domainstack/constants";
-import { isValidDomain } from "@domainstack/core/domain";
+import { isValidDomain } from "@domainstack/core/domain/client";
 
 /**
  * Build the system prompt for client-side (browser) AI chat.

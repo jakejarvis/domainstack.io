@@ -3,6 +3,7 @@
 import type { browserAI } from "@browser-ai/core";
 import {
   convertToModelMessages,
+  readUIMessageStream,
   streamText,
   type ToolSet,
   type UIMessage,
@@ -126,43 +127,23 @@ export function useLocalChat({
           abortSignal: abortControllerRef.current.signal,
         });
 
-        let fullText = "";
-
-        // Stream the response
-        for await (const chunk of result.textStream) {
-          fullText += chunk;
-
-          // Update the assistant message with accumulated text
+        // Stream the response using readUIMessageStream to capture all parts
+        // (text, tool-call, tool-result) - textStream only emits text deltas
+        for await (const uiMessage of readUIMessageStream({
+          stream: result.toUIMessageStream(),
+        })) {
+          // Update the assistant message with all accumulated parts
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMessageId
                 ? {
                     ...msg,
-                    parts: fullText
-                      ? [{ type: "text" as const, text: fullText }]
-                      : [],
+                    parts: uiMessage.parts,
                   }
                 : msg,
             ),
           );
         }
-
-        // Get the final text
-        const finalText = await result.text;
-
-        // Final update with complete text
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMessageId
-              ? {
-                  ...msg,
-                  parts: finalText
-                    ? [{ type: "text" as const, text: finalText }]
-                    : [],
-                }
-              : msg,
-          ),
-        );
 
         setStatus("ready");
       } catch (err) {

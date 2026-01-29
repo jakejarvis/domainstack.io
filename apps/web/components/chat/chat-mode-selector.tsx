@@ -47,7 +47,7 @@ function getStatusLabel(
     case "downloadable":
       return "Download required";
     case "downloading":
-      return `Downloading… ${Math.round(downloadProgress ?? 0 * 100)}%`;
+      return `Downloading… ${Math.round((downloadProgress ?? 0) * 100)}%`;
     case "ready":
       return "Ready";
     case "error":
