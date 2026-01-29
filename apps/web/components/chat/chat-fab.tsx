@@ -2,16 +2,15 @@
 
 import { CHATBOT_NAME } from "@domainstack/constants";
 import { Button } from "@domainstack/ui/button";
-import { cn } from "@domainstack/ui/utils";
 import { IconLego, IconMessageCircleFilled } from "@tabler/icons-react";
 import {
+  type MotionValue,
   motion,
   useAnimationFrame,
   useMotionTemplate,
   useMotionValue,
   useReducedMotion,
 } from "motion/react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const MotionButton = motion.create(Button);
 
@@ -19,8 +18,33 @@ interface ChatFabProps {
   onClick: () => void;
 }
 
+/**
+ * Animated mesh gradient background for the FAB.
+ * Extracted to share between mobile and desktop variants.
+ */
+function MeshGradientBackground({
+  alwaysVisible,
+  meshGradient,
+}: {
+  alwaysVisible: boolean;
+  meshGradient: MotionValue<string>;
+}) {
+  return (
+    <motion.span
+      className="pointer-events-none absolute size-full"
+      initial={{ opacity: alwaysVisible ? 1 : 0 }}
+      animate={alwaysVisible ? { opacity: 1 } : undefined}
+      variants={alwaysVisible ? undefined : { hover: { opacity: 1 } }}
+      transition={{ duration: 0.2 }}
+      style={{
+        background: meshGradient,
+        filter: "blur(4px)",
+      }}
+    />
+  );
+}
+
 export function ChatFab({ onClick }: ChatFabProps) {
-  const isMobile = useIsMobile();
   const prefersReducedMotion = useReducedMotion();
 
   // Animated gradient positions for mesh-like effect
@@ -54,46 +78,54 @@ export function ChatFab({ onClick }: ChatFabProps) {
     radial-gradient(ellipse at ${x4}% ${y4}%, rgba(34, 197, 94, 0.5) 0%, transparent 50%)
   `;
 
+  const motionProps = {
+    onClick,
+    initial: prefersReducedMotion ? false : { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 16 },
+    whileHover: prefersReducedMotion ? undefined : "hover",
+    transition: {
+      duration: 0.25,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+  } as const;
+
+  // Render both mobile and desktop variants, use CSS to toggle visibility.
+  // This prevents FOIC (Flash of Incorrect Content) since useIsMobile returns
+  // false during SSR, causing mobile users to see desktop button first.
   return (
-    <MotionButton
-      variant={isMobile ? "default" : "outline"}
-      size={isMobile ? "icon-lg" : "default"}
-      aria-label={`Chat with ${CHATBOT_NAME}`}
-      className={cn(
-        "group fixed right-6 bottom-6 z-40 overflow-hidden shadow-lg transition-none",
-        isMobile ? "rounded-full" : "backdrop-blur-md",
-      )}
-      onClick={onClick}
-      initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 16 }}
-      whileHover={prefersReducedMotion ? undefined : "hover"}
-      transition={{
-        duration: 0.25,
-        ease: [0.22, 1, 0.36, 1] as const,
-      }}
-    >
-      <motion.span
-        className="pointer-events-none absolute size-full"
-        initial={{ opacity: isMobile ? 1 : 0 }}
-        animate={isMobile ? { opacity: 1 } : undefined}
-        variants={isMobile ? undefined : { hover: { opacity: 1 } }}
-        transition={{ duration: 0.2 }}
-        style={{
-          background: meshGradient,
-          filter: "blur(4px)",
-        }}
-      />
-      {isMobile ? (
+    <>
+      {/* Mobile FAB - icon only, always-visible gradient */}
+      <MotionButton
+        variant="default"
+        size="icon-lg"
+        aria-label={`Chat with ${CHATBOT_NAME}`}
+        className="group fixed right-6 bottom-6 z-40 overflow-hidden rounded-full shadow-lg transition-none md:hidden"
+        {...motionProps}
+      >
+        <MeshGradientBackground alwaysVisible meshGradient={meshGradient} />
         <span className="relative z-10 flex items-center justify-center">
           <IconMessageCircleFilled className="size-5 text-background/95" />
         </span>
-      ) : (
+      </MotionButton>
+
+      {/* Desktop FAB - text + icon, gradient on hover */}
+      <MotionButton
+        variant="outline"
+        size="default"
+        aria-label={`Chat with ${CHATBOT_NAME}`}
+        className="group fixed right-6 bottom-6 z-40 hidden overflow-hidden shadow-lg backdrop-blur-md transition-none md:flex"
+        {...motionProps}
+      >
+        <MeshGradientBackground
+          alwaysVisible={false}
+          meshGradient={meshGradient}
+        />
         <span className="relative z-10 flex items-center gap-1.5 pr-0.5 font-semibold text-[13px] leading-none tracking-tight">
           <IconLego className="size-4 text-muted-foreground group-hover:text-foreground" />
           Ask {CHATBOT_NAME}
         </span>
-      )}
-    </MotionButton>
+      </MotionButton>
+    </>
   );
 }
