@@ -27,8 +27,8 @@
   "peerDependencies": {
     "@tabler/icons-react": "^3",
     "motion": "^12",
-    "react": "^19",
-    "react-dom": "^19",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "sonner": "^2"
   },
   "devDependencies": {
